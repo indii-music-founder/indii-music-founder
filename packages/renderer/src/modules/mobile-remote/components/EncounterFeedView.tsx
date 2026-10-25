@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Pause, UserPlus, Phone, CheckCircle, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, UserPlus, Phone, CheckCircle, Clock, FileText, ChevronDown, ChevronUp, Camera, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { FieldEncounter } from '@/types/encounter';
 import type { FieldContact } from '@/types/contacts';
@@ -8,6 +8,10 @@ import { exportContactToIPhone } from '@/utils/vcard';
 import { useToast } from '@/core/context/ToastContext';
 import { triggerHaptic } from '../haptics';
 import { Timestamp } from 'firebase/firestore';
+import { useStore } from '@/core/store';
+import { auth } from '@/services/firebase';
+import { StorageService } from '@/services/StorageService';
+import ArtistShareCardModal from './ArtistShareCardModal';
 
 export default function EncounterFeedView({ isPaired = false }: { isPaired?: boolean }) {
     const [openingId, setOpeningId] = useState<string | null>(null);
@@ -15,10 +19,37 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [shareOpen, setShareOpen] = useState(false);
+    const [isScanningCard, setIsScanningCard] = useState(false);
+    const cardInputRef = useRef<HTMLInputElement>(null);
+    const profile = useStore(state => state.userProfile);
+    const canShare = Boolean(auth.currentUser?.uid && auth.currentUser.uid === profile.uid && profile.displayName?.trim());
     const toast = useToast();
     const [reviewId, setReviewId] = useState<string | null>(null);
     const [reviewFields, setReviewFields] = useState({ name: '', phone: '', email: '', organization: '', notes: '', role: 'other' as FieldContact['role'] });
     const [isSavingReview, setIsSavingReview] = useState(false);
+    const scanCard = async (file: File | undefined) => {
+        if (!file || isScanningCard) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size <= 0 || file.size > 10 * 1024 * 1024) {
+            toast.error('Choose a JPG, PNG, or WebP card photo under 10 MB.');
+            return;
+        }
+        const uid = auth.currentUser?.uid;
+        if (!uid) { toast.error('Sign in before scanning a card.'); return; }
+        setIsScanningCard(true);
+        try {
+            const path = `users/${uid}/encounters/card_${crypto.randomUUID()}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
+            const downloadUrl = await StorageService.uploadFile(file, path);
+            await EncounterService.createEncounter({ assets: [{ type: 'document', storagePath: path, downloadUrl,
+                mimeType: file.type, filename: file.name }] }, uid);
+            toast.success('Card saved for AI extraction. Review the contact fields before saving.');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to scan card.');
+        } finally {
+            setIsScanningCard(false);
+            if (cardInputRef.current) cardInputRef.current.value = '';
+        }
+    };
     const startReview = (encounter: FieldEncounter) => {
         const contact = encounter.extractedContact;
         setReviewFields({ name: contact?.name || '', phone: contact?.phone || '', email: contact?.email || '', organization: contact?.organization || '', notes: contact?.notes || '', role: contact?.role || 'other' });
@@ -125,13 +156,27 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
         }
     };
 
+    const contactHeader = <>
+        <div className="flex items-center justify-between px-1">
+            <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Recent Encounters</span>
+            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono">Live Synced</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+            <button type="button" disabled={!canShare} onClick={() => setShareOpen(true)} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-200 disabled:opacity-40">
+                <QrCode size={16} /> Share My Card
+            </button>
+            <button type="button" disabled={isScanningCard} onClick={() => cardInputRef.current?.click()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white disabled:opacity-40">
+                <Camera size={16} /> {isScanningCard ? 'Scanning…' : 'Scan Card'}
+            </button>
+            <input ref={cardInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" aria-label="Business card photo" onChange={event => void scanCard(event.target.files?.[0])} />
+        </div>
+        {shareOpen && canShare && <ArtistShareCardModal name={profile.displayName} email={profile.email} onClose={() => setShareOpen(false)} />}
+    </>;
+
     if (encounters.length === 0) {
         return (
             <div className="w-full flex flex-col space-y-4 px-3 pb-24">
-                <div className="flex items-center justify-between px-1">
-                    <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Recent Encounters</span>
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono">Live Synced</span>
-                </div>
+                {contactHeader}
                 <div className="flex flex-col items-center justify-center p-8 text-center text-stone-400 space-y-3 bg-[#1c1815] border border-white/10 rounded-2xl">
                     <Clock className="w-8 h-8 text-stone-600 animate-pulse" />
                     <p className="text-sm font-medium text-stone-300">No encounters captured yet.</p>
@@ -143,10 +188,7 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
 
     return (
         <div className="w-full flex flex-col space-y-4 px-3 pb-24">
-            <div className="flex items-center justify-between px-1">
-                <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Recent Encounters</span>
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono">Live Synced</span>
-            </div>
+            {contactHeader}
 
             {encounters.map((enc) => {
                 const photoAsset = enc.assets.find((a) => a.type === 'photo');

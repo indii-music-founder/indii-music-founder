@@ -352,6 +352,17 @@ describe('publishStudioPresence', () => {
         });
         await presence()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', state: { studioInstanceId: INSTANCE, pendingApproval: { ...approval, content: 'x'.repeat(2001) } } }));
         expect(mocks.writes.at(-1)?.data.pendingApproval).toBeNull();
+    it('projects bounded playback fields and clears stale track metadata', async () => {
+        enroll();
+        await presence()(req({
+            deviceId: DEVICE_ID, leaseToken: 'the-real-token', protocolVersion: 1,
+            state: { studioInstanceId: INSTANCE, activeTrackId: 'track-1', activeTrackTitle: 'New Master', isPlaying: true,
+                nowPlayingPositionSec: 31, nowPlayingDurationSec: 180, activeTrackUrl: 'https://untrusted.example/file' },
+        }));
+        const write = mocks.writes.find(w => w.path === statePath);
+        expect(write?.data).toMatchObject({ activeTrackId: 'track-1', activeTrackTitle: 'New Master', isPlaying: true,
+            nowPlayingPositionSec: 31, nowPlayingDurationSec: 180 });
+        expect(write?.data).not.toHaveProperty('activeTrackUrl');
     });
 
     it('applies safe defaults for absent fields and slices overlong strings', async () => {

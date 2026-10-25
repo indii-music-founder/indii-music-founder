@@ -4762,6 +4762,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1518: Active architecture instructions still identify retired video and sidecar components
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **2026-10-24 progress:** The `codex/issue-1518-active-architecture-docs` branch updates active `CLAUDE.md` and tech-stack guidance to the manifest-backed HyperFrames CLI/player and 13 declared workspaces, and describes Python as an optional utility bridge rather than a required Docker sidecar. The npm audit step is correctly labeled advisory. Historical migration records remain untouched; publication and review are pending.
 - **Recovered from:** Original audit ISSUE-1459; current ISSUE-1459 concerns unrelated UI work.
 - **October 12 recheck:** CLAUDE.md:155 and matching instruction mirrors retain Remotion; tech-stack.md:15,58,89 retains retired video/sidecar architecture and describes advisory npm audit as a gate. Preserve labeled roadmap history.
 - **Severity:** MEDIUM
@@ -4775,6 +4776,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1519: HyperFrames telemetry opt-out is not proven across all isolated execution environments
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **2026-10-24 progress:** The `codex/issue-1519-hyperframes-telemetry` branch passes `HYPERFRAMES_NO_TELEMETRY=1` into the adapter's isolated CLI process and the build, deploy, and weekly audit workflows. A focused probe runs the pinned CLI's own `telemetry status` inside an isolated HOME and verifies `disabled` with that environment source. This proves the local override path; network egress and packaged production rendering remain unverified.
 - **Recovered from:** Original audit ISSUE-1460; current ISSUE-1460 concerns unrelated UI work.
 - **October 12 recheck:** Weekly workflow disables telemetry, but deployment jobs and HyperFramesAdapter's separate CLI HOME/cache have no proven opt-out coverage. Passing renders or unrelated telemetry output do not prove HyperFrames egress or privacy.
 - **Severity:** MEDIUM
@@ -4840,6 +4842,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1524: Audit ledger findings were deleted and issue identifiers reused
 
 - **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **2026-10-24 progress:** The `codex/issue-1524-ledger-integrity` branch adds a pre-commit and GitHub Actions comparison against the prior ledger revision. It preserves historical duplicate entries while rejecting newly removed/renamed findings, reused IDs, expanded duplicates, and resolved statuses without newly added commit and CI evidence. Focused parser tests cover each boundary; branch CI and enforcement after merge remain pending.
 - **Severity:** HIGH
 - **Module:** Issue ledger / Agent coordination
 - **Classification:** Structural source defect; historical commit evidence or authenticated CI evidence where stated. Genuine customer impact/acceptance remains Conditional.
@@ -4976,6 +4979,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1529: Remote Cloud Music Vault (StreamView) unreachable from navigation and lacks desktop Now Playing sync / Car Test player
 
+**Progress (2026-10-24):** `codex/issue-1529-mobile-vault-playback` exposes Cloud Vault in the mobile navigation, projects bounded desktop playback metadata through the lease-backed presence endpoint, shows a persistent paired-only now-playing control, and offers phone-local playback when the desktop track exists in the user's Cloud Vault. The relay carries the track ID, not its media URL. Focused unit tests and renderer/Firebase typechecks pass. Desktop-to-phone live playback and transport acceptance remain open; desktop skip remains unavailable because the current audio player has no queue/next action.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Audio Streaming / TransportBar / DesktopState Sync
@@ -5040,6 +5045,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1532: Mobile capture ingestion bypasses AI agent swarm — voice memos lack auto-transcription and receipts lack OCR expense parsing
 
+**Progress (2026-10-24):** The existing cloud Encounter pipeline already transcribes captured audio and creates a durable note, so the prior voice finding was partly stale. `codex/issue-1532-mobile-capture-ingestion` removes the duplicate direct desktop note task for voice/receipt captures and requires a durable Encounter before clearing them. Receipt media now gets evidence-cited OCR fields; complete USD results create a deterministic, unclassified, receipt-attached expense candidate and a reviewable note. Incomplete/unsupported extraction saves the original note without inventing an amount. Road Mode exposes mileage logging; its 2026 estimate follows the published IRS period rates and remains unclassified for review. Focused structural tests and typechecks pass. Genuine captured-media transcription/OCR, expense review, and mobile UI acceptance remain open.
+
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Capture Ingestion / Notes / Finance Agent / Speech-to-Text
@@ -5059,6 +5066,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. Photographing an expense receipt on mobile automatically extracts amount and vendor in the financial ledger.
 
 ### ISSUE-1533: Road networking lacks digital contact sharing (QR code / Artist Passport card) and business card camera OCR
+
+**Progress (2026-10-24):** `codex/issue-1533-mobile-contact-sharing` adds a full-screen scannable vCard QR in Contacts, with account email excluded until the artist opts in. It uses a vCard because the alleged public `/p/{artistSlug}` route is not implemented. The Contacts camera action uploads a bounded card image to the existing cloud Encounter pipeline, which extracts cited contact fields for review in the feed instead of silently filling unverified fields. Focused structural tests and renderer typecheck pass. Real QR scanning and business-card OCR/review acceptance remain open.
 
 - **Status:** 🔴 OPEN (2026-10-13)
 - **Severity:** 🟡 MEDIUM
@@ -5312,6 +5321,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1543: `ARCJET_PROTECTION_MATRIX.md` 69-file false-compliance gap, unthrottled `mintElectronAppCheckToken` arbitrary `appId` minting, and `issueStudioExecutorLease` auto-enrollment relay hijack
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The `codex/issue-1543-appcheck-mint` branch narrows token minting to a verified, non-anonymous user and the Electron renderer's configured Firebase app ID, and adds Arcjet admission before token creation. Focused tests cover denied identity, app ID, admission, and allowed minting. This is partial protection: a verified browser session can still request a token for the allowed app ID. Device-bound proof, relay enrollment, the wider Arcjet matrix audit, branch CI, and production acceptance remain open.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Security / Admission & App Check / Studio Remote Relay (`docs/ARCJET_PROTECTION_MATRIX.md`, `packages/firebase/src/functions/auth/mintElectronAppCheckToken.ts`, `packages/firebase/src/functions/remote/issueStudioExecutorLease.ts`, `packages/firebase/src/assets/auditReleaseArtwork.ts`)
 - **Classification:** App Check bypass, remote relay device hijack, and 69-endpoint Arcjet admission gap.
@@ -5390,6 +5400,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1546: Desktop `RightsCopilotModal` and `rightsCopilot.ts` launch marketing `/join` URLs instead of portals, silently report failed DOM steps as `completed`, reset React controlled inputs, and no-op `stage_deposit_upload`
 
 - **Status:** 🔴 OPEN (2026-10-16)
+- **2026-10-24 progress:** The `codex/issue-1546-rights-copilot` branch sends the modal to the member portals used by the native controller, disables native Run actions until a session ID exists, uses native DOM value setters for controlled fields, and keeps deposit attachment explicitly in the artist's hands because the reviewed manifest has no trusted local file path or verified portal upload result. Missing or blocked fields already fail closed; a manual deposit step now cannot report completion. Focused tests and local type checks pass. Signed-in portal acceptance and actual deposit submission remain open.
 - **Severity:** 🟠 HIGH
 - **Module:** Desktop Rights Registration Copilot (`packages/renderer/src/modules/registration/components/RightsCopilotModal.tsx`, `packages/main/src/handlers/rightsCopilot.ts`)
 - **Classification:** Broken Electron DOM automation, silent failure reporting, and unimplemented upload step.

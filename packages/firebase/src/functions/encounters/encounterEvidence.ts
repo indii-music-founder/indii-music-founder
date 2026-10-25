@@ -65,17 +65,41 @@ const contactSchema = z.object({
     confidence: z.enum(['high', 'uncertain']),
     evidence: evidenceSchema,
 });
+const receiptSchema = z.object({
+    vendor: z.string().trim().min(1).max(200),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+        const date = new Date(`${value}T00:00:00Z`);
+        return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }),
+    amount: z.number().finite().positive().max(1_000_000),
+    currency: z.string().trim().length(3),
+    category: z.enum(['Travel', 'Equipment', 'Marketing', 'Services', 'Other']),
+    tax: z.number().finite().nonnegative().nullish(),
+    evidence: evidenceSchema,
+});
 const analysisSchema = z.object({
     summary: z.string().trim().min(1).max(4000),
     transcript: z.string().max(24000).nullish(),
     contact: contactSchema.nullish(),
+    receipt: z.unknown().nullish(),
 });
 
 /** Drop fields that lack a citation to evidence actually supplied in this call. */
-export function parseEncounterAnalysis(raw: string, sourceIds: readonly string[]) {
+export function parseEncounterAnalysis(raw: string, sourceIds: readonly string[], receiptSourceIds: readonly string[] = []) {
     const analysis = analysisSchema.parse(JSON.parse(raw));
+    const candidateReceipt = receiptSchema.safeParse(analysis.receipt);
+    const parsedReceipt = candidateReceipt.success ? candidateReceipt.data : undefined;
+    const receipt = parsedReceipt && receiptSourceIds.length > 0 &&
+        ['vendor', 'date', 'amount', 'currency'].every(field =>
+            parsedReceipt.evidence[field]?.length &&
+            parsedReceipt.evidence[field]!.every(id => receiptSourceIds.includes(id))) &&
+        parsedReceipt.currency.toUpperCase() === 'USD'
+        ? { vendor: parsedReceipt.vendor, date: parsedReceipt.date, amount: parsedReceipt.amount,
+            currency: 'USD' as const, category: parsedReceipt.category,
+            tax: parsedReceipt.evidence.tax?.every(id => receiptSourceIds.includes(id)) && parsedReceipt.tax !== undefined && parsedReceipt.tax !== null && parsedReceipt.tax <= parsedReceipt.amount ? parsedReceipt.tax : undefined }
+        : undefined;
     const candidate = analysis.contact;
-    if (!candidate) return { summary: analysis.summary, transcript: analysis.transcript || undefined, contact: undefined };
+    if (!candidate) return { summary: analysis.summary, transcript: analysis.transcript || undefined, contact: undefined, receipt };
     const supported = (field: string) => candidate.evidence[field]?.length
         && candidate.evidence[field]!.every(id => sourceIds.includes(id));
     if (!supported('name')) throw new Error('Contact name has no supplied evidence.');
@@ -86,6 +110,7 @@ export function parseEncounterAnalysis(raw: string, sourceIds: readonly string[]
     return {
         summary: analysis.summary,
         transcript: analysis.transcript || undefined,
+        receipt,
         contact,
         confidence: candidate.confidence,
         evidence: Object.fromEntries(fieldNames.filter(field => supported(field)).map(field => [field, candidate.evidence[field]])),

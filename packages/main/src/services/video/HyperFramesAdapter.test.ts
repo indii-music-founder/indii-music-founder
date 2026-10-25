@@ -5,6 +5,7 @@
  */
 
 import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -15,7 +16,7 @@ import { afterEach, beforeEach, describe, expect } from 'vitest';
 import { runVideoRendererContractSuite } from '@shared/testing/videoRendererSuite';
 import type { RendererContractScenario } from '@shared/testing/videoRendererSuite';
 
-import { HyperFramesAdapter } from './HyperFramesAdapter';
+import { HyperFramesAdapter, hyperFramesCliEnv, resolveHyperFramesCliEntry } from './HyperFramesAdapter';
 
 const MINIMAL_INDEX = (title: string): string => `<!doctype html>
 <html lang="en"><head><meta charset="UTF-8" />
@@ -52,6 +53,18 @@ describe('HyperFramesAdapter', () => {
 
     afterEach(async () => {
         if (dir) await rm(dir, { recursive: true, force: true });
+    });
+
+    it('disables CLI telemetry inside the isolated render home', () => {
+        const env = hyperFramesCliEnv({ ...process.env, HYPERFRAMES_NO_TELEMETRY: '0' }, dir);
+        expect(env.HOME).toBe(dir);
+        expect(env.HYPERFRAMES_NO_TELEMETRY).toBe('1');
+        const probe = spawnSync(process.execPath, [resolveHyperFramesCliEntry(), 'telemetry', 'status'], {
+            env, encoding: 'utf8', timeout: 15_000,
+        });
+        expect(probe.status).toBe(0);
+        expect(probe.stdout).toContain('Status:     disabled');
+        expect(probe.stdout).toContain('Source:     HYPERFRAMES_NO_TELEMETRY');
     });
 
     runVideoRendererContractSuite('HyperFramesAdapter (local engine)', (): RendererContractScenario => {

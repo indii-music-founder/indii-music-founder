@@ -49,14 +49,14 @@ vi.mock('../../lib/vertexClient', () => ({
     getVertexAIClient: () => ({ models: { generateContent: mocks.generateContent } }),
 }));
 
-import { analyzeEncounterWithGemini } from './processEncounterPipeline';
+import { analyzeEncounterWithGemini, buildEncounterReceiptExpense } from './processEncounterPipeline';
 import type { EncounterMediaAsset } from './encounterEvidence';
 
 function asset(type: EncounterMediaAsset['type'], i: number): EncounterMediaAsset {
     return { type, storagePath: `users/owner/encounters/e1/${type}${i}`, downloadUrl: `gs://proj/users/owner/encounters/e1/${type}${i}` } as EncounterMediaAsset;
 }
 
-const MIME_BY_TYPE: Record<string, string> = { audio: 'audio/webm', photo: 'image/jpeg', video: 'video/mp4' };
+const MIME_BY_TYPE: Record<string, string> = { audio: 'audio/webm', photo: 'image/jpeg', video: 'video/mp4', receipt: 'image/png' };
 
 function modelJsonResponse(citedSource = 'asset_1') {
     return {
@@ -75,7 +75,7 @@ beforeEach(() => {
     // Storage metadata is authoritative: derive contentType/size from the object path.
     mocks.getMetadata.mockImplementation(async () => {
         const path = mocks.state.lastPath ?? 'audio';
-        const type = ['audio', 'photo', 'video'].find(t => path.includes(`/${t}`)) ?? 'audio';
+        const type = ['audio', 'photo', 'video', 'receipt'].find(t => path.includes(`/${t}`)) ?? 'audio';
         return [{ size: '100', contentType: MIME_BY_TYPE[type] }];
     });
     mocks.generateContent.mockResolvedValue(modelJsonResponse());
@@ -114,6 +114,18 @@ describe('analyzeEncounterWithGemini — multi-asset wiring', () => {
         const parts = mocks.generateContent.mock.calls[0][0].contents[0].parts;
         expect(parts.some((p: { text?: string }) => p.text?.includes('context (user note): Met after the show'))).toBe(true);
         expect(parts[parts.length - 1].text).toContain('asset_0, context');
+    });
+    it('extracts receipt fields only from a labeled receipt asset', async () => {
+        mocks.generateContent.mockResolvedValue({ text: JSON.stringify({ summary: 'Parking receipt', contact: null,
+            receipt: { vendor: 'Venue Parking', date: '2026-10-24', amount: 12.5, currency: 'USD', category: 'Travel',
+                evidence: { vendor: ['asset_0'], date: ['asset_0'], amount: ['asset_0'], currency: ['asset_0'] } } }),
+            candidates: [{ finishReason: 'STOP' }] });
+        const result = await analyzeEncounterWithGemini({ userId: 'owner', assets: [asset('receipt', 0)] });
+        expect(result.receipt?.vendor).toBe('Venue Parking');
+        expect(mocks.generateContent.mock.calls[0][0].contents[0].parts[1].fileData.mimeType).toBe('image/png');
+        const expense = buildEncounterReceiptExpense('owner', 'e1', result.receipt!, 'gs://proj/users/owner/receipt');
+        expect(expense.id).toBe('expense_encounter_owner_e1');
+        expect(expense.data).toMatchObject({ amount: 12.5, paymentStatus: 'unclassified', evidenceStatus: 'receipt_attached' });
     });
 
     it('rejects more than the maximum asset count', async () => {

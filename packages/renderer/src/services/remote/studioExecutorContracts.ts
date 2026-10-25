@@ -72,6 +72,12 @@ export interface StudioExecutionAdapter {
         isAgentProcessing: boolean;
         activeSessionId: string;
         pendingApproval: import('@/services/agent/RemoteRelayService').DesktopState['pendingApproval'];
+        activeTrackTitle?: string;
+        activeTrackId?: string;
+        activeTrackArtist?: string;
+        isPlaying?: boolean;
+        nowPlayingPositionSec?: number;
+        nowPlayingDurationSec?: number;
         sleepMode: boolean;
         capabilities: StudioCapabilities;
     };

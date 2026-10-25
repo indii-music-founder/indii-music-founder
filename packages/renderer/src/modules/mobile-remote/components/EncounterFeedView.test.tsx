@@ -1,10 +1,20 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import EncounterFeedView from './EncounterFeedView';
-import { EncounterService } from '@/services/encounters/EncounterService';
 
 const fixtureState: { items: unknown[]; emit?: (items: unknown[]) => void } = { items: [] };
+const { mockCreateEncounter, mockUploadFile } = vi.hoisted(() => ({
+    mockCreateEncounter: vi.fn(async () => 'enc-card'),
+    mockUploadFile: vi.fn(async () => 'gs://project/users/u1/encounters/card.png'),
+}));
+
+vi.mock('@/core/store', () => ({ useStore: (selector: (state: unknown) => unknown) => selector({
+    userProfile: { uid: 'u1', displayName: 'Stage Artist', email: 'private@example.com' },
+}) }));
+vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'u1' } } }));
+vi.mock('@/services/StorageService', () => ({ StorageService: { uploadFile: mockUploadFile } }));
+vi.mock('qrcode.react', () => ({ QRCodeSVG: ({ value }: { value: string }) => <div data-testid="share-qr" data-value={value} /> }));
 
 vi.mock('@/services/encounters/EncounterService', () => ({
     EncounterService: {
@@ -14,6 +24,7 @@ vi.mock('@/services/encounters/EncounterService', () => ({
             return () => {};
         }),
         reviewContact: vi.fn(() => Promise.resolve()),
+        createEncounter: mockCreateEncounter,
     }
 }));
 
@@ -47,6 +58,26 @@ const baseEncounter = {
 };
 
 describe('EncounterFeedView Component', () => {
+    it('shares a scannable vCard without email until the artist opts in', () => {
+        setEncounters([]);
+        render(<EncounterFeedView />);
+        fireEvent.click(screen.getByRole('button', { name: 'Share My Card' }));
+        expect(screen.getByTestId('share-qr').getAttribute('data-value')).toContain('FN:Stage Artist');
+        expect(screen.getByTestId('share-qr').getAttribute('data-value')).not.toContain('private@example.com');
+        fireEvent.click(screen.getByRole('checkbox', { name: /include my account email/i }));
+        expect(screen.getByTestId('share-qr').getAttribute('data-value')).toContain('private@example.com');
+    });
+
+    it('routes a captured business card through the reviewable Encounter pipeline', async () => {
+        setEncounters([]);
+        render(<EncounterFeedView />);
+        const input = screen.getByLabelText('Business card photo');
+        fireEvent.change(input, { target: { files: [new File(['card'], 'card.png', { type: 'image/png' })] } });
+        await waitFor(() => expect(mockCreateEncounter).toHaveBeenCalledWith(expect.objectContaining({
+            assets: [expect.objectContaining({ type: 'document', mimeType: 'image/png' })],
+        }), 'u1'));
+        expect(mockUploadFile).toHaveBeenCalled();
+    });
     it('renders the recent encounter and displays extracted contact info', () => {
         setEncounters([baseEncounter]);
         render(<EncounterFeedView />);

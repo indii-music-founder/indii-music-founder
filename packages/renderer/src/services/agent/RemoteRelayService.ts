@@ -130,6 +130,12 @@ export interface DesktopState {
     } | null;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     online: boolean;
+    activeTrackTitle?: string;
+    activeTrackId?: string;
+    activeTrackArtist?: string;
+    isPlaying?: boolean;
+    nowPlayingPositionSec?: number;
+    nowPlayingDurationSec?: number;
     /** Presence must come from a Studio executor, never the Controller. */
     role?: 'studio';
     /** Per-running-Studio identity, used to distinguish a live executor lease. */

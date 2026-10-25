@@ -154,6 +154,7 @@ describe('rightsRegistration - ISSUE-1511 Assisted Rights Registration Engine', 
 
       const depositAction = actions.find((a) => a.type === 'stage_deposit_upload');
       expect(depositAction?.value).toBe('track_01_master.wav');
+      expect(depositAction?.requiresUserAction).toBe(true);
 
       const paymentAction = actions.find((a) => a.type === 'pause_for_user_payment');
       expect(paymentAction?.requiresUserAction).toBe(true);
