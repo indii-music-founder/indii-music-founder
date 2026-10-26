@@ -12,13 +12,15 @@
  *    and Google Ads Enhanced Conversions with Firestore-backed idempotency.
  */
 
+import { randomUUID } from 'crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { ZodError } from 'zod';
 
-import { typesafeApiKey } from '../../config/secrets';
+import { arcjetKey, typesafeApiKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     type IAdPlatformAdapter,
     UnifiedAttributionEventSchema,
@@ -218,7 +220,7 @@ export async function handleIngestUnifiedAttributionEvent(
 export const executeUnifiedCampaignDirective = onCall(
     {
         enforceAppCheck: false,
-        secrets: [typesafeApiKey],
+        secrets: [typesafeApiKey, arcjetKey],
         timeoutSeconds: 60,
         memory: '512MiB',
     },
@@ -227,6 +229,26 @@ export const executeUnifiedCampaignDirective = onCall(
 
         if (!request.auth?.uid) {
             throw new HttpsError('unauthenticated', 'Authentication required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `execute-unified-campaign:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         try {
@@ -258,6 +280,7 @@ export const executeUnifiedCampaignDirective = onCall(
 export const ingestUnifiedAttributionEvent = onCall(
     {
         enforceAppCheck: false,
+        secrets: [arcjetKey],
         timeoutSeconds: 30,
         memory: '512MiB',
     },
@@ -266,6 +289,26 @@ export const ingestUnifiedAttributionEvent = onCall(
 
         if (!request.auth?.uid) {
             throw new HttpsError('unauthenticated', 'Authentication required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `ingest-unified-attribution:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         try {

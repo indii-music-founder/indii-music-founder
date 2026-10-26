@@ -1,9 +1,10 @@
+import { randomUUID } from 'crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import { z } from 'zod';
 import { arcjetKey } from '../config/secrets';
-import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
+import { protectAnonymousSignupRequest, protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
 
 export const PRE_SAVE_CAMPAIGNS_COLLECTION = 'presaveCampaigns';
@@ -232,12 +233,33 @@ export const createPreSaveCampaign = onCall(
     region: 'us-central1',
     memory: '512MiB',
     enforceAppCheck: true,
+    secrets: [arcjetKey],
     cors: publicOrigins,
   },
   async (request) => {
     validateAppCheckV2(request);
     const ownerId = request.auth?.uid;
     if (!ownerId) throw new HttpsError('unauthenticated', 'Sign in to publish a campaign.');
+    if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.auth?.token?.email_verified === false) {
+      throw new HttpsError('permission-denied', 'Verified email is required.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: ownerId,
+        policy: 'verified-free',
+        operationId: `create-presave-campaign:${randomUUID()}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError(
+          protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+          protection.message,
+        );
+      }
+    }
 
     const campaignId = await savePreSaveCampaign(ownerId, request.data);
     logger.info('[PreSaveCampaign] Campaign persisted', { ownerId, campaignId });

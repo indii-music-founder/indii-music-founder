@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **38**.
+- Declarations missing at least one of those local references: **161**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -75,8 +75,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/knowledge/upload.ts:26` | `createKnowledgeUpload` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:97` | `finalizeKnowledgeUpload` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:207` | `deleteKnowledgeDocument` | `onCall` | Not established | Not established |
-| `functions/marketing/adCampaignCallables.ts:218` | `executeUnifiedCampaignDirective` | `onCall` | Not established | Not established |
-| `functions/marketing/adCampaignCallables.ts:258` | `ingestUnifiedAttributionEvent` | `onCall` | Not established | Not established |
+| `functions/marketing/adCampaignCallables.ts:220` | `executeUnifiedCampaignDirective` | `onCall` | Present | Present |
+| `functions/marketing/adCampaignCallables.ts:280` | `ingestUnifiedAttributionEvent` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:119` | `getCanonicalClaimsInbox` | `onCall` | Not established | Not established |
 | `functions/music/claimsInbox.ts:124` | `declareCanonicalRightsClaim` | `onCall` | Not established | Not established |
 | `functions/music/claimsInbox.ts:129` | `respondToCanonicalRightsClaim` | `onCall` | Not established | Not established |
@@ -149,31 +149,31 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `lib/audio.ts:50` | `(factory/helper)` | `onCall` | Not established | Not established |
 | `lib/image_generation.ts:868` | `(factory/helper)` | `onCall` | Present | Not established |
 | `lib/image_generation.ts:928` | `(factory/helper)` | `onCall` | Present | Not established |
-| `lib/marketing.ts:176` | `executeCampaign` | `onCall` | Not established | Not established |
-| `lib/marketing.ts:358` | `dispatchSocialPost` | `onCall` | Not established | Not established |
-| `lib/marketing.ts:422` | `createInfluencerBounty` | `onCall` | Not established | Not established |
+| `lib/marketing.ts:179` | `executeCampaign` | `onCall` | Present | Present |
+| `lib/marketing.ts:382` | `dispatchSocialPost` | `onCall` | Present | Present |
+| `lib/marketing.ts:467` | `createInfluencerBounty` | `onCall` | Present | Present |
 | `lib/touring.ts:276` | `computeDistanceMatrix` | `onCall` | Not established | Not established |
 | `lib/touring.ts:315` | `generateItinerary` | `onCall` | Not established | Not established |
 | `lib/touring.ts:329` | `checkLogistics` | `onCall` | Not established | Not established |
 | `lib/touring.ts:343` | `findPlaces` | `onCall` | Not established | Not established |
-| `marketing/campaignMetricsCallable.ts:124` | `marketingGetCampaignMetrics` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:39` | `createAdCampaign` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:107` | `createAdSet` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:185` | `createAd` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:244` | `getAdInsights` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:289` | `pauseAdCampaign` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:324` | `getSocialPostInsights` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:366` | `syncEmailList` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:411` | `deployEmailCampaign` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:460` | `getEmailCampaignStats` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:502` | `sendSMSBlast` | `onCall` | Not established | Not established |
-| `marketing/marketingCallables.ts:551` | `getSMSDeliveryStatus` | `onCall` | Not established | Not established |
-| `marketing/presaveCampaigns.ts:230` | `createPreSaveCampaign` | `onCall` | Not established | Not established |
-| `marketing/presaveCampaigns.ts:248` | `getPreSaveCampaign` | `onCall` | Present | Present |
-| `marketing/presaveCampaigns.ts:304` | `listPreSaveCampaigns` | `onCall` | Present | Present |
+| `marketing/campaignMetricsCallable.ts:127` | `marketingGetCampaignMetrics` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:73` | `createAdCampaign` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:136` | `createAdSet` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:209` | `createAd` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:264` | `getAdInsights` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:305` | `pauseAdCampaign` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:336` | `getSocialPostInsights` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:374` | `syncEmailList` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:415` | `deployEmailCampaign` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:460` | `getEmailCampaignStats` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:498` | `sendSMSBlast` | `onCall` | Present | Present |
+| `marketing/marketingCallables.ts:543` | `getSMSDeliveryStatus` | `onCall` | Present | Present |
+| `marketing/presaveCampaigns.ts:231` | `createPreSaveCampaign` | `onCall` | Present | Present |
+| `marketing/presaveCampaigns.ts:270` | `getPreSaveCampaign` | `onCall` | Present | Present |
+| `marketing/presaveCampaigns.ts:326` | `listPreSaveCampaigns` | `onCall` | Present | Present |
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
 | `marketing/shopifyWebhook.ts:188` | `shopifyWebhook` | `onRequest` | Not established | Not established |
-| `marketing/smartLink.ts:103` | `smartLinkRedirect` | `onRequest` | Not established | Not established |
+| `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
 | `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
 | `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
