@@ -4721,6 +4721,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Green CI does not establish a clean dependency security posture; advisory counts alone do not establish exploitable production exposure.
 - **Fix:** Record affected packages, production/dev reachability and mitigations; apply bounded compatible upgrades with lockfile integrity checks; explicitly document advisory policy.
 - **Acceptance:** Exact-SHA audit and regression results demonstrate each high advisory fixed or explicitly reviewed with owner, rationale and follow-up.
+- **2026-10-25 follow-up:** Fresh `npm audit --omit=dev` on base reported 2 critical / 32 high / 10 moderate / 1 low. Compatible upgrades in `codex/issue-1514-dependency-audit-current` reduce the repeat audit to 0 critical / 18 high / 7 moderate / 0 low. `docs/security/issue-1514-dependency-audit-2026-10-25.md` records the remaining package paths, module owners, and follow-up. The issue remains OPEN pending supported Node 24 clean install, exact-SHA CI, and vulnerable-path review.
 
 ### ISSUE-1515: CI root runtime differs from the declared Node requirement
 
@@ -4735,6 +4736,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
 - **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
 - **2026-10-24 follow-up:** The deployment workflow's seven CI host jobs now request Node 24 and use a Node-24-specific `node_modules` cache key. The Firebase Functions package still declares its separate Node 22 runtime. Exact-SHA CI and clean-install evidence remain pending; this issue is not closed.
+- **2026-10-25 follow-up:** A clean local `npm ci --ignore-scripts --no-audit` under Node 24.22.1 installed 2,912 packages. A new lint guard checks every setup-node step in build/deploy workflows against the root Node 24 engine while preserving the separate Functions Node 22 declaration. `npm run build:ci` passed under Node 24.22.1 and the Functions TypeScript build passed under Node 22.23.4; exact-SHA CI on the new branch remains pending.
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 

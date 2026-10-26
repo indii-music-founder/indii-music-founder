@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import MobileMileageModal from './MobileMileageModal';
+import { businessMileageRate } from './mileageRate';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';
@@ -81,6 +82,7 @@ function ActionButton({
 
 export default function StatusDashboard({ connectionStatus, isPaired, onTabChange }: StatusDashboardProps) {
     const [showMileageModal, setShowMileageModal] = useState(false);
+    const mileageRate = businessMileageRate(new Date());
 
     return (
         <div className="space-y-6 pb-8 font-sans">
@@ -115,7 +117,7 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                 <ActionButton
                     icon={Car}
                     label="Track Miles"
-                    description="Gear run & $0.67/mi deduction"
+                    description={mileageRate === null ? "Record miles for review" : `Gear run · $${mileageRate}/mi estimate`}
                     delay={0.25}
                     disabled={false}
                     iconColor="text-[#FF5722]"
