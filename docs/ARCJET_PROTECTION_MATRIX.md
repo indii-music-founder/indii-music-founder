@@ -1,134 +1,217 @@
-# Arcjet Protection Matrix (ISSUE-1244)
+# Arcjet Protection Inventory (ISSUE-1244 / ISSUE-1543)
 
-> **Authority & Compliance Record**
-> - **Module:** `packages/firebase/src/**`
-> - **Total Trigger-Declaring Files Inventory:** 100
-> - **Client-Reachable Endpoints (`onCall` / `onRequest`):** 79
-> - **Internal-Only Event Triggers (`onSchedule` / Firestore / Storage / Cloud Tasks):** 21
-> - **Requirement:** Every client-reachable function carries Arcjet rate-limiting / security request protection and mounts `ARCJET_KEY` via `secrets`. Internal-only event triggers are explicitly documented as exemptions without binding `ARCJET_KEY`.
+Generated from current source with `npm run inventory:arcjet`. Check freshness with `npm run check:arcjet-inventory`.
 
----
+This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-## 1. Client-Reachable Endpoints Matrix (79 Files)
+- Trigger declarations: **199** across **103** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
+- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
-All client-reachable boundaries evaluate Arcjet protection (`protectCallableRequest`, `protectAuthenticatedApiRequest`, or `protectAnonymousSignupRequest`) against the raw HTTP request and bind `ARCJET_KEY` via `secrets: [arcjetKey]`.
+Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
-| # | File Path | Trigger Type | Primary Arcjet Policy Class | Secret Bound (`ARCJET_KEY`) | Protection Status |
-|---|---|---|---|---|---|
-| 1 | `index.ts` | `onCall`, `onRequest` | `verified-free` / `paid` | Yes | PROTECTED |
-| 2 | `pod/printful.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 3 | `releases/generateDownloadUrl.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 4 | `marketplace/createMarketplaceCheckout.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 5 | `marketplace/getStemDownloadUrl.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 6 | `distribution/ingestion.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 7 | `mcp/index.ts` | `onRequest` | `verified-free` / `admin` | Yes | PROTECTED |
-| 8 | `streaming/agentStream.ts` | `onRequest` | `verified-free` | Yes | PROTECTED |
-| 9 | `subscription/activateFounderPass.ts` | `onCall` | `founder` | Yes | PROTECTED |
-| 10 | `subscription/cancelSubscription.ts` | `onCall` | `paid` | Yes | PROTECTED |
-| 11 | `subscription/createCheckoutSession.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 12 | `subscription/createMicroTransaction.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 13 | `subscription/createOneTimeCheckout.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 14 | `subscription/generateInvoice.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 15 | `subscription/getCustomerPortal.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 16 | `subscription/getSubscription.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 17 | `subscription/getUsageStats.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 18 | `subscription/resumeSubscription.ts` | `onCall` | `paid` | Yes | PROTECTED |
-| 19 | `subscription/trackUsage.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 20 | `social/refreshTokenCallable.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 21 | `orchestration/toggle/unified-distribution.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 22 | `lib/audio.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 23 | `lib/image_generation.ts` | `onCall` | `paid` | Yes | PROTECTED |
-| 24 | `lib/marketing.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 25 | `lib/touring.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 26 | `marketing/campaignMetricsCallable.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 27 | `marketing/shopifyWebhook.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 28 | `marketing/smartLink.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 29 | `functions/video/alignSessionMaster.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 30 | `functions/video/applyAudioRecipe.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 31 | `functions/video/approveSessionEditPlan.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 32 | `functions/video/cancelVideoSession.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 33 | `functions/video/createSocialHandoffDraft.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 34 | `functions/video/createVideoSession.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 35 | `functions/video/generateSessionEditPlan.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 36 | `functions/video/getVideoRenderReceipt.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 37 | `functions/video/retrySessionProxyJob.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 38 | `functions/security/logAuditEvent.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 39 | `functions/security/persistFraudAlert.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 40 | `functions/security/writeSharedOperationalData.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 41 | `functions/auth/entitlements.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 42 | `functions/auth/handoff.ts` | `onRequest` | `verified-free` | Yes | PROTECTED |
-| 43 | `functions/admin/setGodMode.ts` | `onCall` | `admin` | Yes | PROTECTED |
-| 44 | `functions/distribution/distributionRecords.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 45 | `functions/agent/getCapabilitySnapshot.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 46 | `functions/agent/manageSemanticMemory.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 47 | `functions/agent/reportBugFn.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 48 | `functions/storage/fetchStorageAssetForCanvas.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 49 | `functions/storage/verifyMasterAudio.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 50 | `functions/rights/queueRightsRegistration.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 51 | `functions/knowledge/query.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 52 | `functions/knowledge/upload.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 53 | `functions/api/router.ts` | `onRequest` | `verified-free` / `paid` / `admin` | Yes | PROTECTED |
-| 54 | `functions/finance/calculateRoyaltyAllocations.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 55 | `functions/finance/ingestEarningsReport.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 56 | `functions/finance/setRecoupmentBalance.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 57 | `functions/finance/submitTaxForm.ts` | `onRequest` | `verified-free` | Yes | PROTECTED |
-| 58 | `functions/creative/gateway.ts` | `onCall` | `verified-free` / `paid` | Yes | PROTECTED |
-| 59 | `functions/creative/getMediaDuration.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 60 | `functions/webhooks/dispatcher.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 61 | `functions/billing/enforceOperationCost.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 62 | `functions/remote/issueStudioExecutorLease.ts` | `onCall` | `admin` | Yes | PROTECTED |
-| 63 | `relay/telegramLink.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 64 | `relay/telegramWebhook.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 65 | `legal/digitalSignature.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 66 | `legal/mechanicalLicense.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 67 | `legal/pandadocProxy.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 68 | `legal/pandadocWebhook.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 69 | `assets/auditReleaseArtwork.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 70 | `email/sendEmail.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 71 | `email/tokenManager.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 72 | `analytics/platformTokenExchange.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 73 | `stripe/connect.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 74 | `stripe/escrow.ts` | `onRequest` | `verified-free` | Yes | PROTECTED |
-| 75 | `stripe/paymentLinks.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 76 | `stripe/splitEscrow.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 77 | `stripe/taxForms.ts` | `onCall` | `verified-free` | Yes | PROTECTED |
-| 78 | `stripe/webhookHandler.ts` | `onRequest` | `anonymous-signup` | Yes | PROTECTED |
-| 79 | `factory.ts` | Abstraction Helper | N/A (Factory Module) | No | EXEMPT (Factory Helper) |
+Evidence rules: inspect each trigger's options and callback, following same-file variable/function references. Guard references must be calls to imported Arcjet helpers; comments, strings and unused imports do not qualify. Secret references must occur within options (following same-file constants), not merely elsewhere in the file. Imported callbacks/options, dynamic factories, control-flow dominance, denial handling, policy selection, deployed secret versions, and live decisions require separate review. A local call reference can be conditional or unreachable and is **not** proof that every request is admitted correctly.
 
----
+ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verified executor enrollment, deployed configuration, and genuine acceptance remain separate requirements. Changes to this inventory cannot close them.
 
-## 2. Internal-Only Trigger Exemptions Matrix (21 Files)
-
-The following 21 files declare internal-only Cloud Functions triggers (`onSchedule`, Firestore triggers, Storage event triggers, Cloud Task handlers). Because these functions are invoked exclusively by GCP infrastructure and Cloud Scheduler/Cloud Tasks (and cannot be reached by external client requests), HTTP request protection is inapplicable. Binding `ARCJET_KEY` as a secret is explicitly avoided to prevent unnecessary secret noise.
-
-| # | File Path | Internal Trigger Type | Exemption Rationale | Secret Binding |
+| Source (relative to packages/firebase/src) | Declaration | Trigger | ARCJET_KEY option reference | Local guard-call reference |
 |---|---|---|---|---|
-| 1 | `publishing/iswc.ts` | Firestore (`onDocumentUpdated`) | Invoked automatically by Firestore document mutation. No HTTP or client caller. | Omitted |
-| 2 | `publishing/iswcMapper.ts` | Firestore (`onDocumentCreated`) | Invoked automatically by Firestore document mutation. No HTTP or client caller. | Omitted |
-| 3 | `devops/storageMaintenance.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered internal maintenance worker executed by GCP Cloud Scheduler. | Omitted |
-| 4 | `daemons/retention-daemon.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered data retention worker executed by GCP Cloud Scheduler. | Omitted |
-| 5 | `distribution/pollDeliveryStatus.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered delivery status poller executed by GCP Cloud Scheduler. | Omitted |
-| 6 | `distribution/processDDEXAck.ts` | Cloud Storage (`onObjectFinalized`) | Eventarc storage trigger executed when DDEX acknowledgment files land in Storage. | Omitted |
-| 7 | `social/deliverScheduledPosts.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered scheduled post delivery worker executed by GCP Cloud Scheduler. | Omitted |
-| 8 | `orchestration/index.ts` | Firestore (`onDocumentWritten`) | Invoked automatically by workflow document mutation in Firestore. | Omitted |
-| 9 | `orchestration/pulseTick.ts` | Cloud Scheduler (`onSchedule`) | System heartbeat tick executed on schedule by GCP Cloud Scheduler. | Omitted |
-| 10 | `marketing/flushConversionEvents.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered conversion event flush worker executed by GCP Cloud Scheduler. | Omitted |
-| 11 | `functions/video/cleanupVideoSessions.ts` | Cloud Scheduler (`onSchedule`) | Scheduled cleanup task executed by GCP Cloud Scheduler. | Omitted |
-| 12 | `functions/video/finalizeVideoSessionUpload.ts` | Cloud Storage (`onObjectFinalized`) | Eventarc storage trigger executed on video file upload completion. | Omitted |
-| 13 | `functions/video/settleVideoSessionCost.ts` | Firestore (`onDocumentWritten`) | Invoked automatically by video session document completion state writes. | Omitted |
-| 14 | `functions/agent/agentLoopCron.ts` | Cloud Scheduler (`onSchedule`) | Autonomous agent loop heartbeat executed by GCP Cloud Scheduler. | Omitted |
-| 15 | `functions/agent/workflowOrchestrator.ts` | Firestore (`onDocumentWritten`) | Invoked automatically by agent workflow execution state writes. | Omitted |
-| 16 | `functions/knowledge/indexWorker.ts` | Cloud Tasks (`onTaskDispatched`) | Authenticated private Cloud Task queue worker for Knowledge RAG ingestion. | Omitted |
-| 17 | `functions/creative/videoJobOrchestrator.ts` | Firestore (`onDocumentWritten`) | Invoked automatically by video job state changes in Firestore. | Omitted |
-| 18 | `functions/analytics/bigquery-pipeline.ts` | Cloud Scheduler (`onSchedule`), Firestore (`onDocumentCreated`) | Internal analytics sync pipeline executed by Cloud Scheduler & document triggers. | Omitted |
-| 19 | `relay/relayCommandProcessor.ts` | Firestore (`onDocumentCreated`) | Invoked automatically by relay command queue writes in Firestore. | Omitted |
-| 20 | `timeline/onMilestoneScheduled.ts` | Firestore (`onDocumentWritten`) | Invoked automatically by milestone document updates in Firestore. | Omitted |
-| 21 | `timeline/pollTimelineMilestones.ts` | Cloud Scheduler (`onSchedule`) | Cron-triggered timeline milestone poller executed by GCP Cloud Scheduler. | Omitted |
-
----
-
-## 3. Policy & Runtime Enforcement Rules
-
-1. **Secret Mounting:** `ARCJET_KEY` is mounted **only** via `secrets: [arcjetKey]` on client-callable HTTP/callable Cloud Function definitions.
-2. **Fail-Closed Security:** Unavailable configuration or decision errors fail closed with a structured HTTP 503 (`SECURITY_UNAVAILABLE`) or HttpsError `unavailable`.
-3. **No External Client Impersonation:** Arcjet policy classes (`verified-free`, `paid`, `founder`, `admin`, `byo-api`) are derived on the server from Firebase Auth and server-owned entitlement state.
+| `analytics/platformTokenExchange.ts:80` | `analyticsExchangeToken` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:163` | `analyticsFinalizeInstagramConnection` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:183` | `analyticsGetConnectionStatus` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:221` | `auditInstagramConnectionCallable` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:285` | `analyticsRefreshToken` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:392` | `analyticsRevokeToken` | `onCall` | Not established | Not established |
+| `assets/auditReleaseArtwork.ts:30` | `auditReleaseArtworkForDelivery` | `onCall` | Not established | Not established |
+| `distribution/ingestion.ts:223` | `processAudioIngestion` | `onCall` | Not established | Not established |
+| `email/sendEmail.ts:285` | `sendEmail` | `onCall` | Not established | Not established |
+| `email/tokenManager.ts:164` | `emailExchangeToken` | `onCall` | Not established | Not established |
+| `email/tokenManager.ts:274` | `emailRefreshToken` | `onCall` | Not established | Not established |
+| `email/tokenManager.ts:372` | `emailRevokeToken` | `onCall` | Not established | Not established |
+| `factory.ts:143` | `(factory/helper)` | `onCall` | Not established | Not established |
+| `factory.ts:170` | `(factory/helper)` | `onRequest` | Not established | Not established |
+| `foundingArtist/admin.ts:261` | `inviteNextFoundingArtist` | `onCall` | Not established | Not established |
+| `foundingArtist/admin.ts:266` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Not established | Not established |
+| `foundingArtist/waitlist.ts:177` | `joinFoundingArtistWaitlist` | `onCall` | Not established | Not established |
+| `functions/agent/getCapabilitySnapshot.ts:327` | `getCapabilitySnapshot` | `onCall` | Present | Not established |
+| `functions/agent/manageSemanticMemory.ts:117` | `manageSemanticMemory` | `onCall` | Not established | Not established |
+| `functions/agent/manageSemanticMemory.ts:236` | `batchEmbedText` | `onCall` | Not established | Not established |
+| `functions/agent/reportBugFn.ts:44` | `reportBugFn` | `onCall` | Not established | Not established |
+| `functions/agent/workflowExecutionCallables.ts:59` | `createWorkflowExecution` | `onCall` | Not established | Not established |
+| `functions/agent/workflowExecutionCallables.ts:105` | `manageWorkflowExecution` | `onCall` | Not established | Not established |
+| `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
+| `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
+| `functions/auth/entitlements.ts:375` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Not established |
+| `functions/auth/handoff.ts:120` | `createHandoffCode` | `onRequest` | Not established | Not established |
+| `functions/auth/handoff.ts:171` | `redeemHandoffCode` | `onRequest` | Not established | Not established |
+| `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:923` | `enforceOperationCost` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:940` | `voidAgentStreamCostReservation` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:958` | `voidVideoCostReservation` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:981` | `getOperationCostStatus` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1031` | `getOperationCostHistory` | `onCall` | Present | Present |
+| `functions/catalog/semanticProjection.ts:138` | `setCatalogVisibility` | `onCall` | Not established | Not established |
+| `functions/catalog/semanticProjection.ts:196` | `catalogSemanticApi` | `onRequest` | Not established | Not established |
+| `functions/creative/gateway.ts:1280` | `generateImageV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1590` | `generateVideoV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1831` | `cancelVideoJob` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2057` | `generateOmniRemixV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2416` | `generateAudioV3` | `onCall` | Present | Present |
+| `functions/creative/getMediaDuration.ts:49` | `getMediaDuration` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:229` | `assignDistributionIdentifier` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:260` | `recordDistributionIdentifier` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:308` | `recordDistributionAuditEvent` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:354` | `requestDistributionTakedown` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:411` | `createSftpIngestionRecord` | `onCall` | Not established | Not established |
+| `functions/distribution/distributionRecords.ts:433` | `updateSftpIngestionRecord` | `onCall` | Not established | Not established |
+| `functions/finance/calculateRoyaltyAllocations.ts:348` | `calculateRoyaltyAllocations` | `onCall` | Not established | Not established |
+| `functions/finance/ingestEarningsReport.ts:404` | `ingestEarningsReport` | `onCall` | Not established | Not established |
+| `functions/finance/parseAndIngestReport.ts:23` | `parseAndIngestRoyaltyReport` | `onCall` | Not established | Not established |
+| `functions/finance/requestTaxFormUpload.ts:58` | `requestTaxFormUpload` | `onCall` | Not established | Not established |
+| `functions/finance/setRecoupmentBalance.ts:123` | `setRecoupmentBalance` | `onCall` | Not established | Not established |
+| `functions/finance/submitTaxForm.ts:157` | `submitTaxForm` | `onRequest` | Not established | Not established |
+| `functions/intelligence/typesafeJudge.ts:30` | `typesafeJudge` | `onCall` | Not established | Not established |
+| `functions/knowledge/query.ts:29` | `queryKnowledgeBase` | `onCall` | Not established | Not established |
+| `functions/knowledge/upload.ts:26` | `createKnowledgeUpload` | `onCall` | Not established | Not established |
+| `functions/knowledge/upload.ts:97` | `finalizeKnowledgeUpload` | `onCall` | Not established | Not established |
+| `functions/knowledge/upload.ts:207` | `deleteKnowledgeDocument` | `onCall` | Not established | Not established |
+| `functions/marketing/adCampaignCallables.ts:218` | `executeUnifiedCampaignDirective` | `onCall` | Not established | Not established |
+| `functions/marketing/adCampaignCallables.ts:258` | `ingestUnifiedAttributionEvent` | `onCall` | Not established | Not established |
+| `functions/music/claimsInbox.ts:119` | `getCanonicalClaimsInbox` | `onCall` | Not established | Not established |
+| `functions/music/claimsInbox.ts:124` | `declareCanonicalRightsClaim` | `onCall` | Not established | Not established |
+| `functions/music/claimsInbox.ts:129` | `respondToCanonicalRightsClaim` | `onCall` | Not established | Not established |
+| `functions/music/getCanonicalMusicCatalogIntelligence.ts:40` | `getCanonicalMusicCatalogIntelligence` | `onCall` | Not established | Not established |
+| `functions/persona/recordPersonaResponseMeasurement.ts:104` | `recordPersonaResponseMeasurement` | `onCall` | Not established | Not established |
+| `functions/print/enqueuePrintJob.ts:78` | `enqueuePrintJob` | `onCall` | Not established | Not established |
+| `functions/print/preparePrintHandoff.ts:14` | `preparePrintHandoff` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:31` | `issueStudioExecutorLease` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:64` | `publishStudioPresence` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:138` | `releaseStudioPresence` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:153` | `claimStudioCommand` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:175` | `publishStudioResponse` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:201` | `completeStudioCommand` | `onCall` | Not established | Not established |
+| `functions/rights/queueRightsRegistration.ts:166` | `queueRightsRegistration` | `onCall` | Not established | Not established |
+| `functions/rights/rightsRegistration.ts:85` | `rightsRegistration` | `onCall` | Not established | Not established |
+| `functions/security/claimComputerApproval.ts:23` | `claimComputerApproval` | `onCall` | Not established | Not established |
+| `functions/security/claimComputerApproval.ts:45` | `denyComputerApproval` | `onCall` | Not established | Not established |
+| `functions/security/errorReportCallables.ts:94` | `listErrorReports` | `onCall` | Not established | Not established |
+| `functions/security/errorReportCallables.ts:124` | `updateErrorReportStatus` | `onCall` | Not established | Not established |
+| `functions/security/logAuditEvent.ts:155` | `logAuditEvent` | `onCall` | Present | Not established |
+| `functions/security/organizationAccess.ts:327` | `getOrganizationAccessMatrix` | `onCall` | Present | Not established |
+| `functions/security/organizationAccess.ts:332` | `updateOrganizationMemberAccess` | `onCall` | Present | Not established |
+| `functions/security/persistFraudAlert.ts:80` | `persistFraudAlert` | `onCall` | Present | Not established |
+| `functions/security/writeSharedOperationalData.ts:64` | `registerAiContextCache` | `onCall` | Not established | Not established |
+| `functions/security/writeSharedOperationalData.ts:109` | `recordInstrumentUsage` | `onCall` | Not established | Not established |
+| `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
+| `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
+| `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
+| `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
+| `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
+| `functions/video/alignSessionMaster.ts:217` | `alignSessionMaster` | `onCall` | Not established | Not established |
+| `functions/video/approveSessionEditPlan.ts:97` | `approveSessionEditPlan` | `onCall` | Not established | Not established |
+| `functions/video/cancelVideoSession.ts:129` | `cancelVideoSession` | `onCall` | Not established | Not established |
+| `functions/video/createVideoSession.ts:555` | `createVideoSession` | `onCall` | Not established | Not established |
+| `functions/video/generateSessionEditPlan.ts:267` | `generateSessionEditPlan` | `onCall` | Not established | Not established |
+| `functions/video/getVideoRenderReceipt.ts:211` | `getVideoRenderReceipt` | `onCall` | Present | Present |
+| `functions/video/queueCloudVideoRender.ts:72` | `queueCloudVideoRender` | `onCall` | Not established | Not established |
+| `functions/video/relayVideoRenderJob.ts:20` | `claimVideoRenderJob` | `onCall` | Not established | Not established |
+| `functions/video/relayVideoRenderJob.ts:51` | `completeVideoRenderJob` | `onCall` | Not established | Not established |
+| `functions/video/retrySessionProxyJob.ts:142` | `retrySessionProxyJob` | `onCall` | Not established | Not established |
+| `functions/webhooks/dispatcher.ts:432` | `createWebhook` | `onRequest` | Not established | Not established |
+| `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Not established |
+| `index.ts:655` | `triggerLongFormVideoJob` | `onCall` | Present | Not established |
+| `index.ts:809` | `renderVideo` | `onCall` | Present | Present |
+| `index.ts:1095` | `inngestApi` | `onRequest` | Not established | Not established |
+| `index.ts:1164` | `generateContentStream` | `onRequest` | Present | Present |
+| `index.ts:1598` | `ragProxy` | `onRequest` | Not established | Not established |
+| `index.ts:1662` | `listGKEClusters` | `onCall` | Not established | Not established |
+| `index.ts:1716` | `getGKEClusterStatus` | `onCall` | Not established | Not established |
+| `index.ts:1744` | `scaleGKENodePool` | `onCall` | Not established | Not established |
+| `index.ts:1772` | `listGCEInstances` | `onCall` | Not established | Not established |
+| `index.ts:1799` | `restartGCEInstance` | `onCall` | Not established | Not established |
+| `index.ts:1833` | `executeBigQueryQuery` | `onCall` | Not established | Not established |
+| `index.ts:1869` | `getBigQueryTableSchema` | `onCall` | Not established | Not established |
+| `index.ts:1897` | `listBigQueryDatasets` | `onCall` | Not established | Not established |
+| `index.ts:1971` | `exportUserData` | `onCall` | Not established | Not established |
+| `index.ts:2043` | `requestAccountDeletion` | `onCall` | Not established | Not established |
+| `index.ts:2119` | `healthCheck` | `onRequest` | Not established | Not established |
+| `index.ts:2155` | `healthCheckWest1` | `onRequest` | Not established | Not established |
+| `index.ts:2175` | `enrichFanData` | `onCall` | Not established | Not established |
+| `legal/digitalSignature.ts:7` | `sendForDigitalSignature` | `onCall` | Not established | Not established |
+| `legal/exportSplitSheet.ts:202` | `exportSplitSheet` | `onCall` | Not established | Not established |
+| `legal/mechanicalLicense.ts:29` | `verifyMechanicalLicense` | `onCall` | Not established | Not established |
+| `legal/pandadocProxy.ts:60` | `pandadocListTemplates` | `onCall` | Not established | Not established |
+| `legal/pandadocProxy.ts:97` | `pandadocCreateDocument` | `onCall` | Not established | Not established |
+| `legal/pandadocProxy.ts:182` | `pandadocSendDocument` | `onCall` | Not established | Not established |
+| `legal/pandadocProxy.ts:225` | `pandadocGetDocumentStatus` | `onCall` | Not established | Not established |
+| `legal/pandadocProxy.ts:276` | `pandadocGetSigningLink` | `onCall` | Not established | Not established |
+| `legal/pandadocWebhook.ts:47` | `pandadocWebhook` | `onRequest` | Not established | Not established |
+| `lib/audio.ts:50` | `(factory/helper)` | `onCall` | Not established | Not established |
+| `lib/image_generation.ts:868` | `(factory/helper)` | `onCall` | Present | Not established |
+| `lib/image_generation.ts:928` | `(factory/helper)` | `onCall` | Present | Not established |
+| `lib/marketing.ts:176` | `executeCampaign` | `onCall` | Not established | Not established |
+| `lib/marketing.ts:358` | `dispatchSocialPost` | `onCall` | Not established | Not established |
+| `lib/marketing.ts:422` | `createInfluencerBounty` | `onCall` | Not established | Not established |
+| `lib/touring.ts:276` | `computeDistanceMatrix` | `onCall` | Not established | Not established |
+| `lib/touring.ts:315` | `generateItinerary` | `onCall` | Not established | Not established |
+| `lib/touring.ts:329` | `checkLogistics` | `onCall` | Not established | Not established |
+| `lib/touring.ts:343` | `findPlaces` | `onCall` | Not established | Not established |
+| `marketing/campaignMetricsCallable.ts:124` | `marketingGetCampaignMetrics` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:39` | `createAdCampaign` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:107` | `createAdSet` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:185` | `createAd` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:244` | `getAdInsights` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:289` | `pauseAdCampaign` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:324` | `getSocialPostInsights` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:366` | `syncEmailList` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:411` | `deployEmailCampaign` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:460` | `getEmailCampaignStats` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:502` | `sendSMSBlast` | `onCall` | Not established | Not established |
+| `marketing/marketingCallables.ts:551` | `getSMSDeliveryStatus` | `onCall` | Not established | Not established |
+| `marketing/presaveCampaigns.ts:230` | `createPreSaveCampaign` | `onCall` | Not established | Not established |
+| `marketing/presaveCampaigns.ts:248` | `getPreSaveCampaign` | `onCall` | Present | Present |
+| `marketing/presaveCampaigns.ts:304` | `listPreSaveCampaigns` | `onCall` | Present | Present |
+| `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
+| `marketing/shopifyWebhook.ts:188` | `shopifyWebhook` | `onRequest` | Not established | Not established |
+| `marketing/smartLink.ts:103` | `smartLinkRedirect` | `onRequest` | Not established | Not established |
+| `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
+| `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
+| `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
+| `pod/checkout.ts:107` | `pod_createOrderCheckout` | `onCall` | Not established | Not established |
+| `pod/printful.ts:13` | `pod_printfulGetProducts` | `onCall` | Not established | Not established |
+| `pod/printful.ts:18` | `pod_printfulGetProduct` | `onCall` | Not established | Not established |
+| `pod/printful.ts:23` | `pod_printfulCalculatePrice` | `onCall` | Not established | Not established |
+| `pod/printful.ts:37` | `pod_printfulGetShippingRates` | `onCall` | Not established | Not established |
+| `pod/printful.ts:57` | `pod_printfulCreateOrder` | `onCall` | Not established | Not established |
+| `pod/printful.ts:115` | `pod_printfulGetOrder` | `onCall` | Not established | Not established |
+| `pod/printful.ts:121` | `pod_printfulCancelOrder` | `onCall` | Not established | Not established |
+| `pod/printful.ts:132` | `pod_printfulGenerateMockup` | `onCall` | Not established | Not established |
+| `releases/generateDownloadUrl.ts:5` | `generateReleaseDownloadUrl` | `onCall` | Not established | Not established |
+| `social/instagramMessaging.ts:52` | `sendInstagramMessageCallable` | `onCall` | Present | Not established |
+| `social/instagramMessaging.ts:127` | `replyInstagramCommentCallable` | `onCall` | Present | Not established |
+| `social/instagramMessaging.ts:181` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Not established |
+| `social/instagramWebhook.ts:26` | `instagramWebhook` | `onRequest` | Not established | Not established |
+| `streaming/agentStream.ts:73` | `agentStreamResponse` | `onRequest` | Not established | Not established |
+| `streaming/agentStream.ts:221` | `agentStreamHealth` | `onRequest` | Not established | Not established |
+| `stripe/connect.ts:8` | `createStripeConnectAccount` | `onCall` | Not established | Not established |
+| `stripe/connect.ts:73` | `createTransfer` | `onCall` | Not established | Not established |
+| `stripe/escrow.ts:15` | `handleEscrowWebhook` | `onRequest` | Not established | Not established |
+| `stripe/paymentLinks.ts:223` | `createStripePaymentLinks` | `onCall` | Not established | Not established |
+| `stripe/splitEscrow.ts:38` | `initiateSplitEscrow` | `onCall` | Not established | Not established |
+| `stripe/splitEscrow.ts:183` | `signEscrow` | `onCall` | Not established | Not established |
+| `stripe/splitEscrow.ts:249` | `releaseEscrow` | `onCall` | Not established | Not established |
+| `stripe/taxForms.ts:10` | `requestTaxForms` | `onCall` | Not established | Not established |
+| `stripe/webhookHandler.ts:1269` | `stripeWebhook` | `onRequest` | Not established | Not established |
+| `subscription/activateFounderPass.ts:203` | `activateFounderPass` | `onCall` | Not established | Not established |
+| `subscription/cancelSubscription.ts:13` | `cancelSubscription` | `onCall` | Not established | Not established |
+| `subscription/createCheckoutSession.ts:16` | `createCheckoutSession` | `onCall` | Not established | Not established |
+| `subscription/createMicroTransaction.ts:7` | `createMicroTransaction` | `onCall` | Not established | Not established |
+| `subscription/createOneTimeCheckout.ts:30` | `createOneTimeCheckout` | `onCall` | Not established | Not established |
+| `subscription/deductCredits.ts:19` | `deductCredits` | `onCall` | Not established | Not established |
+| `subscription/generateInvoice.ts:40` | `generateInvoice` | `onCall` | Not established | Not established |
+| `subscription/getCustomerPortal.ts:13` | `getCustomerPortal` | `onCall` | Not established | Not established |
+| `subscription/getSubscription.ts:5` | `getSubscription` | `onCall` | Not established | Not established |
+| `subscription/getUsageStats.ts:15` | `getUsageStats` | `onCall` | Not established | Not established |
+| `subscription/resumeSubscription.ts:13` | `resumeSubscription` | `onCall` | Not established | Not established |
+| `subscription/trackUsage.ts:12` | `trackUsage` | `onCall` | Not established | Not established |
+| `subscription/updateWalletSettings.ts:26` | `updateWalletSettings` | `onCall` | Not established | Not established |
