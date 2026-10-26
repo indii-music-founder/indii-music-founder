@@ -1,5 +1,5 @@
 ---
-description: Mainline sync, pre-push validation, and CI monitor. Requires main, fast-forwards safely, validates one coherent commit, pushes directly to origin/main, and monitors its exact CI run.
+description: Read-only repository state and CI monitor. Repository delivery runs through reviewed task PRs under branch-safety.md.
 ---
 
 > [!IMPORTANT]
@@ -14,7 +14,7 @@ This command keeps the local and remote repositories in sync while guaranteeing 
 
 ## 1. Execute the Synchronization Cycle
 
-Run the monitor script to fetch `origin/main`, enforce the mainline-only policy, and evaluate the single pending commit:
+Run the read-only monitor script to fetch `origin/main` and report branch divergence and CI state:
 
 ```bash
 node scripts/git_monitor_sync.js
@@ -29,7 +29,7 @@ Inspect the JSON output returned by the script:
 ### Case A — Sync Errors or Conflicts Detected (`syncError` is present)
 
 - **STOP.** Do not push or proceed.
-- If local `main` is behind, divergent, dirty with unrelated work, or not the active branch, report the exact state and stop. Never start a rebase automatically.
+- If the task branch is behind, divergent, or dirty with unrelated work, report the exact state. Never start a rebase automatically.
 
 ### Case B — Polling Interval Changed (`intervalChanged` is true)
 
@@ -41,18 +41,12 @@ If the dynamic polling interval has doubled (idle runs) or reset to 15 minutes (
    - TaskId: `<currentTaskId>`
 3. Register the new Cron sequence using the `schedule` tool:
    - CronExpression: `<cronExpression>`
-   - Prompt: `Verify mainline repository status, fetch origin/main, stop on divergence or unrelated dirty work, and monitor the exact main CI SHA.`
+   - Prompt: `Verify repository status without mutation, fetch origin/main, report divergence or unrelated dirty work, and monitor exact-SHA CI.`
 4. Update `currentTaskId` in [polling_state.json](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/.agent/checkpoints/polling_state.json) with the new Task ID returned by the scheduler.
 
-## 3. Pre-Push Validation details
+## 3. Delivery handoff
 
-If exactly one coherent commit is ahead of `origin/main`, `/get-git` executes:
-
-- `npm run typecheck`
-- `npm test -- --run`
-- `git push origin HEAD:main` (only if typecheck and tests pass and `main` is zero commits behind).
-
-If validation fails, the push is blocked to protect the remote build.
+`/get-git` never pushes or merges. Use `/ci-validate` and `/end` for local validation and PR publication under [`branch-safety.md`](branch-safety.md).
 
 ## 4. Issue Sync & Fix
 
@@ -76,4 +70,4 @@ If safe to proceed, execute `/issue sync` to:
 **Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues or CI pipelines.**
 
 > **Note on polish:** `/get-git` is a sync-and-validate utility — do NOT run `/better` here. Polish belongs to `/go` (per task) and `/end` (final pass).
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

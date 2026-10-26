@@ -12,7 +12,7 @@ Read [`branch-safety.md`](branch-safety.md), then record:
 
 ```bash
 git fetch origin
-test "$(git branch --show-current)" = "main"
+test "$(git branch --show-current)" != "main"
 git rev-list --left-right --count origin/main...HEAD
 git status --short
 git log origin/main..HEAD --oneline
@@ -20,7 +20,7 @@ git log origin/main..HEAD --oneline
 
 Require:
 
-- current `main` and zero commits behind `origin/main`;
+- a focused task branch based on current `origin/main`;
 - at most one coherent unpublished task commit;
 - a worktree that is clean for this objective;
 - unrelated dirty files listed and excluded;
@@ -86,7 +86,7 @@ Known exceptions are evidence, not folklore. An ignored flake or warning needs a
 
 ## 5. Local verdict and delivery handoff
 
-When local checks pass, emit a local verdict. `/end` owns explicit staging, full staged-diff review, the one coherent commit, and `git push origin HEAD:main`.
+When local checks pass, emit a local verdict. `/end` owns explicit staging, full staged-diff review, the one coherent commit, branch push, and PR publication.
 
 Any edit after the local verdict invalidates the affected verdict and requires rerun.
 
@@ -119,4 +119,4 @@ Return this in the task report or CI job summary without modifying the validated
 }
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
