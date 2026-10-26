@@ -4740,7 +4740,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** 🔴 OPEN — owner declined mandatory PR protection (2026-10-26); administrative ruleset reversal and verification remain.
+- **2026-10-26 owner decision:** The owner explicitly asked to restore the earlier direct-to-`main` workflow. PR #486's repository policy and monitor changes are being reversed without changing product code. Ruleset `16587669` was active when this policy change was prepared; it must be disabled through GitHub administration and verified before claiming the old workflow is operational. Keep exact-commit CI checks and non-force fast-forward delivery in the mainline instructions.
 - **2026-10-25 progress:** The user explicitly chose PR protection and a matching policy update. Ruleset `16587669` is now `active`, with no bypass actors, zero required approvals for the solo owner, and a required `test` check; GitHub's effective rules endpoint lists all four rules on `main`, and the branch endpoint reports `protected: true`. PR #486 carries the matching workflow policy and read-only `git_monitor_sync.js`. The issue remains OPEN until that policy PR is green for its exact head SHA and merged.
 - **Recovered from:** Original audit ISSUE-1457; current ISSUE-1457 concerns unrelated UI work.
 - **October 12 recheck:** Branch main is unprotected and repository ruleset main-branch-protection (16587669) enforcement is disabled. Earlier ruleset uncertainty is resolved; administrative remediation requires appropriate authorization.

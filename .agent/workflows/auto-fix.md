@@ -34,13 +34,13 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
    If pass, proceed to commit.
 
 4. **Commit and Push**
-   When `/auto-fix` is standalone, create one coherent task-branch commit with all related code, tests, and ledger evidence and open a PR. When invoked inside `/go`, `/end`, or `/issue-sweep`, do not create an intermediate commit; return the verified changes to the parent workflow's single delivery.
+   When `/auto-fix` is standalone, create one coherent `main` commit with all related code, tests, and ledger evidence. When invoked inside `/go`, `/end`, or `/issue-sweep`, do not create an intermediate commit; return the verified changes to the parent workflow's single delivery.
    ```bash
    git add <auto-fix-task-files>
    git commit -m "fix(auto): resolve Sentry/CodeRabbit issues - integration tests passing"
-   git push origin HEAD:<task-branch>
+   git push origin HEAD:main
    ```
 
 5. **Report**
    Summarize the fixed issues and provide the user with a brief report.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

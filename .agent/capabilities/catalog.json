@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "3c131cd1339387fa8307509cce592a994ed4c424479f09b036c2fe6192341e29",
+  "sourceDigest": "7478204563d0abb502e7667ad93ffd57d0ef21d775416c66e97e351dc1037d22",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5042,7 +5042,7 @@
       "available": true,
       "description": "Run the adjustable 20M valuation, investor-room, pricing, and acquisition system. Defaults to $20M; accepts 50M, 100M, 1B, or custom targets.",
       "descriptionHash": "a97aa8c3b711b779cbec497b1e271df8ff2ddf4f5e1540d8e74ac9159bebb913",
-      "contentHash": "0eefd94ea275c638ce09aaa261884a5eabd325901e6a13bcd4eddc25caecdd61",
+      "contentHash": "76e9b225bb79c67a16db73e1b493bef739c32c5ec36ed64eb4545c113b999fa9",
       "state": "conditional",
       "authority": "bounded-document-writes-and-research",
       "prerequisites": [
@@ -5071,7 +5071,7 @@
       "available": true,
       "description": "Engine A / A-Engine — the Finder. Runs the test suites (live + background), finds bugs, and writes them as enriched issues to OPEN_ISSUES.md for B to fix. A does NOT fix and does NOT ship.",
       "descriptionHash": "09442979210e729f950ef659d6e4efb932e22fb9d7fc9697bb817a860ad8ef37",
-      "contentHash": "04859f91ff187eb935abc29fac784ba96d29c2e81d10d3e359124c76421f5eda",
+      "contentHash": "b098a3031da3c8ae01ce7b8e8343690157f0173ef2c565408cec07e8ae2991c6",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5100,7 +5100,7 @@
       "available": true,
       "description": "Full ABCD engine launch workflow. Starts the coordinated testing/build/CI/CD loop by activating /a, /b, /c, and /d as discoverable Engine A/B/C/D roles.",
       "descriptionHash": "5ec7114ec24d03ed4290004364cd7a7b92cee59a0b5af48d5d4e2cb9ad53db38",
-      "contentHash": "c2d2093855656cd4a693d6ff55cb3138361571ed49e1d235d3b467ffc7512407",
+      "contentHash": "7ff1c4248be4f768eea5fce60c6abf39de395011b8c7ee1d2bbcad2b7876575f",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5129,7 +5129,7 @@
       "available": true,
       "description": "The ultimate reference and diagnostic tool for the entire API system (Firebase Cloud Functions, AI logic, Inngest Jobs, etc.).",
       "descriptionHash": "3949a367164a2473d1a80077fb61114c40d5494d21fa476b98e72727544418cc",
-      "contentHash": "d44d2ea76c303f4905837e938078ae109bed42b6b6561fa899a77a10891f2f33",
+      "contentHash": "7ca3496231f3fde09e0fc256acd8a8fabc3cdf2fa9fcbe7d0d635160de4175a9",
       "state": "certified",
       "authority": "read-only-unless-implementation-requested",
       "prerequisites": [
@@ -5157,7 +5157,7 @@
       "available": true,
       "description": "Automatically fetch and fix Sentry issues and CodeRabbit PR comments",
       "descriptionHash": "0bb58fcc3e2b6d5229cf15c1fc29a7119569ae70401b82213b95108b2abae793",
-      "contentHash": "930dc842f90f88a85b6aaaea3ab8eb0932d5b20fcc4b59b3691d699ea7a4d45d",
+      "contentHash": "a3fc291b657020f1ecfc65983114ea2db20d493b0615433a30235ba001989ba3",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5186,7 +5186,7 @@
       "available": true,
       "description": "Host-neutral visual QA workflow. Routes to the owned auto_qa skill, requires an approved available browser capability, and preserves honest structural/simulated/local-real/production-real evidence boundaries.",
       "descriptionHash": "a44fd7cdba55a290474280192fa57f2ff0f2f7be515219e0dc2c0a99b8c1f18c",
-      "contentHash": "f1701f667cefd8496d3a629e8bfd969c77e94cb72ce6ba2c206572226cefeacb",
+      "contentHash": "e87f34de805137efb32a87c7df0a834e597a1c367ea75b39706f4b44c93c2992",
       "state": "conditional",
       "authority": "local-interactive",
       "prerequisites": [
@@ -5214,9 +5214,9 @@
       "path": ".agent/workflows/away.md",
       "mutable": true,
       "available": true,
-      "description": "**Purpose:** Monitor exact-SHA CI for a published task PR, fix logged failures on that branch, and report review readiness.",
-      "descriptionHash": "8c432f4394a12b9ccc6003eef7f087764186ec9161a1dbb94c84a6cfbc9e200f",
-      "contentHash": "a511e216acf5b4026c0f3c5be3beffc52e1f33f187757e8da783f3a854bc57bd",
+      "description": "**Purpose:** Executes an autonomous loop for `main`: monitor the exact CI run produced by a direct push, fix observed failures, and repeat until `main` is green.",
+      "descriptionHash": "d0db66a63575172a192ac4c3077b99218233ac5bcc4e07a3140ed25a4e58d04a",
+      "contentHash": "a4fded0a5510ae5d39c1716b7527ccf3b5041653c6b2714c2b47cfd1af8524c8",
       "state": "conditional",
       "authority": "repository-delivery-when-authorized",
       "prerequisites": [
@@ -5246,7 +5246,7 @@
       "available": true,
       "description": "Engine B / B-Engine workflow to resolve real ledger issues autonomously in the ABCD Swarm.",
       "descriptionHash": "0abc983c78421cae4a9483c9bc10640c01f329ec62168baba07df1e46644ae1b",
-      "contentHash": "f1f4115227164dbaa0b348cea646d21a4171dc9a764a3d5b46439b3947c15a65",
+      "contentHash": "9ad10137f8a598399fd20fad82a355e75451765489969f0022a0215d478ea7d6",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5275,7 +5275,7 @@
       "available": true,
       "description": "Bounded improvement pass for an existing artifact. Finds and applies material quality gains inside the active scope without changing the acceptance contract, expanding authority, or creating independent commits.",
       "descriptionHash": "855b40a449a7481551ae7fe1590f5e16ff2c4473230d24ffbbc0f727ca0b92ca",
-      "contentHash": "4efc5cfecc807940859427c91bcb5eb7ea97628fec17af53851a6dc2a7c0937e",
+      "contentHash": "27e14cd18e72241b23840f091d9943bb5b613ed4e4a41c7c7cb3e9e759dbc5a7",
       "state": "certified",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5302,9 +5302,9 @@
       "path": ".agent/workflows/branch-safety.md",
       "mutable": true,
       "available": true,
-      "description": "`main` is protected by the `main-branch-protection` GitHub ruleset. This file is the authoritative delivery policy when older workflow instructions conflict with it.",
-      "descriptionHash": "f29abc805e8e9be57fce216df27239375d40a96378eb6128b6481ed0382ad53b",
-      "contentHash": "3cfeaa4cd9afcc9596583e06d4fcae0184b55b824b087f64cb8a8e1fe445fff6",
+      "description": "1. **Use `main` as the single delivery lane.** Before changing code, run `git fetch origin`, confirm the current branch is `main`, confirm the worktree does not contain unrelated changes, and fast-forward local `main` to `origin/main`. Do not begin work from a stale local commit.\n2. **No automatic branch creation.** Slash workflows, agents, tests, fixes, checkpoints, and CI recovery all remain on `main`. A branch or PR is allowed only when the user explicitly requests it for the current task.\n3. **One coherent commit at a time.** Collect the task's related changes, run the relevant local validation, and create one purposeful commit. Do not emit session-checkpoint, save-state, polling, or one-commit-per-micro-fix history. Never mix unrelated work into the commit.\n4. **Synchronize without rewriting history.** Immediately before committing or pushing, fetch again and require local `main` to be based on current `origin/main`. If `origin/main` advanced, stop and integrate it safely before continuing. Never force-push, reset, or rewrite `main`.\n5. **Push only the validated commit directly to `origin/main`.** Use an explicit refspec: `git push origin HEAD:main`. Never run an ambiguous push and never push a different local branch to `main`.\n6. **CI is the remote acceptance gate.** After the push, identify the workflow run for the exact pushed SHA and inspect its actual logs. If it fails, fix only the observed root cause on `main`, validate, make one follow-up commit, push, and repeat until that SHA's successor is green. Do not guess, delete tests, weaken assertions, or open side branches to hide a red run.\n7. **A green run ends the delivery cycle.** Report the pushed SHA, local validation, CI run URL/status, and any follow-up fix SHA. Do not continue adding opportunistic changes after green.",
+      "descriptionHash": "3e2347bfde9fad3662c722975ec9931c17950c2d77e0d35247f510af6c6a9ade",
+      "contentHash": "284ddd9a3d705bc8b77390d2a90a5f0d6330eeda84ea2b09b11a66495d0c448b",
       "state": "certified",
       "authority": "policy-only",
       "prerequisites": [
@@ -5332,7 +5332,7 @@
       "available": true,
       "description": "Engine C / C-Engine workflow to keep the exact pushed main SHA green, monitor deployment health, and ship verified single-commit changes in the ABCD Swarm.",
       "descriptionHash": "083f7f8607cf2520c7fa8ea5a483f1b6434e1397331b4209af0bd04491404007",
-      "contentHash": "2050b7e68bd8be18ce66998e89856181002f4a574356c368c714ae20cddff11b",
+      "contentHash": "931e867640e67dae003abcd15b8775785bbfa5caf3a44c9a511573477a5e9d54",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5361,7 +5361,7 @@
       "available": true,
       "description": "Observational repository delivery gate. Validates the coherent task scope, runs proportional local checks and the unified CI gauntlet, then binds remote acceptance to the exact pushed SHA. It never performs speculative fixes, rewrites secrets, or creates validation commits.",
       "descriptionHash": "eccf88327d568af35420950360264a5d82f0eedd1633cb5934dc5023b7d57aef",
-      "contentHash": "477f2dfbfc232ed32a4b0518dd7f2dd4db5c5d64d417df3fbfbdec6d20122f7f",
+      "contentHash": "e64edad23a8b5909d150b7b1a3d94ebce186d571dba6f94fea781e9fae8b3a0e",
       "state": "certified",
       "authority": "observational-validation",
       "prerequisites": [
@@ -5392,7 +5392,7 @@
       "available": true,
       "description": "Engine D / D-Engine — the Verifier / Quality Gate. Independently checks B's FIXED claims and C's CI/shipping claims against the real code, catches fake or incomplete fixes, and re-opens them with evidence until they are genuinely done. Does NOT fix code; it writes verdicts and re-opens only.",
       "descriptionHash": "194ec44a9f93827becaab48cdc300c7e76589951e1e2d105cb274dfa65e8c751",
-      "contentHash": "b1d65d887489441518314f0b32b166c30aedba71466aa6a261ea1133858cf6ff",
+      "contentHash": "f27d9126fa4ff29aadf57aa016bc587d694eaf529d52387ff55d76a9a09d39fe",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5421,7 +5421,7 @@
       "available": true,
       "description": "Database and Security Rules synchronization workflow. Audit rules and sync changes to firestore.rules or storage.rules safely.",
       "descriptionHash": "63a094ac57e13ec09b89ecf47f28d73acac529fc3639038ca5202a3dfbb835df",
-      "contentHash": "1291f9e5fcd86ba466bfd85dab40a74d2d3c0404b5e60b10b3a7ef6394e6e49d",
+      "contentHash": "e2cc7bf04cd37b9f17daf6db0179b38a74ef456e0e155463805be01c495e38b5",
       "state": "conditional",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5450,7 +5450,7 @@
       "available": true,
       "description": "Comprehensive Developer Experience audit — run periodically to keep DX at 10/10.",
       "descriptionHash": "2ccde97e2c13c6b66c20a462a5b1556d9ccc294cea822010c96c622bdaee985e",
-      "contentHash": "8c53116cb372b00ed70ce13c36630f524c91bbcb9a4f883ea482139d132709cc",
+      "contentHash": "2a07da650f30983ab1e3fc2ad67ba0b9b2bbd8b9dd7fca529301a2813d8cdd68",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5477,9 +5477,9 @@
       "path": ".agent/workflows/end.md",
       "mutable": true,
       "available": true,
-      "description": "Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, publishes one coherent task branch PR, and verifies exact-SHA CI without post-gate edits.",
-      "descriptionHash": "cb6ce1e304f610d6c88e155ddf61be01090e001f1a68e5336233f23038309cbc",
-      "contentHash": "2af55b1edeb7d96d6adec42f5dde9f5ec85ecd96ad9e2c0046d0012710aca979",
+      "description": "Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, delivers one coherent main commit when authorized, and verifies exact-SHA CI without post-gate edits.",
+      "descriptionHash": "297ab210dd4cc34ff85d29a566892b3d322f7749d06524ea3827e46de93d3716",
+      "contentHash": "e910ae35fd537592089367e4b3815d6b6835b91783b237c82f5ea3da2a1cd024",
       "state": "certified",
       "authority": "repository-delivery-when-authorized",
       "prerequisites": [
@@ -5510,7 +5510,7 @@
       "available": true,
       "description": "Same Builder/Critic discipline as the standard gauntlet loop, retargeted from\nbug-fixing against `OPEN_ISSUES.md` to build-out against\n`docs/EVOLAS_BUILD_PLAN.md`. Do not skip setup. Do not ask questions —\nresolve ambiguity by reading the build plan and this repo's own conventions.",
       "descriptionHash": "f7d38455cb11f8d1479b493cd225c341f78dfa8cba57d8f4d303d7d808cebf91",
-      "contentHash": "199df708f5a118484e38f5d872898ab9532da3d0f1cf3ee233984bb66fd664ca",
+      "contentHash": "2bb59774dbfc2a92d1ed27d86a27426f402ce874ad695d7e34e4848c48959d7f",
       "state": "conditional",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5539,7 +5539,7 @@
       "available": true,
       "description": "The ultimate closed-loop automation workflow. Spins up the Test Orchestrator, the Fix Agent, and the CI Publisher simultaneously to run full system tests, auto-patch bugs, and deploy overnight.",
       "descriptionHash": "12247c7e05dcb2e4a9e6070d3efc6ebc38d9799f3e24de3f638916f945ad950e",
-      "contentHash": "4f16e1566d7ea0963f1a619b860cddafd21ecc4793f0df4c547e09b08f2ccbc7",
+      "contentHash": "e0f655b89940f36b1899c70eb85228c2111564d4f880ad174e76afaa59d5bcec",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5568,7 +5568,7 @@
       "available": true,
       "description": "Scours the repository for unfinished work, TODOs, and stubs using a swarm of agents, aggregates them for human approval, and then fixes them.",
       "descriptionHash": "c17d92917bba79b8dbf2b2f83ebf6552ca5da54c8c73386a3cd5dbe944ceea1c",
-      "contentHash": "794719ea18294adb361aa48190affd303c6a59b09c4ff73eba95818ac8052025",
+      "contentHash": "402bb32e7ab2013ca1c1d74c17bb458967057ed94dfc98ac406e56ed8925333c",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5597,7 +5597,7 @@
       "available": true,
       "description": "Evidence-based Mermaid visualization workflow for state, ownership, hierarchy, dependencies, and multi-step execution paths. Use when a diagram materially improves understanding; save a repository artifact only when the user or active task calls for durable documentation.",
       "descriptionHash": "8be1013d6d6b21b83b8644ef3321e617befe27aa5a03a3ee43ba3de92df895dd",
-      "contentHash": "ca0801a46ce26bc39c446bbc371ed5060c2514108bf582f013212d4e167717a3",
+      "contentHash": "85a8a4d34751b81bf90beda12a3954d2f5984a5a0d9238d9e93ed0b42060e1f9",
       "state": "conditional",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5623,9 +5623,9 @@
       "path": ".agent/workflows/get-git.md",
       "mutable": true,
       "available": true,
-      "description": "Read-only repository state and CI monitor. Repository delivery runs through reviewed task PRs under branch-safety.md.",
-      "descriptionHash": "0cae8ded1c36855ee0bb4a5d24038277e2d1f9db64efce968d65fb145d964a24",
-      "contentHash": "a6d9ca7f4310124597064ead61c462d4f4e0d3caa42065773ca8858a38f969f8",
+      "description": "Mainline sync, pre-push validation, and CI monitor. Requires main, fast-forwards safely, validates one coherent commit, pushes directly to origin/main, and monitors its exact CI run.",
+      "descriptionHash": "86052eea3cf90641cf032c1a77d12773e948b1f8b26ea986d7c3487b7209b276",
+      "contentHash": "d12c83d95edb743051f56b71fd304eb6b4c24e70299ebb294ab9a49f9238b374",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5654,7 +5654,7 @@
       "available": true,
       "description": "Recursive motor for the active objective. Reviews progress, selects one coherent verification unit, resolves blockers with bounded retries, and continues to evidence-backed completion without checkpoint or micro-fix commits.",
       "descriptionHash": "4754d59e1a5b4eee8f18d23fd53fb9719009e9b744712a3b668f5b5421ee69dc",
-      "contentHash": "1862fad0feed4b6222fa29a05a35ca3f80f6508a786be714268c02a9d15b98e9",
+      "contentHash": "f36043394729c1fff9f61a42713488db48630724d8b56843635f2c72d4e8e186",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5684,7 +5684,7 @@
       "available": true,
       "description": "Daily health check workflow - validates integration tests, Sentry metrics, and updates dashboard",
       "descriptionHash": "88ea84d4335884b049aef8f6f84adf9d6875f8ccce667bce5836de5c295c43c8",
-      "contentHash": "41b492c5c912d4c1c45c445dbc749945931f5e449d6035a29bdf6ba30f16451d",
+      "contentHash": "3db4354a11c2e253a62021dd6eecc8bdb17ab6bcc36de2ce9cc34eda7015ed45",
       "state": "deprecated",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5713,7 +5713,7 @@
       "available": true,
       "description": "Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. In HUNT mode it fixes, verifies, and commits; in AUDIT mode it records findings in OPEN_ISSUES.md and preserves supporting evidence only.",
       "descriptionHash": "d3209ce49cdb4f19f58cff8e795db8d08d1a36d1833e7ffe7cd64a3dbe839606",
-      "contentHash": "f139154ec0b49fbf5f26385de5fb15487fe2f8a8783de8e7ebab084aac5058b5",
+      "contentHash": "0202e72bb1c951228146fc72bbb59d6d16019754803c18ba0fd2a177e5692407",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5742,7 +5742,7 @@
       "available": true,
       "description": "The Fix Agent. Scans .agent/test_ledger/OPEN_ISSUES_V3.md for unresolved issues, triages by severity, diagnoses root causes in source code, applies surgical fixes, verifies them, and marks issues as FIXED. This is the counterpart to /mega and /real which only find issues — /issue is the one that resolves them. THE FIX AGENT DOES NOT RUN TESTS. It reads issues, patches code, and verifies.",
       "descriptionHash": "b2e7859dd0cb97da0f04cbfb43574dcad06c384a3ce9948702d24e80b7ec8d9c",
-      "contentHash": "25e9cb17313605108441324c76091ba81443183060c49b4eb43c7d9ec50feea9",
+      "contentHash": "52b4831d32c93b85f4033a34324e5d194c92c8c04cdaa6cbc1f17048143d34a4",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5771,7 +5771,7 @@
       "available": true,
       "description": ">-",
       "descriptionHash": "debf8b346efdb2cdc8c1d4530cc5708ff2d99963b8df5d6cfa63f2c1b04c7de4",
-      "contentHash": "d3219283a310a11eeec4410110980384f85930c1193262c0e2ae949e10a4a6ce",
+      "contentHash": "1ea6858d696ddd316e4ac768ff877d6cd84b1d4c44bfe8a6badb6a8c805c778a",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5800,7 +5800,7 @@
       "available": true,
       "description": "The Master Orchestrator for the Mega Stress Test. Sweeps EVERY left-menu item — managers, departments, tools, projects/dashboards — running the full per-item gauntlet (`/mega-test <item>`) against each, grouped by sidebar category. Can run autonomously for hours, cycling the entire menu on a loop until explicitly stopped. The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`. Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
       "descriptionHash": "1f5373b997837e5ed9c342c57a28c80d7c06ecbcf6fb65bc70d35d44cc641fd5",
-      "contentHash": "8e37df6b848c0a8ef4e97f2de9d261825357717db52cc2b23c748b86f286c6d1",
+      "contentHash": "b3871bb48fa554c5406372763aedde1745f2bcc40b359e5b06dbe7b3859c2c7e",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5829,7 +5829,7 @@
       "available": true,
       "description": "Execute a full multi-dimensional stress test against ONE left-menu item — a manager, department, tool, or project/dashboard — named as the fill-in-the-blank target. Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`. The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`. Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet against the live module, documents pass/fail, logs new issues to `.agent/test_ledger/OPEN_ISSUES_V2.md`, and produces a structured per-target report. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
       "descriptionHash": "c87fd82387bb53edc8cc3d4b6b02bba94d3398e54a7e0b1dbea00dfbcb4c862a",
-      "contentHash": "8e67634825d470b16e1cbbdaf13a58653ddb31978e9f8ac46010c832fe56582d",
+      "contentHash": "e572a66358fe8e7fcd4f55c4d191e9c233a8e2f6e53f8fa1c44720ab5c96ff24",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5858,7 +5858,7 @@
       "available": true,
       "description": "Flagship execution workflow for implementing an active objective in coherent verification units. Runs the certified toolchain selected by /skill-skill, preserves contract and authenticity boundaries, and uses /go as its recursive motor.",
       "descriptionHash": "64b173c82e83c2fb5b7f6bc5714239e6a3b357aa6a75baa768e7bda9bb220ae5",
-      "contentHash": "b6bbf242eb6eeb4b52d90a18b06afd0c1645a3c47237b43f2d7921f931b71602",
+      "contentHash": "0cc61be79c5185ffa5bcf9f19fc606aaa9c6a9b9de82b63dd2840b57f096b309",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5888,7 +5888,7 @@
       "available": true,
       "description": "Session bootstrap — comprehensive environment audit, handoff state check, and Operator persona activation. Run this at the START of every session.",
       "descriptionHash": "c09c88237ab94ef67e265c550a7903ae349aa549ae4698cf276fbe3586cc824b",
-      "contentHash": "16f09e91ccf005a11df9e1585d5c72a192cd150a6339ed430947cfe2cabda790",
+      "contentHash": "e1f23931f73345e9ba6e5bd4b7f6e5091da384be799ab1d7b1ddd7b78e65d39b",
       "state": "conditional",
       "authority": "read-only-orientation",
       "prerequisites": [
@@ -5917,7 +5917,7 @@
       "available": true,
       "description": "Resume and reconciliation gate for an interrupted or handed-off objective. Verifies the current request, handoff, diff, mainline state, scope, and evidence before continuing edits.",
       "descriptionHash": "859a8e0163d5cf0bf34495c52c2f5a0c3efb6839681ca8466eade96714cf0b1e",
-      "contentHash": "a48e42adb4e1d114ec6f2ffc0057f23a595d94b71054f6694f77660e485532a6",
+      "contentHash": "4fa4e2f451cdc52d16c4978cab807eb364b0cf4c0bd0d24c156013accdbd07a9",
       "state": "certified",
       "authority": "read-only-until-reconciled",
       "prerequisites": [
@@ -5947,7 +5947,7 @@
       "available": true,
       "description": "Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios. Can be vague (AI figures out what to test) or specific (user directs the test). Always exhausts the system until completion or documented failure. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a separate fixing agent.",
       "descriptionHash": "086134a05dfc4bc74627535b09d4ecc665c76113de11b71d23d54177432f69ae",
-      "contentHash": "32f8e6a6dcdcd8e257b6bee926bde782d083fd00f7009a4f38d06f2ed41ce4d9",
+      "contentHash": "db12c92f291b96dd74a9c918e5bf4e58d0ea26c125ea3545bfef4518f2b9aa65",
       "state": "conditional",
       "authority": "named-live-interaction",
       "prerequisites": [
@@ -5977,7 +5977,7 @@
       "available": true,
       "description": "Conversational context review and agent specialization workflow. Use to onboard the agent into a specific role or review mid-session progress to realign focus.",
       "descriptionHash": "001219c8a2f05ff0eb1a2bc8a3e0a2cab2c50580c11cfc013d2a0167f64cff54",
-      "contentHash": "44af34925d9cd45f94f5070dc04dfd033fcb042cdf079313061501ec26b15cb5",
+      "contentHash": "64f01530b3079a8e77ea176a386b88d24d4bce5a364c6d5b0777d62dabedf293",
       "state": "certified",
       "authority": "conversation-only",
       "prerequisites": [
@@ -6005,7 +6005,7 @@
       "available": true,
       "description": "Canonical intent, authority, and capability router. Selects the smallest healthy ordered toolchain from the generated catalog plus tools actually exposed by the current host, then executes inside existing authority or pauses for one named prerequisite.",
       "descriptionHash": "f7f58e449968730743612fb8f56e79cbd4c5a62b3563d70c9a3716b397e39b13",
-      "contentHash": "85e9013589e505bd13d4ef74fbe940b64086c57385f077e0f46b976022c9a88e",
+      "contentHash": "5fa06b1a57714ba540c348e9f6167602e995d3d0703938162731e3bf43fa289e",
       "state": "certified",
       "authority": "routing-only-inherits-on-execution",
       "prerequisites": [
@@ -6035,7 +6035,7 @@
       "available": true,
       "description": "Flagship orientation workflow for a new objective. Establishes source of truth, request mode, task profile, authority, repository state, capability route, and definition of done before mutation.",
       "descriptionHash": "d3113fa8bc4e707037a51f84e8c5b3a921b5ef75ad00854975b36211d0b51ce2",
-      "contentHash": "64ba2e8464772f6e2e656d74e41cc54959dc9296e3bfde1567f47c9dd773dc6c",
+      "contentHash": "a9983b85db1c8e6a0369802c456251e8e4bb56a2abcc4e9ca40a27f809f9dcd3",
       "state": "certified",
       "authority": "profile-bounded",
       "prerequisites": [
@@ -6065,7 +6065,7 @@
       "available": true,
       "description": "Automatically identify and run relevant tests based on the current context.",
       "descriptionHash": "c2460cc150b4880eeede8eed903f740e141df1f65e920a18a212c532f386a9bc",
-      "contentHash": "484a2ebd3e0889691e261eb3e6a0867b45b71d694279fc9bee10b2e2951a7f40",
+      "contentHash": "15567d071a37f25a60df597cb31370105b427a4dffb43714027aa5b774a24eb1",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [
@@ -6093,7 +6093,7 @@
       "available": true,
       "description": "Use when the user types `/training` or explicitly requests to run the AI agent training pipeline or dataset generation.",
       "descriptionHash": "692ddf293087cbcefd2130bc79c669082f44bd8b26a78d61889bc484bf7dc833",
-      "contentHash": "5437639c533293876cf9fea297509d38419d59cf26291fe9a825b6304c587556",
+      "contentHash": "88dad00dd4cc7879070be1a7cc77f2f16d7c07af306b2d943d190323608b9005",
       "state": "conditional",
       "authority": "bounded-local-writes;named-paid-external-write",
       "prerequisites": [
@@ -6122,7 +6122,7 @@
       "available": true,
       "description": "Human-facing index of indii slash workflows. The generated capability catalog owns health, authority, availability, and automatic-selection state.",
       "descriptionHash": "d8b9d6ac930b9110ffb76b3e8ae4e2e9a897f762c8839c9fb08d2f6ad9294fe3",
-      "contentHash": "50b1300088728b43a267e9d959a9fa311cbeecadeed7ce42eeee06ea4ac0ea19",
+      "contentHash": "c75337a7440a4413ad46a8d82b2fc0e5c79522aa74c841c68bc6c24a4d53d0d8",
       "state": "certified",
       "authority": "read-only-index",
       "prerequisites": [
