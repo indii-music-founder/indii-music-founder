@@ -5,7 +5,7 @@ import process from 'process';
 const repoRoot = process.cwd();
 const workflowsDir = path.join(repoRoot, '.agent', 'workflows');
 const gateLine =
-  '> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.';
+  '> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.';
 
 const workflowFiles = fs
   .readdirSync(workflowsDir)
@@ -13,11 +13,13 @@ const workflowFiles = fs
   .sort();
 
 const forbidden = [
+  ['automatic branch creation', /git (?:checkout -b|switch -c)/],
   ['history-rewriting pull', /git pull --rebase/],
   ['force push', /git push[^\n]*--force/],
   ['catch-all staging', /git add -A/],
-  ['direct main push', /git push origin HEAD:main/],
-  ['direct-main mandate', /Direct-to-`main` is mandatory/]
+  ['automatic PR creation', /\bopen a PR\b/i],
+  ['automatic branch merge', /\bmerge the active branch\b/i],
+  ['feature-branch mandate', /\bUse Feature Branches\b/i]
 ];
 
 const failures = [];
@@ -27,7 +29,7 @@ for (const name of workflowFiles) {
   const contents = fs.readFileSync(filePath, 'utf8');
 
   if (!contents.includes(gateLine)) {
-    failures.push(`${name}: missing protected-main delivery gate`);
+    failures.push(`${name}: missing mandatory mainline delivery gate`);
   }
 
   for (const [label, pattern] of forbidden) {
@@ -36,6 +38,11 @@ for (const name of workflowFiles) {
     }
   }
 
+  for (const [index, line] of contents.split('\n').entries()) {
+    if (line.includes('git push') && !line.includes('git push origin HEAD:main')) {
+      failures.push(`${name}:${index + 1}: ambiguous or non-main push instruction`);
+    }
+  }
 }
 
 const checkpointPath = path.join(repoRoot, '.claude', 'scripts', 'checkpoint.sh');
@@ -47,22 +54,25 @@ for (const pattern of [/^\s*git add\b/m, /^\s*git commit\b/m, /^\s*git push\b/m]
 }
 
 const agents = fs.readFileSync(path.join(repoRoot, 'AGENTS.md'), 'utf8');
-if (!agents.includes('## Protected Main Delivery Standard')) {
-  failures.push('AGENTS.md: missing Protected Main Delivery Standard');
+if (!agents.includes('## Mainline Delivery Standard')) {
+  failures.push('AGENTS.md: missing Mainline Delivery Standard');
 }
 
 const monitor = fs.readFileSync(path.join(repoRoot, 'scripts', 'git_monitor_sync.js'), 'utf8');
-if (/runCommand\(['"]git (?:push|merge|reset)/.test(monitor)) {
-  failures.push('git_monitor_sync.js: monitor must remain read-only');
+// Match the explicit direct-to-main push whether or not the call carries
+// extra options (e.g. timeout args): `runCommand('git push origin HEAD:main')`
+// or `runCommand('git push origin HEAD:main', false, TIMEOUTS.pushMs)`.
+if (!/runCommand\('git push origin HEAD:main'(?:,|\s*\))/.test(monitor)) {
+  failures.push('git_monitor_sync.js: missing explicit direct-to-main push');
 }
 if (/git pull --rebase|git push origin \$\{branchName\}/.test(monitor)) {
   failures.push('git_monitor_sync.js: contains legacy branch/rebase behavior');
 }
 
 if (failures.length > 0) {
-  console.error('Protected-main workflow policy validation failed:');
+  console.error('Mainline workflow policy validation failed:');
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log(`Protected-main workflow policy valid across ${workflowFiles.length} slash workflows.`);
+console.log(`Mainline workflow policy valid across ${workflowFiles.length} slash workflows.`);

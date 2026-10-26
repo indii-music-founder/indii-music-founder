@@ -23,6 +23,7 @@ const TIMEOUTS = {
     gitFetchMs: 60000,
     gitStatusMs: 30000,
     validationMs: 1800000, // typecheck + full test run can take a while
+    pushMs: 120000,
     ghMs: 60000,
 };
 
@@ -51,7 +52,7 @@ function getGitState() {
         execSync('git fetch origin', { stdio: 'ignore', timeout: TIMEOUTS.gitFetchMs });
     } catch (e) {
         fetchSucceeded = false;
-        logMessage('CRITICAL: Could not fetch origin/main. Repository monitoring is blocked.');
+        logMessage('CRITICAL: Could not fetch origin/main. Mainline delivery is blocked.');
     }
 
     const statusOutput = runCommand('git status -sb');
@@ -122,19 +123,41 @@ async function executeSync() {
             throw new Error('origin-main-fetch-failed');
         }
         if (branchName !== 'main') {
-            logMessage(`Task branch ${branchName}; monitor remains read-only.`);
+            throw new Error(`non-main-branch-blocked:${branchName}`);
         }
-        if (branchName === 'main' && behindCount > 0 && aheadCount > 0) {
+        if (behindCount > 0 && aheadCount > 0) {
             throw new Error(`main-diverged:behind-${behindCount}:ahead-${aheadCount}`);
         }
-        if (branchName === 'main' && behindCount > 0 && hasLocalChanges) {
+        if (behindCount > 0 && hasLocalChanges) {
             throw new Error(`main-behind-with-dirty-worktree:${behindCount}`);
         }
-        // Protected main is updated only through an approved PR. This monitor
-        // must never fast-forward a checkout, validate unpublished commits as
-        // a delivery substitute, or push directly to main.
-        if (branchName === 'main' && (behindCount > 0 || aheadCount > 0)) {
-            logMessage('Main differs from origin/main; report state without mutating it.');
+        if (behindCount > 0) {
+            logMessage(`Fast-forwarding main by ${behindCount} commit(s)...`);
+            runCommand('git merge --ff-only origin/main');
+            behindCount = 0;
+            syncPerformed = true;
+        }
+        if (aheadCount > 1) {
+            throw new Error(`multiple-unpushed-commits-blocked:${aheadCount}`);
+        }
+        if (aheadCount === 1 && hasLocalChanges) {
+            throw new Error('unpushed-commit-with-dirty-worktree');
+        }
+
+        // Validate and push exactly one coherent mainline commit.
+        if (aheadCount === 1) {
+            logMessage('Verifying the single mainline commit before pushing...');
+
+            logMessage('Running typecheck validation...');
+            runCommand('npm run typecheck', false, TIMEOUTS.validationMs);
+
+            logMessage('Running tests validation...');
+            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads', false, TIMEOUTS.validationMs);
+
+            logMessage('Validation successful. Pushing explicit HEAD:main refspec...');
+            runCommand('git push origin HEAD:main', false, TIMEOUTS.pushMs);
+            logMessage('Push completed successfully.');
+            syncPerformed = true;
         }
     } catch (err) {
         logMessage(`Sync failed: ${err.message}`);

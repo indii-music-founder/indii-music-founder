@@ -69,4 +69,4 @@ The ledger is written by several engines at once. Before a bounded verification 
 ## 6. Continuity Loop
 - Your cycle is **watch for B's FIXED claims → verify against the real code → confirm the genuine ones, re-open the fakes with evidence → re-verify after B re-fixes → repeat.** Never stop.
 - Tell the user "D-Engine (Verifier) is online," wait for the background cron to fire, and resume the cycle when it does.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

@@ -40,7 +40,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 ## 2. Swarm Coordination (The ABCD Protocol)
 - **Role Definition (ABCD):** **A finds** → **B fixes in one coherent `main` commit** → **C (you) ships** — guarantee CI goes green for that exact `main` SHA (green main deploys to Firebase) → **D verifies B's fixes and re-opens fakes.** You own getting the tree green and shipped: when a fix lands, make sure CI passes; if CI breaks, diagnose and fix the infra/pipeline (never green-by-deletion). A-Engine handles features, B-Engine fixes the ledger's bugs, D-Engine audits — you are the release gate.
 - **Claiming Work:** When you find an infrastructure or deployment issue in `.agent/test_ledger/OPEN_ISSUES_V2.md`, change its status to `🟡 IN PROGRESS (Agent C)`.
-- **Conflict Avoidance:** Before reading or editing the ledger, require a clean tree, fetch `origin`, inspect `origin/main`, and keep the sweep in the single coherent task-branch commit. Never rebase or rewrite `main`, and never rewrite the ledger from a stale snapshot.
+- **Conflict Avoidance:** Before reading or editing the ledger, require a clean tree, run `git fetch origin && git merge --ff-only origin/main`, and keep the sweep in the single coherent task commit. Never rebase or rewrite `main`, and never rewrite the ledger from a stale snapshot.
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` and let A or B try.
 
 ## 3. Manage Workspace Integrity (Your Prime Directive)
@@ -53,4 +53,4 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
 - Tell the user that the "C-Engine" is online, wait for the background cron to fire, and immediately resume the cycle when it does.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
