@@ -3,6 +3,9 @@ import * as admin from 'firebase-admin';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { CanonicalArtistEntityIdSchema } from '@indii/shared';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const AgentId = z.enum(['brand', 'creative', 'devops', 'finance', 'marketing', 'publicist', 'social']);
 const Step = z.object({
@@ -57,11 +60,31 @@ export function validateWorkflowExecutionInput(value: unknown): CreatePayload {
 }
 
 export const createWorkflowExecution = onCall(
-  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB', secrets: [arcjetKey] },
   async request => {
+    validateAppCheckV2(request);
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to start a workflow.');
-    const input = validateWorkflowExecutionInput(request.data);
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not start workflows.');
+    }
+    if (request.auth.token?.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'Verified email is required to start workflows.');
+    }
     const userId = request.auth.uid;
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId,
+        policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+        operationId: `createWorkflowExecution:${randomUUID()}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError(
+          protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+          protection.message,
+        );
+      }
+    }
+    const input = validateWorkflowExecutionInput(request.data);
     const db = admin.firestore();
     const now = Date.now();
     const id = randomUUID();
@@ -103,13 +126,34 @@ const ManagePayload = z.object({
 }).strict();
 
 export const manageWorkflowExecution = onCall(
-  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB', secrets: [arcjetKey] },
   async request => {
+    validateAppCheckV2(request);
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to manage a workflow.');
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not manage workflows.');
+    }
+    if (request.auth.token?.email_verified !== true) {
+      throw new HttpsError('permission-denied', 'Verified email is required to manage workflows.');
+    }
+    const userId = request.auth.uid;
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId,
+        policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+        operationId: `manageWorkflowExecution:${randomUUID()}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError(
+          protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+          protection.message,
+        );
+      }
+    }
     const parsed = ManagePayload.safeParse(request.data);
     if (!parsed.success) throw new HttpsError('invalid-argument', 'Workflow action is invalid.');
     const { executionId, action } = parsed.data;
-    const ref = admin.firestore().collection('users').doc(request.auth.uid).collection('workflowExecutions').doc(executionId);
+    const ref = admin.firestore().collection('users').doc(userId).collection('workflowExecutions').doc(executionId);
     await admin.firestore().runTransaction(async tx => {
       const snap = await tx.get(ref);
       if (!snap.exists) throw new HttpsError('not-found', 'Workflow execution was not found.');

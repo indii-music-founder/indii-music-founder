@@ -1,7 +1,9 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
-import { githubToken, getGithubToken } from "../../config/secrets";
+import { githubToken, getGithubToken, arcjetKey } from "../../config/secrets";
+import { protectAuthenticatedApiRequest } from "../security/arcjet";
+import { validateAppCheckV2 } from "../../middleware/appCheck";
 
 interface ReportBugRequest {
     title: string;
@@ -42,15 +44,9 @@ function generateIdempotencyKey(title: string, module: string, severity: string,
  * - Returns per-channel success status
  */
 export const reportBugFn = onCall(
-    { secrets: [githubToken], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [githubToken, arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<ReportBugResponse> => {
-        // Require App Check
-        if (request.app == undefined) {
-            throw new HttpsError(
-                'failed-precondition',
-                'The function must be called from an App Check verified app.'
-            );
-        }
+        validateAppCheckV2(request);
 
         // Require authentication
         if (!request.auth) {
@@ -58,6 +54,26 @@ export const reportBugFn = onCall(
                 "unauthenticated",
                 "User must be authenticated to report bugs."
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not file bug reports.');
+        }
+        if (request.auth.token?.email_verified !== true) {
+            throw new HttpsError('permission-denied', 'Verified email is required to file bug reports.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `reportBugFn:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { title, description, stepsToReproduce = 'Not provided', expectedBehavior = 'Not provided', actualBehavior = 'Not provided', severity = 'major', module = 'unknown', errorMessage } = (request.data ?? {}) as ReportBugRequest;

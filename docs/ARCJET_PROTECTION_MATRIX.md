@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **37**.
+- Declarations missing at least one of those local references: **162**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -16,29 +16,29 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 
 | Source (relative to packages/firebase/src) | Declaration | Trigger | ARCJET_KEY option reference | Local guard-call reference |
 |---|---|---|---|---|
-| `analytics/platformTokenExchange.ts:80` | `analyticsExchangeToken` | `onCall` | Not established | Not established |
-| `analytics/platformTokenExchange.ts:163` | `analyticsFinalizeInstagramConnection` | `onCall` | Not established | Not established |
-| `analytics/platformTokenExchange.ts:183` | `analyticsGetConnectionStatus` | `onCall` | Not established | Not established |
-| `analytics/platformTokenExchange.ts:221` | `auditInstagramConnectionCallable` | `onCall` | Not established | Not established |
-| `analytics/platformTokenExchange.ts:285` | `analyticsRefreshToken` | `onCall` | Not established | Not established |
-| `analytics/platformTokenExchange.ts:392` | `analyticsRevokeToken` | `onCall` | Not established | Not established |
+| `analytics/platformTokenExchange.ts:89` | `analyticsExchangeToken` | `onCall` | Present | Present |
+| `analytics/platformTokenExchange.ts:185` | `analyticsFinalizeInstagramConnection` | `onCall` | Present | Present |
+| `analytics/platformTokenExchange.ts:218` | `analyticsGetConnectionStatus` | `onCall` | Present | Present |
+| `analytics/platformTokenExchange.ts:269` | `auditInstagramConnectionCallable` | `onCall` | Present | Present |
+| `analytics/platformTokenExchange.ts:346` | `analyticsRefreshToken` | `onCall` | Present | Present |
+| `analytics/platformTokenExchange.ts:466` | `analyticsRevokeToken` | `onCall` | Present | Present |
 | `assets/auditReleaseArtwork.ts:30` | `auditReleaseArtworkForDelivery` | `onCall` | Not established | Not established |
 | `distribution/ingestion.ts:223` | `processAudioIngestion` | `onCall` | Not established | Not established |
-| `email/sendEmail.ts:285` | `sendEmail` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:164` | `emailExchangeToken` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:274` | `emailRefreshToken` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:372` | `emailRevokeToken` | `onCall` | Not established | Not established |
+| `email/sendEmail.ts:289` | `sendEmail` | `onCall` | Present | Present |
+| `email/tokenManager.ts:168` | `emailExchangeToken` | `onCall` | Present | Present |
+| `email/tokenManager.ts:299` | `emailRefreshToken` | `onCall` | Present | Present |
+| `email/tokenManager.ts:418` | `emailRevokeToken` | `onCall` | Present | Present |
 | `factory.ts:143` | `(factory/helper)` | `onCall` | Not established | Not established |
 | `factory.ts:170` | `(factory/helper)` | `onRequest` | Not established | Not established |
-| `foundingArtist/admin.ts:261` | `inviteNextFoundingArtist` | `onCall` | Not established | Not established |
-| `foundingArtist/admin.ts:266` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Not established | Not established |
-| `foundingArtist/waitlist.ts:177` | `joinFoundingArtistWaitlist` | `onCall` | Not established | Not established |
+| `foundingArtist/admin.ts:293` | `inviteNextFoundingArtist` | `onCall` | Present | Present |
+| `foundingArtist/admin.ts:298` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Present | Present |
+| `foundingArtist/waitlist.ts:192` | `joinFoundingArtistWaitlist` | `onCall` | Present | Present |
 | `functions/agent/getCapabilitySnapshot.ts:327` | `getCapabilitySnapshot` | `onCall` | Present | Not established |
-| `functions/agent/manageSemanticMemory.ts:117` | `manageSemanticMemory` | `onCall` | Not established | Not established |
-| `functions/agent/manageSemanticMemory.ts:236` | `batchEmbedText` | `onCall` | Not established | Not established |
-| `functions/agent/reportBugFn.ts:44` | `reportBugFn` | `onCall` | Not established | Not established |
-| `functions/agent/workflowExecutionCallables.ts:59` | `createWorkflowExecution` | `onCall` | Not established | Not established |
-| `functions/agent/workflowExecutionCallables.ts:105` | `manageWorkflowExecution` | `onCall` | Not established | Not established |
+| `functions/agent/manageSemanticMemory.ts:120` | `manageSemanticMemory` | `onCall` | Present | Present |
+| `functions/agent/manageSemanticMemory.ts:259` | `batchEmbedText` | `onCall` | Present | Present |
+| `functions/agent/reportBugFn.ts:46` | `reportBugFn` | `onCall` | Present | Present |
+| `functions/agent/workflowExecutionCallables.ts:62` | `createWorkflowExecution` | `onCall` | Present | Present |
+| `functions/agent/workflowExecutionCallables.ts:128` | `manageWorkflowExecution` | `onCall` | Present | Present |
 | `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
 | `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
 | `functions/auth/entitlements.ts:375` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Not established |

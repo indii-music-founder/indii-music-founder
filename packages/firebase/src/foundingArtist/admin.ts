@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 import {
   FOUNDING_ARTIST_EVENTS_COLLECTION,
   FOUNDING_ARTIST_WAITLIST_COLLECTION,
@@ -246,24 +249,53 @@ export async function queueFoundingArtistMilestoneCampaign(
 export async function inviteNextFoundingArtistHandler(
   request: CallableRequest<unknown>,
 ): Promise<InvitationQueueResult> {
-  return queueNextFoundingArtistInvitation(requireFoundingArtistAdmin(request));
+  validateAppCheckV2(request);
+  const adminIdentity = requireFoundingArtistAdmin(request);
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: adminIdentity.uid,
+      policy: 'admin',
+      operationId: `inviteNextFoundingArtist:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
+  }
+  return queueNextFoundingArtistInvitation(adminIdentity);
 }
 
 export async function queueFoundingArtistMilestoneUpdateHandler(
   request: CallableRequest<unknown>,
 ): Promise<MilestoneCampaignResult> {
+  validateAppCheckV2(request);
   const actor = requireFoundingArtistAdmin(request);
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: actor.uid,
+      policy: 'admin',
+      operationId: `queueFoundingArtistMilestoneUpdate:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
+  }
   const parsed = milestoneRequestSchema.safeParse(request.data ?? {});
   if (!parsed.success) throw new HttpsError('invalid-argument', 'The milestone update is invalid.');
   return queueFoundingArtistMilestoneCampaign(actor, parsed.data);
 }
 
 export const inviteNextFoundingArtist = onCall(
-  { cors: true, enforceAppCheck: false },
+  { cors: true, enforceAppCheck: false, secrets: [arcjetKey] },
   inviteNextFoundingArtistHandler,
 );
 
 export const queueFoundingArtistMilestoneUpdate = onCall(
-  { cors: true, enforceAppCheck: false },
+  { cors: true, enforceAppCheck: false, secrets: [arcjetKey] },
   queueFoundingArtistMilestoneUpdateHandler,
 );

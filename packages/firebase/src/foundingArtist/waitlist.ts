@@ -3,6 +3,8 @@ import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 import { requireVerifiedEmailV2, validateAppCheckV2 } from '../middleware/appCheck';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export const FOUNDING_ARTIST_WAITLIST_COLLECTION = 'foundingArtistWaitlist';
 export const FOUNDING_ARTIST_EMAIL_INDEX_COLLECTION = 'foundingArtistEmailIndex';
@@ -161,6 +163,19 @@ export async function joinFoundingArtistWaitlistHandler(
 ): Promise<FoundingArtistEnrollmentResult> {
   validateAppCheckV2(request);
   const uid = requireVerifiedEmailV2(request);
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: uid,
+      policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+      operationId: `joinFoundingArtistWaitlist:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
+  }
   const email = typeof request.auth?.token.email === 'string' ? request.auth.token.email : '';
   if (!email) {
     throw new HttpsError('failed-precondition', 'The verified account does not contain an email address.');
@@ -175,6 +190,6 @@ export async function joinFoundingArtistWaitlistHandler(
 }
 
 export const joinFoundingArtistWaitlist = onCall(
-  { cors: true, enforceAppCheck: false },
+  { cors: true, enforceAppCheck: false, secrets: [arcjetKey] },
   joinFoundingArtistWaitlistHandler,
 );

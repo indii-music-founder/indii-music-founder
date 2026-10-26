@@ -20,7 +20,9 @@ import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { randomUUID } from 'node:crypto';
 import { validateAppCheckV2 } from "../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 import {
+    arcjetKey,
     spotifyClientId,
     spotifyClientSecret,
     tiktokClientKey,
@@ -37,6 +39,7 @@ import {
 
 // ── Secrets (imported from centralized config/secrets.ts) ─────────────────────
 const ALL_SECRETS = [
+    arcjetKey,
     spotifyClientId, spotifyClientSecret,
     tiktokClientKey, tiktokClientSecret,
     metaAppId, metaAppSecret,
@@ -69,6 +72,12 @@ function assertAuth(request: CallableRequest): string {
     if (!request.auth) {
         throw new HttpsError("unauthenticated", "Authentication required.");
     }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform analytics token operations.');
+    }
+    if (request.auth.token?.email_verified !== true) {
+        throw new HttpsError('permission-denied', 'Verified email is required for analytics token operations.');
+    }
     return request.auth.uid;
 }
 
@@ -82,6 +91,19 @@ export const analyticsExchangeToken = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `analyticsExchangeToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const { platform, code, redirectUri, codeVerifier, facebookPageId } = (request.data ?? {}) as {
             platform: string;
             code: string;
@@ -165,6 +187,19 @@ export const analyticsFinalizeInstagramConnection = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `analyticsFinalizeInstagramConnection:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const { intentId, facebookPageId } = (request.data ?? {}) as { intentId?: string; facebookPageId?: string };
         if (!isSafeIdentifier(intentId) || !isSafeIdentifier(facebookPageId)) {
             throw new HttpsError('invalid-argument', 'intentId and facebookPageId are required safe identifiers.');
@@ -181,10 +216,23 @@ export const analyticsFinalizeInstagramConnection = onCall(
 
 /** Return connection metadata only; OAuth tokens never leave the backend. */
 export const analyticsGetConnectionStatus = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [arcjetKey], timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `analyticsGetConnectionStatus:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
         const snapshot = await tokenPath(uid, platform).get();
         if (!snapshot.exists) {
@@ -223,6 +271,19 @@ export const auditInstagramConnectionCallable = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `auditInstagramConnectionCallable:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const snapshot = await tokenPath(uid, 'instagram').get();
         if (!snapshot.exists) {
             return {
@@ -287,6 +348,19 @@ export const analyticsRefreshToken = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `analyticsRefreshToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
 
         const snap = await tokenPath(uid, platform).get();
@@ -394,6 +468,19 @@ export const analyticsRevokeToken = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `analyticsRevokeToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
 
         // Best-effort revocation at the platform's API

@@ -19,6 +19,10 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { Resend } from 'resend';
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'node:crypto';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 // ---------------------------------------------------------------------------
 // Secret Management
@@ -284,7 +288,7 @@ function getEmailTemplate(
 
 export const sendEmail = onCall(
     {
-        secrets: [resendApiKey],
+        secrets: [resendApiKey, arcjetKey],
         region: 'us-central1',
         enforceAppCheck: true,
         maxInstances: 10,
@@ -293,6 +297,27 @@ export const sendEmail = onCall(
         // Auth check
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'Must be authenticated to send emails');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not send emails.');
+        }
+        if (request.auth.token?.email_verified !== true) {
+            throw new HttpsError('permission-denied', 'Verified email is required to send emails.');
+        }
+
+        validateAppCheckV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `sendEmail:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const data = request.data as SendEmailRequest;

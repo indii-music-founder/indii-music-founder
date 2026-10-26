@@ -3,7 +3,10 @@ import * as admin from 'firebase-admin';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const DEFAULT_SEMANTIC_SEARCH_LIMIT = 5;
 const MAX_SEMANTIC_SEARCH_LIMIT = 100; // Increased from 20 to support full-archive recall (ISSUE-757)
@@ -117,7 +120,8 @@ function normalizeSemanticAction(value: unknown): 'add' | 'search' {
 export const manageSemanticMemory = onCall({ 
     timeoutSeconds: 60, 
     memory: '512MiB', 
-    enforceAppCheck: false 
+    enforceAppCheck: false,
+    secrets: [arcjetKey],
 }, async (request) => {
     validateAppCheckV2(request);
     
@@ -125,8 +129,27 @@ export const manageSemanticMemory = onCall({
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated.');
     }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not manage semantic memory.');
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required to manage semantic memory.');
+    }
 
     const userId = request.auth.uid;
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId,
+            policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+            operationId: `manageSemanticMemory:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
+    }
 
     try {
         const data = request.data as unknown;
@@ -237,10 +260,32 @@ export const batchEmbedText = onCall({
     timeoutSeconds: 60,
     memory: '512MiB',
     enforceAppCheck: false,
+    secrets: [arcjetKey],
 }, async (request) => {
     validateAppCheckV2(request);
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not batch embed text.');
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required to batch embed text.');
+    }
+
+    const userId = request.auth.uid;
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId,
+            policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+            operationId: `batchEmbedText:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
     }
 
     const data = request.data as unknown;

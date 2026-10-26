@@ -93,7 +93,11 @@ export async function verifyProviderAccount(
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
+import { randomUUID } from "node:crypto";
 import { enforceRateLimit } from "../lib/rateLimit";
+import { arcjetKey } from "../config/secrets";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
+import { validateAppCheckV2 } from "../middleware/appCheck";
 
 // Item 328: Token exchange rate limit — 20 req/min per UID
 const TOKEN_RATE_LIMIT = { maxRequests: 20, windowMs: 60 * 1000 };
@@ -164,7 +168,7 @@ export function resolveEmailOAuthRedirectUri(
 export const emailExchangeToken = onCall(
     {
         enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret, arcjetKey],
         timeoutSeconds: 30,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
@@ -172,6 +176,27 @@ export const emailExchangeToken = onCall(
         // 1. Authentication required
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform email token operations.');
+        }
+        if (request.auth.token?.email_verified !== true) {
+            throw new HttpsError('permission-denied', 'Verified email is required for email token operations.');
+        }
+
+        validateAppCheckV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `emailExchangeToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { code, redirectUri: requestedRedirectUri } = (request.data ?? {}) as {
@@ -274,13 +299,34 @@ export const emailExchangeToken = onCall(
 export const emailRefreshToken = onCall(
     {
         enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret, arcjetKey],
         timeoutSeconds: 15,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
     async (request) => {
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform email token operations.');
+        }
+        if (request.auth.token?.email_verified !== true) {
+            throw new HttpsError('permission-denied', 'Verified email is required for email token operations.');
+        }
+
+        validateAppCheckV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `emailRefreshToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
@@ -372,13 +418,34 @@ export const emailRefreshToken = onCall(
 export const emailRevokeToken = onCall(
     {
         enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret],
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, arcjetKey],
         timeoutSeconds: 15,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
     async (request) => {
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform email token operations.');
+        }
+        if (request.auth.token?.email_verified !== true) {
+            throw new HttpsError('permission-denied', 'Verified email is required for email token operations.');
+        }
+
+        validateAppCheckV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `emailRevokeToken:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
