@@ -4740,10 +4740,10 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** 🟢 RESOLVED (2026-10-26; effective ruleset and exact-main CI verified)
 - **2026-10-25 progress:** The user explicitly chose PR protection and a matching policy update. Ruleset `16587669` is now `active`, with no bypass actors, zero required approvals for the solo owner, and a required `test` check; GitHub's effective rules endpoint lists all four rules on `main`, and the branch endpoint reports `protected: true`. PR #486 carries the matching workflow policy and read-only `git_monitor_sync.js`. The issue remains OPEN until that policy PR is green for its exact head SHA and merged.
 - **Recovered from:** Original audit ISSUE-1457; current ISSUE-1457 concerns unrelated UI work.
-- **October 12 recheck:** Branch main is unprotected and repository ruleset main-branch-protection (16587669) enforcement is disabled. Earlier ruleset uncertainty is resolved; administrative remediation requires appropriate authorization.
+- **Historical October 12 recheck:** Branch main is unprotected and repository ruleset main-branch-protection (16587669) enforcement is disabled. Earlier ruleset uncertainty is resolved; administrative remediation requires appropriate authorization.
 - **Severity:** HIGH
 - **Module:** Repository governance
 - **Evidence:** Audit branch metadata reported protected=false and required-status-check protection off. Organization/repository rulesets were not fully established by that result. Source references are at the audit baseline SHA above.
@@ -4751,6 +4751,9 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Direct mainline delivery is not proven to require the intended truth gates; absence of all protection must not be inferred without ruleset evidence.
 - **Fix:** Inspect effective rulesets and branch protection; document required checks and authorized bypasses; configure appropriate enforcement only with applicable administrative authorization.
 - **Acceptance:** Effective rule evidence shows the intended required checks enforce mainline updates; record administrative blockers rather than claiming protection.
+
+- **Resolution evidence (2026-10-26):** [PR #486](https://github.com/indii-music-founder/indii-music-founder/pull/486) merged as `e7b4dc83558e85164eec0281bbeb90ff6c3212e4`, aligning repository delivery policy with protected-main PR delivery. Authenticated GitHub API recheck using `wiil-tech` reports `main` protected and [ruleset 16587669](https://github.com/indii-music-founder/indii-music-founder/rules/16587669) active for `refs/heads/main`: pull requests and the `test` check (GitHub Actions integration 15368) required, zero required approvals, no bypass actors, deletion and non-fast-forward updates prohibited. No second-person approval is required.
+- **Acceptance verified:** Main SHA `1c721e720a78481c5a6aa77cfc259243748903b4` matches the successful [deployment run 40265880549](https://github.com/indii-music-founder/indii-music-founder/actions/runs/40265880549). This closes the repository-governance finding only; CI success does not establish genuine signed-in product acceptance, Apple certification, print-worker permissions, or separate backend/Web3 wiring.
 
 ### ISSUE-1517: Packaged Python, DDEX XSD and native runtime reproducibility remain unproven
 
