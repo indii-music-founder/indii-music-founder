@@ -1,5 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { arcjetKey } from "../../config/secrets";
+import { validateAppCheckV2 } from "../../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../security/arcjet";
 
 type IdentifierType = "isrc" | "upc";
 
@@ -94,9 +98,29 @@ async function assertIdentifierUnique(
     }
 }
 
-function requireAuth(request: CallableRequest): string {
-    if (!request.auth) {
+async function requireAuth(request: CallableRequest, operation: string = "record"): Promise<string> {
+    validateAppCheckV2(request);
+    if (!request.auth || !request.auth.uid) {
         throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === "anonymous") {
+        throw new HttpsError("permission-denied", "Anonymous accounts may not perform this operation.");
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError("permission-denied", "Verified email is required.");
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: "verified-free",
+            operationId: `distribution:${operation}:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? "resource-exhausted" : protection.status === 403 ? "permission-denied" : "unavailable",
+                protection.message,
+            );
+        }
     }
     return request.auth.uid;
 }
@@ -227,9 +251,9 @@ async function assignIdentifier(
 }
 
 export const assignDistributionIdentifier = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "assignIdentifier");
         const data = (request.data ?? {}) as AssignIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
             throw new HttpsError("invalid-argument", "Identifier type is invalid.");
@@ -258,9 +282,9 @@ export const assignDistributionIdentifier = onCall(
 );
 
 export const recordDistributionIdentifier = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "recordIdentifier");
         const data = (request.data ?? {}) as RecordIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
             throw new HttpsError("invalid-argument", "Identifier type is invalid.");
@@ -306,9 +330,9 @@ export const recordDistributionIdentifier = onCall(
 );
 
 export const recordDistributionAuditEvent = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "recordAuditEvent");
         const data = (request.data ?? {}) as RecordDistributionAuditRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         await findWritableReleaseRef(releaseId, uid);
@@ -352,9 +376,9 @@ export const recordDistributionAuditEvent = onCall(
 );
 
 export const requestDistributionTakedown = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "requestTakedown");
         const data = (request.data ?? {}) as RequestDistributionTakedownRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         const distributorId = data.distributorId ? requireString(data.distributorId, "distributorId") : "all";
@@ -409,9 +433,9 @@ export const requestDistributionTakedown = onCall(
 );
 
 export const createSftpIngestionRecord = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "createSftpIngestion");
         const data = (request.data ?? {}) as CreateSftpIngestionRequest;
         const targetDSP = requireString(data.targetDSP, "targetDSP", 160);
         const releaseFolder = requireString(data.releaseFolder, "releaseFolder", 1000);
@@ -431,9 +455,9 @@ export const createSftpIngestionRecord = onCall(
 );
 
 export const updateSftpIngestionRecord = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: false },
     async (request) => {
-        const uid = requireAuth(request);
+        const uid = await requireAuth(request, "updateSftpIngestion");
         const data = (request.data ?? {}) as UpdateSftpIngestionRequest;
         const ingestionId = requireString(data.ingestionId, "ingestionId");
         const status = requireString(data.status, "status", 80);

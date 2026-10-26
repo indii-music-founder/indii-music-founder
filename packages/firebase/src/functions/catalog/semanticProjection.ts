@@ -1,6 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from '../security/arcjet';
 import {
     AdminLedgerReceiptSchema,
     derivePreclearance,
@@ -136,9 +140,29 @@ const SetCatalogVisibilityPayload = z.object({
 
 /** Owner-controlled publication of a rights-verified catalog projection. */
 export const setCatalogVisibility = onCall(
-    { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+    { region: 'us-central1', enforceAppCheck: false, memory: '512MiB', secrets: [arcjetKey] },
     async request => {
-        if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to change catalog visibility.');
+        validateAppCheckV2(request);
+        if (!request.auth || !request.auth.uid) throw new HttpsError('unauthenticated', 'Sign in to change catalog visibility.');
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `set-catalog-visibility:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const parsed = SetCatalogVisibilityPayload.safeParse(request.data);
         if (!parsed.success) throw new HttpsError('invalid-argument', 'Catalog visibility request is invalid.');
         const { masterHash, visibility } = parsed.data;
@@ -194,10 +218,15 @@ type SimpleResponse = {
 };
 
 export const catalogSemanticApi = onRequest(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 30 },
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 30, secrets: [arcjetKey] },
     async (request, response: SimpleResponse) => {
         if (request.method !== 'GET') {
             response.status(405).json({ error: 'GET only' });
+            return;
+        }
+        const protection = await protectAnonymousSignupRequest(request as never, `catalog-semantic-api:${request.ip || 'anonymous'}`, 'allow-low-risk-read');
+        if (!protection.allowed) {
+            response.status(protection.status).json({ error: protection.message });
             return;
         }
         const entityId = typeof request.query['entityId'] === 'string' ? request.query['entityId'].trim() : '';
