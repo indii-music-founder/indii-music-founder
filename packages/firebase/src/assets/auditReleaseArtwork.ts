@@ -1,5 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-
+import { randomUUID } from 'node:crypto';
+import { arcjetKey } from '../config/secrets.js';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet.js';
+import { validateAppCheckV2 } from '../middleware/appCheck.js';
 import { auditReleaseArtwork, type AssetResolutionAudit } from './AssetResolutionAuditService.js';
 
 function releaseIdFrom(value: unknown): string {
@@ -28,13 +31,28 @@ export async function auditReleaseArtworkForOwner(
  * happen on the backend.
  */
 export const auditReleaseArtworkForDelivery = onCall(
-    { region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { region: 'us-central1', enforceAppCheck: false, secrets: [arcjetKey], timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<AssetResolutionAudit> => {
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'An authenticated owner is required to audit release artwork.');
+        const uid = request.auth?.uid;
+        if (!uid || request.auth?.token?.email_verified === false || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in owner is required to audit release artwork.');
+        }
+        validateAppCheckV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `audit-release-artwork:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
         try {
-            return await auditReleaseArtworkForOwner(request.auth.uid, request.data);
+            return await auditReleaseArtworkForOwner(uid, request.data);
         } catch (error) {
             // Passes `releaseIdFrom`'s invalid-argument errors through instead
             // of flattening them to failed-precondition. Reference renamed from
