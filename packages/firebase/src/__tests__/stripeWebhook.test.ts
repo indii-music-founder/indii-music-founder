@@ -125,6 +125,7 @@ vi.mock('firebase-functions/params', () => ({
 }));
 
 vi.mock('../config/secrets', () => ({
+    arcjetKey: {},
     stripeSecretKey: { value: vi.fn(() => 'sk_test_mock') },
     stripeWebhookSecret: { value: vi.fn(() => 'whsec_mock') },
     getStripeSecretKey: () => 'sk_test_mock',

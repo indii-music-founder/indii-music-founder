@@ -1,18 +1,44 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { stripe } from './config';
+import { arcjetKey, stripeSecretKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 /**
  * Triggered by the client to onboard a collaborator to Stripe Connect.
  * Moved from createStripeConnectAccount.ts to connect.ts to consolidate duplicates.
  */
 export const createStripeConnectAccount = onCall(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    {
+        region: 'us-central1',
+        memory: '512MiB',
+        timeoutSeconds: 60,
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        enforceAppCheck: false,
+        secrets: [arcjetKey, stripeSecretKey],
+    },
     async (request): Promise<{ accountId: string; onboardingUrl: string }> => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to create a Stripe Connect account.'
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `stripe-connect-account:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { email, businessType } = (request.data ?? {}) as { email: string; businessType?: string };
@@ -71,10 +97,34 @@ export const createStripeConnectAccount = onCall(
  * Triggers a payout/transfer from the platform to the destination artist.
  */
 export const createTransfer = onCall(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    {
+        region: 'us-central1',
+        memory: '512MiB',
+        timeoutSeconds: 60,
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        enforceAppCheck: false,
+        secrets: [arcjetKey, stripeSecretKey],
+    },
     async (request): Promise<{ transferId: string }> => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `stripe-transfer:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         if (!request.auth.token['admin']) {

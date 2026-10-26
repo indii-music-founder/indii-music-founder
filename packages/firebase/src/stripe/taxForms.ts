@@ -1,5 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface Payee {
     name: string;
@@ -8,13 +11,36 @@ export interface Payee {
 }
 
 export const requestTaxForms = onCall(
-    { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    {
+        region: 'us-central1',
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        enforceAppCheck: false,
+        secrets: [arcjetKey],
+    },
     async (request): Promise<{ requests: Array<{ name: string; email: string; formTypeRequested: string; status: string; }> }> => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to request tax forms.'
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `stripe-tax-forms:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { payees } = (request.data ?? {}) as { payees?: Payee[] };

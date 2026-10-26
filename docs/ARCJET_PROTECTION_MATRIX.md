@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **28**.
+- Declarations missing at least one of those local references: **171**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -193,15 +193,15 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `social/instagramWebhook.ts:26` | `instagramWebhook` | `onRequest` | Not established | Not established |
 | `streaming/agentStream.ts:73` | `agentStreamResponse` | `onRequest` | Not established | Not established |
 | `streaming/agentStream.ts:221` | `agentStreamHealth` | `onRequest` | Not established | Not established |
-| `stripe/connect.ts:8` | `createStripeConnectAccount` | `onCall` | Not established | Not established |
-| `stripe/connect.ts:73` | `createTransfer` | `onCall` | Not established | Not established |
-| `stripe/escrow.ts:15` | `handleEscrowWebhook` | `onRequest` | Not established | Not established |
-| `stripe/paymentLinks.ts:223` | `createStripePaymentLinks` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:38` | `initiateSplitEscrow` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:183` | `signEscrow` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:249` | `releaseEscrow` | `onCall` | Not established | Not established |
-| `stripe/taxForms.ts:10` | `requestTaxForms` | `onCall` | Not established | Not established |
-| `stripe/webhookHandler.ts:1269` | `stripeWebhook` | `onRequest` | Not established | Not established |
+| `stripe/connect.ts:11` | `createStripeConnectAccount` | `onCall` | Present | Present |
+| `stripe/connect.ts:99` | `createTransfer` | `onCall` | Present | Present |
+| `stripe/escrow.ts:17` | `handleEscrowWebhook` | `onRequest` | Present | Present |
+| `stripe/paymentLinks.ts:226` | `createStripePaymentLinks` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:41` | `initiateSplitEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:201` | `signEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:282` | `releaseEscrow` | `onCall` | Present | Present |
+| `stripe/taxForms.ts:13` | `requestTaxForms` | `onCall` | Present | Present |
+| `stripe/webhookHandler.ts:1270` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:203` | `activateFounderPass` | `onCall` | Not established | Not established |
 | `subscription/cancelSubscription.ts:13` | `cancelSubscription` | `onCall` | Not established | Not established |
 | `subscription/createCheckoutSession.ts:16` | `createCheckoutSession` | `onCall` | Not established | Not established |

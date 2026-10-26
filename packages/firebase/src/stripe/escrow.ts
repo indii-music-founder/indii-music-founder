@@ -1,6 +1,8 @@
 import * as crypto from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../config/secrets';
+import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 
 // Lazy Firestore handle: a bare getFirestore() at module top level throws at
 // import time in test environments (import-crash class, see 2179e43a).
@@ -12,8 +14,27 @@ function getDb() {
  * Pay-Per-Approval Escrow Infrastructure
  * Settles escrow transactions using immutable ACID transactions and HMAC signature verification.
  */
-export const handleEscrowWebhook = onRequest(async (request, response) => {
+export const handleEscrowWebhook = onRequest({
+    secrets: [arcjetKey],
+    timeoutSeconds: 30,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+}, async (request, response) => {
     const signature = request.headers['x-indii-signature'] as string;
+    const protection = await protectAnonymousSignupRequest(
+        request as never,
+        `escrow-webhook:${signature?.slice(0, 16) || 'anonymous'}`,
+        'allow-low-risk-read'
+    );
+    if (!protection.allowed) {
+        if (protection.retryAfterSeconds && typeof response.set === 'function') {
+            response.set('Retry-After', String(protection.retryAfterSeconds));
+        }
+        response.status(protection.status).send(protection.message);
+        return;
+    }
+
     const webhookPayload = request.rawBody.toString('utf8');
     
     // In production, fetch this securely from Google Cloud Secret Manager

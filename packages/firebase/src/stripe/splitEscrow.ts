@@ -9,6 +9,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { stripe } from './config';
+import { arcjetKey, stripeSecretKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 interface SplitEscrowRequest {
     trackId: string;
@@ -36,14 +39,29 @@ interface SplitEscrowResponse {
  * and records the pending signatures in Firestore.
  */
 export const initiateSplitEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey, stripeSecretKey] },
     async (request) => {
+        validateAppCheckV2(request);
         const data = (request.data ?? {}) as SplitEscrowRequest;
         if (!request.auth) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be signed in.'
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `split-escrow-initiate:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { trackId, holdAmount, parties } = data;
@@ -181,11 +199,26 @@ export const initiateSplitEscrow = onCall(
  * escrow honestly reports that no money has moved yet.
  */
 export const signEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey, stripeSecretKey] },
     async (request) => {
+        validateAppCheckV2(request);
         const data = (request.data ?? {}) as { escrowDocId: string };
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `split-escrow-sign:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { escrowDocId } = data;
@@ -247,11 +280,26 @@ export const signEscrow = onCall(
  * and creates Stripe transfers for each party based on their split percentage.
  */
 export const releaseEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 120, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, timeoutSeconds: 120, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey, stripeSecretKey] },
     async (request) => {
+        validateAppCheckV2(request);
         const data = (request.data ?? {}) as { escrowDocId: string };
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `split-escrow-release:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { escrowDocId } = data;

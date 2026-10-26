@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { stripe } from './config';
+import { arcjetKey, stripeSecretKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface StorefrontItemInput {
     sku: string;
@@ -220,14 +223,40 @@ export async function createStorefrontCheckout(
     };
 }
 
-export const createStripePaymentLinks = onCall(async (req) => {
-    if (!req.auth) throw new HttpsError('unauthenticated', 'User must be signed in.');
+export const createStripePaymentLinks = onCall(
+    {
+        region: 'us-central1',
+        memory: '512MiB',
+        timeoutSeconds: 60,
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        enforceAppCheck: false,
+        secrets: [arcjetKey, stripeSecretKey],
+    },
+    async (req) => {
+        validateAppCheckV2(req);
+        if (!req.auth) throw new HttpsError('unauthenticated', 'User must be signed in.');
+        if (req.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
 
-    try {
-        return await createStorefrontCheckout(req.data, stripe as unknown as StorefrontStripeClient);
-    } catch (error: unknown) {
-        if (error instanceof HttpsError) throw error;
-        const message = error instanceof Error ? error.message : String(error);
-        throw new HttpsError('internal', `Failed to create Stripe checkout preview: ${message}`);
+        if (req.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(req.rawRequest as never, {
+                userId: req.auth.uid,
+                policy: 'verified-free',
+                operationId: `stripe-payment-links:${req.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+
+        try {
+            return await createStorefrontCheckout(req.data, stripe as unknown as StorefrontStripeClient);
+        } catch (error: unknown) {
+            if (error instanceof HttpsError) throw error;
+            const message = error instanceof Error ? error.message : String(error);
+            throw new HttpsError('internal', `Failed to create Stripe checkout preview: ${message}`);
+        }
     }
-});
+);
