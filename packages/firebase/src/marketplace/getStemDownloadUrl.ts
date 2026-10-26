@@ -15,6 +15,9 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { logger } from 'firebase-functions';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface GetStemDownloadUrlParams {
   productId: string;
@@ -22,13 +25,28 @@ export interface GetStemDownloadUrlParams {
 }
 
 export const getStemDownloadUrl = onCall({
+  secrets: [arcjetKey],
   timeoutSeconds: 30,
   memory: '512MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: false,
 }, async (request) => {
+  validateAppCheckV2(request);
   const buyerId = request.auth?.uid;
   if (!buyerId) {
     throw new HttpsError('unauthenticated', 'User must be signed in.');
+  }
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: buyerId,
+      policy: 'verified-free',
+      operationId: `get-stem-download-url:${buyerId}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
   }
 
   const { productId, label } = request.data as GetStemDownloadUrlParams;

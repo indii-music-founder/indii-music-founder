@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { arcjetKey } from "../config/secrets";
 import { validateAppCheckV2 } from "../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 
 export const generateReleaseDownloadUrl = onCall(
     {
@@ -10,14 +12,28 @@ export const generateReleaseDownloadUrl = onCall(
         memory: "512MiB",
         cpu: "gcf_gen1",
         concurrency: 1,
+        secrets: [arcjetKey],
     },
     async (request): Promise<{ success: boolean; url?: string; message?: string }> => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth || !request.auth.uid) {
             throw new HttpsError(
                 "unauthenticated",
                 "User must be authenticated to download releases."
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `generate-release-download-url:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const userId = request.auth.uid;

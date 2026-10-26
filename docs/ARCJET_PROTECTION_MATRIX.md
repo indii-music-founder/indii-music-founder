@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **23**.
+- Declarations missing at least one of those local references: **176**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -104,7 +104,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/security/writeSharedOperationalData.ts:109` | `recordInstrumentUsage` | `onCall` | Not established | Not established |
 | `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
 | `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
-| `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
+| `functions/storage/fetchStorageAssetForCanvas.ts:15` | `fetchStorageAssetForCanvas` | `onCall` | Present | Present |
 | `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
 | `functions/video/alignSessionMaster.ts:217` | `alignSessionMaster` | `onCall` | Not established | Not established |
@@ -174,8 +174,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
 | `marketing/shopifyWebhook.ts:188` | `shopifyWebhook` | `onRequest` | Not established | Not established |
 | `marketing/smartLink.ts:103` | `smartLinkRedirect` | `onRequest` | Not established | Not established |
-| `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
-| `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
+| `marketplace/createMarketplaceCheckout.ts:40` | `createMarketplaceCheckout` | `onCall` | Present | Present |
+| `marketplace/getStemDownloadUrl.ts:27` | `getStemDownloadUrl` | `onCall` | Present | Present |
 | `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
 | `pod/checkout.ts:107` | `pod_createOrderCheckout` | `onCall` | Not established | Not established |
 | `pod/printful.ts:13` | `pod_printfulGetProducts` | `onCall` | Not established | Not established |
@@ -186,7 +186,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `pod/printful.ts:115` | `pod_printfulGetOrder` | `onCall` | Not established | Not established |
 | `pod/printful.ts:121` | `pod_printfulCancelOrder` | `onCall` | Not established | Not established |
 | `pod/printful.ts:132` | `pod_printfulGenerateMockup` | `onCall` | Not established | Not established |
-| `releases/generateDownloadUrl.ts:5` | `generateReleaseDownloadUrl` | `onCall` | Not established | Not established |
+| `releases/generateDownloadUrl.ts:7` | `generateReleaseDownloadUrl` | `onCall` | Present | Present |
 | `social/instagramMessaging.ts:52` | `sendInstagramMessageCallable` | `onCall` | Present | Not established |
 | `social/instagramMessaging.ts:127` | `replyInstagramCommentCallable` | `onCall` | Present | Not established |
 | `social/instagramMessaging.ts:181` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Not established |
