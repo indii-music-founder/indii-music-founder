@@ -62,19 +62,22 @@ export async function signUpWithEmail(
   // Create user document in Firestore
   await createUserDocument(result.user, displayName, acquisitionSource, assessmentId);
 
-  // If assessmentId is present, claim the assessment record
+  // Account creation and Passport linking are separate outcomes. Preserve the
+  // created account and send its verification email even if linking fails.
+  let passportClaimFailed = false;
   if (assessmentId) {
     try {
       await claimProspectAssessment(assessmentId, result.user.uid);
     } catch (err) {
-      console.warn('[auth] Deferred claim of prospect assessment:', err);
+      passportClaimFailed = true;
+      console.warn('[auth] Prospect assessment claim needs retry:', err);
     }
   }
 
   // Send verification email
   await sendEmailVerification(result.user);
 
-  return result.user;
+  return { user: result.user, passportClaimFailed };
 }
 
 /**

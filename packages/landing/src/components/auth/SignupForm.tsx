@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { signUpWithEmail, getStudioUrl, refreshEmailVerification, resendEmailVerification } from '@/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { claimProspectAssessment } from '@/lib/passportService';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/lib/founderFunnel';
 import { Loader2 } from 'lucide-react';
 import FounderPreviewContext from './FounderPreviewContext';
@@ -20,6 +21,7 @@ export default function SignupForm() {
     const [error, setError] = useState<string | null>(null);
     const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
     const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
+    const [passportClaimFailed, setPassportClaimFailed] = useState(false);
 
     // Detect referral traffic via ?source= query param
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -64,13 +66,14 @@ export default function SignupForm() {
                     variant: 'signup',
                 });
             }
-            const user = await signUpWithEmail(
+            const { user, passportClaimFailed: claimFailed } = await signUpWithEmail(
                 email,
                 password,
                 displayName,
                 referralSource || undefined,
                 assessmentId || undefined,
             );
+            setPassportClaimFailed(claimFailed);
             if (isFounderSource) {
                 await trackFounderFunnelEvent('founder_auth_completed', {
                     variant: 'signup',
@@ -84,7 +87,9 @@ export default function SignupForm() {
                 return;
             }
             setVerificationEmail(user.email || email);
-            setVerificationNotice('We sent a verification link. Open it, then return here to continue.');
+            setVerificationNotice(claimFailed
+                ? 'Your account was created and a verification link was sent. Your Passport answers did not link. Retry below, or continue without them.'
+                : 'We sent a verification link. Open it, then return here to continue.');
         } catch (err: unknown) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create account.';
@@ -124,6 +129,24 @@ export default function SignupForm() {
         }
     };
 
+    const handlePassportClaimRetry = async () => {
+        if (!assessmentId || !auth?.currentUser) {
+            setError('Sign in to retry linking your Passport answers.');
+            return;
+        }
+        setIsLoading(true);
+        setError(null);
+        try {
+            await claimProspectAssessment(assessmentId, auth.currentUser.uid);
+            setPassportClaimFailed(false);
+            setVerificationNotice('Your Passport answers are linked. Verify your email to continue.');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Your Passport answers could not be linked. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
 
     return (
@@ -147,8 +170,18 @@ export default function SignupForm() {
                     <p className="text-sm text-gray-300">
                         Verify <span className="font-medium text-white">{verificationEmail}</span> before opening Studio.
                     </p>
-                    {verificationNotice && <p className="text-sm text-emerald-300">{verificationNotice}</p>}
+                    {verificationNotice && <p className={`text-sm ${passportClaimFailed ? 'text-amber-300' : 'text-emerald-300'}`}>{verificationNotice}</p>}
                     {error && <p className="text-sm text-red-300">{error}</p>}
+                    {passportClaimFailed && (
+                        <button
+                            type="button"
+                            onClick={handlePassportClaimRetry}
+                            disabled={isLoading}
+                            className="w-full text-sm font-medium text-amber-300 hover:text-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Retry linking Passport answers
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handleVerificationCheck}

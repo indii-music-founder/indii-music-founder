@@ -4857,6 +4857,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1525: Artist Passport email receipt metadata blocks subsequent account claim/contact updates
 
 - **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **2026-10-25 progress:** The current rules already preserve server report receipt fields through contact edits and reject client receipt forgery. The landing signup path now reports a failed assessment claim separately from successful account creation, still sends the verification email, and offers an in-session retry. Claim reads distinguish missing, already-owned-by-caller, and other-owned records; write failures propagate instead of being swallowed. Focused unit tests cover retry and idempotency. This is structural evidence only; secure ownership enforcement remains ISSUE-1526, and genuine signup/reload acceptance remains unverified.
 - **Severity:** HIGH
 - **Module:** Artist Passport / Firestore / Onboarding
 - **Classification:** Structural source defect; historical commit evidence or authenticated CI evidence where stated. Genuine customer impact/acceptance remains Conditional.
