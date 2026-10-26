@@ -7,10 +7,12 @@
  * The client-side PandaDocService calls these instead of hitting
  * the PandaDoc API directly with a VITE_-prefixed key.
  */
+import { randomUUID } from "node:crypto";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
-import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
+import { arcjetKey, getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
 import { validateAppCheckV2 } from "../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
@@ -62,15 +64,35 @@ export const pandadocListTemplates = onCall(
         region: REGION,
         timeoutSeconds: 30,
         memory: "512MiB",
-        enforceAppCheck: false,
-        secrets: [pandaDocApiKey],
+        enforceAppCheck: true,
+        secrets: [pandaDocApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
     async (request) => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth?.uid) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `pandadoc:list-templates:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const apiKey = getPandaDocApiKey();
@@ -99,15 +121,35 @@ export const pandadocCreateDocument = onCall(
         region: REGION,
         timeoutSeconds: 60,
         memory: "512MiB",
-        enforceAppCheck: false,
-        secrets: [pandaDocApiKey],
+        enforceAppCheck: true,
+        secrets: [pandaDocApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
     async (request) => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth?.uid) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `pandadoc:create-document:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const input = (request.data ?? {}) as {
@@ -184,15 +226,35 @@ export const pandadocSendDocument = onCall(
         region: REGION,
         timeoutSeconds: 30,
         memory: "512MiB",
-        enforceAppCheck: false,
-        secrets: [pandaDocApiKey],
+        enforceAppCheck: true,
+        secrets: [pandaDocApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
     async (request) => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth?.uid) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `pandadoc:send-document:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const input = (request.data ?? {}) as { documentId: string; message?: string; subject?: string };
@@ -227,15 +289,35 @@ export const pandadocGetDocumentStatus = onCall(
         region: REGION,
         timeoutSeconds: 30,
         memory: "512MiB",
-        enforceAppCheck: false,
-        secrets: [pandaDocApiKey],
+        enforceAppCheck: true,
+        secrets: [pandaDocApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
     async (request) => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth?.uid) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `pandadoc:get-document-status:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const input = (request.data ?? {}) as { documentId: string };
@@ -278,15 +360,35 @@ export const pandadocGetSigningLink = onCall(
         region: REGION,
         timeoutSeconds: 30,
         memory: "512MiB",
-        enforceAppCheck: false,
-        secrets: [pandaDocApiKey],
+        enforceAppCheck: true,
+        secrets: [pandaDocApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
     async (request) => {
         validateAppCheckV2(request);
-        if (!request.auth) {
+        if (!request.auth?.uid) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `pandadoc:get-signing-link:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const input = (request.data ?? {}) as { documentId: string; recipientId: string };

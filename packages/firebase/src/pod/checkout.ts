@@ -20,11 +20,14 @@
  * charged to indii's Printful account by this path.
  */
 
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { stripe } from '../stripe/config';
-import { printfulApiKey, stripeSecretKey } from '../config/secrets';
+import { arcjetKey, printfulApiKey, stripeSecretKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { getPrintfulOrder, estimatePrintfulOrderCosts } from './printfulApi';
 
 const CHECKOUT_TTL_SECONDS = 30 * 60; // 30 minutes, mirroring marketplace checkout
@@ -105,14 +108,35 @@ function assertAllowedRedirect(url: string, field: string): void {
 }
 
 export const pod_createOrderCheckout = onCall({
-  secrets: [printfulApiKey, stripeSecretKey],
+  secrets: [printfulApiKey, stripeSecretKey, arcjetKey],
   timeoutSeconds: 30,
   memory: '512MiB',
   enforceAppCheck: true,
 }, async (request) => {
+  validateAppCheckV2(request);
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'User must be signed in.');
+  }
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth?.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: uid,
+      policy: 'verified-free',
+      operationId: `pod-create-order-checkout:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const { orderId, successUrl, cancelUrl } = request.data as CreatePodCheckoutParams;

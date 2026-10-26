@@ -47,6 +47,11 @@ vi.mock('../stripe/config', () => ({
 vi.mock('../config/secrets', () => ({
   printfulApiKey: {},
   stripeSecretKey: {},
+  arcjetKey: {},
+}));
+
+vi.mock('../functions/security/arcjet', () => ({
+  protectAuthenticatedApiRequest: vi.fn().mockResolvedValue({ allowed: true }),
 }));
 
 vi.mock('./printfulApi', () => ({

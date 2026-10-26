@@ -5,17 +5,38 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 import sharp from 'sharp';
 import { getPrintPreset, planPrintOutput } from '@indii/shared';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { assertUserOwnsStoragePath, parseStorageUri } from '../../lib/storageUri';
 import { enforceRateLimit } from '../../lib/rateLimit';
 import { makePressPdf } from './pressPdf';
 
 const schema = z.object({ assets: z.array(z.object({ uri: z.string().min(1), presetId: z.string(), dpi: z.number().int().positive() })).min(1).max(10) });
 export const preparePrintHandoff = onCall(
-    { timeoutSeconds: 120, memory: '2GiB', enforceAppCheck: false },
+    { timeoutSeconds: 120, memory: '2GiB', enforceAppCheck: true, secrets: [arcjetKey] },
     async request => {
         validateAppCheckV2(request);
-        if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to prepare press artwork.');
+        if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Sign in to prepare press artwork.');
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `prepare-print-handoff:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const parsed = schema.safeParse(request.data);
         if (!parsed.success) throw new HttpsError('invalid-argument', 'Valid artwork and print targets are required.');
         await enforceRateLimit(request.auth.uid, 'preparePrintHandoff', { maxRequests: 12, windowMs: 60_000 });

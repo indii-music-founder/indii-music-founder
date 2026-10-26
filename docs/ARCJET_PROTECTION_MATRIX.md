@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **39**.
+- Declarations missing at least one of those local references: **160**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -82,8 +82,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/music/claimsInbox.ts:129` | `respondToCanonicalRightsClaim` | `onCall` | Not established | Not established |
 | `functions/music/getCanonicalMusicCatalogIntelligence.ts:40` | `getCanonicalMusicCatalogIntelligence` | `onCall` | Not established | Not established |
 | `functions/persona/recordPersonaResponseMeasurement.ts:104` | `recordPersonaResponseMeasurement` | `onCall` | Not established | Not established |
-| `functions/print/enqueuePrintJob.ts:78` | `enqueuePrintJob` | `onCall` | Not established | Not established |
-| `functions/print/preparePrintHandoff.ts:14` | `preparePrintHandoff` | `onCall` | Not established | Not established |
+| `functions/print/enqueuePrintJob.ts:80` | `enqueuePrintJob` | `onCall` | Present | Present |
+| `functions/print/preparePrintHandoff.ts:16` | `preparePrintHandoff` | `onCall` | Present | Present |
 | `functions/remote/issueStudioExecutorLease.ts:31` | `issueStudioExecutorLease` | `onCall` | Not established | Not established |
 | `functions/remote/issueStudioExecutorLease.ts:64` | `publishStudioPresence` | `onCall` | Not established | Not established |
 | `functions/remote/issueStudioExecutorLease.ts:138` | `releaseStudioPresence` | `onCall` | Not established | Not established |
@@ -137,15 +137,15 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `index.ts:2119` | `healthCheck` | `onRequest` | Not established | Not established |
 | `index.ts:2155` | `healthCheckWest1` | `onRequest` | Not established | Not established |
 | `index.ts:2175` | `enrichFanData` | `onCall` | Not established | Not established |
-| `legal/digitalSignature.ts:7` | `sendForDigitalSignature` | `onCall` | Not established | Not established |
-| `legal/exportSplitSheet.ts:202` | `exportSplitSheet` | `onCall` | Not established | Not established |
-| `legal/mechanicalLicense.ts:29` | `verifyMechanicalLicense` | `onCall` | Not established | Not established |
-| `legal/pandadocProxy.ts:60` | `pandadocListTemplates` | `onCall` | Not established | Not established |
-| `legal/pandadocProxy.ts:97` | `pandadocCreateDocument` | `onCall` | Not established | Not established |
-| `legal/pandadocProxy.ts:182` | `pandadocSendDocument` | `onCall` | Not established | Not established |
-| `legal/pandadocProxy.ts:225` | `pandadocGetDocumentStatus` | `onCall` | Not established | Not established |
-| `legal/pandadocProxy.ts:276` | `pandadocGetSigningLink` | `onCall` | Not established | Not established |
-| `legal/pandadocWebhook.ts:47` | `pandadocWebhook` | `onRequest` | Not established | Not established |
+| `legal/digitalSignature.ts:10` | `sendForDigitalSignature` | `onCall` | Present | Present |
+| `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |
+| `legal/mechanicalLicense.ts:33` | `verifyMechanicalLicense` | `onCall` | Present | Present |
+| `legal/pandadocProxy.ts:62` | `pandadocListTemplates` | `onCall` | Present | Present |
+| `legal/pandadocProxy.ts:119` | `pandadocCreateDocument` | `onCall` | Present | Present |
+| `legal/pandadocProxy.ts:224` | `pandadocSendDocument` | `onCall` | Present | Present |
+| `legal/pandadocProxy.ts:287` | `pandadocGetDocumentStatus` | `onCall` | Present | Present |
+| `legal/pandadocProxy.ts:358` | `pandadocGetSigningLink` | `onCall` | Present | Present |
+| `legal/pandadocWebhook.ts:48` | `pandadocWebhook` | `onRequest` | Present | Present |
 | `lib/audio.ts:50` | `(factory/helper)` | `onCall` | Not established | Not established |
 | `lib/image_generation.ts:868` | `(factory/helper)` | `onCall` | Present | Not established |
 | `lib/image_generation.ts:928` | `(factory/helper)` | `onCall` | Present | Not established |
@@ -177,15 +177,15 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
 | `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
 | `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
-| `pod/checkout.ts:107` | `pod_createOrderCheckout` | `onCall` | Not established | Not established |
-| `pod/printful.ts:13` | `pod_printfulGetProducts` | `onCall` | Not established | Not established |
-| `pod/printful.ts:18` | `pod_printfulGetProduct` | `onCall` | Not established | Not established |
-| `pod/printful.ts:23` | `pod_printfulCalculatePrice` | `onCall` | Not established | Not established |
-| `pod/printful.ts:37` | `pod_printfulGetShippingRates` | `onCall` | Not established | Not established |
-| `pod/printful.ts:57` | `pod_printfulCreateOrder` | `onCall` | Not established | Not established |
-| `pod/printful.ts:115` | `pod_printfulGetOrder` | `onCall` | Not established | Not established |
-| `pod/printful.ts:121` | `pod_printfulCancelOrder` | `onCall` | Not established | Not established |
-| `pod/printful.ts:132` | `pod_printfulGenerateMockup` | `onCall` | Not established | Not established |
+| `pod/checkout.ts:110` | `pod_createOrderCheckout` | `onCall` | Present | Present |
+| `pod/printful.ts:36` | `pod_printfulGetProducts` | `onCall` | Present | Present |
+| `pod/printful.ts:41` | `pod_printfulGetProduct` | `onCall` | Present | Present |
+| `pod/printful.ts:46` | `pod_printfulCalculatePrice` | `onCall` | Present | Present |
+| `pod/printful.ts:60` | `pod_printfulGetShippingRates` | `onCall` | Present | Present |
+| `pod/printful.ts:80` | `pod_printfulCreateOrder` | `onCall` | Present | Present |
+| `pod/printful.ts:138` | `pod_printfulGetOrder` | `onCall` | Present | Present |
+| `pod/printful.ts:144` | `pod_printfulCancelOrder` | `onCall` | Present | Present |
+| `pod/printful.ts:155` | `pod_printfulGenerateMockup` | `onCall` | Present | Present |
 | `releases/generateDownloadUrl.ts:5` | `generateReleaseDownloadUrl` | `onCall` | Not established | Not established |
 | `social/instagramMessaging.ts:52` | `sendInstagramMessageCallable` | `onCall` | Present | Not established |
 | `social/instagramMessaging.ts:127` | `replyInstagramCommentCallable` | `onCall` | Present | Not established |
