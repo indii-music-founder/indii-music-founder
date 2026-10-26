@@ -4736,6 +4736,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Align root CI with the intentional engine requirement; retain separately documented supported Functions runtime; verify lockfile installs and dependency drift/integrity.
 - **Acceptance:** Clean installs and required gates pass on the declared root runtime; backend runtime compatibility is independently tested and documented.
 - **2026-10-24 follow-up:** The deployment workflow's seven CI host jobs now request Node 24 and use a Node-24-specific `node_modules` cache key. The Firebase Functions package still declares its separate Node 22 runtime. Exact-SHA CI and clean-install evidence remain pending; this issue is not closed.
+- **2026-10-25 follow-up:** A clean local `npm ci --ignore-scripts --no-audit` under Node 24.22.1 installed 2,912 packages. A new lint guard checks every setup-node step in build/deploy workflows against the root Node 24 engine while preserving the separate Functions Node 22 declaration. `npm run build:ci` passed under Node 24.22.1 and the Functions TypeScript build passed under Node 22.23.4; exact-SHA CI on the new branch remains pending.
 
 ### ISSUE-1516: Mainline branch protection and required-check ruleset are disabled
 
