@@ -51,9 +51,11 @@ const CORRECTIONS: Record<string, string> = {
     '⚠️ I haven\'t confirmed this action completed — let me verify. ',
   confident_action_no_evidence:
     '⚠️ I haven\'t confirmed this action completed — let me verify. ',
-  claims_verified_readiness_without_evidence:
-    '⚠️ To be precise about current capabilities: ',
+  claims_verified_readiness_without_evidence: '', // Replaced in full below.
 };
+
+const UNVERIFIED_READINESS_FALLBACK =
+  'I cannot verify that capability or connection status from the evidence in this response. A current check or receipt is needed before treating it as confirmed.';
 
 const UNACTIONABLE_FALLBACK =
   "I'm not sure how to help with that yet. Try asking me to schedule a post, check your connections, or show your analytics.";
@@ -218,6 +220,9 @@ export class JevGuardrailService {
     let finalText: string;
     if (!wasModified) {
       finalText = responseText;
+    } else if (flags.includes('claims_verified_readiness_without_evidence')) {
+      // A caution prefix must not leave the unsupported claim visible as fact.
+      finalText = UNVERIFIED_READINESS_FALLBACK;
     } else if (flags.includes('unactionable_response')) {
       finalText = UNACTIONABLE_FALLBACK;
     } else {

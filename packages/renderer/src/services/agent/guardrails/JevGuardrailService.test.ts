@@ -113,12 +113,34 @@ describe('JevGuardrailService', () => {
     expect(result.wasModified).toBe(true);
     expect(result.flags).toContain('claims_verified_readiness_without_evidence');
     expect(result.confidence['claims_verified_readiness_without_evidence']).toBeCloseTo(0.92);
-    expect(result.text).toContain('To be precise about current capabilities');
+    expect(result.text).toContain('A current check or receipt is needed');
+    expect(result.text).not.toContain(input.text);
     // Auto-file happens fire-and-forget; give the microtask queue a tick.
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(reportOverclaimIfNeeded).toHaveBeenCalledWith(expect.objectContaining({
       source: 'jev_guardrail',
       signal: 'claims_verified_readiness_without_evidence',
     }));
+  });
+
+  it('does not repeat an unverified mobile pairing claim to the user', async () => {
+    const input = {
+      text: 'Your iPhone is successfully paired and two-way communication is functional.',
+    };
+    judgeInvoke.mockResolvedValue({
+      data: {
+        answers: {
+          claims_verified_readiness_without_evidence: 0.91,
+          is_actionable_response: 0.9,
+        },
+      },
+    });
+
+    const result = await service.screen(input);
+
+    expect(result.flags).toContain('claims_verified_readiness_without_evidence');
+    expect(result.text).toContain('cannot verify');
+    expect(result.text).not.toContain('successfully paired');
+    expect(result.text).not.toContain('two-way communication is functional');
   });
 });
