@@ -8,11 +8,35 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
 import { getOrCreateSubscription } from './subscriptionDefaults';
 
-export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async (request) => {
+export const getUsageStats = onCall({
+  enforceAppCheck: false,
+  secrets: [arcjetKey],
+}, async (request) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `get-usage-stats:${request.auth.uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
+
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {

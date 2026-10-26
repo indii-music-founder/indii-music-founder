@@ -1,6 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { CreditWalletSchema, STANDARD_CREDIT_PACKS } from '@indii/shared';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface UpdateWalletSettingsRequest {
   userId?: string;
@@ -24,13 +27,28 @@ export interface UpdateWalletSettingsResponse {
 }
 
 export const updateWalletSettings = onCall({
+  secrets: [arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: false,
 }, async (request): Promise<UpdateWalletSettingsResponse> => {
+  validateAppCheckV2(request);
   const callerUid = request.auth?.uid;
   if (!callerUid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to update wallet settings');
+  }
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: callerUid,
+      policy: 'verified-free',
+      operationId: `update-wallet-settings:${callerUid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
   }
 
   const data = request.data as UpdateWalletSettingsRequest;

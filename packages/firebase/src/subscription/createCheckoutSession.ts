@@ -11,14 +11,34 @@ import { stripe, getPriceId } from '../stripe/config';
 import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export const createCheckoutSession = onCall({
-  secrets: [stripeSecretKey],
+  secrets: [stripeSecretKey, arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: false,
 }, async (request) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `create-checkout-session:${request.auth.uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
+
   const { userId, tier, billingPeriod, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
   if (!userId || userId !== request.auth?.uid) {

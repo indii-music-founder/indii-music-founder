@@ -2,14 +2,34 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe } from '../stripe/config';
 import Stripe from 'stripe';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export const createMicroTransaction = onCall({
-  secrets: [stripeSecretKey],
+  secrets: [stripeSecretKey, arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true, // App Check globally active
+  enforceAppCheck: false,
 }, async (request) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError('unauthenticated', 'Unauthorized');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `create-micro-transaction:${request.auth.uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
+
   const { userId, credits, successUrl, cancelUrl } = request.data as { userId: string, credits: number, successUrl: string, cancelUrl: string };
 
   if (!userId || userId !== request.auth?.uid) {

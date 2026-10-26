@@ -24,7 +24,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
-import { githubTokenFounders } from '../config/secrets';
+import { githubTokenFounders, arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { SubscriptionTier } from '../shared/subscription/types';
 import { writeFounderEntitlementGrant } from '../functions/auth/entitlements';
 
@@ -201,15 +203,33 @@ async function commitFounderToGitHub(
 }
 
 export const activateFounderPass = onCall({
-    secrets: [githubTokenFounders],
+    secrets: [githubTokenFounders, arcjetKey],
     timeoutSeconds: 120,
     memory: '512MiB',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
 }, async (request): Promise<ActivateFounderPassResult> => {
+    validateAppCheckV2(request);
+    if (!request.auth || !request.auth.uid) {
+        throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `activate-founder-pass:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+        }
+    }
+
     const { targetUid, displayName } = request.data as ActivateFounderPassParams;
 
     // Admin Guard
-    if (!request.auth || request.auth.token.admin !== true) {
+    if (request.auth.token.admin !== true) {
         throw new HttpsError('permission-denied', 'Must be an admin to activate a founder pass.');
     }
 

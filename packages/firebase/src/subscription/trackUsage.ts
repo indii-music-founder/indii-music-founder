@@ -6,15 +6,35 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { UsageRecord } from '../shared/subscription/types';
 import * as crypto from 'crypto';
 
-export const trackUsage = onCall({ enforceAppCheck: true }, async (request) => {
-  const { userId, type, amount, project, metadata } = request.data;
-
+export const trackUsage = onCall({
+  enforceAppCheck: false,
+  secrets: [arcjetKey],
+}, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Usage tracking requires an authenticated user.');
   }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `track-usage:${request.auth.uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
+
+  const { userId, type, amount, project, metadata } = request.data;
 
   // Validate userId matches auth
   if (userId && userId !== request.auth.uid) {

@@ -1,6 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import * as crypto from 'crypto';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface DeductCreditsRequest {
   amount: number;
@@ -17,13 +20,28 @@ export interface DeductCreditsResponse {
 }
 
 export const deductCredits = onCall({
+  secrets: [arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: false,
 }, async (request): Promise<DeductCreditsResponse> => {
+  validateAppCheckV2(request);
   const callerUid = request.auth?.uid;
   if (!callerUid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to deduct credits');
+  }
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: callerUid,
+      policy: 'verified-free',
+      operationId: `deduct-credits:${callerUid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
   }
 
   const data = request.data as DeductCreditsRequest;

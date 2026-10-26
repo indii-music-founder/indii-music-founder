@@ -12,7 +12,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe } from '../stripe/config';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface InvoiceData {
     invoiceId: string;
@@ -38,16 +40,30 @@ export interface InvoiceData {
 }
 
 export const generateInvoice = onCall({
-    secrets: [stripeSecretKey],
+    secrets: [stripeSecretKey, arcjetKey],
     timeoutSeconds: 30,
     memory: '512MiB',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
 }, async (request) => {
-    const { invoiceId } = request.data as { invoiceId?: string };
-
+    validateAppCheckV2(request);
     if (!request.auth?.uid) {
         throw new HttpsError('unauthenticated', 'User must be signed in.');
     }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `generate-invoice:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+        }
+    }
+
+    const { invoiceId } = request.data as { invoiceId?: string };
 
     const db = getFirestore();
     const userId = request.auth.uid;

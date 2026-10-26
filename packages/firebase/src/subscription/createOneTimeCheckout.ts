@@ -10,7 +10,9 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { stripe } from '../stripe/config';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface OneTimeCheckoutParams {
     userId: string;
@@ -28,15 +30,33 @@ export interface OneTimeCheckoutParams {
 }
 
 export const createOneTimeCheckout = onCall({
-    secrets: [stripeSecretKey],
+    secrets: [stripeSecretKey, arcjetKey],
     timeoutSeconds: 60,
     memory: '512MiB',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
 }, async (request) => {
+    validateAppCheckV2(request);
+    if (!request.auth?.uid) {
+        throw new HttpsError('unauthenticated', 'User must be signed in.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `create-one-time-checkout:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+        }
+    }
+
     const { userId, items, successUrl, cancelUrl, customerEmail, metadata, applySurcharge } =
         request.data as OneTimeCheckoutParams & { applySurcharge?: boolean };
 
-    if (!request.auth?.uid || request.auth.uid !== userId) {
+    if (request.auth.uid !== userId) {
         throw new HttpsError('unauthenticated', 'User must be signed in.');
     }
 
