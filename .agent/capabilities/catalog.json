@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "7478204563d0abb502e7667ad93ffd57d0ef21d775416c66e97e351dc1037d22",
+  "sourceDigest": "33f1b627bbd09e111d76802c882fbb80052e20066593522764ed20d16f7655ed",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 37,
     "conditional": 70,
-    "quarantined": 94,
+    "quarantined": 96,
     "deprecated": 1
   },
   "capabilities": [
@@ -589,6 +589,36 @@
       "description": "bash scripts/generate-changelog.sh --prepend",
       "descriptionHash": "2c09e3a56f2cc9b2f24f9d4b2dc8bc722bbbd46258996cace69358f99f3c1ec9",
       "contentHash": "f3933793bce3c8facb2cadccd921ac150d41283fa70160ab23ed49f290b66a09",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:check:arcjet-inventory",
+      "name": "npm run check:arcjet-inventory",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node --test scripts/arcjet-protection-inventory.test.mjs && node scripts/arcjet-protection-inventory.mjs",
+      "descriptionHash": "d4f4a1b020288847a5b2ef270e8431fc9b1942980ea1b21e2ee5c60e9416ef84",
+      "contentHash": "542f9a9668e9f964db6d3cd57cef8a4e5c10d77e00a46bc51e65d4ce2c04aeb3",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
@@ -1414,6 +1444,36 @@
       "conflicts": []
     },
     {
+      "id": "script:npm:inventory:arcjet",
+      "name": "npm run inventory:arcjet",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/arcjet-protection-inventory.mjs --write",
+      "descriptionHash": "5d1332278cd18ae59e315f182de5509b0ff4f38f8e1a2778bb708472ac6b5bdb",
+      "contentHash": "fea337d553113ddd19bcf485646c92e87240dece9a056d5fa49df3847571090f",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
       "id": "script:npm:lint",
       "name": "npm run lint",
       "kind": "script",
@@ -1421,9 +1481,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run check:test-quality && npm run validate:ci-node-runtime && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "4cdbd907c4231a86f07cb5350fd235562d28d02c8447e6a16030596db9325aad",
-      "contentHash": "fbec31f6d0a501bcaedded2458ea4a9d3712ead14c612c2148ed662073907791",
+      "description": "npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "349e6124ff012322a9712a389514a35ffb75094c3b8ddf72e6dd255e1a305011",
+      "contentHash": "e9feae5c98025d9874d9fedbf552784210ea7af59e205bbe83409f5383407814",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [
