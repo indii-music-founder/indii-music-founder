@@ -152,7 +152,7 @@ indii-music-founder/
 | Canvas | Fabric.js 6.9 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
 | Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 + Python (YAMNet ONNX) | Local-first analysis & visualization |
-| Video | Remotion 4.0.445 | Video rendering |
+| Video | HyperFrames CLI 0.8.10 + player 0.8.11 | Shared compiler, desktop adapter, web preview, and Cloud Run worker; Remotion is retired |
 | 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |
 | Router | React Router 7.11 | URL sync |
@@ -400,7 +400,7 @@ The `build` script runs three steps sequentially:
 
 - **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
 - **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
-- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
+- **Native Execution** - Node.js/TypeScript services are the primary execution path. Some DDEX and media utilities still use the optional Python bridge; do not assume a Docker sidecar is running.
 
 ---
 
