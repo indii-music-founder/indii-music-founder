@@ -11,6 +11,8 @@ import {
     type PresentationTimeMap,
 } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
 
@@ -264,11 +266,34 @@ export function createGenerateSessionEditPlanHandler(
     };
 }
 
-export const generateSessionEditPlan = onCall(async (request) => {
-    validateAppCheckV2(request);
-    if (!request.auth?.uid) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated.');
-    }
-    const handler = createGenerateSessionEditPlanHandler();
-    return await handler(request.data, request.auth.uid);
-});
+export const generateSessionEditPlan = onCall(
+    {
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        enforceAppCheck: false,
+        secrets: [arcjetKey],
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `generate-session-edit-plan:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+        const handler = createGenerateSessionEditPlanHandler();
+        return await handler(request.data, request.auth.uid);
+    },
+);

@@ -3,6 +3,8 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { dispatchSessionProxyJob, type DispatchSessionProxyJobResult } from './dispatchSessionProxyJob';
 import type { FinalizedOriginalRef } from './finalizeVideoSessionUpload';
 
@@ -140,11 +142,24 @@ export async function retryOwnedSessionProxyJob(
 }
 
 export const retrySessionProxyJob = onCall(
-    { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false },
+    { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
     async (request) => {
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'Authentication is required to retry a proxy job.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `retry-session-proxy-job:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
         return retryOwnedSessionProxyJob(request.auth.uid, request.data, {
             store: createFirestoreVideoSessionProxyRetryStore(),

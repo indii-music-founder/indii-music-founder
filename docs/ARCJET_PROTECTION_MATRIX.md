@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **28**.
+- Declarations missing at least one of those local references: **171**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -107,16 +107,16 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
-| `functions/video/alignSessionMaster.ts:217` | `alignSessionMaster` | `onCall` | Not established | Not established |
-| `functions/video/approveSessionEditPlan.ts:97` | `approveSessionEditPlan` | `onCall` | Not established | Not established |
-| `functions/video/cancelVideoSession.ts:129` | `cancelVideoSession` | `onCall` | Not established | Not established |
-| `functions/video/createVideoSession.ts:555` | `createVideoSession` | `onCall` | Not established | Not established |
-| `functions/video/generateSessionEditPlan.ts:267` | `generateSessionEditPlan` | `onCall` | Not established | Not established |
+| `functions/video/alignSessionMaster.ts:219` | `alignSessionMaster` | `onCall` | Present | Present |
+| `functions/video/approveSessionEditPlan.ts:99` | `approveSessionEditPlan` | `onCall` | Present | Present |
+| `functions/video/cancelVideoSession.ts:131` | `cancelVideoSession` | `onCall` | Present | Present |
+| `functions/video/createVideoSession.ts:557` | `createVideoSession` | `onCall` | Present | Present |
+| `functions/video/generateSessionEditPlan.ts:269` | `generateSessionEditPlan` | `onCall` | Present | Present |
 | `functions/video/getVideoRenderReceipt.ts:211` | `getVideoRenderReceipt` | `onCall` | Present | Present |
-| `functions/video/queueCloudVideoRender.ts:72` | `queueCloudVideoRender` | `onCall` | Not established | Not established |
-| `functions/video/relayVideoRenderJob.ts:20` | `claimVideoRenderJob` | `onCall` | Not established | Not established |
-| `functions/video/relayVideoRenderJob.ts:51` | `completeVideoRenderJob` | `onCall` | Not established | Not established |
-| `functions/video/retrySessionProxyJob.ts:142` | `retrySessionProxyJob` | `onCall` | Not established | Not established |
+| `functions/video/queueCloudVideoRender.ts:74` | `queueCloudVideoRender` | `onCall` | Present | Present |
+| `functions/video/relayVideoRenderJob.ts:22` | `claimVideoRenderJob` | `onCall` | Present | Present |
+| `functions/video/relayVideoRenderJob.ts:63` | `completeVideoRenderJob` | `onCall` | Present | Present |
+| `functions/video/retrySessionProxyJob.ts:144` | `retrySessionProxyJob` | `onCall` | Present | Present |
 | `functions/webhooks/dispatcher.ts:432` | `createWebhook` | `onRequest` | Not established | Not established |
 | `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Not established |
 | `index.ts:655` | `triggerLongFormVideoJob` | `onCall` | Present | Not established |
