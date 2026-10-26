@@ -30,7 +30,7 @@ Explicit `/start` remains honored at every tier; the tier changes only the amoun
 
 ## 3. Reconcile repository state when applicable
 
-Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, confirm the focused task branch starts from current `origin/main`, and inspect `git status --short`. Do not auto-rebase, stash, stage, or overwrite unrelated work.
+Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, require current `main`, compare `origin/main...HEAD`, and inspect `git status --short`. Do not auto-rebase, branch, stash, stage, or overwrite unrelated work.
 
 For a read-only non-repository request, skip git mutation and report only the context needed.
 
@@ -69,4 +69,4 @@ DEFINITION OF DONE: <observable criteria>
 FIRST VERIFICATION UNIT: <next bounded action>
 ```
 
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

@@ -1,17 +1,18 @@
 # Agent Operating Notes
 
-## Protected Main Delivery Standard
+## Mainline Delivery Standard
 
-Deliver repository changes through focused task branches and CI-checked PRs into protected `main`. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
+This repository works directly on `main`. Do not create, switch to, push, or continue work on a task branch unless the user explicitly requests that branch workflow for the current task. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
 
-Publish one coherent locally validated change to a task branch, open a PR, and inspect CI for its exact head SHA. Merge only after the required `test` check and user authorization for that merge. Never push directly to `main`, create checkpoint commits, bypass protection, force-push, guess at CI failures, or bundle unrelated work.
+Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA. Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
 
 ## User GitHub Completion Preference
 
 For this user's repository work, a local change or commit is not a completed
-deliverable. Publish the task branch and open the PR, then verify the remote
-branch SHA, PR head, and CI status before reporting completion. Do not merge or
-deploy unless the user explicitly asks. If the normal Git push path fails, check the already
+deliverable. When the user requests a branch/PR workflow, publish the requested
+branch and open the requested PR, then verify the remote branch SHA, PR head,
+and CI status before reporting completion. Do not merge or deploy unless the
+user explicitly asks. If the normal Git push path fails, check the already
 authorized GitHub connection before calling the work blocked; do not switch to
 an unauthorized credential or authentication path. Coordinate with other
 agents first and do not duplicate or overwrite their work.

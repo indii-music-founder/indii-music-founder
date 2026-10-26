@@ -42,4 +42,4 @@ When assisting the user with the API, strictly adhere to the following rules:
 
 ## Step 4: Execute
 Assist the user with their API needs based on the registry and these principles.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

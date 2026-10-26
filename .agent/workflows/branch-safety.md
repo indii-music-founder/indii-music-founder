@@ -1,21 +1,33 @@
-# Protected Main Delivery Gate — Mandatory for Every Slash Workflow
+# Mainline Delivery Gate — Mandatory for Every Slash Workflow
 
-`main` is protected by the `main-branch-protection` GitHub ruleset. This file is the authoritative delivery policy when older workflow instructions conflict with it.
+> This is a hard stop, not advice. The repository operates directly on `main`. Do not create, use, or push a task branch unless the user explicitly requests that exact branch workflow.
 
-## Before editing
+## Non-negotiable rules
 
-1. Run `git fetch origin` and inspect `git status --short --branch`. Preserve unrelated work and coordinate with other agents.
-2. Create a focused `codex/` task branch from current `origin/main` in a clean checkout. Do not reuse a stale branch for a different issue.
-3. Make one coherent change and run the local checks relevant to it. Never create checkpoint commits, weaken tests, or mix unrelated work.
+1. **Use `main` as the single delivery lane.** Before changing code, run `git fetch origin`, confirm the current branch is `main`, confirm the worktree does not contain unrelated changes, and fast-forward local `main` to `origin/main`. Do not begin work from a stale local commit.
+2. **No automatic branch creation.** Slash workflows, agents, tests, fixes, checkpoints, and CI recovery all remain on `main`. A branch or PR is allowed only when the user explicitly requests it for the current task.
+3. **One coherent commit at a time.** Collect the task's related changes, run the relevant local validation, and create one purposeful commit. Do not emit session-checkpoint, save-state, polling, or one-commit-per-micro-fix history. Never mix unrelated work into the commit.
+4. **Synchronize without rewriting history.** Immediately before committing or pushing, fetch again and require local `main` to be based on current `origin/main`. If `origin/main` advanced, stop and integrate it safely before continuing. Never force-push, reset, or rewrite `main`.
+5. **Push only the validated commit directly to `origin/main`.** Use an explicit refspec: `git push origin HEAD:main`. Never run an ambiguous push and never push a different local branch to `main`.
+6. **CI is the remote acceptance gate.** After the push, identify the workflow run for the exact pushed SHA and inspect its actual logs. If it fails, fix only the observed root cause on `main`, validate, make one follow-up commit, push, and repeat until that SHA's successor is green. Do not guess, delete tests, weaken assertions, or open side branches to hide a red run.
+7. **A green run ends the delivery cycle.** Report the pushed SHA, local validation, CI run URL/status, and any follow-up fix SHA. Do not continue adding opportunistic changes after green.
 
-## Publish and review
+## Required pre-push evidence
 
-1. Fetch again before publishing. If `origin/main` advanced, inspect the change and integrate safely without overwriting concurrent work. Never force-push or rewrite `main`.
-2. Push the task branch with an explicit refspec such as `git push origin HEAD:codex/issue-1234-description` and open a PR targeting `main`.
-3. Verify the remote branch SHA, PR head SHA, and CI run for that exact SHA. Fix only logged failures on the same branch, then repeat the exact-SHA check.
-4. Merge only when the PR has its required `test` check and the user has authorized that merge. Do not bypass the ruleset, self-approve, or push directly to `main`.
-5. Report the PR, SHA, validation, review/merge state, and any genuine-user or deployment acceptance still outstanding. A published branch alone is not a completed delivery.
+```bash
+git fetch origin
+test "$(git branch --show-current)" = "main"
+git merge-base --is-ancestor origin/main HEAD
+git rev-list --left-right --count origin/main...HEAD
+git status --short
+```
 
-## Credentials and concurrent work
+Expected immediately before the commit: `main`, clean except for the current task, and zero historical divergence. Expected immediately before the push: `main` is zero behind and exactly one coherent validated commit ahead.
 
-Expired credentials require the official authorization flow in `AGENTS.md`. Do not switch accounts, use a secret from another source, or bypass protected-branch settings. Keep unrelated uncommitted work and artifacts intact. Do not delete another agent's branch or worktree.
+## Explicit branch exception
+
+If the user explicitly requests a branch, state the branch name and purpose, create it from current `origin/main`, keep it task-specific, and do not merge, rebase, force-push, delete, or open a PR without the user's matching instruction. After that task, return to the mainline standard.
+
+## Legacy branch recovery
+
+Do not merge the existing stale branches into `main`. Preserve them until separately authorized for cleanup. Recover only explicitly requested changes by applying their minimal patch directly to current `main`, validating it, and delivering it through the single-mainline cycle above.

@@ -44,18 +44,18 @@ git status --short && git branch --show-current
 
 Summarize what is uncommitted. If the working tree is clean, skip to Phase 2.
 
-### Step 2 — Require a current task branch and isolate task scope
+### Step 2 — Require current main and isolate task scope
 
-Create a focused task branch from current `origin/main`; if unrelated changes already exist, stop and report them rather than bundling them into the sweep:
+Do not create a branch. Fetch and require current `main`; if unrelated changes already exist, stop and report them rather than bundling them into the sweep:
 
 ```bash
 git fetch origin
-test "$(git branch --show-current)" != "main"
+test "$(git branch --show-current)" = "main"
 git merge-base --is-ancestor origin/main HEAD
 git status --short
 ```
 
-> **Rule:** Never sweep across unrelated dirty work. Keep this sweep to one coherent validated task-branch commit and PR.
+> **Rule:** Never sweep across unrelated dirty work. Keep this sweep to one coherent validated commit on `main`.
 
 ---
 
@@ -362,7 +362,7 @@ Any newly discovered bugs (not regressions) are logged as OPEN and deferred to n
 echo "## $(date +%Y-%m-%d) — issue-sweep + Mega Test V<N> — <PASS>✅ <FAIL>❌ <NEW> new issues" >> .agent/test_ledger/REAL_TEST_HISTORY.md
 ```
 
-After all Phase 8 verification passes, stage only the sweep's related files, create one structured task-branch commit, publish a PR, and monitor its exact head-SHA CI until green. Merge only under [`branch-safety.md`](branch-safety.md).
+After all Phase 8 verification passes, stage only the sweep's related files, create one structured commit on `main`, push with `git push origin HEAD:main`, and monitor the exact CI SHA until green.
 
 ---
 
@@ -420,7 +420,7 @@ The sweep is **complete** when ALL of the following are true:
 
 | Criterion | Status |
 |-----------|--------|
-| Work completed as one coherent task-branch commit and PR | ✅ |
+| Work completed as one coherent commit on current `main` | ✅ |
 | Sentry: zero unresolved issues (or all actioned) | ✅ |
 | CodeRabbit: all Critical/Major comments fixed | ✅ |
 | `typecheck` passes (exit 0) | ✅ |
@@ -461,4 +461,4 @@ Related workflows:
   /auto-fix    → Lightweight version of Phase 2+3 only (no test plan)
   /ci-validate → Run all 4 test shards locally before pushing to main
 ```
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
