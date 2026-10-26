@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
@@ -8,7 +8,9 @@ import {
     SegmentApprovalDecisionSchema,
     SessionEditPlan,
 } from '@indii/shared';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const ApproveSessionEditPlanRequestSchema = z.object({
     sessionId: z.string().trim().min(1).max(256),
@@ -94,11 +96,33 @@ export function createApproveSessionEditPlanHandler(
     };
 }
 
-export const approveSessionEditPlan = onCall(async (request) => {
-    validateAppCheckV2(request);
-    if (!request.auth?.uid) {
-        throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const approveSessionEditPlan = onCall(
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'User must be authenticated.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `approve-session-edit-plan:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
+        const handler = createApproveSessionEditPlanHandler();
+        return await handler(request.data, request.auth.uid);
     }
-    const handler = createApproveSessionEditPlanHandler();
-    return await handler(request.data, request.auth.uid);
-});
+);
