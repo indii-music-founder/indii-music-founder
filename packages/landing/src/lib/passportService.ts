@@ -144,18 +144,26 @@ export async function claimProspectAssessment(
   assessmentId: string,
   uid: string,
 ): Promise<void> {
-  if (!db || !assessmentId || !uid) return;
-
-  try {
-    const docRef = doc(db, 'prospect_assessments', assessmentId);
-    await updateDoc(docRef, {
-      claimedByUid: uid,
-      claimedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  } catch (err) {
-    console.warn('[ArtistPassport] Claim linking deferred:', err);
+  if (!db || !assessmentId || !uid) {
+    throw new Error('Your Passport answers could not be linked. Please try again.');
   }
+
+  const docRef = doc(db, 'prospect_assessments', assessmentId);
+  const assessment = await getDoc(docRef);
+  if (!assessment.exists()) {
+    throw new Error('Your Passport answers could not be found. Please keep your report link.');
+  }
+  const claimedByUid = assessment.data().claimedByUid;
+  if (claimedByUid === uid) return;
+  if (claimedByUid != null) {
+    throw new Error('These Passport answers are already linked to another account.');
+  }
+
+  await updateDoc(docRef, {
+    claimedByUid: uid,
+    claimedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /**
