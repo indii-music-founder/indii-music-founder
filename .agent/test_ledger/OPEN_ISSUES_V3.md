@@ -4779,6 +4779,9 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Update active instruction mirrors and tech-stack from manifests/runtime code; retain explicitly dated history. HyperFrames is current; Remotion and Vino stay retired.
 - **Acceptance:** Active documentation and instruction mirrors match current code; historical references are clearly separated; no retired dependency is reintroduced.
 
+- **2026-10-26 mirror follow-up:** PR #470 merged as `07ed03dc4`, but a current-source recheck found the corresponding `GEMINI.md` rows still identified Remotion and implied sidecar support. This focused change aligns `GEMINI.md:155` and `GEMINI.md:403` with the current `CLAUDE.md` video and native-execution guidance; historical migration records remain intact. A direct comparison confirms both active instruction rows match. Jev `jev-1.14.0` judged the stale mirror a conflict (Noul 0.91) and the bounded correction appropriate (0.89); that judgment is advisory. Publication/exact-head CI of this final mirror correction remain pending.
+
+
 ### ISSUE-1519: HyperFrames telemetry opt-out is not proven across all isolated execution environments
 
 - **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
