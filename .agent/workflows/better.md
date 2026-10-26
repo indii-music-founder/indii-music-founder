@@ -88,4 +88,4 @@ VERDICT: IMPROVED | NO MATERIAL CHANGE | PARTIAL | BLOCKED (REVERTED)
 
 Return changed files to parent workflow's delivery. `/better` never creates its own commit.
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

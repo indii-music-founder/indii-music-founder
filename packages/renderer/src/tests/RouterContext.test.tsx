@@ -73,6 +73,22 @@ vi.mock('@/utils/dynamicImport', () => ({
     importWithRetry: (fn: () => Promise<any>) => fn(),
 }));
 
+// Router coverage must not start account hydration or workspace network sync.
+// Those services import modules after unmount and can still write to Vitest's
+// console RPC while the worker is closing.
+vi.mock('@/providers/AppInitializationProvider', () => ({
+    AuthInitializationProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AppInitializationProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+vi.mock('@/hooks/useWorkspaceSync', () => ({ useWorkspaceSync: vi.fn() }));
+vi.mock('@/hooks/useRemoteCommandListener', () => ({ useRemoteCommandListener: vi.fn() }));
+vi.mock('@/hooks/useConnectivityMonitor', () => ({ useConnectivityMonitor: vi.fn() }));
+vi.mock('@/hooks/useAutoSleep', () => ({ useAutoSleep: vi.fn() }));
+vi.mock('@/modules/debug/useBugReportShortcut', () => ({ useBugReportShortcut: vi.fn() }));
+vi.mock('@/modules/debug/BugReportDialog', () => ({ BugReportDialog: () => null }));
+vi.mock('@/components/ui/ConfirmDialog', () => ({ ConfirmDialog: () => null }));
+vi.mock('@/components/ui/PrintSpecDialog', () => ({ PrintSpecDialog: () => null }));
+
 // Mock Dashboard to use useNavigate and verify it runs
 vi.mock('../modules/dashboard/Dashboard', () => ({
     default: () => <div>Dashboard Loaded</div>

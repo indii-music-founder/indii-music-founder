@@ -39,9 +39,10 @@
     "deploy:all": "npm run repo:assert-canonical && npm run preflight:prod && npm run build && npm run build:firebase && npm run build:landing && firebase deploy",
     "sync:video-sidecars": "node scripts/sync-video-sidecars.mjs",
     "typecheck": "tsc -b packages/shared && tsc -b packages/video-compiler && tsc -b packages/main && tsc -b packages/renderer && tsc -b packages/firebase && tsc -b packages/render-worker && tsc -b packages/sdk && tsc -b packages/admin-dashboard && npm run typecheck:firebase-tests && npm run typecheck -w packages/rights-session-broker && npm run typecheck -w packages/rights-browser-worker",
-    "lint": "npm run check:test-quality && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+    "lint": "npm run check:test-quality && npm run validate:ci-node-runtime && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
     "check:test-quality": "node scripts/check-test-quality.js",
     "validate:mainline-workflows": "node scripts/validate-mainline-workflows.js",
+    "validate:ci-node-runtime": "node scripts/check-ci-node-runtime.mjs",
     "capabilities:generate": "node scripts/validate-agent-capabilities.mjs",
     "validate:capabilities": "node scripts/validate-agent-capabilities.mjs --check",
     "security:frontend-api-boundary": "node scripts/guard-frontend-api-boundary.mjs",
@@ -227,25 +228,25 @@
     "@genkit-ai/firebase": "1.26.0",
     "@genkit-ai/google-cloud": "1.26.0",
     "fast-xml-parser": "5.10.1",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.17",
     "postcss": "8.5.26",
-    "@hono/node-server": "2.1.0",
-    "hono": "4.13.1",
-    "fast-uri": "3.1.5",
+    "@hono/node-server": "2.1.5",
+    "hono": "4.13.14",
+    "fast-uri": "3.1.9",
     "ip-address": "10.4.0",
-    "js-yaml": "4.3.1",
+    "js-yaml": "4.3.2",
     "minimatch@10.2.5": {
       "brace-expansion": "5.0.9"
     },
-    "brace-expansion": "2.1.4",
-    "body-parser": "1.20.6",
+    "brace-expansion": "2.1.7",
+    "body-parser": "1.20.9",
     "re2": "1.26.1",
     "tar": "7.5.22",
     "node-gyp": {
       "undici": "6.28.0"
     },
     "protobufjs": "7.6.5",
-    "axios": "^1.19.0",
+    "axios": "1.20.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "react": "18.3.1",
@@ -255,12 +256,20 @@
     "firebase-admin": "13.10.0",
     "@opentelemetry/core": "^2.9.0",
     "@opentelemetry/auto-instrumentations-node": "0.79.0",
-    "express@4.22.2": {
-      "body-parser": "1.20.6"
+    "express@4.22.3": {
+      "body-parser": "1.20.9"
     },
     "express@5.2.1": {
-      "body-parser": "2.3.0"
-    }
+      "body-parser": "2.4.0"
+    },
+    "proxy-addr": "2.0.8",
+    "sharp": "0.35.5",
+    "@fastify/busboy": "3.2.4",
+    "@xmldom/xmldom": "0.8.15",
+    "adm-zip": "0.6.1",
+    "follow-redirects": "1.16.1",
+    "source-map-js": "1.2.2",
+    "@grpc/grpc-js": "1.14.6"
   },
   "license": "SEE LICENSE IN LICENSE",
   "lint-staged": {
@@ -275,7 +284,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@ngrok/ngrok": "^1.7.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -285,8 +294,8 @@
     "electron-log": "5.4.3",
     "electron-squirrel-startup": "1.0.1",
     "electron-store": "11.0.2",
-    "electron-updater": "^6.8.9",
-    "express": "4.22.2",
+    "electron-updater": "^6.8.11",
+    "express": "4.22.3",
     "fast-xml-parser": "5.10.1",
     "ffmpeg-static": "5.3.0",
     "ffprobe-static": "3.1.0",

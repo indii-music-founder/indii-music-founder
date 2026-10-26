@@ -32,7 +32,7 @@ These five commands form the backbone of the agent's development workflow.
 
 ### `/end` — The Closing Protocol
 - **Purpose:** Wraps up a session leaving a pristine repository.
-- **Actions:** Reconciles acceptance evidence, updates only relevant durable artifacts, runs observational `/ci-validate`, and delivers one coherent direct-main commit with exact-SHA CI when authorized.
+- **Actions:** Reconciles acceptance evidence, updates only relevant durable artifacts, runs observational `/ci-validate`, and publishes one coherent task PR with exact-SHA CI.
 - **When to use:** When the task is complete and ready to be merged or handed off.
 
 ### `/skill-skill` — The Intelligent Skill Router
@@ -67,8 +67,8 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **When to use:** Do not auto-select; redesign the workflow before reuse.
 
 ### `/away` — Autonomous Main CI Monitor
-- **Purpose:** Monitors the exact CI run for the latest direct `main` push, fixes logged root causes one coherent commit at a time, and stops when `main` is green.
-- **When to use:** When the user steps away and wants the agent to drive the current `main` delivery across the finish line.
+- **Purpose:** Monitors the exact CI run for the PR head, fixes logged root causes on the same branch, and reports review readiness when green.
+- **When to use:** When the user steps away and wants the agent to drive the current PR through exact-SHA CI and review readiness.
 
 ### `/ci-validate` — Pre-Push CI Validation
 - **Purpose:** Observational local validation plus exact-SHA remote delivery proof. It does not fix, commit, push, or rewrite secrets.
@@ -195,4 +195,4 @@ Beyond `.agent/skills/`, three additional skill registries exist. The generated 
 ---
 
 *(Note: Any legacy `/live_test_*.md` files or undocumented one-off commands have been deprecated in favor of this standardized suite).*
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

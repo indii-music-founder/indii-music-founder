@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import StatusDashboard from './StatusDashboard';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -29,6 +29,7 @@ vi.mock('../MobileRemote', () => ({
 }));
 
 describe('StatusDashboard', () => {
+    afterEach(() => vi.useRealTimers());
     it('renders the legal review card as unavailable', () => {
         render(<StatusDashboard connectionStatus="connected" isPaired={true} />);
 
@@ -71,7 +72,9 @@ describe('StatusDashboard', () => {
         expect(legalReview).toBeDisabled();
     });
 
-    it('opens mileage modal and calculates IRS mileage deduction when tracking a gear run', () => {
+    it('opens mileage modal and shows the date-specific optional business-rate estimate', () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-10-25T12:00:00Z'));
         render(<StatusDashboard connectionStatus="idle" isPaired={false} />);
 
         const trackMiles = screen.getByText('Track Miles').closest('button');
@@ -79,17 +82,28 @@ describe('StatusDashboard', () => {
         fireEvent.click(trackMiles!);
 
         expect(screen.getByText('Track Miles & Run')).toBeInTheDocument();
-        expect(screen.getByText('Auto-deductible at $0.67/mi')).toBeInTheDocument();
+        expect(screen.getByText('Gear run · $0.76/mi estimate')).toBeInTheDocument();
+        expect(screen.getByText('Business mileage estimate for review')).toBeInTheDocument();
 
         // Select destination chip
         fireEvent.click(screen.getByRole('button', { name: 'Guitar Center' }));
 
-        // Enter miles: 10 miles (round trip = 20 miles * 0.67 = $13.40)
+        // Enter miles: 10 miles (round trip = 20 miles * 0.76 = $15.20)
         const milesInput = screen.getByPlaceholderText('e.g. 14.2');
         fireEvent.change(milesInput, { target: { value: '10' } });
 
-        expect(screen.getByText(/Estimated Tax Deduction/i)).toBeInTheDocument();
-        expect(screen.getByText(/\$13\.40/)).toBeInTheDocument();
+        expect(screen.getByText(/Optional business-rate estimate/i)).toBeInTheDocument();
+        expect(screen.getByText(/\$15\.20/)).toBeInTheDocument();
+    });
+
+    it('does not claim a rate for an unpublished future year', () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2027-01-15T12:00:00Z'));
+        render(<StatusDashboard connectionStatus="idle" isPaired={false} />);
+        expect(screen.getByText('Record miles for review')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Track Miles').closest('button')!);
+        fireEvent.change(screen.getByPlaceholderText('e.g. 14.2'), { target: { value: '10' } });
+        expect(screen.getByText('Rate unavailable')).toBeInTheDocument();
     });
 
     it('navigates to capture tab when Log Receipt is clicked', () => {
