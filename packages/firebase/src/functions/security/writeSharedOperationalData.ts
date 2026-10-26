@@ -1,5 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+
+import { arcjetKey } from "../../config/secrets";
+import { validateAppCheckV2 } from "../../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../security/arcjet";
 
 const CACHE_HASH_PATTERN = /^-?[0-9a-f]{1,16}$/;
 const VERTEX_CACHE_RESOURCE_PATTERN = /^projects\/[a-z0-9-]{1,63}\/locations\/[a-z0-9-]{1,40}\/cachedContents\/[A-Za-z0-9_-]{1,128}$/;
@@ -20,11 +25,18 @@ interface RecordInstrumentUsageRequest {
 }
 
 function requireAuthenticatedUid(request: CallableRequest): string {
-    if (!request.auth) {
+    validateAppCheckV2(request);
+    if (!request.auth || !request.auth.uid) {
         throw new HttpsError(
             "unauthenticated",
             "User must be authenticated.",
         );
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required.');
     }
     return request.auth.uid;
 }
@@ -62,9 +74,22 @@ export function validateContextCacheRegistration(data: RegisterAiContextCacheReq
  * one another's Vertex resource reference.
  */
 export const registerAiContextCache = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
         const userId = requireAuthenticatedUid(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `register-ai-context-cache:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const validated = validateContextCacheRegistration(
             (request.data ?? {}) as RegisterAiContextCacheRequest,
         );
@@ -107,9 +132,22 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
  * cannot replace aggregate counters or inject arbitrary instrument IDs.
  */
 export const recordInstrumentUsage = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
         const userId = requireAuthenticatedUid(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `record-instrument-usage:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const { instrumentId, outcome, executionId } = validateInstrumentUsage(
             (request.data ?? {}) as RecordInstrumentUsageRequest,
         );

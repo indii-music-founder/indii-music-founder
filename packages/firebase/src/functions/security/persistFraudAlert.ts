@@ -8,7 +8,7 @@ import { requireVerifiedServerEntitlement } from "../auth/entitlements";
 import {
     policyClassForServerEntitlement,
     protectAuthenticatedApiRequest,
-} from "./arcjet";
+} from "../security/arcjet";
 
 interface FraudAlert {
     trackId: string;
@@ -48,14 +48,23 @@ export async function admitFraudAlertWriteRequest(
     if (!request.rawRequest) {
         throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
-    const protection = await protect(request.rawRequest as never, {
-        userId: uid,
-        policy: policyForEntitlement({
-            tier: entitlement.tier,
-            isAdmin: request.auth?.token.admin === true,
-        }),
-        operationId: `fraud-alert-write:${randomUUID()}`,
-    });
+    const protection = dependencies.protect
+        ? await dependencies.protect(request.rawRequest as never, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `fraud-alert-write:${randomUUID()}`,
+        })
+        : await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `fraud-alert-write:${randomUUID()}`,
+        });
     if (!protection.allowed) {
         const code = protection.status === 429
             ? 'resource-exhausted'

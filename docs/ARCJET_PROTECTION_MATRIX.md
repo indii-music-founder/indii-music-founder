@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **33**.
+- Declarations missing at least one of those local references: **166**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -71,10 +71,10 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/finance/setRecoupmentBalance.ts:123` | `setRecoupmentBalance` | `onCall` | Not established | Not established |
 | `functions/finance/submitTaxForm.ts:157` | `submitTaxForm` | `onRequest` | Not established | Not established |
 | `functions/intelligence/typesafeJudge.ts:30` | `typesafeJudge` | `onCall` | Not established | Not established |
-| `functions/knowledge/query.ts:29` | `queryKnowledgeBase` | `onCall` | Not established | Not established |
-| `functions/knowledge/upload.ts:26` | `createKnowledgeUpload` | `onCall` | Not established | Not established |
-| `functions/knowledge/upload.ts:97` | `finalizeKnowledgeUpload` | `onCall` | Not established | Not established |
-| `functions/knowledge/upload.ts:207` | `deleteKnowledgeDocument` | `onCall` | Not established | Not established |
+| `functions/knowledge/query.ts:33` | `queryKnowledgeBase` | `onCall` | Present | Present |
+| `functions/knowledge/upload.ts:29` | `createKnowledgeUpload` | `onCall` | Present | Present |
+| `functions/knowledge/upload.ts:120` | `finalizeKnowledgeUpload` | `onCall` | Present | Present |
+| `functions/knowledge/upload.ts:250` | `deleteKnowledgeDocument` | `onCall` | Present | Present |
 | `functions/marketing/adCampaignCallables.ts:218` | `executeUnifiedCampaignDirective` | `onCall` | Not established | Not established |
 | `functions/marketing/adCampaignCallables.ts:258` | `ingestUnifiedAttributionEvent` | `onCall` | Not established | Not established |
 | `functions/music/claimsInbox.ts:119` | `getCanonicalClaimsInbox` | `onCall` | Not established | Not established |
@@ -92,16 +92,16 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/remote/issueStudioExecutorLease.ts:201` | `completeStudioCommand` | `onCall` | Not established | Not established |
 | `functions/rights/queueRightsRegistration.ts:166` | `queueRightsRegistration` | `onCall` | Not established | Not established |
 | `functions/rights/rightsRegistration.ts:85` | `rightsRegistration` | `onCall` | Not established | Not established |
-| `functions/security/claimComputerApproval.ts:23` | `claimComputerApproval` | `onCall` | Not established | Not established |
-| `functions/security/claimComputerApproval.ts:45` | `denyComputerApproval` | `onCall` | Not established | Not established |
-| `functions/security/errorReportCallables.ts:94` | `listErrorReports` | `onCall` | Not established | Not established |
-| `functions/security/errorReportCallables.ts:124` | `updateErrorReportStatus` | `onCall` | Not established | Not established |
-| `functions/security/logAuditEvent.ts:155` | `logAuditEvent` | `onCall` | Present | Not established |
-| `functions/security/organizationAccess.ts:327` | `getOrganizationAccessMatrix` | `onCall` | Present | Not established |
-| `functions/security/organizationAccess.ts:332` | `updateOrganizationMemberAccess` | `onCall` | Present | Not established |
-| `functions/security/persistFraudAlert.ts:80` | `persistFraudAlert` | `onCall` | Present | Not established |
-| `functions/security/writeSharedOperationalData.ts:64` | `registerAiContextCache` | `onCall` | Not established | Not established |
-| `functions/security/writeSharedOperationalData.ts:109` | `recordInstrumentUsage` | `onCall` | Not established | Not established |
+| `functions/security/claimComputerApproval.ts:26` | `claimComputerApproval` | `onCall` | Present | Present |
+| `functions/security/claimComputerApproval.ts:68` | `denyComputerApproval` | `onCall` | Present | Present |
+| `functions/security/errorReportCallables.ts:119` | `listErrorReports` | `onCall` | Present | Present |
+| `functions/security/errorReportCallables.ts:149` | `updateErrorReportStatus` | `onCall` | Present | Present |
+| `functions/security/logAuditEvent.ts:164` | `logAuditEvent` | `onCall` | Present | Present |
+| `functions/security/organizationAccess.ts:336` | `getOrganizationAccessMatrix` | `onCall` | Present | Present |
+| `functions/security/organizationAccess.ts:341` | `updateOrganizationMemberAccess` | `onCall` | Present | Present |
+| `functions/security/persistFraudAlert.ts:89` | `persistFraudAlert` | `onCall` | Present | Present |
+| `functions/security/writeSharedOperationalData.ts:76` | `registerAiContextCache` | `onCall` | Present | Present |
+| `functions/security/writeSharedOperationalData.ts:134` | `recordInstrumentUsage` | `onCall` | Present | Present |
 | `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
 | `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
 | `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
