@@ -57,4 +57,4 @@ The `/abcd` loop is healthy when:
 - D samples B/C claims and either confirms them or re-opens them with evidence.
 
 The workflow is not complete just because one engine says "done"; D's verification and C's CI evidence close the loop.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

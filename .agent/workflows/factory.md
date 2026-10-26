@@ -43,4 +43,4 @@ When the user types `/factory`, you (the orchestrating agent) must:
 3. Monitor their status. You do not need to actively poll; simply wait for the subagents to report back via messages.
 4. Once both loops complete, run the **QA & Publisher** on a focused task branch under [`branch-safety.md`](branch-safety.md).
 5. Provide a master summary of everything that was broken, fixed, and pushed.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

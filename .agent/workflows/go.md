@@ -29,7 +29,7 @@ Do not claim completion from intent, code appearance, a queued state, or a test 
 
 ## Delivery boundary
 
-`/go` does not create WIP, checkpoint, per-unit, or speculative repair commits. `/end` owns final reconciliation and `/ci-validate`; repository delivery follows one coherent task-branch commit, a reviewed PR, and exact-SHA CI under [`branch-safety.md`](branch-safety.md).
+`/go` does not create WIP, checkpoint, per-unit, or speculative repair commits. `/end` owns final reconciliation and `/ci-validate`; repository delivery follows one coherent task-branch commit, a CI-checked PR, and exact-SHA CI under [`branch-safety.md`](branch-safety.md).
 
 ```text
 OBJECTIVE: <objective>
@@ -39,4 +39,4 @@ STRIKES / ROUTE: <attempt count and capability health>
 NEXT: <next in-authority action>
 ```
 
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

@@ -2,9 +2,9 @@
 
 ## Protected Main Delivery Standard
 
-Deliver repository changes through focused task branches and reviewed PRs into protected `main`. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
+Deliver repository changes through focused task branches and CI-checked PRs into protected `main`. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
 
-Publish one coherent locally validated change to a task branch, open a PR, and inspect CI for its exact head SHA. Merge only after the required `test` check, a qualifying approving review, and user authorization for that merge. Never push directly to `main`, create checkpoint commits, bypass protection, force-push, guess at CI failures, or bundle unrelated work.
+Publish one coherent locally validated change to a task branch, open a PR, and inspect CI for its exact head SHA. Merge only after the required `test` check and user authorization for that merge. Never push directly to `main`, create checkpoint commits, bypass protection, force-push, guess at CI failures, or bundle unrelated work.
 
 ## User GitHub Completion Preference
 

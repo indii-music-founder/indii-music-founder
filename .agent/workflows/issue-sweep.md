@@ -461,4 +461,4 @@ Related workflows:
   /auto-fix    → Lightweight version of Phase 2+3 only (no test plan)
   /ci-validate → Run all 4 test shards locally before pushing to main
 ```
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

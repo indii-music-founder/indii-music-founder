@@ -51,4 +51,4 @@ Update a flowchart only when state, sequence, or ownership is genuinely difficul
 
 Continue until all acceptance criteria have decisive evidence, then run `/end`. Keep the task's related changes together for one coherent delivery; no checkpoint or micro-fix commits.
 
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

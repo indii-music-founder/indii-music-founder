@@ -1,6 +1,6 @@
 # GAUNTLET LOOP — EVOLAS BUILD PASS
 
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
 
 Same Builder/Critic discipline as the standard gauntlet loop, retargeted from
 bug-fixing against `OPEN_ISSUES.md` to build-out against

@@ -13,5 +13,5 @@
 
 ## 3. Report Review Readiness (If Green)
 - Confirm the successful run belongs to the PR head SHA.
-- Report the green SHA and run URL. Merge only after the required approving review and user authorization.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+- Report the green SHA and run URL. Merge only after the required `test` check and user authorization.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

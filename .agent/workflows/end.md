@@ -38,7 +38,7 @@ When the tree is clean for this objective and local validation passes:
 5. verify the remote branch and PR head SHA, then locate CI for that exact SHA;
 6. inspect actual failed logs if red;
 7. repair only logged root causes through `/middle` until the successor SHA is green;
-8. merge only with the required review, check, and user authorization in [`branch-safety.md`](branch-safety.md).
+8. merge only with the required check and user authorization in [`branch-safety.md`](branch-safety.md).
 
 Missing GitHub credentials require the official `gh auth login` flow. Never harvest a PAT from `.env` or switch identities.
 
@@ -57,4 +57,4 @@ AUTHENTICITY: <structural | simulated | local-real | production-real>
 REMAINING: <none or exact blocker>
 ```
 
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.

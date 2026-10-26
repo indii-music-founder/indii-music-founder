@@ -93,4 +93,4 @@ Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES_V2.m
 - When you finish an iteration, do NOT stop.
 - Keep the ledger current with only durable findings; do not churn the file with speculative entries.
 - Tell the user "A-Engine (Finder) is online," wait for the background cron to fire, and immediately resume the cycle when it does.
-> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and reviewed PR; direct pushes to `main` are prohibited.
+> **Protected main delivery gate:** Before any code, git, CI, or push action, read and obey [`branch-safety.md`](branch-safety.md). Deliver through a focused branch and CI-checked PR; direct pushes to `main` are prohibited.
