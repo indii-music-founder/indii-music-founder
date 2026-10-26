@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **25**.
+- Declarations missing at least one of those local references: **174**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -64,12 +64,12 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/distribution/distributionRecords.ts:354` | `requestDistributionTakedown` | `onCall` | Not established | Not established |
 | `functions/distribution/distributionRecords.ts:411` | `createSftpIngestionRecord` | `onCall` | Not established | Not established |
 | `functions/distribution/distributionRecords.ts:433` | `updateSftpIngestionRecord` | `onCall` | Not established | Not established |
-| `functions/finance/calculateRoyaltyAllocations.ts:348` | `calculateRoyaltyAllocations` | `onCall` | Not established | Not established |
-| `functions/finance/ingestEarningsReport.ts:404` | `ingestEarningsReport` | `onCall` | Not established | Not established |
-| `functions/finance/parseAndIngestReport.ts:23` | `parseAndIngestRoyaltyReport` | `onCall` | Not established | Not established |
-| `functions/finance/requestTaxFormUpload.ts:58` | `requestTaxFormUpload` | `onCall` | Not established | Not established |
-| `functions/finance/setRecoupmentBalance.ts:123` | `setRecoupmentBalance` | `onCall` | Not established | Not established |
-| `functions/finance/submitTaxForm.ts:157` | `submitTaxForm` | `onRequest` | Not established | Not established |
+| `functions/finance/calculateRoyaltyAllocations.ts:350` | `calculateRoyaltyAllocations` | `onCall` | Present | Present |
+| `functions/finance/ingestEarningsReport.ts:406` | `ingestEarningsReport` | `onCall` | Present | Present |
+| `functions/finance/parseAndIngestReport.ts:26` | `parseAndIngestRoyaltyReport` | `onCall` | Present | Present |
+| `functions/finance/requestTaxFormUpload.ts:60` | `requestTaxFormUpload` | `onCall` | Present | Present |
+| `functions/finance/setRecoupmentBalance.ts:125` | `setRecoupmentBalance` | `onCall` | Present | Present |
+| `functions/finance/submitTaxForm.ts:159` | `submitTaxForm` | `onRequest` | Present | Present |
 | `functions/intelligence/typesafeJudge.ts:30` | `typesafeJudge` | `onCall` | Not established | Not established |
 | `functions/knowledge/query.ts:29` | `queryKnowledgeBase` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:26` | `createKnowledgeUpload` | `onCall` | Not established | Not established |
