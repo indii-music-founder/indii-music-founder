@@ -4889,6 +4889,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1526: Artist Passport unclaimed contact data, account claim and email consent lack trusted ownership enforcement
 
 - **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **2026-10-26 progress:** Enforced email immutability on unclaimed assessment contact updates in `packages/firebase/firestore.rules` (`isValidContactUpdate` checks `!('email' in resource.data) || resource.data.email == null || request.resource.data.email == resource.data.email`) and in `packages/landing/src/lib/passportService.ts` (`updateAssessmentContact` rejects modifying email once set). Enforced trusted ownership on account claims in `packages/firebase/firestore.rules` (`isValidAccountClaim` requires verified `request.auth.token.email == resource.data.email` whenever an email is recorded) and in `packages/landing/src/lib/passportService.ts` (`claimProspectAssessment` validates `callerEmail` against `data.email`). Enforced assessment consent check `assessmentConsent === true` in `packages/firebase/src/passport/sendPassportReportEmail.ts` before dispatching report emails. Verified with 307 Firestore security rules tests passing (0 failures), 6 trigger unit tests, 8 landing claim unit tests, and 0 TypeScript compilation errors.
 - **Severity:** HIGH
 - **Module:** Artist Passport / Privacy / Account linking / Email
 - **Classification:** Structural source defect; historical commit evidence or authenticated CI evidence where stated. Genuine customer impact/acceptance remains Conditional.

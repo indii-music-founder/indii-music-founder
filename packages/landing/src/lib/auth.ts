@@ -67,7 +67,7 @@ export async function signUpWithEmail(
   let passportClaimFailed = false;
   if (assessmentId) {
     try {
-      await claimProspectAssessment(assessmentId, result.user.uid);
+      await claimProspectAssessment(assessmentId, result.user.uid, result.user.email ?? email);
     } catch (err) {
       passportClaimFailed = true;
       console.warn('[auth] Prospect assessment claim needs retry:', err);

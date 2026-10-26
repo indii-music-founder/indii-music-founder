@@ -3040,7 +3040,8 @@ service cloud.firestore {
             'marketingConsent',
             'assessmentConsent',
             'updatedAt'
-          ]);
+          ]) &&
+          (!('email' in resource.data) || resource.data.email == null || request.resource.data.email == resource.data.email);
       }
 
       function isValidAccountClaim() {
@@ -3055,7 +3056,8 @@ service cloud.firestore {
             'email',
             'marketingConsent',
             'assessmentConsent'
-          ]);
+          ]) &&
+          (!('email' in resource.data) || resource.data.email == null || (request.auth.token.email != null && request.auth.token.email == resource.data.email));
       }
 
       // Visitor enumeration and scanning blocked
