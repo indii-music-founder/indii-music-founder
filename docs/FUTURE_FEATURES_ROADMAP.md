@@ -7,6 +7,8 @@
 
 ## 1. Social Music Platform — "Music 4.0 Community"
 
+**October 7, 2026 concept expansion:** The founder's [fan social commerce and numbered song editions record](specifications/FAN_SOCIAL_COMMERCE_CONCEPT_2026-10-07.md) preserves the full artist/fan page, favorite-artist widget, print-on-demand, STL download, lossless fixed-edition song drop, resale, provenance, portability, economics, and legal questions. This is future-work context, not a claim that the entire social frontend is absent or that these features are approved for immediate implementation. Current social follows/feed/product attachments and marketplace foundations should be checked in source before sizing work.
+
 **Philosophy:** Based on the **1,000 True Fans theory**. Most music artists will never reach superstardom — indii is about building a *career*. The social platform extends that thesis by giving artists a direct relationship with their audience.
 
 **Concept:**
