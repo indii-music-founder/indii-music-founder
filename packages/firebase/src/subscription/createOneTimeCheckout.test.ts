@@ -34,6 +34,7 @@ vi.mock('../stripe/config', () => ({
 
 vi.mock('../config/secrets', () => ({
   stripeSecretKey: {},
+  arcjetKey: {},
 }));
 
 import { createOneTimeCheckout } from './createOneTimeCheckout';
@@ -102,5 +103,19 @@ describe('createOneTimeCheckout metadata authority', () => {
 
     const params = mocks.mockSessionsCreate.mock.calls[0][0];
     expect(params.metadata.sneaky).toBeUndefined();
+  });
+
+  it('rejects an anonymous or unverified user', async () => {
+    const anonRequest = {
+      ...makeRequest({}),
+      auth: { uid: UID, token: { email: 'anon@example.com', firebase: { sign_in_provider: 'anonymous' } } },
+    };
+    await expect(callCallable(anonRequest)).rejects.toThrow('A verified signed-in user is required');
+
+    const unverifiedRequest = {
+      ...makeRequest({}),
+      auth: { uid: UID, token: { email: 'unverified@example.com', email_verified: false } },
+    };
+    await expect(callCallable(unverifiedRequest)).rejects.toThrow('A verified signed-in user is required');
   });
 });

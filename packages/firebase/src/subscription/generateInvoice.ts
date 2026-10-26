@@ -11,8 +11,11 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { stripe } from '../stripe/config';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 export interface InvoiceData {
     invoiceId: string;
@@ -38,15 +41,35 @@ export interface InvoiceData {
 }
 
 export const generateInvoice = onCall({
-    secrets: [stripeSecretKey],
+    secrets: [stripeSecretKey, arcjetKey],
     timeoutSeconds: 30,
     memory: '512MiB',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
 }, async (request) => {
     const { invoiceId } = request.data as { invoiceId?: string };
 
     if (!request.auth?.uid) {
         throw new HttpsError('unauthenticated', 'User must be signed in.');
+    }
+
+    if (request.auth?.token?.email_verified === false || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+    }
+
+    validateAppCheckV2(request);
+
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: request.auth?.token?.admin ? 'admin' : 'paid',
+            operationId: `generate-invoice:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
     }
 
     const db = getFirestore();

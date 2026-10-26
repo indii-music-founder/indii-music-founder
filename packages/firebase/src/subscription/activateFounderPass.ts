@@ -23,10 +23,12 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { createHash } from 'crypto';
-import { githubTokenFounders } from '../config/secrets';
+import { createHash, randomUUID } from 'crypto';
+import { githubTokenFounders, arcjetKey } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
 import { writeFounderEntitlementGrant } from '../functions/auth/entitlements';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 const GITHUB_REPO_OWNER = 'indii-music-founder';
 const GITHUB_REPO_NAME = 'indii-music-founder';
@@ -201,16 +203,36 @@ async function commitFounderToGitHub(
 }
 
 export const activateFounderPass = onCall({
-    secrets: [githubTokenFounders],
+    secrets: [githubTokenFounders, arcjetKey],
     timeoutSeconds: 120,
     memory: '512MiB',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
 }, async (request): Promise<ActivateFounderPassResult> => {
     const { targetUid, displayName } = request.data as ActivateFounderPassParams;
 
     // Admin Guard
     if (!request.auth || request.auth.token.admin !== true) {
         throw new HttpsError('permission-denied', 'Must be an admin to activate a founder pass.');
+    }
+
+    if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('unauthenticated', 'A verified signed-in admin is required.');
+    }
+
+    validateAppCheckV2(request);
+
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'admin',
+            operationId: `activate-founder-pass:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
     }
 
     if (!targetUid || !displayName?.trim()) {

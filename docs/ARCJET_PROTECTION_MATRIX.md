@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **26**.
-- Declarations missing at least one of those local references: **173**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **48**.
+- Declarations missing at least one of those local references: **151**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -174,8 +174,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
 | `marketing/shopifyWebhook.ts:188` | `shopifyWebhook` | `onRequest` | Not established | Not established |
 | `marketing/smartLink.ts:103` | `smartLinkRedirect` | `onRequest` | Not established | Not established |
-| `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
-| `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
+| `marketplace/createMarketplaceCheckout.ts:41` | `createMarketplaceCheckout` | `onCall` | Present | Present |
+| `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |
 | `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
 | `pod/checkout.ts:107` | `pod_createOrderCheckout` | `onCall` | Not established | Not established |
 | `pod/printful.ts:13` | `pod_printfulGetProducts` | `onCall` | Not established | Not established |
@@ -193,25 +193,25 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `social/instagramWebhook.ts:26` | `instagramWebhook` | `onRequest` | Not established | Not established |
 | `streaming/agentStream.ts:73` | `agentStreamResponse` | `onRequest` | Not established | Not established |
 | `streaming/agentStream.ts:221` | `agentStreamHealth` | `onRequest` | Not established | Not established |
-| `stripe/connect.ts:8` | `createStripeConnectAccount` | `onCall` | Not established | Not established |
-| `stripe/connect.ts:73` | `createTransfer` | `onCall` | Not established | Not established |
+| `stripe/connect.ts:12` | `createStripeConnectAccount` | `onCall` | Present | Present |
+| `stripe/connect.ts:97` | `createTransfer` | `onCall` | Present | Present |
 | `stripe/escrow.ts:15` | `handleEscrowWebhook` | `onRequest` | Not established | Not established |
-| `stripe/paymentLinks.ts:223` | `createStripePaymentLinks` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:38` | `initiateSplitEscrow` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:183` | `signEscrow` | `onCall` | Not established | Not established |
-| `stripe/splitEscrow.ts:249` | `releaseEscrow` | `onCall` | Not established | Not established |
-| `stripe/taxForms.ts:10` | `requestTaxForms` | `onCall` | Not established | Not established |
+| `stripe/paymentLinks.ts:226` | `createStripePaymentLinks` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:42` | `initiateSplitEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:207` | `signEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:293` | `releaseEscrow` | `onCall` | Present | Present |
+| `stripe/taxForms.ts:14` | `requestTaxForms` | `onCall` | Present | Present |
 | `stripe/webhookHandler.ts:1269` | `stripeWebhook` | `onRequest` | Not established | Not established |
-| `subscription/activateFounderPass.ts:203` | `activateFounderPass` | `onCall` | Not established | Not established |
-| `subscription/cancelSubscription.ts:13` | `cancelSubscription` | `onCall` | Not established | Not established |
-| `subscription/createCheckoutSession.ts:16` | `createCheckoutSession` | `onCall` | Not established | Not established |
-| `subscription/createMicroTransaction.ts:7` | `createMicroTransaction` | `onCall` | Not established | Not established |
-| `subscription/createOneTimeCheckout.ts:30` | `createOneTimeCheckout` | `onCall` | Not established | Not established |
-| `subscription/deductCredits.ts:19` | `deductCredits` | `onCall` | Not established | Not established |
-| `subscription/generateInvoice.ts:40` | `generateInvoice` | `onCall` | Not established | Not established |
-| `subscription/getCustomerPortal.ts:13` | `getCustomerPortal` | `onCall` | Not established | Not established |
-| `subscription/getSubscription.ts:5` | `getSubscription` | `onCall` | Not established | Not established |
-| `subscription/getUsageStats.ts:15` | `getUsageStats` | `onCall` | Not established | Not established |
-| `subscription/resumeSubscription.ts:13` | `resumeSubscription` | `onCall` | Not established | Not established |
-| `subscription/trackUsage.ts:12` | `trackUsage` | `onCall` | Not established | Not established |
-| `subscription/updateWalletSettings.ts:26` | `updateWalletSettings` | `onCall` | Not established | Not established |
+| `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |
+| `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
+| `subscription/createCheckoutSession.ts:19` | `createCheckoutSession` | `onCall` | Present | Present |
+| `subscription/createMicroTransaction.ts:10` | `createMicroTransaction` | `onCall` | Present | Present |
+| `subscription/createOneTimeCheckout.ts:33` | `createOneTimeCheckout` | `onCall` | Present | Present |
+| `subscription/deductCredits.ts:22` | `deductCredits` | `onCall` | Present | Present |
+| `subscription/generateInvoice.ts:43` | `generateInvoice` | `onCall` | Present | Present |
+| `subscription/getCustomerPortal.ts:16` | `getCustomerPortal` | `onCall` | Present | Present |
+| `subscription/getSubscription.ts:9` | `getSubscription` | `onCall` | Present | Present |
+| `subscription/getUsageStats.ts:19` | `getUsageStats` | `onCall` | Present | Present |
+| `subscription/resumeSubscription.ts:16` | `resumeSubscription` | `onCall` | Present | Present |
+| `subscription/trackUsage.ts:15` | `trackUsage` | `onCall` | Present | Present |
+| `subscription/updateWalletSettings.ts:30` | `updateWalletSettings` | `onCall` | Present | Present |

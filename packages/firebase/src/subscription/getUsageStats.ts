@@ -8,15 +8,42 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
 import { getOrCreateSubscription } from './subscriptionDefaults';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
-export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async (request) => {
+export const getUsageStats = onCall({
+  secrets: [arcjetKey],
+  enforceAppCheck: false,
+}, async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Unauthorized');
+  }
+
+  if (request.auth?.token?.email_verified === false || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+  }
+
+  validateAppCheckV2(request);
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId,
+      policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+      operationId: `get-usage-stats:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   try {
