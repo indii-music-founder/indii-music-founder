@@ -581,3 +581,38 @@ describe('completeStudioCommand', () => {
         ).rejects.toMatchObject({ code: 'permission-denied' });
     });
 });
+
+// ─── security & admission controls (ISSUE-1543) ─────────────────────────────
+
+describe('security & admission controls (ISSUE-1543)', () => {
+    const issue = () => handlerOf(remote.issueStudioExecutorLease);
+
+    it('rejects unverified email callers', async () => {
+        await expect(
+            issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }, { uid: UID, token: { email_verified: false } } as never))
+        ).rejects.toMatchObject({ code: 'unauthenticated' });
+    });
+
+    it('rejects anonymous auth callers', async () => {
+        await expect(
+            issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }, {
+                uid: UID,
+                token: { email_verified: true, firebase: { sign_in_provider: 'anonymous' } }
+            } as never))
+        ).rejects.toMatchObject({ code: 'unauthenticated' });
+    });
+
+    it('prevents rogue auto-enrollment when an active Studio session is online', async () => {
+        mocks.makeSnap(statePath, true, {
+            online: true,
+            executorDeviceId: 'active-desktop-device-01',
+            leaseExpiresAt: { toMillis: () => Date.now() + 300_000 },
+        });
+
+        await expect(
+            issue()(req({ deviceId: 'rogue-device-00000002', enrollmentSecret: SECRET }))
+        ).rejects.toMatchObject({
+            code: 'failed-precondition',
+        });
+    });
+});
