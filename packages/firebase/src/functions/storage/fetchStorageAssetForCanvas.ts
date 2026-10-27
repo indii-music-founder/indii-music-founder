@@ -16,7 +16,7 @@ export const fetchStorageAssetForCanvas = onCall(
   { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
   async (request): Promise<{ data: string; mimeType: string; size: number }> => {
     validateAppCheckV2(request);
-    if (!request.auth) {
+    if (!request.auth || !request.auth.uid) {
       throw new HttpsError('unauthenticated', 'Authentication is required to load canvas assets.');
     }
     if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
