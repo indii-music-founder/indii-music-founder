@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **27**.
+- Declarations missing at least one of those local references: **172**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -102,8 +102,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/security/persistFraudAlert.ts:80` | `persistFraudAlert` | `onCall` | Present | Not established |
 | `functions/security/writeSharedOperationalData.ts:64` | `registerAiContextCache` | `onCall` | Not established | Not established |
 | `functions/security/writeSharedOperationalData.ts:109` | `recordInstrumentUsage` | `onCall` | Not established | Not established |
-| `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
-| `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
+| `functions/social-connections.ts:26` | `getSocialConnectionStatus` | `onCall` | Present | Present |
+| `functions/social-stats-sync.ts:349` | `syncPlatformStats` | `onCall` | Present | Present |
 | `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
@@ -187,12 +187,12 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `pod/printful.ts:121` | `pod_printfulCancelOrder` | `onCall` | Not established | Not established |
 | `pod/printful.ts:132` | `pod_printfulGenerateMockup` | `onCall` | Not established | Not established |
 | `releases/generateDownloadUrl.ts:5` | `generateReleaseDownloadUrl` | `onCall` | Not established | Not established |
-| `social/instagramMessaging.ts:52` | `sendInstagramMessageCallable` | `onCall` | Present | Not established |
-| `social/instagramMessaging.ts:127` | `replyInstagramCommentCallable` | `onCall` | Present | Not established |
-| `social/instagramMessaging.ts:181` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Not established |
-| `social/instagramWebhook.ts:26` | `instagramWebhook` | `onRequest` | Not established | Not established |
-| `streaming/agentStream.ts:73` | `agentStreamResponse` | `onRequest` | Not established | Not established |
-| `streaming/agentStream.ts:221` | `agentStreamHealth` | `onRequest` | Not established | Not established |
+| `social/instagramMessaging.ts:56` | `sendInstagramMessageCallable` | `onCall` | Present | Present |
+| `social/instagramMessaging.ts:142` | `replyInstagramCommentCallable` | `onCall` | Present | Present |
+| `social/instagramMessaging.ts:207` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Present |
+| `social/instagramWebhook.ts:27` | `instagramWebhook` | `onRequest` | Present | Present |
+| `streaming/agentStream.ts:75` | `agentStreamResponse` | `onRequest` | Present | Present |
+| `streaming/agentStream.ts:237` | `agentStreamHealth` | `onRequest` | Present | Present |
 | `stripe/connect.ts:8` | `createStripeConnectAccount` | `onCall` | Not established | Not established |
 | `stripe/connect.ts:73` | `createTransfer` | `onCall` | Not established | Not established |
 | `stripe/escrow.ts:15` | `handleEscrowWebhook` | `onRequest` | Not established | Not established |
