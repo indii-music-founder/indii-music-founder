@@ -10,6 +10,8 @@ import ffprobePath from 'ffprobe-static';
 import { logger } from 'firebase-functions/v2';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { parseStorageUri, assertUserOwnsStoragePath } from '../../lib/storageUri';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 if (ffprobePath.path) {
   ffmpeg.setFfprobePath(ffprobePath.path);
@@ -47,11 +49,30 @@ export function probeDurationSeconds(filePath: string): Promise<number> {
  * frame-count default.
  */
 export const getMediaDuration = onCall(
-  { timeoutSeconds: 60, memory: '1GiB', enforceAppCheck: false },
+  { secrets: [arcjetKey], timeoutSeconds: 60, memory: '1GiB', enforceAppCheck: false },
   async (request): Promise<{ durationSeconds: number }> => {
     validateAppCheckV2(request);
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication is required to probe media duration.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `get-media-duration:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        const code = protection.status === 429
+          ? 'resource-exhausted'
+          : protection.status === 403
+            ? 'permission-denied'
+            : 'unavailable';
+        throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+      }
     }
 
     const parsed = GetMediaDurationSchema.safeParse(request.data);

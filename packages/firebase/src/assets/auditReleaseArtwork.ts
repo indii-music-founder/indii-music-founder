@@ -1,6 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 import { auditReleaseArtwork, type AssetResolutionAudit } from './AssetResolutionAuditService.js';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 function releaseIdFrom(value: unknown): string {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -28,11 +31,32 @@ export async function auditReleaseArtworkForOwner(
  * happen on the backend.
  */
 export const auditReleaseArtworkForDelivery = onCall(
-    { region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<AssetResolutionAudit> => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'An authenticated owner is required to audit release artwork.');
         }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `audit-release-artwork:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         try {
             return await auditReleaseArtworkForOwner(request.auth.uid, request.data);
         } catch (error) {

@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **29**.
+- Declarations missing at least one of those local references: **170**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -22,8 +22,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `analytics/platformTokenExchange.ts:221` | `auditInstagramConnectionCallable` | `onCall` | Not established | Not established |
 | `analytics/platformTokenExchange.ts:285` | `analyticsRefreshToken` | `onCall` | Not established | Not established |
 | `analytics/platformTokenExchange.ts:392` | `analyticsRevokeToken` | `onCall` | Not established | Not established |
-| `assets/auditReleaseArtwork.ts:30` | `auditReleaseArtworkForDelivery` | `onCall` | Not established | Not established |
-| `distribution/ingestion.ts:223` | `processAudioIngestion` | `onCall` | Not established | Not established |
+| `assets/auditReleaseArtwork.ts:33` | `auditReleaseArtworkForDelivery` | `onCall` | Present | Present |
+| `distribution/ingestion.ts:225` | `processAudioIngestion` | `onCall` | Present | Present |
 | `email/sendEmail.ts:285` | `sendEmail` | `onCall` | Not established | Not established |
 | `email/tokenManager.ts:164` | `emailExchangeToken` | `onCall` | Not established | Not established |
 | `email/tokenManager.ts:274` | `emailRefreshToken` | `onCall` | Not established | Not established |
@@ -57,13 +57,13 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/creative/gateway.ts:1831` | `cancelVideoJob` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:2057` | `generateOmniRemixV3` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:2416` | `generateAudioV3` | `onCall` | Present | Present |
-| `functions/creative/getMediaDuration.ts:49` | `getMediaDuration` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:229` | `assignDistributionIdentifier` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:260` | `recordDistributionIdentifier` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:308` | `recordDistributionAuditEvent` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:354` | `requestDistributionTakedown` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:411` | `createSftpIngestionRecord` | `onCall` | Not established | Not established |
-| `functions/distribution/distributionRecords.ts:433` | `updateSftpIngestionRecord` | `onCall` | Not established | Not established |
+| `functions/creative/getMediaDuration.ts:51` | `getMediaDuration` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:232` | `assignDistributionIdentifier` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:283` | `recordDistributionIdentifier` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:351` | `recordDistributionAuditEvent` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:417` | `requestDistributionTakedown` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:494` | `createSftpIngestionRecord` | `onCall` | Present | Present |
+| `functions/distribution/distributionRecords.ts:536` | `updateSftpIngestionRecord` | `onCall` | Present | Present |
 | `functions/finance/calculateRoyaltyAllocations.ts:348` | `calculateRoyaltyAllocations` | `onCall` | Not established | Not established |
 | `functions/finance/ingestEarningsReport.ts:404` | `ingestEarningsReport` | `onCall` | Not established | Not established |
 | `functions/finance/parseAndIngestReport.ts:23` | `parseAndIngestRoyaltyReport` | `onCall` | Not established | Not established |
@@ -117,7 +117,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/relayVideoRenderJob.ts:20` | `claimVideoRenderJob` | `onCall` | Not established | Not established |
 | `functions/video/relayVideoRenderJob.ts:51` | `completeVideoRenderJob` | `onCall` | Not established | Not established |
 | `functions/video/retrySessionProxyJob.ts:142` | `retrySessionProxyJob` | `onCall` | Not established | Not established |
-| `functions/webhooks/dispatcher.ts:432` | `createWebhook` | `onRequest` | Not established | Not established |
+| `functions/webhooks/dispatcher.ts:434` | `createWebhook` | `onRequest` | Present | Present |
 | `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Not established |
 | `index.ts:655` | `triggerLongFormVideoJob` | `onCall` | Present | Not established |
 | `index.ts:809` | `renderVideo` | `onCall` | Present | Present |

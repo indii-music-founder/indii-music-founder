@@ -1,5 +1,8 @@
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 type IdentifierType = "isrc" | "upc";
 
@@ -227,9 +230,29 @@ async function assignIdentifier(
 }
 
 export const assignDistributionIdentifier = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:assign-identifier:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as AssignIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
             throw new HttpsError("invalid-argument", "Identifier type is invalid.");
@@ -258,9 +281,29 @@ export const assignDistributionIdentifier = onCall(
 );
 
 export const recordDistributionIdentifier = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:record-identifier:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as RecordIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
             throw new HttpsError("invalid-argument", "Identifier type is invalid.");
@@ -306,9 +349,29 @@ export const recordDistributionIdentifier = onCall(
 );
 
 export const recordDistributionAuditEvent = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:record-audit-event:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as RecordDistributionAuditRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         await findWritableReleaseRef(releaseId, uid);
@@ -352,9 +415,29 @@ export const recordDistributionAuditEvent = onCall(
 );
 
 export const requestDistributionTakedown = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:request-takedown:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as RequestDistributionTakedownRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         const distributorId = data.distributorId ? requireString(data.distributorId, "distributorId") : "all";
@@ -409,9 +492,29 @@ export const requestDistributionTakedown = onCall(
 );
 
 export const createSftpIngestionRecord = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:create-sftp-ingestion:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as CreateSftpIngestionRequest;
         const targetDSP = requireString(data.targetDSP, "targetDSP", 160);
         const releaseFolder = requireString(data.releaseFolder, "releaseFolder", 1000);
@@ -431,9 +534,29 @@ export const createSftpIngestionRecord = onCall(
 );
 
 export const updateSftpIngestionRecord = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = requireAuth(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform distribution operations.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `distribution:update-sftp-ingestion:${uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         const data = (request.data ?? {}) as UpdateSftpIngestionRequest;
         const ingestionId = requireString(data.ingestionId, "ingestionId");
         const status = requireString(data.status, "status", 80);
