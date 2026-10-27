@@ -11,6 +11,7 @@ import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import { validateAppCheckV2 } from '../middleware/appCheck';
 import { metaAppId, metaAppSecret, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 const ALL_SECRETS = [metaAppId, metaAppSecret, arcjetKey];
 const META_GRAPH_API_BASE = 'https://graph.facebook.com/v23.0';
@@ -26,6 +27,9 @@ interface StoredSocialToken {
 function assertAuth(request: CallableRequest): string {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Authentication required.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
     }
     return request.auth.uid;
 }
@@ -54,6 +58,17 @@ export const sendInstagramMessageCallable = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `send-instagram-message:${uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
 
         const { recipientIgUserId, messageText, mediaUrl, inboundEventId } = (request.data ?? {}) as {
             recipientIgUserId?: string;
@@ -130,6 +145,17 @@ export const replyInstagramCommentCallable = onCall(
         validateAppCheckV2(request);
         const uid = assertAuth(request);
 
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `reply-instagram-comment:${uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+
         const { commentId, replyText } = (request.data ?? {}) as {
             commentId?: string;
             replyText?: string;
@@ -183,6 +209,17 @@ export const getInstagramMediaCommentsCallable = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `get-instagram-media-comments:${uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
 
         const { mediaId } = (request.data ?? {}) as { mediaId?: string };
         if (!mediaId) {

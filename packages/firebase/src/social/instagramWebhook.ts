@@ -1,7 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { onRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import { metaAppSecret, metaWebhookVerifyToken } from '../config/secrets';
+import { metaAppSecret, metaWebhookVerifyToken, arcjetKey } from '../config/secrets';
+import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 import { classifyInstagramMessagingEvent, normalizeInstagramCommerceChange } from './instagramWebhookPolicy';
 
 function validSignature(rawBody: Buffer, supplied: string | undefined, secret: string): boolean {
@@ -24,8 +25,21 @@ async function createOnce(ref: FirebaseFirestore.DocumentReference, data: Record
 }
 
 export const instagramWebhook = onRequest(
-    { secrets: [metaAppSecret, metaWebhookVerifyToken], timeoutSeconds: 30, memory: '512MiB' },
+    { secrets: [metaAppSecret, metaWebhookVerifyToken, arcjetKey], timeoutSeconds: 30, memory: '512MiB' },
     async (request, response) => {
+        const protection = await protectAnonymousSignupRequest(
+            request as never,
+            `instagram-webhook:${request.header('x-hub-signature-256')?.slice(0, 16) || 'anonymous'}`,
+            'allow-low-risk-read'
+        );
+        if (!protection.allowed) {
+            if (protection.retryAfterSeconds && typeof response.set === 'function') {
+                response.set('Retry-After', String(protection.retryAfterSeconds));
+            }
+            response.status(protection.status).send(protection.message);
+            return;
+        }
+
         if (request.method === 'GET') {
             const verified = request.query['hub.mode'] === 'subscribe'
                 && request.query['hub.verify_token'] === metaWebhookVerifyToken.value();

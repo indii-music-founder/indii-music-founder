@@ -1,6 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from './security/arcjet';
 
 const db = admin.firestore();
 
@@ -20,11 +23,35 @@ const GetSocialConnectionStatusRequestSchema = z.object({
   platform: z.enum(['spotify', 'instagram', 'tiktok', 'twitter', 'youtube']).optional(),
 });
 
-export const getSocialConnectionStatus = onCall(async (request) => {
-  // Require authentication
-  if (!request.auth?.uid) {
-    throw new HttpsError('unauthenticated', 'User must be signed in.');
-  }
+export const getSocialConnectionStatus = onCall(
+  {
+    timeoutSeconds: 30,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    enforceAppCheck: false,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
+    validateAppCheckV2(request);
+    // Require authentication
+    if (!request.auth?.uid) {
+      throw new HttpsError('unauthenticated', 'User must be signed in.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `social-connection-status:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+      }
+    }
 
   const userId = request.auth.uid;
 
