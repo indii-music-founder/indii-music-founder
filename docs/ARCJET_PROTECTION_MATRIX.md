@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **29**.
+- Declarations missing at least one of those local references: **170**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -70,18 +70,18 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/finance/requestTaxFormUpload.ts:58` | `requestTaxFormUpload` | `onCall` | Not established | Not established |
 | `functions/finance/setRecoupmentBalance.ts:123` | `setRecoupmentBalance` | `onCall` | Not established | Not established |
 | `functions/finance/submitTaxForm.ts:157` | `submitTaxForm` | `onRequest` | Not established | Not established |
-| `functions/intelligence/typesafeJudge.ts:30` | `typesafeJudge` | `onCall` | Not established | Not established |
+| `functions/intelligence/typesafeJudge.ts:32` | `typesafeJudge` | `onCall` | Present | Present |
 | `functions/knowledge/query.ts:29` | `queryKnowledgeBase` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:26` | `createKnowledgeUpload` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:97` | `finalizeKnowledgeUpload` | `onCall` | Not established | Not established |
 | `functions/knowledge/upload.ts:207` | `deleteKnowledgeDocument` | `onCall` | Not established | Not established |
 | `functions/marketing/adCampaignCallables.ts:218` | `executeUnifiedCampaignDirective` | `onCall` | Not established | Not established |
 | `functions/marketing/adCampaignCallables.ts:258` | `ingestUnifiedAttributionEvent` | `onCall` | Not established | Not established |
-| `functions/music/claimsInbox.ts:119` | `getCanonicalClaimsInbox` | `onCall` | Not established | Not established |
-| `functions/music/claimsInbox.ts:124` | `declareCanonicalRightsClaim` | `onCall` | Not established | Not established |
-| `functions/music/claimsInbox.ts:129` | `respondToCanonicalRightsClaim` | `onCall` | Not established | Not established |
-| `functions/music/getCanonicalMusicCatalogIntelligence.ts:40` | `getCanonicalMusicCatalogIntelligence` | `onCall` | Not established | Not established |
-| `functions/persona/recordPersonaResponseMeasurement.ts:104` | `recordPersonaResponseMeasurement` | `onCall` | Not established | Not established |
+| `functions/music/claimsInbox.ts:130` | `getCanonicalClaimsInbox` | `onCall` | Present | Present |
+| `functions/music/claimsInbox.ts:154` | `declareCanonicalRightsClaim` | `onCall` | Present | Present |
+| `functions/music/claimsInbox.ts:178` | `respondToCanonicalRightsClaim` | `onCall` | Present | Present |
+| `functions/music/getCanonicalMusicCatalogIntelligence.ts:51` | `getCanonicalMusicCatalogIntelligence` | `onCall` | Present | Present |
+| `functions/persona/recordPersonaResponseMeasurement.ts:107` | `recordPersonaResponseMeasurement` | `onCall` | Present | Present |
 | `functions/print/enqueuePrintJob.ts:78` | `enqueuePrintJob` | `onCall` | Not established | Not established |
 | `functions/print/preparePrintHandoff.ts:14` | `preparePrintHandoff` | `onCall` | Not established | Not established |
 | `functions/remote/issueStudioExecutorLease.ts:31` | `issueStudioExecutorLease` | `onCall` | Not established | Not established |
@@ -90,8 +90,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/remote/issueStudioExecutorLease.ts:153` | `claimStudioCommand` | `onCall` | Not established | Not established |
 | `functions/remote/issueStudioExecutorLease.ts:175` | `publishStudioResponse` | `onCall` | Not established | Not established |
 | `functions/remote/issueStudioExecutorLease.ts:201` | `completeStudioCommand` | `onCall` | Not established | Not established |
-| `functions/rights/queueRightsRegistration.ts:166` | `queueRightsRegistration` | `onCall` | Not established | Not established |
-| `functions/rights/rightsRegistration.ts:85` | `rightsRegistration` | `onCall` | Not established | Not established |
+| `functions/rights/queueRightsRegistration.ts:168` | `queueRightsRegistration` | `onCall` | Present | Present |
+| `functions/rights/rightsRegistration.ts:87` | `rightsRegistration` | `onCall` | Present | Present |
 | `functions/security/claimComputerApproval.ts:23` | `claimComputerApproval` | `onCall` | Not established | Not established |
 | `functions/security/claimComputerApproval.ts:45` | `denyComputerApproval` | `onCall` | Not established | Not established |
 | `functions/security/errorReportCallables.ts:94` | `listErrorReports` | `onCall` | Not established | Not established |
@@ -105,8 +105,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
 | `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
 | `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
-| `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
-| `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
+| `functions/trash/trashFunctions.ts:153` | `createPurgeIntent` | `onCall` | Present | Present |
+| `functions/trash/trashFunctions.ts:197` | `purgeTrashItems` | `onCall` | Present | Present |
 | `functions/video/alignSessionMaster.ts:217` | `alignSessionMaster` | `onCall` | Not established | Not established |
 | `functions/video/approveSessionEditPlan.ts:97` | `approveSessionEditPlan` | `onCall` | Not established | Not established |
 | `functions/video/cancelVideoSession.ts:129` | `cancelVideoSession` | `onCall` | Not established | Not established |

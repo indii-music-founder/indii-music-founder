@@ -19,7 +19,9 @@ import { societyOnboarding } from './societyOnboarding';
 import { prepareSoundExchangeBulk } from '@indii/shared';
 import { createCanonicalMusicCatalogStore } from '../music/canonicalMusicCatalogStore';
 import { validateRightsEntityReferences, CanonicalMusicEntitySchema, RightsEntityId, COPYRIGHT_PORTAL_HOSTS, canApproveCwrExport, publicRightsSession } from '@indii/shared';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { canReopenUncertainFiling } from './rightsFilingReconciliation';
 
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
@@ -82,10 +84,20 @@ async function prepareDeposit(uid: string, payload: Record<string, unknown>) {
   } finally { await rm(dir, { recursive: true, force: true }); }
 }
 
-export const rightsRegistration = onCall({ enforceAppCheck: false, timeoutSeconds: 540, memory: '2GiB' }, async request => {
+export const rightsRegistration = onCall({ secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 540, memory: '2GiB' }, async request => {
   validateAppCheckV2(request);
   if (!request.auth || request.auth.token.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('unauthenticated', 'Sign in to manage your filings.');
   const uid = request.auth.uid;
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: uid,
+      policy: 'verified-free',
+      operationId: `rights-registration:${uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
   try {
     const { action, payload } = Request.parse(request.data);
     if (action === 'capabilities') return { hostedEnabled: process.env.RIGHTS_HOSTED_ENABLED === 'true', paymentEnabled: process.env.RIGHTS_PAYMENT_ENABLED === 'true', rememberEnabled: Boolean(process.env.RIGHTS_VAULT_BUCKET && process.env.RIGHTS_KMS_KEY && process.env.RIGHTS_AUTH_COOKIE_NAMES && COPYRIGHT_PORTAL_HOSTS.includes(process.env.RIGHTS_AUTH_COOKIE_HOST ?? '')) };

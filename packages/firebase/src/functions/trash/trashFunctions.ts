@@ -1,6 +1,9 @@
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import crypto from 'crypto';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -140,9 +143,30 @@ function isNotFoundStorageError(error: unknown): boolean {
     return candidate.code === 404 || candidate.statusCode === 404;
 }
 
-export const createPurgeIntent = onCall({ enforceAppCheck: true }, async (request: CallableRequest<PurgeRequest>) => {
+export const trashCallableOptions = {
+    secrets: [arcjetKey],
+    enforceAppCheck: false,
+    timeoutSeconds: 60,
+    memory: '512MiB' as const,
+};
+
+export const createPurgeIntent = onCall(trashCallableOptions, async (request: CallableRequest<PurgeRequest>) => {
+    validateAppCheckV2(request);
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to create a purge intent.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `trash-create-purge-intent:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+        }
     }
 
     const uid = request.auth.uid;
@@ -170,9 +194,23 @@ export const createPurgeIntent = onCall({ enforceAppCheck: true }, async (reques
     return { success: true, intentToken: intentId, expiresAt };
 });
 
-export const purgeTrashItems = onCall({ enforceAppCheck: true }, async (request: CallableRequest<PurgeRequest>) => {
+export const purgeTrashItems = onCall(trashCallableOptions, async (request: CallableRequest<PurgeRequest>) => {
+    validateAppCheckV2(request);
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated to execute purge.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `trash-purge-items:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+        }
     }
 
     const uid = request.auth.uid;

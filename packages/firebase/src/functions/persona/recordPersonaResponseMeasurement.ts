@@ -1,4 +1,7 @@
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     PERSONA_FADER_AXES,
     PERSONA_IDS,
@@ -102,13 +105,27 @@ export function createPersonaMeasurementHandler(
 const handlePersonaMeasurement = createPersonaMeasurementHandler();
 
 export const recordPersonaResponseMeasurement = onCall(
-    { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { secrets: [arcjetKey], enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request: CallableRequest<unknown>) => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to record persona measurements.',
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `persona-measurement:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         return handlePersonaMeasurement(request.data, request.auth.uid);

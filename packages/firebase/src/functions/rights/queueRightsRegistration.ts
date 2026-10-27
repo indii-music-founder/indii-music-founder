@@ -1,7 +1,9 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { logger } from 'firebase-functions';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 // Ensure Firebase admin is initialized
 if (!admin.apps.length) {
@@ -164,11 +166,24 @@ export async function processQueueRightsRegistration(
 }
 
 export const queueRightsRegistration = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 30 },
+    { secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 30 },
     async (request) => {
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'Sign in to queue a rights registration.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `queue-rights-registration:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
         const provider = parseRightsProvider(request.data?.provider);
         const metadata = sanitizeRightsMetadata(request.data?.metadata);
