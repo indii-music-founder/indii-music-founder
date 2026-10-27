@@ -4694,6 +4694,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** Accepted jobs can disappear on process termination; arbitrary fetches and unbounded downloads expose security/resource risks. Deployed exposure remains Conditional.
 - **Fix:** Durably enqueue before 202; enforce identity and owner agreement, approved storage/HTTPS sources with redirect/SSRF protection, streaming byte/time/type/checksum limits, transactional leases, idempotency, cancellation and retries.
 - **Acceptance:** Boundary tests reject wrong-owner/private-IP/redirect/oversized inputs; duplicate enqueue executes once; crash recovery preserves jobs; credentialed staging proves delivery, otherwise retain Conditional.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #481 (commit d813350fa). Cloud Tasks durable enqueue, fenced Firestore lease, and bounded project storage staging are active in source; live Cloud Tasks queue provisioning, staging E2E render delivery, and credentialed crash recovery remain open operational acceptance gates.
 
 ### ISSUE-1513: Statement imports retain unstable identities, fragile parsing and fee reconciliation defects
 
@@ -4708,6 +4709,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Make shared adapters canonical; parse CSV/TSV correctly; hash original bytes with SHA-256; use stable normalized identities with legitimate duplicate occurrence handling; preserve lineage and fixed-point amounts through persistence; quarantine malformed rows.
 - **Acceptance:** Provider-shaped fixtures prove same-file zero-new-event reimport, documented reorder semantics, genuine duplicate preservation, quoted multiline parsing, exact per-currency gross/net/fee reconciliation and matching renderer/shared output.
 - **2026-10-25 follow-up:** Shared adapters now parse quoted CSV/TSV, use stable row identities and report hashes, reconcile gross/fee/net, and are re-exported by renderer. The mapper uses a canonical row multiset for reorder-stable ledger receipts; ingestion persists fee/net amounts and source hashes. Focused local tests cover structural behavior. Real provider files, deployed same-file reimport, and genuine-user acceptance remain unverified, so this issue remains OPEN pending those gates.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #482 (commit b592b3b49). Quoted CSV/TSV parsing, stable row multiset hashing, and fee reconciliation are merged and re-exported in renderer; real provider files, deployed reimport verification, and production acceptance remain open.
 
 ### ISSUE-1514: Dependency security advisories remain advisory without documented reachability triage
 
@@ -4722,10 +4724,12 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Record affected packages, production/dev reachability and mitigations; apply bounded compatible upgrades with lockfile integrity checks; explicitly document advisory policy.
 - **Acceptance:** Exact-SHA audit and regression results demonstrate each high advisory fixed or explicitly reviewed with owner, rationale and follow-up.
 - **2026-10-25 follow-up:** Fresh `npm audit --omit=dev` on base reported 2 critical / 32 high / 10 moderate / 1 low. Compatible upgrades in `codex/issue-1514-dependency-audit-current` reduce the repeat audit to 0 critical / 18 high / 7 moderate / 0 low. `docs/security/issue-1514-dependency-audit-2026-10-25.md` records the remaining package paths, module owners, and follow-up. The issue remains OPEN pending supported Node 24 clean install, exact-SHA CI, and vulnerable-path review.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #483 (commit ff1c67cf3). Compatible package upgrades reduced critical advisories from 2 to 0 and high from 32 to 18; documented triage retained in docs/security/issue-1514-dependency-audit-2026-10-25.md. Full Node 24 clean audit and remaining residual triage remain open.
 
 ### ISSUE-1515: CI root runtime differs from the declared Node requirement
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED — Node 24 root runtime enforced across workflows (2026-10-26).
+- **Closure evidence:** commit 92d7a1d2e0a33449e8b2e5d693c2e73a4bda7523 via PR #485; CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40210351249 passed Node runtime checks. Added scripts/check-ci-node-runtime.mjs enforcing root Node 24 engine across all GitHub Actions workflows while preserving separate Node 22 runtime for Firebase Functions.
 - **Recovered from:** Original audit ISSUE-1456; current ISSUE-1456 concerns unrelated UI work.
 - **October 12 recheck:** Root Node >=24 conflicts with deployed CI Node 22.23.3; Functions separately targets22. build.yml uses24. HyperFrames CLI/player pins are0.8.10/0.8.11; verify intentional compatibility rather than assuming patch-version incompatibility.
 - **Severity:** MEDIUM
@@ -4864,7 +4868,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1524: Audit ledger findings were deleted and issue identifiers reused
 
-- **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **Status:** ✅ CLOSED — pre-commit and CI ledger integrity gates enforced (2026-10-26).
+- **Closure evidence:** commit 892928f8ad2801b056e15e794655a0b30eaca740 via PR #471; CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40332392806 passed exact-head issue-ledger run. Added scripts/issue-ledger-integrity.mjs, scripts/validate-issue-ledger.mjs, and .github/workflows/issue-ledger-integrity.yml to enforce immutable findings, prevent ID reuse, and require closure evidence for resolved statuses.
 - **2026-10-24 progress:** The `codex/issue-1524-ledger-integrity` branch adds a pre-commit and GitHub Actions comparison against the prior ledger revision. It preserves historical duplicate entries while rejecting newly removed/renamed findings, reused IDs, expanded duplicates, and resolved statuses without newly added commit and CI evidence. Focused parser tests cover each boundary; branch CI and enforcement after merge remain pending.
 - **Severity:** HIGH
 - **Module:** Issue ledger / Agent coordination
@@ -4885,6 +4890,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Impact:** A visitor receives a report but cannot durably link saved answers to an account; onboarding repeats or linkage appears complete without persistence.
 - **Fix:** Separate server receipt metadata or permit immutable preserved receipt fields under strict client protections; enforce secure owner linking and truthful retryable failure feedback.
 - **Acceptance:** Emulator test covers assessment→server email receipt→authorized claim→profile hydration. Receipt forgery/mutation fails. Genuine signup/reload preserves answers without duplicate entry; live acceptance remains conditional.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #487 (commit 1c721e720). Signup assessment claim failure separation, retry feedback, and immutable server receipt metadata are merged in source; live emulator/production signup and email acceptance remain open.
 
 ### ISSUE-1526: Artist Passport unclaimed contact data, account claim and email consent lack trusted ownership enforcement
 
@@ -4909,6 +4915,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Fix:** Remove completed migrations from ordinary deployment; inspect exact generation/trigger metadata and perform bounded explicitly authorized migrations with recovery where necessary. Preserve deployment safeguards.
 - **Acceptance:** Ordinary redeploy regression invokes no active-function deletions; migration fixtures verify prerequisites and recovery. Exact-SHA CI/deployment metadata confirms expected endpoints. Destructive live migration requires separate authorization; customer/event continuity remains separate acceptance.
 - **2026-10-24 follow-up:** Removed five unconditional forced deletions and the automatic Gen1 deletion path from ordinary deployment. An existing endpoint not confirmed as Gen2 now fails the deployment with an explicit migration error before the Firebase deploy command. A deploy-guard check rejects future direct function-delete commands in this workflow and runs in lint. Exact-SHA CI, live function inventory, and endpoint continuity remain pending; no migration was performed.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #458 (commit 207e9a60b). Unconditional forced function deletions and Gen1 automatic purge removed from ordinary deploy workflow with deploy-guard lint check; exact-SHA deployment continuity and live endpoint inventory remain open.
 
 ---
 
@@ -5212,6 +5219,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Unit and security tests prove that passing a `ledgerAccountId` owned by `artist-B` when authenticated as `artist-A` rejects with `permission-denied` and leaves `artist-B`'s balance untouched, and identical `eventId` values across two different `artistId`s do not collide.
 
 - **Progress (2026-10-24):** Reservation now checks ledger `artistId` in the same transaction before spending and rejects a mismatched existing reservation. Firestore attribution receipts are scoped under the authenticated artist's user path, so identical event IDs in different tenants do not collide. Focused tests cover unchanged cross-tenant balance and independent event receipts. Ledgers without an authoritative `artistId` now fail closed; inventory/backfill and genuine deployed acceptance remain outstanding.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #461 (commit b2a060d5f). Artist ownership verification in recoupment ledger reservation and tenant-scoped attribution deduplication receipts merged into main; production cross-tenant live testing and inventory backfill remain open.
 
 ---
 
@@ -5219,6 +5227,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Status:** 🔴 OPEN (2026-10-16)
 - **2026-10-24 progress:** The focused `codex/issue-1538-typesafe-contract` branch converts the renderer's 44 Score definitions and Choice payloads to ordered `criteria`, adds explicit rubrics where only a range or prose existed, and maps zero-based Jev scores to 1–5 only for consumers that expose that scale. Campaign creative fit now uses ordered criteria and converts the 0–4 response to its documented 1–5 score. The 0–3 consumers remain zero-based. A live `jev-latest` Score request returned HTTP 200 (`req_01a16e8e54037266be38f0cc3db5fb90`); structural and focused unit tests passed. This remains OPEN until branch CI and mainline delivery, with production acceptance still unverified.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #464 (commit e8b9f7b0f). Ordered criteria schema arrays and 0-indexed score normalization for 44 TypeSafe System One judgments merged into main; live production endpoint verification across all client flows remains open.
 - **Severity:** 🔴 CRITICAL
 - **Module:** TypeSafe System One Judgments (`packages/renderer/src/config/typesafeJudgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-judgments.ts`)
 - **Classification:** Upstream API contract violation and response parsing off-by-one defect.
@@ -5264,6 +5273,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Unit tests verify 3-platform Jev-refined allocations always sum to ` exactly directive.totalBudgetCents`, never drop below `adapter.minBudgetCents`, and do not shift budget when `creative_readiness_noul < 0.65`.
 
 - **Progress (2026-10-24):** Source review found exact-cent allocation already uses floor plus remainder, so the 101% rounding claim above is historical. The remaining fix raises readiness confirmation to 0.65 and validates absolute per-platform cent minimums before reservation; a refined split below the minimum falls back to the original valid split. Focused tests cover 0.64 readiness, exact-cent totals, and a below-minimum refined split. Live JEV allocation remains blocked by ISSUE-1538's request-schema defects, and branch CI/deployed acceptance are pending.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #462 (commit 5e91f19c6). 0.65 readiness threshold, floor-bounded cent allocations, and safe fallback on refined splits merged into main; live multi-platform ad spend delivery remains open.
 
 ---
 
@@ -5288,6 +5298,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   2. In `GoogleAdsAdapter`, either use `VIDEO` / `DEMAND_GEN` channel types compatible with AdGroup provisioning or implement `AssetGroup` provisioning when `advertisingChannelType === 'PERFORMANCE_MAX'`.
   3. In `TikTokAdAdapter.updateBudget`, update the AdGroup's daily budget (`/open_api/v1.3/adgroup/update/`) or align campaign `budget_mode` with the budget tier being updated.
 - **Acceptance:** Adapter unit tests verify `GoogleAdsAdapter.updateBudget` targets the actual `budgetResourceName` from Step 1 (when `campaignId !== budgetId`), `WAITLIST_INTAKE`/`MERCH_CONVERSION`/`EVENT_TICKETING` provision valid Google Ads entity hierarchies, and `TikTokAdAdapter.updateBudget` does not overwrite a `BUDGET_MODE_TOTAL` campaign cap with `dailyBudgetCents`.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #465 (commit e13cfeb63). Google Ads campaign budget resource ownership resolution and TikTok ad-group daily budget targeting merged into main; PMax AssetGroup remote provisioning and live ad platform execution remain open.
 
 ---
 
@@ -5311,6 +5322,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Unit test proves that when all configured platform adapters return `{ success: false }` on first attempt, a subsequent retry of the same `eventId` is NOT short-circuited as `DUPLICATE_EVENT` and succeeds once the adapter recovers.
 
 - **Progress (2026-10-24):** The attribution bus now persists a terminal deduplication receipt only after every attempted eligible platform succeeds. Failed and partially failed fan-outs remain retryable with the same platform event ID. Adapter failures carry bounded status/code diagnostics into the receipt; focused tests cover outage recovery and partial fan-out. Publication, exact-SHA CI, and production delivery evidence remain pending.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #459 (commit 1af6c0710). Terminal deduplication receipt gating on all-platform success and retryable transient error handling merged into main; live CAPI platform retry telemetry remains open.
 
 ---
 
@@ -5340,6 +5352,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   3. Sending a `video/mp4` attachment via `handleSendToBoardroom` delivers the video reference to `agentService.sendMessage` rather than stripping it.
 
 - **Progress (2026-10-24):** Current source no longer dispatches Boardroom captures through the relay; it uploads them, records an Encounter, and navigates to chat, so the old Boardroom relay-cleanup claim is historical. The editor path now removes uploads only when task creation is rejected; once a task is accepted, timeout cleanup would destroy media a still-running desktop may need. Audio exposes the Video Editor action, receipt/document Encounter types are retained, and owned Firebase Storage audio/video URLs are added to the agent request as unexamined references instead of silently disappearing. Focused structural tests pass; genuine mobile-to-desktop media acceptance and branch CI remain pending.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #463 (commit 951f8e4c2). Mobile Remote audio bridge to Video Editor, Encounter type classification, and Boardroom audio/video URL references merged into main; live mobile-to-desktop device relay acceptance remains open.
 
 ---
 
@@ -5422,6 +5435,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-24):** A focused branch moves both wallet and legacy-credit reads ahead of transactional writes, then reserves image budget and caps inline payload size before legacy generation. The callable settles an attempted provider call on both success and failure. Focused structural tests cover funded-wallet read order, budget denial, provider failure settlement, and oversized input; production acceptance and exact-SHA CI remain pending.
 - **2026-10-26 verification progress (partial):** On branch `codex/issue-1544-verification`, full characterization tests verify both `deductCredits` read-after-write resolution and `generateImageV3Fn` budget reservation & payload limit enforcement. `deductCredits.test.ts` (9/9 passed) proves all `transaction.get` reads execute before any write, supports admin cross-user deductions, and safely handles absent legacy credit records. `image_generation.test.ts` (23/23 passed) proves `generateImageV3Fn` caps request byte size, reserves budget via `checkOperationBudget`, rejects on budget exhaustion, calculates multi-image fast generation costs accurately, and settles reservations on both success and provider failure. Static checks pass with 0 errors (`npx tsc -b packages/firebase` and `npm run typecheck:firebase-tests`). ISSUE-1544 remains OPEN.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #460 (commit 2580dea77). Firestore transaction read-before-write ordering in deductCredits and budget reservation / payload capping in generateImageV3Fn merged into main; live wallet deduction and 4K generation acceptance remain open.
 
 ---
 
@@ -5429,6 +5443,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-25):** Current code already releases capacity transactionally on a confirmed worker `ended` event, fences stale `control_ack` generations, and runs a scheduled Cloud Run execution reconciliation before releasing uncertain capacity. The remaining user-facing deadlock is `outcome_unknown`: a focused branch adds an exact-filing, owner-bound artist attestation path to reopen only when no hosted reservation or reported receipt remains, with an audit record and explicit notice that external status is unverified. An unconfirmed launch with no recoverable operation/execution proof still requires operator reconciliation; its capacity cannot safely be released by elapsed time alone. Live portal acceptance remains open.
 - **2026-10-26 verification progress (partial):** On branch `codex/issue-1545-verification`, full verification confirms all three core defects in hosted rights registration have characterization coverage. Unit tests in `packages/firebase/src/functions/rights/rightsFilingReconciliation.test.ts` (4/4 passed) verify `canReopenUncertainFiling` allows reopening only exact owned preparations after capacity is released, blocks reopening while active sessions exist, and rejects filings with reported receipts or terminal official outcomes. Shared rights schemas and lifecycle tests pass (51/51 tests across `packages/shared`). Static checks pass with 0 errors (`npx tsc -b packages/firebase` and `npm run typecheck:firebase-tests`). ISSUE-1545 remains OPEN.
+- **2026-10-26 mainline merge progress:** Merged into mainline main via PR #480 (commit 01ba77cde). Artist-attested outcome_unknown recovery path and fenced generation broker state merged into main; live member portal filing and Cloud Run session reconciliation remain open.
 
 - **Status:** 🔴 OPEN (2026-10-16)
 - **Severity:** 🟠 HIGH
