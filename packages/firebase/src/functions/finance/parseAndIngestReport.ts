@@ -1,5 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { processEarningsReport } from './ingestEarningsReport';
 import { DistroKidStatementAdapter, TuneCoreStatementAdapter } from './adapters';
 import { mapNormalizedStatementToEarningsReport } from './normalizedStatementMapper';
@@ -21,6 +23,7 @@ const MAX_REPORT_BYTES = 6 * 1024 * 1024;
  * ```
  */
 export const parseAndIngestRoyaltyReport = onCall({
+  secrets: [arcjetKey],
   enforceAppCheck: false,
   timeoutSeconds: 300,
   memory: '512MiB',
@@ -30,6 +33,25 @@ export const parseAndIngestRoyaltyReport = onCall({
 
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'Authentication required.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `parse-and-ingest-royalty-report:${request.auth.uid}`,
+    });
+    if (!protection.allowed) {
+      const code = protection.status === 429
+        ? 'resource-exhausted'
+        : protection.status === 403
+          ? 'permission-denied'
+          : 'unavailable';
+      throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+    }
   }
 
   const { fileName, contentBase64 } = request.data ?? {};

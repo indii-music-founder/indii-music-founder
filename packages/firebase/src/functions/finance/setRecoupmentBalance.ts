@@ -4,6 +4,8 @@ import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 interface SetRecoupmentInput {
     trackId: string;
@@ -121,10 +123,30 @@ export async function processSetRecoupmentBalance(
 }
 
 export const setRecoupmentBalance = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB' },
+    { secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB' },
     async request => {
         validateAppCheckV2(request);
         if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to configure recoupment.');
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `set-recoupment-balance:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         return processSetRecoupmentBalance(request.auth.uid, request.data as SetRecoupmentInput);
     }
 );

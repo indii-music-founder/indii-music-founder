@@ -4,6 +4,8 @@ import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const SHARE_UNITS_PER_PERCENT = 10_000;
 const TOTAL_SHARE_UNITS = 100 * SHARE_UNITS_PER_PERCENT;
@@ -346,12 +348,32 @@ export async function processRoyaltyAllocations(
 }
 
 export const calculateRoyaltyAllocations = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 540, memory: '512MiB' },
+    { secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 540, memory: '512MiB' },
     async request => {
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'Sign in to calculate royalty allocations.');
         }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `calculate-royalty-allocations:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         return processRoyaltyAllocations(request.auth.uid, request.data?.batchId);
     }
 );
