@@ -915,6 +915,49 @@ describe('FirestoreFinanceRecoupmentLedger', () => {
         expect(accounts.get('ledger_b')?.availableBalanceCents).toBe(100_000);
         expect(reservations.size).toBe(0);
     });
+
+    it('rejects a recoupment ledger without an authoritative artistId before changing its balance', async () => {
+        const { db, accounts, reservations } = createMockRecoupmentFirestore({ ledger_unowned: 100_000 });
+        delete accounts.get('ledger_unowned')!.artistId;
+        const ledger = new FirestoreFinanceRecoupmentLedger({ db });
+
+        await expect(ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_unowned',
+            directiveId: 'dir_artist_a',
+            artistId: 'artist_A',
+            releaseId: 'rel_artist_a',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 50_000,
+            currency: 'USD',
+        })).rejects.toMatchObject({ code: 'permission-denied' });
+        expect(accounts.get('ledger_unowned')?.availableBalanceCents).toBe(100_000);
+        expect(reservations.size).toBe(0);
+    });
+
+    it('rejects an existing reservation belonging to another artist or ledger', async () => {
+        const { db, accounts, reservations } = createMockRecoupmentFirestore({ ledger_a: 100_000 });
+        accounts.get('ledger_a')!.artistId = 'artist_A';
+        const ledger = new FirestoreFinanceRecoupmentLedger({ db });
+        const existingResId = 'res_dir_existing_01_ledger_a';
+        reservations.set(existingResId, {
+            reservationId: existingResId,
+            directiveId: 'dir_existing_01',
+            artistId: 'artist_other',
+            ledgerAccountId: 'ledger_a',
+            status: 'RESERVED',
+        });
+
+        await expect(ledger.reserveCampaignBudget({
+            ledgerAccountId: 'ledger_a',
+            directiveId: 'dir_existing_01',
+            artistId: 'artist_A',
+            releaseId: 'rel_artist_a',
+            isrc: 'US-S1Z-26-00412',
+            amountCents: 50_000,
+            currency: 'USD',
+        })).rejects.toMatchObject({ code: 'permission-denied' });
+        expect(accounts.get('ledger_a')?.availableBalanceCents).toBe(100_000);
+    });
 });
 
 describe('Jev System One Campaign Judgments & Orchestrator Integration', () => {
