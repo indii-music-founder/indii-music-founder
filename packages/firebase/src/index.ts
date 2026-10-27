@@ -461,6 +461,25 @@ export const triggerVideoJob = onCall(
         const data = request.data as unknown;
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-video-job');
 
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: policyClassForServerEntitlement({
+                    tier: entitlement.tier,
+                    isAdmin: request.auth?.token.admin === true,
+                }),
+                operationId: `trigger-video-job:${userId}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
         const inputData: Record<string, unknown> = { ...safeData, userId };
@@ -665,6 +684,25 @@ export const triggerLongFormVideoJob = onCall(
     async (request): Promise<{ success: boolean; jobId: string; message: string }> => {
         const data = request.data as unknown;
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-long-form-video-job');
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: policyClassForServerEntitlement({
+                    tier: entitlement.tier,
+                    isAdmin: request.auth?.token.admin === true,
+                }),
+                operationId: `trigger-long-form-video-job:${userId}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};

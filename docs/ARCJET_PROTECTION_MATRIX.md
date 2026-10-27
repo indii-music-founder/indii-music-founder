@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **32**.
+- Declarations missing at least one of those local references: **167**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -28,17 +28,17 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `email/tokenManager.ts:164` | `emailExchangeToken` | `onCall` | Not established | Not established |
 | `email/tokenManager.ts:274` | `emailRefreshToken` | `onCall` | Not established | Not established |
 | `email/tokenManager.ts:372` | `emailRevokeToken` | `onCall` | Not established | Not established |
-| `factory.ts:143` | `(factory/helper)` | `onCall` | Not established | Not established |
-| `factory.ts:170` | `(factory/helper)` | `onRequest` | Not established | Not established |
+| `factory.ts:145` | `(factory/helper)` | `onCall` | Present | Present |
+| `factory.ts:179` | `(factory/helper)` | `onRequest` | Present | Present |
 | `foundingArtist/admin.ts:261` | `inviteNextFoundingArtist` | `onCall` | Not established | Not established |
 | `foundingArtist/admin.ts:266` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Not established | Not established |
 | `foundingArtist/waitlist.ts:177` | `joinFoundingArtistWaitlist` | `onCall` | Not established | Not established |
-| `functions/agent/getCapabilitySnapshot.ts:327` | `getCapabilitySnapshot` | `onCall` | Present | Not established |
-| `functions/agent/manageSemanticMemory.ts:117` | `manageSemanticMemory` | `onCall` | Not established | Not established |
-| `functions/agent/manageSemanticMemory.ts:236` | `batchEmbedText` | `onCall` | Not established | Not established |
-| `functions/agent/reportBugFn.ts:44` | `reportBugFn` | `onCall` | Not established | Not established |
-| `functions/agent/workflowExecutionCallables.ts:59` | `createWorkflowExecution` | `onCall` | Not established | Not established |
-| `functions/agent/workflowExecutionCallables.ts:105` | `manageWorkflowExecution` | `onCall` | Not established | Not established |
+| `functions/agent/getCapabilitySnapshot.ts:336` | `getCapabilitySnapshot` | `onCall` | Present | Present |
+| `functions/agent/manageSemanticMemory.ts:119` | `manageSemanticMemory` | `onCall` | Present | Present |
+| `functions/agent/manageSemanticMemory.ts:258` | `batchEmbedText` | `onCall` | Present | Present |
+| `functions/agent/reportBugFn.ts:46` | `reportBugFn` | `onCall` | Present | Present |
+| `functions/agent/workflowExecutionCallables.ts:62` | `createWorkflowExecution` | `onCall` | Present | Present |
+| `functions/agent/workflowExecutionCallables.ts:129` | `manageWorkflowExecution` | `onCall` | Present | Present |
 | `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
 | `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
 | `functions/auth/entitlements.ts:375` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Not established |
@@ -50,8 +50,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/billing/enforceOperationCost.ts:958` | `voidVideoCostReservation` | `onCall` | Present | Present |
 | `functions/billing/enforceOperationCost.ts:981` | `getOperationCostStatus` | `onCall` | Present | Present |
 | `functions/billing/enforceOperationCost.ts:1031` | `getOperationCostHistory` | `onCall` | Present | Present |
-| `functions/catalog/semanticProjection.ts:138` | `setCatalogVisibility` | `onCall` | Not established | Not established |
-| `functions/catalog/semanticProjection.ts:196` | `catalogSemanticApi` | `onRequest` | Not established | Not established |
+| `functions/catalog/semanticProjection.ts:141` | `setCatalogVisibility` | `onCall` | Present | Present |
+| `functions/catalog/semanticProjection.ts:220` | `catalogSemanticApi` | `onRequest` | Present | Present |
 | `functions/creative/gateway.ts:1280` | `generateImageV3` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1590` | `generateVideoV3` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1831` | `cancelVideoJob` | `onCall` | Present | Present |
@@ -118,25 +118,25 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/relayVideoRenderJob.ts:51` | `completeVideoRenderJob` | `onCall` | Not established | Not established |
 | `functions/video/retrySessionProxyJob.ts:142` | `retrySessionProxyJob` | `onCall` | Not established | Not established |
 | `functions/webhooks/dispatcher.ts:432` | `createWebhook` | `onRequest` | Not established | Not established |
-| `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Not established |
-| `index.ts:655` | `triggerLongFormVideoJob` | `onCall` | Present | Not established |
-| `index.ts:809` | `renderVideo` | `onCall` | Present | Present |
-| `index.ts:1095` | `inngestApi` | `onRequest` | Not established | Not established |
-| `index.ts:1164` | `generateContentStream` | `onRequest` | Present | Present |
-| `index.ts:1598` | `ragProxy` | `onRequest` | Not established | Not established |
-| `index.ts:1662` | `listGKEClusters` | `onCall` | Not established | Not established |
-| `index.ts:1716` | `getGKEClusterStatus` | `onCall` | Not established | Not established |
-| `index.ts:1744` | `scaleGKENodePool` | `onCall` | Not established | Not established |
-| `index.ts:1772` | `listGCEInstances` | `onCall` | Not established | Not established |
-| `index.ts:1799` | `restartGCEInstance` | `onCall` | Not established | Not established |
-| `index.ts:1833` | `executeBigQueryQuery` | `onCall` | Not established | Not established |
-| `index.ts:1869` | `getBigQueryTableSchema` | `onCall` | Not established | Not established |
-| `index.ts:1897` | `listBigQueryDatasets` | `onCall` | Not established | Not established |
-| `index.ts:1971` | `exportUserData` | `onCall` | Not established | Not established |
-| `index.ts:2043` | `requestAccountDeletion` | `onCall` | Not established | Not established |
-| `index.ts:2119` | `healthCheck` | `onRequest` | Not established | Not established |
-| `index.ts:2155` | `healthCheckWest1` | `onRequest` | Not established | Not established |
-| `index.ts:2175` | `enrichFanData` | `onCall` | Not established | Not established |
+| `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Present |
+| `index.ts:674` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
+| `index.ts:847` | `renderVideo` | `onCall` | Present | Present |
+| `index.ts:1133` | `inngestApi` | `onRequest` | Not established | Not established |
+| `index.ts:1202` | `generateContentStream` | `onRequest` | Present | Present |
+| `index.ts:1636` | `ragProxy` | `onRequest` | Not established | Not established |
+| `index.ts:1700` | `listGKEClusters` | `onCall` | Not established | Not established |
+| `index.ts:1754` | `getGKEClusterStatus` | `onCall` | Not established | Not established |
+| `index.ts:1782` | `scaleGKENodePool` | `onCall` | Not established | Not established |
+| `index.ts:1810` | `listGCEInstances` | `onCall` | Not established | Not established |
+| `index.ts:1837` | `restartGCEInstance` | `onCall` | Not established | Not established |
+| `index.ts:1871` | `executeBigQueryQuery` | `onCall` | Not established | Not established |
+| `index.ts:1907` | `getBigQueryTableSchema` | `onCall` | Not established | Not established |
+| `index.ts:1935` | `listBigQueryDatasets` | `onCall` | Not established | Not established |
+| `index.ts:2009` | `exportUserData` | `onCall` | Not established | Not established |
+| `index.ts:2081` | `requestAccountDeletion` | `onCall` | Not established | Not established |
+| `index.ts:2157` | `healthCheck` | `onRequest` | Not established | Not established |
+| `index.ts:2193` | `healthCheckWest1` | `onRequest` | Not established | Not established |
+| `index.ts:2213` | `enrichFanData` | `onCall` | Not established | Not established |
 | `legal/digitalSignature.ts:7` | `sendForDigitalSignature` | `onCall` | Not established | Not established |
 | `legal/exportSplitSheet.ts:202` | `exportSplitSheet` | `onCall` | Not established | Not established |
 | `legal/mechanicalLicense.ts:29` | `verifyMechanicalLicense` | `onCall` | Not established | Not established |
@@ -176,7 +176,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/smartLink.ts:103` | `smartLinkRedirect` | `onRequest` | Not established | Not established |
 | `marketplace/createMarketplaceCheckout.ts:38` | `createMarketplaceCheckout` | `onCall` | Not established | Not established |
 | `marketplace/getStemDownloadUrl.ts:24` | `getStemDownloadUrl` | `onCall` | Not established | Not established |
-| `mcp/index.ts:159` | `mcpEndpoint` | `onRequest` | Not established | Not established |
+| `mcp/index.ts:161` | `mcpEndpoint` | `onRequest` | Present | Present |
 | `pod/checkout.ts:107` | `pod_createOrderCheckout` | `onCall` | Not established | Not established |
 | `pod/printful.ts:13` | `pod_printfulGetProducts` | `onCall` | Not established | Not established |
 | `pod/printful.ts:18` | `pod_printfulGetProduct` | `onCall` | Not established | Not established |

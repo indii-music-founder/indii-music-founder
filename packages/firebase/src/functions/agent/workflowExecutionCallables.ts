@@ -3,6 +3,9 @@ import * as admin from 'firebase-admin';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { CanonicalArtistEntityIdSchema } from '@indii/shared';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const AgentId = z.enum(['brand', 'creative', 'devops', 'finance', 'marketing', 'publicist', 'social']);
 const Step = z.object({
@@ -57,9 +60,30 @@ export function validateWorkflowExecutionInput(value: unknown): CreatePayload {
 }
 
 export const createWorkflowExecution = onCall(
-  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+  { secrets: [arcjetKey], region: 'us-central1', enforceAppCheck: false, memory: '512MiB' },
   async request => {
+    validateAppCheckV2(request);
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to start a workflow.');
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `create-workflow-execution:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        const code = protection.status === 429
+          ? 'resource-exhausted'
+          : protection.status === 403
+            ? 'permission-denied'
+            : 'unavailable';
+        throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+      }
+    }
+
     const input = validateWorkflowExecutionInput(request.data);
     const userId = request.auth.uid;
     const db = admin.firestore();
@@ -103,9 +127,30 @@ const ManagePayload = z.object({
 }).strict();
 
 export const manageWorkflowExecution = onCall(
-  { region: 'us-central1', enforceAppCheck: true, memory: '512MiB' },
+  { secrets: [arcjetKey], region: 'us-central1', enforceAppCheck: false, memory: '512MiB' },
   async request => {
+    validateAppCheckV2(request);
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to manage a workflow.');
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `manage-workflow-execution:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        const code = protection.status === 429
+          ? 'resource-exhausted'
+          : protection.status === 403
+            ? 'permission-denied'
+            : 'unavailable';
+        throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+      }
+    }
+
     const parsed = ManagePayload.safeParse(request.data);
     if (!parsed.success) throw new HttpsError('invalid-argument', 'Workflow action is invalid.');
     const { executionId, action } = parsed.data;

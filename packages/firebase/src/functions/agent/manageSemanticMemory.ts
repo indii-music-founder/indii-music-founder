@@ -4,6 +4,8 @@ import { getVertexAIClient } from '../../lib/vertexClient';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const DEFAULT_SEMANTIC_SEARCH_LIMIT = 5;
 const MAX_SEMANTIC_SEARCH_LIMIT = 100; // Increased from 20 to support full-archive recall (ISSUE-757)
@@ -115,6 +117,7 @@ function normalizeSemanticAction(value: unknown): 'add' | 'search' {
  * Provides a backend proxy to Vertex AI embeddings and the current Firestore vector-search API surface.
  */
 export const manageSemanticMemory = onCall({ 
+    secrets: [arcjetKey],
     timeoutSeconds: 60, 
     memory: '512MiB', 
     enforceAppCheck: false 
@@ -124,6 +127,25 @@ export const manageSemanticMemory = onCall({
     // Require authentication
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `manage-semantic-memory:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            const code = protection.status === 429
+                ? 'resource-exhausted'
+                : protection.status === 403
+                    ? 'permission-denied'
+                    : 'unavailable';
+            throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+        }
     }
 
     const userId = request.auth.uid;
@@ -234,6 +256,7 @@ export const manageSemanticMemory = onCall({
  * while vectors are computed where they can be.
  */
 export const batchEmbedText = onCall({
+    secrets: [arcjetKey],
     timeoutSeconds: 60,
     memory: '512MiB',
     enforceAppCheck: false,
@@ -241,6 +264,25 @@ export const batchEmbedText = onCall({
     validateAppCheckV2(request);
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `batch-embed-text:${request.auth.uid}`,
+        });
+        if (!protection.allowed) {
+            const code = protection.status === 429
+                ? 'resource-exhausted'
+                : protection.status === 403
+                    ? 'permission-denied'
+                    : 'unavailable';
+            throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+        }
     }
 
     const data = request.data as unknown;
