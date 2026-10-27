@@ -2,7 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { arcjetKey } from '../config/secrets';
 import { requireVerifiedEmailV2, validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export const FOUNDING_ARTIST_WAITLIST_COLLECTION = 'foundingArtistWaitlist';
 export const FOUNDING_ARTIST_EMAIL_INDEX_COLLECTION = 'foundingArtistEmailIndex';
@@ -161,6 +163,19 @@ export async function joinFoundingArtistWaitlistHandler(
 ): Promise<FoundingArtistEnrollmentResult> {
   validateAppCheckV2(request);
   const uid = requireVerifiedEmailV2(request);
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: uid,
+      policy: 'verified-free',
+      operationId: `founding-artist-waitlist:${uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
   const email = typeof request.auth?.token.email === 'string' ? request.auth.token.email : '';
   if (!email) {
     throw new HttpsError('failed-precondition', 'The verified account does not contain an email address.');
@@ -175,6 +190,6 @@ export async function joinFoundingArtistWaitlistHandler(
 }
 
 export const joinFoundingArtistWaitlist = onCall(
-  { cors: true, enforceAppCheck: false },
+  { cors: true, enforceAppCheck: false, secrets: [arcjetKey] },
   joinFoundingArtistWaitlistHandler,
 );

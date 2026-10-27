@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **30**.
+- Declarations missing at least one of those local references: **169**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -24,15 +24,15 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `analytics/platformTokenExchange.ts:392` | `analyticsRevokeToken` | `onCall` | Not established | Not established |
 | `assets/auditReleaseArtwork.ts:30` | `auditReleaseArtworkForDelivery` | `onCall` | Not established | Not established |
 | `distribution/ingestion.ts:223` | `processAudioIngestion` | `onCall` | Not established | Not established |
-| `email/sendEmail.ts:285` | `sendEmail` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:164` | `emailExchangeToken` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:274` | `emailRefreshToken` | `onCall` | Not established | Not established |
-| `email/tokenManager.ts:372` | `emailRevokeToken` | `onCall` | Not established | Not established |
+| `email/sendEmail.ts:288` | `sendEmail` | `onCall` | Present | Present |
+| `email/tokenManager.ts:167` | `emailExchangeToken` | `onCall` | Present | Present |
+| `email/tokenManager.ts:291` | `emailRefreshToken` | `onCall` | Present | Present |
+| `email/tokenManager.ts:403` | `emailRevokeToken` | `onCall` | Present | Present |
 | `factory.ts:143` | `(factory/helper)` | `onCall` | Not established | Not established |
 | `factory.ts:170` | `(factory/helper)` | `onRequest` | Not established | Not established |
-| `foundingArtist/admin.ts:261` | `inviteNextFoundingArtist` | `onCall` | Not established | Not established |
-| `foundingArtist/admin.ts:266` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Not established | Not established |
-| `foundingArtist/waitlist.ts:177` | `joinFoundingArtistWaitlist` | `onCall` | Not established | Not established |
+| `foundingArtist/admin.ts:293` | `inviteNextFoundingArtist` | `onCall` | Present | Present |
+| `foundingArtist/admin.ts:298` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Present | Present |
+| `foundingArtist/waitlist.ts:192` | `joinFoundingArtistWaitlist` | `onCall` | Present | Present |
 | `functions/agent/getCapabilitySnapshot.ts:327` | `getCapabilitySnapshot` | `onCall` | Present | Not established |
 | `functions/agent/manageSemanticMemory.ts:117` | `manageSemanticMemory` | `onCall` | Not established | Not established |
 | `functions/agent/manageSemanticMemory.ts:236` | `batchEmbedText` | `onCall` | Not established | Not established |
@@ -42,8 +42,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
 | `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
 | `functions/auth/entitlements.ts:375` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Not established |
-| `functions/auth/handoff.ts:120` | `createHandoffCode` | `onRequest` | Not established | Not established |
-| `functions/auth/handoff.ts:171` | `redeemHandoffCode` | `onRequest` | Not established | Not established |
+| `functions/auth/handoff.ts:122` | `createHandoffCode` | `onRequest` | Present | Present |
+| `functions/auth/handoff.ts:186` | `redeemHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
 | `functions/billing/enforceOperationCost.ts:923` | `enforceOperationCost` | `onCall` | Present | Present |
 | `functions/billing/enforceOperationCost.ts:940` | `voidAgentStreamCostReservation` | `onCall` | Present | Present |
@@ -104,7 +104,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/security/writeSharedOperationalData.ts:109` | `recordInstrumentUsage` | `onCall` | Not established | Not established |
 | `functions/social-connections.ts:23` | `getSocialConnectionStatus` | `onCall` | Not established | Not established |
 | `functions/social-stats-sync.ts:346` | `syncPlatformStats` | `onCall` | Not established | Not established |
-| `functions/storage/fetchStorageAssetForCanvas.ts:13` | `fetchStorageAssetForCanvas` | `onCall` | Not established | Not established |
+| `functions/storage/fetchStorageAssetForCanvas.ts:15` | `fetchStorageAssetForCanvas` | `onCall` | Present | Present |
 | `functions/trash/trashFunctions.ts:143` | `createPurgeIntent` | `onCall` | Not established | Not established |
 | `functions/trash/trashFunctions.ts:173` | `purgeTrashItems` | `onCall` | Not established | Not established |
 | `functions/video/alignSessionMaster.ts:217` | `alignSessionMaster` | `onCall` | Not established | Not established |
@@ -186,7 +186,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `pod/printful.ts:115` | `pod_printfulGetOrder` | `onCall` | Not established | Not established |
 | `pod/printful.ts:121` | `pod_printfulCancelOrder` | `onCall` | Not established | Not established |
 | `pod/printful.ts:132` | `pod_printfulGenerateMockup` | `onCall` | Not established | Not established |
-| `releases/generateDownloadUrl.ts:5` | `generateReleaseDownloadUrl` | `onCall` | Not established | Not established |
+| `releases/generateDownloadUrl.ts:7` | `generateReleaseDownloadUrl` | `onCall` | Present | Present |
 | `social/instagramMessaging.ts:52` | `sendInstagramMessageCallable` | `onCall` | Present | Not established |
 | `social/instagramMessaging.ts:127` | `replyInstagramCommentCallable` | `onCall` | Present | Not established |
 | `social/instagramMessaging.ts:181` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Not established |

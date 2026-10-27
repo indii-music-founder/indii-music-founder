@@ -1,7 +1,9 @@
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { parseStorageUri, assertUserOwnsStoragePath } from '../../lib/storageUri';
 
 const MAX_CANVAS_ASSET_BYTES = 20 * 1024 * 1024;
@@ -11,11 +13,24 @@ const FetchStorageAssetSchema = z.object({
 });
 
 export const fetchStorageAssetForCanvas = onCall(
-  { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false },
+  { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
   async (request): Promise<{ data: string; mimeType: string; size: number }> => {
     validateAppCheckV2(request);
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication is required to load canvas assets.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `fetch-storage-asset-canvas:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+      }
     }
 
     const parsed = FetchStorageAssetSchema.safeParse(request.data);
