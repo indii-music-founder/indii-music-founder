@@ -18,8 +18,10 @@ import { randomUUID } from 'node:crypto';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 export const VIDEO_RENDER_JOB_SCHEMA_VERSION = 'video-render-job.v1' as const;
 
@@ -70,10 +72,27 @@ export const sanitizeVideoRenderOutputName = (raw: unknown): string | undefined 
 };
 
 export const queueCloudVideoRender = onCall(
-    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
     async (request): Promise<{ renderId: string; projectId: string; status: 'queued'; progress: 0 }> => {
         validateAppCheckV2(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
         const userId = requireVerifiedCreativeUser(request.auth);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `queue-cloud-video-render:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
 
         const data = request.data as Record<string, unknown>;
         const projectId = typeof data.projectId === 'string' ? data.projectId.trim() : '';

@@ -5,11 +5,14 @@
  * cloud worker remains the first executor; whichever claims first wins.
  */
 
+import { randomUUID } from 'node:crypto';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { VIDEO_RENDER_JOB_TRANSITIONS } from './queueCloudVideoRender';
 
 const JOB_IDENTIFIER = /^[A-Za-z0-9_-]{1,128}$/;
@@ -18,10 +21,26 @@ const jobRefFor = (userId: string, jobId: string) =>
     getFirestore().doc(`users/${userId}/videoRenderJobs/${jobId}`);
 
 export const claimVideoRenderJob = onCall(
-    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
     async (request): Promise<{ claimed: true }> => {
         validateAppCheckV2(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
         const userId = requireVerifiedCreativeUser(request.auth);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `claim-video-render-job:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const data = request.data as Record<string, unknown>;
         const jobId = typeof data.jobId === 'string' ? data.jobId.trim() : '';
         if (!jobId || !JOB_IDENTIFIER.test(jobId)) {
@@ -49,10 +68,26 @@ export const claimVideoRenderJob = onCall(
 );
 
 export const completeVideoRenderJob = onCall(
-    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
     async (request): Promise<{ completed: true }> => {
         validateAppCheckV2(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
         const userId = requireVerifiedCreativeUser(request.auth);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `complete-video-render-job:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const data = request.data as Record<string, unknown>;
         const jobId = typeof data.jobId === 'string' ? data.jobId.trim() : '';
         if (!jobId || !JOB_IDENTIFIER.test(jobId)) {
