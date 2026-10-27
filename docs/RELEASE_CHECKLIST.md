@@ -42,6 +42,21 @@ checks immediately afterwards:
 - [ ] Each manifest's `version:` field equals the newest signed-and-verified release
 - [ ] `gh api repos/indii-music-founder/indii-music-founder/releases/latest --jq '.assets | length'` is greater than 0
 
+## Active Founder Launch Station Tasks (October 2026)
+
+All 37 engineering issues are closed and verified on `main`. The four remaining real-world operational gates are detailed with complete copy-paste scripts, OAuth settings, and video storyboards in [`docs/launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md`](launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md):
+
+1. **GCP OAuth Consent Screen (`ISSUE-1400`):**
+   - Add founder email(s) to [GCP Console OAuth Consent Screen Test Users](https://console.cloud.google.com/apis/credentials/consent?project=indii-music-founder) (2-min unblock).
+   - Alternatively, submit production app verification using the dossier's scope justification packet.
+2. **Eight Founder-Narrated Real-Product Clips (`ISSUE-1427`):**
+   - Record 8 concise 15–30s screen/voice clips following the word-for-word scripts and WebVTT caption templates in `docs/launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md` § Section 3.
+   - Save output files into `packages/landing/public/clips/`.
+3. **Social Channel Ownership & 2FA Vault (`ISSUE-1428`):**
+   - Verify handles and register 1Password/Bitwarden vault credentials per the Master Channel Registry table in `docs/launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md` § Section 4.
+4. **indii Internal Marketing Project Seed (`ISSUE-1429`):**
+   - Run `npx tsx scripts/seed-internal-marketing-launch.ts` to seed the "indii.music Public Launch" campaign into Firestore.
+
 ## Human Action Items — Desktop Signing & Notarization
 
 These are real-world account/certificate tasks that an agent cannot complete
