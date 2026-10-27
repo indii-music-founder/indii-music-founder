@@ -59,6 +59,20 @@ describe('PlatformConnector', () => {
         expect(screen.getByRole('button', { name: 'Open walkthrough guide for Twitter / X' })).toBeInTheDocument();
     });
 
+    it('renders Bluesky Social card with walkthrough guide button', async () => {
+        render(<PlatformConnector />);
+
+        expect(await screen.findByText('Bluesky Social')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open walkthrough guide for Bluesky Social' })).toBeInTheDocument();
+    });
+
+    it('renders LinkedIn card with walkthrough guide button', async () => {
+        render(<PlatformConnector />);
+
+        expect(await screen.findByText('LinkedIn')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open walkthrough guide for LinkedIn' })).toBeInTheDocument();
+    });
+
     it('opens PlatformWalkthroughModal when Setup Walkthrough Copilot button is clicked', async () => {
         render(<PlatformConnector />);
 

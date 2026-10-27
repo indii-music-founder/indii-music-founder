@@ -12,6 +12,8 @@ describe('PlatformWalkthroughModal', () => {
         apple_music: false,
         instagram: false,
         twitter: false,
+        bluesky: false,
+        linkedin: false,
     };
 
     it('does not render when isOpen is false', () => {
@@ -95,6 +97,40 @@ describe('PlatformWalkthroughModal', () => {
         fireEvent.click(connectBtn);
 
         expect(mockOnConnect).toHaveBeenCalledWith('twitter');
+    });
+
+    it('renders Bluesky guide with custom domain handle and app password steps', () => {
+        render(
+            <PlatformWalkthroughModal
+                isOpen={true}
+                onClose={mockOnClose}
+                initialPlatform="bluesky"
+                connectionStatus={defaultStatus}
+                onConnectPlatform={mockOnConnect}
+            />
+        );
+
+        expect(screen.getByText('Bluesky Social (AT Protocol)')).toBeInTheDocument();
+        expect(screen.getByText('Configure Custom Domain Handle (@indii.music)')).toBeInTheDocument();
+        expect(screen.getByText('Generate an App Password')).toBeInTheDocument();
+        expect(screen.getByText('Connect Bluesky Now')).toBeInTheDocument();
+    });
+
+    it('renders LinkedIn guide with mobile identity verification and company admin steps', () => {
+        render(
+            <PlatformWalkthroughModal
+                isOpen={true}
+                onClose={mockOnClose}
+                initialPlatform="linkedin"
+                connectionStatus={defaultStatus}
+                onConnectPlatform={mockOnConnect}
+            />
+        );
+
+        expect(screen.getByText('LinkedIn Company & Founder Network')).toBeInTheDocument();
+        expect(screen.getByText('Complete Mobile Identity Verification')).toBeInTheDocument();
+        expect(screen.getByText('Verify Company Page Administrator Access')).toBeInTheDocument();
+        expect(screen.getByText('Connect LinkedIn Now')).toBeInTheDocument();
     });
 
     it('closes when close button is clicked', () => {

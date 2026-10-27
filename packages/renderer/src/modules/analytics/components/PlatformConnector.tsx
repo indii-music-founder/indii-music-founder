@@ -129,6 +129,34 @@ const PLATFORMS: PlatformDef[] = [
             </svg>
         ),
     },
+    {
+        id: 'bluesky',
+        label: 'Bluesky Social',
+        description: 'Decentralized open social posting, custom domain identity (@indii.music), and direct fan broadcasting via AT Protocol.',
+        dataPoints: ['Post release updates via AT Protocol', 'Custom domain handle (@indii.music)', 'App Password authentication', 'Decentralized syndication'],
+        color: 'text-sky-400',
+        bgColor: 'bg-sky-500/10',
+        borderColor: 'border-sky-500/30',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-sky-400">
+                <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.994C2.566.944 1.561 1.266.902 1.566.242 1.866.1 2.9.1 3.588c0 .688.378 5.65.624 6.478.815 2.736 3.712 3.66 6.383 3.364-3.913.58-7.387 2-2.83 7.076 5.012 5.19 6.87-1.114 7.823-4.307.953 3.193 2.81 9.497 7.823 4.307 4.557-5.076 1.083-6.496-2.83-7.076 2.67.296 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.688-.142-1.722-.802-2.022-.66-.3-1.664-.622-4.3 1.24C16.046 4.747 13.087 8.686 12 10.8z"/>
+            </svg>
+        ),
+    },
+    {
+        id: 'linkedin',
+        label: 'LinkedIn',
+        description: 'B2B music industry outreach, founder updates, licensing announcements, and executive networking via LinkedIn API.',
+        dataPoints: ['Company page announcement posts', 'B2B sync licensing updates', 'Executive identity verification', 'Music industry engagement reach'],
+        color: 'text-blue-400',
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/30',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-blue-400">
+                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            </svg>
+        ),
+    },
 ];
 
 // ── Status pill ───────────────────────────────────────────────────────────────
@@ -169,6 +197,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
         apple_music: false,
         instagram:   false,
         twitter:     false,
+        bluesky:     false,
+        linkedin:    false,
     });
     const [loading, setLoading] = useState<Partial<Record<keyof PlatformConnectionStatus, boolean>>>({});
     const [errors,  setErrors]  = useState<Partial<Record<keyof PlatformConnectionStatus, string>>>({});
@@ -204,6 +234,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 apple_music: apple.status      === 'fulfilled' && apple.value,
                 instagram:   instagram.status  === 'fulfilled' && instagram.value,
                 twitter:     prev.twitter ?? false,
+                bluesky:     prev.bluesky ?? false,
+                linkedin:    prev.linkedin ?? false,
             }));
         } finally {
             setChecking(false);
@@ -248,6 +280,12 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                     // Open Twitter/X guided walkthrough sequence
                     openWalkthrough('twitter');
                     break;
+                case 'bluesky':
+                    openWalkthrough('bluesky');
+                    break;
+                case 'linkedin':
+                    openWalkthrough('linkedin');
+                    break;
                 default:
                     throw new Error(`Connection not implemented for platform: ${platform}`);
             }
@@ -270,6 +308,12 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 case 'apple_music':  await appleMusicService.disconnect();         break;
                 case 'twitter':
                     setStatus(prev => ({ ...prev, twitter: false }));
+                    break;
+                case 'bluesky':
+                    setStatus(prev => ({ ...prev, bluesky: false }));
+                    break;
+                case 'linkedin':
+                    setStatus(prev => ({ ...prev, linkedin: false }));
                     break;
                 default: 
                     throw new Error(`Disconnect not implemented for platform: ${platform}`);

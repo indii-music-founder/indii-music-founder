@@ -48,6 +48,8 @@ export interface PlatformConnectionStatus {
     apple_music: boolean;
     instagram: boolean;
     twitter?: boolean;
+    bluesky?: boolean;
+    linkedin?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

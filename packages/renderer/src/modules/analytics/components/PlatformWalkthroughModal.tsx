@@ -299,6 +299,100 @@ export const PLATFORM_GUIDES: Record<WalkthroughPlatformId, PlatformWalkthroughG
         ],
         troubleshooting: 'Apple Music does not offer standard OAuth for individual artists. Only verified Apple Music for Artists profiles and enterprise developer tokens can access real telemetry.',
         supportUrl: 'https://artists.apple.com'
+    },
+    bluesky: {
+        id: 'bluesky',
+        name: 'Bluesky Social (AT Protocol)',
+        tagline: 'Decentralized open social posting, custom domain identity (@indii.music), and direct fan broadcasting.',
+        difficulty: 'Instant',
+        accentColor: 'text-sky-400',
+        badgeBg: 'bg-sky-500/10',
+        borderColor: 'border-sky-500/30',
+        capabilities: [
+            'Autonomous release announcements and timeline updates',
+            'Custom domain handle verification (@indii.music)',
+            'App Password authentication with Zero-Credential isolation',
+            'Direct AT Protocol syndicated broadcasting'
+        ],
+        prerequisites: [
+            'Active Bluesky account (e.g. indii.bsky.social or artist handle)',
+            'Domain ownership of indii.music (for custom handle DNS TXT record)'
+        ],
+        steps: [
+            {
+                stepNumber: 1,
+                title: 'Create or Sign In to Bluesky',
+                instruction: 'Open bsky.app and sign up or sign in. If creating a new account, you can start with a free username like @indii.bsky.social.',
+                portalUrl: 'https://bsky.app',
+                portalLabel: 'Open Bluesky Web',
+                tip: 'Bluesky is open and decentralized — no phone number or developer approval required.'
+            },
+            {
+                stepNumber: 2,
+                title: 'Configure Custom Domain Handle (@indii.music)',
+                instruction: 'In Bluesky: Settings → Advanced → Change Handle → select "I have my own domain". Enter indii.music and add the provided DNS TXT record (_atproto.indii.music) in Cloudflare or your DNS registrar.',
+                copyValue: '_atproto.indii.music',
+                copyLabel: 'Copy DNS Hostname',
+                portalUrl: 'https://bsky.app/settings/account',
+                portalLabel: 'Open Bluesky Settings',
+                tip: 'Once DNS propagates, your handle changes to @indii.music with a cryptographic blue checkmark.'
+            },
+            {
+                stepNumber: 3,
+                title: 'Generate an App Password',
+                instruction: 'In Bluesky: Settings → Privacy & Security → App Passwords → Add App Password. Name it "indii Studio" and copy the generated password.',
+                portalUrl: 'https://bsky.app/settings/app-passwords',
+                portalLabel: 'Open App Passwords',
+                tip: 'App Passwords allow indii to auto-post without ever exposing your primary master account password.'
+            }
+        ],
+        troubleshooting: 'If DNS verification fails, wait a few minutes for DNS TXT record propagation and ensure no conflicting CNAME or TXT records exist.',
+        supportUrl: 'https://bsky.app'
+    },
+    linkedin: {
+        id: 'linkedin',
+        name: 'LinkedIn Company & Founder Network',
+        tagline: 'B2B music industry outreach, founder updates, licensing announcements, and executive networking.',
+        difficulty: 'Easy (2 min)',
+        accentColor: 'text-blue-400',
+        badgeBg: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/30',
+        capabilities: [
+            'Scheduled thought leadership and company updates to indii-music Company Page',
+            'Sync release milestones with professional music industry executives',
+            'B2B licensing deal announcements and press releases',
+            'Engagement telemetry across industry connections'
+        ],
+        prerequisites: [
+            'Personal LinkedIn profile verified via mobile app (Persona identity verification)',
+            'Admin rights on the official indii-music LinkedIn Company Page'
+        ],
+        steps: [
+            {
+                stepNumber: 1,
+                title: 'Complete Mobile Identity Verification',
+                instruction: 'Open the LinkedIn app on your phone and scan the Persona verification QR code to verify your founder identity.',
+                portalUrl: 'https://www.linkedin.com/verify/identity/persona/start/?entryPoint=selfview_topcard&platform=DESKTOP&referrer=VERIFY_HUB',
+                portalLabel: 'Open LinkedIn Verification Hub',
+                tip: 'Identity verification establishes official executive status and unlocks high-trust company administration.'
+            },
+            {
+                stepNumber: 2,
+                title: 'Verify Company Page Administrator Access',
+                instruction: 'Navigate to your official Company Page (https://linkedin.com/company/indii-music) and verify that you have Super Admin or Content Admin role.',
+                portalUrl: 'https://www.linkedin.com/company/indii-music/admin/',
+                portalLabel: 'Open LinkedIn Company Admin',
+                tip: 'Posts can be dispatched as either your personal founder voice or the corporate brand page.'
+            },
+            {
+                stepNumber: 3,
+                title: 'Authorize indii.music LinkedIn Integration',
+                instruction: 'Click "Connect LinkedIn" below to authorize the OAuth 2.0 app with w_organization_social and r_organization_social permissions.',
+                tip: 'Tokens are securely stored in your private user vault with automated 60-day refresh.'
+            }
+        ],
+        troubleshooting: 'If authorization fails, ensure your personal profile is listed as an admin of the LinkedIn Company page and not just an employee.',
+        supportUrl: 'https://www.linkedin.com/company/indii-music'
     }
 };
 
