@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, query, where, limit, orderBy } from 'firebase/firestore';
+import { Compass, Sparkles } from 'lucide-react';
 import { buildCwrBatch, CwrBatchInputSchema, cwrPercentageUnits, cwrUnitsPercentage, societyPreparationCopy, SOCIETY_ONBOARDING, societyOnboardingChecklist, type CanonicalMusicEntity, type CwrBatchInput, type SocietyRecipient, type CwrWorkOutcome } from '@indii/shared';
 import { SocietyTransportAdmin } from './SocietyTransportAdmin';
 import { SocietyDeliveryPanel } from './SocietyDeliveryPanel';
 import { db } from '@/services/firebase';
 import { downloadRightsFile, exportRightsCwr, rightsOperation } from '@/services/rights/HostedRightsService';
+import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
 
 const rights = ['performance', 'mechanical', 'synchronization'] as const;
 type ShareText = Record<typeof rights[number], string>;
@@ -63,6 +65,7 @@ export function SocietyRegistrationWorkspace({ userId }: { userId: string }) {
   const [reviewed, setReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
   const staged = useRef<CwrBatchInput>();
   const profile = SOCIETY_ONBOARDING[recipient];
   const activeBatchId = artifact?.batchId;
@@ -120,8 +123,21 @@ export function SocietyRegistrationWorkspace({ userId }: { userId: string }) {
     setArtifact(saved); setReviewed(false);
     setMessage('Export saved with its exact checksum. No works have been transmitted or registered.');
   };
-  return <div className="p-6 space-y-5 text-white overflow-y-auto"><h2 className="text-xl font-semibold">PRO and MLC exports</h2>
-    <p>Prepare composition registrations, complete receiver onboarding, and track each work’s acknowledgments. Exports are available before production receiver access is approved.</p>
+  return <div className="p-6 space-y-5 text-white overflow-y-auto">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+      <div>
+        <h2 className="text-xl font-semibold">PRO and MLC exports</h2>
+        <p className="text-xs text-gray-400 mt-1">Prepare composition registrations, complete receiver onboarding, and track each work’s acknowledgments. Exports are available before production receiver access is approved.</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setIsWalkthroughOpen(true)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 hover:from-[#FFD700]/30 hover:to-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/40 text-xs font-bold transition-all shrink-0 shadow-[0_0_12px_rgba(255,184,0,0.15)]"
+      >
+        <Compass size={14} className="text-[#FFD700]" />
+        <span>PRO & MLC Setup Guide</span>
+      </button>
+    </div>
     <fieldset disabled={busy} className="space-y-4"><Choice label="Recipient" value={recipient} options={Object.entries(SOCIETY_ONBOARDING).map(([id, value]) => [id, value.label])} onChange={value => { if (Object.hasOwn(SOCIETY_ONBOARDING, value)) edit(() => setRecipient(value as SocietyRecipient)); }} />
       <section className="border border-amber-400/40 rounded p-4 space-y-2"><h3>{profile.label} onboarding</h3><ol className="list-decimal pl-5">{profile.steps.map(step => <li key={step}>{step}</li>)}</ol><a className="underline" href={profile.guide} target="_blank" rel="noopener noreferrer">Official instructions</a> · <a className="underline" href={profile.contact} target="_blank" rel="noopener noreferrer">Official contact</a><div><button type="button" onClick={() => downloadRightsFile(`${recipient}-onboarding.txt`, societyOnboardingChecklist(recipient))}>Download onboarding checklist</button></div></section>
       {profile.exportSupported ? <><div className="grid md:grid-cols-3 gap-2"><Field label="Actual publisher / administrator legal name" value={sender.name} onChange={name => edit(() => setSender({ ...sender, name }))} /><Field label="Sender IPI name number" value={sender.ipi} onChange={ipi => edit(() => setSender({ ...sender, ipi }))} /><Field label="Assigned CWR sender code" value={sender.code} onChange={code => edit(() => setSender({ ...sender, code }))} /><Field label="Unused receiver file sequence" value={sequence} onChange={value => edit(() => setSequence(value))} /><Choice label="Receiver-approved CWR version" value={version} options={[[ '2.1', '2.1' ], [ '2.2', '2.2' ]]} onChange={value => edit(() => setVersion(value))} /></div>
@@ -148,5 +164,10 @@ export function SocietyRegistrationWorkspace({ userId }: { userId: string }) {
       <p className="text-xs text-amber-300">Imported ACKs retain their provenance. Initial file acceptance does not establish that each society registered a work.</p>{decisions.slice(0, 100).map(decision => <p key={decision.id} className="text-xs">{decision.workId} · revision {decision.revision} · sender {decision.sender} · {decision.outcome.replaceAll('_', ' ')} ({decision.status}) · {decision.source === 'receiver_transport' ? 'receiver retrieval' : 'user-reported import'} · {decision.messages.join('; ')}</p>)}{decisions.length === 100 && <p>Showing the latest 100 decisions. Current outcomes are reconciled across saved evidence; legacy decisions without timestamps remain in their original records.</p>}
     </section>}
     {message && <p role="status" className="text-amber-300 whitespace-pre-wrap">{message}</p>}
+    <RightsRegistrationWalkthroughModal
+      isOpen={isWalkthroughOpen}
+      onClose={() => setIsWalkthroughOpen(false)}
+      initialPrerequisite="mlc_membership"
+    />
   </div>;
 }

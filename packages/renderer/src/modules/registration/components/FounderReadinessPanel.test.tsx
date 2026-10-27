@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { FounderReadinessPanel } from './FounderReadinessPanel';
 
 describe('FounderReadinessPanel (ISSUE-1121)', () => {
@@ -46,5 +46,27 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     } finally {
       open.mockRestore();
     }
+  });
+
+  it('opens RightsRegistrationWalkthroughModal when Setup Rights Copilot or Guide button is clicked', () => {
+    render(<FounderReadinessPanel userId="test-user-4" />);
+
+    const copilotBtn = screen.getByRole('button', { name: /Setup Rights Copilot/i });
+    fireEvent.click(copilotBtn);
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText('Rights & Royalty Copilot')).toBeInTheDocument();
+    expect(within(dialog).getByText('PRO Writer & Publisher Affiliation')).toBeInTheDocument();
+
+    const closeBtn = screen.getByLabelText('Close walkthrough guide');
+    fireEvent.click(closeBtn);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    const guideBtn = screen.getByLabelText('Open walkthrough guide for The Mechanical Licensing Collective');
+    fireEvent.click(guideBtn);
+    const dialog2 = screen.getByRole('dialog');
+    expect(dialog2).toBeInTheDocument();
+    expect(within(dialog2).getByText('The Mechanical Licensing Collective')).toBeInTheDocument();
   });
 });

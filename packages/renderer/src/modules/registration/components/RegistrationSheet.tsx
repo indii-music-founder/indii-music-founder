@@ -1,10 +1,11 @@
-import React from 'react';
-import { Music2, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Music2, Info, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CatalogTrack, OrgId, TrackRegistrationState, SubmissionResult } from '../types';
 import { ORG_ADAPTERS } from '../adapters';
 import { OrgStatusCard } from './OrgStatusCard';
 import { RegistrationForm } from './RegistrationForm';
+import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
 
 interface RegistrationSheetProps {
   track: CatalogTrack | null;
@@ -28,6 +29,8 @@ export function RegistrationSheet({
   onSubmitComplete,
   selectedProId,
 }: RegistrationSheetProps) {
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+
   if (!track) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3">
@@ -85,11 +88,21 @@ export function RegistrationSheet({
           })}
 
           {!selectedProId && (
-            <div className="flex items-start gap-2 p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl mt-3">
-              <Info size={13} className="text-gray-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-gray-600">
-                You haven't chosen a performing rights organization (PRO) yet. Go to your profile to select ASCAP, BMI, or SESAC first.
-              </p>
+            <div className="flex items-center justify-between gap-3 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl mt-3">
+              <div className="flex items-start gap-2">
+                <Info size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-200">
+                  You haven't chosen a performing rights organization (PRO) yet. Affiliate with ASCAP, BMI, or SESAC to collect performance royalties.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWalkthroughOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFB800] text-black text-xs font-bold hover:brightness-110 transition-all shrink-0 shadow-sm"
+              >
+                <Sparkles size={12} />
+                <span>PRO Guide</span>
+              </button>
             </div>
           )}
         </div>
@@ -114,6 +127,13 @@ export function RegistrationSheet({
           </div>
         )}
       </div>
+
+      {/* Rights Registration Walkthrough Modal */}
+      <RightsRegistrationWalkthroughModal
+        isOpen={isWalkthroughOpen}
+        onClose={() => setIsWalkthroughOpen(false)}
+        initialPrerequisite="pro_affiliation"
+      />
     </div>
   );
 }

@@ -7,10 +7,11 @@
  */
 
 import React, { useState } from 'react';
-import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save, Sparkles } from 'lucide-react';
+import { ExternalLink, ShieldAlert, CheckCircle2, Circle, Building2, Save, Sparkles, Compass } from 'lucide-react';
 import type { FounderPrerequisite, FounderPrerequisiteId } from '../types';
 import type { PortalTarget } from '@indii/shared';
 import { logger } from '@/utils/logger';
+import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
 
 const COPILOT_PORTAL_MAP: Partial<Record<FounderPrerequisiteId, PortalTarget>> = {
   usco_org: 'loc_copyright',
@@ -114,6 +115,29 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     return {};
   });
   const [saved, setSaved] = useState(false);
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+  const [walkthroughPrereq, setWalkthroughPrereq] = useState<FounderPrerequisiteId>('pro_affiliation');
+
+  const openWalkthrough = (id: FounderPrerequisiteId) => {
+    setWalkthroughPrereq(id);
+    setIsWalkthroughOpen(true);
+  };
+
+  const handleUpdatePrerequisite = (id: FounderPrerequisiteId, value: string, verified: boolean) => {
+    setData((prev) => {
+      const updated = {
+        ...prev,
+        [id]: { value, verified },
+      };
+      try {
+        localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updated));
+      } catch (err) {
+        logger.error('[FounderReadiness] Failed to persist prerequisite update', err);
+      }
+      return updated;
+    });
+    setSaved(false);
+  };
 
   const handleToggleVerified = (id: FounderPrerequisiteId) => {
     setData((prev) => {
@@ -170,6 +194,14 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
             <div className="text-xs font-mono text-neutral-400">Readiness Score</div>
             <div className="text-xl font-black text-white">{progressPct}%</div>
           </div>
+          <button
+            type="button"
+            onClick={() => openWalkthrough('pro_affiliation')}
+            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 hover:from-[#FFD700]/30 hover:to-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/40 text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)]"
+          >
+            <Compass size={14} className="text-[#FFD700]" />
+            <span>Setup Rights Copilot</span>
+          </button>
           <button
             onClick={handleSave}
             className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold rounded-lg transition-colors"
@@ -228,11 +260,21 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => openWalkthrough(item.id)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ffb800]/10 hover:bg-[#ffb800]/20 text-[#ffb800] border border-[#ffb800]/30 text-xs font-semibold transition-all shadow-sm"
+                    title={`Open walkthrough guide for ${item.organization}`}
+                    aria-label={`Open walkthrough guide for ${item.title}`}
+                  >
+                    <Sparkles size={12} />
+                    <span>Guide</span>
+                  </button>
                   {COPILOT_PORTAL_MAP[item.id] && (
                     <button
                       type="button"
                       onClick={() => window.open(item.officialUrl, '_blank', 'noopener,noreferrer')}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#ffb800]/10 hover:bg-[#ffb800]/20 text-[#ffb800] border border-[#ffb800]/30 text-xs font-semibold transition-all shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 text-xs font-semibold transition-all shadow-sm"
                       title={`Launch guided Copilot assistant for ${item.organization}`}
                     >
                       <Sparkles size={12} />
@@ -267,7 +309,14 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
         })}
       </div>
 
-
+      {/* Rights Registration Walkthrough Copilot Modal */}
+      <RightsRegistrationWalkthroughModal
+        isOpen={isWalkthroughOpen}
+        onClose={() => setIsWalkthroughOpen(false)}
+        initialPrerequisite={walkthroughPrereq}
+        readinessData={data}
+        onUpdatePrerequisite={handleUpdatePrerequisite}
+      />
     </div>
   );
 }

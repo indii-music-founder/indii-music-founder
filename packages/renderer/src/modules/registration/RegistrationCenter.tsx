@@ -14,14 +14,15 @@ import { SocietyRegistrationWorkspace } from './components/SocietyRegistrationWo
 import { RightsFilingWorkspace } from './components/RightsFilingWorkspace';
 import { FounderReadinessPanel } from './components/FounderReadinessPanel';
 import { CatalogVisibilityPanel } from './components/CatalogVisibilityPanel';
-import { Building2, Music } from 'lucide-react';
+import { Building2, Music, Compass, Sparkles } from 'lucide-react';
 import { ORG_ADAPTERS } from './adapters';
-import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
+import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord, FounderPrerequisiteId } from './types';
 import { logger } from '@/utils/logger';
 import { loadRegistrationCatalog } from './services/RegistrationCatalog';
 import { loadCanonicalCatalogIntelligence } from './services/CanonicalCatalogIntelligence';
 import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
 import { existingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
+import { RightsRegistrationWalkthroughModal } from './components/RightsRegistrationWalkthroughModal';
 
 // ============================================================================
 // Data loaders (module-level, not component-level)
@@ -125,6 +126,13 @@ export default function RegistrationCenter() {
   const [canonicalIntelligenceReport, setCanonicalIntelligenceReport] = useState<CatalogIntelligenceReport | null>(null);
   const [canonicalIntelligenceStatus, setCanonicalIntelligenceStatus] = useState<CanonicalCatalogIntelligenceStatus>('loading');
   const [activeTab, setActiveTab] = useState<'tracks' | 'founder' | 'visibility' | 'filing' | 'society'>('tracks');
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+  const [walkthroughPrereq, setWalkthroughPrereq] = useState<FounderPrerequisiteId>('pro_affiliation');
+
+  const openWalkthrough = (prereqId: FounderPrerequisiteId = 'pro_affiliation') => {
+    setWalkthroughPrereq(prereqId);
+    setIsWalkthroughOpen(true);
+  };
 
   const selectedTrack = registrationFocus.trackId
     ? (tracks.find(t => t.id === registrationFocus.trackId) ?? tracks[0] ?? null)
@@ -248,13 +256,20 @@ export default function RegistrationCenter() {
       <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-8 text-center">
         <p>No tracks found in your catalog yet.</p>
         <button onClick={() => setActiveTab('visibility')} className="text-green-400 underline">Manage catalog visibility</button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => setActiveTab('founder')}
             className="flex items-center gap-2 px-4 py-2 bg-amber-400 text-black text-xs font-bold rounded-lg hover:bg-amber-300 transition-colors"
           >
             <Building2 size={14} />
             Open Founder Readiness Checklist
+          </button>
+          <button
+            onClick={() => openWalkthrough('pro_affiliation')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 hover:from-[#FFD700]/30 hover:to-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/40 text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)]"
+          >
+            <Compass size={14} className="text-[#FFD700]" />
+            <span>Open Rights & Royalties Copilot</span>
           </button>
         </div>
         <p className="text-xs text-gray-600">You can establish your organization legal prerequisites above, or add tracks via Distribution.</p>
@@ -265,6 +280,13 @@ export default function RegistrationCenter() {
             report={canonicalIntelligenceReport}
           />
         </section>
+
+        {/* Rights Walkthrough Modal */}
+        <RightsRegistrationWalkthroughModal
+          isOpen={isWalkthroughOpen}
+          onClose={() => setIsWalkthroughOpen(false)}
+          initialPrerequisite={walkthroughPrereq}
+        />
       </div>
     );
   }
@@ -298,6 +320,14 @@ export default function RegistrationCenter() {
           <button onClick={() => setActiveTab('society')} className="w-full py-2 text-xs rounded text-amber-300">PRO and MLC exports</button>
           <button onClick={() => setActiveTab('filing')} className="w-full py-2 text-xs rounded text-amber-300">Copyright filing workspace</button>
           <button onClick={() => setActiveTab('visibility')} className={`w-full py-2 text-xs rounded ${activeTab === 'visibility' ? 'bg-white/10 text-white' : 'text-neutral-400'}`}>Catalog visibility</button>
+          <button
+            type="button"
+            onClick={() => openWalkthrough('pro_affiliation')}
+            className="w-full mt-2 py-2 px-2 text-xs font-semibold rounded-lg bg-[#FFB800]/10 hover:bg-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/30 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+          >
+            <Compass size={13} className="text-[#FFD700]" />
+            <span>Rights & Royalty Copilot</span>
+          </button>
         </div>
         {activeTab === 'tracks' ? (
           <CatalogRail
@@ -353,6 +383,13 @@ export default function RegistrationCenter() {
           track={selectedTrack}
         />
       </div>}
+
+      {/* Rights Registration Walkthrough Copilot Modal */}
+      <RightsRegistrationWalkthroughModal
+        isOpen={isWalkthroughOpen}
+        onClose={() => setIsWalkthroughOpen(false)}
+        initialPrerequisite={walkthroughPrereq}
+      />
     </div>
   );
 }
