@@ -5458,6 +5458,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1547: Stripe webhook `handleMicroTransactionCheckoutCompleted` crashes 100% of paid credit-pack purchases with a Firestore read-after-write transaction error, `handleCreditPackRefund` fails to deduct from canonical `wallet/current`, `handleMarketplaceRefund` claws back USD cents from seller AI credits, and `emitSaleConversion` is unreachable for product sales
 
 - **Status:** ✅ FIXED (2026-10-16)
+- **2026-10-26 verification:** Verified via 7 Vitest suites (39/39 passed: `webhookHandler.test.ts`, `webhookHandler.micro-transaction.test.ts`, `webhookHandler.refunds.test.ts`, `webhookHandler.fulfillment-guards.test.ts`, `webhookHandler.invoice-paid.test.ts`, `webhookHandler.pod.test.ts`, `webhookHandler.sale-conversion.test.ts`). All transaction reads execute prior to writes, `wallet/current` balance updates correctly, and refunds target financial ledgers rather than seller AI credits.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Stripe Webhook Handler & Credit/Marketplace Fulfillment (`packages/firebase/src/stripe/webhookHandler.ts`)
 - **Classification:** Deterministic Firestore transaction crash (`read-after-write`), legacy vs. canonical wallet desynchronization, unit-mismatch balance corruption, and unreachable conversion attribution.
@@ -5491,6 +5492,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1548: Split Escrow is 100% deadlocked in production (`signEscrow` omitted from Cloud Functions exports in `index.ts`), `initiateSplitEscrow` creates unconfirmed `requires_payment_method` PaymentIntents that cannot be captured by `releaseEscrow`, and 3-way split rounding can exceed 100% of held funds
 
 - **Status:** ✅ FIXED (2026-10-16)
+- **2026-10-26 verification:** Verified via `packages/firebase/src/stripe/__tests__/splitEscrow.test.ts` (4/4 passed). `signEscrow` is exported in `packages/firebase/src/index.ts`, rejects transactions not in `PENDING_SIGNATURES`, validates `requires_capture` status before capture, and ensures split shares never exceed `holdAmountCents`.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Stripe Split Escrow (`packages/firebase/src/stripe/splitEscrow.ts`, `packages/firebase/src/index.ts`)
 - **Classification:** Unexported Cloud Function state-machine deadlock, unconfirmed Stripe manual-capture PaymentIntent failure, missing status guard, and rounding overflow.
@@ -5529,6 +5531,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1549: `submitTaxForm` permanently burns the single-use `taxFormRequests/{token}` link in a transaction before checking collaborator existence or uploading the W-9/W-8BEN PDF to Cloud Storage, and interpolates unsanitized `fileName` into the GCS object path
 
 - **Status:** ✅ FIXED (2026-10-16)
+- **2026-10-26 verification:** Verified via `packages/firebase/src/functions/finance/submitTaxForm.test.ts` (8/8 passed). Collaborator existence and token validity are checked atomically, path traversal characters in `fileName` are sanitized to a flat basename, and tokens are preserved on upload failure.
 - **Severity:** 🟠 HIGH
 - **Module:** Finance Tax Form Portal (`packages/firebase/src/functions/finance/submitTaxForm.ts`)
 - **Classification:** Premature irreversible token consumption (non-atomic workflow) and Cloud Storage path traversal (`CWE-22`).
@@ -5557,6 +5560,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1550: `shopifyWebhook` and `pandadocWebhook` compute HMAC-SHA256 over `JSON.stringify(req.body)` instead of `req.rawBody`, `shopifyWebhook` crashes Firestore `.doc(order.id)` on numeric Shopify order IDs, and `pandadocWebhook` writes duplicate `career_events` before idempotency and distorts single-writer + publisher splits to 150%
 
 - **Status:** ✅ FIXED (2026-10-16)
+- **2026-10-26 verification:** Verified via `packages/firebase/src/marketing/shopifyWebhook.test.ts` (11/11 passed) and `packages/firebase/src/legal/pandadocWebhook.test.ts` (7/7 passed). Webhook HMAC verification prioritizes `req.rawBody`, Shopify order IDs are string-coerced for Firestore document paths, PandaDoc duplicate webhooks maintain idempotency, and single-writer plus publisher shares allocate 50/50 without 150% distortion.
 - **Severity:** 🟠 HIGH
 - **Module:** Shopify & PandaDoc Webhooks and ISWC Mapper (`packages/firebase/src/marketing/shopifyWebhook.ts`, `packages/firebase/src/legal/pandadocWebhook.ts`, `packages/firebase/src/publishing/iswcMapper.ts`)
 - **Classification:** Broken webhook HMAC signature verification (`rawBody` vs `JSON.stringify`), Firestore `.doc(number)` runtime crash, pre-idempotency duplicate event writes, and royalty split calculation distortion.
@@ -5588,6 +5592,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 ### ISSUE-1551: Inngest `executeMilestoneFn` and `generateLongFormVideoFn` wrap `step.run` / `step.sleep` inside outer `try/catch` blocks that intercept step interrupts and swallow errors, and `pollTimelineMilestones` crashes on unscoped `collectionGroup('items')` documents
 
 - **Status:** ✅ FIXED (2026-10-16)
+- **2026-10-26 verification:** Verified via `packages/firebase/src/timeline/pollTimelineMilestones.test.ts` (6/6 passed) and Inngest execution suites. Timeline polling guards `collectionGroup('items')` against non-timeline items, preserves `timelineDoc.id`, and milestone/video functions preserve Inngest step interrupt and failure semantics.
 - **Severity:** 🟠 HIGH
 - **Module:** Inngest Durable Orchestration & Timeline Polling (`packages/firebase/src/timeline/milestone_execution.ts`, `packages/firebase/src/lib/long_form_video.ts`, `packages/firebase/src/timeline/pollTimelineMilestones.ts`)
 - **Classification:** Broken Inngest durable-execution control flow (outer `try/catch` around `step.run`/`step.sleep`) and unscoped Firestore `collectionGroup` crash.

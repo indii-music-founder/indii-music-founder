@@ -270,7 +270,7 @@ export const pandadocWebhook = onRequest(
  * Extract writer/composer data from PandaDoc template tokens.
  * Expects tokens like: writer_1_name, writer_1_ipi, writer_1_share, etc.
  */
-function extractWritersFromTokens(tokens: Record<string, string>) {
+export function extractWritersFromTokens(tokens: Record<string, string>) {
     const writers: Array<{
         legalName: string;
         ipiNumber?: string;
@@ -315,7 +315,7 @@ function extractWritersFromTokens(tokens: Record<string, string>) {
 /**
  * Extract publisher data from PandaDoc template tokens.
  */
-function extractPublisherFromTokens(tokens: Record<string, string>) {
+export function extractPublisherFromTokens(tokens: Record<string, string>) {
     const publisherName = tokens['publisher_name'];
     if (!publisherName || publisherName === 'Self' || publisherName === 'N/A') {
         return null;
