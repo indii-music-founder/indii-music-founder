@@ -19,13 +19,13 @@ describe('auditReleaseArtworkForOwner', () => {
 describe('auditReleaseArtworkForDelivery security & admission (ISSUE-1543)', () => {
     it('rejects unauthenticated callers', async () => {
         await expect(
-            auditReleaseArtworkForDelivery({ data: { releaseId: 'rel-1' } } as never)
+            auditReleaseArtworkForDelivery.run({ data: { releaseId: 'rel-1' } } as never)
         ).rejects.toMatchObject({ code: 'unauthenticated' });
     });
 
     it('rejects unverified email callers', async () => {
         await expect(
-            auditReleaseArtworkForDelivery({
+            auditReleaseArtworkForDelivery.run({
                 data: { releaseId: 'rel-1' },
                 auth: { uid: 'user-1', token: { email_verified: false } }
             } as never)
@@ -34,7 +34,7 @@ describe('auditReleaseArtworkForDelivery security & admission (ISSUE-1543)', () 
 
     it('rejects anonymous callers', async () => {
         await expect(
-            auditReleaseArtworkForDelivery({
+            auditReleaseArtworkForDelivery.run({
                 data: { releaseId: 'rel-1' },
                 auth: { uid: 'user-1', token: { email_verified: true, firebase: { sign_in_provider: 'anonymous' } } }
             } as never)
