@@ -31,7 +31,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, browserPopupRedirectResolver, connectAuthEmulator } from 'firebase/auth';
 
 import { firebaseConfig, env } from '@/config/env';
 
@@ -216,7 +216,8 @@ if (isFirebaseE2EMockEnabled()) {
 } else {
     try {
         rawAuth = initializeAuth(app, {
-            persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+            persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+            popupRedirectResolver: browserPopupRedirectResolver,
         });
 
         // Connect to Auth emulator in dev mode

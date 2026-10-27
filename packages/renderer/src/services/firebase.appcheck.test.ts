@@ -37,7 +37,8 @@ vi.mock('firebase/auth', () => ({
   })),
   browserLocalPersistence: {},
   browserSessionPersistence: {},
-  indexedDBLocalPersistence: {}
+  indexedDBLocalPersistence: {},
+  browserPopupRedirectResolver: {},
 }));
 vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),

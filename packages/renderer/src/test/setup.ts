@@ -255,6 +255,7 @@ vi.mock('firebase/auth', () => ({
     browserLocalPersistence: {},
     browserSessionPersistence: {},
     indexedDBLocalPersistence: {},
+    browserPopupRedirectResolver: {},
     signInWithEmailAndPassword: vi.fn(),
     createUserWithEmailAndPassword: vi.fn(),
     signInAnonymously: vi.fn(),
