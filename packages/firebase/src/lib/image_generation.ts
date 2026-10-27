@@ -14,6 +14,7 @@ import {
 import { getVertexAIClient } from "./vertexClient";
 import { parseStorageUri, assertUserOwnsStoragePath } from './storageUri';
 import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { requireVerifiedCreativeAdmission } from '../functions/creative/legacyAdmission';
 import { checkOperationBudget, finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
 import { entitlementTierToBudgetTier } from '../functions/auth/entitlements';
@@ -878,6 +879,17 @@ export const generateImageV3Fn = () => onCall(
     },
     async (request) => {
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'legacy-generate-image');
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `legacy-image-generate-admission:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         // 2. Validate Input
         const validation = GenerateImageRequestSchema.safeParse(request.data);
@@ -937,6 +949,17 @@ export const editImageFn = () => onCall(
     },
     async (request) => {
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'legacy-edit-image');
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `legacy-image-edit-admission:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         // 2. Validate Input
         const validation = EditImageRequestSchema.safeParse(request.data);

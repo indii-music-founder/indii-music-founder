@@ -2,6 +2,8 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { z } from "zod";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { requireVerifiedEmailV2, validateAppCheckV2 } from "../middleware/appCheck";
+import { arcjetKey } from "../config/secrets";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
@@ -50,6 +52,7 @@ export function resolveOwnedCanonicalMasterPath(
 export const analyzeAudioFn = () => onCall(
     {
         region: "us-central1",
+        secrets: [arcjetKey],
         enforceAppCheck: false,
         timeoutSeconds: 120,
         memory: "512MiB",
@@ -59,6 +62,19 @@ export const analyzeAudioFn = () => onCall(
     async (request) => {
         validateAppCheckV2(request);
         const userId = requireVerifiedEmailV2(request);
+
+        if (!request.rawRequest) {
+            throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
+        }
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+            userId,
+            policy: 'verified-free',
+            operationId: `analyze-audio:${crypto.randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+            throw new HttpsError(code, protection.message);
+        }
 
         // 2. Validation
         const validation = AnalyzeAudioRequestSchema.safeParse(request.data);

@@ -65,6 +65,9 @@ vi.mock('../config/secrets', () => ({
   shopifyWebhookSecret: {
     value: () => SHOPIFY_SECRET,
   },
+  arcjetKey: {
+    value: () => 'mock-arcjet-key',
+  },
 }));
 
 import { emitSaleConversion } from './shopifyWebhook';

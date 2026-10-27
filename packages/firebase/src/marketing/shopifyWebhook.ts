@@ -17,7 +17,8 @@ import * as crypto from 'crypto';
 import { onRequest } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions/v2';
-import { shopifyWebhookSecret } from '../config/secrets';
+import { arcjetKey, shopifyWebhookSecret } from '../config/secrets';
+import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 import { enqueueConversionEvent } from './conversionEventOutbox';
 import { buildConversionEventId } from '@indii/shared';
 
@@ -188,7 +189,7 @@ async function handleOrderCreated(order: ShopifyOrder): Promise<void> {
 export const shopifyWebhook = onRequest(
   {
     region: REGION,
-    secrets: [shopifyWebhookSecret],
+    secrets: [shopifyWebhookSecret, arcjetKey],
     timeoutSeconds: WEBHOOK_TIMEOUT,
     memory: '512MiB',
     concurrency: 10,
@@ -197,6 +198,20 @@ export const shopifyWebhook = onRequest(
     // Only accept POST
     if (req.method !== 'POST') {
       res.status(405).send('Method Not Allowed');
+      return;
+    }
+
+    const signature = req.headers['x-shopify-hmac-sha256'] as string | undefined;
+    const protection = await protectAnonymousSignupRequest(
+      req as never,
+      `shopify-webhook:${signature?.slice(0, 16) || 'anonymous'}`,
+      'allow-low-risk-read'
+    );
+    if (!protection.allowed) {
+      if (protection.retryAfterSeconds && typeof res.set === 'function') {
+        res.set('Retry-After', String(protection.retryAfterSeconds));
+      }
+      res.status(protection.status).json({ error: protection.message });
       return;
     }
 
@@ -209,7 +224,6 @@ export const shopifyWebhook = onRequest(
       }
     })();
 
-    const signature = req.headers['x-shopify-hmac-sha256'] as string | undefined;
     const rawPayload = (req as { rawBody?: Buffer }).rawBody
       ? (req as { rawBody?: Buffer }).rawBody!.toString('utf8')
       : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));

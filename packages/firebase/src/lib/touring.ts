@@ -1,9 +1,8 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-
 import { z } from "zod";
-// Google Maps Client is loaded lazily inside findPlaces to reduce cold start time
-// import { Client } from "@googlemaps/google-maps-services-js";
-import { googleMapsApiKey } from "../config/secrets";
+import { arcjetKey, googleMapsApiKey } from "../config/secrets";
+import { requireVerifiedEmailV2, validateAppCheckV2 } from "../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 
 // ----------------------------------------------------------------------------
 // Validation Schemas
@@ -274,9 +273,21 @@ export function distanceMatrixProviderStatusError(status: string | undefined): H
 }
 
 export const computeDistanceMatrix = onCall(
-    { enforceAppCheck: true, secrets: [googleMapsApiKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [googleMapsApiKey, arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        const userId = requireVerifiedEmailV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `compute-distance-matrix:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         const validation = DistanceMatrixRequestSchema.safeParse(request.data);
         if (!validation.success) {
@@ -313,9 +324,21 @@ export const computeDistanceMatrix = onCall(
 );
 
 export const generateItinerary = onCall(
-    { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        const userId = requireVerifiedEmailV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `generate-itinerary:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         const validation = ItineraryRequestSchema.safeParse(request.data);
         if (!validation.success) {
@@ -327,9 +350,21 @@ export const generateItinerary = onCall(
 );
 
 export const checkLogistics = onCall(
-    { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        const userId = requireVerifiedEmailV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `check-logistics:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         const validation = ScheduleCheckSchema.safeParse(request.data);
         if (!validation.success) {
@@ -341,9 +376,21 @@ export const checkLogistics = onCall(
 );
 
 export const findPlaces = onCall(
-    { enforceAppCheck: true, secrets: [googleMapsApiKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [googleMapsApiKey, arcjetKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        const userId = requireVerifiedEmailV2(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+                userId,
+                policy: 'verified-free',
+                operationId: `find-places:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429 ? 'resource-exhausted' : 'unavailable';
+                throw new HttpsError(code, protection.message);
+            }
+        }
 
         const validation = FindPlacesSchema.safeParse(request.data);
         if (!validation.success) {

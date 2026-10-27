@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { compileRouteDraft, reviewSchedule, normalizeDistanceMatrix } from './touring';
+import {
+    compileRouteDraft,
+    reviewSchedule,
+    normalizeDistanceMatrix,
+    computeDistanceMatrix,
+    generateItinerary,
+    checkLogistics,
+    findPlaces,
+} from './touring';
 
 describe('touring route draft contract', () => {
     it('preserves waypoint order and assigns only deterministic draft dates', () => {
@@ -106,3 +114,70 @@ describe('distance matrix normalization contract', () => {
         expect(normalizeDistanceMatrix({ rows: [{}] }).rows).toEqual([[]]);
     });
 });
+
+describe('touring callables admission and security gates', () => {
+    it('rejects unauthenticated callers on computeDistanceMatrix', async () => {
+        await expect(computeDistanceMatrix.run({
+            rawRequest: {} as never,
+            auth: undefined,
+            data: {},
+        } as never)).rejects.toThrow(/User must be authenticated|unauthenticated/i);
+    });
+
+    it('rejects unverified email callers on computeDistanceMatrix', async () => {
+        await expect(computeDistanceMatrix.run({
+            rawRequest: {} as never,
+            auth: { uid: 'user_1', token: { email_verified: false } } as never,
+            data: {},
+        } as never)).rejects.toThrow(/Verify your email|failed-precondition/i);
+    });
+
+    it('rejects unauthenticated callers on generateItinerary', async () => {
+        await expect(generateItinerary.run({
+            rawRequest: {} as never,
+            auth: undefined,
+            data: {},
+        } as never)).rejects.toThrow(/User must be authenticated|unauthenticated/i);
+    });
+
+    it('rejects unverified email callers on generateItinerary', async () => {
+        await expect(generateItinerary.run({
+            rawRequest: {} as never,
+            auth: { uid: 'user_1', token: { email_verified: false } } as never,
+            data: {},
+        } as never)).rejects.toThrow(/Verify your email|failed-precondition/i);
+    });
+
+    it('rejects unauthenticated callers on checkLogistics', async () => {
+        await expect(checkLogistics.run({
+            rawRequest: {} as never,
+            auth: undefined,
+            data: {},
+        } as never)).rejects.toThrow(/User must be authenticated|unauthenticated/i);
+    });
+
+    it('rejects unverified email callers on checkLogistics', async () => {
+        await expect(checkLogistics.run({
+            rawRequest: {} as never,
+            auth: { uid: 'user_1', token: { email_verified: false } } as never,
+            data: {},
+        } as never)).rejects.toThrow(/Verify your email|failed-precondition/i);
+    });
+
+    it('rejects unauthenticated callers on findPlaces', async () => {
+        await expect(findPlaces.run({
+            rawRequest: {} as never,
+            auth: undefined,
+            data: {},
+        } as never)).rejects.toThrow(/User must be authenticated|unauthenticated/i);
+    });
+
+    it('rejects unverified email callers on findPlaces', async () => {
+        await expect(findPlaces.run({
+            rawRequest: {} as never,
+            auth: { uid: 'user_1', token: { email_verified: false } } as never,
+            data: {},
+        } as never)).rejects.toThrow(/Verify your email|failed-precondition/i);
+    });
+});
+

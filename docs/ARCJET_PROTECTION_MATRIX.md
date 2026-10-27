@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **190**.
-- Declarations missing at least one of those local references: **9**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **199**.
+- Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -41,7 +41,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/agent/workflowExecutionCallables.ts:128` | `manageWorkflowExecution` | `onCall` | Present | Present |
 | `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
 | `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
-| `functions/auth/entitlements.ts:375` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Not established |
+| `functions/auth/entitlements.ts:384` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
 | `functions/auth/handoff.ts:122` | `createHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/handoff.ts:186` | `redeemHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
@@ -146,16 +146,16 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `legal/pandadocProxy.ts:287` | `pandadocGetDocumentStatus` | `onCall` | Present | Present |
 | `legal/pandadocProxy.ts:358` | `pandadocGetSigningLink` | `onCall` | Present | Present |
 | `legal/pandadocWebhook.ts:48` | `pandadocWebhook` | `onRequest` | Present | Present |
-| `lib/audio.ts:50` | `(factory/helper)` | `onCall` | Not established | Not established |
-| `lib/image_generation.ts:868` | `(factory/helper)` | `onCall` | Present | Not established |
-| `lib/image_generation.ts:928` | `(factory/helper)` | `onCall` | Present | Not established |
+| `lib/audio.ts:52` | `(factory/helper)` | `onCall` | Present | Present |
+| `lib/image_generation.ts:869` | `(factory/helper)` | `onCall` | Present | Present |
+| `lib/image_generation.ts:940` | `(factory/helper)` | `onCall` | Present | Present |
 | `lib/marketing.ts:179` | `executeCampaign` | `onCall` | Present | Present |
 | `lib/marketing.ts:382` | `dispatchSocialPost` | `onCall` | Present | Present |
 | `lib/marketing.ts:467` | `createInfluencerBounty` | `onCall` | Present | Present |
-| `lib/touring.ts:276` | `computeDistanceMatrix` | `onCall` | Not established | Not established |
-| `lib/touring.ts:315` | `generateItinerary` | `onCall` | Not established | Not established |
-| `lib/touring.ts:329` | `checkLogistics` | `onCall` | Not established | Not established |
-| `lib/touring.ts:343` | `findPlaces` | `onCall` | Not established | Not established |
+| `lib/touring.ts:275` | `computeDistanceMatrix` | `onCall` | Present | Present |
+| `lib/touring.ts:326` | `generateItinerary` | `onCall` | Present | Present |
+| `lib/touring.ts:352` | `checkLogistics` | `onCall` | Present | Present |
+| `lib/touring.ts:378` | `findPlaces` | `onCall` | Present | Present |
 | `marketing/campaignMetricsCallable.ts:127` | `marketingGetCampaignMetrics` | `onCall` | Present | Present |
 | `marketing/marketingCallables.ts:73` | `createAdCampaign` | `onCall` | Present | Present |
 | `marketing/marketingCallables.ts:136` | `createAdSet` | `onCall` | Present | Present |
@@ -172,7 +172,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/presaveCampaigns.ts:270` | `getPreSaveCampaign` | `onCall` | Present | Present |
 | `marketing/presaveCampaigns.ts:326` | `listPreSaveCampaigns` | `onCall` | Present | Present |
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
-| `marketing/shopifyWebhook.ts:188` | `shopifyWebhook` | `onRequest` | Not established | Not established |
+| `marketing/shopifyWebhook.ts:189` | `shopifyWebhook` | `onRequest` | Present | Present |
 | `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:41` | `createMarketplaceCheckout` | `onCall` | Present | Present |
 | `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |

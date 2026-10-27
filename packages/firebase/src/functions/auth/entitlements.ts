@@ -330,7 +330,6 @@ export async function admitVerifiedEntitlementProvisioning(
 ): Promise<{ uid: string; entitlement: AccountEntitlement }> {
     const validateAppCheck = dependencies.validateAppCheck ?? validateAppCheckV2;
     const resolveEntitlement = dependencies.resolveEntitlement ?? requireVerifiedServerEntitlement;
-    const protect = dependencies.protect ?? protectAuthenticatedApiRequest;
     const policyForEntitlement = dependencies.policyForEntitlement ?? policyClassForServerEntitlement;
 
     validateAppCheck(request);
@@ -341,14 +340,23 @@ export async function admitVerifiedEntitlementProvisioning(
     if (!request.rawRequest) {
         throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
-    const protection = await protect(request.rawRequest, {
-        userId: uid,
-        policy: policyForEntitlement({
-            tier: entitlement.tier,
-            isAdmin: request.auth?.token.admin === true,
-        }),
-        operationId: `provision-entitlement:${crypto.randomUUID()}`,
-    });
+    const protection = dependencies.protect
+        ? await dependencies.protect(request.rawRequest, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `provision-entitlement:${crypto.randomUUID()}`,
+        })
+        : await protectAuthenticatedApiRequest(request.rawRequest, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `provision-entitlement:${crypto.randomUUID()}`,
+        });
     if (!protection.allowed) {
         const code = protection.status === 429
             ? 'resource-exhausted'
