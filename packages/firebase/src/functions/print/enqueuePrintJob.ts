@@ -9,6 +9,8 @@ import {
     planPrintOutput,
 } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
 import { assertUserOwnsStoragePath, parseStorageUri } from '../../lib/storageUri';
 import { enforceRateLimit } from '../../lib/rateLimit';
@@ -79,12 +81,27 @@ export const enqueuePrintJob = onCall(
     {
         timeoutSeconds: 30,
         memory: '512MiB',
-        enforceAppCheck: false,
+        enforceAppCheck: true,
+        secrets: [arcjetKey],
         serviceAccount: 'print-prep-dispatcher@indii-music-founder.iam.gserviceaccount.com',
     },
     async (request): Promise<EnqueuePrintJobResult> => {
         validateAppCheckV2(request);
         const userId = requireVerifiedCreativeUser(request.auth);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `enqueue-print-job:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
 
         const parsed = EnqueuePrintJobInputSchema.safeParse(request.data);
         if (!parsed.success) {

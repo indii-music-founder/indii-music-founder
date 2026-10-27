@@ -1,4 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 export interface MechanicalLicenseRequest {
     trackTitle: string;
@@ -27,13 +31,34 @@ export interface MechanicalLicenseResponse {
  * a VERIFIED status may only be returned from that API's actual response.
  */
 export const verifyMechanicalLicense = onCall(
-    { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey], enforceAppCheck: true },
     async (request): Promise<MechanicalLicenseResponse> => {
-        if (!request.auth) {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to run verification.'
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `verify-mechanical-license:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { trackTitle, originalArtist } = (request.data ?? {}) as MechanicalLicenseRequest;

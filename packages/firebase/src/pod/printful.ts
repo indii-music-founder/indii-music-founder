@@ -1,27 +1,50 @@
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
-import { printfulApiKey } from '../config/secrets';
+import { arcjetKey, printfulApiKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { printfulRequest } from './printfulApi';
 import { getFirestore } from 'firebase-admin/firestore';
 
-function requireAuth(req: CallableRequest<unknown>): string {
-    if (!req.auth) {
+async function requireAuth(req: CallableRequest<unknown>, operation = 'pod'): Promise<string> {
+    validateAppCheckV2(req);
+    if (!req.auth || !req.auth.uid) {
         throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    if (req.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (req.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required.');
+    }
+    if (req.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(req.rawRequest as never, {
+            userId: req.auth.uid,
+            policy: 'verified-free',
+            operationId: `pod:${operation}:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
     }
     return req.auth.uid;
 }
 
-export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    requireAuth(req);
+export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    await requireAuth(req, 'get-products');
     return await printfulRequest<unknown[]>('/store/products');
 });
 
-export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    requireAuth(req);
+export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    await requireAuth(req, 'get-product');
     return await printfulRequest<unknown>(`/store/products/${req.data.productId}`);
 });
 
-export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    requireAuth(req);
+export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    await requireAuth(req, 'calculate-price');
     return await printfulRequest<unknown>('/orders/estimate-costs', {
         method: 'POST',
         body: JSON.stringify({
@@ -34,8 +57,8 @@ export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey], en
     });
 });
 
-export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    requireAuth(req);
+export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    await requireAuth(req, 'get-shipping-rates');
     return await printfulRequest<unknown[]>('/shipping/rates', {
         method: 'POST',
         body: JSON.stringify({
@@ -54,8 +77,8 @@ export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey], 
     });
 });
 
-export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    const uid = requireAuth(req);
+export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    const uid = await requireAuth(req, 'create-order');
     
     // Call printful to create the order
     const result = await printfulRequest<unknown>('/orders', {
@@ -112,14 +135,14 @@ async function verifyOrderOwnership(uid: string, orderId: string) {
     }
 }
 
-export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    const uid = requireAuth(req);
+export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    const uid = await requireAuth(req, 'get-order');
     await verifyOrderOwnership(uid, req.data.orderId);
     return await printfulRequest<unknown>(`/orders/${req.data.orderId}`);
 });
 
-export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    const uid = requireAuth(req);
+export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    const uid = await requireAuth(req, 'cancel-order');
     await verifyOrderOwnership(uid, req.data.orderId);
     const result = await printfulRequest<unknown>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
     await getFirestore().collection('users').doc(uid).collection('pod_orders').doc(String(req.data.orderId)).update({
@@ -129,8 +152,8 @@ export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey], enfor
     return result;
 });
 
-export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
-    requireAuth(req);
+export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey, arcjetKey], enforceAppCheck: true }, async (req) => {
+    await requireAuth(req, 'generate-mockup');
     const result = await printfulRequest<unknown>('/mockup-generator/create-task', {
         method: 'POST',
         body: JSON.stringify({

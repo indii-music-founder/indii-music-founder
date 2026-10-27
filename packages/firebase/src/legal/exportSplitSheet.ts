@@ -8,10 +8,14 @@
  * (window.print()) against the served HTML. The HTML uses @media print
  * CSS so it renders as a clean, court-admissible document.
  */
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 /* ── Validation ──────────────────────────────────────────────────────────── */
 
@@ -200,11 +204,32 @@ function escapeHtml(str: string): string {
 /* ── Cloud Function ──────────────────────────────────────────────────────── */
 
 export const exportSplitSheet = onCall<ExportSplitSheetInput, Promise<{ url: string; storagePath: string }>>(
-    { cors: true, enforceAppCheck: true },
+    { cors: true, enforceAppCheck: true, secrets: [arcjetKey] },
     async (request) => {
+        validateAppCheckV2(request);
         const uid = request.auth?.uid;
         if (!uid) {
             throw new HttpsError('unauthenticated', 'Authentication required.');
+        }
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth?.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: 'verified-free',
+                operationId: `export-split-sheet:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         // Validate input
