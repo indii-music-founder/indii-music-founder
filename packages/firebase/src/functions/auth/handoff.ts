@@ -2,6 +2,8 @@ import { onRequest, Request } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import * as express from 'express';
+import { arcjetKey } from '../../config/secrets';
+import { protectAnonymousSignupRequest } from '../security/arcjet';
 
 const getDb = () => admin.firestore();
 
@@ -117,10 +119,23 @@ async function isRateLimited(ip: string, action: string): Promise<boolean> {
  * POST /createHandoffCode
  * Body: { idToken: string, accessToken?: string }
  */
-export const createHandoffCode = onRequest({ cors: true }, async (req: Request, res: express.Response) => {
+export const createHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] }, async (req: Request, res: express.Response) => {
     // 1. Validate method
     if (req.method !== 'POST') {
         res.status(405).send('Method Not Allowed');
+        return;
+    }
+
+    const protection = await protectAnonymousSignupRequest(
+        req as never,
+        'auth-handoff-create',
+        'allow-low-risk-read'
+    );
+    if (!protection.allowed) {
+        if (protection.retryAfterSeconds && typeof res.setHeader === 'function') {
+            res.setHeader('Retry-After', String(protection.retryAfterSeconds));
+        }
+        res.status(protection.status).send(protection.message);
         return;
     }
 
@@ -168,10 +183,23 @@ export const createHandoffCode = onRequest({ cors: true }, async (req: Request, 
  * POST /redeemHandoffCode
  * Body: { code: string }
  */
-export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, res: express.Response) => {
+export const redeemHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] }, async (req: Request, res: express.Response) => {
     // 1. Validate method
     if (req.method !== 'POST') {
         res.status(405).send('Method Not Allowed');
+        return;
+    }
+
+    const protection = await protectAnonymousSignupRequest(
+        req as never,
+        'auth-handoff-redeem',
+        'allow-low-risk-read'
+    );
+    if (!protection.allowed) {
+        if (protection.retryAfterSeconds && typeof res.setHeader === 'function') {
+            res.setHeader('Retry-After', String(protection.retryAfterSeconds));
+        }
+        res.status(protection.status).send(protection.message);
         return;
     }
 
