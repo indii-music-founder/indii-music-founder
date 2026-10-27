@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **25**.
+- Declarations missing at least one of those local references: **174**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -84,12 +84,12 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/persona/recordPersonaResponseMeasurement.ts:104` | `recordPersonaResponseMeasurement` | `onCall` | Not established | Not established |
 | `functions/print/enqueuePrintJob.ts:78` | `enqueuePrintJob` | `onCall` | Not established | Not established |
 | `functions/print/preparePrintHandoff.ts:14` | `preparePrintHandoff` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:31` | `issueStudioExecutorLease` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:64` | `publishStudioPresence` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:138` | `releaseStudioPresence` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:153` | `claimStudioCommand` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:175` | `publishStudioResponse` | `onCall` | Not established | Not established |
-| `functions/remote/issueStudioExecutorLease.ts:201` | `completeStudioCommand` | `onCall` | Not established | Not established |
+| `functions/remote/issueStudioExecutorLease.ts:79` | `issueStudioExecutorLease` | `onCall` | Present | Present |
+| `functions/remote/issueStudioExecutorLease.ts:135` | `publishStudioPresence` | `onCall` | Present | Present |
+| `functions/remote/issueStudioExecutorLease.ts:209` | `releaseStudioPresence` | `onCall` | Present | Present |
+| `functions/remote/issueStudioExecutorLease.ts:224` | `claimStudioCommand` | `onCall` | Present | Present |
+| `functions/remote/issueStudioExecutorLease.ts:246` | `publishStudioResponse` | `onCall` | Present | Present |
+| `functions/remote/issueStudioExecutorLease.ts:272` | `completeStudioCommand` | `onCall` | Present | Present |
 | `functions/rights/queueRightsRegistration.ts:166` | `queueRightsRegistration` | `onCall` | Not established | Not established |
 | `functions/rights/rightsRegistration.ts:85` | `rightsRegistration` | `onCall` | Not established | Not established |
 | `functions/security/claimComputerApproval.ts:23` | `claimComputerApproval` | `onCall` | Not established | Not established |
