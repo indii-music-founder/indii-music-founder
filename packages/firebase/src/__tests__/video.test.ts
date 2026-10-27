@@ -375,9 +375,36 @@ describe('Video Functions', () => {
 
             expect(mocks.firestore.set).not.toHaveBeenCalled();
         });
+
+        it('throws resource-exhausted when Arcjet rate limit denies triggerVideoJob', async () => {
+            mocks.arcjet.mockResolvedValueOnce({ allowed: false, status: 429, message: 'Too many requests' });
+            const context: any = {
+                auth: { uid: 'user123', token: {} },
+                rawRequest: { headers: {}, ip: '127.0.0.1' },
+                data: { prompt: 'test prompt', orgId: 'personal' },
+            };
+            await expect((triggerVideoJob as any)(context))
+                .rejects.toMatchObject({ code: 'resource-exhausted' });
+        });
     });
 
     describe('triggerLongFormVideoJob', () => {
+        it('throws resource-exhausted when Arcjet rate limit denies triggerLongFormVideoJob', async () => {
+            mocks.arcjet.mockResolvedValueOnce({ allowed: false, status: 429, message: 'Too many requests' });
+            const context: any = {
+                auth: { uid: 'user123', token: {} },
+                rawRequest: { headers: {}, ip: '127.0.0.1' },
+                data: {
+                    jobId: 'browser-long-form-id',
+                    userId: 'attacker',
+                    totalDuration: 1,
+                    prompts: ['first scene', 'second scene'],
+                    options: { model: 'fast', resolution: '720p' },
+                },
+            };
+            await expect((triggerLongFormVideoJob as any)(context))
+                .rejects.toMatchObject({ code: 'resource-exhausted' });
+        });
         it('creates a server-owned long-form job and reservation instead of trusting browser identity or duration', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const result = await (triggerLongFormVideoJob as any)({

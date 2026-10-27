@@ -4,6 +4,8 @@ import * as express from 'express';
 import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 import { McpToolRegistry } from './registry.js';
 import { McpContext } from './types.js';
@@ -158,11 +160,23 @@ app.post('/message', async (req, res) => {
 // Firestore/Redis so multiple instances can share it.
 export const mcpEndpoint = onRequest(
     {
+        secrets: [arcjetKey],
         region: 'us-central1',
         timeoutSeconds: 3600,
         memory: '512MiB',
         maxInstances: 1,
     },
-    app,
+    async (req, res) => {
+        const protection = await protectAuthenticatedApiRequest(req as never, {
+            userId: 'mcp-gateway',
+            policy: 'verified-free',
+            operationId: `mcp-endpoint:${req.ip || 'gateway'}`,
+        });
+        if (!protection.allowed) {
+            res.status(protection.status || 429).send(protection.message || 'Too Many Requests');
+            return;
+        }
+        return app(req, res);
+    },
 );
 export const expressApp = app;
