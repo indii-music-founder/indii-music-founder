@@ -2597,7 +2597,8 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1400: OAuth consent screen is Testing, not In production, with zero test users configured
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 7d1399482 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40537519260
 - **Severity:** 🟠 HIGH (YouTube/Gmail OAuth restricted until addressed)
 - **Module:** GCP OAuth consent screen / integrations
 - **Evidence:** Founder verified 2026-08-23 in GCP Console — publishing status “Testing”; zero test users configured. YouTube upload + Gmail scopes therefore only work for explicitly added test users, and sensitive-scope tokens expire every 7 days for testing users.
@@ -2960,11 +2961,12 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1429: indii does not yet run its own marketing as a first-class internal artist project
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 7d1399482 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40537519260
 - **Severity:** 🟠 HIGH
 - **Module:** Conductor / Marketing / Creative / Social / timeline
 - **Source of truth:** Marketing decision § indii as its own first artist/customer
-- **Evidence:** `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md` now defines the direction layer, Codex and indii execution stacks, task IDs C-01 through C-08 and M-01 through M-09, handoff packets, asset/channel records, approval gates, evidence requirements, and weekly review. The checklist is a durable operating specification; the actual internal campaign record and execution evidence still do not exist.
+- **Evidence:** `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md` defines the direction layer, Codex and indii execution stacks, task IDs C-01 through C-08 and M-01 through M-09, handoff packets, asset/channel records, approval gates, evidence requirements, and weekly review. Production campaign "indii.music Public Launch" (campaign ID `ZGRnIP5enhX3BjgcmRUq`, $5,000 multi-platform budget, 6 scheduled launch posts) was seeded via `scripts/seed-internal-marketing-launch.ts` and executed live through Studio Campaign Manager as founder `wiil@indii.music` (UID `g2AcFApNZvQKYlGg0LQuVADCFoO2`). Posts atomically validated and queued into `scheduledPosts` Firestore collection; campaign live state transitioned to EXECUTING (verification capture steps/18329/media_0.png).
 - **Impact:** indii cannot yet prove the product by operating its own marketing through it.
 - **Fix:** Execute M-01 and the dependent jobs in `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`: create the internal artist-style project and route real planning, imagery, video, copy, news, social, approvals, versions, costs, and results; surface unavailable tools honestly.
 - **Acceptance:** One approved instruction produces a visible plan, routes genuine work, prepares channel outputs, records approvals/versions, and truthfully reports gaps; resulting work becomes beta evidence.
