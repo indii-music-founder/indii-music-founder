@@ -4,7 +4,7 @@
 
 This repository works directly on `main`. Do not create, switch to, push, or continue work on a task branch unless the user explicitly requests that branch workflow for the current task. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
 
-Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA. Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
+Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA (for documentation-only commits, verify the `Docs and Policy Gate` run; if no remote CI is scheduled, explicitly report "Remote CI not scheduled" and document local verification rather than claiming green CI). Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
 
 ## User GitHub Completion Preference
 

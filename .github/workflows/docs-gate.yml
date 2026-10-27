@@ -1,0 +1,60 @@
+name: Docs and Policy Gate
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - '.agent/**'
+      - 'scripts/validate-mainline-workflows.js'
+      - 'scripts/validate-flowcharts.js'
+      - '.github/workflows/docs-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - '.agent/**'
+      - 'scripts/validate-mainline-workflows.js'
+      - 'scripts/validate-flowcharts.js'
+      - '.github/workflows/docs-gate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate-docs-and-policy:
+    name: Validate Docs, Policies and Flowcharts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.x'
+      - name: Validate Mainline Workflows Policy
+        run: node scripts/validate-mainline-workflows.js
+      - name: Validate Mermaid Flowcharts
+        run: node scripts/validate-flowcharts.js
+      - name: Validate Issue Ledger Integrity
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+            node scripts/validate-issue-ledger.mjs "origin/${{ github.base_ref }}"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            node scripts/validate-issue-ledger.mjs HEAD^
+          else
+            node scripts/validate-issue-ledger.mjs
+          fi
+      - name: Verify CI Node Runtime Engine Alignment
+        run: node scripts/check-ci-node-runtime.mjs
