@@ -110,7 +110,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/alignSessionMaster.ts:219` | `alignSessionMaster` | `onCall` | Present | Present |
 | `functions/video/approveSessionEditPlan.ts:99` | `approveSessionEditPlan` | `onCall` | Present | Present |
 | `functions/video/cancelVideoSession.ts:131` | `cancelVideoSession` | `onCall` | Present | Present |
-| `functions/video/createVideoSession.ts:559` | `createVideoSession` | `onCall` | Present | Present |
+| `functions/video/createVideoSession.ts:557` | `createVideoSession` | `onCall` | Present | Present |
 | `functions/video/generateSessionEditPlan.ts:269` | `generateSessionEditPlan` | `onCall` | Present | Present |
 | `functions/video/getVideoRenderReceipt.ts:211` | `getVideoRenderReceipt` | `onCall` | Present | Present |
 | `functions/video/queueCloudVideoRender.ts:74` | `queueCloudVideoRender` | `onCall` | Present | Present |
