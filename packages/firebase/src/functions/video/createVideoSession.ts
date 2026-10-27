@@ -5,8 +5,6 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
-import { arcjetKey } from '../../config/secrets';
-import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { checkOperationBudget, requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '../auth/entitlements';
 import { protectAuthenticatedApiRequest } from '../security/arcjet';
@@ -568,18 +566,6 @@ export const createVideoSession = onCall(
             const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
                 userId,
                 policy: 'verified-free',
-                operationId: `create-video-session:${userId}`,
-            });
-            if (!protection.allowed) {
-                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
-            }
-        }
-        const entitlement = await requireVerifiedServerEntitlement(userId);
-
-        if (request.rawRequest) {
-            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
-                userId,
-                policy: 'verified-free',
                 operationId: `create-video-session:${randomUUID()}`,
             });
             if (!protection.allowed) {
@@ -589,6 +575,7 @@ export const createVideoSession = onCall(
                 );
             }
         }
+        const entitlement = await requireVerifiedServerEntitlement(userId);
 
         return createOwnedVideoSession(userId, request.data, {
             store: createFirestoreVideoSessionClaimStore(),
