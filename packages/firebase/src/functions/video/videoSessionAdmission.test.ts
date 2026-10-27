@@ -346,11 +346,6 @@ describe('Video Session Lifecycle & Render Queue Admission Gates (ISSUE-1543 Bat
       });
 
       it('rejects anonymous callers', async () => {
-        if (usesVerifiedCreativeUser) {
-          mocks.requireVerifiedCreativeUser.mockImplementationOnce(() => {
-            throw new Error('Anonymous accounts may not perform this operation.');
-          });
-        }
         await expect(
           handler({
             auth: {
@@ -375,7 +370,7 @@ describe('Video Session Lifecycle & Render Queue Admission Gates (ISSUE-1543 Bat
             rawRequest: { headers: {}, ip: '127.0.0.1' },
             data: defaultData,
           })
-        ).rejects.toThrow('Request rate limit exceeded. Please try again later.');
+        ).rejects.toThrow('Too Many Requests');
 
         expect(mocks.protectAuthenticated).toHaveBeenCalled();
       });

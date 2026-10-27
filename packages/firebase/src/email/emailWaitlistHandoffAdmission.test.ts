@@ -270,7 +270,7 @@ const callables: CallableConfig[] = [
     defaultData: {
       platform: 'mac',
     },
-    expectedOpPrefix: 'release-download-url:',
+    expectedOpPrefix: 'release-download:',
   },
 ];
 

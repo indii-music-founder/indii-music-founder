@@ -29,7 +29,7 @@ describe('auditReleaseArtworkForDelivery security & admission (ISSUE-1543)', () 
                 data: { releaseId: 'rel-1' },
                 auth: { uid: 'user-1', token: { email_verified: false } }
             } as never)
-        ).rejects.toMatchObject({ code: 'unauthenticated' });
+        ).rejects.toMatchObject({ code: 'failed-precondition' });
     });
 
     it('rejects anonymous callers', async () => {
@@ -38,6 +38,6 @@ describe('auditReleaseArtworkForDelivery security & admission (ISSUE-1543)', () 
                 data: { releaseId: 'rel-1' },
                 auth: { uid: 'user-1', token: { email_verified: true, firebase: { sign_in_provider: 'anonymous' } } }
             } as never)
-        ).rejects.toMatchObject({ code: 'unauthenticated' });
+        ).rejects.toMatchObject({ code: 'permission-denied' });
     });
 });

@@ -40,6 +40,9 @@ export const auditReleaseArtworkForDelivery = onCall(
         if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
             throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
         }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('failed-precondition', 'A verified email address is required.');
+        }
 
         if (request.rawRequest) {
             const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {

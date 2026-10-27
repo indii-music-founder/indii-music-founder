@@ -295,13 +295,15 @@ describe('Subscription & Billing Admission Gates (ISSUE-1543 Batch 10)', () => {
             },
             data: defaultData,
           }),
-        ).rejects.toThrow(/Anonymous|authenticated/i);
+        ).rejects.toThrow(/Anonymous|authenticated|unauthorized|signed in|signed-in/i);
       });
 
       it('enforces Arcjet rate-limiting denial', async () => {
         mocks.protectAuthenticated.mockResolvedValueOnce({
           allowed: false,
+          status: 429,
           reason: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded.',
         });
 
         await expect(

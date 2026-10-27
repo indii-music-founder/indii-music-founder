@@ -757,7 +757,7 @@ describe('security & admission controls (ISSUE-1543)', () => {
                 uid: UID,
                 token: { email_verified: true, firebase: { sign_in_provider: 'anonymous' } }
             } as never))
-        ).rejects.toMatchObject({ code: 'unauthenticated' });
+        ).rejects.toMatchObject({ code: 'permission-denied' });
     });
 
     it('prevents rogue auto-enrollment when an active Studio session is online', async () => {

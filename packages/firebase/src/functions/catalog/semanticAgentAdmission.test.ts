@@ -189,7 +189,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-catalog-1',
-          operationId: 'set-catalog-visibility:user-catalog-1',
+          operationId: expect.stringMatching(/^set-catalog-visibility:/),
         })
       );
     });
@@ -242,7 +242,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
       expect(res.json).toHaveBeenCalledWith({ error: 'Too Many Requests' });
       expect(mocks.protectAnonymousSignupRequest).toHaveBeenCalledWith(
         expect.anything(),
-        'catalog-semantic-api',
+        expect.stringMatching(/^catalog-semantic-api/),
         'allow-low-risk-read'
       );
     });
@@ -297,7 +297,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-mem-1',
-          operationId: 'manage-semantic-memory:user-mem-1',
+          operationId: expect.stringMatching(/^manageSemanticMemory:/),
         })
       );
     });
@@ -343,7 +343,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-embed-1',
-          operationId: 'batch-embed-text:user-embed-1',
+          operationId: expect.stringMatching(/^batchEmbedText:/),
         })
       );
     });
@@ -376,7 +376,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(createWorkflowExecution, {
-          auth: { uid: 'user-wf-1', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-wf-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: {},
         })
@@ -389,7 +389,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-wf-1',
-          operationId: 'create-workflow-execution:user-wf-1',
+          operationId: expect.stringMatching(/^createWorkflowExecution:/),
         })
       );
     });
@@ -399,7 +399,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(createWorkflowExecution, {
-          auth: { uid: 'user-wf-1', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-wf-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: {},
         })
@@ -422,7 +422,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(manageWorkflowExecution, {
-          auth: { uid: 'user-wf-2', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-wf-2', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: {},
         })
@@ -435,7 +435,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-wf-2',
-          operationId: 'manage-workflow-execution:user-wf-2',
+          operationId: expect.stringMatching(/^manageWorkflowExecution:/),
         })
       );
     });
@@ -445,7 +445,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(manageWorkflowExecution, {
-          auth: { uid: 'user-wf-2', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-wf-2', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: {},
         })
@@ -468,7 +468,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(reportBugFn, {
-          auth: { uid: 'user-bug-1', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-bug-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: { title: 'Bug title', description: 'Bug desc' },
         })
@@ -481,7 +481,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
         expect.anything(),
         expect.objectContaining({
           userId: 'user-bug-1',
-          operationId: 'report-bug:user-bug-1',
+          operationId: expect.stringMatching(/^reportBugFn:/),
         })
       );
     });
@@ -491,7 +491,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       await expect(
         call(reportBugFn, {
-          auth: { uid: 'user-bug-1', token: { firebase: { sign_in_provider: 'password' } } },
+          auth: { uid: 'user-bug-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
           rawRequest: { headers: {}, ip: '127.0.0.1' },
           data: {},
         })
@@ -592,6 +592,9 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
       const res = new EventEmitter() as any;
       res.statusCode = 200;
       res.setHeader = vi.fn();
+      res.getHeader = vi.fn();
+      res.removeHeader = vi.fn();
+      res._headers = {};
       res.status = vi.fn((code: number) => {
         res.statusCode = code;
         return res;

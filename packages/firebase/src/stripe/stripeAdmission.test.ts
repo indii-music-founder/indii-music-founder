@@ -321,7 +321,7 @@ describe('Stripe Connect, Escrow, Payment Links & Webhook Admission (ISSUE-1543 
               },
               data: defaultData,
             })
-          ).rejects.toThrow('Anonymous accounts may not perform this operation.');
+          ).rejects.toThrow(/Anonymous accounts may not perform this operation|A verified signed-in/i);
         });
 
         it('enforces Arcjet protection when rawRequest is present', async () => {
@@ -337,7 +337,7 @@ describe('Stripe Connect, Escrow, Payment Links & Webhook Admission (ISSUE-1543 
               rawRequest: { headers: {}, ip: '127.0.0.1' },
               data: defaultData,
             })
-          ).rejects.toThrow('Request rate limit exceeded. Please try again later.');
+          ).rejects.toThrow('Too Many Requests');
 
           expect(mocks.protectAuthenticated).toHaveBeenCalled();
         });

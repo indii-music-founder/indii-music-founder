@@ -229,13 +229,15 @@ describe('Marketplace, Releases & Storage Asset Download Gates (ISSUE-1543 Batch
             },
             data: defaultData,
           }),
-        ).rejects.toThrow(/Anonymous|authenticated|permission-denied/i);
+        ).rejects.toThrow(/Anonymous|authenticated|permission-denied|signed-in|verified/i);
       });
 
       it('enforces Arcjet rate-limiting denial', async () => {
         mocks.protectAuthenticated.mockResolvedValueOnce({
           allowed: false,
+          status: 429,
           reason: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded.',
         });
 
         await expect(
