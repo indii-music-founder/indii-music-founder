@@ -24,7 +24,12 @@
  */
 
 import { auth } from '@/services/firebase';
-import { GoogleAuthProvider, reauthenticateWithPopup } from 'firebase/auth';
+import {
+    GoogleAuthProvider,
+    reauthenticateWithPopup,
+    linkWithPopup,
+    signInWithPopup,
+} from 'firebase/auth';
 import type { PlatformData, StreamDataPoint, RegionData } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -172,7 +177,17 @@ export class YouTubeAnalyticsService {
         const user = auth.currentUser;
         if (!user) throw new Error('Not authenticated.');
 
-        const result = await reauthenticateWithPopup(user, provider);
+        const isGoogleLinked = Array.isArray(user.providerData) && user.providerData.some(p => p.providerId === 'google.com');
+        let result;
+        if (isGoogleLinked) {
+            result = await reauthenticateWithPopup(user, provider);
+        } else {
+            try {
+                result = await linkWithPopup(user, provider);
+            } catch {
+                result = await signInWithPopup(auth, provider);
+            }
+        }
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential?.accessToken;
 

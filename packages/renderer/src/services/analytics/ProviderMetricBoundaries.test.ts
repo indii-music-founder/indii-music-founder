@@ -13,6 +13,8 @@ vi.mock('firebase/auth', () => ({
         addScope() {}
     },
     reauthenticateWithPopup: vi.fn(),
+    linkWithPopup: vi.fn(),
+    signInWithPopup: vi.fn(),
 }));
 vi.mock('@sentry/react', () => ({ captureException: vi.fn() }));
 

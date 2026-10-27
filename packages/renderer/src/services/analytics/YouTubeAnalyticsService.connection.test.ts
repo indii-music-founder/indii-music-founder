@@ -17,6 +17,8 @@ vi.mock('firebase/auth', () => ({
         setCustomParameters() {}
     },
     reauthenticateWithPopup: vi.fn(),
+    linkWithPopup: vi.fn(),
+    signInWithPopup: vi.fn(),
 }));
 
 import { YouTubeAnalyticsService } from './YouTubeAnalyticsService';
@@ -61,5 +63,25 @@ describe('YouTubeAnalyticsService connection state', () => {
 
         sessionStorage.setItem('yt_google_token_expiry:user-a', 'not-a-number');
         await expect(service.isConnected()).resolves.toBe(false);
+    });
+
+    it('links Google identity when user signed up with password', async () => {
+        const { linkWithPopup, GoogleAuthProvider } = await import('firebase/auth');
+        const mockLink = vi.mocked(linkWithPopup).mockResolvedValue({} as never);
+        vi.mocked(GoogleAuthProvider.credentialFromResult).mockReturnValue({
+            accessToken: 'scoped-yt-token',
+        } as never);
+
+        firebase.auth.currentUser = {
+            uid: 'password-user',
+            providerData: [{ providerId: 'password' }],
+        };
+
+        const service = new YouTubeAnalyticsService();
+        await service.requestYouTubeAccess();
+
+        expect(mockLink).toHaveBeenCalled();
+        expect(sessionStorage.getItem('yt_google_access_token:password-user')).toBe('scoped-yt-token');
+        await expect(service.isConnected()).resolves.toBe(true);
     });
 });
