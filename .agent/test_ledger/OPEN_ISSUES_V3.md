@@ -4682,9 +4682,9 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1512: Cloud rendering acknowledges work before durable enqueue and lacks bounded ownership-safe downloads
 
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit d813350fa CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40198666070
 - **Progress (2026-10-25):** A focused branch replaces the worker's in-process HTTP 202 path with a deterministically named Cloud Task created before dispatch success, retries enqueue failures, and uses a fenced Firestore lease so an expired worker can be reclaimed without a stale completion write. Media staging now uses generation-pinned, owner-scoped project Storage objects with type, size, total-job, timeout and checksum limits; arbitrary external URLs and redirects are refused. The Cloud Tasks queue and enqueuer IAM must be provisioned before deploying this branch. Local tests and builds are structural proof only; credentialed staging, crash recovery and genuine render delivery remain required before closing the issue.
-
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
 - **Recovered from:** Original audit ISSUE-1453; current ISSUE-1453 concerns unrelated UI work.
 - **October 12 recheck:** Worker still returns HTTP 202 before durable execution and follows arbitrary redirects into unbounded arrayBuffer downloads (index.ts:41–54,168–173).
 - **Severity:** HIGH
@@ -4698,7 +4698,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1513: Statement imports retain unstable identities, fragile parsing and fee reconciliation defects
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b592b3b49 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40199235089
 - **Recovered from:** Original audit ISSUE-1454; current ISSUE-1454 concerns unrelated UI work.
 - **October 12 recheck:** Adapters retain timestamp report IDs, positional row IDs, naive CSV/TSV splitting and incorrect fee totals (DistroKid:108,153,157; TuneCore:64,144,148).
 - **Severity:** HIGH
@@ -4881,7 +4882,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1525: Artist Passport email receipt metadata blocks subsequent account claim/contact updates
 
-- **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 1c721e720 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40265222596
 - **2026-10-25 progress:** The current rules already preserve server report receipt fields through contact edits and reject client receipt forgery. The landing signup path now reports a failed assessment claim separately from successful account creation, still sends the verification email, and offers an in-session retry. Claim reads distinguish missing, already-owned-by-caller, and other-owned records; write failures propagate instead of being swallowed. Focused unit tests cover retry and idempotency. This is structural evidence only; secure ownership enforcement remains ISSUE-1526, and genuine signup/reload acceptance remains unverified.
 - **Severity:** HIGH
 - **Module:** Artist Passport / Firestore / Onboarding
@@ -4894,7 +4896,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1526: Artist Passport unclaimed contact data, account claim and email consent lack trusted ownership enforcement
 
-- **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 249d180e1 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432776214
 - **2026-10-26 progress:** Enforced email immutability on unclaimed assessment contact updates in `packages/firebase/firestore.rules` (`isValidContactUpdate` checks `!('email' in resource.data) || resource.data.email == null || request.resource.data.email == resource.data.email`) and in `packages/landing/src/lib/passportService.ts` (`updateAssessmentContact` rejects modifying email once set). Enforced trusted ownership on account claims in `packages/firebase/firestore.rules` (`isValidAccountClaim` requires verified `request.auth.token.email == resource.data.email` whenever an email is recorded) and in `packages/landing/src/lib/passportService.ts` (`claimProspectAssessment` validates `callerEmail` against `data.email`). Enforced assessment consent check `assessmentConsent === true` in `packages/firebase/src/passport/sendPassportReportEmail.ts` before dispatching report emails. Verified with 307 Firestore security rules tests passing (0 failures), 6 trigger unit tests, 8 landing claim unit tests, and 0 TypeScript compilation errors.
 - **Severity:** HIGH
 - **Module:** Artist Passport / Privacy / Account linking / Email
@@ -4906,7 +4909,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1527: Ordinary production deployment repeatedly deletes active functions
 
-- **Status:** 🔴 OPEN (2026-10-13; October 12 audit intake)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 207e9a60b CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40130145767
 - **Severity:** HIGH
 - **Module:** CI deployment / Cloud Functions / Availability
 - **Classification:** Structural source defect; historical commit evidence or authenticated CI evidence where stated. Genuine customer impact/acceptance remains Conditional.
@@ -5200,7 +5204,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1537: Cross-tenant recoupment ledger balance drain and global attribution receipt poisoning
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **Severity:** 🔴 CRITICAL
 - **Module:** Marketing Orchestration / Finance Recoupment Ledger / Attribution Bus (`packages/firebase/src/functions/marketing/adCampaignCallables.ts`, `packages/firebase/src/orchestration/marketing/firestore-recoupment-ledger.ts`, `packages/firebase/src/execution/attribution/firestore-attribution-store.ts`)
 - **Classification:** Multi-tenant authorization bypass and cross-tenant state poisoning.
@@ -5226,7 +5231,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1538: Systemic HTTP 422 schema violations and 1-indexed Score misparsing across 45+ TypeSafe System One (`jev-latest`) judgment call sites
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **2026-10-24 progress:** The focused `codex/issue-1538-typesafe-contract` branch converts the renderer's 44 Score definitions and Choice payloads to ordered `criteria`, adds explicit rubrics where only a range or prose existed, and maps zero-based Jev scores to 1–5 only for consumers that expose that scale. Campaign creative fit now uses ordered criteria and converts the 0–4 response to its documented 1–5 score. The 0–3 consumers remain zero-based. A live `jev-latest` Score request returned HTTP 200 (`req_01a16e8e54037266be38f0cc3db5fb90`); structural and focused unit tests passed. This remains OPEN until branch CI and mainline delivery, with production acceptance still unverified.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #464 (commit e8b9f7b0f). Ordered criteria schema arrays and 0-indexed score normalization for 44 TypeSafe System One judgments merged into main; live production endpoint verification across all client flows remains open.
 - **2026-10-26 progress:** Merged into mainline via PR #464 (commit `e8b9f7b0f`). Unit test suites `typesafeJudgments.test.ts` (196/196), `typesafeJudgments.cooldown.test.ts` (2/2), `typesafeJudgments.maskedText.test.ts` (7/7), `typesafeClient.test.ts` (5/5), `typesafeJudge.test.ts` (10/10), and `judgments.test.ts` (11/11) pass cleanly with zero 422 schema rejections.
@@ -5258,7 +5264,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1539: `CampaignOrchestrator` and `evaluateCampaignAllocationWithJev` over-allocate total campaign budget (101%), violate platform `minBudgetCents` floors, and invert the Noul readiness threshold
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing Orchestration (`packages/firebase/src/orchestration/marketing/campaign-judgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-orchestrator.ts`)
 - **Classification:** Financial allocation math error and inverted probability threshold.
@@ -5282,7 +5289,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1540: `GoogleAdsAdapter` and `TikTokAdAdapter` corrupt budget/campaign resources on update and fail PMax provisioning
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **2026-10-24 progress:** The `codex/issue-1540-ad-adapter-resources` branch resolves Google Ads budget ownership through `campaign.campaign_budget` before mutation, updates TikTok's single daily-budget ad group rather than its lifetime campaign cap, and rejects ambiguous ad-group matches. Google Video Action now uses the `VIDEO_ACTION` subtype and `VIDEO_RESPONSIVE` ad-group type. PMax objectives fail before any remote create until the directive can supply and validate the required AssetGroup/AssetGroupAssets roles; this prevents stranded resources but **does not complete PMax provisioning acceptance**. This issue remains OPEN pending that work, branch CI, and live platform validation.
 - **2026-10-26 progress:** Merged into mainline via PR #465 (commit `e13cfeb63`). Verified via `ad-execution-and-attribution.test.ts`: Google Ads budget mutations resolve campaign-owned `campaign_budget` resources, TikTok updates mutate single daily-budget ad groups without altering lifetime caps, and unsupported Performance Max objectives fail before remote resource creation.
 - **Severity:** 🟠 HIGH
@@ -5308,7 +5316,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1541: `AttributionBus.dispatch` permanently marks conversion events as deduplicated when all platform CAPI dispatches fail
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **Severity:** 🟠 HIGH
 - **Module:** Attribution Bus & Ad Adapters (`packages/firebase/src/execution/attribution/attribution-bus.ts`, `packages/firebase/src/execution/ad-adapters/meta.adapter.ts`, `packages/firebase/src/execution/ad-adapters/tiktok.adapter.ts`, `packages/firebase/src/execution/ad-adapters/google-ads.adapter.ts`)
 - **Classification:** Silent conversion loss and broken retry idempotency on upstream error.
@@ -5333,7 +5342,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1542: Mobile Remote `QuickCaptureView` leaks orphaned Storage blobs on relay failure, hides the Video Editor bridge for audio captures, and `rendererExecutionAdapter` silently drops video/audio attachments sent to Boardroom
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **Severity:** 🟠 HIGH
 - **Module:** Mobile Remote / Command Execution Adapter (`packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`, `packages/renderer/src/services/command/rendererExecutionAdapter.ts`)
 - **Classification:** Storage resource leak, unreachable UI action, and silent attachment drop.
@@ -5418,7 +5428,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1544: `deductCredits` deterministic Firestore read-after-write transaction crash and `generateImageV3Fn` unmetered 4K Pro cost-enforcement bypass
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 195f814f9 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432855519
 - **Severity:** 🔴 CRITICAL
 - **Module:** Subscription Credits & Creative Image Generation (`packages/firebase/src/subscription/deductCredits.ts`, `packages/firebase/src/lib/image_generation.ts`)
 - **Classification:** Guaranteed Firestore transaction runtime crash and unmetered AI generation quota bypass.
@@ -5448,11 +5459,11 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1545: Hosted Rights Registration 2-hour `rightsInfrastructure/capacity` session leak, permanent `outcome_unknown` filing deadlock, and unvalidated broker `control_ack` race
 
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 15f4920b5 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432858837
 - **Progress (2026-10-25):** Current code already releases capacity transactionally on a confirmed worker `ended` event, fences stale `control_ack` generations, and runs a scheduled Cloud Run execution reconciliation before releasing uncertain capacity. The remaining user-facing deadlock is `outcome_unknown`: a focused branch adds an exact-filing, owner-bound artist attestation path to reopen only when no hosted reservation or reported receipt remains, with an audit record and explicit notice that external status is unverified. An unconfirmed launch with no recoverable operation/execution proof still requires operator reconciliation; its capacity cannot safely be released by elapsed time alone. Live portal acceptance remains open.
 - **2026-10-26 verification progress (partial):** On branch `codex/issue-1545-verification`, full verification confirms all three core defects in hosted rights registration have characterization coverage. Unit tests in `packages/firebase/src/functions/rights/rightsFilingReconciliation.test.ts` (4/4 passed) verify `canReopenUncertainFiling` allows reopening only exact owned preparations after capacity is released, blocks reopening while active sessions exist, and rejects filings with reported receipts or terminal official outcomes. Shared rights schemas and lifecycle tests pass (51/51 tests across `packages/shared`). Static checks pass with 0 errors (`npx tsc -b packages/firebase` and `npm run typecheck:firebase-tests`). ISSUE-1545 remains OPEN.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #480 (commit 01ba77cde). Artist-attested outcome_unknown recovery path and fenced generation broker state merged into main; live member portal filing and Cloud Run session reconciliation remain open.
-
-- **Status:** 🔴 OPEN (2026-10-16)
 - **Severity:** 🟠 HIGH
 - **Module:** Rights Registration & Cloud Run Session Broker (`packages/firebase/src/functions/rights/rightsRegistration.ts`, `packages/rights-session-broker/src/index.ts`)
 - **Classification:** Distributed capacity leak, unrecoverable state-machine deadlock, and unvalidated WebSocket state transition.
@@ -5479,7 +5490,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1546: Desktop `RightsCopilotModal` and `rightsCopilot.ts` launch marketing `/join` URLs instead of portals, silently report failed DOM steps as `completed`, reset React controlled inputs, and no-op `stage_deposit_upload`
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b04b1a6fb CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40437196637
 - **2026-10-24 progress:** The `codex/issue-1546-rights-copilot` branch sends the modal to the member portals used by the native controller, disables native Run actions until a session ID exists, uses native DOM value setters for controlled fields, and keeps deposit attachment explicitly in the artist's hands because the reviewed manifest has no trusted local file path or verified portal upload result. Missing or blocked fields already fail closed; a manual deposit step now cannot report completion. Focused tests and local type checks pass. Signed-in portal acceptance and actual deposit submission remain open.
 - **2026-10-26 progress:** Merged into mainline via PR #468 (commit `c3b396772`). Verified via `packages/main/src/handlers/rightsCopilot.test.ts` (22/22 passed) and `packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx` (12/12 passed): official member portal URLs are targeted, DOM field failures fail closed, native prototype value setters prevent React input resets, and manual deposit staging is required.
 - **Severity:** 🟠 HIGH
