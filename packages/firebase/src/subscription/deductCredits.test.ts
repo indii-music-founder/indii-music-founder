@@ -251,4 +251,68 @@ describe('deductCredits', () => {
       })
     );
   });
+
+  it('allows admin callers to deduct credits for target user', async () => {
+    const adminAuth = { uid: 'admin-user', token: { admin: true } };
+
+    mocks.mockTransaction.get.mockImplementation(async (ref: any) => {
+      if (mocks.mockTransaction.update.mock.calls.length || mocks.mockTransaction.set.mock.calls.length) {
+        throw new Error('Firestore transactions require all reads before all writes');
+      }
+      if (ref.path === 'users/artist-user/wallet/current') {
+        return {
+          exists: true,
+          data: () => ({ balanceCredits: 500 }),
+        };
+      }
+      return { exists: false, data: () => null };
+    });
+
+    const result = await fn(
+      makeRequest(
+        { amount: 100, reason: 'Admin adjustment', userId: 'artist-user' },
+        adminAuth
+      )
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.balanceAfter).toBe(400);
+    expect(mocks.mockTransaction.update).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'users/artist-user/wallet/current' }),
+      expect.objectContaining({ balanceCredits: 400 })
+    );
+  });
+
+  it('handles absent legacy credits document without writing to legacy collection', async () => {
+    const auth = { uid: 'user-new' };
+
+    mocks.mockTransaction.get.mockImplementation(async (ref: any) => {
+      if (mocks.mockTransaction.update.mock.calls.length || mocks.mockTransaction.set.mock.calls.length) {
+        throw new Error('Firestore transactions require all reads before all writes');
+      }
+      if (ref.path === 'users/user-new/wallet/current') {
+        return {
+          exists: true,
+          data: () => ({ balanceCredits: 250 }),
+        };
+      }
+      // legacyCreditsRef does not exist
+      return { exists: false, data: () => null };
+    });
+
+    const result = await fn(
+      makeRequest(
+        { amount: 50, reason: 'Stem separation' },
+        auth
+      )
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.balanceAfter).toBe(200);
+    // Ensure no update to user_credits was called
+    const legacyUpdate = mocks.mockTransaction.update.mock.calls.find(
+      (call: any[]) => call[0]?.path?.includes('user_credits')
+    );
+    expect(legacyUpdate).toBeUndefined();
+  });
 });
