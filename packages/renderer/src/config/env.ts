@@ -171,7 +171,7 @@ const firebaseEnv = processEnv;
 // screen with an error rather than silently connecting to the wrong project.
 export const firebaseConfig = {
     apiKey: firebaseEnv.firebaseApiKey || "",
-    authDomain: firebaseEnv.firebaseAuthDomain || "",
+    authDomain: firebaseEnv.firebaseAuthDomain || (firebaseEnv.firebaseProjectId ? `${firebaseEnv.firebaseProjectId}.firebaseapp.com` : ""),
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
     projectId: firebaseEnv.firebaseProjectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || "",
