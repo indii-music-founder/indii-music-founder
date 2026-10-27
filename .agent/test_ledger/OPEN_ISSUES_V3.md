@@ -5220,6 +5220,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-24):** Reservation now checks ledger `artistId` in the same transaction before spending and rejects a mismatched existing reservation. Firestore attribution receipts are scoped under the authenticated artist's user path, so identical event IDs in different tenants do not collide. Focused tests cover unchanged cross-tenant balance and independent event receipts. Ledgers without an authoritative `artistId` now fail closed; inventory/backfill and genuine deployed acceptance remain outstanding.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #461 (commit b2a060d5f). Artist ownership verification in recoupment ledger reservation and tenant-scoped attribution deduplication receipts merged into main; production cross-tenant live testing and inventory backfill remain open.
+- **2026-10-26 progress:** Merged into mainline via PR #461 (commit `b2a060d5f`). Extended characterization tests in `ad-execution-and-attribution.test.ts` (27/27 passed) verify multi-tenant recoupment balance isolation, rejection of unowned ledgers without an authoritative artist ID, and rejection of cross-tenant existing reservations.
 
 ---
 
@@ -5228,6 +5229,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Status:** 🔴 OPEN (2026-10-16)
 - **2026-10-24 progress:** The focused `codex/issue-1538-typesafe-contract` branch converts the renderer's 44 Score definitions and Choice payloads to ordered `criteria`, adds explicit rubrics where only a range or prose existed, and maps zero-based Jev scores to 1–5 only for consumers that expose that scale. Campaign creative fit now uses ordered criteria and converts the 0–4 response to its documented 1–5 score. The 0–3 consumers remain zero-based. A live `jev-latest` Score request returned HTTP 200 (`req_01a16e8e54037266be38f0cc3db5fb90`); structural and focused unit tests passed. This remains OPEN until branch CI and mainline delivery, with production acceptance still unverified.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #464 (commit e8b9f7b0f). Ordered criteria schema arrays and 0-indexed score normalization for 44 TypeSafe System One judgments merged into main; live production endpoint verification across all client flows remains open.
+- **2026-10-26 progress:** Merged into mainline via PR #464 (commit `e8b9f7b0f`). Unit test suites `typesafeJudgments.test.ts` (196/196), `typesafeJudgments.cooldown.test.ts` (2/2), `typesafeJudgments.maskedText.test.ts` (7/7), `typesafeClient.test.ts` (5/5), `typesafeJudge.test.ts` (10/10), and `judgments.test.ts` (11/11) pass cleanly with zero 422 schema rejections.
 - **Severity:** 🔴 CRITICAL
 - **Module:** TypeSafe System One Judgments (`packages/renderer/src/config/typesafeJudgments.ts`, `packages/firebase/src/orchestration/marketing/campaign-judgments.ts`)
 - **Classification:** Upstream API contract violation and response parsing off-by-one defect.
@@ -5274,6 +5276,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-24):** Source review found exact-cent allocation already uses floor plus remainder, so the 101% rounding claim above is historical. The remaining fix raises readiness confirmation to 0.65 and validates absolute per-platform cent minimums before reservation; a refined split below the minimum falls back to the original valid split. Focused tests cover 0.64 readiness, exact-cent totals, and a below-minimum refined split. Live JEV allocation remains blocked by ISSUE-1538's request-schema defects, and branch CI/deployed acceptance are pending.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #462 (commit 5e91f19c6). 0.65 readiness threshold, floor-bounded cent allocations, and safe fallback on refined splits merged into main; live multi-platform ad spend delivery remains open.
+- **2026-10-26 progress:** Merged into mainline via PR #462 (commit `5e91f19c6`). Verified via `ad-execution-and-attribution.test.ts` (27/27 passed): Jev readiness probability < 0.65 is rejected, 3-platform campaign budget splits preserve exact cents, and allocations below platform minimum fall back to original valid splits.
 
 ---
 
@@ -5281,6 +5284,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Status:** 🔴 OPEN (2026-10-16)
 - **2026-10-24 progress:** The `codex/issue-1540-ad-adapter-resources` branch resolves Google Ads budget ownership through `campaign.campaign_budget` before mutation, updates TikTok's single daily-budget ad group rather than its lifetime campaign cap, and rejects ambiguous ad-group matches. Google Video Action now uses the `VIDEO_ACTION` subtype and `VIDEO_RESPONSIVE` ad-group type. PMax objectives fail before any remote create until the directive can supply and validate the required AssetGroup/AssetGroupAssets roles; this prevents stranded resources but **does not complete PMax provisioning acceptance**. This issue remains OPEN pending that work, branch CI, and live platform validation.
+- **2026-10-26 progress:** Merged into mainline via PR #465 (commit `e13cfeb63`). Verified via `ad-execution-and-attribution.test.ts`: Google Ads budget mutations resolve campaign-owned `campaign_budget` resources, TikTok updates mutate single daily-budget ad groups without altering lifetime caps, and unsupported Performance Max objectives fail before remote resource creation.
 - **Severity:** 🟠 HIGH
 - **Module:** Ad Execution Adapters (`packages/firebase/src/execution/ad-adapters/google-ads.adapter.ts`, `packages/firebase/src/execution/ad-adapters/tiktok.adapter.ts`)
 - **Classification:** Third-party ad platform API contract defect.
@@ -5323,6 +5327,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-24):** The attribution bus now persists a terminal deduplication receipt only after every attempted eligible platform succeeds. Failed and partially failed fan-outs remain retryable with the same platform event ID. Adapter failures carry bounded status/code diagnostics into the receipt; focused tests cover outage recovery and partial fan-out. Publication, exact-SHA CI, and production delivery evidence remain pending.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #459 (commit 1af6c0710). Terminal deduplication receipt gating on all-platform success and retryable transient error handling merged into main; live CAPI platform retry telemetry remains open.
+- **2026-10-26 progress:** Merged into mainline via PR #459 (commit `1af6c0710`). Verified via `ad-execution-and-attribution.test.ts`: `AttributionBus.dispatch` retains retries across transient platform failures and marks events deduplicated only upon verified delivery success.
 
 ---
 
@@ -5353,6 +5358,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Progress (2026-10-24):** Current source no longer dispatches Boardroom captures through the relay; it uploads them, records an Encounter, and navigates to chat, so the old Boardroom relay-cleanup claim is historical. The editor path now removes uploads only when task creation is rejected; once a task is accepted, timeout cleanup would destroy media a still-running desktop may need. Audio exposes the Video Editor action, receipt/document Encounter types are retained, and owned Firebase Storage audio/video URLs are added to the agent request as unexamined references instead of silently disappearing. Focused structural tests pass; genuine mobile-to-desktop media acceptance and branch CI remain pending.
 - **2026-10-26 mainline merge progress:** Merged into mainline main via PR #463 (commit 951f8e4c2). Mobile Remote audio bridge to Video Editor, Encounter type classification, and Boardroom audio/video URL references merged into main; live mobile-to-desktop device relay acceptance remains open.
+- **2026-10-26 progress:** Merged into mainline via PR #463 (commit `951f8e4c2`). Verified via `QuickCaptureView.test.tsx` (22/22 passed) and `remoteMediaAttachmentBridge.test.ts` (4/4 passed): mobile video/audio references are formatted and preserved into desktop agent requests, audio captures surface the Video Editor action, and failed task dispatches remove uploaded media.
 
 ---
 
@@ -5474,6 +5480,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 - **Status:** 🔴 OPEN (2026-10-16)
 - **2026-10-24 progress:** The `codex/issue-1546-rights-copilot` branch sends the modal to the member portals used by the native controller, disables native Run actions until a session ID exists, uses native DOM value setters for controlled fields, and keeps deposit attachment explicitly in the artist's hands because the reviewed manifest has no trusted local file path or verified portal upload result. Missing or blocked fields already fail closed; a manual deposit step now cannot report completion. Focused tests and local type checks pass. Signed-in portal acceptance and actual deposit submission remain open.
+- **2026-10-26 progress:** Merged into mainline via PR #468 (commit `c3b396772`). Verified via `packages/main/src/handlers/rightsCopilot.test.ts` (22/22 passed) and `packages/renderer/src/modules/registration/components/RightsCopilotModal.test.tsx` (12/12 passed): official member portal URLs are targeted, DOM field failures fail closed, native prototype value setters prevent React input resets, and manual deposit staging is required.
 - **Severity:** 🟠 HIGH
 - **Module:** Desktop Rights Registration Copilot (`packages/renderer/src/modules/registration/components/RightsCopilotModal.tsx`, `packages/main/src/handlers/rightsCopilot.ts`)
 - **Classification:** Broken Electron DOM automation, silent failure reporting, and unimplemented upload step.
