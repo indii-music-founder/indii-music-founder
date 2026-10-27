@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { processEarningsReport } from './ingestEarningsReport';
 import { DistroKidStatementAdapter, TuneCoreStatementAdapter } from './adapters';
 import { mapNormalizedStatementToEarningsReport } from './normalizedStatementMapper';
@@ -24,12 +27,32 @@ export const parseAndIngestRoyaltyReport = onCall({
   enforceAppCheck: false,
   timeoutSeconds: 300,
   memory: '512MiB',
+  secrets: [arcjetKey],
 }, async (request) => {
   // Validate App Check token (if unknown)
   validateAppCheckV2(request);
 
-  if (!request.auth) {
+  if (!request.auth || !request.auth.uid) {
     throw new HttpsError('unauthenticated', 'Authentication required.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `parse-ingest-royalty-report:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const { fileName, contentBase64 } = request.data ?? {};
