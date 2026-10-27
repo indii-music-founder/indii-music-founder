@@ -5663,7 +5663,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1552: Direct-main documentation commits can have no exact-SHA CI despite the mainline policy requiring it
 
-- **Status:** 🔴 OPEN (2026-10-26; repository-workflow evidence, no new GitHub issue)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 4137cee7a CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40511435746
 - **Severity:** MEDIUM — verification/provenance gap, not evidence of a failing build.
 - **Module:** GitHub Actions / mainline delivery policy
 - **Evidence:** `AGENTS.md` and `.agent/workflows/branch-safety.md` require agents to inspect CI for the exact pushed SHA. `.github/workflows/build.yml` runs on pull requests or manual dispatch and ignores `**.md`, `docs/**`, and `.agent/**`; `.github/workflows/deploy.yml` ignores those paths on `main` pushes. The docs-only PR #492 had no automatic PR checks, so its exact-head Build and Test run was dispatched manually. After merge, GitHub returned zero check runs for docs-only main commit `e905a8c3e5d0e96099e8c6d23092cdab11326dfc`. The issue-ledger workflow covers its own file but not every documentation path.

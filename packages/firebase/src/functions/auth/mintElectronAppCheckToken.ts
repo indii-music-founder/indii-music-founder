@@ -15,7 +15,7 @@ const ELECTRON_FIREBASE_APP_ID = '1:148015878263:web:febc76c0bd56f28cdbb672';
  * and calls this function to obtain a valid App Check token.
  */
 export const mintElectronAppCheckToken = onCall(
-  { region: 'us-central1', enforceAppCheck: false, secrets: [arcjetKey] },
+  { region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid || request.auth?.token.email_verified !== true || request.auth.token.firebase?.sign_in_provider === 'anonymous') {
