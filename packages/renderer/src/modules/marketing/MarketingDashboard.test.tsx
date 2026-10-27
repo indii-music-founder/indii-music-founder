@@ -31,7 +31,7 @@ describe('MarketingDashboard', () => {
         render(<MarketingDashboard />);
         // Sidebar header
         expect(screen.getByText('Marketing')).toBeInTheDocument();
-        expect(screen.getByText(/Pocket-team capture for live moments\./)).toBeInTheDocument();
+        expect(screen.getByText('Campaign Dashboard')).toBeInTheDocument();
         // Toolbar action
         expect(screen.getByText('New Campaign')).toBeInTheDocument();
         // Main content (via mock)

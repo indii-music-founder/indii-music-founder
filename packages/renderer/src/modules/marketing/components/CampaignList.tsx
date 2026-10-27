@@ -46,9 +46,9 @@ const CampaignList: React.FC<CampaignListProps> = ({
             {/* Section Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
                         {isSearchActive ? 'Search Results' : 'Active Campaigns'}{' '}
-                        <span className="text-xs font-normal text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">{campaigns.length}</span>
+                        <span className="text-xs font-bold text-[#FFD700] px-2.5 py-0.5 bg-[#FFB800]/10 rounded-full border border-[#FFB800]/30 shadow-sm">{campaigns.length}</span>
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
                         {isSearchActive ? `Campaigns matching "${searchQuery?.trim()}"` : 'Manage and track your ongoing marketing efforts.'}
@@ -68,19 +68,19 @@ const CampaignList: React.FC<CampaignListProps> = ({
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onAIGenerate}
-                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-dept-marketing/30 bg-dept-marketing/5 hover:bg-dept-marketing/10 hover:border-dept-marketing/60 transition-all duration-300"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-[#FFB800]/30 bg-[#14100C]/70 hover:bg-[#14100C] hover:border-[#FFB800]/60 transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-[0_0_24px_rgba(255,184,0,0.15)]"
                         >
-                            <div className="h-16 w-16 rounded-full bg-dept-marketing/10 flex items-center justify-center group-hover:bg-dept-marketing/20 group-hover:scale-110 transition-all duration-300">
-                                <Sparkles size={32} className="text-dept-marketing group-hover:text-white" />
+                            <div className="h-16 w-16 rounded-full bg-[#FFB800]/10 flex items-center justify-center group-hover:bg-[#FFB800]/20 group-hover:scale-110 transition-all duration-300">
+                                <Sparkles size={30} className="text-[#FFD700] group-hover:text-white" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with Intelligence</h3>
-                                <p className="text-xs text-gray-500 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
+                                <h3 className="text-sm font-bold text-white group-hover:text-[#FFD700] transition-colors tracking-tight">Generate with Intelligence</h3>
+                                <p className="text-xs text-gray-400 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
                             </div>
 
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4">
-                                <Sparkles size={16} className="text-dept-marketing/50 animate-pulse" />
+                                <Sparkles size={16} className="text-[#FFB800]/50 animate-pulse" />
                             </div>
                         </button>
                     </motion.div>
@@ -91,19 +91,19 @@ const CampaignList: React.FC<CampaignListProps> = ({
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onCreateNew}
-                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-800 bg-black/20 hover:bg-black/40 hover:border-dept-creative/50 transition-all duration-300"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-white/10 bg-[#14100C]/40 hover:bg-[#14100C]/80 hover:border-[#FFB800]/30 transition-all duration-300 backdrop-blur-md"
                         >
-                            <div className="h-16 w-16 rounded-full bg-gray-900 flex items-center justify-center group-hover:bg-dept-creative/30 group-hover:scale-110 transition-all duration-300">
-                                <Plus size={32} className="text-gray-600 group-hover:text-dept-creative" />
+                            <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#FFB800]/15 group-hover:scale-110 transition-all duration-300">
+                                <Plus size={30} className="text-gray-400 group-hover:text-[#FFD700]" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm font-semibold text-gray-300 group-hover:text-dept-creative transition-colors">New Campaign</h3>
-                                <p className="text-xs text-gray-600 group-hover:text-gray-500 mt-1 max-w-[160px]">Create manually from scratch</p>
+                                <h3 className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors tracking-tight">New Campaign</h3>
+                                <p className="text-xs text-gray-500 group-hover:text-gray-400 mt-1 max-w-[160px]">Create manually from scratch</p>
                             </div>
 
-                            {/* Decorative Autonomous Sparkles */}
+                            {/* Decorative Plus */}
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <Plus size={16} className="text-dept-creative" />
+                                <Plus size={16} className="text-[#FFB800]" />
                             </div>
                         </button>
                     </motion.div>

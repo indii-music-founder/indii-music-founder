@@ -175,23 +175,6 @@ const CampaignDashboard: React.FC = () => {
 
                 {/* ── CENTER — Campaign Workspace ────────────────────── */}
                 <div className="flex-1 flex flex-col min-w-0 bg-background relative">
-                    <div className="px-4 md:px-6 pt-4">
-                        <div className="rounded-[28px] border border-dept-marketing/20 bg-linear-to-r from-dept-marketing/10 via-white/[0.03] to-transparent p-5 md:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
-                            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                                <div className="max-w-2xl">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-dept-marketing">Marketing Narrative</p>
-                                    <h3 className="mt-2 text-xl md:text-2xl font-bold tracking-tight text-white">Pocket-team capture for live moments.</h3>
-                                    <p className="mt-2 text-sm md:text-[15px] leading-relaxed text-gray-300">
-                                        The remote becomes a pocket team-capture lane for voice memos, photos, and quick notes that turn real-world moments into campaign-ready material.
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-dept-marketing/80">
-                                    <span className="h-2 w-2 rounded-full bg-dept-marketing shadow-[0_0_12px_rgba(233,30,99,0.55)]" />
-                                    Marketing page concept
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
@@ -257,10 +240,10 @@ const CampaignDashboard: React.FC = () => {
                 </div>
 
                 {/* ── RIGHT PANEL — Performance & Assets ─────────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-campaign/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/10 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#000000]/20">
                     <PerformanceSnapshotPanel campaigns={campaigns} />
                     <AssetLibraryPanel />
-                    <IntelligenceSuggestionsPanel />
+                    <IntelligenceSuggestionsPanel campaigns={campaigns} />
                 </aside>
 
                 {isCreateModalOpen && (
@@ -290,22 +273,25 @@ function PerformanceSnapshotPanel({ campaigns }: { campaigns: CampaignAsset[] })
     const active = campaigns.filter(c => c.status === 'EXECUTING' || c.status === 'DONE').length;
     const total = campaigns.length;
     const items = [
-        { label: 'Active Campaigns', value: active.toString(), icon: Radio, color: 'text-green-400' },
-        { label: 'Total Campaigns', value: total.toString(), icon: BarChart3, color: 'text-blue-400' },
+        { label: 'Active Campaigns', value: active.toString(), icon: Radio, color: 'text-[#00B8D4]' },
+        { label: 'Total Campaigns', value: total.toString(), icon: BarChart3, color: 'text-[#FFB800]' },
     ];
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Performance</h3>
+        <div className="rounded-2xl bg-[#14100C]/70 border border-white/10 backdrop-blur-md p-4 shadow-sm">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1 flex items-center justify-between">
+                <span>Performance</span>
+                <span className="text-[10px] text-[#FFB800] font-mono">Live Telemetry</span>
+            </h3>
             <div className="space-y-2">
                 {items.map((s) => (
-                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
                         <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                             <s.icon size={14} className={s.color} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{s.value}</p>
-                            <p className="text-[10px] text-gray-500">{s.label}</p>
+                            <p className="text-sm font-bold text-white truncate">{s.value}</p>
+                            <p className="text-[10px] text-gray-400 font-medium">{s.label}</p>
                         </div>
                     </div>
                 ))}
@@ -324,16 +310,16 @@ function AssetLibraryPanel() {
     const totalAssets = brandAssets.length + referenceImages.length;
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center justify-between">
+        <div className="rounded-2xl bg-[#14100C]/70 border border-white/10 backdrop-blur-md p-4 shadow-sm">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1 flex items-center justify-between">
                 <span>Asset Library</span>
-                <span className="text-gray-600">{totalAssets} stored</span>
+                <span className="text-gray-500 font-mono">{totalAssets} stored</span>
             </h3>
             {totalAssets === 0 ? (
                 <div className="flex flex-col items-center justify-center py-4 text-center">
-                    <Image size={16} className="text-gray-600 mb-2" />
-                    <p className="text-[11px] text-gray-600">No brand assets uploaded</p>
-                    <p className="text-[10px] text-gray-700 mt-0.5">Upload logos, photos, and templates</p>
+                    <Image size={18} className="text-gray-500 mb-2 opacity-60" />
+                    <p className="text-xs font-semibold text-gray-400">No brand assets uploaded</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Upload logos, photos, and templates</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-2">
@@ -344,7 +330,7 @@ function AssetLibraryPanel() {
                     ))}
                     {totalAssets > 4 && (
                         <div className="col-span-2 text-center pt-2">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">+ {totalAssets - 4} more assets</p>
+                            <p className="text-[10px] text-[#FFB800] font-bold uppercase tracking-widest">+ {totalAssets - 4} more assets</p>
                         </div>
                     )}
                 </div>
@@ -353,17 +339,47 @@ function AssetLibraryPanel() {
     );
 }
 
-function IntelligenceSuggestionsPanel() {
+function IntelligenceSuggestionsPanel({ campaigns }: { campaigns: CampaignAsset[] }) {
+    const executingCampaign = campaigns.find(c => c.status === 'EXECUTING');
+
     return (
-        <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
-            <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
-                <Sparkles size={10} /> Autonomous Suggestions
+        <div className="rounded-2xl bg-[#14100C]/70 border border-[#FFB800]/20 backdrop-blur-md p-4 shadow-[0_0_20px_rgba(255,184,0,0.06)]">
+            <h3 className="text-[10px] font-bold text-[#FFD700] uppercase tracking-widest mb-3 px-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-[#FFB800]" /> Autonomous Suggestions
+                </span>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">Jev System One</span>
             </h3>
-            <div className="flex flex-col items-center justify-center py-4 text-center">
-                <Sparkles size={16} className="text-gray-600 mb-2" />
-                <p className="text-[11px] text-gray-600">Collecting analytics...</p>
-                <p className="text-[10px] text-gray-700 mt-0.5 max-w-[180px]">Need a live campaign generating real-world impressions to formulate predictive growth advice.</p>
-            </div>
+            {executingCampaign ? (
+                <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-black/50 border border-white/5">
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB800] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFD700]"></span>
+                            </span>
+                            <p className="text-xs font-bold text-white truncate">{executingCampaign.title}</p>
+                        </div>
+                        <p className="text-[11px] text-gray-300 leading-relaxed font-mono">
+                            {executingCampaign.posts?.length || 0} drops queued · {executingCampaign.durationDays}d timeline
+                        </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-[#FFB800]/5 border border-[#FFB800]/15">
+                        <p className="text-[10px] uppercase font-bold text-[#FFB800] tracking-wider mb-1">Recommended Next Step</p>
+                        <p className="text-xs text-gray-300 leading-relaxed">
+                            Multi-platform queue active. Generate matching 60fps lyric video clips in Video Studio to pair with release drops.
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-4 text-center">
+                    <Sparkles size={18} className="text-[#FFB800]/60 mb-2" />
+                    <p className="text-xs font-semibold text-gray-300">Ready to Launch</p>
+                    <p className="text-[11px] text-gray-400 mt-1 max-w-[200px] leading-relaxed">
+                        Create your first release campaign using Intelligence to synchronize multi-platform social drops.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
