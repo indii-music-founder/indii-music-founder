@@ -45,6 +45,7 @@ vi.mock('../stripe/config', () => ({
 
 vi.mock('../config/secrets', () => ({
   stripeSecretKey: {},
+  arcjetKey: {},
 }));
 
 function makeRequest(overrides: Partial<{
@@ -212,5 +213,26 @@ describe('createCheckoutSession', () => {
         metadata: { userId: 'user-123', tier: 'scale', billingPeriod: 'annual' },
       })
     );
+  });
+
+  it('rejects an anonymous or unverified user', async () => {
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    const anonymousRequest = {
+      ...makeRequest(),
+      auth: { uid: 'user-123', token: { email: 'anon@indii.music', firebase: { sign_in_provider: 'anonymous' } } },
+    };
+
+    await expect(
+      (createCheckoutSession as unknown as (req: unknown) => Promise<unknown>)(anonymousRequest),
+    ).rejects.toThrow('A verified signed-in user is required');
+
+    const unverifiedRequest = {
+      ...makeRequest(),
+      auth: { uid: 'user-123', token: { email: 'anon@indii.music', email_verified: false } },
+    };
+
+    await expect(
+      (createCheckoutSession as unknown as (req: unknown) => Promise<unknown>)(unverifiedRequest),
+    ).rejects.toThrow('A verified signed-in user is required');
   });
 });

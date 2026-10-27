@@ -1,18 +1,42 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { randomUUID } from 'node:crypto';
 import { stripe } from './config';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 /**
  * Triggered by the client to onboard a collaborator to Stripe Connect.
  * Moved from createStripeConnectAccount.ts to connect.ts to consolidate duplicates.
  */
 export const createStripeConnectAccount = onCall(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false, secrets: [stripeSecretKey, arcjetKey] },
     async (request): Promise<{ accountId: string; onboardingUrl: string }> => {
         if (!request.auth) {
             throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to create a Stripe Connect account.'
             );
+        }
+
+        if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+        }
+
+        validateAppCheckV2(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth.token?.admin ? 'admin' : 'verified-free',
+                operationId: `create-stripe-connect:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { email, businessType } = (request.data ?? {}) as { email: string; businessType?: string };
@@ -71,7 +95,7 @@ export const createStripeConnectAccount = onCall(
  * Triggers a payout/transfer from the platform to the destination artist.
  */
 export const createTransfer = onCall(
-    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1, enforceAppCheck: false, secrets: [stripeSecretKey, arcjetKey] },
     async (request): Promise<{ transferId: string }> => {
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
@@ -79,6 +103,26 @@ export const createTransfer = onCall(
 
         if (!request.auth.token['admin']) {
             throw new HttpsError('permission-denied', 'Insufficient privileges.');
+        }
+
+        if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in admin is required.');
+        }
+
+        validateAppCheckV2(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'admin',
+                operationId: `stripe-transfer:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { amount, destinationId, currency = 'usd', payoutId } = (request.data ?? {}) as { amount: number; destinationId: string; currency?: string; payoutId?: string };

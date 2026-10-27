@@ -7,22 +7,45 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { stripe, getPriceId } from '../stripe/config';
 import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 export const createCheckoutSession = onCall({
-  secrets: [stripeSecretKey],
+  secrets: [stripeSecretKey, arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true,
+  enforceAppCheck: false,
 }, async (request) => {
   const { userId, tier, billingPeriod, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
   if (!userId || userId !== request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Unauthorized');
+  }
+
+  if (request.auth?.token?.email_verified === false || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('unauthenticated', 'A verified signed-in user is required to create a checkout session.');
+  }
+
+  validateAppCheckV2(request);
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId,
+      policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+      operationId: `create-checkout-session:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   if (tier === SubscriptionTier.FREE) {

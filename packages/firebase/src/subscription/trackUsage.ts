@@ -8,17 +8,43 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { UsageRecord } from '../shared/subscription/types';
 import * as crypto from 'crypto';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
-export const trackUsage = onCall({ enforceAppCheck: true }, async (request) => {
+export const trackUsage = onCall({
+  secrets: [arcjetKey],
+  enforceAppCheck: false,
+}, async (request) => {
   const { userId, type, amount, project, metadata } = request.data;
 
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Usage tracking requires an authenticated user.');
   }
 
+  if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+  }
+
   // Validate userId matches auth
   if (userId && userId !== request.auth.uid) {
     throw new HttpsError('permission-denied', 'Unauthorized: userId mismatch');
+  }
+
+  validateAppCheckV2(request);
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: request.auth.token?.admin ? 'admin' : 'verified-free',
+      operationId: `track-usage:${crypto.randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const effectiveUserId = userId || request.auth.uid;

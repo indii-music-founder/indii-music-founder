@@ -80,6 +80,7 @@ vi.mock('../stripe/config', () => ({
 
 vi.mock('../config/secrets', () => ({
     stripeSecretKey: { value: vi.fn(() => 'sk_test_mock') },
+    arcjetKey: { value: vi.fn(() => 'ajkey_test_mock') },
 }));
 
 import { createMarketplaceCheckout } from './createMarketplaceCheckout';
