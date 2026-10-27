@@ -166,6 +166,24 @@ describe('generateImageV3Fn', () => {
         expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
+    it('calculates estimated budget correctly for multi-image fast generation', async () => {
+        const data: any = {
+            prompt: 'four icons',
+            model: 'fast',
+            count: 4,
+        };
+        await wrapped({ auth: { uid: 'test-user-id' }, data });
+        expect(mockCheckOperationBudget).toHaveBeenCalledWith(expect.objectContaining({
+            userId: 'test-user-id',
+            operationType: 'image',
+            estimatedCost: 0.16,
+            metadata: expect.objectContaining({
+                count: 4,
+                model: 'fast',
+            }),
+        }));
+    });
+
     it('should use fast model with correct defaults', async () => {
         const data: any = {
             prompt: 'simple prompt',
