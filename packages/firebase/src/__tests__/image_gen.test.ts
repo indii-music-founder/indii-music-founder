@@ -130,6 +130,7 @@ vi.mock('../functions/auth/entitlements', () => ({
 }));
 vi.mock('../functions/security/arcjet', () => ({
     protectAuthenticatedApiRequest: vi.fn().mockResolvedValue({ allowed: true }),
+    protectAnonymousSignupRequest: vi.fn().mockResolvedValue({ allowed: true }),
     policyClassForServerEntitlement: vi.fn(() => 'verified-free'),
 }));
 vi.mock('../functions/creative/legacyAdmission', () => ({
