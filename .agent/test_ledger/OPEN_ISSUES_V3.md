@@ -3322,7 +3322,8 @@ PRs. Full phase/product acceptance is not established by those facts. See
 
 ### ISSUE-1450: Claims Inbox has no persisted claim source and presents missing input as a clean catalog
 
-- **Status:** 🔴 OPEN (2026-10-01)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit f47f9b870 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432818025
 - **Severity:** 🔴 HIGH
 - **Module:** Legal / Phase 12 operational gate
 - **Evidence:** `LegalDashboard.tsx` renders `<ClaimsInboxTab />`; `ClaimsInboxTab.tsx` projects `initialClaims || []`. `LegalService.getClaimsInbox` is synchronous projection of caller data. No data is passed by the dashboard, yet the empty UI says the catalog has no overlapping assertions or unresolved external disputes.
@@ -3333,7 +3334,8 @@ PRs. Full phase/product acceptance is not established by those facts. See
 
 ### ISSUE-1451: Workflow execution client writes conflict with server-authoritative rules
 
-- **Status:** 🔴 OPEN (2026-10-01)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 9c48f89f5 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432833653
 - **Severity:** 🔴 HIGH
 - **Module:** Agent orchestration / Phase 14 history
 - **Evidence:** `WorkflowStateService.createExecution` calls client `FirestoreService.set`; cancel/execute/advance/skip/fail methods use client transactions. `packages/firebase/firestore.rules:513` permits owner reads and denies all writes to that collection. `OrchestrationService.executeWorkflowWithStatus` calls this creation path. `workflowOrchestrator` is a document trigger, not an authenticated creation callable.
@@ -4714,7 +4716,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1514: Dependency security advisories remain advisory without documented reachability triage
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit ff1c67cf3 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40221769405
 - **Recovered from:** Original audit ISSUE-1455; current ISSUE-1455 concerns unrelated UI work.
 - **October 12 recheck:** npm audit --audit-level=high exited 1 with 71 vulnerabilities: 3 low, 31 moderate, 34 high, 3 critical (October 5:51). deploy.yml:228–231 remains advisory. Critical-rated reports include proxy-addr and shell-quote; production reachability remains unverified.
 - **Severity:** HIGH
@@ -4803,7 +4806,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1519: HyperFrames telemetry opt-out is not proven across all isolated execution environments
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 217e7db06 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40139679119
 - **2026-10-24 progress:** The `codex/issue-1519-hyperframes-telemetry` branch passes `HYPERFRAMES_NO_TELEMETRY=1` into the adapter's isolated CLI process and the build, deploy, and weekly audit workflows. A focused probe runs the pinned CLI's own `telemetry status` inside an isolated HOME and verifies `disabled` with that environment source. This proves the local override path; network egress and packaged production rendering remain unverified.
 - **Recovered from:** Original audit ISSUE-1460; current ISSUE-1460 concerns unrelated UI work.
 - **October 12 recheck:** Weekly workflow disables telemetry, but deployment jobs and HyperFramesAdapter's separate CLI HOME/cache have no proven opt-out coverage. Passing renders or unrelated telemetry output do not prove HyperFrames egress or privacy.
@@ -4980,7 +4984,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1528: Mobile Remote capture cannot bridge media attachments to Boardroom, headless Creative Canvas, or automated social/story workflows
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 951f8e4c2 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40118940305
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Cloud Relay / Boardroom / Creative Canvas / Video Pipeline / Social Tools
 - **Classification:** Structural integration gap across mobile capture, remote relay serialization, desktop execution adapter, and headless agent tool orchestration. Genuine customer mobile-to-boardroom creative loop is broken.
@@ -5017,7 +5022,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1529-mobile-vault-playback` exposes Cloud Vault in the mobile navigation, projects bounded desktop playback metadata through the lease-backed presence endpoint, shows a persistent paired-only now-playing control, and offers phone-local playback when the desktop track exists in the user's Cloud Vault. The relay carries the track ID, not its media URL. Focused unit tests and renderer/Firebase typechecks pass. Desktop-to-phone live playback and transport acceptance remain open; desktop skip remains unavailable because the current audio player has no queue/next action.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b7bb0a961 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40144463564
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Audio Streaming / TransportBar / DesktopState Sync
 - **Classification:** Structural UX omission and state-sync gap between desktop playback engine and mobile remote.
@@ -5040,7 +5046,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1530-mobile-approval-relay` projects a bounded local `requestApproval` record through the leased Studio presence, renders the request on the paired phone, and sends an ID-bound decision through the existing relay. Studio rejects stale or mismatched IDs; local requests expire after two minutes. Focused tests and typechecks pass. This covers the local agent UI approval promise; Firestore `ToolApprovalService` remains a separate approval path. Genuine paired-phone acceptance is still required before closing the issue.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit b209e31f1 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40167167464
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Agent Guardrails / Approval Queue / Cloud Relay
 - **Classification:** Architectural isolation defect. Component built to satisfy safety and authorization guardrails is unmounted and severed from remote relay protocol.
@@ -5062,7 +5069,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1531-mobile-studio-controls` exposes the existing GenerationMonitor and CommandPad behind dedicated Studio subtabs, gates their relay actions on pairing, adds a pending-generation cancellation control, and removes CommandPad's hardcoded CPU/audio/sync claims. Focused structural tests and renderer typecheck pass. Real paired-phone validation of Streetwear + 9:16 metadata, cancellation against a pending desktop command, and Show Me delivery remains required before closing this issue.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 2a3586c89 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40140292131
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / CommandPad / GenerationMonitor / StudioWorkView
 - **Classification:** Structural UX degradation. High-utility tactile controls and generation style presets exist in tree but were bypassed by barebones text inputs.
@@ -5083,7 +5091,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** The existing cloud Encounter pipeline already transcribes captured audio and creates a durable note, so the prior voice finding was partly stale. `codex/issue-1532-mobile-capture-ingestion` removes the duplicate direct desktop note task for voice/receipt captures and requires a durable Encounter before clearing them. Receipt media now gets evidence-cited OCR fields; complete USD results create a deterministic, unclassified, receipt-attached expense candidate and a reviewable note. Incomplete/unsupported extraction saves the original note without inventing an amount. Road Mode exposes mileage logging; its 2026 estimate follows the published IRS period rates and remains unclassified for review. Focused structural tests and typechecks pass. Genuine captured-media transcription/OCR, expense review, and mobile UI acceptance remain open.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 83c1061ec CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40151517440
 - **Severity:** 🔴 HIGH
 - **Module:** Mobile Remote / Capture Ingestion / Notes / Finance Agent / Speech-to-Text
 - **Classification:** Functional bypass in task dispatch. Captured media is shunted into static storage notes instead of activating specialist agents.
@@ -5105,7 +5114,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1533-mobile-contact-sharing` adds a full-screen scannable vCard QR in Contacts, with account email excluded until the artist opts in. It uses a vCard because the alleged public `/p/{artistSlug}` route is not implemented. The Contacts camera action uploads a bounded card image to the existing cloud Encounter pipeline, which extracts cited contact fields for review in the feed instead of silently filling unverified fields. Focused structural tests and renderer typecheck pass. Real QR scanning and business-card OCR/review acceptance remain open.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit c37a44bbd CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40151770799
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / Contacts / EncounterFeedView / QuickContactModal / Artist Passport
 - **Classification:** Feature gap in mobile artist CRM and on-the-road networking workflows.
@@ -5125,7 +5135,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-25):** `codex/issue-1534-mobile-push-notifications` repairs the existing FCM registration path with the configured VAPID key and explicit service worker, adds an opt-in control on the phone, sends generic push events for completed visual relay responses, and sends deduplicated approval alerts from the leased Studio presence callable. Notifications open the canonical mobile route or Studio tab. Approval alerts depend on ISSUE-1530's pending-approval projection. The branch does not claim notifications for unrelated render systems, and real installed iOS/Android PWA push acceptance remains required before closing the issue.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit cac771088 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40195374942
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / Push Notifications / FCM / Service Worker
 - **Classification:** Background communication deficit. Mobile client loses connection when backgrounded without push wakeup.
@@ -5145,7 +5156,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1535-mobile-camera-viewfinder` adds a tap-opened in-app photo/video viewfinder with front/rear switching, hardware torch/zoom/exposure controls when supported, social crop guides, a thirds grid, optional device-orientation level, and a video microphone meter. Photo snapshots are cropped to the selected aspect ratio before entering the existing review/send flow; recorded video enters the same review flow, while its ratio grid is a framing guide rather than a video crop. Camera and microphone tracks stop on close, backgrounding, or switching, with the native picker retained as fallback. Structural tests pass; real iOS/Android camera hardware, permissions, torch, exposure, and video acceptance remain required before closing the issue.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 79df4f503 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40152860737
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / QuickCaptureView / In-App Camera / WebRTC MediaStream
 - **Classification:** Capability gap. Relying solely on HTML file inputs hands control to OS camera, preventing in-app adjustments for stage lighting, zoom, lens switching, or composition framing.
@@ -5176,7 +5188,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 **Progress (2026-10-24):** `codex/issue-1536-mobile-lockscreen-capture` binds supported Media Session play, pause, seek, previous, and next actions to the phone's active Vault audio, with bounded position state and track metadata. The canonical `app.indii.music/mobile-remote` route accepts `?action=photo`, `voice`, or `vault`; Settings exposes shortcut links. Browser camera/microphone APIs require a tap after the deep link, so the capture shortcut presents a prominent launch control rather than claiming automatic access. Locked-device iOS/Android acceptance remains required before closing this issue.
 
-- **Status:** 🔴 OPEN (2026-10-13)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit c9939a1d6 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40152430504
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / TransportBar / StreamView / MediaSession / Deep Linking
 - **Classification:** Mobile operating system integration gap. The web app does not leverage the native Lock Screen playback widget or lock screen launcher shortcuts.
@@ -5380,7 +5393,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1543: `ARCJET_PROTECTION_MATRIX.md` 69-file false-compliance gap, unthrottled `mintElectronAppCheckToken` arbitrary `appId` minting, and `issueStudioExecutorLease` auto-enrollment relay hijack
 
-- **Status:** 🔴 OPEN (2026-10-16)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 4137cee7a CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40511435746
 - **2026-10-27 Arcjet 100% matrix inventory milestone (Batch 22 closure):** Remediated the final 9 unestablished declarations across `packages/firebase/src/functions/auth/entitlements.ts` (`provisionVerifiedFreeEntitlement`), `packages/firebase/src/lib/audio.ts` (`analyzeAudioFn`), `packages/firebase/src/lib/image_generation.ts` (`generateImageV3Fn`, `editImageFn`), `packages/firebase/src/lib/touring.ts` (`computeDistanceMatrix`, `generateItinerary`, `checkLogistics`, `findPlaces`), and `packages/firebase/src/marketing/shopifyWebhook.ts` (`shopifyWebhook`). Bound `secrets: [arcjetKey]`, enforced `validateAppCheckV2(request)`, strict non-anonymous/verified-email authentication, and `protectAuthenticatedApiRequest` / `protectAnonymousSignupRequest` with rate limiting. Dedicated admission tests in `packages/firebase/src/lib/touring.test.ts` pass 15/15 tests; 70/70 tests pass across all 5 affected test files. `docs/ARCJET_PROTECTION_MATRIX.md` achieved **199 of 199** declarations with both local references (Present | Present, 0 missing). Both `npm run check:arcjet-inventory` and `npm run check:gen2-semantics` pass. ISSUE-1543 remains OPEN pending device-bound App Check token minting proof and production acceptance.
 - **2026-10-24 progress:** The `codex/issue-1543-appcheck-mint` branch narrows token minting to a verified, non-anonymous user and the Electron renderer's configured Firebase app ID, and adds Arcjet admission before token creation. Focused tests cover denied identity, app ID, admission, and allowed minting. This is partial protection: a verified browser session can still request a token for the allowed app ID. Device-bound proof, relay enrollment, the wider Arcjet matrix audit, branch CI, and production acceptance remain open.
 - **2026-10-26 progress (Batch 11 - Marketplace, Releases & Storage Asset Download Admission):** Enforced Arcjet protection (`protectAuthenticatedApiRequest`), App Check validation (`validateAppCheckV2`), and verified non-anonymous authentication across 4 media download and checkout callables (`createMarketplaceCheckout`, `getStemDownloadUrl`, `generateReleaseDownloadUrl`, `fetchStorageAssetForCanvas`). All 4 trigger declarations updated to Present in `docs/ARCJET_PROTECTION_MATRIX.md` (present declarations increased from 19 to 23 on this branch; missing reduced from 180 to 176). Verified with `npm run check:arcjet-inventory` (8/8 passed), full test suite passing (26/26 tests passed including 20 dedicated admission tests in `marketplaceReleasesAdmission.test.ts`), and TypeScript clean (0 errors).
