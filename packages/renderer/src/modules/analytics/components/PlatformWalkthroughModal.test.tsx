@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PlatformWalkthroughModal, PLATFORM_GUIDES } from './PlatformWalkthroughModal';
+import { PlatformWalkthroughModal } from './PlatformWalkthroughModal';
 
 describe('PlatformWalkthroughModal', () => {
     const mockOnClose = vi.fn();

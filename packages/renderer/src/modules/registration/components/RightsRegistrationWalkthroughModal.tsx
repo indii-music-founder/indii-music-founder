@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useId } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
     X,
     ExternalLink,
@@ -438,22 +438,23 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
 }) => {
     const titleId = useId();
     const [activePrereq, setActivePrereq] = useState<FounderPrerequisiteId>(initialPrerequisite);
+    const [prevInitialPrereq, setPrevInitialPrereq] = useState<FounderPrerequisiteId>(initialPrerequisite);
     const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
-    const [inputValue, setInputValue] = useState<string>('');
+    const [inputValue, setInputValue] = useState<string>(() => readinessData[initialPrerequisite]?.value || '');
+    const [prevActivePrereq, setPrevActivePrereq] = useState<FounderPrerequisiteId>(initialPrerequisite);
     const [isSavedRecently, setIsSavedRecently] = useState<boolean>(false);
 
-    useEffect(() => {
-        if (isOpen) {
-            setActivePrereq(initialPrerequisite);
-        }
-    }, [isOpen, initialPrerequisite]);
+    if (isOpen && initialPrerequisite !== prevInitialPrereq) {
+        setPrevInitialPrereq(initialPrerequisite);
+        setActivePrereq(initialPrerequisite);
+    }
 
-    useEffect(() => {
-        const currentStored = readinessData[activePrereq]?.value || '';
-        setInputValue(currentStored);
+    if (activePrereq !== prevActivePrereq) {
+        setPrevActivePrereq(activePrereq);
+        setInputValue(readinessData[activePrereq]?.value || '');
         setIsSavedRecently(false);
-    }, [activePrereq, readinessData]);
+    }
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

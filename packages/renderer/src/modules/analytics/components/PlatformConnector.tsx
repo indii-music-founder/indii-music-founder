@@ -19,7 +19,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, XCircle, Loader2, ExternalLink, AlertCircle, Compass, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ExternalLink, AlertCircle, Compass } from 'lucide-react';
 
 import { spotifyService } from '@/services/analytics/SpotifyService';
 import { youTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';

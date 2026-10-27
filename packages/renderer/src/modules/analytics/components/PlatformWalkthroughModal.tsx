@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useId } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
     X,
     ExternalLink,
@@ -415,14 +415,14 @@ export const PlatformWalkthroughModal: React.FC<PlatformWalkthroughModalProps> =
 }) => {
     const titleId = useId();
     const [activePlatform, setActivePlatform] = useState<WalkthroughPlatformId>(initialPlatform);
+    const [prevInitialPlatform, setPrevInitialPlatform] = useState<WalkthroughPlatformId>(initialPlatform);
     const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (initialPlatform) {
-            setActivePlatform(initialPlatform);
-        }
-    }, [initialPlatform]);
+    if (initialPlatform !== prevInitialPlatform) {
+        setPrevInitialPlatform(initialPlatform);
+        setActivePlatform(initialPlatform);
+    }
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
