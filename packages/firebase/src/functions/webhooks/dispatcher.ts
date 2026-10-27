@@ -15,6 +15,8 @@ import { logger } from 'firebase-functions';
 import * as express from 'express';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
+import { arcjetKey } from '../../config/secrets';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 function maskId(id: string): string {
   if (!id) return '';
@@ -429,18 +431,35 @@ async function deliverQueuedWebhook(doc: admin.firestore.QueryDocumentSnapshot):
 /**
  * HTTP endpoint: Create webhook subscription
  */
-export const createWebhook = onRequest(async (req: express.Request, res: express.Response) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ error: 'Unauthorized: Missing or invalid authorization header' });
-      return;
-    }
-    const token = authHeader.split('Bearer ')[1]!;
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const userId = decodedToken.uid;
+export const createWebhook = onRequest(
+  { secrets: [arcjetKey] },
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'Unauthorized: Missing or invalid authorization header' });
+        return;
+      }
+      const token = authHeader.split('Bearer ')[1]!;
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      const userId = decodedToken.uid;
 
-    const { url, secret, events } = req.body;
+      if (decodedToken.firebase?.sign_in_provider === 'anonymous') {
+        res.status(403).json({ error: 'Forbidden: Anonymous accounts cannot register webhooks' });
+        return;
+      }
+
+      const protection = await protectAuthenticatedApiRequest(req as never, {
+        userId,
+        policy: 'verified-free',
+        operationId: `create-webhook:${userId}`,
+      });
+      if (!protection.allowed) {
+        res.status(protection.status || 429).json({ error: protection.message || 'Request rate limit exceeded.' });
+        return;
+      }
+
+      const { url, secret, events } = req.body;
 
     if (!url || !secret || !Array.isArray(events)) {
       res.status(400).json({ error: 'Missing required fields' });
