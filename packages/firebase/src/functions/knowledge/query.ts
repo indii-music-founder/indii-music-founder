@@ -1,5 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import {
   KNOWLEDGE_EMBEDDING_MODEL,
@@ -26,9 +30,29 @@ if (!admin.apps.length) {
  * using Firestore findNearest on user-isolated subcollection, returns top-K citations,
  * and logs an immutable KnowledgeQueryReceipt.
  */
-export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (request: CallableRequest<KnowledgeQueryRequest>) => {
-  if (!request.auth) {
+export const queryKnowledgeBase = onCall({ enforceAppCheck: true, secrets: [arcjetKey] }, async (request: CallableRequest<KnowledgeQueryRequest>) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to query knowledge base.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `query-knowledge-base:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const uid = request.auth.uid;

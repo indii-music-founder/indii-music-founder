@@ -1,5 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+
+import { arcjetKey } from "../../config/secrets";
+import { validateAppCheckV2 } from "../../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../security/arcjet";
 
 /**
  * Founder-gated triage callables for agent error reports (ISSUE-1446).
@@ -32,8 +37,15 @@ interface UpdateErrorReportStatusRequest {
 }
 
 function requireAuthenticatedUid(request: CallableRequest): string {
-    if (!request.auth) {
+    validateAppCheckV2(request);
+    if (!request.auth || !request.auth.uid) {
         throw new HttpsError("unauthenticated", "User must be authenticated.");
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required.');
     }
     return request.auth.uid;
 }
@@ -42,8 +54,21 @@ function requireAuthenticatedUid(request: CallableRequest): string {
  * Founder gate — reads the caller's own user document with the Admin SDK and
  * requires an explicit founder signal. Never trusts client-sent identity.
  */
-async function requireFounderUid(request: CallableRequest): Promise<string> {
+async function requireFounderUid(request: CallableRequest, operation = "triage"): Promise<string> {
     const uid = requireAuthenticatedUid(request);
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: uid,
+            policy: 'verified-free',
+            operationId: `error-reports:${operation}:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
+    }
     const snap = await admin.firestore().collection("users").doc(uid).get();
     if (!snap.exists) {
         throw new HttpsError("permission-denied", "Founder access required.");
@@ -92,9 +117,9 @@ export async function validateUpdateErrorReportStatusRequest(
  * required; report volume is small and bounded by the limit.
  */
 export const listErrorReports = onCall(
-    { memory: "512MiB", cpu: "gcf_gen1", concurrency: 1 },
+    { memory: "512MiB", cpu: "gcf_gen1", concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
-        await requireFounderUid(request);
+        await requireFounderUid(request, "list");
         const validated = await validateListErrorReportsRequest(
             (request.data ?? {}) as ListErrorReportsRequest,
         );
@@ -122,9 +147,9 @@ export const listErrorReports = onCall(
  * the reviewer recorded; the document is otherwise untouched.
  */
 export const updateErrorReportStatus = onCall(
-    { memory: "512MiB", cpu: "gcf_gen1", concurrency: 1 },
+    { memory: "512MiB", cpu: "gcf_gen1", concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
-        const reviewerUid = await requireFounderUid(request);
+        const reviewerUid = await requireFounderUid(request, "update-status");
         const validated = await validateUpdateErrorReportStatusRequest(
             (request.data ?? {}) as UpdateErrorReportStatusRequest,
         );
