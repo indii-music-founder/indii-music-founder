@@ -11,16 +11,6 @@ const DEVICE_ID = /^[A-Za-z0-9_-]{16,128}$/;
 const ENROLLMENT_SECRET = /^[A-Za-z0-9_-]{32,256}$/;
 const REMOTE_RELAY_PROTOCOL_VERSION = 1;
 
-const studioRelayCallableOptions = {
-  region: 'us-central1' as const,
-  cors: true,
-  enforceAppCheck: false,
-  memory: '512MiB' as const,
-  cpu: 'gcf_gen1' as const,
-  concurrency: 1,
-  secrets: [arcjetKey],
-};
-
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 
 async function admitStudioRelayCaller(
@@ -80,7 +70,15 @@ async function assertLease(uid: string, deviceId: unknown, leaseToken: unknown) 
  * Controllers do not have the IPC bridge required to retrieve it.
  */
 export const issueStudioExecutorLease = onCall(
-  studioRelayCallableOptions,
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
   async (request) => {
     await admitStudioRelayCaller(request, 'issueStudioExecutorLease');
     const input = (request.data ?? {}) as { deviceId?: unknown; enrollmentSecret?: unknown };
@@ -141,7 +139,17 @@ export const issueStudioExecutorLease = onCall(
     return { deviceId: input.deviceId, leaseToken, expiresAt: expiresAt.toMillis() };
   });
 
-export const publishStudioPresence = onCall(studioRelayCallableOptions, async (request) => {
+export const publishStudioPresence = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
   await admitStudioRelayCaller(request, 'publishStudioPresence');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; protocolVersion?: unknown; state?: Record<string, unknown> };
   await assertLease(request.auth!.uid, input.deviceId, input.leaseToken);
@@ -211,7 +219,17 @@ export const publishStudioPresence = onCall(studioRelayCallableOptions, async (r
   return { ok: true };
 });
 
-export const releaseStudioPresence = onCall(studioRelayCallableOptions, async (request) => {
+export const releaseStudioPresence = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
   await admitStudioRelayCaller(request, 'releaseStudioPresence');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; studioInstanceId?: unknown };
   await assertLease(request.auth!.uid, input.deviceId, input.leaseToken);
@@ -226,7 +244,17 @@ export const releaseStudioPresence = onCall(studioRelayCallableOptions, async (r
   return { ok: true };
 });
 
-export const claimStudioCommand = onCall(studioRelayCallableOptions, async (request) => {
+export const claimStudioCommand = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
   await admitStudioRelayCaller(request, 'claimStudioCommand');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; studioInstanceId?: unknown };
   await assertLease(request.auth!.uid, input.deviceId, input.leaseToken);
@@ -248,7 +276,17 @@ export const claimStudioCommand = onCall(studioRelayCallableOptions, async (requ
   return { claimed };
 });
 
-export const publishStudioResponse = onCall(studioRelayCallableOptions, async (request) => {
+export const publishStudioResponse = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
   await admitStudioRelayCaller(request, 'publishStudioResponse');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; videoUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
   const { deviceId } = await assertLease(request.auth!.uid, input.deviceId, input.leaseToken);
@@ -274,7 +312,17 @@ export const publishStudioResponse = onCall(studioRelayCallableOptions, async (r
   return { ok: true };
 });
 
-export const completeStudioCommand = onCall(studioRelayCallableOptions, async (request) => {
+export const completeStudioCommand = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+    enforceAppCheck: false,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
   await admitStudioRelayCaller(request, 'completeStudioCommand');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown };
   const { deviceId } = await assertLease(request.auth!.uid, input.deviceId, input.leaseToken);
