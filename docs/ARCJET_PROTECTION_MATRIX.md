@@ -5,8 +5,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
 - Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **19**.
-- Declarations missing at least one of those local references: **180**. These require review; absence of local evidence does not prove the absence of imported middleware.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **37**.
+- Declarations missing at least one of those local references: **162**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
 
@@ -116,27 +116,27 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/queueCloudVideoRender.ts:72` | `queueCloudVideoRender` | `onCall` | Not established | Not established |
 | `functions/video/relayVideoRenderJob.ts:20` | `claimVideoRenderJob` | `onCall` | Not established | Not established |
 | `functions/video/relayVideoRenderJob.ts:51` | `completeVideoRenderJob` | `onCall` | Not established | Not established |
-| `functions/video/retrySessionProxyJob.ts:142` | `retrySessionProxyJob` | `onCall` | Not established | Not established |
+| `functions/video/retrySessionProxyJob.ts:144` | `retrySessionProxyJob` | `onCall` | Present | Present |
 | `functions/webhooks/dispatcher.ts:432` | `createWebhook` | `onRequest` | Not established | Not established |
-| `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Not established |
-| `index.ts:655` | `triggerLongFormVideoJob` | `onCall` | Present | Not established |
-| `index.ts:809` | `renderVideo` | `onCall` | Present | Present |
-| `index.ts:1095` | `inngestApi` | `onRequest` | Not established | Not established |
-| `index.ts:1164` | `generateContentStream` | `onRequest` | Present | Present |
-| `index.ts:1598` | `ragProxy` | `onRequest` | Not established | Not established |
-| `index.ts:1662` | `listGKEClusters` | `onCall` | Not established | Not established |
-| `index.ts:1716` | `getGKEClusterStatus` | `onCall` | Not established | Not established |
-| `index.ts:1744` | `scaleGKENodePool` | `onCall` | Not established | Not established |
-| `index.ts:1772` | `listGCEInstances` | `onCall` | Not established | Not established |
-| `index.ts:1799` | `restartGCEInstance` | `onCall` | Not established | Not established |
-| `index.ts:1833` | `executeBigQueryQuery` | `onCall` | Not established | Not established |
-| `index.ts:1869` | `getBigQueryTableSchema` | `onCall` | Not established | Not established |
-| `index.ts:1897` | `listBigQueryDatasets` | `onCall` | Not established | Not established |
-| `index.ts:1971` | `exportUserData` | `onCall` | Not established | Not established |
-| `index.ts:2043` | `requestAccountDeletion` | `onCall` | Not established | Not established |
-| `index.ts:2119` | `healthCheck` | `onRequest` | Not established | Not established |
-| `index.ts:2155` | `healthCheckWest1` | `onRequest` | Not established | Not established |
-| `index.ts:2175` | `enrichFanData` | `onCall` | Not established | Not established |
+| `index.ts:450` | `triggerVideoJob` | `onCall` | Present | Present |
+| `index.ts:674` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
+| `index.ts:847` | `renderVideo` | `onCall` | Present | Present |
+| `index.ts:1133` | `inngestApi` | `onRequest` | Present | Present |
+| `index.ts:1212` | `generateContentStream` | `onRequest` | Present | Present |
+| `index.ts:1646` | `ragProxy` | `onRequest` | Present | Present |
+| `index.ts:1721` | `listGKEClusters` | `onCall` | Present | Present |
+| `index.ts:1792` | `getGKEClusterStatus` | `onCall` | Present | Present |
+| `index.ts:1837` | `scaleGKENodePool` | `onCall` | Present | Present |
+| `index.ts:1882` | `listGCEInstances` | `onCall` | Present | Present |
+| `index.ts:1926` | `restartGCEInstance` | `onCall` | Present | Present |
+| `index.ts:1977` | `executeBigQueryQuery` | `onCall` | Present | Present |
+| `index.ts:2030` | `getBigQueryTableSchema` | `onCall` | Present | Present |
+| `index.ts:2075` | `listBigQueryDatasets` | `onCall` | Present | Present |
+| `index.ts:2166` | `exportUserData` | `onCall` | Present | Present |
+| `index.ts:2258` | `requestAccountDeletion` | `onCall` | Present | Present |
+| `index.ts:2354` | `healthCheck` | `onRequest` | Present | Present |
+| `index.ts:2397` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:2424` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:7` | `sendForDigitalSignature` | `onCall` | Not established | Not established |
 | `legal/exportSplitSheet.ts:202` | `exportSplitSheet` | `onCall` | Not established | Not established |
 | `legal/mechanicalLicense.ts:29` | `verifyMechanicalLicense` | `onCall` | Not established | Not established |
