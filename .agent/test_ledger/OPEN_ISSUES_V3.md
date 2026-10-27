@@ -754,7 +754,8 @@ All six "why it will recur" write-downs are now closed in code on this tree. The
 
 ### ISSUE-1227: Hidden-bug baseline remains high — remediation must be a measured program, not a one-time scan
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 932487464 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/31032377708
 - **Severity:** 🟠 HIGH
 - **Module:** repository-wide detector, endpoint inventory, tests, issue workflow
 - **Evidence:** `npm run detect:bugs` reported risk score 171 before this session and **169** after the canonical image/entitlement admission work on 2026-07-26. Its categories include base64 transport, callable boundaries, unprotected awaits, direct Firebase imports, missing promise catches, and string enums. Some hits are legitimate patterns, so deleting syntax to lower the score would be a false fix.
@@ -2914,7 +2915,8 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1425: Beta participation, bug reporting, invitations, and communications need bounded operations
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 95c97d7d7 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40436129500
 - **Severity:** 🟡 MEDIUM
 - **Module:** Support / feedback / release operations
 - **Source of truth:** Marketing decision § Founding Artist Beta operations
@@ -4775,7 +4777,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1517: Packaged Python, DDEX XSD and native runtime reproducibility remain unproven
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 95c97d7d7 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40436129500
 - **Recovered from:** Original audit ISSUE-1458; current ISSUE-1458 concerns unrelated UI work.
 - **October 12 recheck:** Host Python fallback and source target/release RAW binary packaging remain. TypeScript IngestionValidator explicitly returns xsdValidated:false; Python defaults require_xsd:false. Installed RAW/FFmpeg/Python and strict offline official-XSD conformance remain unverified.
 - **Severity:** MEDIUM
@@ -4821,7 +4824,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1520: Computer-control approval implementation needs complete security-boundary acceptance evidence
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 95c97d7d7 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40436129500
 - **Recovered from:** Original audit ISSUE-1461; current ISSUE-1461 concerns unrelated UI work.
 - **October 12 recheck:** Authorization/IPC tests pass for identity, opt-in, wrong user, expiry/revocation, argument binding, replay/concurrent claim, drive scope, native confirmation and abort. Identity/backend/providers are mocked: Structural evidence only. Genuine OS/signout/reload and official-portal acceptance remain Conditional; ISSUE-1511 code closeout does not establish live filing.
 - **Severity:** MEDIUM
@@ -4834,7 +4838,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1521: Studio execution retains renderer dependencies and headless durability is unproven
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 95c97d7d7 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40436129500
 - **Recovered from:** Original audit ISSUE-1462; current ISSUE-1462 concerns unrelated UI work.
 - **October 12 recheck:** rendererExecutionAdapter.ts:13–14,132,199 remains coupled to stores, AgentService and window. Headless/sleep/reconnect durability remains unproven.
 - **Severity:** MEDIUM
@@ -4847,7 +4852,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1522: Execution graph foundation is present but the complete verified feedback loop remains conditional
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 9c48f89f5 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40432833653
 - **Recovered from:** Original audit ISSUE-1463; current ISSUE-1463 concerns unrelated UI work.
 - **October 12 recheck:** Execution graph contracts and authoritative-verification tests exist; baseline document still records missing event adapters/executor admission. Full authorized intake→issue→graph→patch→CI→verified closure remains Conditional.
 - **Severity:** MEDIUM
@@ -4860,7 +4866,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 
 ### ISSUE-1523: Audit quality and release claims need explicit unresolved-gate evidence
 
-- **Status:** 🔴 OPEN (restored 2026-10-13; October 5/12 audit evidence)
+- **Status:** ✅ CLOSED (2026-10-27)
+- **Closure evidence:** commit 95c97d7d7 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40436129500
 - **Recovered from:** Original audit ISSUE-1464; current ISSUE-1464 concerns unrelated UI work.
 - **October 12 recheck:** Run `38251335540` succeeded, including production deploy:9638 tests passed,45 explicitly skipped,333 rules tests passed,229 lint warnings (previous217),studio electron-vite build58s,two public smoke tests5.1s. Real HyperFrames MP4/probe/parity tests passed. Dependency drift/integrity and full root preflight execution remain unproven; chunk warnings persist; no OOM observed. Landing workspace npm run build is not root preflight proof.
 - **Severity:** LOW
