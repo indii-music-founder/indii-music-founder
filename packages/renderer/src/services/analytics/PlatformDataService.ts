@@ -47,6 +47,7 @@ export interface PlatformConnectionStatus {
     tiktok: boolean;
     apple_music: boolean;
     instagram: boolean;
+    twitter?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

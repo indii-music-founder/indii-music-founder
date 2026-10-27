@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PlatformConnector } from './PlatformConnector';
@@ -50,5 +50,22 @@ describe('PlatformConnector', () => {
         expect(await screen.findByText('Apple Music')).toBeInTheDocument();
         expect(screen.getByText('Apple Music analytics are unavailable until the secured backend integration is configured.')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Unavailable' })).toBeDisabled();
+    });
+
+    it('renders Twitter / X card with walkthrough guide button', async () => {
+        render(<PlatformConnector />);
+
+        expect(await screen.findByText('Twitter / X')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open walkthrough guide for Twitter / X' })).toBeInTheDocument();
+    });
+
+    it('opens PlatformWalkthroughModal when Setup Walkthrough Copilot button is clicked', async () => {
+        render(<PlatformConnector />);
+
+        const copilotBtn = await screen.findByRole('button', { name: /Setup Walkthrough Copilot/i });
+        fireEvent.click(copilotBtn);
+
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('Platform Connection Copilot')).toBeInTheDocument();
     });
 });

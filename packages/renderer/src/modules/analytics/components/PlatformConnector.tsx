@@ -4,6 +4,7 @@
  * Displays a card for each supported platform with:
  *  - Connection status (connected / disconnected)
  *  - OAuth "Connect" button that initiates the platform-specific flow
+ *  - Guided "Walkthrough" copilot button that opens the assisted step-by-step modal
  *  - "Disconnect" button for connected platforms
  *  - Brief description of what data will be imported
  *
@@ -12,12 +13,13 @@
  *  - YouTube       (Google reauth via YouTubeAnalyticsService)
  *  - TikTok        (OAuth 2.0 via TikTokAnalyticsService)
  *  - Instagram     (Facebook Login / Meta OAuth via InstagramAnalyticsService)
+ *  - Twitter / X   (API v2 via Guided Setup & OAuth)
  *  - Apple Music   (requires secured Apple Music for Artists backend)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, XCircle, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, ExternalLink, AlertCircle, Compass, Sparkles } from 'lucide-react';
 
 import { spotifyService } from '@/services/analytics/SpotifyService';
 import { youTubeAnalyticsService } from '@/services/analytics/YouTubeAnalyticsService';
@@ -25,6 +27,7 @@ import { tikTokAnalyticsService } from '@/services/analytics/TikTokAnalyticsServ
 import { instagramAnalyticsService } from '@/services/analytics/InstagramAnalyticsService';
 import { appleMusicService } from '@/services/analytics/AppleMusicService';
 import type { PlatformConnectionStatus } from '@/services/analytics/PlatformDataService';
+import { PlatformWalkthroughModal, type WalkthroughPlatformId } from './PlatformWalkthroughModal';
 
 // ── Platform definitions ──────────────────────────────────────────────────────
 
@@ -98,6 +101,20 @@ const PLATFORMS: PlatformDef[] = [
         ),
     },
     {
+        id: 'twitter',
+        label: 'Twitter / X',
+        description: 'Automated release tweets, campaign threads, impressions, and engagement metrics via X API.',
+        dataPoints: ['Post automated announcement tweets', 'Impression and reach analytics', 'Retweet & like metrics', 'Release day campaign threads'],
+        color: 'text-sky-400',
+        bgColor: 'bg-sky-500/10',
+        borderColor: 'border-sky-500/30',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-sky-400">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        ),
+    },
+    {
         id: 'apple_music',
         label: 'Apple Music',
         description: 'Apple Music analytics require a secured Apple Music for Artists backend before indii can import real metrics.',
@@ -151,10 +168,20 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
         tiktok:      false,
         apple_music: false,
         instagram:   false,
+        twitter:     false,
     });
     const [loading, setLoading] = useState<Partial<Record<keyof PlatformConnectionStatus, boolean>>>({});
     const [errors,  setErrors]  = useState<Partial<Record<keyof PlatformConnectionStatus, string>>>({});
     const [checking, setChecking] = useState(true);
+
+    // Walkthrough modal state
+    const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+    const [walkthroughPlatform, setWalkthroughPlatform] = useState<WalkthroughPlatformId>('instagram');
+
+    const openWalkthrough = (platform: keyof PlatformConnectionStatus) => {
+        setWalkthroughPlatform(platform as WalkthroughPlatformId);
+        setIsWalkthroughOpen(true);
+    };
 
     // ── Load connection status ────────────────────────────────────────────────
 
@@ -169,13 +196,15 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 appleMusicService.isConnected(),
             ]);
 
-            setStatus({
+            setStatus(prev => ({
+                ...prev,
                 spotify:     spotify.status    === 'fulfilled' && spotify.value,
                 youtube:     youtube.status    === 'fulfilled' && youtube.value,
                 tiktok:      tiktok.status     === 'fulfilled' && tiktok.value,
                 apple_music: apple.status      === 'fulfilled' && apple.value,
                 instagram:   instagram.status  === 'fulfilled' && instagram.value,
-            });
+                twitter:     prev.twitter ?? false,
+            }));
         } finally {
             setChecking(false);
         }
@@ -215,6 +244,10 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                     await checkStatus();
                     onConnectionChange?.();
                     break;
+                case 'twitter':
+                    // Open Twitter/X guided walkthrough sequence
+                    openWalkthrough('twitter');
+                    break;
                 default:
                     throw new Error(`Connection not implemented for platform: ${platform}`);
             }
@@ -230,11 +263,14 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
         setErrorFor(platform, undefined);
         try {
             switch (platform) {
-                case 'spotify':   await spotifyService.disconnect();            break;
-                case 'youtube':   youTubeAnalyticsService.disconnect();         break;
+                case 'spotify':      await spotifyService.disconnect();            break;
+                case 'youtube':      await youTubeAnalyticsService.disconnect();   break;
                 case 'tiktok':       await tikTokAnalyticsService.disconnect();    break;
                 case 'instagram':    await instagramAnalyticsService.disconnect(); break;
                 case 'apple_music':  await appleMusicService.disconnect();         break;
+                case 'twitter':
+                    setStatus(prev => ({ ...prev, twitter: false }));
+                    break;
                 default: 
                     throw new Error(`Disconnect not implemented for platform: ${platform}`);
             }
@@ -250,113 +286,143 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="space-y-3">
-            <div className="mb-4">
-                <h3 className="text-sm font-semibold text-white">Connect Your Platforms</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                    Connect your streaming and social accounts to unlock real analytics data.
-                    Your credentials are stored securely and never shared.
-                </p>
+        <div className="space-y-4">
+            {/* Header with Walkthrough Copilot CTA */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/5">
+                <div>
+                    <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                        Connect Your Platforms
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">
+                            API & Analytics
+                        </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                        Connect streaming and social accounts to unlock automated campaign delivery and real-time growth analytics.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => openWalkthrough('instagram')}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 border border-[#FFB800]/40 text-[#FFD700] hover:border-[#FFD700] text-xs font-bold transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)] shrink-0 w-fit"
+                >
+                    <Compass size={14} className="text-[#FFD700]" />
+                    <span>Setup Walkthrough Copilot</span>
+                </button>
             </div>
 
             {checking ? (
-                <div className="flex items-center gap-2 text-slate-500 text-sm py-6 justify-center">
-                    <Loader2 size={16} className="animate-spin" />
-                    Checking connections…
+                <div className="flex items-center gap-2 text-slate-500 text-sm py-8 justify-center">
+                    <Loader2 size={16} className="animate-spin text-[#FFB800]" />
+                    Checking platform connections…
                 </div>
             ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {PLATFORMS.map(platform => {
-                        const isConnected = status[platform.id];
-                        const isLoading   = !!loading[platform.id];
+                        const isConnected = Boolean(status[platform.id]);
+                        const isLoading   = Boolean(loading[platform.id]);
                         const error       = errors[platform.id];
-                        const isUnavailable = !!platform.unavailableReason;
+                        const isUnavailable = Boolean(platform.unavailableReason);
 
                         return (
                             <motion.div
                                 key={platform.id}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className={`relative rounded-xl border p-4 transition-all duration-200 ${
+                                className={`relative rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 ${
                                     isConnected
                                         ? `${platform.borderColor} ${platform.bgColor}`
-                                        : 'border-white/8 bg-slate-800/40 hover:bg-slate-800/70'
+                                        : 'border-white/10 bg-[#14100C]/80 hover:bg-[#14100C] hover:border-white/20'
                                 }`}
                             >
-                                {/* Header */}
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className={`p-2 rounded-lg ${platform.bgColor} border ${platform.borderColor}`}>
-                                            {platform.icon}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-white leading-tight">
-                                                {platform.label}
-                                            </p>
-                                            <div className="mt-0.5">
-                                                <StatusPill connected={isConnected} unavailable={isUnavailable} />
+                                <div>
+                                    {/* Header */}
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className={`p-2 rounded-lg ${platform.bgColor} border ${platform.borderColor}`}>
+                                                {platform.icon}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-white leading-tight">
+                                                    {platform.label}
+                                                </p>
+                                                <div className="mt-0.5">
+                                                    <StatusPill connected={isConnected} unavailable={isUnavailable} />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Description */}
+                                    <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+                                        {platform.description}
+                                    </p>
+
+                                    {/* Data points */}
+                                    <ul className="space-y-1 mb-4">
+                                        {platform.dataPoints.map(point => (
+                                            <li key={point} className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                                                <span className={`w-1 h-1 rounded-full shrink-0 ${isConnected ? platform.color.replace('text-', 'bg-') : 'bg-slate-600'}`} />
+                                                {point}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {/* Error */}
+                                    <AnimatePresence>
+                                        {(error || platform.unavailableReason) && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className={`mb-3 flex items-start gap-1.5 text-[11px] border rounded-lg px-2 py-2 ${
+                                                    error
+                                                        ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                                                        : 'text-amber-300 bg-amber-500/10 border-amber-500/20'
+                                                }`}
+                                            >
+                                                <AlertCircle size={11} className="shrink-0 mt-0.5" />
+                                                {error || platform.unavailableReason}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
 
-                                {/* Description */}
-                                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                                    {platform.description}
-                                </p>
+                                {/* Action Buttons Row */}
+                                <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                    <button
+                                        type="button"
+                                        onClick={() => openWalkthrough(platform.id)}
+                                        className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold bg-white/5 hover:bg-[#FFB800]/15 hover:text-[#FFD700] border border-white/10 text-gray-300 transition-all shrink-0"
+                                        aria-label={`Open walkthrough guide for ${platform.label}`}
+                                    >
+                                        <Compass size={13} className="text-[#FFB800]" />
+                                        <span>Guide</span>
+                                    </button>
 
-                                {/* Data points */}
-                                <ul className="space-y-1 mb-4">
-                                    {platform.dataPoints.map(point => (
-                                        <li key={point} className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                            <span className={`w-1 h-1 rounded-full shrink-0 ${isConnected ? platform.color.replace('text-', 'bg-') : 'bg-slate-600'}`} />
-                                            {point}
-                                        </li>
-                                    ))}
-                                </ul>
-
-                                {/* Error */}
-                                <AnimatePresence>
-                                    {(error || platform.unavailableReason) && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            className={`mb-3 flex items-start gap-1.5 text-[11px] border rounded-lg px-2 py-2 ${
-                                                error
-                                                    ? 'text-red-400 bg-red-500/10 border-red-500/20'
-                                                    : 'text-amber-300 bg-amber-500/10 border-amber-500/20'
-                                            }`}
-                                        >
-                                            <AlertCircle size={11} className="shrink-0 mt-0.5" />
-                                            {error || platform.unavailableReason}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Action button */}
-                                <button
-                                    onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
-                                    disabled={isLoading || isUnavailable}
-                                    className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
-                                        isConnected
-                                            ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
-                                            : `${platform.bgColor} border ${platform.borderColor} ${platform.color} hover:brightness-125`
-                                    }`}
-                                >
-                                    {isLoading ? (
-                                        <Loader2 size={12} className="animate-spin" />
-                                    ) : isConnected ? (
-                                        'Disconnect'
-                                    ) : isUnavailable ? (
-                                        'Unavailable'
-                                    ) : (
-                                        <>
-                                            <ExternalLink size={11} />
-                                            Connect {platform.label}
-                                        </>
-                                    )}
-                                </button>
+                                    <button
+                                        onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
+                                        disabled={isLoading || isUnavailable}
+                                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
+                                            isConnected
+                                                ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
+                                                : `${platform.bgColor} border ${platform.borderColor} ${platform.color} hover:brightness-125`
+                                        }`}
+                                    >
+                                        {isLoading ? (
+                                            <Loader2 size={12} className="animate-spin" />
+                                        ) : isConnected ? (
+                                            'Disconnect'
+                                        ) : isUnavailable ? (
+                                            'Unavailable'
+                                        ) : (
+                                            <>
+                                                <ExternalLink size={11} />
+                                                Connect {platform.label.split(' ')[0]}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </motion.div>
                         );
                     })}
@@ -364,10 +430,22 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
             )}
 
             {/* Privacy note */}
-            <p className="text-[11px] text-slate-600 text-center pt-2">
-                Platform credentials are stored encrypted in your private Firestore account.
-                We only request read-only analytics access — we never post on your behalf.
+            <p className="text-[11px] text-slate-500 text-center pt-2">
+                Platform credentials are cryptographically stored in your private Firestore vault.
+                Publishing permissions are only used for campaigns you explicitly approve.
             </p>
+
+            {/* Platform Walkthrough & Copilot Modal */}
+            <PlatformWalkthroughModal
+                isOpen={isWalkthroughOpen}
+                onClose={() => setIsWalkthroughOpen(false)}
+                initialPlatform={walkthroughPlatform}
+                connectionStatus={status}
+                onConnectPlatform={async (platformId) => {
+                    await handleConnect(platformId);
+                }}
+                isConnecting={Boolean(loading[walkthroughPlatform])}
+            />
         </div>
     );
 }
