@@ -122,6 +122,23 @@ export async function updateAssessmentContact(
 
   try {
     const docRef = doc(db, 'prospect_assessments', assessmentId);
+    const existing = await getDoc(docRef);
+    if (!existing.exists()) {
+      throw new Error('Your Passport answers could not be found.');
+    }
+    const currentData = existing.data();
+    if (currentData.claimedByUid != null) {
+      throw new Error('This assessment has already been claimed.');
+    }
+    // Prevent modifying contact email once set (ISSUE-1526 anti-tamper / hijack)
+    if (
+      contact.email !== undefined &&
+      currentData.email &&
+      currentData.email.toLowerCase() !== contact.email.trim().toLowerCase()
+    ) {
+      throw new Error('The contact email for this assessment cannot be modified once set.');
+    }
+
     const updates: Record<string, unknown> = {
       updatedAt: serverTimestamp(),
     };
@@ -133,6 +150,9 @@ export async function updateAssessmentContact(
     await updateDoc(docRef, updates);
   } catch (err) {
     console.warn('[ArtistPassport] Contact update deferred:', err);
+    if (err instanceof Error && err.message.includes('cannot be modified')) {
+      throw err;
+    }
     throw new Error('Your report request could not be saved. Please try again.');
   }
 }
@@ -143,6 +163,7 @@ export async function updateAssessmentContact(
 export async function claimProspectAssessment(
   assessmentId: string,
   uid: string,
+  callerEmail?: string,
 ): Promise<void> {
   if (!db || !assessmentId || !uid) {
     throw new Error('Your Passport answers could not be linked. Please try again.');
@@ -153,10 +174,16 @@ export async function claimProspectAssessment(
   if (!assessment.exists()) {
     throw new Error('Your Passport answers could not be found. Please keep your report link.');
   }
-  const claimedByUid = assessment.data().claimedByUid;
+  const data = assessment.data();
+  const claimedByUid = data.claimedByUid;
   if (claimedByUid === uid) return;
   if (claimedByUid != null) {
     throw new Error('These Passport answers are already linked to another account.');
+  }
+
+  // Enforce trusted ownership if assessment is bound to an email (ISSUE-1526)
+  if (data.email && callerEmail && data.email.toLowerCase() !== callerEmail.trim().toLowerCase()) {
+    throw new Error('These Passport answers were created for a different email address.');
   }
 
   await updateDoc(docRef, {

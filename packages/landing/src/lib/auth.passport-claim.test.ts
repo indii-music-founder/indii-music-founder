@@ -49,7 +49,7 @@ describe('signUpWithEmail Passport linking outcome', () => {
 
     expect(result).toEqual({ user, passportClaimFailed: true });
     expect(mocks.sendEmailVerification).toHaveBeenCalledWith(user);
-    expect(mocks.claimProspectAssessment).toHaveBeenCalledWith('assessment-1', 'artist-a');
+    expect(mocks.claimProspectAssessment).toHaveBeenCalledWith('assessment-1', 'artist-a', 'artist@example.com');
   });
 
   it('reports successful Passport linking separately from account creation', async () => {

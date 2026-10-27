@@ -1,5 +1,10 @@
 // Structural-only trigger tests using service doubles; not delivery evidence.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+
+vi.mock('firebase-functions/v2/firestore', () => ({
+    onDocumentWritten: vi.fn((_opts: unknown, handler: unknown) => handler),
+}));
+
 import { buildPassportReportContent, sendPassportReportEmail } from './sendPassportReportEmail';
 import * as notify from '../lib/notify';
 
@@ -163,6 +168,48 @@ describe('sendPassportReportEmail', () => {
             await (sendPassportReportEmail as unknown as (e: unknown) => Promise<void>)(noEmailEvent);
 
             expect(mockSend).not.toHaveBeenCalled();
+        });
+
+        it('strictly skips delivery when assessmentConsent is false or absent (ISSUE-1526)', async () => {
+            const mockUpdate = vi.fn();
+            const mockSend = vi.mocked(notify.sendTransactionalEmail);
+
+            const noConsentEvent = {
+                params: { assessmentId: 'doc-no-consent' },
+                data: {
+                    after: {
+                        exists: true,
+                        data: () => ({
+                            id: 'doc-no-consent',
+                            email: 'artist@example.com',
+                            // assessmentConsent missing
+                        }),
+                        ref: { update: mockUpdate },
+                    },
+                },
+            };
+
+            await (sendPassportReportEmail as unknown as (e: unknown) => Promise<void>)(noConsentEvent);
+            expect(mockSend).not.toHaveBeenCalled();
+
+            const falseConsentEvent = {
+                params: { assessmentId: 'doc-false-consent' },
+                data: {
+                    after: {
+                        exists: true,
+                        data: () => ({
+                            id: 'doc-false-consent',
+                            email: 'artist@example.com',
+                            assessmentConsent: false,
+                        }),
+                        ref: { update: mockUpdate },
+                    },
+                },
+            };
+
+            await (sendPassportReportEmail as unknown as (e: unknown) => Promise<void>)(falseConsentEvent);
+            expect(mockSend).not.toHaveBeenCalled();
+            expect(mockUpdate).not.toHaveBeenCalled();
         });
     });
 });

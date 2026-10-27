@@ -15,7 +15,7 @@ vi.mock('firebase/firestore', async (importOriginal) => ({
   serverTimestamp: () => 'server-time',
 }));
 
-import { claimProspectAssessment } from './passportService';
+import { claimProspectAssessment, updateAssessmentContact } from './passportService';
 
 describe('claimProspectAssessment', () => {
   beforeEach(() => {
@@ -51,5 +51,56 @@ describe('claimProspectAssessment', () => {
       expect.objectContaining({ path: 'prospect_assessments/assessment-1' }),
       expect.objectContaining({ claimedByUid: 'artist-a' }),
     );
+  });
+
+  it('enforces email match when assessment has a bound email', async () => {
+    mocks.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ claimedByUid: null, email: 'alice@example.com' }),
+    });
+
+    // Mismatched caller email is rejected
+    await expect(claimProspectAssessment('assessment-1', 'artist-eve', 'eve@example.com'))
+      .rejects.toThrow('different email address');
+    expect(mocks.updateDoc).not.toHaveBeenCalled();
+
+    // Matching caller email succeeds
+    await expect(claimProspectAssessment('assessment-1', 'artist-alice', 'alice@example.com'))
+      .resolves.toBeUndefined();
+    expect(mocks.updateDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'prospect_assessments/assessment-1' }),
+      expect.objectContaining({ claimedByUid: 'artist-alice' }),
+    );
+  });
+});
+
+describe('updateAssessmentContact', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects modifying contact email once set on the assessment', async () => {
+    mocks.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ claimedByUid: null, email: 'original@example.com' }),
+    });
+
+    await expect(updateAssessmentContact('assessment-1', { email: 'hijacked@example.com' }))
+      .rejects.toThrow('cannot be modified once set');
+    expect(mocks.updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('allows updating contact when email is unchanged or added initially', async () => {
+    mocks.getDoc.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ claimedByUid: null, email: 'original@example.com' }),
+    });
+
+    await expect(updateAssessmentContact('assessment-1', {
+      email: 'original@example.com',
+      marketingConsent: true,
+      assessmentConsent: true,
+    })).resolves.toBeUndefined();
+    expect(mocks.updateDoc).toHaveBeenCalled();
   });
 });

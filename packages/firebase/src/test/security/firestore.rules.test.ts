@@ -4078,6 +4078,37 @@ describe('Firestore Security Rules', () => {
                 }));
             });
 
+            it('update Case A: rejects changing email once an email is already recorded on unclaimed assessment', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-update-email-locked'), {
+                        ...validAssessment,
+                        email: 'alice@example.com',
+                    });
+                });
+
+                // Bob / unauthenticated visitor cannot overwrite Alice's email
+                await assertFails(updateDoc(doc(unauthDb, 'prospect_assessments', 'doc-update-email-locked'), {
+                    email: 'bob@example.com',
+                    updatedAt: Timestamp.now(),
+                }));
+
+                await assertFails(updateDoc(doc(bobDb, 'prospect_assessments', 'doc-update-email-locked'), {
+                    email: 'bob@example.com',
+                    updatedAt: Timestamp.now(),
+                }));
+
+                // Retaining the same email while updating contact info succeeds
+                await assertSucceeds(updateDoc(doc(unauthDb, 'prospect_assessments', 'doc-update-email-locked'), {
+                    artistName: 'Alice Updated',
+                    email: 'alice@example.com',
+                    updatedAt: Timestamp.now(),
+                }));
+            });
+
             it('update Case B: allows newly authenticated user to claim unclaimed assessment with their own uid', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
@@ -4088,6 +4119,62 @@ describe('Firestore Security Rules', () => {
 
                 await assertSucceeds(updateDoc(doc(aliceDb, 'prospect_assessments', 'doc-claim-1'), {
                     claimedByUid: ALICE_UID,
+                    claimedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }));
+            });
+
+            it('update Case B: allows authenticated user to claim unclaimed assessment when their auth email matches assessment email', async () => {
+                if (requireEmulator()) return;
+                const aliceCtx = testEnv.authenticatedContext(ALICE_UID, { email: 'alice@example.com' });
+                const aliceDb = aliceCtx.firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claim-email-match'), {
+                        ...validAssessment,
+                        email: 'alice@example.com',
+                    });
+                });
+
+                await assertSucceeds(updateDoc(doc(aliceDb, 'prospect_assessments', 'doc-claim-email-match'), {
+                    claimedByUid: ALICE_UID,
+                    claimedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }));
+            });
+
+            it('update Case B: rejects authenticated user claiming assessment when their auth email does not match assessment email', async () => {
+                if (requireEmulator()) return;
+                const eveCtx = testEnv.authenticatedContext('eve-uid-999', { email: 'eve@example.com' });
+                const eveDb = eveCtx.firestore();
+                const bobCtx = testEnv.authenticatedContext(BOB_UID, { email: 'bob@example.com' });
+                const bobDb = bobCtx.firestore();
+                const noEmailDb = verifiedCtx(BOB_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'doc-claim-email-mismatch'), {
+                        ...validAssessment,
+                        email: 'alice@example.com',
+                    });
+                });
+
+                // Eve cannot claim Alice's assessment
+                await assertFails(updateDoc(doc(eveDb, 'prospect_assessments', 'doc-claim-email-mismatch'), {
+                    claimedByUid: 'eve-uid-999',
+                    claimedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }));
+
+                // Bob cannot claim Alice's assessment
+                await assertFails(updateDoc(doc(bobDb, 'prospect_assessments', 'doc-claim-email-mismatch'), {
+                    claimedByUid: BOB_UID,
+                    claimedAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }));
+
+                // Authenticated user with missing email in token cannot claim assessment with email
+                await assertFails(updateDoc(doc(noEmailDb, 'prospect_assessments', 'doc-claim-email-mismatch'), {
+                    claimedByUid: BOB_UID,
                     claimedAt: Timestamp.now(),
                     updatedAt: Timestamp.now(),
                 }));
