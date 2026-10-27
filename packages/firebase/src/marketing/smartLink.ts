@@ -23,6 +23,8 @@ import * as admin from 'firebase-admin';
 import { createHash, randomUUID } from 'node:crypto';
 
 import { buildConversionEventId, type ConversionEvent } from '@indii/shared';
+import { arcjetKey } from '../config/secrets';
+import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 import { enqueueConversionEventDetached } from './conversionEventOutbox';
 
 const REGION = 'us-central1';
@@ -104,9 +106,19 @@ export const smartLinkRedirect = onRequest(
     // 512MiB is the floor here, not a tuning choice: below ~259MiB the shared
     // cold-start footprint OOMs before the container binds its port, failing
     // the deploy health check. Enforced by `npm run check:functions`.
-    { region: REGION, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, cors: false },
+    { region: REGION, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, cors: false, secrets: [arcjetKey] },
     async (req, res) => {
         const slug = (req.path.split('/').filter(Boolean).pop() ?? '').toLowerCase();
+
+        const protection = await protectAnonymousSignupRequest(
+            ((req as { rawRequest?: unknown }).rawRequest ?? req) as never,
+            `smartlink-redirect:${slug || 'root'}`,
+            'allow-low-risk-read',
+        );
+        if (!protection.allowed) {
+            res.status(protection.status || 429).send(protection.message || 'Rate limit exceeded');
+            return;
+        }
 
         if (!SLUG_PATTERN.test(slug)) {
             res.status(404).send('Not found');
