@@ -25,6 +25,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('../../config/secrets', () => ({
     typesafeApiKey: { value: () => mocks.apiKeyValue() },
+    arcjetKey: {},
 }));
 
 import { typesafeJudge } from './typesafeJudge';

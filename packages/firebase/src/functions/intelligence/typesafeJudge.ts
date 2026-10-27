@@ -1,5 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { typesafeApiKey } from '../../config/secrets';
+import { typesafeApiKey, arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     createTypesafeClient,
     TypesafeClientError,
@@ -34,17 +36,31 @@ export const typesafeJudge = onCall(
         // Browser preflights cannot satisfy Cloud Run IAM authentication.
         // The callable still requires App Check and a verified Firebase user.
         invoker: 'public',
-        enforceAppCheck: true,
+        enforceAppCheck: false,
         memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
         timeoutSeconds: 30,
-        secrets: [typesafeApiKey],
+        secrets: [typesafeApiKey, arcjetKey],
     },
     async (request) => {
+        validateAppCheckV2(request);
         if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
         if (!request.auth.token.email_verified) {
             throw new HttpsError('permission-denied', 'Verify your email to use AI judgments.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `typesafe-judge:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const input = (request.data ?? {}) as {

@@ -9,6 +9,9 @@ import {
     createCanonicalMusicCatalogStore,
     type CanonicalMusicCatalogStore,
 } from './canonicalMusicCatalogStore';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     admitOrganizationAccessRequest,
     organizationAccessCallableOptions,
@@ -116,17 +119,82 @@ export async function resolveRespondToRightsClaim(
         });
 }
 
+export const claimsInboxCallableOptions = {
+    secrets: [arcjetKey],
+    enforceAppCheck: false,
+    region: 'us-central1' as const,
+    timeoutSeconds: 15,
+    memory: '512MiB' as const,
+};
+
 export const getCanonicalClaimsInbox = onCall(
-    organizationAccessCallableOptions,
-    request => resolveClaimsInbox(request),
+    claimsInboxCallableOptions,
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'Authentication is required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `claims-inbox-read:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+        return resolveClaimsInbox(request);
+    },
 );
 
 export const declareCanonicalRightsClaim = onCall(
-    organizationAccessCallableOptions,
-    request => resolveDeclareRightsClaim(request),
+    claimsInboxCallableOptions,
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'Authentication is required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `claims-inbox-declare:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+        return resolveDeclareRightsClaim(request);
+    },
 );
 
 export const respondToCanonicalRightsClaim = onCall(
-    organizationAccessCallableOptions,
-    request => resolveRespondToRightsClaim(request),
+    claimsInboxCallableOptions,
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'Authentication is required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `claims-inbox-respond:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+        return resolveRespondToRightsClaim(request);
+    },
 );

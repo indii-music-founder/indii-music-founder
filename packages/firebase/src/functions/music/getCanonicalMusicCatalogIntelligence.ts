@@ -7,6 +7,9 @@ import {
     createCanonicalMusicCatalogStore,
     type CanonicalMusicCatalogStore,
 } from './canonicalMusicCatalogStore';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     admitOrganizationAccessRequest,
     organizationAccessCallableOptions,
@@ -37,7 +40,34 @@ export async function resolveCanonicalMusicCatalogIntelligence(
     return analyzeCatalogIntelligence(input);
 }
 
+export const canonicalMusicCatalogIntelligenceCallableOptions = {
+    secrets: [arcjetKey],
+    enforceAppCheck: false,
+    region: 'us-central1' as const,
+    timeoutSeconds: 30,
+    memory: '512MiB' as const,
+};
+
 export const getCanonicalMusicCatalogIntelligence = onCall(
-    organizationAccessCallableOptions,
-    request => resolveCanonicalMusicCatalogIntelligence(request),
+    canonicalMusicCatalogIntelligenceCallableOptions,
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth?.uid) {
+            throw new HttpsError('unauthenticated', 'A valid canonical catalog scope is required.');
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `canonical-music-catalog-intelligence:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
+        }
+        return resolveCanonicalMusicCatalogIntelligence(request);
+    },
 );
