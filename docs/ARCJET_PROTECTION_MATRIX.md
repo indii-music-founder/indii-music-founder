@@ -41,7 +41,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/agent/workflowExecutionCallables.ts:128` | `manageWorkflowExecution` | `onCall` | Present | Present |
 | `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
 | `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
-| `functions/auth/entitlements.ts:384` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
+| `functions/auth/entitlements.ts:383` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
 | `functions/auth/handoff.ts:122` | `createHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/handoff.ts:186` | `redeemHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
