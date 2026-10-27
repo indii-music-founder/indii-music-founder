@@ -1,6 +1,9 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { arcjetKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
   KNOWLEDGE_WORKER_VERSION,
   KNOWLEDGE_EMBEDDING_MODEL,
@@ -23,9 +26,29 @@ if (!admin.apps.length) {
  * Authorizes upload, records 'uploading' state, and returns canonical storage path.
  * Path pattern: rag-sources/{uid}/{sha256}/original.{ext}
  */
-export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<CreateKnowledgeUploadRequest>) => {
-  if (!request.auth) {
+export const createKnowledgeUpload = onCall({ enforceAppCheck: true, secrets: [arcjetKey] }, async (request: CallableRequest<CreateKnowledgeUploadRequest>) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to create knowledge upload.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `create-knowledge-upload:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const uid = request.auth.uid;
@@ -94,9 +117,29 @@ export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (re
  * Verifies object exists in Storage, matches metadata/generation/SHA, updates state to 'queued',
  * and dispatches background indexing.
  */
-export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<FinalizeKnowledgeUploadRequest>) => {
-  if (!request.auth) {
+export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true, secrets: [arcjetKey] }, async (request: CallableRequest<FinalizeKnowledgeUploadRequest>) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to finalize knowledge upload.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `finalize-knowledge-upload:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const uid = request.auth.uid;
@@ -204,9 +247,29 @@ export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (
  * Endpoint 3: deleteKnowledgeDocument
  * Marks document state as deleting, batch deletes chunks, and deletes the GCS object.
  */
-export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (request: CallableRequest<DeleteKnowledgeDocumentRequest>) => {
-  if (!request.auth) {
+export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true, secrets: [arcjetKey] }, async (request: CallableRequest<DeleteKnowledgeDocumentRequest>) => {
+  validateAppCheckV2(request);
+  if (!request.auth || !request.auth.uid) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to delete knowledge upload.');
+  }
+  if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.auth.token?.email_verified === false) {
+    throw new HttpsError('permission-denied', 'Verified email is required.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: request.auth.uid,
+      policy: 'verified-free',
+      operationId: `delete-knowledge-document:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   const uid = request.auth.uid;

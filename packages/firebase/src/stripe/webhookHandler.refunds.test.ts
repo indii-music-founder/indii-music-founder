@@ -50,6 +50,7 @@ vi.mock('./config', () => ({
 }));
 
 vi.mock('../config/secrets', () => ({
+  arcjetKey: {},
   stripeSecretKey: {},
   stripeWebhookSecret: {},
   getStripeWebhookSecret: () => 'whsec_test_secret',

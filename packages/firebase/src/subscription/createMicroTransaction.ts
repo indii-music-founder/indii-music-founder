@@ -1,19 +1,42 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { stripe } from '../stripe/config';
 import Stripe from 'stripe';
-import { stripeSecretKey } from '../config/secrets';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 export const createMicroTransaction = onCall({
-  secrets: [stripeSecretKey],
+  secrets: [stripeSecretKey, arcjetKey],
   timeoutSeconds: 60,
   memory: '512MiB',
-  enforceAppCheck: true, // App Check globally active
+  enforceAppCheck: false,
 }, async (request) => {
   const { userId, credits, successUrl, cancelUrl } = request.data as { userId: string, credits: number, successUrl: string, cancelUrl: string };
 
   if (!userId || userId !== request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Unauthorized');
+  }
+
+  if (request.auth?.token?.email_verified === false || request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+  }
+
+  validateAppCheckV2(request);
+
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId,
+      policy: request.auth?.token?.admin ? 'admin' : 'paid',
+      operationId: `create-micro-transaction:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError(
+        protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+        protection.message,
+      );
+    }
   }
 
   if (!credits || credits <= 0) {

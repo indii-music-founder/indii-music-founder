@@ -1,11 +1,13 @@
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { checkOperationBudget, requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '../auth/entitlements';
+import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 const MAX_SESSION_BYTES = 20 * 1024 * 1024 * 1024;
 const RETENTION_DAYS = 30;
@@ -553,10 +555,26 @@ export async function createOwnedVideoSession(
 }
 
 export const createVideoSession = onCall(
-    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false, secrets: [arcjetKey] },
     async (request): Promise<CreateVideoSessionResult> => {
         validateAppCheckV2(request);
+        if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
         const userId = requireVerifiedCreativeUser(request.auth);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: 'verified-free',
+                operationId: `create-video-session:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
         const entitlement = await requireVerifiedServerEntitlement(userId);
 
         return createOwnedVideoSession(userId, request.data, {

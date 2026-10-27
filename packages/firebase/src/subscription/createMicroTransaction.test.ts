@@ -51,6 +51,7 @@ vi.mock('../stripe/config', () => ({
 
 vi.mock('../config/secrets', () => ({
   stripeSecretKey: {},
+  arcjetKey: {},
 }));
 
 import { createMicroTransaction } from './createMicroTransaction';

@@ -19,7 +19,7 @@ import { requireVerifiedServerEntitlement } from '../auth/entitlements';
 import {
     policyClassForServerEntitlement,
     protectAuthenticatedApiRequest,
-} from './arcjet';
+} from '../security/arcjet';
 
 const getAccessMatrixSchema = z.object({
     orgId: z.string().trim().min(1).max(128),
@@ -215,14 +215,23 @@ export async function admitOrganizationAccessRequest(
     if (!request.rawRequest) {
         throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
-    const protection = await protect(request.rawRequest, {
-        userId: uid,
-        policy: policyForEntitlement({
-            tier: entitlement.tier,
-            isAdmin: request.auth?.token.admin === true,
-        }),
-        operationId: `${operation}:${randomUUID()}`,
-    });
+    const protection = dependencies.protect
+        ? await dependencies.protect(request.rawRequest, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `${operation}:${randomUUID()}`,
+        })
+        : await protectAuthenticatedApiRequest(request.rawRequest, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `${operation}:${randomUUID()}`,
+        });
     if (!protection.allowed) {
         const code = protection.status === 429
             ? 'resource-exhausted'

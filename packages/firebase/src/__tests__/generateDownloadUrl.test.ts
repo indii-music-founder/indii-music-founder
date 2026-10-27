@@ -59,7 +59,7 @@ vi.mock('firebase-functions/v2/https', () => {
 });
 
 
-import { generateReleaseDownloadUrl } from '../index';
+import { generateReleaseDownloadUrl } from '../releases/generateDownloadUrl';
 
 describe('generateReleaseDownloadUrl Cloud Function', () => {
     beforeEach(() => {

@@ -8,7 +8,11 @@
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'node:crypto';
 import { stripe } from './config';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 interface SplitEscrowRequest {
     trackId: string;
@@ -36,7 +40,7 @@ interface SplitEscrowResponse {
  * and records the pending signatures in Firestore.
  */
 export const initiateSplitEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [stripeSecretKey, arcjetKey], timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const data = (request.data ?? {}) as SplitEscrowRequest;
         if (!request.auth) {
@@ -44,6 +48,26 @@ export const initiateSplitEscrow = onCall(
                 'unauthenticated',
                 'User must be signed in.'
             );
+        }
+
+        if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+        }
+
+        validateAppCheckV2(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth.token?.admin ? 'admin' : 'paid',
+                operationId: `initiate-split-escrow:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { trackId, holdAmount, parties } = data;
@@ -181,11 +205,31 @@ export const initiateSplitEscrow = onCall(
  * escrow honestly reports that no money has moved yet.
  */
 export const signEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [stripeSecretKey, arcjetKey], timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const data = (request.data ?? {}) as { escrowDocId: string };
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+
+        if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+        }
+
+        validateAppCheckV2(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth.token?.admin ? 'admin' : 'paid',
+                operationId: `sign-escrow:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { escrowDocId } = data;
@@ -247,11 +291,31 @@ export const signEscrow = onCall(
  * and creates Stripe transfers for each party based on their split percentage.
  */
 export const releaseEscrow = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 120, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: false, secrets: [stripeSecretKey, arcjetKey], timeoutSeconds: 120, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const data = (request.data ?? {}) as { escrowDocId: string };
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'User must be signed in.');
+        }
+
+        if (request.auth.token?.email_verified === false || request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+        }
+
+        validateAppCheckV2(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: request.auth.token?.admin ? 'admin' : 'paid',
+                operationId: `release-escrow:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const { escrowDocId } = data;

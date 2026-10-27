@@ -1,6 +1,8 @@
 import { onRequest, Request } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
+import { arcjetKey } from '../../config/secrets';
+import { protectAnonymousSignupRequest } from '../security/arcjet';
 
 /**
  * Public, unauthenticated ingress for a payment collaborator to submit their
@@ -154,9 +156,15 @@ export async function processSubmitTaxForm(input: SubmitTaxFormInput): Promise<S
     return { status: 200, body: { success: true } };
 }
 
-export const submitTaxForm = onRequest({ cors: true }, async (req: Request, res: express.Response) => {
+export const submitTaxForm = onRequest({ cors: true, secrets: [arcjetKey] }, async (req: Request, res: express.Response) => {
     if (req.method !== 'POST') {
         res.status(405).send('Method Not Allowed');
+        return;
+    }
+
+    const protection = await protectAnonymousSignupRequest(req as never, `submit-tax-form:${req.ip || 'anonymous'}`);
+    if (!protection.allowed) {
+        res.status(protection.status).send(protection.message);
         return;
     }
 

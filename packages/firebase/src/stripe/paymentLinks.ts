@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { stripe } from './config';
+import { stripeSecretKey, arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 export interface StorefrontItemInput {
     sku: string;
@@ -220,8 +223,33 @@ export async function createStorefrontCheckout(
     };
 }
 
-export const createStripePaymentLinks = onCall(async (req) => {
+export const createStripePaymentLinks = onCall({
+    secrets: [stripeSecretKey, arcjetKey],
+    enforceAppCheck: false,
+    timeoutSeconds: 60,
+    memory: '512MiB',
+}, async (req) => {
     if (!req.auth) throw new HttpsError('unauthenticated', 'User must be signed in.');
+
+    if (req.auth.token?.email_verified === false || req.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('unauthenticated', 'A verified signed-in user is required.');
+    }
+
+    validateAppCheckV2(req);
+
+    if (req.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(req.rawRequest as never, {
+            userId: req.auth.uid,
+            policy: req.auth.token?.admin ? 'admin' : 'paid',
+            operationId: `create-stripe-payment-links:${crypto.randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
+    }
 
     try {
         return await createStorefrontCheckout(req.data, stripe as unknown as StorefrontStripeClient);

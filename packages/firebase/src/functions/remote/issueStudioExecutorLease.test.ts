@@ -13,6 +13,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
+import { HttpsError } from 'firebase-functions/v2/https';
 
 // ─── Hoisted doubles ────────────────────────────────────────────────────────
 
@@ -72,12 +73,23 @@ const mocks = vi.hoisted(() => {
         makeSnap: (path: string, exists: boolean, data: Record<string, unknown> = {}) => {
             snapshots.set(path, { exists, data });
         },
+        validateAppCheckV2: vi.fn(),
+        protectAuthenticatedApiRequest: vi.fn(async (): Promise<
+            | { allowed: true; degraded?: true }
+            | { allowed: false; status: number; code: string; message: string; retryAfterSeconds?: number }
+        > => ({ allowed: true })),
         clearRelay: () => {
             snapshots.clear();
             writes.length = 0;
+            mocks.validateAppCheckV2.mockReset();
+            mocks.protectAuthenticatedApiRequest.mockReset().mockResolvedValue({ allowed: true });
         },
     };
 });
+
+vi.mock('../../config/secrets', () => ({ arcjetKey: { name: 'ARCJET_KEY' } }));
+vi.mock('../../middleware/appCheck', () => ({ validateAppCheckV2: mocks.validateAppCheckV2 }));
+vi.mock('../security/arcjet', () => ({ protectAuthenticatedApiRequest: mocks.protectAuthenticatedApiRequest }));
 
 vi.mock('firebase-functions/v2/https', () => {
     class HttpsError extends Error {
@@ -123,7 +135,7 @@ import * as remote from './issueStudioExecutorLease';
 
 // Resolve each export's captured onCall handler through its wrapper identity,
 // so reordering/re naming exports cannot mis-route assertions.
-type CallHandler = (req: { auth?: { uid: string } | null; data?: unknown }) => Promise<unknown>;
+type CallHandler = (req: { auth?: { uid: string; token?: Record<string, unknown> } | null; data?: unknown; rawRequest?: unknown }) => Promise<unknown>;
 
 const handlerOf = (fn: unknown): CallHandler => {
     const h = mocks.handlersByWrapper.get(fn as object);
@@ -141,7 +153,11 @@ const cmdPath = (id: string) => `users/${UID}/remote-relay-commands/${id}`;
 
 const sha256Hex = (value: string) => createHash('sha256').update(value).digest('hex');
 
-const req = (data: unknown, auth: { uid: string } | null = { uid: UID }) => ({ auth, data });
+const req = (data: unknown, auth: { uid: string; token?: Record<string, unknown> } | null = { uid: UID, token: { email_verified: true, firebase: { sign_in_provider: 'password' } } }) => ({
+    auth,
+    data,
+    rawRequest: { method: 'POST', headers: {} } as never,
+});
 
 beforeEach(() => {
     mocks.clearRelay();
@@ -150,7 +166,7 @@ beforeEach(() => {
 // ─── Registration posture (§11 security surface) ────────────────────────────
 
 describe('callable registration posture', () => {
-    it('registers all six callables, app-check disabled, single region', () => {
+    it('registers all six callables, app-check disabled, single region, and binds arcjetKey secret', () => {
         const exports = Object.values(remote);
         expect(exports).toHaveLength(6);
 
@@ -158,6 +174,7 @@ describe('callable registration posture', () => {
             expect(mocks.callConfigs.get(callable as object)).toMatchObject({
                 region: 'us-central1',
                 enforceAppCheck: false,
+                secrets: [expect.objectContaining({ name: 'ARCJET_KEY' })],
             });
         }
         // Every export captured a handler (nothing fell through the mock).
@@ -229,6 +246,147 @@ describe('issueStudioExecutorLease', () => {
         expect(first.leaseToken).not.toBe(second.leaseToken);
         const write = mocks.writes.find(w => w.path === devicePath);
         expect(write?.data['createdAt']).toEqual({ __ts: 111 });
+    });
+
+    it('rejects anonymous authentication across lease issuance and relay callables', async () => {
+        const anonReq = req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }, {
+            uid: UID,
+            token: { firebase: { sign_in_provider: 'anonymous' } },
+        });
+        await expect(issue()(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+            message: 'Anonymous accounts cannot access Studio remote relay.',
+        });
+        await expect(handlerOf(remote.publishStudioPresence)(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+        });
+        await expect(handlerOf(remote.releaseStudioPresence)(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+        });
+        await expect(handlerOf(remote.claimStudioCommand)(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+        });
+        await expect(handlerOf(remote.publishStudioResponse)(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+        });
+        await expect(handlerOf(remote.completeStudioCommand)(anonReq)).rejects.toMatchObject({
+            code: 'permission-denied',
+        });
+    });
+
+    it('enforces validateAppCheckV2 across all callables', async () => {
+        mocks.validateAppCheckV2.mockImplementationOnce(() => {
+            throw new HttpsError('failed-precondition', 'Unauthorized: Missing App Check token.');
+        });
+        await expect(issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))).rejects.toMatchObject({
+            code: 'failed-precondition',
+            message: 'Unauthorized: Missing App Check token.',
+        });
+    });
+
+    it('fails closed when request admission context is missing', async () => {
+        const rawReq = {
+            auth: { uid: UID, token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+            data: { deviceId: DEVICE_ID, enrollmentSecret: SECRET },
+            rawRequest: undefined,
+        };
+        await expect(issue()(rawReq as never)).rejects.toMatchObject({
+            code: 'unavailable',
+            message: 'Request protection is temporarily unavailable.',
+        });
+    });
+
+    it('rejects requests when Arcjet admission returns 429 resource-exhausted', async () => {
+        mocks.protectAuthenticatedApiRequest.mockResolvedValueOnce({
+            allowed: false,
+            status: 429,
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Rate limit exceeded on Studio executor lease.',
+        });
+        await expect(issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))).rejects.toMatchObject({
+            code: 'resource-exhausted',
+            message: 'Rate limit exceeded on Studio executor lease.',
+        });
+    });
+
+    it('prevents a rogue new device from overwriting an active healthy desktop lease', async () => {
+        const activeDeviceId = 'active-desktop-device-001';
+        const activeDevicePath = `users/${UID}/studioExecutors/${activeDeviceId}`;
+        mocks.makeSnap(statePath, true, {
+            online: true,
+            executorDeviceId: activeDeviceId,
+        });
+        mocks.makeSnap(activeDevicePath, true, {
+            activeLeaseToken: 'active-desktop-lease-token',
+            leaseExpiresAt: { toMillis: () => Date.now() + 300_000 },
+        });
+
+        await expect(
+            issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))
+        ).rejects.toMatchObject({
+            code: 'failed-precondition',
+            message: 'Cannot enroll a new Studio executor while an active desktop lease is online.',
+        });
+    });
+
+    it('allows a new device enrollment when the previously active desktop is offline', async () => {
+        const activeDeviceId = 'active-desktop-device-001';
+        const activeDevicePath = `users/${UID}/studioExecutors/${activeDeviceId}`;
+        mocks.makeSnap(statePath, true, {
+            online: false,
+            executorDeviceId: activeDeviceId,
+        });
+        mocks.makeSnap(activeDevicePath, true, {
+            activeLeaseToken: 'active-desktop-lease-token',
+            leaseExpiresAt: { toMillis: () => Date.now() + 300_000 },
+        });
+
+        const result = (await issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))) as {
+            deviceId: string;
+            leaseToken: string;
+        };
+        expect(result.deviceId).toBe(DEVICE_ID);
+        expect(result.leaseToken).toBeDefined();
+    });
+
+    it('allows a new device enrollment when the previously active desktop lease has expired', async () => {
+        const activeDeviceId = 'active-desktop-device-001';
+        const activeDevicePath = `users/${UID}/studioExecutors/${activeDeviceId}`;
+        mocks.makeSnap(statePath, true, {
+            online: true,
+            executorDeviceId: activeDeviceId,
+        });
+        mocks.makeSnap(activeDevicePath, true, {
+            activeLeaseToken: 'active-desktop-lease-token',
+            leaseExpiresAt: { toMillis: () => Date.now() - 5_000 },
+        });
+
+        const result = (await issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))) as {
+            deviceId: string;
+            leaseToken: string;
+        };
+        expect(result.deviceId).toBe(DEVICE_ID);
+        expect(result.leaseToken).toBeDefined();
+    });
+
+    it('allows the currently enrolled active desktop to renew its lease while online', async () => {
+        mocks.makeSnap(devicePath, true, {
+            secretHash: sha256Hex(SECRET),
+            activeLeaseToken: 'current-desktop-token',
+            leaseExpiresAt: { toMillis: () => Date.now() + 300_000 },
+            createdAt: mocks.SERVER_TS,
+        });
+        mocks.makeSnap(statePath, true, {
+            online: true,
+            executorDeviceId: DEVICE_ID,
+        });
+
+        const result = (await issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }))) as {
+            deviceId: string;
+            leaseToken: string;
+        };
+        expect(result.deviceId).toBe(DEVICE_ID);
+        expect(result.leaseToken).not.toBe('current-desktop-token');
     });
 });
 
@@ -579,5 +737,40 @@ describe('completeStudioCommand', () => {
         await expect(
             complete()(req({ deviceId: DEVICE_ID, leaseToken: 'the-real-token', commandId: 'cmd-1' }))
         ).rejects.toMatchObject({ code: 'permission-denied' });
+    });
+});
+
+// ─── security & admission controls (ISSUE-1543) ─────────────────────────────
+
+describe('security & admission controls (ISSUE-1543)', () => {
+    const issue = () => handlerOf(remote.issueStudioExecutorLease);
+
+    it('rejects unverified email callers', async () => {
+        await expect(
+            issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }, { uid: UID, token: { email_verified: false } } as never))
+        ).rejects.toMatchObject({ code: 'unauthenticated' });
+    });
+
+    it('rejects anonymous auth callers', async () => {
+        await expect(
+            issue()(req({ deviceId: DEVICE_ID, enrollmentSecret: SECRET }, {
+                uid: UID,
+                token: { email_verified: true, firebase: { sign_in_provider: 'anonymous' } }
+            } as never))
+        ).rejects.toMatchObject({ code: 'unauthenticated' });
+    });
+
+    it('prevents rogue auto-enrollment when an active Studio session is online', async () => {
+        mocks.makeSnap(statePath, true, {
+            online: true,
+            executorDeviceId: 'active-desktop-device-01',
+            leaseExpiresAt: { toMillis: () => Date.now() + 300_000 },
+        });
+
+        await expect(
+            issue()(req({ deviceId: 'rogue-device-00000002', enrollmentSecret: SECRET }))
+        ).rejects.toMatchObject({
+            code: 'failed-precondition',
+        });
     });
 });

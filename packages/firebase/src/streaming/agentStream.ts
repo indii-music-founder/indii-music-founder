@@ -33,6 +33,8 @@ import { z } from "zod";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { getVertexAIClient } from "../lib/vertexClient";
 import { validateAppCheckHttp } from "../middleware/appCheck";
+import { arcjetKey } from "../config/secrets";
+import { protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from "../functions/security/arcjet";
 
 interface StreamToken {
   token: string;
@@ -74,7 +76,8 @@ export const agentStreamResponse = onRequest(
   {
     region: "us-central1",
     timeoutSeconds: 600,
-    memory: "1GiB"
+    memory: "1GiB",
+    secrets: [arcjetKey],
   },
   async (req: Request, res: Response): Promise<void> => {
     // Handle CORS preflight
@@ -134,6 +137,19 @@ export const agentStreamResponse = onRequest(
 
       // Verify App Check manually after CORS preflight has passed
       if (!(await validateAppCheckHttp(req, res))) {
+        return;
+      }
+
+      const protection = await protectAuthenticatedApiRequest(req as never, {
+        userId,
+        policy: 'verified-free',
+        operationId: `agent-stream:${userId}`,
+      });
+      if (!protection.allowed) {
+        if (protection.retryAfterSeconds && typeof res.setHeader === 'function') {
+          res.setHeader('Retry-After', String(protection.retryAfterSeconds));
+        }
+        res.status(protection.status).json({ error: protection.message });
         return;
       }
 
@@ -220,9 +236,10 @@ export const agentStreamResponse = onRequest(
  */
 export const agentStreamHealth = onRequest(
   {
-    region: "us-central1"
+    region: "us-central1",
+    secrets: [arcjetKey],
   },
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     // Handle CORS preflight
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -230,6 +247,19 @@ export const agentStreamHealth = onRequest(
 
     if (req.method === "OPTIONS") {
       res.status(204).send("");
+      return;
+    }
+
+    const protection = await protectAnonymousSignupRequest(
+      req as never,
+      'agent-stream-health',
+      'allow-low-risk-read'
+    );
+    if (!protection.allowed) {
+      if (protection.retryAfterSeconds && typeof res.setHeader === 'function') {
+        res.setHeader('Retry-After', String(protection.retryAfterSeconds));
+      }
+      res.status(protection.status).json({ error: protection.message });
       return;
     }
 

@@ -7,6 +7,9 @@ import {
     validateInstagramPublishingPayload,
     type InstagramPublishingPayload,
 } from '@indii/shared';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 // Default empty — runtime code below already fails closed with a clean
 // HttpsError when this resolves empty (see the bounty-link handler); the
@@ -174,10 +177,31 @@ export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'insta
  * Queues supported posts for the scheduled social delivery worker.
  */
 export const executeCampaign = onCall(
-    { enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    { enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
-        if (!request.auth) {
+        validateAppCheckV2(request);
+        if (!request.auth || !request.auth.uid) {
             throw new HttpsError("unauthenticated", "Auth required");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `marketing:execute-campaign:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
         }
 
         const validation = CampaignExecutionRequestSchema.safeParse(request.data);
@@ -356,9 +380,30 @@ export const executeCampaign = onCall(
  * Fulfills PRODUCTION_200:141.
  */
 export const dispatchSocialPost = onCall(
-    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 120, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 120, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        if (!request.auth || !request.auth.uid) throw new HttpsError("unauthenticated", "Auth required");
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `marketing:dispatch-social-post:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
 
         const { mediaUrl, platform, caption, instagramPayload } = (request.data ?? {}) as Record<string, unknown>;
         const normalizedPlatform = normalizeDispatchPlatform(platform);
@@ -420,9 +465,30 @@ export const dispatchSocialPost = onCall(
  * Fulfills PRODUCTION_200:149.
  */
 export const createInfluencerBounty = onCall(
-    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] },
     async (request) => {
-        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
+        validateAppCheckV2(request);
+        if (!request.auth || !request.auth.uid) throw new HttpsError("unauthenticated", "Auth required");
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.auth.token?.email_verified === false) {
+            throw new HttpsError('permission-denied', 'Verified email is required.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `marketing:create-influencer-bounty:${crypto.randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
 
         const { influencerHandle, trackName, rewardAmount: _rewardAmount, action } = (request.data ?? {}) as Record<string, unknown>;
         let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';

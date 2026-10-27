@@ -1,6 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import * as admin from 'firebase-admin';
 
+vi.mock('firebase-admin', () => {
+    const mockSet = vi.fn().mockResolvedValue(undefined);
+    const mockUpdate = vi.fn().mockResolvedValue(undefined);
+    const mockDoc = vi.fn(() => ({ set: mockSet, update: mockUpdate }));
+    const mockCollection = vi.fn(() => ({ doc: mockDoc }));
+    const firestore = vi.fn(() => ({ collection: mockCollection }));
+    Object.assign(firestore, {
+        FieldValue: { serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP') },
+    });
+    return {
+        default: { firestore },
+        firestore,
+    };
+});
+
+vi.mock('../security/arcjet', () => ({
+    protectAuthenticatedApiRequest: vi.fn().mockResolvedValue({ allowed: true }),
+}));
+
 // Mock storageUri functions
 vi.mock('../../lib/storageUri', () => ({
     parseStorageUri: vi.fn((uri: string) => {

@@ -76,7 +76,7 @@ import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 import { requireVerifiedEmailV2, validateAppCheckHttp, validateAppCheckV2 } from "./middleware/appCheck";
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from './functions/auth/entitlements';
 import { checkOperationBudget, claimOperationReservation, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
-import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from './functions/security/arcjet';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from './functions/security/arcjet';
 import { requireVerifiedCreativeAdmission } from './functions/creative/legacyAdmission';
 import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
 import { resolveVertexEndpointResource } from './lib/vertexRouting';
@@ -461,6 +461,25 @@ export const triggerVideoJob = onCall(
         const data = request.data as unknown;
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-video-job');
 
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: policyClassForServerEntitlement({
+                    tier: entitlement.tier,
+                    isAdmin: request.auth?.token.admin === true,
+                }),
+                operationId: `trigger-video-job:${userId}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
         const inputData: Record<string, unknown> = { ...safeData, userId };
@@ -665,6 +684,25 @@ export const triggerLongFormVideoJob = onCall(
     async (request): Promise<{ success: boolean; jobId: string; message: string }> => {
         const data = request.data as unknown;
         const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-long-form-video-job');
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId,
+                policy: policyClassForServerEntitlement({
+                    tier: entitlement.tier,
+                    isAdmin: request.auth?.token.admin === true,
+                }),
+                operationId: `trigger-long-form-video-job:${userId}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -1094,7 +1132,7 @@ export const renderVideo = onCall(
  */
 export const inngestApi = onRequest(
     {
-        secrets: [inngestSigningKey, inngestEventKey, typesafeApiKey],
+        secrets: [inngestSigningKey, inngestEventKey, typesafeApiKey, arcjetKey],
         timeoutSeconds: 540, // 9 minutes
         // ffmpeg canvas rendering (canvasRenderFn) needs headroom well beyond
         // the 256MB Gen1 default this function used to inherit.
@@ -1103,6 +1141,16 @@ export const inngestApi = onRequest(
         concurrency: 1,
     },
     async (req, res) => {
+        const protection = await protectAuthenticatedApiRequest(req as never, {
+            userId: 'inngest-dispatcher',
+            policy: 'verified-free',
+            operationId: `inngest-api:${req.ip || 'inngest'}`,
+        });
+        if (!protection.allowed) {
+            res.status(protection.status || 429).send(protection.message || 'Too Many Requests');
+            return;
+        }
+
         const inngestClient = getInngestClient();
 
         // 1. Long Form Video Generation Logic (Daisychaining)
@@ -1597,6 +1645,7 @@ export const generateContentStream = onRequest(
 
 export const ragProxy = onRequest(
     {
+        secrets: [arcjetKey],
         // App Check is verified manually after corsHandler so the CORS
         // preflight can pass; v2 onRequest has no enforceAppCheck option.
         timeoutSeconds: 60,
@@ -1609,6 +1658,16 @@ export const ragProxy = onRequest(
     },
     (req, res) => {
         corsHandler(req, res, async () => {
+            const protection = await protectAuthenticatedApiRequest(req as never, {
+                userId: 'rag-proxy-caller',
+                policy: 'verified-free',
+                operationId: `rag-proxy:${req.ip || 'caller'}`,
+            });
+            if (!protection.allowed) {
+                res.status(protection.status || 429).send({ error: protection.message || 'Too Many Requests' });
+                return;
+            }
+
             // Verify Authentication
             const authHeader = req.headers.authorization;
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -1661,6 +1720,7 @@ import * as marketingService from './lib/marketing';
  */
 export const listGKEClusters = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1668,6 +1728,22 @@ export const listGKEClusters = onCall(
     async (request) => {
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `list-gke-clusters:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1715,6 +1791,7 @@ export {
  */
 export const getGKEClusterStatus = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1723,6 +1800,22 @@ export const getGKEClusterStatus = onCall(
         const data = request.data as { location: string; clusterName: string };
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `get-gke-cluster-status:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1743,6 +1836,7 @@ export const getGKEClusterStatus = onCall(
  */
 export const scaleGKENodePool = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1751,6 +1845,22 @@ export const scaleGKENodePool = onCall(
         const data = request.data as { location: string; clusterName: string; nodePoolName: string; nodeCount: number };
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `scale-gke-node-pool:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1771,6 +1881,7 @@ export const scaleGKENodePool = onCall(
  */
 export const listGCEInstances = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1778,6 +1889,22 @@ export const listGCEInstances = onCall(
     async (request) => {
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `list-gce-instances:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1798,6 +1925,7 @@ export const listGCEInstances = onCall(
  */
 export const restartGCEInstance = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1806,6 +1934,22 @@ export const restartGCEInstance = onCall(
         const data = request.data as { zone: string; instanceName: string };
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `restart-gce-instance:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1832,6 +1976,7 @@ export { batchEventsScheduled, streamEventOnCreate } from './functions/analytics
  */
 export const executeBigQueryQuery = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 120, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1840,6 +1985,22 @@ export const executeBigQueryQuery = onCall(
         const data = request.data as { query: string; maxResults?: number };
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `execute-bigquery-query:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         if (!data.query) {
              throw new HttpsError('invalid-argument', 'Query is required.');
@@ -1868,6 +2029,7 @@ export const executeBigQueryQuery = onCall(
  */
 export const getBigQueryTableSchema = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1876,6 +2038,22 @@ export const getBigQueryTableSchema = onCall(
         const data = request.data as { datasetId: string; tableId: string };
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `get-bigquery-table-schema:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1896,6 +2074,7 @@ export const getBigQueryTableSchema = onCall(
  */
 export const listBigQueryDatasets = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1903,6 +2082,22 @@ export const listBigQueryDatasets = onCall(
     async (request) => {
         validateAppCheckV2(request);
         requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `list-bigquery-datasets:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
@@ -1970,6 +2165,7 @@ export {
  */
 export const exportUserData = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 120, memory: "512MiB",
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -1979,6 +2175,25 @@ export const exportUserData = onCall(
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `export-user-data:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
         }
 
         const userId = request.auth.uid;
@@ -2042,6 +2257,7 @@ export const exportUserData = onCall(
  */
 export const requestAccountDeletion = onCall(
     {
+        secrets: [arcjetKey],
         enforceAppCheck: false, timeoutSeconds: 120, memory: "512MiB",
         cpu: 'gcf_gen1',
         concurrency: 1,
@@ -2051,6 +2267,25 @@ export const requestAccountDeletion = onCall(
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "Authentication required.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `request-account-deletion:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
         }
 
         const userId = request.auth.uid;
@@ -2118,11 +2353,18 @@ export const requestAccountDeletion = onCall(
  */
 export const healthCheck = onRequest(
     {
+        secrets: [arcjetKey],
         timeoutSeconds: 60, memory: "512MiB",
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
-    async (_req, res) => {
+    async (req, res) => {
+        const protection = await protectAnonymousSignupRequest(req as never, 'health-check', 'allow-low-risk-read');
+        if (!protection.allowed) {
+            res.status(protection.status || 429).json({ error: protection.message || 'Too Many Requests' });
+            return;
+        }
+
         const status: Record<string, unknown> = {
             status: "ok",
             timestamp: new Date().toISOString(),
@@ -2154,12 +2396,19 @@ export const healthCheck = onRequest(
  */
 export const healthCheckWest1 = onRequest(
     {
+        secrets: [arcjetKey],
         region: "us-central1",
         timeoutSeconds: 60, memory: "512MiB",
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
-    async (_req, res) => {
+    async (req, res) => {
+        const protection = await protectAnonymousSignupRequest(req as never, 'health-check-west1', 'allow-low-risk-read');
+        if (!protection.allowed) {
+            res.status(protection.status || 429).json({ error: protection.message || 'Too Many Requests' });
+            return;
+        }
+
         res.status(200).json({
             status: "ok",
             timestamp: new Date().toISOString(),
@@ -2177,7 +2426,7 @@ export const enrichFanData = onCall(
         region: "us-central1",
         timeoutSeconds: 300,
         memory: "1GiB",
-        secrets: [clearbitApiKey, apolloApiKey],
+        secrets: [clearbitApiKey, apolloApiKey, arcjetKey],
         cpu: 'gcf_gen1',
         concurrency: 1,
     },
@@ -2191,6 +2440,25 @@ export const enrichFanData = onCall(
                 "unauthenticated",
                 "Unauthorized: User session required for data enrichment."
             );
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `enrich-fan-data:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
         }
 
         const { fans, provider, orgId } = data as { fans?: Record<string, unknown>[]; provider?: string; orgId?: string };

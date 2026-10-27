@@ -10,7 +10,8 @@ import { logger } from 'firebase-functions';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
-import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
+import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret, arcjetKey } from '../config/secrets';
+import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 import { enqueueConversionEvent } from '../marketing/conversionEventOutbox';
 import { confirmPrintfulOrder } from '../pod/printfulApi';
 import { printfulApiKey } from '../config/secrets';
@@ -1267,10 +1268,23 @@ async function handlePodOrderPaid(session: Stripe.Checkout.Session): Promise<voi
  * Main webhook handler
  */
 export const stripeWebhook = onRequest({
-  secrets: [stripeSecretKey, stripeWebhookSecret, printfulApiKey],
+  secrets: [stripeSecretKey, stripeWebhookSecret, printfulApiKey, arcjetKey],
   timeoutSeconds: 30,
 }, async (req, res) => {
   const signature = req.headers['stripe-signature'] as string;
+  const protection = await protectAnonymousSignupRequest(
+    req as never,
+    `stripe-webhook:${signature?.slice(0, 16) || 'anonymous'}`,
+    'allow-low-risk-read'
+  );
+  if (!protection.allowed) {
+    if (protection.retryAfterSeconds && typeof res.set === 'function') {
+      res.set('Retry-After', String(protection.retryAfterSeconds));
+    }
+    res.status(protection.status).json({ error: protection.message });
+    return;
+  }
+
   const webhookSecret = getStripeWebhookSecret();
 
   if (!webhookSecret) {

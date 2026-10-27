@@ -113,6 +113,15 @@ vi.mock('firebase-functions/v2/https', () => {
 
 vi.mock('firebase-functions/params', () => ({
     defineString: vi.fn(() => ({ value: vi.fn(() => '') })),
+    defineSecret: vi.fn((name: string) => ({ name, value: vi.fn(() => '') })),
+}));
+
+vi.mock('../middleware/appCheck', () => ({
+    validateAppCheckV2: vi.fn(),
+}));
+
+vi.mock('../functions/security/arcjet', () => ({
+    protectAuthenticatedApiRequest: vi.fn().mockResolvedValue({ allowed: true }),
 }));
 
 import {

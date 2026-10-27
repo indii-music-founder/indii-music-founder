@@ -93,6 +93,9 @@ export async function verifyProviderAccount(
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
+import { arcjetKey } from "../config/secrets";
+import { validateAppCheckV2 } from "../middleware/appCheck";
+import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
 import { enforceRateLimit } from "../lib/rateLimit";
 
 // Item 328: Token exchange rate limit — 20 req/min per UID
@@ -163,15 +166,29 @@ export function resolveEmailOAuthRedirectUri(
 
 export const emailExchangeToken = onCall(
     {
-        enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
+        enforceAppCheck: false,
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret, arcjetKey],
         timeoutSeconds: 30,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
     async (request) => {
+        validateAppCheckV2(request);
         // 1. Authentication required
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `email-exchange-token:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const { code, redirectUri: requestedRedirectUri } = (request.data ?? {}) as {
@@ -273,14 +290,28 @@ export const emailExchangeToken = onCall(
 
 export const emailRefreshToken = onCall(
     {
-        enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
+        enforceAppCheck: false,
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret, arcjetKey],
         timeoutSeconds: 15,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
     async (request) => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `email-refresh-token:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
@@ -371,14 +402,28 @@ export const emailRefreshToken = onCall(
 
 export const emailRevokeToken = onCall(
     {
-        enforceAppCheck: true,
-        secrets: [googleOAuthClientId, googleOAuthClientSecret],
+        enforceAppCheck: false,
+        secrets: [googleOAuthClientId, googleOAuthClientSecret, arcjetKey],
         timeoutSeconds: 15,
         memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
     },
     async (request) => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "User must be authenticated.");
+        }
+        if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+            throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+        }
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth.uid,
+                policy: 'verified-free',
+                operationId: `email-revoke-token:${request.auth.uid}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+            }
         }
 
         const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);

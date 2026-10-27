@@ -9,9 +9,12 @@
  * HttpsError codes when providers are unconfigured or unavailable).
  */
 
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { randomUUID } from 'crypto';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import { arcjetKey } from '../config/secrets';
+import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
 import {
     getAdAccountId,
@@ -27,10 +30,41 @@ const DEFAULT_CALLABLE_OPTS = {
     cpu: 'gcf_gen1' as const,
     concurrency: 1,
     timeoutSeconds: 60,
+    secrets: [arcjetKey],
 };
 
 function getDb(): admin.firestore.Firestore {
     return admin.firestore();
+}
+
+async function enforceMarketingAdmission(
+    request: CallableRequest<any>,
+    operation: string,
+): Promise<string> {
+    validateAppCheckV2(request);
+    if (!request.auth || !request.auth.uid) {
+        throw new HttpsError('unauthenticated', 'User session required to perform marketing operation.');
+    }
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.auth.token?.email_verified === false) {
+        throw new HttpsError('permission-denied', 'Verified email is required.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: request.auth.uid,
+            policy: 'verified-free',
+            operationId: `marketing:${operation}:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
+    }
+    return request.auth.uid;
 }
 
 /**
@@ -39,10 +73,7 @@ function getDb(): admin.firestore.Firestore {
 export const createAdCampaign = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to create ad campaign.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'create-ad-campaign');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const platform = String(data.platform || '').toLowerCase().trim();
@@ -60,8 +91,6 @@ export const createAdCampaign = onCall(
         if (!Number.isFinite(totalDays) || totalDays <= 0) {
             throw new HttpsError('invalid-argument', 'A positive totalDays is required.');
         }
-
-        const userId = request.auth.uid;
 
         if (platform === 'meta' || platform === 'facebook' || platform === 'instagram') {
             const adAccountId = await getAdAccountId(userId);
@@ -107,10 +136,7 @@ export const createAdCampaign = onCall(
 export const createAdSet = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to create ad set.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'create-ad-set');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const campaignId = String(data.campaignId || '').trim();
@@ -124,8 +150,6 @@ export const createAdSet = onCall(
         if (!campaignId) {
             throw new HttpsError('invalid-argument', 'campaignId is required.');
         }
-
-        const userId = request.auth.uid;
 
         if (platform === 'meta' || platform === 'facebook' || platform === 'instagram') {
             const adAccountId = await getAdAccountId(userId);
@@ -185,10 +209,7 @@ export const createAdSet = onCall(
 export const createAd = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to create ad.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'create-ad');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const adSetId = String(data.adSetId || '').trim();
@@ -206,7 +227,6 @@ export const createAd = onCall(
             throw new HttpsError('invalid-argument', 'creativeId is required.');
         }
 
-        const userId = request.auth.uid;
         const adAccountId = await getAdAccountId(userId);
         if (!adAccountId) {
             throw new HttpsError(
@@ -244,10 +264,7 @@ export const createAd = onCall(
 export const getAdInsights = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to fetch ad insights.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'get-ad-insights');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const adId = String(data.adId || '').trim();
@@ -255,7 +272,6 @@ export const getAdInsights = onCall(
             throw new HttpsError('invalid-argument', 'adId is required.');
         }
 
-        const userId = request.auth.uid;
         const insightsDoc = await getDb()
             .collection('users').doc(userId)
             .collection('adInsights').doc(adId)
@@ -289,10 +305,7 @@ export const getAdInsights = onCall(
 export const pauseAdCampaign = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to pause campaign.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'pause-ad-campaign');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const campaignId = String(data.campaignId || '').trim();
@@ -302,7 +315,6 @@ export const pauseAdCampaign = onCall(
             throw new HttpsError('invalid-argument', 'campaignId is required.');
         }
 
-        const userId = request.auth.uid;
         const result = await executePauseAd(userId, campaignId, reason);
 
         if (!result.success) {
@@ -324,10 +336,7 @@ export const pauseAdCampaign = onCall(
 export const getSocialPostInsights = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to fetch post insights.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'get-social-post-insights');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const externalId = String(data.externalId || '').trim();
@@ -337,7 +346,6 @@ export const getSocialPostInsights = onCall(
             throw new HttpsError('invalid-argument', 'externalId is required.');
         }
 
-        const userId = request.auth.uid;
         const postDoc = await getDb().collection('scheduledPosts').doc(externalId).get();
 
         if (postDoc.exists && postDoc.data()?.userId === userId) {
@@ -366,10 +374,7 @@ export const getSocialPostInsights = onCall(
 export const syncEmailList = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to sync email list.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'sync-email-list');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const provider = String(data.provider || '').toLowerCase().trim();
@@ -383,7 +388,6 @@ export const syncEmailList = onCall(
             throw new HttpsError('invalid-argument', 'listId is required.');
         }
 
-        const userId = request.auth.uid;
         const integrationDoc = await getDb()
             .collection('users').doc(userId)
             .collection('marketing_integrations').doc(provider)
@@ -411,10 +415,7 @@ export const syncEmailList = onCall(
 export const deployEmailCampaign = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to deploy email campaign.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'deploy-email-campaign');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const provider = String(data.provider || '').toLowerCase().trim();
@@ -430,7 +431,6 @@ export const deployEmailCampaign = onCall(
             throw new HttpsError('invalid-argument', 'subject is required.');
         }
 
-        const userId = request.auth.uid;
         const integrationDoc = await getDb()
             .collection('users').doc(userId)
             .collection('marketing_integrations').doc(provider)
@@ -460,10 +460,7 @@ export const deployEmailCampaign = onCall(
 export const getEmailCampaignStats = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to fetch campaign stats.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'get-email-campaign-stats');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const campaignId = String(data.campaignId || '').trim();
@@ -473,7 +470,6 @@ export const getEmailCampaignStats = onCall(
             throw new HttpsError('invalid-argument', 'campaignId is required.');
         }
 
-        const userId = request.auth.uid;
         const campaignDoc = await getDb()
             .collection('users').doc(userId)
             .collection('emailCampaigns').doc(campaignId)
@@ -502,10 +498,7 @@ export const getEmailCampaignStats = onCall(
 export const sendSMSBlast = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to send SMS blast.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'send-sms-blast');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const phones = Array.isArray(data.phones) ? (data.phones as string[]) : [];
@@ -520,7 +513,6 @@ export const sendSMSBlast = onCall(
             throw new HttpsError('invalid-argument', 'Message text is required.');
         }
 
-        const userId = request.auth.uid;
         const hasTwilioEnv = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
 
         const twilioDoc = await getDb()
@@ -551,10 +543,7 @@ export const sendSMSBlast = onCall(
 export const getSMSDeliveryStatus = onCall(
     DEFAULT_CALLABLE_OPTS,
     async (request) => {
-        validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'User session required to check SMS status.');
-        }
+        const userId = await enforceMarketingAdmission(request, 'get-sms-delivery-status');
 
         const data = (request.data ?? {}) as Record<string, unknown>;
         const messageId = String(data.messageId || '').trim();
@@ -562,7 +551,6 @@ export const getSMSDeliveryStatus = onCall(
             throw new HttpsError('invalid-argument', 'messageId is required.');
         }
 
-        const userId = request.auth.uid;
         const deliveryDoc = await getDb()
             .collection('users').doc(userId)
             .collection('smsDeliveries').doc(messageId)

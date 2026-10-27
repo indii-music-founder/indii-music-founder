@@ -14,7 +14,8 @@
 import * as crypto from "crypto";
 import { onRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
-import { pandadocWebhookSecret } from "../config/secrets";
+import { arcjetKey, pandadocWebhookSecret } from "../config/secrets";
+import { protectAnonymousSignupRequest } from "../functions/security/arcjet";
 import { findWritableReleaseRef } from "../functions/distribution/distributionRecords";
 
 const REGION = "us-central1";
@@ -47,7 +48,7 @@ interface PandaDocWebhookEvent {
 export const pandadocWebhook = onRequest(
     {
         region: REGION,
-        secrets: [pandadocWebhookSecret],
+        secrets: [pandadocWebhookSecret, arcjetKey],
         timeoutSeconds: 60,
         memory: "512MiB",
         cpu: 'gcf_gen1',
@@ -57,6 +58,16 @@ export const pandadocWebhook = onRequest(
         // Only accept POST
         if (req.method !== "POST") {
             res.status(405).send("Method Not Allowed");
+            return;
+        }
+
+        const protection = await protectAnonymousSignupRequest(
+            req as never,
+            `pandadoc-webhook:${req.ip || 'external'}`,
+            'allow-low-risk-read',
+        );
+        if (!protection.allowed) {
+            res.status(protection.status || 429).send(protection.message || "Too Many Requests");
             return;
         }
 

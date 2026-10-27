@@ -8,7 +8,7 @@ import { requireVerifiedServerEntitlement } from "../auth/entitlements";
 import {
     policyClassForServerEntitlement,
     protectAuthenticatedApiRequest,
-} from "./arcjet";
+} from "../security/arcjet";
 
 type AuditSeverity = "low" | "medium" | "high" | "critical";
 
@@ -123,14 +123,23 @@ export async function admitAuditLogWriteRequest(
     if (!request.rawRequest) {
         throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
-    const protection = await protect(request.rawRequest as never, {
-        userId: uid,
-        policy: policyForEntitlement({
-            tier: entitlement.tier,
-            isAdmin: request.auth?.token.admin === true,
-        }),
-        operationId: `audit-log-write:${randomUUID()}`,
-    });
+    const protection = dependencies.protect
+        ? await dependencies.protect(request.rawRequest as never, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `audit-log-write:${randomUUID()}`,
+        })
+        : await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: uid,
+            policy: policyForEntitlement({
+                tier: entitlement.tier,
+                isAdmin: request.auth?.token.admin === true,
+            }),
+            operationId: `audit-log-write:${randomUUID()}`,
+        });
     if (!protection.allowed) {
         const code = protection.status === 429
             ? 'resource-exhausted'

@@ -2,6 +2,9 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { calculateReelEngagementPercent, resolveReelShareSignal, resolveUnifiedViews } from '@indii/shared';
+import { arcjetKey } from '../config/secrets';
+import { validateAppCheckV2 } from '../middleware/appCheck';
+import { protectAuthenticatedApiRequest } from './security/arcjet';
 
 const SyncStatsRequestSchema = z.object({
   platform: z.enum(['spotify', 'instagram', 'tiktok', 'twitter', 'youtube']),
@@ -343,8 +346,32 @@ export async function syncPlatformStatsForUser(
  * Server-side platform stats sync. Raw OAuth tokens remain behind Admin SDK;
  * callers receive sanitized status and numeric analytics only.
  */
-export const syncPlatformStats = onCall(async (request) => {
-  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'User must be signed in.');
+export const syncPlatformStats = onCall(
+  {
+    timeoutSeconds: 60,
+    memory: '512MiB',
+    cpu: 'gcf_gen1',
+    concurrency: 1,
+    enforceAppCheck: false,
+    secrets: [arcjetKey],
+  },
+  async (request) => {
+    validateAppCheckV2(request);
+    if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'User must be signed in.');
+    if (request.auth.token?.firebase?.sign_in_provider === 'anonymous') {
+      throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+
+    if (request.rawRequest) {
+      const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+        userId: request.auth.uid,
+        policy: 'verified-free',
+        operationId: `sync-platform-stats:${request.auth.uid}`,
+      });
+      if (!protection.allowed) {
+        throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+      }
+    }
 
   try {
     return await syncPlatformStatsForUser(request.auth.uid, request.data);
