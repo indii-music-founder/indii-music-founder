@@ -28,3 +28,24 @@ The following owners are module ownership lanes for follow-up, not named human a
 | `vite` | Web build | Vite 6.4.3 remains affected. Vite 6.4.5 could not resolve alongside the current react-call >=8 peer requirement. Fix that peer/toolchain combination, then upgrade and test dev-server access controls. |
 
 The remaining moderate advisories are tracked by the same issue. A clean `npm ci --ignore-scripts --no-audit` installed 2,904 packages on the local Node 25 host, and focused tests passed. Supported Node 24 clean-install evidence and exact-SHA CI are still required; local tests cannot establish production reachability or release acceptance.
+
+## 2026-10-28 gRPC resolution follow-up
+
+Baseline `a7449d6b3` still audits at 0 critical / 18 high / 7 moderate. Although root overrides already named `@grpc/grpc-js` 1.14.6, the lock retained 1.9.16 under both root `@firebase/firestore` and landing. A normal lock-only update of gRPC and then its Firestore parent left those entries unchanged. Merely inspecting the manifest therefore did not prove remediation.
+
+The repair explicitly scopes the same 1.14.6 override to Firestore and re-resolves those two stale lock entries in an isolated manifest workspace using Node 24.22.1/npm 11.20.0. The resulting graph deduplicates both to the existing patched root package. No Firebase downgrade, forced install, peer-check bypass, unrelated version upgrade, or change to the running checkout's shared node_modules was used. The only accompanying lock classification change marks landing's no-longer-runtime Node type dependencies as development dependencies. Unrelated package-manager cleanup was excluded.
+
+| Evidence | Observed result | Limit |
+| --- | --- | --- |
+| `npm audit --omit=dev --json` before/after | High 18 → 14; critical remains 0; moderate remains 7; gRPC and its Firestore/Firebase meta-advisories disappear | Registry results are dated observations, not a clean security or exploitability verdict |
+| Isolated `npm ci --ignore-scripts --no-audit`, Node 24.22.1/npm 11.20.0 | Exit 0; 2,903 packages installed | Lifecycle/native postinstall scripts deliberately not executed; Functions still declares Node 22 and its engine warning is retained |
+| Actual installed package resolution from both Firestore package locations | Both load gRPC 1.14.6; Metadata construction/set/get succeeds | Package resolution/API check only; no authenticated Firestore transport, server or customer path tested |
+| `scripts/check-grpc-resolution.mjs` against original and repaired locks | Original exits 1 identifying both 1.9.16 entries; repaired exits 0 | Guard validates the resolved lock graph, not an already-installed or deployed tree |
+
+The new lock guard runs before the existing lint checks, requiring every resolved gRPC copy to equal the exact reviewed patched override. Generated capability catalogs were refreshed to record that npm script without granting agent certification.
+
+The [upstream certificate-authentication advisory GHSA-m9gg-hp2v-232j](https://github.com/grpc/grpc-node/security/advisories/GHSA-m9gg-hp2v-232j) concerns server `getAuthContext` use with optional client certificates; its fixed lines include 1.13.6 and 1.14.5. The [1.14.6 release](https://github.com/grpc/grpc-node/releases/tag/%40grpc%2Fgrpc-js%401.14.6) also addresses remaining error-disclosure cases from GHSA-f596-whhp-79r4. No application call to `getAuthContext`, `ServerCredentials.createSsl`, or gRPC xDS was found in package source. That source search does not prove transitive/runtime non-reachability; removal of the affected versions is the remediation evidence.
+
+Full repository typecheck passed both in the original checkout and against the freshly installed patched graph under Node 24; full lint passed with zero errors and 235 existing warnings. Ledger integrity, capability-catalog validation, guard syntax and diff checks passed.
+
+Remaining 14 high and seven moderate findings still require their own compatible fixes/reachability reviews. This follow-up does not close ISSUE-1514, prove installed desktop/native packaging, or establish deployed Firebase acceptance. Jev's focused review of the install/audit/guard evidence is advisory only. Remote CI monitoring remains with the owner's existing systems.
