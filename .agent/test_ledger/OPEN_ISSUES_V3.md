@@ -5773,10 +5773,12 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **2026-10-28 implementation progress:** Delivered affirmative consent gate in `packages/shared/src/rights/aiTrainingConsent.ts` (`AITrainingGrantSchema`, `evaluateAITrainingExport`) with 10 unit tests (`packages/shared/src/rights/aiTrainingConsent.test.ts`). Enforces server-side default deny, un-inferred permission, multi-rightsholder consensus, expiration and revocation, scope and vendor whitelisting, and verified settled compensation to both artist and platform prior to export. Exported in `@/shared`.
 
 ### CI-V3-20261021-02 — Royalti.io royalty-operations teardown against actual indii implementation [P1 RESEARCH]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Parent:** Financial operations acceptance; spawned by founder's requested reverse engineering and competitor public capabilities.
 - **Overlaps/depends on:** GitHub #216 (closed idempotent ingestion defect), #394 (closed malformed Quantity), #372 (closed finance readiness report), ISSUE-1537 (open tenant isolation), CI-V3-20261019-04.
 - **Research scope:** Statement formats/normalization, mapping, catalog/ISRC/ISWC matching, contract splits, recoupment, multi-currency, payout ledger, corrections/reversals, Roy assistant permissions, audit receipts, import idempotency, DDEX/CWR integration. Compare to actual current code; note RoyaltyService is now a compatibility facade calling server-owned calculateRoyaltyAllocations, not the old client-side allocation described in #216.
 - **Acceptance:** Evidence-linked feature/architecture comparison with implemented/partial/missing/live-unverified classification; explicit build-vs-defer decision and prioritized smallest acceptance test; no proprietary code copying.
+- **Terminal Evidence:** Completed comprehensive evidence-linked architectural teardown in `docs/research/royalti-io-teardown-2026-10-28.md`. Analyzes 11 operational capability domains with `IMPLEMENTED`/`PARTIAL`/`MISSING`/`LIVE-UNVERIFIED` classifications; grounds comparison in actual codebase implementations (`calculateRoyaltyAllocations.ts`, `parseAndIngestReport.ts`, `DecimalMoney`, `shareUnits`, `agentControlIntegrity`); specifies explicit build-vs-defer decisions; and defines prioritized smallest acceptance test with zero proprietary code copying.
 - **Converges to:** Finance/royalty release readiness and competitive dossier.
 
 ### CI-V3-20261021-03 — Recording-to-work rights matching and unmatched-income exceptions [P1 RESEARCH + PROPOSED IMPLEMENTATION]
