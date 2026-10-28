@@ -1,6 +1,7 @@
 /**
  * DistributionRevenueService Tests
  *
+ * Legacy mock-backed structural checks; not signed-in customer acceptance.
  * Validates earnings aggregation across multiple distributor adapters,
  * revenue totalling, and adapter connection.
  */
@@ -75,7 +76,7 @@ describe('DistributionRevenueService', () => {
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
                 {
-                    releaseId: 'release-1',
+                    currencyCode: 'USD', releaseId: 'release-1',
                     distributorId: 'distrokid',
                     streams: 50000,
                     downloads: 200,
@@ -84,7 +85,7 @@ describe('DistributionRevenueService', () => {
                     netRevenue: 150.0,
                 },
                 {
-                    releaseId: 'release-2',
+                    currencyCode: 'USD', releaseId: 'release-2',
                     distributorId: 'distrokid',
                     streams: 25000,
                     downloads: 100,
@@ -117,7 +118,7 @@ describe('DistributionRevenueService', () => {
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
                 {
-                    releaseId: 'release-1',
+                    currencyCode: 'USD', releaseId: 'release-1',
                     distributorId: 'distrokid',
                     streams: 30000,
                     downloads: 100,
@@ -132,7 +133,7 @@ describe('DistributionRevenueService', () => {
             tcAdapter.isConnected.mockResolvedValue(true);
             tcAdapter.getAllEarnings.mockResolvedValue([
                 {
-                    releaseId: 'release-1',
+                    currencyCode: 'USD', releaseId: 'release-1',
                     distributorId: 'tunecore',
                     streams: 20000,
                     downloads: 50,
@@ -179,7 +180,7 @@ describe('DistributionRevenueService', () => {
 
             tcAdapter.isConnected.mockResolvedValue(true);
             tcAdapter.getAllEarnings.mockResolvedValue([{
-                releaseId: 'r-1', distributorId: 'tunecore', streams: 1000, downloads: 10,
+                currencyCode: 'USD', releaseId: 'r-1', distributorId: 'tunecore', streams: 1000, downloads: 10,
                 grossRevenue: 20.0, distributorFee: 0, netRevenue: 20.0,
             }] as DistributorEarnings[]);
 
@@ -217,7 +218,7 @@ describe('DistributionRevenueService', () => {
             dkAdapter.isConnected.mockResolvedValue(true);
             dkAdapter.getAllEarnings.mockResolvedValue([
                 {
-                    releaseId: 'r-1',
+                    currencyCode: 'USD', releaseId: 'r-1',
                     distributorId: 'distrokid',
                     streams: 10000,
                     downloads: 50,
@@ -226,7 +227,7 @@ describe('DistributionRevenueService', () => {
                     netRevenue: 30.0,
                 },
                 {
-                    releaseId: 'r-2',
+                    currencyCode: 'USD', releaseId: 'r-2',
                     distributorId: 'distrokid',
                     streams: 5000,
                     downloads: 25,

@@ -4,7 +4,6 @@
  */
 import {
     DistributorId,
-    DistributorEarnings,
     AggregatedEarnings,
     DateRange,
     DistributorAdapter,
@@ -16,11 +15,12 @@ import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdap
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { logger } from '@/utils/logger';
+import { aggregateNativeEarnings, summarizeNativeRevenue } from './aggregateNativeEarnings';
 
 /**
  * ISSUE-1280: aggregation results carry which distributors failed to report, so a
  * partial fetch can never be mistaken for a complete one. An empty
- * `failedDistributors` means the figures are whole.
+ * `failedDistributors` means no connected distributor fetch failed; currencies remain separate.
  */
 export interface AggregatedEarningsResult {
     earnings: AggregatedEarnings[];
@@ -29,8 +29,11 @@ export interface AggregatedEarningsResult {
 }
 
 export interface TotalNetRevenueResult {
-    total: number;
-    /** False when at least one distributor failed — `total` is then an understatement. */
+    /** Null when multiple currencies cannot truthfully be combined. */
+    total: number | null;
+    currencyCode: string | null;
+    totalsByCurrency: Record<string, number>;
+    /** Fetch coverage only: true does not make mixed currencies convertible. */
     complete: boolean;
     failedDistributors: string[];
 }
@@ -79,40 +82,7 @@ export class DistributionRevenueService {
         const results = await Promise.all(allEarningsPromises);
         const flatEarnings = results.flat();
 
-        // Group by Release ID
-        const groupedByRelease = flatEarnings.reduce((acc, earning) => {
-            if (!acc[earning.releaseId]) {
-                acc[earning.releaseId] = [];
-            }
-            acc[earning.releaseId]!.push(earning);
-            return acc;
-        }, {} as Record<string, DistributorEarnings[]>);
-
-        // Aggregate per Release
-        const earningsByRelease = Object.entries(groupedByRelease).map(([releaseId, earnings]) => {
-            const initial: AggregatedEarnings = {
-                releaseId,
-                period,
-                totalStreams: 0,
-                totalDownloads: 0,
-                totalGrossRevenue: 0,
-                totalFees: 0,
-                totalNetRevenue: 0,
-                currencyCode: 'USD',
-                byDistributor: earnings,
-                byPlatform: [],
-                byTerritory: []
-            };
-
-            return earnings.reduce((acc, curr) => {
-                acc.totalStreams += curr.streams;
-                acc.totalDownloads += curr.downloads;
-                acc.totalGrossRevenue += curr.grossRevenue;
-                acc.totalFees += curr.distributorFee;
-                acc.totalNetRevenue += curr.netRevenue;
-                return acc;
-            }, initial);
-        });
+        const earningsByRelease = aggregateNativeEarnings(flatEarnings, period);
 
         return { earnings: earningsByRelease, failedDistributors };
     }
@@ -121,13 +91,14 @@ export class DistributionRevenueService {
      * Get Total Net Revenue for a period across all releases.
      *
      * ISSUE-1280: `complete` is false when any distributor's fetch failed, meaning
-     * `total` is an UNDERSTATEMENT rather than a real figure. Never render this as a
-     * definitive revenue number without checking it.
+     * the reported amounts omit that distributor. Check coverage before displaying
+     * a definitive revenue number. Mixed currencies produce a null
+     * scalar total and explicit native totals; no implicit USD conversion is performed.
      */
     async getTotalNetRevenue(period: DateRange): Promise<TotalNetRevenueResult> {
         const { earnings, failedDistributors } = await this.getAggregatedEarnings(period);
         return {
-            total: earnings.reduce((sum, item) => sum + item.totalNetRevenue, 0),
+            ...summarizeNativeRevenue(earnings),
             complete: failedDistributors.length === 0,
             failedDistributors,
         };
