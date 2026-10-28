@@ -288,7 +288,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
         }
 
-        const streamBody = "data: " + JSON.stringify({ text, functionCalls }) + "\n\n";
+        const streamBody = "data: " + JSON.stringify({ text, functionCalls }) + "\n\n" + "data: " + JSON.stringify({ complete: true }) + "\n\n";
         console.log(`[DEBUG] [E2E mock] userMessage: "${userMessage}", functionCalls:`, JSON.stringify(functionCalls));
         await route.fulfill({
           status: 200,
@@ -351,6 +351,33 @@ export async function setupE2EPage(page: Page): Promise<void> {
               maxTeamMembers: 5
             },
           }),
+        });
+        return;
+      }
+
+      if (url.includes("typesafeJudge")) {
+        let postData: any = {};
+        try {
+          postData = JSON.parse(route.request().postData() || "{}");
+        } catch {
+          // ignore
+        }
+        const questions = (postData?.data?.questions || postData?.questions || {}) as Record<string, unknown>;
+        const answers: Record<string, unknown> = {};
+        for (const [key] of Object.entries(questions)) {
+          if (key === 'intent') {
+            answers[key] = { choice: 'discussion', confidence: 0.95 };
+          } else if (key === 'complexity') {
+            answers[key] = { choice: 'simple', confidence: 0.95 };
+          } else {
+            answers[key] = { choice: 'allow', confidence: 0.95 };
+          }
+        }
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({ data: { answers } }),
         });
         return;
       }
@@ -503,11 +530,12 @@ export async function setupE2EPage(page: Page): Promise<void> {
         }
 
         const streamChunk = JSON.stringify({ text, functionCalls });
+        const terminalChunk = JSON.stringify({ complete: true });
         await route.fulfill({
           status: 200,
           headers: corsHeaders,
           contentType: "text/event-stream",
-          body: `data: ${streamChunk}\n\n`,
+          body: `data: ${streamChunk}\n\ndata: ${terminalChunk}\n\n`,
         });
         return;
       }
@@ -731,6 +759,15 @@ export async function setupE2EPage(page: Page): Promise<void> {
       }
 
       // Default success for others (e.g. generateContent)
+      let defaultText = "Mock RAG Response";
+      try {
+        const bodyText = route.request().postData() || "";
+        if (bodyText.includes("intent") && (bodyText.includes("discussion") || bodyText.includes("BOARDROOM_INTENT"))) {
+          defaultText = JSON.stringify({ intent: "discussion", confidence: 0.95 });
+        }
+      } catch {
+        // ignore
+      }
       await route.fulfill({
         status: 200,
         headers: corsHeaders,
@@ -740,7 +777,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
             {
               content: {
                 role: "model",
-                parts: [{ text: "Mock RAG Response" }],
+                parts: [{ text: defaultText }],
               },
             },
           ],
