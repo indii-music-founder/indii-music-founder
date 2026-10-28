@@ -52,6 +52,7 @@ export * from './types/nle.js';
 export * from './types/rightsRegistration.js';
 export * from './rights/contracts.js';
 export * from './rights/aiTrainingConsent.js';
+export * from './rights/recordingWorkMatching.js';
 export * from './rights/sessionLifecycle.js';
 export * from './rights/recovery.js';
 export * from './rights/entityReferences.js';
