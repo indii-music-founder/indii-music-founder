@@ -23,6 +23,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { estimateMechanicalFee } from './mechanicalEstimate';
 import {
     type MechanicalLicenseDocument,
     type MechanicalLicenseStatus,
@@ -51,11 +52,6 @@ export type MechanicalLicense = MechanicalLicenseDocument;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-// 2026 US statutory mechanical rates per 37 CFR §385.11
-// For permanent-digital-downloads and physical: 13.1¢ per work or 2.52¢ per minute (whichever is larger)
-// For streams: separate per-stream rate applies
-const STATUTORY_RATE_PER_WORK_USD = 0.131;     // 13.1¢ per work minimum (2026)
-const STATUTORY_RATE_PER_MINUTE_USD = 0.0252;  // 2.52¢ per minute for works over ~5 min
 const COLLECTION = 'mechanical_licenses';
 const CF_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? '';
 
@@ -93,7 +89,7 @@ export const MechanicalRoyaltyService = {
         isrc?: string;
         composition: CompositionInfo;
         distributionCopies?: number;
-        durationSeconds?: number;
+        durationSeconds: number;
         searchFailed?: boolean;
     }): Promise<MechanicalLicense> {
         const uid = auth.currentUser?.uid;
@@ -101,15 +97,9 @@ export const MechanicalRoyaltyService = {
 
         const copies = params.distributionCopies ?? 1000;
 
-        // Compute per-copy rate using 2026 statutory rates
-        let ratePerCopy = STATUTORY_RATE_PER_WORK_USD;
-        if (params.durationSeconds) {
-            const minutes = Math.ceil(params.durationSeconds / 60);
-            const perMinuteRate = minutes * STATUTORY_RATE_PER_MINUTE_USD;
-            ratePerCopy = Math.max(STATUTORY_RATE_PER_WORK_USD, perMinuteRate);
-        }
-
-        const fee = Math.round(copies * ratePerCopy * 100) / 100;
+        const { ratePerCopy, totalFee: fee } = estimateMechanicalFee(
+            copies, params.durationSeconds, new Date().getUTCFullYear(),
+        );
 
         const licenseId = `ml_${uid}_${Date.now()}`;
         // When search failed, mark as clearance_unknown (blocking). Otherwise, use composition status.
