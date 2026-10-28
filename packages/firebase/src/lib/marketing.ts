@@ -40,7 +40,7 @@ const ScheduledTimeSchema = z.union([
 
 export const ScheduledPostSchema = z.object({
     id: z.string().trim().min(1).max(200),
-    platform: z.enum(['Twitter', 'Instagram']),
+    platform: z.enum(['Twitter', 'Instagram', 'Bluesky']),
     copy: z.string().max(10_000).refine(value => value.trim().length > 0, 'Post copy is required'),
     imageAsset: z.object({
         assetType: z.literal('image'),
@@ -94,7 +94,7 @@ const ExistingQueueSchema = z.object({
     campaignId: z.string(),
     campaignPostId: z.string(),
     contentHash: z.string().optional(),
-    platform: z.enum(['twitter', 'instagram']),
+    platform: z.enum(['twitter', 'instagram', 'bluesky']),
     text: z.string(),
     mediaUrl: z.string().nullable().optional(),
     source: z.literal('campaign_manager'),
@@ -110,10 +110,12 @@ const ExistingQueueSchema = z.object({
     deliveryError: z.string().optional(),
 });
 
-type SupportedCampaignPlatform = 'Twitter' | 'Instagram';
+type SupportedCampaignPlatform = 'Twitter' | 'Instagram' | 'Bluesky';
 
-function toDeliveryPlatform(platform: SupportedCampaignPlatform): 'twitter' | 'instagram' {
-    return platform === 'Twitter' ? 'twitter' : 'instagram';
+function toDeliveryPlatform(platform: SupportedCampaignPlatform): 'twitter' | 'instagram' | 'bluesky' {
+    if (platform === 'Twitter') return 'twitter';
+    if (platform === 'Instagram') return 'instagram';
+    return 'bluesky';
 }
 
 function scheduledTimeAsDate(value: z.infer<typeof ScheduledTimeSchema>): Date {
@@ -155,11 +157,12 @@ function campaignStatusForQueue(data: z.infer<typeof ExistingQueueSchema>): 'EXE
     return 'EXECUTING';
 }
 
-export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' | 'tiktok' | 'youtube' {
+export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'bluesky' {
     const normalized = String(platform || '').toLowerCase().trim();
     if (normalized === 'twitter' || normalized === 'x') return 'twitter';
     if (normalized === 'instagram' || normalized === 'ig' || normalized === 'meta_reels') return 'instagram';
     if (normalized === 'tiktok') return 'tiktok';
+    if (normalized === 'bluesky' || normalized === 'bsky') return 'bluesky';
     // ISSUE-820: MultiPlatformPoster/SocialAutoPosterService send the raw
     // platform id 'youtube_shorts' verbatim in the dispatch payload, but the
     // scheduled-delivery worker (deliverScheduledPosts.ts) only recognizes

@@ -214,6 +214,36 @@ describe('deliverScheduledPostsHandler production worker path', () => {
         });
     });
 
+    it('persists Bluesky platform receipt and completes correlated campaign', async () => {
+        const memory = createMemoryDb({
+            scheduledPosts: { 'queue-bsky': pendingPost({ platform: 'bluesky', text: 'Bluesky test post' }) },
+            campaigns: { 'campaign-1': campaign() },
+        });
+        const dispatch = vi.fn().mockResolvedValue({
+            success: true,
+            postId: 'at://did:plc:vho74kucxgx6p3gsq6xjhuxk/app.bsky.feed.post/3myvhycm2gv23',
+        });
+
+        await deliverScheduledPostsHandler({
+            db: memory.db as never,
+            now: NOW,
+            getToken: vi.fn().mockResolvedValue({
+                identifier: 'indii-music.bsky.social',
+                appPassword: 'test-app-password',
+            }),
+            dispatch,
+        });
+
+        expect(dispatch).toHaveBeenCalledOnce();
+        expect(memory.scheduledPost('queue-bsky')).toMatchObject({
+            status: 'delivered',
+            platformPostId: 'at://did:plc:vho74kucxgx6p3gsq6xjhuxk/app.bsky.feed.post/3myvhycm2gv23',
+        });
+        expect(memory.campaign('campaign-1')).toMatchObject({
+            status: 'DONE',
+        });
+    });
+
     it('never lets an owner-created queue record update another user\'s campaign', async () => {
         const victimCampaign = {
             ...campaign(),

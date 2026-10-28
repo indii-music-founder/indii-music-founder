@@ -1,4 +1,4 @@
-export type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'spotify';
+export type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'spotify' | 'bluesky';
 
 export type InstagramMediaType = 'image' | 'video' | 'reel' | 'story' | 'carousel';
 

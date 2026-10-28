@@ -23,7 +23,7 @@ import {
     type InstagramPublishingPayload,
 } from '@indii/shared';
 
-type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube';
+type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'bluesky';
 
 interface ScheduledPostDoc {
     userId: string;
@@ -60,6 +60,9 @@ interface PlatformToken {
     refreshToken?: string;
     expiresAt?: number;
     igUserId?: string;
+    identifier?: string;
+    appPassword?: string;
+    did?: string;
 }
 
 interface DeliveryResult {
@@ -128,6 +131,66 @@ async function deliverToTwitter(token: PlatformToken, text: string, postId: stri
         if (!res.ok) return { success: false, error: `Twitter ${res.status}` };
         const data = await res.json() as { data?: { id: string } };
         return requireDeliveredPostId('Twitter', data.data?.id);
+    } catch (e) {
+        return { success: false, error: String(e) };
+    }
+}
+
+async function deliverToBluesky(token: PlatformToken, text: string, _postId: string): Promise<DeliveryResult> {
+    try {
+        let accessToken = token.accessToken;
+        let did = token.did || token.identifier;
+
+        // If accessToken is missing or expired, and identifier + appPassword are provided, exchange credentials
+        if (!accessToken && token.identifier && token.appPassword) {
+            const sessionRes = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: token.identifier, password: token.appPassword }),
+                signal: AbortSignal.timeout(15000),
+            });
+            if (!sessionRes.ok) {
+                return { success: false, error: `Bluesky session creation failed: ${sessionRes.status}` };
+            }
+            const sessionData = await sessionRes.json() as { accessJwt?: string; did?: string };
+            if (!sessionData.accessJwt) {
+                return { success: false, error: 'Bluesky session returned no access token' };
+            }
+            accessToken = sessionData.accessJwt;
+            did = sessionData.did || did;
+        }
+
+        if (!accessToken) {
+            return { success: false, error: 'Bluesky access token or credentials missing' };
+        }
+
+        const repo = did || 'self';
+        const res = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                repo,
+                collection: 'app.bsky.feed.post',
+                record: {
+                    $type: 'app.bsky.feed.post',
+                    text,
+                    createdAt: new Date().toISOString(),
+                },
+            }),
+            signal: AbortSignal.timeout(15000),
+        });
+
+        if (!res.ok) {
+            const errBody = await res.text().catch(() => '');
+            return { success: false, error: `Bluesky ${res.status}: ${errBody}` };
+        }
+
+        const data = await res.json() as { uri?: string; cid?: string };
+        const createdId = data.uri || data.cid;
+        return requireDeliveredPostId('Bluesky', createdId);
     } catch (e) {
         return { success: false, error: String(e) };
     }
@@ -459,6 +522,8 @@ async function deliverPost(
     switch (post.platform) {
         case 'twitter':
             return deliverToTwitter(token, post.text || '', postId);
+        case 'bluesky':
+            return deliverToBluesky(token, post.text || '', postId);
         case 'instagram':
             if (!db || !postRef) {
                 return { success: false, error: 'Instagram delivery requires the queue document reference for container persistence.' };

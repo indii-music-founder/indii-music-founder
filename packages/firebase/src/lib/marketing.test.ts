@@ -402,11 +402,14 @@ describe('normalizeDispatchPlatform (ISSUE-820)', () => {
         expect(normalizeDispatchPlatform('ig')).toBe('instagram');
         expect(normalizeDispatchPlatform('meta_reels')).toBe('instagram');
         expect(normalizeDispatchPlatform('tiktok')).toBe('tiktok');
+        expect(normalizeDispatchPlatform('bluesky')).toBe('bluesky');
+        expect(normalizeDispatchPlatform('bsky')).toBe('bluesky');
     });
 
     it('is case/whitespace tolerant', () => {
         expect(normalizeDispatchPlatform('  YouTube_Shorts  ')).toBe('youtube');
         expect(normalizeDispatchPlatform('TIKTOK')).toBe('tiktok');
+        expect(normalizeDispatchPlatform('  BlueSky  ')).toBe('bluesky');
     });
 
     it('still rejects a genuinely unsupported platform', () => {
