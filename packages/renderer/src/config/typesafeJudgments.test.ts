@@ -101,6 +101,7 @@ import {
     judgeStemSeparationRecipe,
     judgeDawTitleSanitization,
     judgeCatalogCollisionRisk,
+    judgeStatementColumnLoss,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -4299,6 +4300,65 @@ describe('judgeCatalogCollisionRisk (Judgment 75)', () => {
         expect(result.disposition).toBe('DELUXE_EDITION');
         expect(result.collisionConfidence).toBe(4);
         expect(result.matchedTrackId).toBe('trk_1');
+    });
+});
+
+describe('judgeStatementColumnLoss (Judgment 76)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('returns null when judgments are disabled or empty missingColumns provided', async () => {
+        mocks.enabled.mockReturnValue(false);
+        expect(await judgeStatementColumnLoss(['Earnings (USD)'], 'distrokid')).toBeNull();
+        expect(await judgeStatementColumnLoss([], 'distrokid')).toBeNull();
+    });
+
+    it('judges critical revenue loss accurately when Jev probability >= 0.70', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    is_critical_loss: { noul: 0.95 },
+                },
+            },
+        }));
+
+        const result = await judgeStatementColumnLoss(['Earnings (USD)', 'Quantity'], 'distrokid');
+        expect(result).not.toBeNull();
+        expect(result?.isCriticalLoss).toBe(true);
+        expect(result?.lossCategory).toBe('CRITICAL_FINANCIAL');
+        expect(result?.lossConfidence).toBe(0.95);
+        expect(result?.explanation).toContain('Earnings (USD)');
+    });
+
+    it('judges non-critical layout metadata when Jev probability < 0.70', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    is_critical_loss: 0.15,
+                },
+            },
+        }));
+
+        const result = await judgeStatementColumnLoss(['Notes / Promo Comments'], 'tunecore');
+        expect(result).not.toBeNull();
+        expect(result?.isCriticalLoss).toBe(false);
+        expect(result?.lossCategory).toBe('NON_CRITICAL_METADATA');
+        expect(result?.lossConfidence).toBe(0.15);
+        expect(result?.explanation).toContain('non-critical supplementary metadata');
+    });
+
+    it('handles proxy failure gracefully by logging and returning null', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Callable error');
+        });
+
+        const result = await judgeStatementColumnLoss(['ISRC'], 'cdbaby');
+        expect(result).toBeNull();
     });
 });
 

@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { CollaborationSplitsCompiler, CollaborationSplitsInput } from './CollaborationSplitsCompiler';
 import { HarnessContext } from '../business-harness/HarnessCompiler';
+import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 describe('CollaborationSplitsCompiler', () => {
   const compiler = new CollaborationSplitsCompiler();
@@ -241,5 +242,77 @@ describe('CollaborationSplitsCompiler', () => {
         title: 'Missing Producer Agreement'
       })
     );
+  });
+
+  it('should asynchronously enrich collaborator roles via judgeCollaboratorRoleSemantics in compileAsync', async () => {
+    const judgeSpy = vi.spyOn(typesafeJudgments, 'judgeCollaboratorRoleSemantics');
+    judgeSpy.mockImplementation(async (role: string) => {
+      if (role === 'Sonic Architect') {
+        return {
+          roleCategory: 'producer',
+          isProducerRequiringAgreement: true,
+          confidence: 0.95,
+        };
+      }
+      if (role === 'Executive Producer') {
+        return {
+          roleCategory: 'other',
+          isProducerRequiringAgreement: false,
+          confidence: 0.99,
+        };
+      }
+      return null;
+    });
+
+    const input: CollaborationSplitsInput = {
+      trackId: 'track-async',
+      trackTitle: 'Async Symphony',
+      collaborators: [
+        {
+          id: 'collab-sonic',
+          name: 'Sam',
+          roles: ['Sonic Architect'],
+          contributionNotes: 'Crafted the entire instrumental framework',
+          proposedSplit: 60,
+          approvalStatus: 'approved',
+          hasAgreement: false,
+        },
+        {
+          id: 'collab-exec',
+          name: 'Elena',
+          roles: ['Executive Producer'],
+          contributionNotes: 'Project financing & studio booking',
+          proposedSplit: 40,
+          approvalStatus: 'approved',
+          hasAgreement: false,
+        },
+      ],
+    };
+
+    const run = await compiler.compileAsync(input, ctx);
+
+    expect(judgeSpy).toHaveBeenCalled();
+    // Sam should trigger missing Producer Agreement gate
+    expect(run.findings).toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Producer Agreement',
+        detail: expect.stringContaining('Sam'),
+      })
+    );
+    // Elena (Executive Producer) should only trigger general collaborator agreement
+    expect(run.findings).toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Collaborator Agreement',
+        detail: expect.stringContaining('Elena'),
+      })
+    );
+    expect(run.findings).not.toContainEqual(
+      expect.objectContaining({
+        title: 'Missing Producer Agreement',
+        detail: expect.stringContaining('Elena'),
+      })
+    );
+
+    judgeSpy.mockRestore();
   });
 });

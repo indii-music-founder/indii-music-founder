@@ -6,6 +6,7 @@ import {
   HarnessApprovalGate, 
   HarnessAgentBrief 
 } from '../business-harness/types';
+import { judgeCollaboratorRoleSemantics } from '@/config/typesafeJudgments';
 
 export type SplitApprovalStatus = 'approved' | 'disputed' | 'pending';
 
@@ -17,6 +18,7 @@ export interface CollaboratorInput {
   proposedSplit: number; // percentage (0-100)
   approvalStatus: SplitApprovalStatus;
   hasAgreement: boolean;
+  requiresProducerAgreement?: boolean;
 }
 
 export interface CollaborationSplitsInput {
@@ -34,6 +36,52 @@ export interface CollaborationSplitsOutput {
 
 export class CollaborationSplitsCompiler implements HarnessCompiler<CollaborationSplitsInput, CollaborationSplitsOutput> {
   readonly domain = 'collaboration_splits';
+
+  /**
+   * Semantically enriches collaborator inputs using TypeSafe AI (Jev) judgment when available.
+   * If Jev is disabled or unavailable, leaves existing flags intact for deterministic fallback.
+   */
+  async enrichCollaboratorRoles(collaborators: CollaboratorInput[]): Promise<CollaboratorInput[]> {
+    return Promise.all(
+      collaborators.map(async (collab) => {
+        if (collab.requiresProducerAgreement !== undefined) {
+          return collab;
+        }
+
+        // For each role specified, consult Jev if available
+        let requiresAgreement: boolean | undefined = undefined;
+        for (const role of collab.roles) {
+          const judgment = await judgeCollaboratorRoleSemantics(role, collab.contributionNotes);
+          if (judgment) {
+            if (judgment.isProducerRequiringAgreement) {
+              requiresAgreement = true;
+              break;
+            } else if (requiresAgreement === undefined) {
+              requiresAgreement = false;
+            }
+          }
+        }
+
+        if (requiresAgreement !== undefined) {
+          return {
+            ...collab,
+            requiresProducerAgreement: requiresAgreement,
+          };
+        }
+
+        return collab;
+      })
+    );
+  }
+
+  /**
+   * Async compilation workflow that first enriches collaborator roles via Jev semantic judgments
+   * before running the standard compilation rules.
+   */
+  async compileAsync(input: CollaborationSplitsInput, ctx: HarnessContext): Promise<HarnessRun<CollaborationSplitsOutput>> {
+    const enrichedCollaborators = await this.enrichCollaboratorRoles(input.collaborators);
+    return this.compile({ ...input, collaborators: enrichedCollaborators }, ctx);
+  }
 
   compile(input: CollaborationSplitsInput, ctx: HarnessContext): HarnessRun<CollaborationSplitsOutput> {
     const findings: HarnessFinding[] = [];
@@ -75,15 +123,15 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
       if (!collab.hasAgreement) {
         missingAgreements.push(collab.id);
         
-        // Fast deterministic baseline: includes producer in role title
-        // Also checks explicit requiresProducerAgreement flag if pre-judged by Jev
-        const hasProducerTitle = collab.roles.some(r => {
-          const lower = r.toLowerCase();
-          // Exclude executive producer from requiring track-level audio producer agreement
-          if (lower.includes('executive')) return false;
-          return lower.includes('producer') || lower.includes('beatmaker') || lower.includes('track producer');
-        });
-        const isProducer = hasProducerTitle || (collab as unknown as { requiresProducerAgreement?: boolean }).requiresProducerAgreement === true;
+        // Jev judgment takes precedence when present; otherwise falls back to deterministic heuristic
+        const isProducer = collab.requiresProducerAgreement !== undefined
+          ? collab.requiresProducerAgreement
+          : collab.roles.some(r => {
+              const lower = r.toLowerCase();
+              // Exclude executive producer from requiring track-level audio producer agreement
+              if (lower.includes('executive')) return false;
+              return lower.includes('producer') || lower.includes('beatmaker') || lower.includes('track producer');
+            });
         
         if (isProducer) {
           findings.push({

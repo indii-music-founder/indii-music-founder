@@ -440,6 +440,8 @@ export interface CompatibilityDriftReport {
   quarantineRequired: boolean;
   suggestedPatchNotes?: string;
   detectedAt: string;
+  semanticAnalysisSource?: 'baseline' | 'jev';
+  dataLossAssessed?: boolean;
 }
 
 // ============================================================================

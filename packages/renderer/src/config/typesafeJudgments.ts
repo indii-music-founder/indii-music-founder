@@ -8847,3 +8847,75 @@ export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Pr
         return {};
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 76: Statement Column Loss & Financial Drift (consumer: CompatibilityDriftMonitor)
+// ---------------------------------------------------------------------------
+
+export interface StatementColumnLossJudgment {
+    isCriticalLoss: boolean;
+    lossConfidence: number; // 0 to 1
+    lossCategory: 'CRITICAL_FINANCIAL' | 'NON_CRITICAL_METADATA' | 'BENIGN_LAYOUT';
+    explanation: string;
+}
+
+export const STATEMENT_COLUMN_LOSS_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'A royalty statement format has missing or omitted columns compared to its baseline template. ' +
+        'Does the absence of these missing columns cause genuine loss of critical financial accounting, ' +
+        'royalty earnings, unit counts, or track/ISRC identification data (requiring statement quarantine)?',
+    criteria: {
+        true: 'Critical loss: Net earnings, gross revenue, quantity/units, or ISRC/UPC identifiers are lost.',
+        false: 'Benign/metadata: Commentary, promotional notes, marketing labels, or redundant display fields.',
+    },
+};
+
+/**
+ * Semantically evaluate whether missing columns in a royalty statement represent
+ * critical financial data loss requiring file quarantine.
+ */
+export async function judgeStatementColumnLoss(
+    missingColumns: string[],
+    formatId: string
+): Promise<StatementColumnLossJudgment | null> {
+    if (!judgmentsAvailable() || missingColumns.length === 0) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                formatId: formatId.slice(0, 100),
+                missingColumns: missingColumns.slice(0, 20),
+            },
+            questions: {
+                is_critical_loss: STATEMENT_COLUMN_LOSS_QUESTION,
+            },
+        });
+
+        const ans = result.data.answers?.is_critical_loss;
+        const prob = typeof ans === 'number'
+            ? ans
+            : Number((ans as { noul?: unknown })?.noul);
+
+        if (!Number.isFinite(prob)) return null;
+
+        const isCriticalLoss = prob >= 0.70;
+        return {
+            isCriticalLoss,
+            lossConfidence: Math.round(prob * 100) / 100,
+            lossCategory: isCriticalLoss ? 'CRITICAL_FINANCIAL' : 'NON_CRITICAL_METADATA',
+            explanation: isCriticalLoss
+                ? `Missing columns (${missingColumns.join(', ')}) represent critical revenue or tracking data.`
+                : `Missing columns (${missingColumns.join(', ')}) are non-critical supplementary metadata.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'statement column loss judgment');
+        return null;
+    }
+}

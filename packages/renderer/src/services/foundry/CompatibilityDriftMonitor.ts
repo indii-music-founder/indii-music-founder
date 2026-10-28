@@ -3,8 +3,43 @@ import {
   FormatForensicsReport
 } from '@indii/shared';
 import { FormatForensicsEngine } from './FormatForensicsEngine';
+import { judgeStatementColumnLoss } from '@/config/typesafeJudgments';
 
 export class CompatibilityDriftMonitor {
+  /**
+   * Asynchronously inspect drift with semantic TypeSafe Jev column-loss evaluation.
+   */
+  static async inspectDriftWithJudgment(
+    baselineReport: FormatForensicsReport,
+    incomingContent: string
+  ): Promise<CompatibilityDriftReport> {
+    const report = this.inspectDrift(baselineReport, incomingContent);
+
+    if (report.hasMissingColumns && report.missingColumns.length > 0) {
+      const judgment = await judgeStatementColumnLoss(report.missingColumns, report.formatId);
+      if (judgment) {
+        const severity = judgment.isCriticalLoss ? 'breaking' : 'benign';
+        const quarantineRequired = judgment.isCriticalLoss;
+        return {
+          ...report,
+          severity,
+          quarantineRequired,
+          semanticAnalysisSource: 'jev',
+          dataLossAssessed: true,
+          suggestedPatchNotes: judgment.isCriticalLoss
+            ? `CRITICAL (Jev): ${judgment.explanation} Statement quarantined.`
+            : `BENIGN (Jev): ${judgment.explanation}`,
+        };
+      }
+    }
+
+    return {
+      ...report,
+      semanticAnalysisSource: 'baseline',
+      dataLossAssessed: false,
+    };
+  }
+
   /**
    * Compare incoming file against a baseline forensics report to detect upstream drift
    */
