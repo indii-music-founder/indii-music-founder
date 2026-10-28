@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentLoopService } from './AgentLoopService';
 import { maestroBatchingService } from '../MaestroBatchingService';
+import { judgeTransientError } from '@/config/typesafeJudgments';
 import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
 
 // Mock dependencies
@@ -9,6 +10,14 @@ vi.mock('../MaestroBatchingService', () => ({
         executeBatch: vi.fn(),
     }
 }));
+
+vi.mock('@/config/typesafeJudgments', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/config/typesafeJudgments')>();
+    return {
+        ...actual,
+        judgeTransientError: vi.fn(actual.judgeTransientError),
+    };
+});
 
 const mockGenerateContent = vi.fn();
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
@@ -244,5 +253,85 @@ describe('AgentLoopService', () => {
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.history).toHaveLength(2);
         expect(execution?.history[1]?.iteration).toBe(2);
+    });
+
+    it('should halt immediately when TypeSafe judgment classifies a keyword-matching error as non-transient', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-test-typesafe-refine',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Logical Policy Failure',
+            verifiabilityCriteria: 'Criteria',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
+            maxIterations: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        const context = { userId: 'user1', projectId: 'proj1' } as any;
+
+        // An error string containing 'network' (which heuristic flags as transient),
+        // but Jev resolves it as logical (e.g. network policy rejection).
+        vi.mocked(judgeTransientError).mockResolvedValueOnce(false);
+
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: false, error: 'Network policy rejected: caller unauthorized' } as any
+        ]);
+
+        mockGenerateContent.mockResolvedValueOnce({
+            response: {
+                text: () => JSON.stringify({ passed: false, feedback: 'Request was blocked by network policy.' })
+            }
+        });
+
+        const executionId = await agentLoopService.startLoop(def, context);
+
+        // Wait for loop execution
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const execution = agentLoopService.getExecution(executionId);
+        expect(execution).toBeDefined();
+        // Because JEV classified it as non-transient, executeBatch was called only once (no retry backoff)
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
+        expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(execution?.history[0]?.feedback).toBe('Request was blocked by network policy.');
+    });
+
+    it('should retry evaluation when evaluation error is classified as transient by resolveTransient', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-test-eval-retry',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Eval Retry Task',
+            verifiabilityCriteria: 'Must pass evaluation',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
+            maxIterations: 2,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        const context = { userId: 'user1', projectId: 'proj1' } as any;
+
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
+            { success: true, text: 'Action result' } as any
+        ]);
+
+        // First evaluation attempt fails with a transient 503 error, retry succeeds
+        mockGenerateContent
+            .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+            .mockResolvedValueOnce({
+                response: {
+                    text: () => JSON.stringify({ passed: true, feedback: 'PASS on retry' })
+                }
+            });
+
+        const executionId = await agentLoopService.startLoop(def, context);
+
+        // Wait for backoff retry and evaluation
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const execution = agentLoopService.getExecution(executionId);
+        expect(execution).toBeDefined();
+        expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
+        expect(execution?.history[0]?.passed).toBe(true);
+        expect(execution?.history[0]?.feedback).toBe('PASS on retry');
     });
 });

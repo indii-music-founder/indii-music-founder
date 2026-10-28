@@ -27,6 +27,7 @@ vi.mock('@/config/featureFlags', () => ({
 import {
     heuristicTransientError,
     judgeTransientError,
+    extractStatusCode,
     judgeSkillIntent,
     judgeMemoryImportance,
     judgeColumnSemantics,
@@ -233,6 +234,36 @@ describe('judgeTransientError decision bands', () => {
         expect(TRANSIENT_ADOPT_MIN).toBeGreaterThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(TRANSIENT_ADOPT_MIN);
+    });
+
+    it('enriches state with status code, retry attempt, and action context', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const callableMock = vi.fn(async () => ({ data: { answers: { transient: 0.85 } } }));
+        mocks.httpsCallable.mockReturnValue(callableMock);
+
+        const error = Object.assign(new Error('Rate limit hit'), { status: 429 });
+        const verdict = await judgeTransientError(error, false, { retryAttempt: 2, action: 'executeBatch' });
+
+        expect(verdict).toBe(true);
+        expect(callableMock).toHaveBeenCalledWith(expect.objectContaining({
+            state: expect.objectContaining({
+                statusCode: 429,
+                retryAttempt: 2,
+                action: 'executeBatch',
+                heuristicVerdict: false,
+            }),
+        }));
+    });
+});
+
+describe('extractStatusCode', () => {
+    it('extracts numeric status code from object properties or message regex', () => {
+        expect(extractStatusCode({ status: 503 })).toBe(503);
+        expect(extractStatusCode({ statusCode: 429 })).toBe(429);
+        expect(extractStatusCode({ code: 500 })).toBe(500);
+        expect(extractStatusCode(new Error('HTTP 502 Bad Gateway'))).toBe(502);
+        expect(extractStatusCode('Unrelated error string')).toBeNull();
+        expect(extractStatusCode(null)).toBeNull();
     });
 });
 

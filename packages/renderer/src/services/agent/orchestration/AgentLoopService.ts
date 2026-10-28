@@ -158,9 +158,12 @@ export class AgentLoopService {
      * judgment when the enable_typesafe_judgments flag is on; unavailable
      * judgments always fall back to the heuristic.
      */
-    private async resolveTransient(error: unknown): Promise<boolean> {
+    private async resolveTransient(
+        error: unknown,
+        context?: { retryAttempt?: number; action?: string }
+    ): Promise<boolean> {
         const heuristic = heuristicTransientError(error);
-        const refined = await judgeTransientError(error, heuristic);
+        const refined = await judgeTransientError(error, heuristic, context);
         return refined ?? heuristic;
     }
 
@@ -288,7 +291,7 @@ export class AgentLoopService {
                 }
 
                 const errorMsg = results?.[0]?.error || 'Action failed.';
-                if (await this.resolveTransient(errorMsg)) {
+                if (await this.resolveTransient(errorMsg, { retryAttempt: attempt, action: 'executeBatch' })) {
                     lastError = new Error(errorMsg);
                     if (attempt < maxRetries) {
                         const jitter = Math.random() * 50;
@@ -303,7 +306,7 @@ export class AgentLoopService {
                 return { output: errorMsg, isTransientFailure: false };
             } catch (error) {
                 lastError = error;
-                if (await this.resolveTransient(error) && attempt < maxRetries) {
+                if (await this.resolveTransient(error, { retryAttempt: attempt, action: 'executeBatch' }) && attempt < maxRetries) {
                     const jitter = Math.random() * 50;
                     const backoffMs = Math.min(3000, Math.pow(2, attempt - 1) * backoffBaseMs) + jitter;
                     logger.warn(`[AgentLoop] Transient exception on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(backoffMs)}ms...`, error);
@@ -314,7 +317,7 @@ export class AgentLoopService {
             }
         }
 
-        if (heuristicTransientError(lastError)) {
+        if (lastError && (await this.resolveTransient(lastError, { action: 'executeBatchExhausted' }))) {
             const msg = lastError instanceof Error ? lastError.message : String(lastError);
             return { output: `Infrastructure timeout/error: ${msg}`, isTransientFailure: true };
         }
@@ -358,11 +361,14 @@ Respond in JSON format only:
                 'You are an impartial judge. Only return valid JSON.'
             );
 
-            const rawResponse = genResult?.response;
+            const rawResponse = genResult?.response as {
+                text?: () => string;
+                candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            } | undefined;
             let responseText = '';
             if (rawResponse) {
-                if (typeof (rawResponse as any).text === 'function') {
-                    responseText = ((rawResponse as any).text)();
+                if (typeof rawResponse.text === 'function') {
+                    responseText = rawResponse.text();
                 } else {
                     responseText = rawResponse.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
                 }
@@ -380,7 +386,7 @@ Respond in JSON format only:
         } catch (error) {
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
-            if (heuristicTransientError(error)) {
+            if (await this.resolveTransient(error, { action: 'evaluateOutcome' })) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
                     const aiService = FirebaseIntelligenceService.getInstance();
@@ -390,11 +396,14 @@ Respond in JSON format only:
                         { temperature: 0.1, maxOutputTokens: 300 },
                         'You are an impartial judge. Only return valid JSON.'
                     );
-                    const rawResponse = retryResult?.response;
+                    const rawResponse = retryResult?.response as {
+                        text?: () => string;
+                        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+                    } | undefined;
                     let responseText = '';
                     if (rawResponse) {
-                        if (typeof (rawResponse as any).text === 'function') {
-                            responseText = ((rawResponse as any).text)();
+                        if (typeof rawResponse.text === 'function') {
+                            responseText = rawResponse.text();
                         } else {
                             responseText = rawResponse.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
                         }

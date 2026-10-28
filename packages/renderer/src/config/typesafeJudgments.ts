@@ -241,6 +241,27 @@ export const TRANSIENT_REJECT_MAX = 0.35;
 /** Between the bands the judgment is too close to call — keep the heuristic. */
 export const TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC = true;
 
+/** Optional execution context for transient error refinement. */
+export interface TransientJudgmentContext {
+    statusCode?: number;
+    retryAttempt?: number;
+    action?: string;
+}
+
+/** Extracts an HTTP status code or error code from an error object or message string. */
+export function extractStatusCode(error: unknown): number | null {
+    if (!error) return null;
+    if (typeof error === 'object') {
+        const obj = error as Record<string, unknown>;
+        if (typeof obj.status === 'number' && Number.isFinite(obj.status)) return obj.status;
+        if (typeof obj.statusCode === 'number' && Number.isFinite(obj.statusCode)) return obj.statusCode;
+        if (typeof obj.code === 'number' && Number.isFinite(obj.code)) return obj.code;
+    }
+    const msg = error instanceof Error ? error.message : String(error);
+    const match = msg.match(/\b(429|500|502|503|504|408|400|401|403|404)\b/);
+    return match ? Number(match[1]) : null;
+}
+
 /**
  * Refine the heuristic verdict with a TypeSafe Noul judgment.
  *
@@ -248,7 +269,11 @@ export const TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC = true;
  * (flag off, upstream failure, malformed/ambiguous answer) — callers must
  * fall back to the deterministic heuristic in that case.
  */
-export async function judgeTransientError(error: unknown, heuristicVerdict: boolean): Promise<boolean | null> {
+export async function judgeTransientError(
+    error: unknown,
+    heuristicVerdict: boolean,
+    context?: TransientJudgmentContext
+): Promise<boolean | null> {
     if (!judgmentsAvailable()) return null;
 
     try {
@@ -258,10 +283,15 @@ export async function judgeTransientError(error: unknown, heuristicVerdict: bool
             { answers: Record<string, unknown> }
         >(functions, 'typesafeJudge');
 
+        const detectedStatusCode = context?.statusCode ?? extractStatusCode(error);
+
         const result = await judgeFn({
             state: {
                 errorMessage: error instanceof Error ? error.message : String(error),
                 errorName: error instanceof Error ? error.name : typeof error,
+                ...(detectedStatusCode !== null ? { statusCode: detectedStatusCode } : {}),
+                ...(context?.retryAttempt !== undefined ? { retryAttempt: context.retryAttempt } : {}),
+                ...(context?.action ? { action: context.action } : {}),
                 heuristicVerdict,
             },
             questions: { transient: TRANSIENT_FAILURE_QUESTION },
