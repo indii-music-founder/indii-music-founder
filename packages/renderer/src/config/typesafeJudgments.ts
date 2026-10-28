@@ -8919,3 +8919,105 @@ export async function judgeStatementColumnLoss(
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 77: Event Retention Tier & Business Permanence (consumer: EventLogger)
+// ---------------------------------------------------------------------------
+
+export type EventRetentionTier = 'working' | 'shortTerm' | 'longTerm' | 'archived';
+
+export interface EventRetentionJudgment {
+    recommendedTier: EventRetentionTier;
+    isPermanentRecord: boolean;
+    permanenceScore: number; // 0 to 4
+    rationale: string;
+}
+
+export const EVENT_PERMANENCE_QUESTION = {
+    type: 'score' as const,
+    instructions:
+        'A memory event was logged in the artist agent operating system. Score the legal, financial, ' +
+        'and creative permanence of this event from 0 (ephemeral banter/ambient telemetry) to 4 (critical business/contractual record).',
+    criteria: [
+        'Ephemeral — ambient UI telemetry, momentary navigation, ping/pong banter.',
+        'Low — temporary task note, working scratchpad, daily session chatter.',
+        'Medium — project milestone, creative iteration feedback, meeting summary.',
+        'High — rights claim, split discussion, budget commitment, collaborator consent.',
+        'Critical — signed split sheet, copyright filing, formal payout, tax document, explicit legal terms.',
+    ],
+};
+
+export const EVENT_IS_BUSINESS_RECORD_QUESTION = {
+    type: 'noul' as const,
+    instructions:
+        'Does this event represent a permanent business, contractual, or financial record that must be retained in longTerm/archived storage rather than pruned as ambient working context?',
+    criteria: {
+        true: 'Financial receipts, split contracts, copyright registrations, rights transfers, tax documents, or durable agreement terms.',
+        false: 'Transient UI events, ephemeral small talk, temporary debug statements, or scratchpad drafts.',
+    },
+};
+
+/**
+ * Semantically evaluate whether an event record represents a durable business/rights artifact
+ * that should be preserved in longTerm or archived memory rather than demoted by age.
+ */
+export async function judgeEventRetentionTier(
+    text: string,
+    type: string,
+    meta?: Record<string, unknown>
+): Promise<EventRetentionJudgment | null> {
+    if (!judgmentsAvailable() || !text.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                text: text.slice(0, 400),
+                type,
+                metaSummary: meta ? Object.keys(meta).join(', ') : 'none',
+            },
+            questions: {
+                permanence: EVENT_PERMANENCE_QUESTION,
+                is_business_record: EVENT_IS_BUSINESS_RECORD_QUESTION,
+            },
+        });
+
+        const permAns = result.data.answers?.permanence;
+        const bizAns = result.data.answers?.is_business_record;
+
+        const permScore = typeof permAns === 'number'
+            ? permAns
+            : Number((permAns as { score?: unknown })?.score);
+
+        const bizProb = typeof bizAns === 'number'
+            ? bizAns
+            : Number((bizAns as { noul?: unknown })?.noul);
+
+        if (!Number.isFinite(permScore) || !Number.isFinite(bizProb)) return null;
+
+        const isPermanentRecord = bizProb >= 0.70 || permScore >= 3;
+        let recommendedTier: EventRetentionTier = 'working';
+        if (permScore >= 3.5 || bizProb >= 0.85) {
+            recommendedTier = 'longTerm';
+        } else if (permScore >= 2 || bizProb >= 0.50) {
+            recommendedTier = 'shortTerm';
+        }
+
+        return {
+            recommendedTier,
+            isPermanentRecord,
+            permanenceScore: Math.round(permScore * 10) / 10,
+            rationale: isPermanentRecord
+                ? `High business permanence (score ${permScore}/4): retains contractual/financial evidence.`
+                : `Transient context (score ${permScore}/4): suitable for standard age-based decay.`,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'event retention tier judgment');
+        return null;
+    }
+}

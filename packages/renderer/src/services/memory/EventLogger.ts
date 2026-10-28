@@ -17,6 +17,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { judgeEventRetentionTier } from '@/config/typesafeJudgments';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,11 @@ class EventLoggerService {
 
     for (const records of this.sessionIndex.values()) {
       for (const record of records) {
+        // Business and legal contractual records are pinned against automatic demotion
+        if (record.meta?.isPermanentRecord === true) {
+          continue;
+        }
+
         const currentIdx = TIER_ORDER.indexOf(record.tier);
         if (currentIdx === TIER_ORDER.length - 1) continue; // already archived
 
@@ -133,6 +139,27 @@ class EventLoggerService {
           record.tier = nextTier;
         }
       }
+    }
+  }
+
+  /**
+   * Semantically classify and promote/pin an event record using TypeSafe Jev judgment.
+   * Prevents contractual receipts, split agreements, and rights transfers from being
+   * prematurely decayed by naive age heuristics.
+   */
+  async assessEventPermanence(record: EventRecord): Promise<void> {
+    const judgment = await judgeEventRetentionTier(record.text, record.type, record.meta);
+    if (!judgment) return;
+
+    record.meta = {
+      ...(record.meta || {}),
+      isPermanentRecord: judgment.isPermanentRecord,
+      permanenceScore: judgment.permanenceScore,
+      permanenceRationale: judgment.rationale,
+    };
+
+    if (judgment.isPermanentRecord && record.tier === 'working') {
+      record.tier = judgment.recommendedTier;
     }
   }
 

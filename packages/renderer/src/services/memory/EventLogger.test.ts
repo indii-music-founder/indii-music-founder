@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { eventLogger, type CompactionResult } from './EventLogger';
+import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 // Unique session id per test keeps the shared singleton isolated.
 let counter = 0;
@@ -102,6 +103,39 @@ describe('EventLogger.promoteTiers', () => {
     eventLogger.append(baseRecord(s));
     eventLogger.promoteTiers();
     expect(eventLogger.getSessionRecords(s)[0]!.tier).toBe('working');
+  });
+
+  it('pins permanent business records against aging demotion', async () => {
+    const s = newSession();
+    const rec = eventLogger.append(baseRecord(s, {
+      text: 'Signed formal split sheet 50/50 with Kira Nova for Detroit Techno master',
+      meta: { isPermanentRecord: true },
+    }));
+    rec.ts = Date.now() - (2 * 60 * 60 * 1000); // 2 hours old
+    eventLogger.promoteTiers();
+    // Because it is pinned as a permanent record, it does not demote automatically to shortTerm
+    expect(eventLogger.getSessionRecords(s)[0]!.tier).toBe('working');
+  });
+
+  it('promotes record via assessEventPermanence when Jev classifies it as durable business record', async () => {
+    const judgeSpy = vi.spyOn(typesafeJudgments, 'judgeEventRetentionTier').mockResolvedValueOnce({
+      recommendedTier: 'longTerm',
+      isPermanentRecord: true,
+      permanenceScore: 4,
+      rationale: 'High business permanence: retains contractual/financial evidence.',
+    });
+
+    const s = newSession();
+    const rec = eventLogger.append(baseRecord(s, {
+      text: 'Executed master licensing contract payout $5,000 to John Doe',
+    }));
+    await eventLogger.assessEventPermanence(rec);
+    expect(judgeSpy).toHaveBeenCalled();
+    expect(rec.meta).toBeDefined();
+    expect(rec.meta?.isPermanentRecord).toBe(true);
+    expect(rec.tier).toBe('longTerm');
+
+    judgeSpy.mockRestore();
   });
 });
 
