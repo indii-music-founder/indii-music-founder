@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 import { auth } from '@/services/firebase';
@@ -1183,14 +1184,9 @@ export class AgentService {
         const intent = isBoardroomCapabilityOnly(task.rawUserUtterance) ? 'capability'
             : await this.orchestrator.determineBoardroomIntent(context, task.rawUserUtterance);
         signal?.throwIfAborted();
-        if (!intent) {
-            store.getState().updateAgentMessage(responseId, {
-                text: 'I couldn’t confidently determine whether you want execution or advice. Tell me which action you want performed; nothing has run.', isStreaming: false,
-            });
-            this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
-            return;
-        }
-        if (intent !== 'action') {
+        if (boardroomConversationIsReadOnly(intent)) {
+            // An unavailable/uncertain classifier cannot authorize tools, but must
+            // not replace ordinary conversation with a canned execution refusal.
             return this.handleBoardroomSwarmFlow(task, attachments, { ...context, isReadOnly: true }, responseId, signal);
         }
 

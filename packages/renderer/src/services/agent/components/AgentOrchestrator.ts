@@ -10,6 +10,7 @@ import { AgentGraph } from '../types';
 
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
+import { parseBoardroomIntentDecision } from '@/config/boardroomIntentPolicy';
 import { refineInjectionRisk, judgeOrchestrationComplexity, judgeBoardroomIntent, BOARDROOM_INTENT_QUESTION, BOARDROOM_INTENT_MIN_CONFIDENCE, type BoardroomIntent } from '@/config/typesafeJudgments';
 
 export class AgentOrchestrator {
@@ -27,9 +28,7 @@ export class AgentOrchestrator {
                 output: { intent: 'discussion | capability | action', confidence: 'number from 0 to 1' },
             }) }] }], INTELLIGENCE_MODELS.TEXT.FAST, { responseMimeType: 'application/json' });
             const decision = JSON.parse(response.response.text() || '{}');
-            return ['discussion', 'capability', 'action'].includes(decision.intent) &&
-                typeof decision.confidence === 'number' && decision.confidence >= BOARDROOM_INTENT_MIN_CONFIDENCE
-                ? decision.intent : null;
+            return parseBoardroomIntentDecision({ choice: decision.intent, confidence: decision.confidence }, BOARDROOM_INTENT_MIN_CONFIDENCE);
         } catch (error) { logger.warn('[Boardroom] Intent unavailable; no action dispatched.', error); return null; }
     }
     async determineAgent(context: AgentContext, userQuery: string): Promise<string> {
