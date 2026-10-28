@@ -216,4 +216,75 @@ describe('AI Training Consent and Export Gate (CI-V3-20261021-01)', () => {
     expect(evaluation.reason).toBeUndefined();
     expect(evaluation.unconsentedRightsholders).toBeUndefined();
   });
+
+  // Pure policy regressions; these literals do not prove signed consent,
+  // actual payment settlement, or a deployed export service.
+  function evaluate(grants: AITrainingGrant[] = [validGrantArtist1], overrides: Record<string, unknown> = {}) {
+    return evaluateAITrainingExport({
+      assetId: 'rec-123',
+      assetType: 'master_recording',
+      requiredRightsholderEntityIds: ['artist-alice'],
+      grants,
+      requestedVendor: 'TrustedModelPartner',
+      requestedScope: 'stem_separation_model',
+      currentTime: now,
+      ...overrides,
+    } as Parameters<typeof evaluateAITrainingExport>[0]);
+  }
+
+  it('does not reuse recording consent for artwork sharing the same asset ID', () => {
+    expect(evaluate(undefined, { assetType: 'artwork' }).allowed).toBe(false);
+  });
+
+  it('selects a matching asset type rather than an unrelated earlier grant', () => {
+    const artworkGrant: AITrainingGrant = { ...validGrantArtist1, assetType: 'artwork', authorizedVendor: 'OtherVendor' };
+    expect(evaluate([artworkGrant, validGrantArtist1]).allowed).toBe(true);
+  });
+
+  it('rejects consent that has not yet been given', () => {
+    expect(evaluate([{ ...validGrantArtist1, optInTimestamp: now + 1 }]).allowed).toBe(false);
+  });
+
+  it('rejects compensation with a future settlement time', () => {
+    expect(evaluate([{ ...validGrantArtist1, compensation: { ...validGrantArtist1.compensation, paidAt: now + 1 } }]).allowed).toBe(false);
+  });
+
+  it('does not treat a future-dated revocation record as active consent', () => {
+    expect(evaluate([{ ...validGrantArtist1, revokedAt: now + 1 }]).allowed).toBe(false);
+  });
+
+  it.each([NaN, Infinity, -Infinity, 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])('fails closed for invalid evaluation time %s', currentTime => {
+    const result = evaluate(undefined, { currentTime });
+    expect(result.allowed).toBe(false);
+    expect(Number.isFinite(result.evaluationTimestamp)).toBe(true);
+  });
+
+  it.each([
+    { expiresAt: NaN },
+    { expiresAt: Number.MAX_SAFE_INTEGER + 1 },
+    { optInTimestamp: undefined },
+    { auditLogId: '' },
+    { compensation: { ...validGrantArtist1.compensation, paidAt: Infinity } },
+    { compensation: { ...validGrantArtist1.compensation, termsAgreementHash: '' } },
+    { compensation: { ...validGrantArtist1.compensation, payoutTransactionId: '   ' } },
+    { compensation: { ...validGrantArtist1.compensation, artistCents: NaN } },
+  ])('rejects malformed grant evidence at runtime (%j)', fields => {
+    const grant = { ...validGrantArtist1, ...fields } as AITrainingGrant;
+    expect(evaluate([grant]).allowed).toBe(false);
+  });
+
+  it.each([
+    { assetId: '' },
+    { requiredRightsholderEntityIds: [''] },
+    { requestedVendor: '   ' },
+    { requestedScope: 'unknown' },
+    { grants: null },
+  ])('rejects malformed export requests without throwing (%j)', fields => {
+    expect(evaluate(undefined, fields).allowed).toBe(false);
+  });
+
+  it('accepts evidence effective exactly at the evaluation boundary', () => {
+    expect(evaluate([{ ...validGrantArtist1, optInTimestamp: now, compensation: { ...validGrantArtist1.compensation, paidAt: now } }]).allowed).toBe(true);
+  });
+
 });
