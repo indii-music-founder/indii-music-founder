@@ -5770,6 +5770,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Requirement:** Default **NO AI training** on uploaded audio, stems, lyrics, artwork, metadata, or other user-controlled creative assets. Never infer training rights from upload, processing, distribution, remix, or subscription consent. Any exceptional training use requires a separate specific affirmative opt-in by all required rightsholders, negotiated scope/term/model/data usage, compensation to participating artist/rightsholders **and indii.music** as contractually agreed, audit trail, revocation/expiry handling and enforceable vendor terms. AI-powered business analysis is distinct from model training; prohibit training reuse by processors unless expressly licensed. No AI-generated music distribution.
 - **Acceptance:** Counsel-approved terms; permission schema and server-side deny-by-default checks; tests proving no opt-in/no agreed compensation/expired or revoked permission blocks training export; processor contract verification; immutable consent and payment evidence. **Not complete** until verified.
 - **Converges to:** Provenance and licensing policy release gate.
+- **2026-10-28 implementation progress:** Delivered affirmative consent gate in `packages/shared/src/rights/aiTrainingConsent.ts` (`AITrainingGrantSchema`, `evaluateAITrainingExport`) with 10 unit tests (`packages/shared/src/rights/aiTrainingConsent.test.ts`). Enforces server-side default deny, un-inferred permission, multi-rightsholder consensus, expiration and revocation, scope and vendor whitelisting, and verified settled compensation to both artist and platform prior to export. Exported in `@/shared`.
 
 ### CI-V3-20261021-02 — Royalti.io royalty-operations teardown against actual indii implementation [P1 RESEARCH]
 - **Parent:** Financial operations acceptance; spawned by founder's requested reverse engineering and competitor public capabilities.
@@ -5790,10 +5791,13 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Test separate states for human-authorship review, AI-assistance disclosures, third-party remix license consent, and model-training permission. Protect legitimate DAW/MIDI/sample-based tracks from automated false rejection; require rights-holder opt-in and compensation terms for any licensed AI use. Distinguish 50M tracks removed from **recommendations** from 75M removed from the **platform**; do not misstate the figures.
 - **Converges to:** DSP metadata and provenance release gate.
 
-### Existing GitHub #424 — Boardroom capability-truth overclaim [OPEN, existing bug; no new issue]
+### Existing GitHub #424 — Boardroom capability-truth overclaim [CLOSED, 2026-10-28; no new issue]
+- **Status:** ✅ CLOSED (2026-10-28)
+- **Closure evidence:** commit 7afd2ba10 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40336025301
 - **Spawned by:** App report_bug pipeline, Oct 20. Overlaps closed #417 but is a new recorded incident.
 - **Acceptance:** Reproduce against current code, verify evidence-bound status language and regression tests, and link passing CI/deployment evidence before closure. Do not claim live registrations or production readiness from the Oct 19 demo-only GO audit (#422, closed).
 - **Converges to:** Beta release verification and truthful agent reporting.
+- **Resolution:** PR #496 (commit `7afd2ba10`, CI run `40336025301` passed) implemented `claims_verified_readiness_without_evidence` interceptor in `JevGuardrailService.ts` and 5/5 regression unit tests in `JevGuardrailService.test.ts`. Unsupported readiness claims and unverified mobile pairing claims are intercepted and replaced with truth-grounded guidance.
 
 **Graph:** 01 blocks any training-licensed data export; 04 validates 01 and #412; 02 depends on financial tenant isolation and converges with 03 on royalty reconciliation; 03 depends on PR #421 rights verification; #424 validates truthful release status. All CI-V3-20261021-* nodes are **PROPOSED, NOT COMPLETED**. No new GitHub issue created by this ledger update.
 
