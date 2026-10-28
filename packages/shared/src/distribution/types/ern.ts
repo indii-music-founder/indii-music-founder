@@ -17,14 +17,15 @@ import type {
   ParentalWarningType,
   AIGenerationInfo,
   RightsController,
-} from './common';
+  DDEXContainsAI,
+} from './common.js';
 
-export type { Contributor };
+export type { Contributor, DDEXContainsAI };
 
 // IngestionNotification Message - top level
 export interface IngestionNotificationMessage {
   action?: 'NewRelease' | 'Update' | 'Takedown';
-  messageSchemaVersionId: '4.3';
+  messageSchemaVersionId: '4.3' | '4.3.2';
   messageHeader: IngestionMessageHeader;
   releaseList: Release[];
   resourceList: Resource[];
@@ -40,7 +41,7 @@ export interface Release {
   releaseSubTitle?: TitleText;
   displayArtistName: string;
   displayArtistSystemIdentifier?: string;
-  contributors: Contributor[];
+  contributors?: Contributor[];
   labelName: string;
   pLine?: CopyrightLine;
   cLine?: CopyrightLine;
@@ -119,7 +120,7 @@ export interface Resource {
   resourceId: ResourceId;
   resourceTitle: TitleText;
   displayArtistName: string;
-  contributors: Contributor[];
+  contributors?: Contributor[];
   duration?: string;  // ISO 8601 duration
   technicalDetails?: TechnicalDetails[];
   parentalWarningType?: ParentalWarningType;

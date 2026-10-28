@@ -97,6 +97,7 @@ export interface Contributor {
   isni?: string;
   spotifyId?: string;
   appleMusicId?: string;
+  aiContribution?: DDEXContainsAI;
 }
 
 // Technical Details for audio resources
@@ -123,12 +124,20 @@ export interface TechnicalDetails {
 // Parental Warning / Explicit content
 export type ParentalWarningType = 'Explicit' | 'NotExplicit' | 'NoAdviceAvailable' | 'Edited';
 
-// Autonomous Generation flags (IngestionNotification 4.3 + 2026 Transparency Tags)
+// Standard ERN 4.3.2 AI Disclosure value set
+export type DDEXContainsAI = 'None' | 'Partly' | 'All';
+
+// Autonomous Generation flags (IngestionNotification 4.3 / 4.3.2 + 2026 Transparency Tags)
 export interface AIGenerationInfo {
   isFullyAIGenerated: boolean;
   isPartiallyAIGenerated: boolean;
   aiToolsUsed?: string[];
   humanContributionDescription?: string;
+
+  /**
+   * DDEX ERN 4.3.2 Standard AI Disclosure Tag
+   */
+  containsAi?: DDEXContainsAI;
 
   /**
    * 2026 Ingestion Intelligence Disclosure Classification
