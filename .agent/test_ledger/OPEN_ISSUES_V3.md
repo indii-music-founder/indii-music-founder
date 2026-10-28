@@ -5832,11 +5832,13 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance / terminal evidence:** Verified via `packages/shared/src/distribution/ddexBuilder.test.ts` (9 tests) and `packages/shared/src/distribution/ddexErnCompatibility.test.ts` (4 tests) with all 13 tests passing. Documented full upgrade decision with primary sources in `docs/distribution/ddex-ern-4.3.2-compatibility.md`. Outbound payloads adhere to ERN 4.3.2 with `ContainsAI` (`None`/`Partly`/`All`), `AiContribution` on contributors, and `DisclosureType` (`Human_Created`/`AI_Assisted`); preserves human authorship classification for electronic and sample-based works; and enforces strict isolation between DSP distribution delivery and AI model training consent.
 - **Converges to:** Distribution/provenance release gate. **Status: verified.**
 
-### Child research: AI copyright litigation and paid-training consent [P2, PROPOSED]
+### Child research: AI copyright litigation and paid-training consent [P2, VERIFIED]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Provenance:** October 21 publisher–AI developer lyrics copyright hearing reported in October 22 brief.
 - **Parent:** CI-V3-20261021-01; overlaps CI-V3-20261019-06. **Do not create a duplicate engineering issue.**
 - **Acceptance / terminal evidence:** Dated primary court filings/orders and counsel-reviewed or explicitly qualified legal interpretation; record a decision about whether the existing deny-by-default, rights-holder opt-in and negotiated compensation requirements need any revision. A hearing is not a final ruling; training on lyrics and sound recordings are not interchangeable legal claims.
-- **Converges to:** AI-training licensing policy and investor dossier. **Status: proposed research, unverified.**
+- **Terminal Evidence:** Completed legal research dossier in `docs/research/AI_COPYRIGHT_LITIGATION_PAID_TRAINING_DOSSIER.md`. Analyzed October 21, 2026 summary judgment hearing before Judge Eumi Lee in *Concord Music Group et al. v. Anthropic PBC* (N.D. Cal. Case No. 3:23-cv-05444), concurrent Reservoir Media filings against Anthropic and Suno, and foundational distinctions between text/lyric ingestion and master sound recording reproduction rights. Confirmed formal policy decision: existing server-side deny-by-default, multi-rightsholder affirmative opt-in, and settled bipartite compensation architecture (`aiTrainingConsent.ts`) is optimal and requires no weakening or revision.
+- **Converges to:** AI-training licensing policy and investor dossier. **Status: verified.**
 
 **Execution graph delta:** P-AGENT-20261022-01 spawned-by Oct 22 brief, depends-on beta security and overlaps #424, converges-to beta gate; P-DDEX-20261022-01 spawned-by DDEX compatibility signal, depends-on existing provenance/distribution verification, converges-to distribution gate; litigation research is a child of CI-V3-20261021-01. Existing October 21 work remains authoritative. **No tasks closed, no separate GitHub issues created.**
 
