@@ -49,3 +49,22 @@ The [upstream certificate-authentication advisory GHSA-m9gg-hp2v-232j](https://g
 Full repository typecheck passed both in the original checkout and against the freshly installed patched graph under Node 24; full lint passed with zero errors and 235 existing warnings. Ledger integrity, capability-catalog validation, guard syntax and diff checks passed.
 
 Remaining 14 high and seven moderate findings still require their own compatible fixes/reachability reviews. This follow-up does not close ISSUE-1514, prove installed desktop/native packaging, or establish deployed Firebase acceptance. Jev's focused review of the install/audit/guard evidence is advisory only. Remote CI monitoring remains with the owner's existing systems.
+
+
+## 2026-10-28 Vite 6 security patch
+
+Branch `codex/issue-1514-vite-security-patch` starts at `11722f901`, which includes the earlier gRPC repair. Vite moves from 6.4.3 to 6.4.5 in root and admin manifests and the renderer's minimum range; landing's existing range already accepts it. The lock updates only Vite and those declarations. All four installed consumers resolve 6.4.5. No unrelated package cleanup or major toolchain migration is included.
+
+The [official 6.4.5 changelog](https://github.com/vitejs/vite/blob/v6.4.5/packages/vite/CHANGELOG.md) records filesystem-access checking after query stripping, following 6.4.4's launch-editor 2.14.2 and resolved-ID checks. [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm) lists affected Vite <=6.4.3 for the Windows launch-editor path. Package remediation does not constitute Windows exploit verification.
+
+Validation on an isolated Node 24.22.1/npm 11.20.0 install:
+
+- `npm ci --ignore-scripts --no-audit`: exit 0; 2,903 packages installed. Native/lifecycle install scripts were skipped.
+- Full repository typecheck; Studio Electron bundle; landing build; admin build: all exit 0. Existing bundle/chunk/bootstrap warnings remain. These are local compilation outputs, not production deployment or signed-in acceptance.
+- Existing ConfirmDialog Callable Root component test: passed against the patched dependency graph; structural component evidence only.
+- Real isolated Vite HTTP server: allowed file 200; outside-file plain/raw/raw+import requests 403. The import-only request returns a 200 JavaScript module containing the asset URL, whose subsequent file fetch is 403; it does not return the outside file contents. An initial blanket-403 test assumption was corrected after inspecting that response.
+- Full lint: exit 0, zero errors / 235 existing warnings. Capability catalog, ledger integrity and diff checks passed.
+- Fresh production audit: **14 → 13 high**, seven moderate, zero critical; no Vite finding. This independent branch excludes the separate Wireit repair.
+- Jev 1.14 reviewed bounded patch alignment (0.91), HTTP evidence interpretation (0.84), and selected patch-validation scope. Advisory judgment only.
+
+npm still warns about the existing optional `react-call` Vite >=8 peer while this toolchain uses Vite 6. No source imports `react-call/vite`; the runtime Callable import and its existing component test work, and electron-vite 5 declares Vite 5/6/7 support. No force or legacy-peer-deps flag was used. Do not claim the optional Vite 8 plugin's compatibility or a clean peer graph. Remaining advisory reachability, Windows paths, native packaging and genuine customer/deployed acceptance remain open. No CI monitoring was performed.
