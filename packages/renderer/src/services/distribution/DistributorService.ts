@@ -493,7 +493,11 @@ class DistributorServiceImpl {
       if (!e) continue;
 
       // Determine conversion rate for this report
-      const rate = rateMap[e.currencyCode] || 1;
+      // Missing or invalid FX evidence must never be replaced with a 1:1 factor.
+      const rate = rateMap[e.currencyCode];
+      if (!Number.isFinite(rate) || rate <= 0) {
+        throw new Error(`Exchange rates unavailable for ${e.currencyCode}/${targetCurrency}; earnings were not aggregated.`);
+      }
 
       // Accumulate totals
       totalStreams += e.streams;
