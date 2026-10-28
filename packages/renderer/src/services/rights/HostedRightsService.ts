@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { ref, uploadBytesResumable } from 'firebase/storage';
 import { functions, storage, auth } from '@/services/firebase';
+import { HostedRightsConnectionLifecycle } from './HostedRightsConnectionLifecycle';
 import type { RightsCase, CopyrightWork, CwrBatchInput, SessionInput } from '@indii/shared';
 
 export async function rightsOperation<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
@@ -34,26 +35,34 @@ export function downloadRightsFile(filename: string, text: string, type = 'text/
 /** The reconnecting transport never records frames or input and never replays input. */
 export class HostedRightsConnection {
   private socket?: WebSocket;
-  private closed = false;
+  private lifecycle = new HostedRightsConnectionLifecycle();
   private sequence = 0;
   private retry?: ReturnType<typeof setTimeout>;
   private fence = { controlGeneration: 0, navigationGeneration: 0, viewportVersion: 1, control: 'none' };
   constructor(private sessionId: string, private onEvent: (event: Record<string, unknown>) => void, private onFrame: (frame: Blob) => void) {}
   async connect() {
-    if (this.closed) return;
+    const generation = this.lifecycle.begin();
+    if (generation === undefined) return;
+    clearTimeout(this.retry);
     try {
       const { ticket, brokerUrl } = await rightsOperation<{ ticket: string; brokerUrl: string }>('connect_ticket', { sessionId: this.sessionId });
+      // Closing while ticket acquisition is pending must never open a socket.
+      if (!this.lifecycle.isCurrent(generation)) return;
       const url = new URL('/session', brokerUrl); url.protocol = 'wss:';
       const socket = new WebSocket(url); socket.binaryType = 'blob'; this.socket = socket;
-      socket.onopen = () => socket.send(JSON.stringify({ kind: 'client', sessionId: this.sessionId, ticket }));
+      socket.onopen = () => {
+        if (!this.lifecycle.connected(generation)) { socket.close(); return; }
+        socket.send(JSON.stringify({ kind: 'client', sessionId: this.sessionId, ticket }));
+      };
       socket.onmessage = event => {
+        if (!this.lifecycle.isCurrent(generation)) return;
         if (event.data instanceof Blob) { this.onFrame(event.data); return; }
         const value = JSON.parse(event.data);
         if (value.type === 'status') {
           this.fence.control = value.control;
           if (this.fence.controlGeneration !== value.controlGeneration) this.sequence = 0;
           this.fence.controlGeneration = value.controlGeneration;
-          if (['ended', 'failed'].includes(value.state)) { this.closed = true; socket.close(); }
+          if (['ended', 'failed', 'termination_pending'].includes(value.state)) this.close();
         }
         if (value.type === 'navigation') {
           this.fence.navigationGeneration = value.navigationGeneration;
@@ -63,19 +72,31 @@ export class HostedRightsConnection {
         this.onEvent(value);
       };
       socket.onclose = () => {
+        if (!this.lifecycle.disconnected(generation)) return;
         this.fence.control = 'none';
-        if (!this.closed) { this.onEvent({ type: 'status', state: 'reconnecting', control: 'none' }); this.retry = setTimeout(() => void this.connect(), 3000); }
+        this.socket = undefined;
+        this.retry = setTimeout(() => { if (this.lifecycle.canRetry(generation)) void this.connect(); }, 3000);
+        this.onEvent({ type: 'status', state: 'reconnecting', control: 'none' });
       };
-      socket.onerror = () => socket.close();
+      socket.onerror = () => { if (this.lifecycle.isCurrent(generation)) socket.close(); };
     } catch (error) {
+      if (!this.lifecycle.disconnected(generation)) return;
+      this.fence.control = 'none';
       this.onEvent({ type: 'error', message: error instanceof Error ? error.message : 'Session connection unavailable.' });
     }
   }
   input(event: SessionInput['event']) {
-    if (this.closed || this.fence.control !== 'human' || this.socket?.readyState !== WebSocket.OPEN) return;
+    if (!this.lifecycle.isConnected || this.fence.control !== 'human' || this.socket?.readyState !== WebSocket.OPEN) return;
     this.socket.send(JSON.stringify({ sessionId: this.sessionId, ...this.fence, sequence: ++this.sequence, event,
       // control belongs to status only, not the validated wire schema.
     }, (key, value) => key === 'control' ? undefined : value));
   }
-  close() { this.closed = true; clearTimeout(this.retry); this.socket?.close(); }
+  close() {
+    this.lifecycle.close();
+    clearTimeout(this.retry);
+    this.fence.control = 'none';
+    const socket = this.socket;
+    this.socket = undefined;
+    socket?.close();
+  }
 }
