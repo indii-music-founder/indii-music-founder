@@ -33,7 +33,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `foundingArtist/admin.ts:293` | `inviteNextFoundingArtist` | `onCall` | Present | Present |
 | `foundingArtist/admin.ts:298` | `queueFoundingArtistMilestoneUpdate` | `onCall` | Present | Present |
 | `foundingArtist/waitlist.ts:192` | `joinFoundingArtistWaitlist` | `onCall` | Present | Present |
-| `functions/agent/getCapabilitySnapshot.ts:336` | `getCapabilitySnapshot` | `onCall` | Present | Present |
+| `functions/agent/getCapabilitySnapshot.ts:335` | `getCapabilitySnapshot` | `onCall` | Present | Present |
 | `functions/agent/manageSemanticMemory.ts:120` | `manageSemanticMemory` | `onCall` | Present | Present |
 | `functions/agent/manageSemanticMemory.ts:259` | `batchEmbedText` | `onCall` | Present | Present |
 | `functions/agent/reportBugFn.ts:46` | `reportBugFn` | `onCall` | Present | Present |
