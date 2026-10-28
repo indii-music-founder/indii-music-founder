@@ -3300,7 +3300,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1449: Boardroom structural browser tests poll a non-existent store field and time out
 
-- **Status:** ✅ FIXED (2026-10-28)
+- **Status:** 🟡 PARTIAL — stream completion event and typesafe intent resolution landed; e2e/boardroom-swarm.spec.ts 4/4 passed (2026-10-28)
 - **Severity:** 🟡 MEDIUM (local browser-test reliability; not evidence of a production customer-path failure)
 - **Module:** Boardroom structural-only Playwright coverage (`e2e/boardroom-swarm.spec.ts`)
 - **Evidence:** `npx playwright test e2e/boardroom-swarm.spec.ts --project=chromium --timeout=12000` currently reports **1 passed, 3 failed**. The no-agents test passes after asserting the visible rejection toast. The multi-agent dispatch, referenced-assets, and cross-specialist continuity tests time out while reading `window.useStore.getState().boardroomMessages` (`e2e/boardroom-swarm.spec.ts:62,86,111,125`). `BoardroomModule` derives its local `boardroomMessages` from the actual store field `state.agentHistory` (`packages/renderer/src/modules/boardroom/BoardroomModule.tsx:47-51`); `boardroomMessages` is not a top-level store field. The run also shows mock-auth Firestore requests failing with 403/offline and session persistence rejected for `mock-project` versus `indii-music-founder`, so it does not validate real persistence or a customer path.
