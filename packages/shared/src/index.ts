@@ -81,6 +81,7 @@ export * from './distribution/rdrRccTsv.js';
 export * from './distribution/ecmContracts.js';
 export * from './security/organizationAccess.js';
 export * from './security/auditLog.js';
+export * from './security/agentControlIntegrity.js';
 export * from './raw/types.js';
 export * from './foundry/index.js';
 export * from './types/contacts.js';

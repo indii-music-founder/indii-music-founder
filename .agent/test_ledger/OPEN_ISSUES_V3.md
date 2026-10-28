@@ -5825,6 +5825,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Discovered children:** Only create on confirmed implementation-specific failures, linked to this parent and routed through the authoritative bug intake.
 - **Acceptance / terminal evidence:** Inventory non-bypassable audit, monitoring, authorization, and approval boundaries; tests showing bounded agents cannot disable or silently modify mandatory controls or suppress audit evidence; demonstrate denied attempts are recorded; link exact commit, passing CI, and deployment evidence if required.
 - **Converges to:** Beta security and truthful-execution release gate. **Status: proposed, unverified.**
+- **2026-10-28 implementation progress:** Delivered agent monitoring and control integrity enforcement in `packages/shared/src/security/agentControlIntegrity.ts` with 5 unit tests (`packages/shared/src/security/agentControlIntegrity.test.ts`). Inventories non-bypassable governance boundaries (tool approvals, audit logging, computer control, financial isolation, output guardrails), strictly rejects agent attempts to disable/modify boundaries, and enforces immutable DENIED audit logging for all violations; exported in `@/shared`.
 
 ### P-DDEX-20261022-01 — ERN 4.3.2 and AI metadata compatibility assessment [P1, VERIFIED]
 - **Status:** ✅ VERIFIED (2026-10-28)
