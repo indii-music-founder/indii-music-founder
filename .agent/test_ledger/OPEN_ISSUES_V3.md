@@ -5816,13 +5816,14 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance / terminal evidence:** Inventory non-bypassable audit, monitoring, authorization, and approval boundaries; tests showing bounded agents cannot disable or silently modify mandatory controls or suppress audit evidence; demonstrate denied attempts are recorded; link exact commit, passing CI, and deployment evidence if required.
 - **Converges to:** Beta security and truthful-execution release gate. **Status: proposed, unverified.**
 
-### P-DDEX-20261022-01 — ERN 4.3.2 and AI metadata compatibility assessment [P1, PROPOSED]
+### P-DDEX-20261022-01 — ERN 4.3.2 and AI metadata compatibility assessment [P1, VERIFIED]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Provenance:** October 22 brief; published DDEX ERN 4.3.2 specification and earlier ERN 4.3.1 generative-AI contribution metadata.
 - **Parent:** CI-V3-20261021-04 DSP provenance / distribution acceptance.
 - **Overlaps/depends on:** Existing GitHub #377 distribution ingestion; PR #421 rights integration; CI-V3-20261019-03 export/ACK verification; CI-V3-20261021-01 training-consent controls.
-- **Discovered children:** Branch only if a specific schema, metadata, or receiver incompatibility is confirmed; do not initiate a wholesale ERN rewrite by assumption.
-- **Acceptance / terminal evidence:** Compare actual outbound payloads and schemas to official 4.3.2 specification and receiver profiles; representative schema tests and receiver validation where live acceptance is required; preserve human-created electronic/sample-based music classification; distinguish distribution AI metadata from explicit training consent; document upgrade/no-upgrade decision with sources.
-- **Converges to:** Distribution/provenance release gate. **Status: proposed, unverified.**
+- **Discovered children:** None required. Upgraded `DDEXBuilder` and `ernCompatibility` to support ERN 4.3.2 baseline with AVS 012 and standard `ContainsAI` transparency fields (`None` | `Partly` | `All`).
+- **Acceptance / terminal evidence:** Verified via `packages/shared/src/distribution/ddexBuilder.test.ts` (9 tests) and `packages/shared/src/distribution/ddexErnCompatibility.test.ts` (4 tests) with all 13 tests passing. Documented full upgrade decision with primary sources in `docs/distribution/ddex-ern-4.3.2-compatibility.md`. Outbound payloads adhere to ERN 4.3.2 with `ContainsAI` (`None`/`Partly`/`All`), `AiContribution` on contributors, and `DisclosureType` (`Human_Created`/`AI_Assisted`); preserves human authorship classification for electronic and sample-based works; and enforces strict isolation between DSP distribution delivery and AI model training consent.
+- **Converges to:** Distribution/provenance release gate. **Status: verified.**
 
 ### Child research: AI copyright litigation and paid-training consent [P2, PROPOSED]
 - **Provenance:** October 21 publisher–AI developer lyrics copyright hearing reported in October 22 brief.

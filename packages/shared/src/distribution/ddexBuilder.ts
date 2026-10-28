@@ -91,16 +91,17 @@ export class DDEXBuilder {
                     ReleaseResourceReference: r.releaseResourceReferenceList,
                 },
                 ...(r.aiGenerationInfo ? {
+                    ContainsAI: r.aiGenerationInfo.containsAi ?? (r.aiGenerationInfo.isFullyAIGenerated ? 'All' : r.aiGenerationInfo.isPartiallyAIGenerated ? 'Partly' : 'None'),
                     AIGenerationInfo: {
                         IsFullyAIGenerated: r.aiGenerationInfo.isFullyAIGenerated,
                         IsPartiallyAIGenerated: r.aiGenerationInfo.isPartiallyAIGenerated,
-                        AIToolsUsed: {
-                            AIToolUsed: r.aiGenerationInfo.aiToolsUsed
-                        },
+                        AIToolsUsed: (r.aiGenerationInfo.aiToolsUsed && r.aiGenerationInfo.aiToolsUsed.length > 0) ? {
+                            AIToolUsed: r.aiGenerationInfo.aiToolsUsed,
+                        } : undefined,
                         HumanContributionDescription: r.aiGenerationInfo.humanContributionDescription,
-                        DisclosureType: r.aiGenerationInfo.disclosureType
-                    }
-                } : {})
+                        DisclosureType: r.aiGenerationInfo.disclosureType,
+                    },
+                } : {}),
             })),
         };
     }
@@ -123,6 +124,15 @@ export class DDEXBuilder {
                         TitleText: r.resourceTitle.titleText,
                     },
                     DisplayArtistName: r.displayArtistName,
+                    ...(r.contributors && r.contributors.length > 0 ? {
+                        ResourceContributor: r.contributors.map((c) => ({
+                            PartyName: { FullName: c.name },
+                            ResourceContributorRole: c.role,
+                            ...(c.sequenceNumber !== undefined ? { SequenceNumber: c.sequenceNumber } : {}),
+                            ...(c.isni ? { PartyId: { ISNI: c.isni } } : {}),
+                            ...(c.aiContribution ? { AiContribution: c.aiContribution } : {}),
+                        })),
+                    } : {}),
                     LanguageOfPerformance: r.soundRecordingDetails?.languageOfPerformance,
                     ImmersiveAudioProfile: r.soundRecordingDetails?.immersiveAudioProfile,
                     Lyrics: r.soundRecordingDetails?.lyrics ? {
@@ -133,6 +143,18 @@ export class DDEXBuilder {
                     Key: r.soundRecordingDetails?.key,
                     Energy: r.soundRecordingDetails?.energy
                 },
+                ...(r.aiGenerationInfo ? {
+                    ContainsAI: r.aiGenerationInfo.containsAi ?? (r.aiGenerationInfo.isFullyAIGenerated ? 'All' : r.aiGenerationInfo.isPartiallyAIGenerated ? 'Partly' : 'None'),
+                    AIGenerationInfo: {
+                        IsFullyAIGenerated: r.aiGenerationInfo.isFullyAIGenerated,
+                        IsPartiallyAIGenerated: r.aiGenerationInfo.isPartiallyAIGenerated,
+                        AIToolsUsed: (r.aiGenerationInfo.aiToolsUsed && r.aiGenerationInfo.aiToolsUsed.length > 0) ? {
+                            AIToolUsed: r.aiGenerationInfo.aiToolsUsed,
+                        } : undefined,
+                        HumanContributionDescription: r.aiGenerationInfo.humanContributionDescription,
+                        DisclosureType: r.aiGenerationInfo.disclosureType,
+                    },
+                } : {}),
             })),
             Image: resources.filter((r) => r.resourceType === 'Image').map((r) => ({
                 '@_ResourceReference': r.resourceReference,
