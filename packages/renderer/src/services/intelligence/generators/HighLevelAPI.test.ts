@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { extractAndParseJson, parseJSON } from './HighLevelAPI';
-import { AppException, AppErrorCode } from '@/shared/types/errors';
 
 describe('HighLevelAPI: extractAndParseJson & parseJSON', () => {
     it('parses raw valid JSON string', () => {

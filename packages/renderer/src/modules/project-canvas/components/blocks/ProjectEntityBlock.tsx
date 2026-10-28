@@ -26,6 +26,7 @@ import {
 import { useStore } from '@/core/store';
 import { EntityResolver } from '../../resolvers/EntityResolver';
 import type { ProjectCanvasBlock, ResolvedProjectEntityData, ProjectEntityType } from '../../types';
+import { logger } from '@/utils/logger';
 
 interface ProjectEntityBlockProps {
     block: ProjectCanvasBlock;
@@ -51,11 +52,16 @@ export const ProjectEntityBlock: React.FC<ProjectEntityBlockProps> = ({
         let isMounted = true;
 
         if (block.entityRef) {
-            EntityResolver.resolve<ResolvedProjectEntityData>(block.entityRef).then((res) => {
-                if (isMounted && res.status === 'resolved' && res.data) {
-                    setResolvedData(res.data);
-                }
-            });
+            EntityResolver.resolve<ResolvedProjectEntityData>(block.entityRef)
+                .then((res) => {
+                    if (isMounted && res.status === 'resolved' && res.data) {
+                        setResolvedData(res.data);
+                    }
+                })
+                .catch((err: unknown) => {
+                    if (!isMounted) return;
+                    logger.warn('[ProjectEntityBlock] Failed to resolve entity:', err);
+                });
         }
 
         return () => {

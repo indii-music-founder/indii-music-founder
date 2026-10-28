@@ -70,9 +70,9 @@ describe('synthesizePair — real canvas', () => {
 
     it('rejects invalid factors, qualities, and tiny sources', async () => {
         const hr = await makeHrBuffer(16, 16);
-        expect(synthesizePair({ hr, factor: 1.5 as 2 }, realFactory)).rejects.toThrow(/integer/);
-        expect(synthesizePair({ hr, factor: 2, jpegQuality: 1.5 }, realFactory)).rejects.toThrow(/jpegQuality/);
-        expect(synthesizePair({ hr: Buffer.alloc(4), factor: 2 }, realFactory)).rejects.toThrow(/Unsupported image type|too small/i);
+        await expect(synthesizePair({ hr, factor: 1.5 as 2 }, realFactory)).rejects.toThrow(/integer/);
+        await expect(synthesizePair({ hr, factor: 2, jpegQuality: 1.5 }, realFactory)).rejects.toThrow(/jpegQuality/);
+        await expect(synthesizePair({ hr: Buffer.alloc(4), factor: 2 }, realFactory)).rejects.toThrow(/Unsupported image type|too small/i);
     });
 });
 

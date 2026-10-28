@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { ElectronPlatformAdapter } from '@/services/platform/PlatformBridgeService';
 import { blenderService, FALLBACK_TEMPLATES } from '@/services/blender/BlenderService';
+import { logger } from '@/utils/logger';
 import type {
     BlenderStatus,
     BlenderTemplateInfo,
@@ -70,12 +71,22 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
 
     useEffect(() => {
         let mounted = true;
-        blenderService.getStatus().then(s => {
-            if (mounted) setStatus(s);
-        });
-        blenderService.listTemplates().then(t => {
-            if (mounted && t.length > 0) setTemplates(t);
-        });
+        blenderService
+            .getStatus()
+            .then(s => {
+                if (mounted) setStatus(s);
+            })
+            .catch((err: unknown) => {
+                logger.warn('[BlenderVideoPanel] Failed to retrieve status:', err);
+            });
+        blenderService
+            .listTemplates()
+            .then(t => {
+                if (mounted && t.length > 0) setTemplates(t);
+            })
+            .catch((err: unknown) => {
+                logger.warn('[BlenderVideoPanel] Failed to list templates:', err);
+            });
         const unsubscribe = window.electronAPI?.blender?.onProgress?.(progress => {
             if (mounted && progress.requestId === activeRequest.current) {
                 setRenderProgress(Math.min(100, Math.max(0, progress.percentage)));

@@ -20,6 +20,7 @@ import {
 import type { ProjectCanvasBlock } from '../../types';
 import { EntityResolver, type ResolvedAssetData } from '../../resolvers/EntityResolver';
 import { useStore } from '@/core/store';
+import { logger } from '@/utils/logger';
 
 interface AssetBlockProps {
     block: ProjectCanvasBlock;
@@ -44,11 +45,17 @@ export const AssetBlock: React.FC<AssetBlockProps> = ({
     useEffect(() => {
         if (!block.entityRef) return;
         let isMounted = true;
-        EntityResolver.resolve<ResolvedAssetData>(block.entityRef).then((res) => {
-            if (!isMounted) return;
-            setStatus(res.status === 'resolved' ? 'resolved' : 'missing');
-            if (res.data) setResolvedData(res.data);
-        });
+        EntityResolver.resolve<ResolvedAssetData>(block.entityRef)
+            .then((res) => {
+                if (!isMounted) return;
+                setStatus(res.status === 'resolved' ? 'resolved' : 'missing');
+                if (res.data) setResolvedData(res.data);
+            })
+            .catch((err: unknown) => {
+                if (!isMounted) return;
+                logger.warn('[AssetBlock] Failed to resolve entity:', err);
+                setStatus('error');
+            });
         return () => {
             isMounted = false;
         };

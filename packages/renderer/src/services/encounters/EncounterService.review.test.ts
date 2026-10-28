@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runTransaction } from 'firebase/firestore';
-import { db, auth } from '@/services/firebase';
+import { auth } from '@/services/firebase';
 import { EncounterService } from '@/services/encounters/EncounterService';
 
 const reviewFields = {
