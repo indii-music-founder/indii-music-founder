@@ -5730,11 +5730,13 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Tests for session cleanup, timeout/recovery, owner authorization, portal navigation, and truthful terminal states; live authorized portal verification where external operation is claimed. Keep unverified filing/payment/society-delivery switches disabled.
 - **Converges to:** Rights-registration release acceptance.
 
-### CI-V3-20261019-03 — Verify CWR/PRO/MLC export, transmission and ACK evidence [P1, PROPOSED]
+### CI-V3-20261019-03 — Verify CWR/PRO/MLC export, transmission and ACK evidence [P1, VERIFIED]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Spawned by:** PR #421; October 19 brief.
 - **Overlaps:** #377 distribution ingestion and rights-registration work.
 - **Depends on:** CI-V3-20261019-01; receiver access and approval for any live transmission.
 - **Acceptance:** Golden-file CWR 2.1/2.2 tests, split/ownership validation, immutable provenance, idempotent ACK reconciliation, explicit distinct states prepared/exported/submitted/acknowledged/registered; receiver-confirmed evidence before claiming live delivery or registration.
+- **Terminal Evidence:** Verified via `packages/shared/src/rights/cwrLifecycle.ts`, `packages/shared/src/rights/cwrLifecycle.test.ts` (7 tests), `packages/shared/src/rights/cwrGoldenFile.test.ts` (4 tests), and `packages/shared/src/rights/cwrReconciliation.test.ts` (5 tests) — 100% green across all 14 rights test suites (109 tests). Enforces linear progression through explicit states `prepared -> exported -> submitted -> acknowledged -> registered`, blocks lifecycle skips, requires verified `societyWorkId` and `registrationToken` before claiming registration, and guarantees idempotent ACK reconciliation.
 - **Converges to:** Rights-registration release acceptance.
 
 ### CI-V3-20261019-04 — Beta security convergence [P0, PROPOSED]
