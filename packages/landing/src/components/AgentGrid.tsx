@@ -18,6 +18,8 @@ interface LifecycleStage {
   glow: string;
   accentClass: string;
   badgeBg: string;
+  clipUrl: string;
+  captionUrl: string;
 }
 
 const lifecycle: LifecycleStage[] = [
@@ -35,6 +37,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(0, 188, 212, 0.25)',
     accentClass: 'text-[#00BCD4]',
     badgeBg: 'bg-[#00BCD4]/10 border-[#00BCD4]/30 text-[#00BCD4]',
+    clipUrl: '/clips/clip-02-audio-analysis.mp4',
+    captionUrl: '/clips/clip-02-audio-analysis.vtt',
   },
   {
     id: 'plan',
@@ -50,6 +54,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(255, 184, 0, 0.25)',
     accentClass: 'text-[#FFB800]',
     badgeBg: 'bg-[#FFB800]/10 border-[#FFB800]/30 text-[#FFB800]',
+    clipUrl: '/clips/clip-01-registration.mp4',
+    captionUrl: '/clips/clip-01-registration.vtt',
   },
   {
     id: 'register',
@@ -65,6 +71,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(0, 150, 136, 0.25)',
     accentClass: 'text-[#009688]',
     badgeBg: 'bg-[#009688]/10 border-[#009688]/30 text-[#009688]',
+    clipUrl: '/clips/clip-05-rights-copilot.mp4',
+    captionUrl: '/clips/clip-05-rights-copilot.vtt',
   },
   {
     id: 'prepare-delivery',
@@ -81,6 +89,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(33, 150, 243, 0.25)',
     accentClass: 'text-[#2196F3]',
     badgeBg: 'bg-[#2196F3]/10 border-[#2196F3]/30 text-[#2196F3]',
+    clipUrl: '/clips/clip-06-ddex-packaging.mp4',
+    captionUrl: '/clips/clip-06-ddex-packaging.vtt',
   },
   {
     id: 'campaign',
@@ -96,6 +106,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(233, 30, 99, 0.25)',
     accentClass: 'text-[#E91E63]',
     badgeBg: 'bg-[#E91E63]/10 border-[#E91E63]/30 text-[#E91E63]',
+    clipUrl: '/clips/clip-03-creative-canvas.mp4',
+    captionUrl: '/clips/clip-03-creative-canvas.vtt',
   },
   {
     id: 'release',
@@ -112,6 +124,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(255, 87, 34, 0.25)',
     accentClass: 'text-[#FF5722]',
     badgeBg: 'bg-[#FF5722]/10 border-[#FF5722]/30 text-[#FF5722]',
+    clipUrl: '/clips/clip-04-video-nle.mp4',
+    captionUrl: '/clips/clip-04-video-nle.vtt',
   },
   {
     id: 'track',
@@ -128,6 +142,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(255, 193, 7, 0.25)',
     accentClass: 'text-[#FFC107]',
     badgeBg: 'bg-[#FFC107]/10 border-[#FFC107]/30 text-[#FFC107]',
+    clipUrl: '/clips/clip-07-ad-automation.mp4',
+    captionUrl: '/clips/clip-07-ad-automation.vtt',
   },
   {
     id: 'repeat',
@@ -144,6 +160,8 @@ const lifecycle: LifecycleStage[] = [
     glow: 'rgba(139, 195, 74, 0.25)',
     accentClass: 'text-[#8BC34A]',
     badgeBg: 'bg-[#8BC34A]/10 border-[#8BC34A]/30 text-[#8BC34A]',
+    clipUrl: '/clips/clip-08-mobile-remote.mp4',
+    captionUrl: '/clips/clip-08-mobile-remote.vtt',
   },
 ];
 
@@ -294,13 +312,40 @@ export default function AgentGrid() {
                     </p>
                   </div>
                   <div
-                    className="mt-12 rounded-xl border border-white/15 bg-black/60 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                    className="mt-12 rounded-xl border border-white/15 bg-black/60 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
-                    <PlayCircle size={28} className="text-[#FFB800] drop-shadow-[0_0_10px_rgba(255,184,0,0.4)]" />
-                    <div className="mt-4 font-mono text-[9px] uppercase font-bold tracking-[0.22em] text-[#FFB800]">Real product clip planned</div>
-                    <p className="mt-2 text-sm font-black text-white">{active.name} / founder walkthrough</p>
-                    <p className="mt-2 text-xs leading-relaxed text-white/60">
-                      A 15–30 second, click-to-play product capture with captions will appear here during the beta.
+                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <PlayCircle size={20} className="text-[#FFB800] drop-shadow-[0_0_10px_rgba(255,184,0,0.4)]" />
+                        <span className="font-mono text-[9px] uppercase font-bold tracking-[0.22em] text-[#FFB800]">
+                          Real product clip planned
+                        </span>
+                      </div>
+                      <span className="font-mono text-[9px] text-white/40">1080p HD • Synchronized VTT</span>
+                    </div>
+                    <div className="mt-4 overflow-hidden rounded-lg border border-white/10 bg-black">
+                      <video
+                        key={active.clipUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full aspect-video rounded-lg object-cover"
+                        aria-label={`${active.name} founder walkthrough video with synchronized captions`}
+                      >
+                        <source src={active.clipUrl} type="video/mp4" />
+                        <track
+                          kind="captions"
+                          src={active.captionUrl}
+                          srcLang="en"
+                          label="English"
+                          default
+                        />
+                        Your browser does not support HTML5 video playback.
+                      </video>
+                    </div>
+                    <p className="mt-3 text-sm font-bold text-white">{active.name} / founder walkthrough</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/60">
+                      Click to play authentic product capture with synchronized captions.
                     </p>
                   </div>
                 </aside>
