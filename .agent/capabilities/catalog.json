@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceDigest": "c2d3c17f939254565d7155d4e4e216506891156da6599b80cd8c525c88228a46",
+  "sourceDigest": "077fd87369d1436071881a52f9030bf866dc6d4728cb14645aba67f94f03f035",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -847,6 +848,36 @@
       "conflicts": []
     },
     {
+      "id": "script:npm:check:grpc-resolution",
+      "name": "npm run check:grpc-resolution",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/check-grpc-resolution.mjs",
+      "descriptionHash": "e6164d5e0e8eaf38612d573ad6fd8b737d9a36e31e6fc2922389a55fb1b23320",
+      "contentHash": "d3c6b522d8af0939576bf0c75c4f5f5c19968ca1958ff47144e67e3199b6ed27",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
       "id": "script:npm:check:no-gen1",
       "name": "npm run check:no-gen1",
       "kind": "script",
@@ -1514,6 +1545,9 @@
       "description": "npm run check:brace-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
       "descriptionHash": "9445f6b3b7a933b26755a10279f11e34de7f5b6d6e52d72ecc964cd404a97f13",
       "contentHash": "d76ed19c161076423ca558f14465c20995b152f062adc2db515a840101dc51a1",
+      "description": "npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "df05f0147dfe97b2e65982442b6392115401cc5ce3a84e20e3ecf06d76df7bd6",
+      "contentHash": "2086df914d471c6d91cfd1b63aa7db5dc57067f16ce53d243a5d01276c34ed34",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [

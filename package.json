@@ -43,6 +43,10 @@
     "inventory:arcjet": "node scripts/arcjet-protection-inventory.mjs --write",
     "check:arcjet-inventory": "node --test scripts/arcjet-protection-inventory.test.mjs && node scripts/arcjet-protection-inventory.mjs",
     "check:brace-resolution": "node scripts/check-brace-resolution.mjs",
+    "lint": "npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+    "inventory:arcjet": "node scripts/arcjet-protection-inventory.mjs --write",
+    "check:arcjet-inventory": "node --test scripts/arcjet-protection-inventory.test.mjs && node scripts/arcjet-protection-inventory.mjs",
+    "check:grpc-resolution": "node scripts/check-grpc-resolution.mjs",
     "check:test-quality": "node scripts/check-test-quality.js",
     "validate:mainline-workflows": "node scripts/validate-mainline-workflows.js",
     "validate:ci-node-runtime": "node scripts/check-ci-node-runtime.mjs",
@@ -275,7 +279,10 @@
     "adm-zip": "0.6.1",
     "follow-redirects": "1.16.1",
     "source-map-js": "1.2.2",
-    "@grpc/grpc-js": "1.14.6"
+    "@grpc/grpc-js": "1.14.6",
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.14.6"
+    }
   },
   "license": "SEE LICENSE IN LICENSE",
   "lint-staged": {
