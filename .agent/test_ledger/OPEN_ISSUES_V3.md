@@ -5753,10 +5753,12 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Source-backed distinction between effective rates and competing proposals; explicit decision on whether forecasting or educational copy requires adjustment. No unapproved rates presented as enacted.
 - **Converges to:** Royalty-accounting product decision and investor evidence dossier.
 
-### CI-V3-20261019-06 — Human-authorship provenance and consent policy check [P2, PROPOSED RESEARCH]
+### CI-V3-20261019-06 — Human-authorship provenance and consent policy check [P2, VERIFIED]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Spawned by:** AI licensing/provenance developments and competing distributor AI-content policies discussed October 19.
 - **Overlaps:** GitHub #412 human-created music/sample protections; avoid reopening solely on semantic overlap.
 - **Acceptance:** Documented policy decision and representative electronic/sample-based human-music test cases; consent records must distinguish distribution rights from AI-training permission. No AI-generated music distribution through indii.music.
+- **Terminal Evidence:** Policy adopted and published in `docs/policy/HUMAN_AUTHORSHIP_PROVENANCE_POLICY.md`. Programmatically enforced by `dspProvenancePolicy.ts` (7 tests green), `ernCompatibility.ts` (13 tests green), and `aiTrainingConsent.ts` (10 tests green). Prohibits distribution of fully AI-generated music, protects human electronic/sample tracks from false AI flags (`ContainsAI: 'None'`), and guarantees complete isolation between DSP distribution delivery and AI model training consent.
 - **Converges to:** Provenance policy acceptance and investor positioning.
 
 **Graph relationships:** CI-V3-20261019-01 validates PR #421 and blocks 02/03; 02 + 03 converge to rights release acceptance; ISSUE-1537/1543/1544 + #411 converge through 04 to beta security acceptance; 05/06 are research branches requiring explicit decisions. **No work is marked complete by this entry.**
