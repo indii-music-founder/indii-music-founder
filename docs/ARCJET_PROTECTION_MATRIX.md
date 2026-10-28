@@ -149,9 +149,9 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `lib/audio.ts:52` | `(factory/helper)` | `onCall` | Present | Present |
 | `lib/image_generation.ts:869` | `(factory/helper)` | `onCall` | Present | Present |
 | `lib/image_generation.ts:940` | `(factory/helper)` | `onCall` | Present | Present |
-| `lib/marketing.ts:179` | `executeCampaign` | `onCall` | Present | Present |
-| `lib/marketing.ts:382` | `dispatchSocialPost` | `onCall` | Present | Present |
-| `lib/marketing.ts:467` | `createInfluencerBounty` | `onCall` | Present | Present |
+| `lib/marketing.ts:182` | `executeCampaign` | `onCall` | Present | Present |
+| `lib/marketing.ts:385` | `dispatchSocialPost` | `onCall` | Present | Present |
+| `lib/marketing.ts:470` | `createInfluencerBounty` | `onCall` | Present | Present |
 | `lib/touring.ts:275` | `computeDistanceMatrix` | `onCall` | Present | Present |
 | `lib/touring.ts:326` | `generateItinerary` | `onCall` | Present | Present |
 | `lib/touring.ts:352` | `checkLogistics` | `onCall` | Present | Present |
