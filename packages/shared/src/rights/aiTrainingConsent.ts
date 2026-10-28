@@ -28,12 +28,14 @@ export type AITrainingAssetType = z.infer<typeof AITrainingAssetTypeSchema>;
  * Verified contractual compensation structure for AI training grants.
  * Both the rightsholder(s) and indii.music must receive contractual compensation.
  */
+const EvidenceTimestamp = z.number().int().positive().safe();
+
 export const AITrainingCompensationSchema = z.object({
   artistCents: z.number().int().positive(),
   platformCents: z.number().int().positive(),
   currency: z.literal('USD'),
   termsAgreementHash: Sha256,
-  paidAt: z.number().int().positive().nullable(),
+  paidAt: EvidenceTimestamp.nullable(),
   payoutTransactionId: z.string().trim().min(1).max(200).nullable(),
 }).strict();
 export type AITrainingCompensation = z.infer<typeof AITrainingCompensationSchema>;
@@ -48,15 +50,25 @@ export const AITrainingGrantSchema = z.object({
   assetType: AITrainingAssetTypeSchema,
   rightsholderEntityId: RightsEntityId,
   affirmativeOptIn: z.literal(true),
-  optInTimestamp: z.number().int().positive(),
-  expiresAt: z.number().int().positive(),
-  revokedAt: z.number().int().positive().nullable(),
+  optInTimestamp: EvidenceTimestamp,
+  expiresAt: EvidenceTimestamp,
+  revokedAt: EvidenceTimestamp.nullable(),
   authorizedVendor: z.string().trim().min(1).max(200),
   scopes: z.array(AITrainingScopeSchema).min(1).max(10),
   compensation: AITrainingCompensationSchema,
   auditLogId: z.string().trim().min(1).max(200),
 }).strict();
 export type AITrainingGrant = z.infer<typeof AITrainingGrantSchema>;
+
+const AITrainingExportRequestSchema = z.object({
+  assetId: RightsId,
+  assetType: AITrainingAssetTypeSchema,
+  requiredRightsholderEntityIds: z.array(RightsEntityId),
+  grants: z.array(AITrainingGrantSchema),
+  requestedVendor: z.string().trim().min(1).max(200),
+  requestedScope: AITrainingScopeSchema,
+  currentTime: EvidenceTimestamp.optional(),
+}).strict();
 
 export interface AITrainingExportEvaluation {
   allowed: boolean;
@@ -72,9 +84,10 @@ export interface AITrainingExportEvaluation {
  * 1. Default NO AI training: empty or missing grants unconditionally deny.
  * 2. Non-inference: permissions cannot be inferred from distribution, processing, or upload.
  * 3. Complete rightsholder consensus: every single required rightsholder must have an active grant.
- * 4. Revocation and expiration: any revoked grant or expired grant immediately fails.
+ * 4. Consent must already be effective; recorded revocation or expiry denies.
  * 5. Scope and Vendor match: the grant must explicitly authorize the requested vendor and scope.
- * 6. Settled compensation: compensation must be positive, agreed, and paid (settled) before export.
+ * 6. Settled compensation: compensation must be positive, agreed, and paid no later than evaluation.
+ * 7. Request and grant evidence must pass runtime schema validation.
  */
 export function evaluateAITrainingExport(params: {
   assetId: string;
@@ -85,9 +98,20 @@ export function evaluateAITrainingExport(params: {
   requestedScope: AITrainingScope;
   currentTime?: number;
 }): AITrainingExportEvaluation {
-  const now = params.currentTime ?? Date.now();
+  // TypeScript types do not validate stored data or JavaScript callers. Parse
+  // here so malformed evidence cannot skip temporal or monetary comparisons.
+  const parsed = AITrainingExportRequestSchema.safeParse(params);
+  if (!parsed.success) {
+    return {
+      allowed: false,
+      reason: 'Denied: Invalid AI training export request or grant evidence.',
+      evaluationTimestamp: Date.now(),
+    };
+  }
+  const input = parsed.data;
+  const now = input.currentTime ?? Date.now();
 
-  if (!params.requiredRightsholderEntityIds || params.requiredRightsholderEntityIds.length === 0) {
+  if (!input.requiredRightsholderEntityIds || input.requiredRightsholderEntityIds.length === 0) {
     return {
       allowed: false,
       reason: 'Denied: Assets with unverified or empty rightsholders cannot be authorized for AI training.',
@@ -95,11 +119,11 @@ export function evaluateAITrainingExport(params: {
     };
   }
 
-  if (!params.grants || params.grants.length === 0) {
+  if (!input.grants || input.grants.length === 0) {
     return {
       allowed: false,
       reason: 'Denied by default: No affirmative AI training grants exist for this asset.',
-      unconsentedRightsholders: [...params.requiredRightsholderEntityIds],
+      unconsentedRightsholders: [...input.requiredRightsholderEntityIds],
       evaluationTimestamp: now,
     };
   }
@@ -107,9 +131,9 @@ export function evaluateAITrainingExport(params: {
   // Validate that all required rightsholders have valid, active, matching grants
   const unconsented: string[] = [];
 
-  for (const requiredId of params.requiredRightsholderEntityIds) {
-    const grant = params.grants.find(
-      (g) => g.rightsholderEntityId === requiredId && g.assetId === params.assetId
+  for (const requiredId of input.requiredRightsholderEntityIds) {
+    const grant = input.grants.find(
+      (g) => g.rightsholderEntityId === requiredId && g.assetId === input.assetId && g.assetType === input.assetType
     );
 
     if (!grant) {
@@ -122,7 +146,17 @@ export function evaluateAITrainingExport(params: {
       continue;
     }
 
-    if (grant.revokedAt !== null && grant.revokedAt <= now) {
+    if (grant.optInTimestamp > now) {
+      return {
+        allowed: false,
+        reason: `Denied: AI training grant ${grant.grantId} has not taken effect.`,
+        evaluationTimestamp: now,
+      };
+    }
+
+    // A recorded revocation is not active permission, including inconsistent
+    // future-dated revocation evidence. Resolve it before considering export.
+    if (grant.revokedAt !== null) {
       return {
         allowed: false,
         reason: `Denied: AI training grant ${grant.grantId} for rightsholder ${requiredId} was revoked.`,
@@ -138,23 +172,23 @@ export function evaluateAITrainingExport(params: {
       };
     }
 
-    if (grant.authorizedVendor !== params.requestedVendor) {
+    if (grant.authorizedVendor !== input.requestedVendor) {
       return {
         allowed: false,
-        reason: `Denied: AI training grant authorizes vendor "${grant.authorizedVendor}", but "${params.requestedVendor}" was requested.`,
+        reason: `Denied: AI training grant authorizes vendor "${grant.authorizedVendor}", but "${input.requestedVendor}" was requested.`,
         evaluationTimestamp: now,
       };
     }
 
-    if (!grant.scopes.includes(params.requestedScope)) {
+    if (!grant.scopes.includes(input.requestedScope)) {
       return {
         allowed: false,
-        reason: `Denied: AI training grant does not authorize scope "${params.requestedScope}".`,
+        reason: `Denied: AI training grant does not authorize scope "${input.requestedScope}".`,
         evaluationTimestamp: now,
       };
     }
 
-    if (!grant.compensation.paidAt || !grant.compensation.payoutTransactionId) {
+    if (!grant.compensation.paidAt || grant.compensation.paidAt > now || !grant.compensation.payoutTransactionId) {
       return {
         allowed: false,
         reason: `Denied: AI training compensation for grant ${grant.grantId} is not settled/paid.`,
