@@ -28,3 +28,26 @@ The following owners are module ownership lanes for follow-up, not named human a
 | `vite` | Web build | Vite 6.4.3 remains affected. Vite 6.4.5 could not resolve alongside the current react-call >=8 peer requirement. Fix that peer/toolchain combination, then upgrade and test dev-server access controls. |
 
 The remaining moderate advisories are tracked by the same issue. A clean `npm ci --ignore-scripts --no-audit` installed 2,904 packages on the local Node 25 host, and focused tests passed. Supported Node 24 clean-install evidence and exact-SHA CI are still required; local tests cannot establish production reachability or release acceptance.
+
+## 2026-10-28 brace-expansion / Wireit follow-up
+
+Baseline `7a15de59f` retains a vulnerable `wireit/node_modules/brace-expansion` 2.1.4 despite Wireit 0.14.13 declaring `^5.0.6`; `npm ls` reports that copy invalid. Root brace-expansion 5.0.9 was also below the fix thresholds in the current primary advisories, even though the registry audit only attributed its reported finding to the nested 2.x copy.
+
+The repair pins Wireit and minimatch 10.2.5 to brace-expansion **5.0.12**, preserving the existing patched **2.1.7** override for 2.x callers. It removes Wireit's stale nested 2.1.4 and now-unused balanced-match 1.0.2. Root brace-expansion and balanced-match become runtime dependencies because Wireit now resolves that root chain. No other package versions, Firebase resolutions, peer checks, or running-checkout node_modules are changed by this branch.
+
+| Primary source inspected October 28 | Relevant patched lines |
+| --- | --- |
+| [GHSA-6j4f-fj2g-mc7p: comma-part recursion](https://github.com/advisories/GHSA-6j4f-fj2g-mc7p) | 5.0.10 and 2.1.5 |
+| [GHSA-qhr7-859c-m2p7: nested-brace recursion](https://github.com/advisories/GHSA-qhr7-859c-m2p7) | 5.0.11 and 2.1.6 |
+| [GHSA-q2hr-2g5m-vwhr: quadratic rewrite](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr) | 5.0.12 and 2.1.7 |
+
+Evidence:
+
+- Isolated manifest/lock re-resolution and `npm ci --ignore-scripts --no-audit` with Node 24.22.1/npm 11.20.0 succeeded; 2,901 packages installed. Native/lifecycle installation scripts were deliberately skipped; Functions' separate Node 22 engine warning remains.
+- The installed Wireit executable ran a local file-copy task whose input glob uses brace alternatives, rebuilt after an input change, and skipped the third unchanged run. Output bytes were checked after each run. These are actual local build-tool operations, not substituted external service responses or a customer journey.
+- The fresh production graph audit reports **0 critical / 17 high / 7 moderate**, compared with 0/18/7 on this branch's starting lock. No brace-expansion entry remains. These figures exclude the separately published gRPC branch; do not combine reductions before auditing an integrated graph.
+- `scripts/check-brace-resolution.mjs` rejects the original lock (affected 5.0.9 and 2.1.4 plus wrong Wireit major) and accepts the repaired graph's 23 copies. It runs in lint and checks Wireit's actual lock resolution as well as every locked copy's reviewed version. Generated capability catalogs include the new script without granting agent certification.
+- Full repository typecheck passed against the clean patched Node 24 graph; full lint passed with zero errors and 235 existing warnings. Ledger integrity, capability-catalog, guard syntax and diff checks passed.
+- Jev 1.14 judged major-version integrity 0.91 and advisory alignment 0.83, and selected dependency-repair-only scope; its judgment remains advisory.
+
+This repairs the dependency/API-resolution gap, not all of ISSUE-1514. Deployed image upscaling, packaged native/runtime behavior, customer acceptance and reachability of remaining advisories are unverified. CI monitoring remains with the owner's existing systems.
