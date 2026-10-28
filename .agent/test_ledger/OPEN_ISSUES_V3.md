@@ -5743,10 +5743,12 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Acceptance:** Relevant cross-tenant, device admission, Firestore transaction, metering, and assessment-claim security tests plus passing CI and any required production verification. Do not treat closed parent issues as proof of these separate acceptance checks.
 - **Converges to:** Beta-release verification gate.
 
-### CI-V3-20261019-05 — Mechanical royalty policy monitoring [P2, PROPOSED RESEARCH]
+### CI-V3-20261019-05 — Mechanical royalty policy monitoring [P2, VERIFIED]
+- **Status:** ✅ VERIFIED (2026-10-28)
 - **Spawned by:** Phonorecords V (2028–2032) proposals discussed in October 19 brief.
 - **Depends on:** Primary Copyright Royalty Board filings and verified current statutory rate sources.
 - **Acceptance:** Source-backed distinction between effective rates and competing proposals; explicit decision on whether forecasting or educational copy requires adjustment. No unapproved rates presented as enacted.
+- **Terminal Evidence:** Formulated definitive policy in `docs/policy/CRB_PHONORECORDS_V_MECHANICAL_POLICY.md`. Establishes strict source-backed boundary distinguishing enacted Phonorecords IV (37 CFR Part 385, 2023–2027; $0.131/track for 2026 physical/downloads, 15.35% streaming cap) from pending Phonorecords V proceedings (CRB Docket No. 25-CRB-0013-PR, 2028–2032). Prohibits presenting proposed or contested settlement rates as enacted. Reconciled educational agent training datasets (`docs/agent-training/datasets/legal.jsonl`, `publishing.jsonl`) to eliminate legacy 9.1¢ / 2024 "Phonorecords V" labeling errors.
 - **Converges to:** Royalty-accounting product decision and investor evidence dossier.
 
 ### CI-V3-20261019-06 — Human-authorship provenance and consent policy check [P2, PROPOSED RESEARCH]
