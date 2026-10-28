@@ -10,6 +10,7 @@ import {
 import { useToast } from '@/core/context/ToastContext';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { estimateMechanicalFee } from '@/services/publishing/mechanicalEstimate';
 
 /**
  * Item 311: Mechanical Royalty Panel
@@ -60,13 +61,21 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
     const [writer, setWriter] = useState('');
     const [isrc, setIsrc] = useState('');
     const [copies, setCopies] = useState('1000');
+    const [durationSeconds, setDurationSeconds] = useState('');
+    let estimate: ReturnType<typeof estimateMechanicalFee> | null = null;
+    let estimateError = '';
+    try {
+        estimate = estimateMechanicalFee(Number(copies), Number(durationSeconds), new Date().getUTCFullYear());
+    } catch (error) {
+        estimateError = error instanceof Error ? error.message : 'Estimate unavailable.';
+    }
     const [searching, setSearching] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const toast = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!trackTitle.trim()) return;
+        if (!trackTitle.trim() || !estimate) return;
 
         setSearching(true);
         try {
@@ -86,7 +95,8 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                     publishers: [],
                     controlled: false,
                 },
-                distributionCopies: parseInt(copies, 10) || 1000,
+                distributionCopies: Number(copies),
+                durationSeconds: Number(durationSeconds),
                 searchFailed,
             });
 
@@ -165,6 +175,8 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                         id="ml-copies"
                         type="number"
                         min="1"
+                        step="1"
+                        required
                         value={copies}
                         onChange={e => setCopies(e.target.value)}
                         className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-white/20"
@@ -172,17 +184,26 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                 </div>
             </div>
 
-            <p className="text-xs text-gray-500">
-                Statutory mechanical rate (2026): <span className="text-gray-300 font-mono">$0.131 / copy</span> (or 2.52¢/min) — estimated fee:{' '}
-                <span className="text-white font-semibold">
-                    ${((parseInt(copies, 10) || 0) * 0.131).toFixed(2)}
-                </span>
+            <div>
+                <label htmlFor="ml-duration" className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5 block">
+                    Track Duration (seconds) *
+                </label>
+                <input id="ml-duration" type="number" min="0.001" step="any" required
+                    value={durationSeconds} onChange={e => setDurationSeconds(e.target.value)}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white" />
+            </div>
+            <p className="text-xs text-gray-500" aria-live="polite">
+                2026 US physical copies and permanent downloads: the greater of $0.131 per copy or
+                $0.0252 per minute (each partial minute rounds up). This does not apply to streaming.
+                {estimate ? <> Estimated fee: <span className="text-white font-semibold">${estimate.totalFee.toFixed(2)}</span>.</>
+                    : <span className="block text-yellow-400">{estimateError}</span>}
+                {' '}Estimate only; provider charges and license approval are separate.
             </p>
 
             <div className="flex gap-3 pt-1">
                 <button
                     type="submit"
-                    disabled={searching || submitting || !trackTitle.trim()}
+                    disabled={searching || submitting || !trackTitle.trim() || !estimate}
                     className="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                     {searching ? (
@@ -326,7 +347,7 @@ export function MechanicalRoyaltyPanel({ releaseId = 'default' }: Props) {
                         Mechanical Licenses
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
-                        Required for physical phonorecords & permanent downloads (37 CFR §385.11). US statutory rate (2026): $0.131/copy (or 2.52¢/min).
+                        For US physical phonorecords and permanent downloads (37 CFR §385.11), the 2026 estimate uses the greater of $0.131/copy or $0.0252 per minute, with partial minutes rounded up. Streaming uses separate rules; an estimate does not establish clearance.
                     </p>
                 </div>
                 <button

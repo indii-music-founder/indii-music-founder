@@ -4,6 +4,7 @@ import { auth } from '@/services/firebase';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getDocs, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 
+// Legacy mock-backed structural checks only; not real-user licensing acceptance.
 // Mock dependencies are handled by src/test/setup.ts
 // We just need to mock the specific behaviors for these tests
 
@@ -64,6 +65,7 @@ describe('MechanicalRoyaltyService', () => {
         it('should create a license record in Firestore', async () => {
             const params = {
                 releaseId: 'rel_123',
+                durationSeconds: 180,
                 trackTitle: 'Test Song',
                 composition: mockComposition,
             };
@@ -81,6 +83,7 @@ describe('MechanicalRoyaltyService', () => {
             auth.currentUser = null;
             await expect(MechanicalRoyaltyService.createLicense({
                 releaseId: '123',
+                durationSeconds: 180,
                 trackTitle: 'T',
                 composition: mockComposition
             })).rejects.toThrow('Not authenticated');
