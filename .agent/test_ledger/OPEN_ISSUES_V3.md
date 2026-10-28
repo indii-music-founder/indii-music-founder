@@ -5790,6 +5790,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Overlaps/depends on:** GitHub #412; CI-V3-20261019-06; distribution metadata/validation work.
 - **Acceptance:** Test separate states for human-authorship review, AI-assistance disclosures, third-party remix license consent, and model-training permission. Protect legitimate DAW/MIDI/sample-based tracks from automated false rejection; require rights-holder opt-in and compensation terms for any licensed AI use. Distinguish 50M tracks removed from **recommendations** from 75M removed from the **platform**; do not misstate the figures.
 - **Converges to:** DSP metadata and provenance release gate.
+- **2026-10-28 implementation progress:** Delivered DSP provenance and human-authorship compliance evaluation in `packages/shared/src/rights/dspProvenancePolicy.ts` with 7 unit tests (`packages/shared/src/rights/dspProvenancePolicy.test.ts`). Validates separate states for authorship review, AI assistance disclosure, third-party remix licensing, and training permission; protects legitimate electronic DAW/MIDI and sample-based works from false rejection; accurately encodes 50M recommendation removals vs 75M platform removals; exported in `@/shared`.
 
 ### Existing GitHub #424 — Boardroom capability-truth overclaim [CLOSED, 2026-10-28; no new issue]
 - **Status:** ✅ CLOSED (2026-10-28)
