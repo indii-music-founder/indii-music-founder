@@ -5808,6 +5808,7 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
 - **Overlaps/depends on:** PR #421; CI-V3-20261019-02/03; GitHub #377; catalog migration work. Do not duplicate CWR/ACK or distribution issues.
 - **Acceptance:** Current-code truth matrix for ISRC↔ISWC↔ownership/split matching, conflicts, unclaimed/unmatched royalty identification, correction receipts, and provenance; explicit implementation decision. External match/registration completion requires authorized receiver evidence, not a generated file.
 - **Converges to:** Rights-registration release acceptance and royalty reconciliation.
+- **2026-10-28 implementation progress:** Delivered recording-to-work matching and unmatched-income exception handling engine in `packages/shared/src/rights/recordingWorkMatching.ts` with 6 unit tests (`packages/shared/src/rights/recordingWorkMatching.test.ts`). Resolves ISRC↔ISWC mappings, detects split disputes, quarantines unmatched royalties into unclaimed_black_box_pool, and enforces external society acknowledgement tokens for confirmed matching status; exported in `@/shared`.
 
 ### CI-V3-20261021-04 — DSP human-authorship and opt-in licensing controls [P1 POLICY VERIFICATION]
 - **Parent:** CI-V3-20261021-01; spawned by Oct 20 Spotify human-artistry report and Believe licensed fan-remix announcement.
