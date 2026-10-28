@@ -102,6 +102,7 @@ import {
     judgeDawTitleSanitization,
     judgeCatalogCollisionRisk,
     judgeStatementColumnLoss,
+    judgeEventRetentionTier,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -4359,6 +4360,72 @@ describe('judgeStatementColumnLoss (Judgment 76)', () => {
 
         const result = await judgeStatementColumnLoss(['ISRC'], 'cdbaby');
         expect(result).toBeNull();
+    });
+});
+
+describe('judgeEventRetentionTier (Judgment 77)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('returns null when judgments are disabled or empty text provided', async () => {
+        mocks.enabled.mockReturnValue(false);
+        expect(await judgeEventRetentionTier('contract signed', 'message')).toBeNull();
+        expect(await judgeEventRetentionTier('', 'message')).toBeNull();
+    });
+
+    it('judges critical contract as permanent record and promotes to longTerm', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    permanence: { score: 3.8 },
+                    is_business_record: { noul: 0.95 },
+                },
+            },
+        }));
+
+        const result = await judgeEventRetentionTier(
+            'Executed 50/50 master split agreement with Alice for album Velvet Voltage',
+            'message'
+        );
+        expect(result).not.toBeNull();
+        expect(result?.isPermanentRecord).toBe(true);
+        expect(result?.recommendedTier).toBe('longTerm');
+        expect(result?.permanenceScore).toBe(3.8);
+        expect(result?.rationale).toContain('High business permanence');
+    });
+
+    it('judges ephemeral chat as non-permanent working record', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    permanence: 0.2,
+                    is_business_record: 0.05,
+                },
+            },
+        }));
+
+        const result = await judgeEventRetentionTier(
+            'hey did you check that drum loop?',
+            'message'
+        );
+        expect(result).not.toBeNull();
+        expect(result?.isPermanentRecord).toBe(false);
+        expect(result?.recommendedTier).toBe('working');
+        expect(result?.permanenceScore).toBe(0.2);
+        expect(result?.rationale).toContain('Transient context');
+    });
+
+    it('handles failure gracefully by returning null', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev down');
+        });
+
+        expect(await judgeEventRetentionTier('contract', 'message')).toBeNull();
     });
 });
 
