@@ -6,6 +6,7 @@ import { google } from 'googleapis';
 import { Resend } from 'resend';
 import { randomBytes } from 'node:crypto';
 import { aggregateProviderUsage, normalizeProviderEvent } from './providerTelemetry';
+import { escapeEmailHtml, isSingleLineEmailRecipient, matchesWebhookSecret } from './adminSecurity';
 import { promises as dns } from 'node:dns';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -828,7 +829,7 @@ async function recordArtistCommunication(opts: {
 // Supports connected Google Workspace (Gmail API) or Resend fallback, and records full audit trail
 app.post('/api/waitlist/send-direct-email', requireAdminAuth, async (req, res) => {
   const { to, subject, message, fromAlias } = req.body;
-  if (!to || typeof to !== 'string' || !to.includes('@')) {
+  if (!isSingleLineEmailRecipient(to)) {
     return res.status(400).json({ error: 'A valid recipient email address is required.' });
   }
   if (!subject || typeof subject !== 'string' || !subject.trim()) {
@@ -850,12 +851,12 @@ app.post('/api/waitlist/send-direct-email', requireAdminAuth, async (req, res) =
   const adminUid = user?.uid ?? 'unknown';
   const adminEmail = user?.email ?? 'unknown';
 
-  const safeHtml = cleanMessage.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>');
+  const safeHtml = escapeEmailHtml(cleanMessage).replace(/\n/g, '<br/>');
   const emailHtml = `
     <div style="background:#090909;color:#f5f5f5;font-family:Arial,sans-serif;padding:32px">
       <div style="max-width:560px;margin:0 auto;border:1px solid #2f2f2f;border-radius:16px;padding:32px">
         <p style="color:#fbbf24;font-weight:700;letter-spacing:.08em;text-transform:uppercase">indii.music</p>
-        <h2 style="font-size:22px;line-height:1.3;margin-top:8px">${cleanSubject}</h2>
+        <h2 style="font-size:22px;line-height:1.3;margin-top:8px">${escapeEmailHtml(cleanSubject)}</h2>
         <div style="color:#c7c7c7;line-height:1.7;margin:20px 0">${safeHtml}</div>
         <hr style="border:none;border-top:1px solid #222;margin:24px 0" />
         <p style="color:#666;font-size:12px;line-height:1.5">Sent from ${senderEmail}</p>
@@ -1075,7 +1076,7 @@ const requireWebhookSecret = (req: express.Request, res: express.Response, next:
     return res.status(500).send('Server configuration error');
   }
   const token = req.headers['x-webhook-secret'] || req.headers['authorization']?.replace('Bearer ', '');
-  if (token !== secret) {
+  if (!matchesWebhookSecret(secret, token)) {
     console.warn('[Webhooks] Rejected request: invalid secret token');
     return res.status(401).send('Unauthorized');
   }
