@@ -150,6 +150,10 @@ jobs:
         VITE_DDEX_DPID_SPOTIFY: ${{ secrets.VITE_DDEX_DPID_SPOTIFY }}
         PRINTFUL_API_KEY: ${{ secrets.PRINTFUL_API_KEY }}
 
+    - name: Verify unsigned Linux package resources
+      if: runner.os == 'Linux'
+      run: npx electron-builder --dir --linux --publish never
+
     # Until production signing certificates are provisioned, Founder desktop
     # downloads are replaced manually and must not enter the auto-update feed.
     - name: Package unsigned Founder installer

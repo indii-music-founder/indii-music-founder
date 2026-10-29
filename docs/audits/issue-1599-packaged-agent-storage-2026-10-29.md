@@ -19,3 +19,9 @@ Six tests use actual temporary files and symlinks for path selection, write/over
 The Linux packaging CI must exercise the actual collection/after-pack hook. Installed Windows/macOS behavior, a genuine customer UI export/reopen journey, actual plan, and persistent customer acceptance remain unverified. No account was created or provider action performed during this pass.
 
 Knowledge updates are still pending: the source Python script mutates agent instruction files and invokes Git, while the handler/service target checkout or bundled paths. There is no established consumer for a writable packaged knowledge overlay. That script was not executed or presented as working. DAW socket authentication is also unresolved. The separately published render-input repair is not included in this branch; the earlier file-replacement repair is already on main. This is not a full ISSUE-1599 closure.
+
+## Authorized package gate follow-up
+
+The default branch Build workflow previously compiled without running electron-builder. Local unsigned packaging stopped at production preflight because this checkout lacked required configuration/credentials; no placeholders, alternate credentials or preflight bypass were used. On October 29 the owner explicitly approved the prepared CI package-check approach.
+
+The Linux build now runs `npx electron-builder --dir --linux --publish never` after its existing credential-backed application build. This exercises actual resource collection and the after-pack verification with the current CI environment. No keys are retrieved locally, and no installer publication or deployment is enabled by this step. The result must be inspected at the follow-up commit SHA; approval or workflow configuration alone is not package evidence.
