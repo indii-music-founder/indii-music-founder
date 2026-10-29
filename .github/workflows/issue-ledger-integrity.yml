@@ -5,6 +5,7 @@ on:
     paths:
       - '.agent/test_ledger/OPEN_ISSUES_V3.md'
       - 'scripts/issue-ledger-integrity*.mjs'
+      - 'scripts/issue-ledger-inventory*.mjs'
       - 'scripts/validate-issue-ledger.mjs'
       - '.github/workflows/issue-ledger-integrity.yml'
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - '.agent/test_ledger/OPEN_ISSUES_V3.md'
       - 'scripts/issue-ledger-integrity*.mjs'
+      - 'scripts/issue-ledger-inventory*.mjs'
       - 'scripts/validate-issue-ledger.mjs'
       - '.github/workflows/issue-ledger-integrity.yml'
   workflow_dispatch:
@@ -29,7 +31,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24.x'
-      - run: node --test scripts/issue-ledger-integrity.test.mjs
+      - run: node --test scripts/issue-ledger-integrity.test.mjs scripts/issue-ledger-inventory.test.mjs
+      - name: Report conservative ledger inventory
+        run: node scripts/issue-ledger-inventory.mjs
       - name: Compare findings with fresh base
         shell: bash
         run: |
