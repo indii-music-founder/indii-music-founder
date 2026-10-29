@@ -1,3 +1,4 @@
+import { isVerifiedOwnerContinuityCaller } from '../security/ownerQuotaContinuity';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { typesafeApiKey, arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
@@ -57,9 +58,12 @@ export const typesafeJudge = onCall(
                 userId: request.auth.uid,
                 policy: 'verified-free',
                 operationId: `typesafe-judge:${request.auth.uid}`,
+                ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth.token),
             });
             if (!protection.allowed) {
-                throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+                const code = protection.status === 429 ? 'resource-exhausted'
+                    : protection.status === 403 ? 'permission-denied' : 'unavailable';
+                throw new HttpsError(code, protection.message);
             }
         }
 
