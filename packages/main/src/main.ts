@@ -555,7 +555,7 @@ if (!gotTheLock) {
             'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
-            'daw:start', 'daw:stop', 'daw:get-state',
+            'daw:start', 'daw:stop', 'daw:get-state', 'daw:get-connection-info',
             'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path', 'video:compile-preview', 'video:read-artifact',
             'power:get-state', 'window:show', 'window:hide',
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',

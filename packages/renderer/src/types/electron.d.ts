@@ -358,6 +358,7 @@ export interface ElectronAPI {
     };
     // DAW Integration (Ableton/Logic/FL Studio Link)
     daw?: {
+        getConnectionInfo: () => Promise<{ url: string; token: string } | null>;
         start: () => Promise<boolean>;
         stop: () => Promise<boolean>;
         getState: () => Promise<DAWState | null>;
