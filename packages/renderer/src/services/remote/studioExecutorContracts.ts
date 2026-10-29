@@ -137,8 +137,9 @@ export interface ExecutorCoreDeps {
     now?: () => number;
 }
 
-/** Core watchdog cadences — preserved verbatim from the pre-extraction hook. */
+/** Core watchdog and presence cadences. */
 export const PROCESSING_TIMEOUT_MS = 120_000;
 export const PROCESSING_RECHECK_MS = 30_000;
-export const HEARTBEAT_INTERVAL_MS = 5_000;
+// Stay below the 120s freshness window without spending 720 protected calls/hour.
+export const HEARTBEAT_INTERVAL_MS = 60_000;
 export const RELAY_CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
