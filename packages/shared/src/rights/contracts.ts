@@ -111,6 +111,11 @@ export function filingStateForEvidence(evidence: RightsEvidence, trustedSource: 
 
 export const SessionControlSchema = z.enum(['none', 'agent', 'human']);
 export const SessionStateSchema = z.enum(['queued', 'starting', 'connected', 'paused', 'reconnecting', 'dispatch_unknown', 'termination_pending', 'ended', 'failed']);
+export const RightsNavigationSchema = z.object({
+  type: z.literal('navigation'),
+  navigationGeneration: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  viewportVersion: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+}).strict();
 export const SessionInputSchema = z.object({
   sessionId: RightsId, controlGeneration: z.number().int().nonnegative(), navigationGeneration: z.number().int().nonnegative(),
   viewportVersion: z.number().int().nonnegative(), sequence: z.number().int().positive(),
