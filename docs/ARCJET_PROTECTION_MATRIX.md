@@ -176,7 +176,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:41` | `createMarketplaceCheckout` | `onCall` | Present | Present |
 | `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |
-| `mcp/index.ts:161` | `mcpEndpoint` | `onRequest` | Present | Present |
+| `mcp/index.ts:169` | `mcpEndpoint` | `onRequest` | Present | Present |
 | `pod/checkout.ts:110` | `pod_createOrderCheckout` | `onCall` | Present | Present |
 | `pod/printful.ts:36` | `pod_printfulGetProducts` | `onCall` | Present | Present |
 | `pod/printful.ts:41` | `pod_printfulGetProduct` | `onCall` | Present | Present |

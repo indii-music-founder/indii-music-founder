@@ -8,6 +8,7 @@ import { arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 
 import { McpToolRegistry } from './registry.js';
+import { mcpMessageUrl } from './messageUrl.js';
 import { McpContext } from './types.js';
 import * as toolModules from './tools/index.js';
 
@@ -57,7 +58,7 @@ app.get('/sse', async (req, res) => {
 
     console.log(`[MCP Server] New SSE connection request for uid ${decoded.uid}`);
 
-    // Build a fully-qualified absolute HTTPS URL — never a bare relative
+    // Build a fully-qualified external callback URL — never a bare relative
     // path (the MCP SDK client resolves a leading-slash path against the
     // origin ROOT, silently dropping any prefix) and never derived from
     // req.protocol (reports 'http': Cloud Functions/Cloud Run terminates TLS
@@ -71,8 +72,15 @@ app.get('/sse', async (req, res) => {
     // route back to this same function; it's absent entirely when accessed
     // via the function's direct Cloud Run subdomain instead.
     const host = req.get('host') || '';
-    const functionPathPrefix = host.endsWith('.cloudfunctions.net') ? '/mcpEndpoint' : '';
-    const messageUrl = `https://${host}${functionPathPrefix}/message`;
+    let messageUrl: string;
+    try {
+        messageUrl = mcpMessageUrl(
+            host, process.env.FUNCTIONS_EMULATOR === 'true', process.env.GCLOUD_PROJECT,
+        );
+    } catch {
+        res.status(400).send('Invalid MCP gateway host.');
+        return;
+    }
     const transport = new SSEServerTransport(messageUrl, res);
     const sessionId = transport.sessionId;
 
