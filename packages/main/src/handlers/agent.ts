@@ -6,6 +6,8 @@ import path from 'path';
 import { AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { historyStore } from '../services/HistoryStore';
+import { accessControlService } from '../security/AccessControlService';
+import { replaceUniqueAgentChunks, resolveAuthorizedAgentFile } from '../utils/agent-file-access';
 
 export function registerAgentHandlers() {
     // Agent History Persistence (Production Ready)
@@ -121,37 +123,13 @@ export function registerAgentHandlers() {
         }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: any) => {
+    ipcMain.handle('agent:multi-replace-file-content', async (event: IpcMainInvokeEvent, args: { targetFile?: unknown; replacementChunks?: unknown }) => {
         try {
             validateSender(event);
-            const { targetFile, replacementChunks } = args;
-            
-            if (!targetFile || typeof targetFile !== 'string') {
-                 throw new Error('Invalid file path');
-            }
-            const allowedRoot = process.cwd();
-            const resolvedPath = path.resolve(allowedRoot, targetFile);
-            const rel = path.relative(allowedRoot, resolvedPath);
-            if (rel.startsWith('..') || path.isAbsolute(rel)) {
-                 throw new Error('Invalid file path');
-            }
-
-            let content = await fs.readFile(resolvedPath, 'utf-8');
-
-            for (const chunk of replacementChunks) {
-                const { targetContent, replacementContent } = chunk;
-                const occurrences = content.split(targetContent).length - 1;
-                if (occurrences === 1) {
-                    content = content.replace(targetContent, replacementContent);
-                } else if (occurrences > 1) {
-                    throw new Error(`Target content occurs multiple times, cannot safely replace: ${targetContent.substring(0, 30)}...`);
-                } else {
-                     throw new Error(`Target content not found in file: ${targetContent.substring(0, 30)}...`);
-                }
-            }
-
-            await fs.writeFile(resolvedPath, content, 'utf-8');
+            const resolvedPath = resolveAuthorizedAgentFile(args?.targetFile, process.cwd(), file => accessControlService.verifyAccess(file));
+            const content = await fs.readFile(resolvedPath, 'utf-8');
+            const replacement = replaceUniqueAgentChunks(content, args?.replacementChunks);
+            await fs.writeFile(resolvedPath, replacement, 'utf-8');
             return { success: true, data: { file: resolvedPath } };
         } catch (error) {
             log.error('Agent Multi Replace Failed:', error);
