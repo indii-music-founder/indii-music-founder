@@ -1,3 +1,4 @@
+import { delegatedTransportResponse } from '../executionFailure';
 import { MessageEnvelope, e2eEncryptionService } from '@/services/security/E2EEncryptionService';
 import { CARD_REGISTRY } from './CardRegistry';
 import { AgentCardSchema } from './AgentCard.schema';
@@ -256,7 +257,7 @@ class A2ARouter {
     }
 
     const result = await localCtx.runAgent(targetAgentId, task, localCtx.parentContext, localCtx.traceId);
-    return { text: result?.text || String(result), agentId: targetAgentId };
+    return delegatedTransportResponse(targetAgentId, result);
   }
 
   /**
@@ -311,7 +312,7 @@ class A2ARouter {
   ): AsyncIterable<MessageEnvelope> {
     try {
       const result = await localCtx.runAgent(targetAgentId, task, localCtx.parentContext, localCtx.traceId);
-      const message = { text: result?.text || String(result), agentId: targetAgentId };
+      const message = delegatedTransportResponse(targetAgentId, result);
 
       await this.ensureRouterKey();
       const envelope = await e2eEncryptionService.encryptMessage(message, recipientId, MY_AGENT_ID);

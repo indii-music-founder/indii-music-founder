@@ -1,3 +1,4 @@
+import { delegatedAgentResult, unauthorizedToolFailure } from './executionFailure';
 import { logger } from '@/utils/logger';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -370,11 +371,7 @@ export class BaseAgent implements SpecializedAgent {
                     }
 
                     const result = await context.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
-                    return {
-                        success: true,
-                        data: result,
-                        message: `Delegated task to ${targetAgentId}`
-                    };
+                    return delegatedAgentResult(targetAgentId, result);
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
                     return toolError(`Delegation failed: ${message}`, 'EXECUTION_ERROR');
@@ -1501,15 +1498,16 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
                         if (authorizedTools !== undefined && !authorizedTools.includes(name) && !universalTrashTools.has(name)) {
                             logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
-                            const blockedResult: ToolFunctionResult = {
-                                success: false,
-                                error: `Tool '${name}' is not authorized for agent '${this.id}'.`
-                            };
+                            const failure = unauthorizedToolFailure(this.id, name);
+                            const message = `Tool '${name}' is not authorized for agent '${this.id}'.`;
+                            const blockedResult: ToolFunctionResult = { success: false, error: message, failure };
                             toolCalls.push({ name, args, result: blockedResult });
-                            lastToolResult = blockedResult;
-                            // Inject block notice into conversation and continue loop
-                            fullPrompt += `\n[Tool Call: ${name}(${elideBase64Payloads(JSON.stringify(args))})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
-                            continue;
+                            onProgress?.({ type: 'tool_result', toolName: name, content: `Error: ${message}` });
+                            await executionContext.rollback();
+                            return {
+                                text: `${message} The blocked call was not executed. Choose an authorized agent to continue.`,
+                                error: message, failure, data: blockedResult, toolCalls,
+                            };
                         }
 
                         // ISSUE-1172 fix (re-ticketed from ISSUE-1115): Artist Operating Profile gate.
@@ -1661,6 +1659,14 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         // Store tool call and result
                         lastToolResult = result;
                         toolCalls.push({ name, args, result });
+                        if (!result.success && result.failure?.retryable === false) {
+                            await executionContext.rollback();
+                            return {
+                                text: result.message || result.error || 'The delegated action stopped. Review the recorded failure before trying again.',
+                                error: result.error || result.failure.code,
+                                failure: result.failure, data: result.data, toolCalls,
+                            };
+                        }
 
                         // Item 406: Write an immutable, server-timestamped tool audit
                         // record. The callable binds the event to the authenticated

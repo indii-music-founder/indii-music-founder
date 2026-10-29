@@ -31,6 +31,8 @@ export class GraphDecompositionService {
         logger.info(`[GraphDecomposition] Decomposing query: "${userQuery.slice(0, 50)}..."`);
 
         const prompt = `
+Bug/feature intake ownership: GitHub issue filing and report_bug/request_feature steps belong to generalist (Conductor), not devops. Other diagnostic work can be assigned separately to an authorized specialist.
+
         You are the indii Architect, the high-reasoning engine responsible for decomposing complex user requests into Directed Acyclic Graphs (DAGs) of specialist agent tasks.
         
         USER REQUEST: "${userQuery}"

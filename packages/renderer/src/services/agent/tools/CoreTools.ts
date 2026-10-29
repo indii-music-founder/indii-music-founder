@@ -1,3 +1,4 @@
+import { delegatedAgentResult } from '../executionFailure';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
@@ -58,11 +59,7 @@ export const CoreTools = {
         };
 
         const result = await agentService.runAgent(args.targetAgentId, args.task, delegatedContext, context?.traceId, context?.attachments);
-        return {
-            success: true,
-            data: result,
-            message: `Delegated to ${args.targetAgentId}. Result: ${result.text.substring(0, 500)}${result.text.length > 500 ? '...' : ''}`
-        };
+        return delegatedAgentResult(args.targetAgentId, result);
     }),
 
     request_approval: wrapTool('request_approval', async (args: {

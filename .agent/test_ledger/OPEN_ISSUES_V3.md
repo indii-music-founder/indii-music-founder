@@ -6569,6 +6569,16 @@ outcome. Reproduce against current source before implementation or closure.
 
 ---
 
+### ISSUE-1603: Boardroom bug reporting delegates to an unauthorized role and repeats terminal tool denials
+- **Status:** 🟡 PARTIAL (2026-10-29; source repair awaiting publication and genuine app acceptance)
+- **Severity:** 🟠 HIGH
+- **GitHub:** [#563](https://github.com/indii-music-founder/indii-music-founder/issues/563)
+- **Evidence:** The owner supplied a genuine Conductor/DevOps transcript with repeated `report_bug` authorization denials, maximum iterations, and a later rate-limit response. Source inspection found unconditional shared bug-filing instructions, DevOps lacking that capability, denial continuing the execution loop, and delegation wrappers discarding child failure status. Provider unavailability and the later rate limit remain separate, unverified causes.
+- **Repair:** Keep intake with the authorized Conductor; make shared instructions permission-aware; stop a denied execution after one blocked attempt; preserve terminal child failures through direct, graph and A2A delegation. No role permissions or iteration budgets are expanded.
+- **Acceptance:** After release, use the genuine signed-in app to request one authorized bug report and verify its durable GitHub/Firestore receipt. Verify a denied role produces one explicit capability failure without a retry storm or false completion. Local structural suites are not customer acceptance. See [repair evidence](../../docs/audits/issue-1603-boardroom-report-recovery-2026-10-29.md).
+
+---
+
 ## 2026-10-19 — Competitive-intelligence execution-graph follow-up (proposed; not verified complete)
 
 > Source: October 19 indii.music daily competitive-intelligence brief; PR #421 rights-registration implementation. These are **work proposals and verification gates**, not independently confirmed new defects. Reconcile against existing issues before opening GitHub tickets. Existing report_bug/reportBugFn → Firestore/GitHub remains the authoritative bug-intake route. Do not close from plans, semantic similarity, or local-only mocks.
