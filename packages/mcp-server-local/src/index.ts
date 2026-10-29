@@ -16,6 +16,7 @@ import { getBlenderStatus } from './blender/discovery.js';
 import { listAvailableTemplates } from './blender/templates.js';
 import { executeBlenderRender } from './blender/executor.js';
 import { sendLiveBlenderCommand, checkLiveBlenderConnected } from './blender/liveBridge.js';
+import { githubReviewUrls, sentryIssuesUrl } from './remoteRequestPaths.js';
 import type {
     BlenderRenderOptions,
     BlenderTemplateId,
@@ -241,9 +242,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     }
 
     if (name === 'get_github_pr_comments') {
-        const owner = String(args?.owner);
-        const repo = String(args?.repo);
-        const pull_number = Number(args?.pull_number);
+        let urls: ReturnType<typeof githubReviewUrls>;
+        try { urls = githubReviewUrls(args); }
+        catch { throw new McpError(ErrorCode.InvalidParams, 'Invalid GitHub repository or pull request number'); }
         const token = process.env.GITHUB_TOKEN;
 
         if (!token) {
@@ -254,13 +255,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         }
 
         try {
-            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${pull_number}/reviews`, {
+            const response = await fetch(urls.reviews, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'indii-MCP'
                 },
                 signal: AbortSignal.timeout(15_000),
+                redirect: 'error',
             });
 
             if (!response.ok) {
@@ -270,15 +272,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
             const reviews = await response.json();
             
             // Also fetch review comments (line-specific)
-            const commentsResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${pull_number}/comments`, {
+            const commentsResponse = await fetch(urls.comments, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'indii-MCP'
                 },
                 signal: AbortSignal.timeout(15_000),
+                redirect: 'error',
             });
-            const comments = commentsResponse.ok ? await commentsResponse.json() : [];
+            if (!commentsResponse.ok) {
+                throw new Error(`GitHub comments API error: ${commentsResponse.status} ${commentsResponse.statusText}`);
+            }
+            const comments = await commentsResponse.json();
 
             return {
                 content: [
@@ -298,8 +304,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     }
 
     if (name === 'get_sentry_issues') {
-        const org = String(args?.organization_slug);
-        const project = String(args?.project_slug);
+        let url: string;
+        try { url = sentryIssuesUrl(args); }
+        catch { throw new McpError(ErrorCode.InvalidParams, 'Invalid Sentry organization or project'); }
         const token = process.env.SENTRY_TOKEN;
 
         if (!token) {
@@ -310,12 +317,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         }
 
         try {
-            const response = await fetch(`https://sentry.io/api/0/projects/${org}/${project}/issues/?query=is:unresolved`, {
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
                 },
                 signal: AbortSignal.timeout(15_000),
+                redirect: 'error',
             });
 
             if (!response.ok) {
