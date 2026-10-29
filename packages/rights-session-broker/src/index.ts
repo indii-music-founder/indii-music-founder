@@ -5,8 +5,9 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { OAuth2Client } from 'google-auth-library';
 import { WebSocket, WebSocketServer } from 'ws';
-import { RightsId, SessionInputSchema, RIGHTS_LIMITS, isRightsSessionClosed, RightsDepositSelectionSchema, RightsBrowserDialogSchema, RightsBrowserExecutionSchema, mayClaimRightsBrowserExecution, type RightsBrowserExecution, type RightsCase } from '@indii/shared';
+import { RightsId, SessionInputSchema, RIGHTS_LIMITS, isRightsSessionClosed, RightsDepositSelectionSchema, RightsBrowserDialogSchema, RightsNavigationSchema, RightsBrowserExecutionSchema, mayClaimRightsBrowserExecution, type RightsBrowserExecution, type RightsCase } from '@indii/shared';
 import { rememberCookies, restoreCookies } from './vault.js';
+import { detachSessionSocket, SessionResources } from './sessionResources.js';
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -35,7 +36,7 @@ async function becomeLeader(): Promise<boolean> {
   if (lease) leaderGeneration = lease.generation;
   return Boolean(lease);
 }
-const heartbeat = setInterval(() => { void becomeLeader().then(ok => { if (!ok) for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }).catch(() => { leaseUntilMs = 0; for (const pair of pairs.values()) { pair.worker?.close(1012); pair.client?.close(1012); } }); }, 5000);
+const heartbeat = setInterval(() => { void becomeLeader().then(ok => { if (!ok) for (const pair of pairs.values()) pair.stop(); }).catch(() => { leaseUntilMs = 0; for (const pair of pairs.values()) pair.stop(); }); }, 5000);
 
 const server = createServer((req, res) => {
   if (req.url === '/healthz') { res.writeHead(draining ? 503 : 200); res.end('ok'); }
@@ -89,22 +90,60 @@ ws.on('connection', socket => {
           tx.update(ref, { executionId: execution!.executionId, cloudExecutionId: execution!.cloudExecutionId, brokerGeneration: leaderGeneration, state: 'connected', workerHeartbeatAtMs: Date.now(), control: 'none', controlGeneration: live.controlGeneration + 1 });
         });
       }
+      if (socket.readyState !== WebSocket.OPEN) throw new Error('Connection closed during authorization');
       clearTimeout(authTimeout);
       let pair = pairs.get(sessionId);
       if (!pair) {
-        const unsub = ref.onSnapshot(snapshot => {
-          const current = snapshot.data();
-          const active = pairs.get(sessionId);
-          if (!current) return;
-          send(active?.client, { type: 'status', sessionId, state: current.state, control: current.control, controlGeneration: current.controlGeneration, expiresAtMs: current.expiresAtMs, paymentEnabled: current.paymentEnabled });
-          if (current.requestedControl) send(active?.worker, { type: 'control', control: current.requestedControl, generation: current.controlGeneration });
-        });
-        const commandsUnsub = ref.collection('commands').where('state', '==', 'pending').onSnapshot(snap => {
-          for (const doc of snap.docs) send(pairs.get(sessionId)?.worker, { type: 'action', commandId: doc.id, ...doc.data() });
-        });
-        pair = { uid, stop: () => { unsub(); commandsUnsub(); } }; pairs.set(sessionId, pair);
+        const created: { uid: string; worker?: WebSocket; client?: WebSocket; stop: () => void } = { uid, stop: () => resources.stop() };
+        const resources = new SessionResources(session.expiresAtMs, () => {
+          if (pairs.get(sessionId) === created) pairs.delete(sessionId);
+        }, error => console.error('Rights broker resource cleanup failed', error));
+        pair = created;
+        pairs.set(sessionId, created);
+        resources.add(() => created.worker?.close(1012));
+        resources.add(() => created.client?.close(1012));
+        try {
+          resources.add(ref.onSnapshot(snapshot => {
+            if (pairs.get(sessionId) !== created) return;
+            const current = snapshot.data();
+            if (!current) {
+              created.stop();
+              return;
+            }
+            send(created.client, { type: 'status', sessionId, state: current.state, control: current.control, controlGeneration: current.controlGeneration, expiresAtMs: current.expiresAtMs, paymentEnabled: current.paymentEnabled });
+            // Keep termination_pending attached so the worker can acknowledge
+            // shutdown; revoked control is not proof that its process stopped.
+            if (['ended', 'failed'].includes(current.state) || current.expiresAtMs <= Date.now()) {
+              created.stop();
+              return;
+            }
+            if (current.requestedControl) send(created.worker, { type: 'control', control: current.requestedControl, generation: current.controlGeneration });
+          }, error => { console.error('Rights broker session listener failed', error); created.stop(); }));
+          resources.add(ref.collection('commands').where('state', '==', 'pending').onSnapshot(snap => {
+            if (pairs.get(sessionId) !== created) return;
+            for (const doc of snap.docs) send(created.worker, { type: 'action', commandId: doc.id, ...doc.data() });
+          }, error => { console.error('Rights broker command listener failed', error); created.stop(); }));
+        } catch (error) {
+          created.stop();
+          throw error;
+        }
       }
       if (pair.uid !== uid) throw new Error('Owner mismatch');
+      socket.on('close', () => {
+        const active = pairs.get(sessionId);
+        if (!active) return;
+        if (packet.kind === 'client' && detachSessionSocket(active, 'client', socket)) send(active.worker, { type: 'client_presence', connected: false });
+        if (packet.kind === 'worker' && detachSessionSocket(active, 'worker', socket)) {
+          void db.runTransaction(async tx => {
+            const live = (await tx.get(ref)).data();
+            // A replacement worker may attach while this transaction retries.
+            if (draining || Date.now() >= leaseUntilMs || pairs.get(sessionId)?.worker || !live
+              || live.brokerGeneration !== leaderGeneration || isRightsSessionClosed(live.state) || live.executionId !== packet.executionId) return;
+            tx.update(ref, { control: 'none', requestedControl: FieldValue.delete(), state: 'reconnecting', controlGeneration: live.controlGeneration + 1 });
+          }).catch(error => console.error('Rights broker disconnect update failed', error));
+        }
+      });
+      socket.on('error', () => socket.close());
       if (packet.kind === 'worker') {
         if (pair.worker?.readyState === WebSocket.OPEN) throw new Error('Worker already attached');
         pair.worker = socket;
@@ -149,7 +188,7 @@ ws.on('connection', socket => {
               const selection = RightsDepositSelectionSchema.parse(event);
               if (liveSession.control === 'human') send(active.client, selection);
             }
-            else if (event.type === 'navigation') send(active.client, event);
+            else if (event.type === 'navigation') send(active.client, RightsNavigationSchema.parse(event));
             else if (event.type === 'heartbeat' || event.type === 'activity') await db.runTransaction(async tx => {
               const live = (await tx.get(ref)).data();
               if (!live || isRightsSessionClosed(live.state) || live.executionId !== packet.executionId) return;
@@ -174,32 +213,18 @@ ws.on('connection', socket => {
                 tx.set(capacityRef, { active });
                 if (filing?.state === 'in_progress') tx.update(filingRef, { state: 'outcome_unknown' });
               });
-              active.stop(); active.client?.close(1000); pairs.delete(sessionId);
+              active.stop();
             }
           }
         })().catch(() => { send(socket, { type: 'error', code: 'SESSION_OPERATION_FAILED' }); });
       });
-      socket.on('close', () => {
-        const active = pairs.get(sessionId);
-        if (!active) return;
-        if (packet.kind === 'client' && active.client === socket) { active.client = undefined; send(active.worker, { type: 'client_presence', connected: false }); }
-        if (packet.kind === 'worker' && active.worker === socket) {
-          active.worker = undefined;
-          void db.runTransaction(async tx => {
-            const live = (await tx.get(ref)).data();
-            if (!live || isRightsSessionClosed(live.state) || live.executionId !== packet.executionId) return;
-            tx.update(ref, { control: 'none', requestedControl: FieldValue.delete(), state: 'reconnecting', controlGeneration: live.controlGeneration + 1 });
-          }).catch(() => {});
-        }
-      });
-      socket.on('error', () => socket.close());
     })().catch(() => { clearTimeout(authTimeout); socket.close(1008, 'Session authorization failed'); });
   });
 });
 
 process.on('SIGTERM', () => {
   draining = true; clearInterval(heartbeat);
-  for (const pair of pairs.values()) { pair.stop(); pair.worker?.close(1012); pair.client?.close(1012); }
+  for (const pair of pairs.values()) pair.stop();
   server.close();
 });
 server.listen(Number(process.env.PORT ?? 8080));

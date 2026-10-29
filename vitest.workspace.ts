@@ -81,6 +81,16 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'rights-session-broker',
+      environment: 'node',
+      include: ['packages/rights-session-broker/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+      setupFiles: [],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'admin-dashboard',
       environment: 'jsdom',
       include: [
