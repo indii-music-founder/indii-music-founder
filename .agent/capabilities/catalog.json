@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "077fd87369d1436071881a52f9030bf866dc6d4728cb14645aba67f94f03f035",
+  "sourceDigest": "ff10882545c2202529efdec100559181c3b3fbd00c5982b54364d284bf95fad0",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 37,
     "conditional": 70,
-    "quarantined": 97,
+    "quarantined": 98,
     "deprecated": 1
   },
   "capabilities": [
@@ -619,6 +619,36 @@
       "description": "node --test scripts/arcjet-protection-inventory.test.mjs && node scripts/arcjet-protection-inventory.mjs",
       "descriptionHash": "d4f4a1b020288847a5b2ef270e8431fc9b1942980ea1b21e2ee5c60e9416ef84",
       "contentHash": "542f9a9668e9f964db6d3cd57cef8a4e5c10d77e00a46bc51e65d4ce2c04aeb3",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:check:brace-resolution",
+      "name": "npm run check:brace-resolution",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "node scripts/check-brace-resolution.mjs",
+      "descriptionHash": "68f0811d60c4047d3b49b3663feb6b08637f76fbc87929c00687d7700366b37e",
+      "contentHash": "c2ba3fa689655f4afba1ab3fcbe920ff09c468ab4d2a208dd525d023ac120ad8",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [
