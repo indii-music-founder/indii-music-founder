@@ -180,6 +180,7 @@ export interface ElectronVideoAPI {
 }
 
 export interface ElectronDawAPI {
+    getConnectionInfo: () => Promise<{ url: string; token: string } | null>;
     start: () => Promise<unknown>;
     stop: () => Promise<unknown>;
     getState: () => Promise<unknown>;

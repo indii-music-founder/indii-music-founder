@@ -6,16 +6,21 @@ import log from 'electron-log';
 import { BrowserWindow } from 'electron';
 
 export const registerDawHandlers = () => {
-    ipcMain.handle('daw:start', (event) => {
+    ipcMain.handle('daw:start', async (event) => {
         validateSender(event);
-        dawServer.start();
+        await dawServer.start();
         return true;
     });
 
-    ipcMain.handle('daw:stop', (event) => {
+    ipcMain.handle('daw:stop', async (event) => {
         validateSender(event);
-        dawServer.stop();
+        await dawServer.stop();
         return true;
+    });
+
+    ipcMain.handle('daw:get-connection-info', event => {
+        validateSender(event);
+        return dawServer.getConnectionInfo();
     });
 
     ipcMain.handle('daw:get-state', (event) => {

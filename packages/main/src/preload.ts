@@ -272,6 +272,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // DAW Integration
     daw: {
         start: () => ipcRenderer.invoke('daw:start'),
+        getConnectionInfo: () => ipcRenderer.invoke('daw:get-connection-info'),
         stop: () => ipcRenderer.invoke('daw:stop'),
         getState: () => ipcRenderer.invoke('daw:get-state'),
         onStateChanged: (callback: (state: unknown) => void) => {
