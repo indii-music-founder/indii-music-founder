@@ -2,6 +2,8 @@ import * as admin from 'firebase-admin';
 import { failedOperationResult, operationResult, requireString, toolResponse, verifyReleaseOwnership, OwnershipFirestore } from '../helpers.js';
 import { IndiiMcpTool, McpContext, McpToolResponse } from '../types.js';
 
+import { clearanceTrackOwnerAllowed, parseClearanceTrackId, summarizeSampleDeclarations } from './sampleClearancePolicy.js';
+
 const TOOL_NAME = 'audit_sample_clearance';
 
 /**
@@ -28,7 +30,7 @@ export const auditSampleClearance: IndiiMcpTool = {
 
         let trackId: string;
         try {
-            trackId = requireString(rawArgs, 'trackId');
+            trackId = parseClearanceTrackId(rawArgs.trackId);
         } catch (error: unknown) {
             return toolResponse(failedOperationResult({
                 tool: TOOL_NAME,
@@ -50,44 +52,27 @@ export const auditSampleClearance: IndiiMcpTool = {
                 await verifyReleaseOwnership(db as unknown as OwnershipFirestore, actorUid, releaseId);
             }
 
-            // Read track metadata
-            const trackSnap = await db.collection('tracks').doc(trackId).get();
-            if (!trackSnap.exists) {
-                return toolResponse(failedOperationResult({
-                    tool: TOOL_NAME,
-                    actorUid,
-                    resourceType: 'track',
-                    resourceId: trackId,
-                    code: 'NOT_FOUND',
-                    message: `Track ${trackId} not found.`,
-                    retryable: false,
-                }));
-            }
-
-            const trackData = trackSnap.data() || {};
-            const samples = trackData.samples || [];
-            const interpolations = trackData.interpolations || [];
-            const clearanceStatus = trackData.clearanceStatus || 'unverified';
-
-            // Determine verdict: DECLARED-BUT-UNVERIFIED or NONE-DECLARED
-            const hasSampleMetadata = Array.isArray(samples) && samples.length > 0;
-            const hasInterpolationMetadata = Array.isArray(interpolations) && interpolations.length > 0;
-            const samplesDeclarationCount = (hasSampleMetadata ? samples.length : 0) + (hasInterpolationMetadata ? interpolations.length : 0);
-
-            let verdict = 'NONE-DECLARED';
-            const warnings: string[] = [];
-
-            if (samplesDeclarationCount > 0) {
-                verdict = 'DECLARED-BUT-UNVERIFIED';
-                warnings.push(`Track declares ${samplesDeclarationCount} sample(s)/interpolation(s) but clearanceStatus is '${clearanceStatus}' — no fingerprint verification has been performed.`);
-                if (clearanceStatus === 'unverified') {
-                    warnings.push('CRITICAL: Verify clearance with rights holders before commercial use. Declared samples have NOT been validated.');
+            // A release grant never authorizes an unrelated track. Resolve the
+            // caller's canonical library first, then the owner-checked legacy store.
+            const scoped = await db.collection('users').doc(actorUid).collection('tracks').doc(trackId).get();
+            let trackData: Record<string, unknown>;
+            if (scoped.exists) {
+                trackData = scoped.data() ?? {};
+                if (!clearanceTrackOwnerAllowed('user', actorUid, trackData.userId)) {
+                    throw new Error('Forbidden: track not found or not owned by caller');
                 }
             } else {
-                warnings.push('No samples or interpolations declared in track metadata.');
+                const legacy = await db.collection('tracks').doc(trackId).get();
+                const legacyData = legacy.data() ?? {};
+                if (!legacy.exists || !clearanceTrackOwnerAllowed('legacy', actorUid, legacyData.userId)) {
+                    throw new Error('Forbidden: track not found or not owned by caller');
+                }
+                trackData = legacyData;
             }
 
-            warnings.push('P7a interim: metadata-declaration check only. Full fingerprint analysis (P7b) pending vendor integration.');
+            const summary = summarizeSampleDeclarations(
+                trackData.samples, trackData.interpolations, trackData.clearanceStatus,
+            );
 
             return toolResponse(operationResult({
                 tool: TOOL_NAME,
@@ -95,16 +80,8 @@ export const auditSampleClearance: IndiiMcpTool = {
                 status: 'succeeded',
                 resourceType: 'track',
                 resourceId: trackId,
-                warnings,
-                data: {
-                    verdict,
-                    samplesDeclarationCount,
-                    hasSampleMetadata,
-                    hasInterpolationMetadata,
-                    clearanceStatus,
-                    fingerprintAnalysisAvailable: false,
-                    note: 'This is a metadata check only. Fingerprint analysis (P7b) requires vendor credentials.',
-                },
+                warnings: summary.warnings,
+                data: summary.data,
             }));
         } catch (error) {
             return toolResponse(failedOperationResult({
@@ -112,7 +89,9 @@ export const auditSampleClearance: IndiiMcpTool = {
                 actorUid,
                 resourceType: 'track',
                 resourceId: trackId,
-                code: 'AUDIT_FAILED',
+                code: error instanceof TypeError ? 'INVALID_ARGUMENT'
+                    : error instanceof Error && error.message.startsWith('Forbidden:') ? 'PERMISSION_DENIED'
+                    : 'AUDIT_FAILED',
                 message: error instanceof Error ? error.message : 'Sample clearance audit failed.',
                 retryable: false,
             }));
