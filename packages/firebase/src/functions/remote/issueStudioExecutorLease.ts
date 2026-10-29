@@ -1,3 +1,4 @@
+import { isVerifiedOwnerContinuityCaller } from '../security/ownerQuotaContinuity';
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { createHash, randomBytes, randomUUID } from 'crypto';
@@ -34,6 +35,7 @@ async function admitStudioRelayCaller(
     userId: request.auth.uid,
     policy: request.auth.token?.admin === true ? 'admin' : 'verified-free',
     operationId: `studio-relay:${operation}:${randomUUID()}`,
+    ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth.token),
   });
   if (!protection.allowed) {
     const code = protection.status === 429

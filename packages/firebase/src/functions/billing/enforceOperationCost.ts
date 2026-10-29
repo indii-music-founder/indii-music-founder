@@ -1,3 +1,4 @@
+import { isVerifiedOwnerContinuityCaller } from '../security/ownerQuotaContinuity';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -110,6 +111,7 @@ async function requireCostCallableAdmission(
       isAdmin: request.auth?.token.admin === true,
     }),
     operationId: `${operation}:${crypto.randomUUID()}`,
+    ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth?.token),
   });
   if (!protection.allowed) {
     const code = protection.status === 429

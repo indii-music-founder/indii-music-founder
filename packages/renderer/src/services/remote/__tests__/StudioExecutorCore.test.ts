@@ -153,7 +153,7 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         return { core, relay, adapter, calls, deps };
     }
 
-    it('publishes presence immediately and on the 5s heartbeat cadence', async () => {
+    it('publishes presence immediately and on the 60s heartbeat cadence', async () => {
         const { core, relay } = build();
         core.start();
 
@@ -189,6 +189,7 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         expect(relay.relay.pushDesktopState).toHaveBeenCalledTimes(1);
         expect(subscribeVisibility).toHaveBeenCalledTimes(1);
 
+        await vi.advanceTimersByTimeAsync(0); // Let the initial publish settle first.
         fireVisibility!();
         await vi.advanceTimersByTimeAsync(0);
         expect(relay.relay.pushDesktopState.mock.calls.length).toBeGreaterThanOrEqual(2);
