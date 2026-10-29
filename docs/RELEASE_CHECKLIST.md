@@ -2,6 +2,50 @@
 
 Use this internal checklist to verify the Founder release artifacts (macOS DMG and Windows NSIS EXE) before and after deployment. Founders do not see this document; it is for release QA.
 
+## Owner prerequisites and terminal evidence — October 29, 2026
+
+This table is an execution checklist, not a fresh credential inventory or a
+release-readiness verdict. The August secret audit and earlier release probes
+are historical; no secret values or provider accounts were inspected for this
+update. Keep credentials in their approved vault/secret store, never in this
+document, screenshots, logs, or chat.
+
+| Finding | Owner action / official entry point | Evidence needed before closure |
+| --- | --- | --- |
+| #1163 signing and updater feed | Confirm the existing authorized Apple signing/notarization identity through the [Apple Developer account](https://developer.apple.com/account/) and the signing steps below. Confirm the Windows signing owner separately. | Approved signed/notarized artifacts, clean-device installation, and all three stable updater manifests resolving to the same verified release. A successful build alone is insufficient. |
+| #1173 Meta Business | Sign in to [Meta for Developers](https://developers.facebook.com/docs/marketing-api/get-started/) and verify the actual Business, app, Page/Instagram ownership, current permissions, callbacks, app mode and approval status. | Genuine authorized account connection and the bounded app path working; any ad creation/spend or public posting requires separate approval. The official documentation required sign-in during this update, so current permissions remain unverified. |
+| #1372 production Stripe | The account owner confirms the intended account and live/sandbox mode in [Stripe API keys](https://dashboard.stripe.com/apikeys), the matching products/prices used by `packages/firebase/src/stripe/config.ts`, and the endpoint's separate [webhook configuration](https://dashboard.stripe.com/webhooks). | An explicitly approved genuine checkout, signed webhook settlement, persisted entitlement and reload. Sandbox proof stays labelled sandbox. Do not charge, refund, fulfill or rotate credentials from this checklist alone. |
+| #1373 integration readiness | Reconcile `docs/SECRET_INVENTORY.md` and V3 against authorized provider dashboards and deployed bindings. Record configured/missing/expired/placeholder by integration and environment, without values. | A real terminal service receipt for each claimed capability. A nonempty secret or a passing local test is not proof that an integration works. Missing/expired authorization stops that integration at its official sign-in flow. |
+| #1428 social inventory | Use the channel registry in `docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md` and the launch dossier. Open each claimed account under its real owner; record exact URL, administrator, recovery/2FA ownership, brand status and integration status. | Every claimed destination is ownership-verified; absent channels have an explicit create/decline decision. Store recovery material only in the vault. Account creation, permission changes and public posts need their own authority. |
+| #1448 Maps | Confirm the existing Cloud project, billing, enabled API and restricted browser/server key bindings in [Google Cloud credentials](https://console.cloud.google.com/apis/credentials?project=indii-music-founder). Reconcile the October 1 ledger correction before repeating already-completed key work. | Genuine `search_places` and matrix results, map/waypoint reload, and draft deletion through the authorized app. Check API eligibility before assuming key enablement is sufficient; see the provider note below. |
+| #1169 engine-dsp | The operator reviews the private Cloud Run target, Cloud Tasks queue, service identities, invoker/enqueue/signing permissions and `ENGINE_DSP_URL` / `ENGINE_DSP_SERVICE_ACCOUNT` bindings. Provisioning and deployment need explicit approval. | A genuine canonical master dispatched with accepted OIDC and a hash/generation-bound analysis receipt; the master remains unchanged. Configuration and IAM screenshots alone do not close the issue. |
+
+**Provider notes, checked October 29:** Apple documents Developer ID signing
+and notarization for external macOS distribution in its
+[Developer ID guide](https://developer.apple.com/developer-id/). Stripe separates
+[sandbox/live API keys](https://docs.stripe.com/keys) from the
+[endpoint signing secret](https://docs.stripe.com/events/manage-webhook-endpoints#signature-errors).
+Google's [Distance Matrix legacy notice](https://developers.google.com/maps/documentation/distance-matrix/overview)
+says new Cloud projects can no longer enable that API as of October 2026;
+existing projects remain supported. If this project is ineligible, assess the
+[Routes API](https://developers.google.com/maps/documentation/routes/get-api-key)
+against the actual adapter before changing configuration. Do not silently swap
+providers or claim the existing implementation is validated by those docs.
+
+**Bound the next live run:** name the environment, genuine account and displayed
+plan, exact path, disposable artifacts/recipients, spend cap, rollback and
+terminal evidence. Founder checkout (#1424), refunds/disputes (#1406), Printful
+fulfillment (#1407), paid generation (#1158/#1159/#1168), cleanup (#1413), and
+invitation/milestone delivery (#1420) require their relevant owner approvals.
+For Founding Owner, reconcile approved business terms, `STRIPE_PRICE_FOUNDER_ONE_TIME`,
+server eligibility/usage limits and permanent rights before enabling payment.
+Do not derive current offer terms from a legacy price constant.
+
+Missing or expired credentials require the official authorization flow and a
+wait for the owner. Do not switch identities, mint replacement credentials,
+impersonate accounts or substitute another authentication mechanism. This
+checklist authorizes no external operation and closes no issue.
+
 ## 🔴 LIVE INCIDENT (ISSUE-992, 2026-07-10) — stable macOS update channel is empty
 
 `v1.64.6` and `v1.64.5` were both confirmed ad-hoc signed (`codesign -d` reports
@@ -44,7 +88,12 @@ checks immediately afterwards:
 
 ## Active Founder Launch Station Tasks (October 2026)
 
-All 37 engineering issues are closed and verified on `main`. The four remaining real-world operational gates are detailed with complete copy-paste scripts, OAuth settings, and video storyboards in [`docs/launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md`](launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md):
+The historical launch station groups below are not a current engineering or
+release-acceptance verdict. Use the [active V3 ledger](../.agent/test_ledger/OPEN_ISSUES_V3.md)
+for pending work and the owner table above for authorization boundaries. The
+[launch operations dossier](launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md) contains
+historical scripts, OAuth settings and clip storyboards; reconcile them with
+current implementation and approval before execution.
 
 1. **GCP OAuth Consent Screen (`ISSUE-1400`):**
    - Add founder email(s) to [GCP Console OAuth Consent Screen Test Users](https://console.cloud.google.com/apis/credentials/consent?project=indii-music-founder) (2-min unblock).
@@ -54,8 +103,12 @@ All 37 engineering issues are closed and verified on `main`. The four remaining 
    - Save output files into `packages/landing/public/clips/`.
 3. **Social Channel Ownership & 2FA Vault (`ISSUE-1428`):**
    - Verify handles and register 1Password/Bitwarden vault credentials per the Master Channel Registry table in `docs/launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md` § Section 4.
-4. **indii Internal Marketing Project Seed (`ISSUE-1429`):**
-   - Run `npx tsx scripts/seed-internal-marketing-launch.ts` to seed the "indii.music Public Launch" campaign into Firestore.
+4. **indii Internal Marketing Acceptance (`ISSUE-1429`):**
+   - The ledger's historical seeded campaign is not genuine-user acceptance
+     under `.agent/REAL_USER_AUTHENTICITY.md`. Do not rerun the seeder to prove
+     the product path. Create any approved internal project through the visible
+     user workflow, then record actual approvals, output receipts and persisted
+     results. The prior closed label must not be reused as proof of this gate.
 
 ## Human Action Items — Desktop Signing & Notarization
 
