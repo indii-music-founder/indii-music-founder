@@ -9,6 +9,7 @@
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 
 import log from 'electron-log';
 import type { IndiiVideoProject } from '@indii/shared';
@@ -131,7 +132,7 @@ export const electronRenderService = {
         ]);
 
         log.info('[ElectronRenderService] Rendering composition:', project.id);
-        const workDir = await mkdtemp(path.join('/tmp', 'indii-render-'));
+        const workDir = await mkdtemp(path.join(tmpdir(), 'indii-render-'));
         const projectDir = path.join(workDir, 'comp');
         try {
             await mkdir(projectDir, { recursive: true });
