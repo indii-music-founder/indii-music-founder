@@ -1,3 +1,4 @@
+import { isVerifiedOwnerContinuityCaller } from './functions/security/ownerQuotaContinuity';
 // indii.music Cloud Functions - V1.1 (all triggers on Gen2 as of ISSUE-1243)
 import { onCall, onRequest, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
@@ -1345,6 +1346,7 @@ export const generateContentStream = onRequest(
                         isAdmin: decodedToken.admin === true,
                     }),
                     operationId: `generate-content-stream:${crypto.randomUUID()}`,
+                    ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(decodedToken),
                 });
                 if (!protection.allowed) {
                     await voidAgentStreamReservation('arcjet-denied');

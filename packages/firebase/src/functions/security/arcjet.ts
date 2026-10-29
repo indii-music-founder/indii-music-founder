@@ -2,6 +2,9 @@ import arcjet, { shield, slidingWindow, type ArcjetDecision } from "@arcjet/node
 import * as logger from "firebase-functions/logger";
 import type { Request } from "firebase-functions/v2/https";
 
+import { enforceRateLimit } from "../../lib/rateLimit";
+import { canUseOwnerQuotaContinuity, isProviderQuotaExhaustion } from "./ownerQuotaContinuity";
+
 import { SubscriptionTier } from "../../shared/subscription/types";
 
 export type ArcjetPolicyClass =
@@ -25,6 +28,8 @@ export interface AuthenticatedArcjetRequestContext {
     userId: string;
     policy: AuthenticatedArcjetPolicyClass;
     operationId: string;
+    /** Set only from verified Firebase token claims, never request data. */
+    ownerQuotaContinuity?: boolean;
 }
 
 export type ArcjetProtectionResult =
@@ -235,6 +240,28 @@ function mapDecision(
     };
 }
 
+// Provider quota is distinct from an actual abuse denial. Only explicitly
+// admitted owner operations may use the distributed, fail-closed fallback.
+let quotaUnavailableUntil = 0;
+
+async function protectOwnerDuringQuotaOutage(context: AuthenticatedArcjetRequestContext): Promise<ArcjetProtectionResult> {
+    try {
+        // One shared owner budget across all continuity-enabled functions and
+        // instances. Never key this counter by random per-request operationId.
+        await enforceRateLimit(context.userId, 'owner-quota-continuity', {
+            maxRequests: 20,
+            windowMs: 60_000,
+        });
+        return { allowed: true, degraded: true };
+    } catch (error) {
+        if ((error as { code?: string })?.code === 'resource-exhausted') {
+            return { allowed: false, status: 429, code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.', retryAfterSeconds: 60 };
+        }
+        logger.error('[Security] Owner continuity limiter unavailable', { operationId: context.operationId });
+        return securityUnavailableResult(context.policy, context.operationId, 'fail-closed', 'decision_error');
+    }
+}
+
 export async function protectAuthenticatedApiRequest(
     req: Request,
     context: AuthenticatedArcjetRequestContext,
@@ -242,6 +269,10 @@ export async function protectAuthenticatedApiRequest(
     const client = authenticatedClient(context.policy);
     if (!client) {
         return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "missing_configuration");
+    }
+    const continuityEligible = canUseOwnerQuotaContinuity(context.ownerQuotaContinuity, context.operationId);
+    if (continuityEligible && quotaUnavailableUntil > Date.now()) {
+        return protectOwnerDuringQuotaOutage(context);
     }
     // ISSUE-1360: a single transient Arcjet API timeout (deadline_exceeded)
     // previously blocked a legitimate paid operation (e.g. the cost-control
@@ -266,6 +297,11 @@ export async function protectAuthenticatedApiRequest(
                     attempt: attempt + 1,
                     err_msg: errMsg,
                 });
+                if (continuityEligible && isProviderQuotaExhaustion(errMsg)) {
+                    quotaUnavailableUntil = Date.now() + 5 * 60_000;
+                    logger.warn('[Security] Provider quota exhausted; using bounded owner continuity', { operationId: context.operationId });
+                    return protectOwnerDuringQuotaOutage(context);
+                }
                 if (attempt < attempts - 1 && isTransientArcjetFailure(errMsg)) {
                     await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
                     continue;

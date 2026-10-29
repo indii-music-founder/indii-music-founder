@@ -20,6 +20,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { PresencePublishGate } from './relayRequestControl';
 import type { RemoteCommand } from '@/services/agent/RemoteRelayService';
 import {
     HEARTBEAT_INTERVAL_MS,
@@ -39,6 +40,7 @@ export class StudioExecutorCore {
     private processing = false;
     private studioInstanceId: string | null = null;
     private hasPublishedPresence = false;
+    private readonly presenceGate = new PresencePublishGate();
 
     private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     private cleanupTimer: ReturnType<typeof setInterval> | null = null;
@@ -68,6 +70,7 @@ export class StudioExecutorCore {
 
     private async publishPresence(): Promise<void> {
         if (!this.running || !this.studioInstanceId) return;
+        if (!this.presenceGate.tryBegin((this.deps.now ?? Date.now)())) return;
         try {
             const snapshot = this.deps.adapter.presenceSnapshot();
             await this.deps.relay.pushDesktopState({
@@ -89,13 +92,15 @@ export class StudioExecutorCore {
                 capabilities: snapshot.capabilities,
             });
             this.hasPublishedPresence = true;
+            this.presenceGate.succeed();
         } catch (error: unknown) {
+            this.presenceGate.fail((this.deps.now ?? Date.now)());
             logger.warn('[ExecutorCore] Presence publish failed:', error);
         }
     }
 
     private armHeartbeat(): void {
-        // Background hosts throttle the 5s loop to ~1/min, so the phone can briefly see a
+        // Background hosts can throttle timers, so the phone can briefly see a
         // stale heartbeat. Push immediately when the host regains visibility so the phone
         // reconnects instantly instead of waiting for the next throttled tick. Visibility
         // sourcing is host-injected: this class has zero document/window references.
