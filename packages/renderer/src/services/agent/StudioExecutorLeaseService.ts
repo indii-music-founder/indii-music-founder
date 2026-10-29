@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { SingleFlight } from '../remote/relayRequestControl';
 import {
     recordPresencePublishAttempt,
     recordPresencePublishFailure,
@@ -25,6 +26,7 @@ function randomToken(): string {
 /** Universal (Electron OS Keychain + Browser LocalStorage) bridge for a server-issued Studio executor lease. */
 class StudioExecutorLeaseService {
     private cached: StudioExecutorLease | null = null;
+    private readonly leaseRequest = new SingleFlight<StudioExecutorLease>();
 
     isSupported(): boolean {
         // Supported in Electron and any standard modern browser with crypto & storage
@@ -33,7 +35,10 @@ class StudioExecutorLeaseService {
 
     async getLease(): Promise<StudioExecutorLease> {
         if (this.cached && this.cached.expiresAt - Date.now() > 60_000) return this.cached;
+        return this.leaseRequest.run(() => this.issueLease());
+    }
 
+    private async issueLease(): Promise<StudioExecutorLease> {
         let deviceId: string | undefined;
         let enrollmentSecret: string | undefined;
 
@@ -95,12 +100,7 @@ class StudioExecutorLeaseService {
             recordPresencePublishSuccess();
         } catch (error) {
             recordPresencePublishFailure(error);
-            const errorStr = String(error);
-            const code = (error as { code?: string })?.code;
-            if (code === 'permission-denied' || errorStr.includes('403') || errorStr.includes('permission-denied')) {
-                logger.warn('[StudioExecutorLeaseService] publishStudioPresence blocked by policy or auth (403). Standing by for lease renewal.');
-                return;
-            }
+            // Preserve denial so the heartbeat backs off and never records it as success.
             throw error;
         }
     }
