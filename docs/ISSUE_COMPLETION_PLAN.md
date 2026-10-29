@@ -1,82 +1,146 @@
-# Issue completion plan
+# Open Issues V3 execution and closure plan
 
-## Purpose
+## Contract and current baseline
 
-Bring the active issue program to a truthful close on `main`: every fixed item
-has reproducible evidence, every residual item has a bounded implementation
-and acceptance path, and no tool or UI claims completion before its underlying
-service has completed it.
+Execute against `.agent/test_ledger/OPEN_ISSUES_V3.md`; V2 and the root
+`OPEN_ISSUES.md` are historical. The October 29 reconciliation preserves the
+50 unpublished October 28 findings, ISSUE-1553–1602, without importing unrelated
+source changes or treating their proposed fixes as independently reproduced.
 
-## Ledger decision
+The current ledger has **88 nonterminal unique IDs**, **1 research decision**,
+and **264 terminal-labelled unique IDs**. Four historical duplicate IDs remain
+preserved. These are ledger classifications, not verified defect or acceptance
+counts. Seven legacy statuses (#1383, #1390–1395) now explicitly await evidence
+reconciliation. No issue was closed by this pass. Run:
 
-`OPEN_ISSUES_V2.md` is the active ledger for new work, but its current
-ISSUE-1090 and ISSUE-1091 identifiers collide with unrelated archived entries.
-Before adding or closing work, preserve the archive and correct V2's identity
-mapping so new MCP entries have unambiguous references. `OPEN_ISSUES.md`
-remains historical evidence for issues through ISSUE-1089, as its header
-states; it is not rewritten or renumbered.
+```bash
+node scripts/issue-ledger-inventory.mjs
+node scripts/issue-ledger-inventory.mjs --json
+```
 
-## Delivery sequence
+The [acceptance inventory](audits/open-issues-v3-closure-inventory-2026-10-29.md)
+links every pending ID to its finding, source paths and original acceptance.
+Dated intelligence proposals are separate work, not extra numbered defects.
 
-1. Establish the source of truth.
+For this objective the user authorized task branches on October 29. Start each
+coherent delivery from current `origin/main`, preserve unrelated dirty work,
+publish its exact branch SHA, and verify matching remote CI. Do not merge or
+deploy without explicit authorization. This exception does not change the
+repository's default mainline policy for future objectives.
 
-   - Inventory V2, the archive's still-partial/high-risk entries, Sentry, and
-     CodeRabbit findings.
-   - Deduplicate stale or colliding records without converting partial evidence
-     into a fixed status.
-   - Record every remaining item in the active ledger with an owner boundary,
-     dependencies, and observable acceptance criteria.
+## 1. Reconcile before rebuilding
 
-2. Improve the routing harness.
+Compare each finding with current source and later evidence. Record the
+remaining acceptance, owner, prerequisites, implementation paths, and smallest
+observable next check. Historical probes, test totals, merged PRs, and semantic
+judgments do not prove current production behavior. Resolve contradictory
+checkpoint language (#1158, #1510) and stale acceptance descriptions (#1406,
+#1407, #1448, #1449) without deleting historical evidence.
 
-   - Evaluate the repository's `skill-skill` workflow against realistic issue,
-     security, deployment, and shared-worktree prompts.
-   - Add the missing decision rules: active-ledger precedence, issue-ID
-     collision detection, external-state proof requirements, and one-mainline
-     delivery discipline.
-   - Run the required skill-creator evaluation loop before accepting the
-     revised router.
+The first delivery preserves findings, normalizes ambiguous statuses, supplies
+a reproducible inventory and retains the closure-evidence integrity guard.
+Subsequent deliveries implement confirmed gaps rather than bulk-closing rows.
 
-3. Complete the MCP foundation.
+## 2. Establish safe boundaries for each journey
 
-   - Prove deployed authenticated SSE round trips and enforce per-tool
-     authorization from the caller identity.
-   - Make the structured operation-result contract the sole response model:
-     idempotency, status, evidence, approval state, and genuine `isError`
-     failures.
-   - Remove or replace every fake processor and queue-as-success response.
+Triage #1553–1602 against current implementation, prioritizing tenant ownership,
+authorization, local execution/filesystem exposure, and financial/webhook
+integrity. Critical inspection targets include remote MCP (#1593), local MCP
+and Blender (#1598), Electron/DAW (#1599), admin backend (#1600), rights-session
+cleanup (#1601), and SDK/API contracts (#1602).
 
-4. Complete MCP-backed business capabilities in dependency order.
+Resolve canonical collection/path and owner models before adding Firestore or
+Storage permissions. Activate the Firestore skill for any Firestore work and
+rule auditing when changing rules. Do not broaden access to make a failing
+journey pass. Block only the affected journey on its relevant security gaps;
+independent work can proceed.
 
-   - Audio/creative: canonical Audio DNA read, byte-inspected assets, real
-     Remotion dispatch and output evidence.
-   - Rights/distribution: dual-evidence sample clearance, immutable
-     split-sheet PDF, truthful CWR/DDEX drafts and delivery gates.
-   - Finance: reconciled recoupment, immutable approval-gated payout staging,
-     then separately authorized execution.
-   - Brand/publicist: owner-scoped data, persisted campaign timeline, and
-     backend-only generated pitches with delivery evidence.
+## 3. Prepare founder and external prerequisites
 
-5. Close residual production-critical archive issues.
+Track signing/updater assets (#1163), Meta Business (#1173), Stripe (#1372),
+integration secrets (#1373), social ownership (#1428), and Maps (#1448).
+Use the issue's latest evidence: #1448 already records key restriction changes;
+recheck configuration rather than assuming the earlier key task remains open.
 
-   - Prioritize the deployment/live-evidence class: audio generation,
-     cost-reservation reconciliation, Vertex image rollout, audio profiling,
-     and MCP endpoint authentication.
-   - Treat credentials, paid spend, partner registration, and legal approvals
-     as explicit acceptance prerequisites—not reasons to fabricate closure.
+For #1169, verify private engine-dsp/Cloud Tasks provisioning, invoker/enqueue/
+signing IAM, configured target identity, and a hash/generation-bound receipt
+that does not modify the canonical master. Infrastructure writes and deployment
+require separate authorization. Missing or expired credentials require the
+official clickable sign-in flow and waiting for the user; no alternate identity
+or authentication path.
 
-6. Seal each delivery.
+## 4. Verify financial and destructive operations
 
-   - One coherent commit on current `main`; exact refspec push; inspect the
-     exact-SHA CI run and fix only logged root causes until green.
-   - Update the active ledger only with evidence from local tests, production
-     probes, or the relevant external authority.
-   - Complete the issue-sweep loop: Sentry/CodeRabbit triage, regression-plan
-     generation, executable verification, test history, and final CI evidence.
+- #1406: reconcile existing refund/reversal implementation in Stripe webhook
+  handling, replay safety, and the remaining finance-review dispute boundary.
+- #1407: validate draft → checkout → paid webhook → manufacturing/status return;
+  unpaid orders must remain unable to manufacture.
+- #1424: align business terms and server entitlements, then prove one genuine
+  eligible purchase, actual usage boundary, recognition, and persisted rights.
+- #1413: inspect orphan selection/ownership and dry-run evidence before any
+  narrowly approved disposable-artifact deletion; retain the disabled flag
+  until acceptance is satisfied.
 
-## Definition of complete
+Genuine provider sandbox evidence supports sandbox claims only. Real charges,
+refunds, fulfillment, paid generation, external transmission, or destructive
+cleanup require bounded explicit authority.
 
-An issue is `✅ FIXED` only when its code path is present, automated coverage
-passes, its persisted/security boundary is verified where applicable, and any
-required deployed or external effect is evidenced. Otherwise it remains
-`🟡 PARTIAL`, `🔴 OPEN`, or explicitly blocked with the precise prerequisite.
+## 5. Complete product acceptance and implementation gaps
+
+Verify enrollment/invitation/milestone delivery (#1420), real homepage clips
+and the artist journey (#1426/#1427/#1431), generated audio/video terminal
+artifacts (#1158/#1159), DSP analysis (#1169), and real AI spending/alert rollout
+(#1168). Clips must capture actual behavior; activate the required video skills
+when creation begins.
+
+For Boardroom (#1449), distinguish its structural-test acceptance from genuine
+stream/billing acceptance; the October 28 structural suite pass is already
+recorded. Keep billing-settlement guards. For #1458–1461, verify delivered files,
+reopen/reload, keyboard/setup accessibility, treatment preview/render, and
+Last Frame output plus settlement.
+
+For #1510, connect the missing demuxed encoded-frame feed before benchmarking.
+Relevant paths: renderer `services/video/nle/`, compiler `nle*.ts`, and shared
+NLE types. Record hardware/browser/media and measure the ledger thresholds:
+<80 ms seek on a 60-minute long-GOP source, ≤1 ms drift over 30 minutes,
+keyframe scrub behavior, export comparison, and two-hour memory stability.
+Do not equate component existence or unit-test totals with those results.
+
+## 6. Resolve decisions, claims and proposal acceptance
+
+Verify Evolas (#1354) using the production-reality audit only after reviewing
+its authenticity. Settle orphan-module product decisions (#1437), retain
+quarantined calculator claims (#1430) until source/legal/financial requirements
+are met, and prove owner catalog publication/reload/downstream retrieval
+(#1452). A prepared/exported rights artifact is not a registered work.
+
+Attach dated intelligence and incident follow-ups to their existing parent
+findings. Record verify/implement/defer decisions; create new defect work only
+for a demonstrated distinct failure.
+
+## Verification and definition of done
+
+Run relevant structural regressions, lint/typecheck, and repository delivery
+gates for each coherent implementation. Inventory tests use literal Markdown
+inputs and prove parsing/counting only. For this reconciliation, run:
+
+```bash
+node --test scripts/issue-ledger-integrity.test.mjs scripts/issue-ledger-inventory.test.mjs
+node scripts/validate-issue-ledger.mjs origin/main
+node scripts/validate-mainline-workflows.js
+node scripts/validate-flowcharts.js
+node scripts/check-ci-node-runtime.mjs
+npm run validate:capabilities
+```
+
+Live claims require `https://indii.music/`, genuine UI authentication, the
+actual displayed plan, visible results and reload/downstream persistence.
+Record environment, account provenance, tier, time, deployed revision where
+available, and blocked steps. No injected sessions, seeded customer state,
+impersonation, or artificial entitlements. Legacy mocks prove structure only.
+
+An issue closes only with its residual acceptance satisfied, required
+commit/CI evidence and any genuine external receipt. Otherwise retain PARTIAL/
+OPEN with its exact blocker and next action. Each branch delivery reports the
+remote SHA and matching CI; report “Remote CI not scheduled” when appropriate.
+The overall plan remains incomplete while required acceptance is blocked.

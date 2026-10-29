@@ -9,7 +9,10 @@ const staged = process.argv[3] === '--staged';
 if (!/^[A-Za-z0-9_./^~-]+$/.test(baseRef) || baseRef.startsWith('-')) {
   throw new Error('Invalid base ref.');
 }
-const show = revision => execFileSync('git', ['show', `${revision}:${path}`], { encoding: 'utf8' });
+// The active ledger exceeds execFileSync's default 1 MiB output limit.
+const show = revision => execFileSync('git', ['show', `${revision}:${path}`], {
+  encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
+});
 const base = show(baseRef);
 const candidate = staged ? show('') : readFileSync(path, 'utf8');
 const failures = validateIssueLedger(base, candidate);
