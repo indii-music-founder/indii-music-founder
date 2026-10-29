@@ -5,10 +5,10 @@ import type { AnyToolFunction } from '../types';
 /**
  * Creates a generic wrapper for frontend Agent Builders to call a backend MCP tool.
  */
-function createMcpWrapper(toolName: string) {
+function createMcpWrapper(toolName: string, remoteToolName = toolName) {
     return wrapTool(toolName, async (args: Record<string, unknown>) => {
         try {
-            const result = await mcpClientService.executeTool(toolName, args);
+            const result = await mcpClientService.executeTool(remoteToolName, args);
             // Standardize the response format for the frontend chat. Remote tools
             // signal not-implemented/failed via isError — surface that as a tool
             // error so agents never treat a fail-closed stub as success.
@@ -19,7 +19,7 @@ function createMcpWrapper(toolName: string) {
                     : String(content ?? 'Remote tool reported an error.');
                 return toolError(text);
             }
-            return toolSuccess(content ?? result, `Executed remote tool: ${toolName}`);
+            return toolSuccess(content ?? result, `Executed remote tool: ${remoteToolName}`);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             return toolError(`MCP execution failed: ${message}`);
@@ -62,7 +62,7 @@ export const McpTools: Record<string, AnyToolFunction> = {
     // ----------------------------------------------------
     // DISTRIBUTION
     // ----------------------------------------------------
-    draft_dsp_metadata: createMcpWrapper('draft_dsp_metadata'),
+    draft_dsp_metadata: createMcpWrapper('draft_dsp_metadata', 'draft_dsp_metadata_xml'),
 
     // ----------------------------------------------------
     // 3D VIDEO & BLENDER (Director / Video / Creative)

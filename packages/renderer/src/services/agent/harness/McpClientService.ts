@@ -5,8 +5,9 @@ import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import { firebaseConfig } from '@/config/env';
+import { assertMcpTransportDestination, resolveMcpEndpoint } from './mcpEndpoint';
 
-const MCP_SERVER_URL = import.meta.env.VITE_MCP_ENDPOINT || 'http://127.0.0.1:5001/indii-music-founder/us-central1/mcpEndpoint';
 
 class McpClientService {
     private client: Client | null = null;
@@ -42,24 +43,27 @@ class McpClientService {
                 throw new Error('User must be authenticated to connect to MCP Server.');
             }
 
+            const endpoint = resolveMcpEndpoint(import.meta.env.VITE_MCP_ENDPOINT, firebaseConfig.projectId, import.meta.env.DEV);
+
             // Inject a fresh Firebase ID token into EVERY request via the SDK's
             // custom fetch. requestInit headers only cover the POST /message leg —
             // the SSE GET handshake would arrive without Authorization and be 401'd
             // by the backend JWT middleware. Per-request minting also survives the
             // 1-hour ID-token expiry on long-lived sessions.
             const authedFetch = async (input: string | URL, init?: RequestInit): Promise<Response> => {
+                assertMcpTransportDestination(input, endpoint);
                 const idToken = await auth.currentUser?.getIdToken();
                 if (!idToken) {
                     throw new Error('MCP request blocked: no authenticated user.');
                 }
                 const headers = new Headers(init?.headers);
                 headers.set('Authorization', `Bearer ${idToken}`);
-                return fetch(input, { ...init, headers });
+                return fetch(input, { ...init, headers, redirect: 'error' });
             };
 
             // Create standard SSE transport pointing to our /sse endpoint
             this.transport = new SSEClientTransport(
-                new URL(`${MCP_SERVER_URL}/sse`),
+                new URL(`${endpoint}/sse`),
                 { fetch: authedFetch }
             );
 
