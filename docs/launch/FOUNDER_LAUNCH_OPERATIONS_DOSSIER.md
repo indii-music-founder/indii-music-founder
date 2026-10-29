@@ -1,32 +1,33 @@
 # Founder Launch Operations Dossier
 
 **Target Surface:** Founder Main Computer Launch Station  
-**Status:** 🟡 FOUNDER-ACTION REQUIRED (Zero code defects remain; 4 real-world operational gates)  
+**Status:** 🟡 DRAFT OWNER WORK PACKET — engineering and genuine-user acceptance remain open
 **Governing Authorities:**
-- [`docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.codex/worktrees/issue-1543-admission-inventory/indii-music-founder/docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md)
-- [`docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.codex/worktrees/issue-1543-admission-inventory/indii-music-founder/docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md)
-- [`docs/RELEASE_CHECKLIST.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.codex/worktrees/issue-1543-admission-inventory/indii-music-founder/docs/RELEASE_CHECKLIST.md)
+- [`docs/business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md`](../business-decisions/07_FOUNDING_ARTIST_BETA_MARKETING.md)
+- [`docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`](../business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md)
+- [`docs/RELEASE_CHECKLIST.md`](../RELEASE_CHECKLIST.md)
 
 ---
 
 ## 1. Executive Summary & Order of Operations
 
-All **37 engineering and architectural issues** across the [`.agent/test_ledger/OPEN_ISSUES_V3.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.codex/worktrees/issue-1543-admission-inventory/indii-music-founder/.agent/test_ledger/OPEN_ISSUES_V3.md) ledger are **100% closed, tested, and verified with mainline GitHub Actions CI**.
+The [active V3 ledger](../../.agent/test_ledger/OPEN_ISSUES_V3.md) still contains pending implementation and acceptance. This dossier is a historical planning packet, not proof that engineering is complete or that four owner tasks establish release readiness. Use the [current owner prerequisites](../RELEASE_CHECKLIST.md#owner-prerequisites-and-terminal-evidence--october-29-2026) before executing any step. No account, secret, provider result or release was verified by this October 29 correction.
 
-When you sit down at the main computer, follow this exact sequence to knock out the 4 remaining real-world founder gates:
+The owner work groups below can support acceptance after their actual prerequisites are satisfied. They are not an exhaustive list of release blockers:
 
 ```mermaid
 flowchart LR
-    A["1. GCP OAuth Test User (2 min)"] --> B["2. Seed Marketing Campaign (1 min)"]
-    B --> C["3. Social Accounts & 2FA Vault (15 min)"]
-    C --> D["4. Record 8 Real-Product Clips (35 min)"]
-    D --> E["🚀 FULL LAUNCH READY"]
+    A["Review current acceptance and authorization"] --> B["Authorize genuine account paths"]
+    B --> C["Verify channel ownership and recovery"]
+    C --> D["Create approved work through the real UI"]
+    D --> E["Capture only evidenced behavior"]
+    E --> F["Evaluate remaining release gates"]
 ```
 
 | Order | Gate | Action | Est. Time | Tools Needed |
 |---|---|---|---|---|
 | **Step 1** | `ISSUE-1400` | Add founder Google account to GCP OAuth "Test users" | 2 minutes | Web Browser |
-| **Step 2** | `ISSUE-1429` | Seed the internal marketing campaign into Firestore | 1 minute | Terminal (`npx tsx scripts/seed-...`) |
+| **Step 2** | `ISSUE-1429` | Create approved internal work through the visible product workflow | Depends on genuine acceptance | Authorized application account |
 | **Step 3** | `ISSUE-1428` | Audit social handles & copy secrets to 1Password vault | 15 minutes | Password Vault + Mobile App |
 | **Step 4** | `ISSUE-1427` | Record 8 founder-narrated lifecycle clips (15–30s each) | 35 minutes | QuickTime / OBS + Microphone |
 
@@ -39,8 +40,12 @@ flowchart LR
 
 ---
 
-### Path A: Fast Dev Unblock (2 Minutes — Immediate Verification)
-If you want to unblock YouTube Video Upload and Gmail dispatches immediately without waiting for Google's multi-week verification review:
+### Path A: Owner-authorized development test users
+
+This applies only to an owner-approved development test configuration. It is
+not public-app verification or a workaround for missing/expired credentials.
+Do not switch identities or authentication mechanisms without explicit authority.
+Review the current provider configuration before changing access:
 
 1. Open the console link above.
 2. In the left menu, click **OAuth consent screen**.
@@ -49,7 +54,7 @@ If you want to unblock YouTube Video Upload and Gmail dispatches immediately wit
    - Your primary Google account email (e.g. `wiil@indii.music` or personal Gmail).
    - Any designated beta artist testing emails.
 5. Click **SAVE**.
-6. **Result:** All sensitive Google OAuth scopes (`youtube.upload`, `gmail.send`) will now authenticate instantly without Google's 403 `access_denied` error screen.
+6. After the owner-approved change, use the official consent flow and verify the actual requested scopes. This does not guarantee authentication, authorize email/video publication, or prove the deployed capability. Keep failed or incomplete paths unverified.
 
 ---
 
@@ -66,7 +71,11 @@ When submitting for permanent "In production" status:
 - **Authorized domain:** `indii.music`
 - **Developer contact information:** `wiil@indii.music`
 
-#### 2. Scopes Justification (Copy-Paste Text into Google Form)
+#### 2. Draft scope justification — verify and approve before submission
+
+These are proposed statements, not audited capability guarantees. Reconcile
+each with actual code, data access and genuine behavior before an owner-approved
+submission. Do not submit them verbatim merely because they appear here.
 
 **Scope 1: `https://www.googleapis.com/auth/youtube.upload` (Sensitive)**
 > *"indii.music is an operating platform for independent artists. The `youtube.upload` scope is used exclusively at the explicit request and confirmation of the artist to upload promotional music videos, visualizers, and teasers created in the indii Studio NLE timeline directly to their official YouTube channel. The application never deletes, edits, or inspects unrelated videos on the user's channel."*
@@ -95,6 +104,14 @@ Google requires an unlisted YouTube video showing the consent flow.
 - **Output Path:** Save raw exports into `packages/landing/public/clips/`.
 
 ---
+
+**Storyboard and narration gate:** All clip actions, voiceovers and caption
+text below are drafts. First verify the exact action in the genuine authorized
+application and retain its output/persistence evidence. Revise or omit any
+unsupported statement; never stage a missing capability, seed product state,
+or use a local mock as release footage. Localhost routes are development
+references, not production proof. Recording scripts does not establish provider
+delivery, financial attribution, registration, or launch readiness.
 
 ### Clip 01: Song Registration & Immutable Rights Intake
 - **File Name:** `clip-01-registration.mp4` | **Target Duration:** 20–22s
@@ -327,21 +344,25 @@ Google requires an unlisted YouTube video showing the consent flow.
 
 ## 4. Gate 3: Social Account Ownership & 2FA Vault (`ISSUE-1428`)
 
-Execute **Job M-02** per [`docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/.codex/worktrees/issue-1543-admission-inventory/indii-music-founder/docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md):
+Execute **Job M-02** per [`docs/business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md`](../business-decisions/08_INDII_MUSIC_LAUNCH_SOCIAL_CHECKLIST.md):
 
-### Master Channel Registry Table
+### Candidate Channel Registry — ownership unverified
 
-| Platform | Desired Handle | Fallback Handle | Canonical Public URL | Admin Account | 2FA Status | Vault Entry UUID |
+The handles and URLs below are candidates from the earlier brief. No current
+admin, recovery/2FA state or vault item was verified. Inspect each actual account
+before assigning ownership or using it as a publishing destination.
+
+| Platform | Desired Handle | Fallback Handle | Candidate URL (unverified) | Admin ownership | Recovery / 2FA evidence | Vault record |
 |---|---|---|---|---|---|---|
-| **Instagram** | `@indii_music` | `@indii.music` | `https://instagram.com/indii_music` | `wiil@indii.music` | App TOTP / Passkey | `vault-ig-indii` |
-| **Instagram (Alt)** | `@indii.music` | redirect bio | `https://instagram.com/indii.music` | `wiil@indii.music` | App TOTP / Passkey | `vault-ig-alt` |
-| **Facebook Page** | `indii.music` | `indii.music.official` | `https://facebook.com/indii.music` | Personal Admin Profile | Security Key / TOTP | `vault-fb-indii` |
-| **TikTok** | `@indii.music` | `@indii_music` | `https://tiktok.com/@indii.music` | `wiil@indii.music` | SMS + App Auth | `vault-tt-indii` |
-| **YouTube** | `@indii_music` | `indii.music` | `https://youtube.com/@indii_music` | Google Workspace Brand | Hardware 2FA | `vault-yt-indii` |
-| **X (Twitter)** | `@indii_music` | `@indii_hq` | `https://x.com/indii_music` | `wiil@indii.music` | FIDO2 Security Key | `vault-x-indii` |
-| **Threads** | `@indii_music` | `@indii.music` | `https://threads.net/@indii_music` | via Instagram Auth | Shared with IG | `vault-threads-indii` |
-| **LinkedIn** | `indii-music` | `indii-music-hq` | `https://linkedin.com/company/indii-music` | Personal Founder Profile | App TOTP | `vault-li-indii` |
-| **Bluesky** | `indii.music` | `@indii.bsky.social` | `https://bsky.app/profile/indii.music` | Custom Domain DNS | Password + TOTP | `vault-bsky-indii` |
+| **Instagram** | `@indii_music` | `@indii.music` | `https://instagram.com/indii_music` | Unverified | Unverified | Unverified |
+| **Instagram (Alt)** | `@indii.music` | redirect bio | `https://instagram.com/indii.music` | Unverified | Unverified | Unverified |
+| **Facebook Page** | `indii.music` | `indii.music.official` | `https://facebook.com/indii.music` | Unverified | Unverified | Unverified |
+| **TikTok** | `@indii.music` | `@indii_music` | `https://tiktok.com/@indii.music` | Unverified | Unverified | Unverified |
+| **YouTube** | `@indii_music` | `indii.music` | `https://youtube.com/@indii_music` | Unverified | Unverified | Unverified |
+| **X (Twitter)** | `@indii_music` | `@indii_hq` | `https://x.com/indii_music` | Unverified | Unverified | Unverified |
+| **Threads** | `@indii_music` | `@indii.music` | `https://threads.net/@indii_music` | Unverified | Unverified | Unverified |
+| **LinkedIn** | `indii-music` | `indii-music-hq` | `https://linkedin.com/company/indii-music` | Unverified | Unverified | Unverified |
+| **Bluesky** | `indii.music` | `@indii.bsky.social` | `https://bsky.app/profile/indii.music` | Unverified | Unverified | Unverified |
 
 ### 1Password / Bitwarden Credential Template
 For every platform in the table above, ensure a dedicated vault item exists with:
@@ -360,20 +381,24 @@ Notes:
 
 ---
 
-## 5. Gate 4: indii Internal Marketing Launch Seed (`ISSUE-1429`)
+## 5. Gate 4: Genuine Internal Marketing Acceptance (`ISSUE-1429`)
 
-Execute **Job M-01** to seed the internal campaign into your local or production Firestore:
+The historical seeder writes product state outside the visible customer
+workflow. Its inserted campaign and scheduled posts cannot establish genuine
+acceptance under [the authenticity policy](../../.agent/REAL_USER_AUTHENTICITY.md).
+Do not rerun it as a launch, investor, or release proof step.
 
-```bash
-# Dry-run check (verifies JSON payload structure without modifying database)
-npx tsx scripts/seed-internal-marketing-launch.ts --dry-run
+For an owner-approved internal project:
 
-# Live Firestore execution (inserts "indii.music Public Launch" campaign)
-npx tsx scripts/seed-internal-marketing-launch.ts --user wiil-founder
-```
+1. Sign in through the genuine application workflow; record environment,
+   account provenance and the plan actually shown.
+2. Create the project/campaign visibly with approved inputs. Keep posting,
+   provider spend, invitations and transmissions separately approval-gated.
+3. Follow the actual planning and creative paths, retaining terminal artifacts,
+   costs, approvals and truthful blocked states.
+4. Reload and verify persisted state. Confirm each external result through its
+   real receipt; queued posts or generated files do not prove publication.
+5. Review the remaining V3 acceptance, including the historical ISSUE-1429
+   closure label, before using this work as release or investor evidence.
 
-### What This Establishes:
-1. **Campaign Record**: Injects `indii.music Public Launch` into `campaigns` collection.
-2. **Scheduled Posts**: Seeds 6 launch posts mapped to Twitter/X and Instagram highlighting the 8 lifecycle clips.
-3. **Task Ledger**: Tracks all 9 Stack M jobs (`M-01` through `M-09`) and 8 Stack C jobs (`C-01` through `C-08`) directly within indii Studio.
-4. **Dogfooding Proof**: Proves to Founding Artists and prospective investors that indii.music was planned, marketed, and launched entirely through indii.music.
+No live operation or issue closure is authorized by this dossier alone.
