@@ -1,3 +1,4 @@
+import { delegatedAgentText } from './executionFailure';
 import { logger } from '@/utils/logger';
 import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy';
 import { v4 as uuidv4 } from 'uuid';
@@ -1839,7 +1840,7 @@ The user will see this plan and can approve it to start execution.`;
      * @param parentTraceId Optional trace ID for observability chaining.
      * @param attachments Optional file attachments.
      */
-    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<{ text: string; thoughtSignature?: string }> {
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // CRITICAL: Deep clone context to prevent mutation affecting parent agent
         let context: AgentContext;
 
@@ -1943,7 +1944,7 @@ The user will see this plan and can approve it to start execution.`;
      */
     async delegateTask(agentId: string, task: string, context?: AgentContext): Promise<string> {
         const result = await this.runAgent(agentId, task, context);
-        return result.text;
+        return delegatedAgentText(result);
     }
 
     /**

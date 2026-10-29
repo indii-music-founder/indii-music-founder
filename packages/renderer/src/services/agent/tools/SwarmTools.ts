@@ -1,3 +1,5 @@
+import { delegatedAgentResult } from '../executionFailure';
+import type { AgentResponse } from '../types';
 import { a2aClient, A2ATransportUnavailableError } from '../a2a/A2AClient';
 import { AgentContext, ToolFunctionResult, VALID_AGENT_IDS } from '../types';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -91,8 +93,13 @@ export const consult_specialist = wrapTool(
                     context.directive,
                     localCtx
                 )) {
-                    const e = ev as { type?: string; text?: string; done?: boolean };
-                    if (e.type === 'error') throw new Error(e.text || 'A2A stream error');
+                    const e = ev as { type?: string; text?: string; done?: boolean; error?: string; failure?: AgentResponse['failure'] };
+                    if (e.failure || e.error) {
+                        return delegatedAgentResult(targetAgentId, { ...e, text: e.text || e.error || 'Specialist action blocked.' });
+                    }
+                    if (e.type === 'error') {
+                        return delegatedAgentResult(targetAgentId, { text: e.text || 'Specialist execution failed.', error: e.text || 'SPECIALIST_EXECUTION_FAILED' });
+                    }
                     if (e.text) {
                         full += e.text;
                         context.emitToken!(e.text); // progressive UI write
@@ -126,6 +133,9 @@ export const consult_specialist = wrapTool(
                 localCtx
             );
 
+            if (result && typeof result === 'object' && typeof (result as { text?: unknown }).text === 'string') {
+                return delegatedAgentResult(targetAgentId, result as AgentResponse);
+            }
             return toolSuccess(result, `Consultation with ${targetAgentId} complete.`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
@@ -164,9 +174,8 @@ export const consult_specialist = wrapTool(
                         context.traceId,
                         context.attachments
                     );
-                    return toolSuccess(result, `Consultation with ${targetAgentId} complete (in-process fallback).`, {
-                        transport: 'in-process-fallback',
-                    });
+                    const outcome = delegatedAgentResult(targetAgentId, result);
+                    return { ...outcome, metadata: { ...outcome.metadata, transport: 'in-process-fallback' } };
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (fallbackError: any) {
                     logger.error(`[A2A:Consult] In-process fallback failed:`, fallbackError);

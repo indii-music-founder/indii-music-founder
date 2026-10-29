@@ -302,7 +302,7 @@ export type AgentRunner = (
     context?: AgentContext,
     traceId?: string,
     attachments?: { mimeType: string; base64: string }[]
-) => Promise<{ text: string; thoughtSignature?: string }>;
+) => Promise<AgentResponse>;
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';
 
@@ -327,7 +327,16 @@ export interface ProactiveTask {
 
 export type ToolFunctionArgs = Record<string, unknown>;
 
+export interface AgentExecutionFailure {
+    code: 'TOOL_NOT_AUTHORIZED' | 'AGENT_EXECUTION_FAILED';
+    retryable: false;
+    agentId: string;
+    toolName?: string;
+    recovery: 'choose_authorized_agent' | 'review_failure';
+}
+
 export interface ToolFunctionResult {
+    failure?: AgentExecutionFailure;
     success: boolean;
     data?: any;
     error?: string;
@@ -424,6 +433,7 @@ export interface AgentConfig {
 }
 
 export interface AgentResponse {
+    failure?: AgentExecutionFailure;
     text: string;
     data?: unknown;
     toolCalls?: Array<{

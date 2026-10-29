@@ -7,11 +7,12 @@ Execute against `.agent/test_ledger/OPEN_ISSUES_V3.md`; V2 and the root
 50 unpublished October 28 findings, ISSUE-1553–1602, without importing unrelated
 source changes or treating their proposed fixes as independently reproduced.
 
-The current ledger has **88 nonterminal unique IDs**, **1 research decision**,
+The current ledger has **89 nonterminal unique IDs**, **1 research decision**,
 and **264 terminal-labelled unique IDs**. Four historical duplicate IDs remain
 preserved. These are ledger classifications, not verified defect or acceptance
 counts. Seven legacy statuses (#1383, #1390–1395) now explicitly await evidence
-reconciliation. No issue was closed by this pass. Run:
+reconciliation. No issue was closed by this pass. The owner-reported Boardroom regression is
+tracked separately as ISSUE-1603 / GitHub #563. Run:
 
 ```bash
 node scripts/issue-ledger-inventory.mjs

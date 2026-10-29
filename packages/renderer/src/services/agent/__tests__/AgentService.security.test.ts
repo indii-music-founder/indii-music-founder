@@ -1,3 +1,4 @@
+// Legacy structural security harness only; mocked model/budget inputs are not genuine-user or production acceptance.
 /**
  * AgentService.security.test.ts
  *
@@ -235,6 +236,9 @@ describe('BaseAgent Runtime Tool Authorization', () => {
             success: false,
             error: expect.stringContaining('not authorized'),
         });
+        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(result.toolCalls).toHaveLength(1);
+        expect(result.failure).toMatchObject({ code: 'TOOL_NOT_AUTHORIZED', retryable: false });
     });
 
     // --------------------------------------------------------------------------
