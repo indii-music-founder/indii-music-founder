@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { ipcMain, IpcMainInvokeEvent } from 'electron';
+import { app, ipcMain, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
@@ -8,6 +8,11 @@ import { validateSender } from '../utils/ipc-security';
 import { historyStore } from '../services/HistoryStore';
 import { accessControlService } from '../security/AccessControlService';
 import { replaceUniqueAgentChunks, resolveAuthorizedAgentFile } from '../utils/agent-file-access';
+import { AgentArtifactStore, agentStoragePaths } from '../utils/agent-storage';
+
+const storagePaths = () => agentStoragePaths(app.isPackaged, app.getPath('userData'), process.resourcesPath, process.cwd());
+const artifacts = () => new AgentArtifactStore(storagePaths().base);
+const ArtifactOptions = z.object({ artifactType: z.string().optional(), requestFeedback: z.boolean().optional() }).optional();
 
 export function registerAgentHandlers() {
     // Agent History Persistence (Production Ready)
@@ -66,22 +71,12 @@ export function registerAgentHandlers() {
         }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('agent:create-artifact', async (event: IpcMainInvokeEvent, filename: string, content: string, options: any) => {
+    ipcMain.handle('agent:create-artifact', async (event: IpcMainInvokeEvent, filename: string, content: string, options: unknown) => {
         try {
             validateSender(event);
-            const artifactDir = path.join(process.cwd(), 'artifacts');
-            await fs.mkdir(artifactDir, { recursive: true });
-            
-            // Path safety check using path.relative to prevent directory traversal & sibling escape
-            const safePath = path.resolve(artifactDir, filename);
-            const rel = path.relative(artifactDir, safePath);
-            if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
-                throw new Error('Invalid artifact filename');
-            }
-            
-            await fs.writeFile(safePath, content, 'utf-8');
-            return { success: true, data: { path: safePath, ...options } };
+            const metadata = ArtifactOptions.parse(options);
+            const safePath = await artifacts().write(filename, content);
+            return { success: true, data: { ...metadata, path: safePath } };
         } catch (error) {
             log.error('Agent Create Artifact Failed:', error);
             return { success: false, error: String(error) };
@@ -91,15 +86,7 @@ export function registerAgentHandlers() {
     ipcMain.handle('agent:list-artifacts', async (event: IpcMainInvokeEvent) => {
         try {
             validateSender(event);
-            const artifactDir = path.join(process.cwd(), 'artifacts');
-            try {
-                await fs.access(artifactDir);
-            } catch {
-                return { success: true, data: [] }; // Directory doesn't exist yet
-            }
-            const files = await fs.readdir(artifactDir);
-            const artifacts = files.filter(f => f.endsWith('.md')).map(f => ({ filename: f }));
-            return { success: true, data: artifacts };
+            return { success: true, data: await artifacts().list() };
         } catch (error) {
             log.error('Agent List Artifacts Failed:', error);
             return { success: false, error: String(error) };
@@ -109,13 +96,7 @@ export function registerAgentHandlers() {
     ipcMain.handle('agent:read-artifact', async (event: IpcMainInvokeEvent, filename: string) => {
         try {
             validateSender(event);
-            const artifactDir = path.join(process.cwd(), 'artifacts');
-            const safePath = path.resolve(artifactDir, filename);
-            const rel = path.relative(artifactDir, safePath);
-            if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
-                throw new Error('Invalid artifact filename');
-            }
-            const content = await fs.readFile(safePath, 'utf-8');
+            const content = await artifacts().read(filename);
             return { success: true, data: content };
         } catch (error) {
             log.error('Agent Read Artifact Failed:', error);
@@ -181,7 +162,7 @@ export function registerAgentHandlers() {
     ipcMain.handle('agent:get-capability-registry', async (event: IpcMainInvokeEvent) => {
         try {
             validateSender(event);
-            const registryPath = path.join(process.cwd(), 'agents/capability_registry.json');
+            const registryPath = storagePaths().registry;
             const data = await fs.readFile(registryPath, 'utf-8');
             return { success: true, data: JSON.parse(data) };
         } catch (error) {
