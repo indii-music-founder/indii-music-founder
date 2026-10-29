@@ -1,3 +1,4 @@
+// Structural-only IPC/output-policy regression tests. Mocked rendering is not export or user acceptance proof.
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerVideoHandlers } from './video';
@@ -141,7 +142,11 @@ describe('🛡️ Shield: Video Render Security Test', () => {
     it('should actually consult the write-target scope check before rendering', async () => {
         const config = {
             compositionId: 'test-comp',
-            outputLocation: '/mock/documents/indii/my-video.mp4'
+            outputLocation: '/mock/documents/indii/my-video.mp4',
+            inputProps: { project: {
+                id: 'structural', name: 'Policy input', fps: 30, width: 640, height: 360,
+                durationInFrames: 30, tracks: [], clips: [],
+            } },
         };
 
         await invoke('video:render', { senderFrame: { url: 'file://valid' } }, config);
@@ -153,7 +158,11 @@ describe('🛡️ Shield: Video Render Security Test', () => {
         const validPath = '/mock/documents/indii/my-video.mp4';
         const config = {
             compositionId: 'test-comp',
-            outputLocation: validPath
+            outputLocation: validPath,
+            inputProps: { project: {
+                id: 'structural', name: 'Policy input', fps: 30, width: 640, height: 360,
+                durationInFrames: 30, tracks: [], clips: [],
+            } },
         };
 
         await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))

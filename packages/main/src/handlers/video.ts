@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
 import { accessControlService } from '../security/AccessControlService';
+import { authorizeRenderInputs } from '../utils/render-input-access';
 
 /** Cap for video:save-asset downloads (2 GB) — disk-fill protection. */
 const MAX_VIDEO_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
@@ -166,8 +167,11 @@ export function registerVideoHandlers() {
     ipcMain.handle('video:compile-preview', async (event, project: import('@indii/shared').IndiiVideoProject) => {
         try {
             validateSender(event);
+            const authorizedProject = authorizeRenderInputs(
+                project, filePath => accessControlService.verifyAccess(filePath),
+            );
             const { electronRenderService } = await import('../services/ElectronRenderService');
-            return await electronRenderService.compilePreview(project);
+            return await electronRenderService.compilePreview(authorizedProject);
         } catch (error) {
             log.error('[VideoHandler] Preview compilation failed:', error);
             throw error;
@@ -244,9 +248,15 @@ export function registerVideoHandlers() {
                 throw new Error("Security Violation: Output directory is outside the allowed scope");
             }
 
-            // Invoke ElectronRenderService dynamically
+            const project = config.inputProps?.project;
+            if (!project) throw new Error('Local render requires inputProps.project.');
+            const authorizedProject = authorizeRenderInputs(
+                project, filePath => accessControlService.verifyAccess(filePath),
+            );
             const { electronRenderService } = await import('../services/ElectronRenderService');
-            return await electronRenderService.render(config);
+            return await electronRenderService.render({
+                ...config, inputProps: { ...config.inputProps, project: authorizedProject },
+            });
 
         } catch (error) {
             log.error('[VideoHandler] Render failed:', error);
