@@ -15,6 +15,10 @@
   ],
   "extraResources": [
     {
+      "from": "dist/agent-catalog/capability_registry.json",
+      "to": "agents/capability_registry.json"
+    },
+    {
       "from": "dist/bundled-mcp/local",
       "to": "mcp-server-local"
     },

@@ -38,6 +38,8 @@ async function copyRuntimePackage(name, from, destination, copied) {
 }
 
 async function buildBundledMcp() {
+    const { buildPortableAgentRegistry } = require('./portable-agent-registry.cjs');
+    await buildPortableAgentRegistry(root);
     await fs.rm(output, { recursive: true, force: true });
     for (const name of ['local', 'harness']) {
         const destination = path.join(output, name);
