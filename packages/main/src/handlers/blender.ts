@@ -1,3 +1,4 @@
+import { mcpClientService } from '../services/mcp/MCPClientService';
 import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
@@ -25,12 +26,18 @@ const RenderRequestSchema = z.object({
 });
 
 const LiveCommandSchema = z.object({
-    action: z.enum(['ping', 'get_scene_info', 'exec_code']),
+    action: z.enum(['ping', 'get_scene_info', 'set_frame']),
     params: z.record(z.unknown()).optional()
 });
 
 export function registerBlenderHandlers(): void {
     const activeRenders = new Map<string, { senderId: number; controller: AbortController }>();
+    ipcMain.handle('blender:pair-session', async (event: IpcMainInvokeEvent, token: unknown) => {
+        validateSender(event);
+        if (activeRenders.size > 0) throw new Error('Wait for the current render before pairing Blender.');
+        await mcpClientService.pairBlender(z.string().regex(/^[a-f0-9]{64}$/).parse(token));
+        return true;
+    });
     ipcMain.handle('blender:cancel-render', (event: IpcMainInvokeEvent, requestId: unknown) => {
         validateSender(event);
         const id = z.string().uuid().parse(requestId);

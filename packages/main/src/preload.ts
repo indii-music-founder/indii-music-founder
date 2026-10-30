@@ -359,6 +359,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         getStatus: () => ipcRenderer.invoke('blender:get-status'),
         listTemplates: () => ipcRenderer.invoke('blender:list-templates'),
         renderMusicVideo: (options: unknown) => ipcRenderer.invoke('blender:render-music-video', options),
+        pairSession: (token: string) => ipcRenderer.invoke('blender:pair-session', token),
         sendLiveCommand: (action: string, params?: Record<string, unknown>) =>
             ipcRenderer.invoke('blender:live-command', { action, params }),
         cancelRender: (requestId: string) => ipcRenderer.invoke('blender:cancel-render', requestId),

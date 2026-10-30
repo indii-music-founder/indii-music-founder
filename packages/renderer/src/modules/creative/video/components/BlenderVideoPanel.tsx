@@ -49,6 +49,8 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
     pendingSaveKey,
     onRenderComplete
 }) => {
+    const [pairingCode, setPairingCode] = useState('');
+    const [pairingMessage, setPairingMessage] = useState('');
     const [audioPath, setAudioPath] = useState(currentAudioPath && !/^(https?:|gs:|blob:)/.test(currentAudioPath) ? currentAudioPath : '');
     const [coverPath, setCoverPath] = useState(currentCoverArtPath && !/^(https?:|gs:|blob:)/.test(currentCoverArtPath) ? currentCoverArtPath : '');
     const activeRequest = useRef<string | null>(null);
@@ -259,6 +261,25 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                     )}
                 </div>
             </div>
+
+            {window.electronAPI?.blender?.pairSession && (
+                <div className="space-y-2 p-3 border border-neutral-700 rounded">
+                    <label htmlFor="blender-pair-code">Pair live Blender session</label>
+                    <p>Copy the pairing code from Blender’s indii.music sidebar. Pair again whenever its bridge restarts.</p>
+                    <input id="blender-pair-code" type="password" autoComplete="off" value={pairingCode}
+                        onChange={event => setPairingCode(event.target.value.trim())} />
+                    <button disabled={isRendering || !/^[a-f0-9]{64}$/.test(pairingCode)} onClick={async () => {
+                        try {
+                            await window.electronAPI!.blender!.pairSession(pairingCode);
+                            setPairingCode('');
+                            const updated = await blenderService.getStatus();
+                            setStatus(updated);
+                            setPairingMessage(updated.liveConnected ? 'Blender session paired.' : 'Could not verify this Blender session. Check its current pairing code.');
+                        } catch { setPairingMessage('Pairing failed. Check the current Blender session code.'); }
+                    }}>Pair session</button>
+                    <p role="status">{pairingMessage}</p>
+                </div>
+            )}
 
             {/* Installation Helper if not installed */}
             {status && !status.installed && (

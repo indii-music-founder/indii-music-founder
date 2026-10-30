@@ -65,6 +65,10 @@ export const BlenderTools: Record<string, AnyToolFunction> = {
 
         try {
             const result = await blenderService.sendLiveCommand(action, params);
+            if (!result || typeof result !== 'object' || (result as { status?: string }).status !== 'ok') {
+                const error = result && typeof result === 'object' ? (result as { error?: string }).error : undefined;
+                return toolError(error || 'Blender did not confirm the scene command.');
+            }
             return toolSuccess(result, `Executed live Blender command: ${action}`);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
