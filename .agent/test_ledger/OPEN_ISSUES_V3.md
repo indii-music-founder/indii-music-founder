@@ -6501,6 +6501,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Security tests confirm unauthenticated TCP payloads and `exec_code` actions are rejected on port `9876`, `read_pdf_contracts` and `read_wav_tags` reject paths outside approved directories, and `../` segments in GitHub/Sentry MCP tool arguments are rejected before `fetch`.
 
 - **Blender boundary repair (2026-10-30):** Arbitrary live Python/custom-script paths removed; session pairing, bounded loopback protocol and main-thread declarative queue implemented. [Evidence and proof limits](../../docs/audits/issue-1598-blender-command-boundary-2026-10-30.md). Native socket/config checks do not prove installed Blender pairing or scene mutation; those remain required. No closure asserted.
+- **Local file-read repair (2026-10-30):** PDF/audio readers obtain current host MCP roots, canonicalize file/root paths and fail closed outside approved scope before extraction. Desktop roots expose existing system scope and session dialog grants; no tool argument grants access. Six filesystem/actual-SDK component checks pass; installed desktop acceptance remains pending. [Evidence](../../docs/audits/issue-1598-approved-local-files-2026-10-30.md). No ISSUE-1598 closure asserted.
 
 ### ISSUE-1599: Electron Main Process (`packages/main`) arbitrary file modification & packaged-app failures — `agent:multi-replace-file-content` overwrites any file under `process.cwd()` without `AccessControlService`, `agent:create-artifact` / `update-knowledge` / `get-capability-registry` use read-only `process.cwd()` in packaged builds, `ElectronRenderService` hardcodes `/tmp` and bypasses `AccessControlService` on `clip.src`, and `DawServer` (`ws://localhost:8081`) lacks origin/auth checks
 - **Status:** 🟡 PARTIAL (2026-10-29; local boundaries implemented, packaged/DAW and live acceptance pending)
@@ -6570,6 +6571,8 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Contract integration tests mounting the Express router from `packages/firebase/src/api/routes.ts` against `indiiClient` in `packages/sdk/src/client.ts` pass end-to-end for tracks, releases/distributions, analytics, and JSON-LD catalog feeds.
 
 ---
+
+- **Current-source reconciliation (2026-10-30):** The cited src/api/routes.ts is absent. Current functions/api/router.ts exports only getProfile/health after ISSUE-1442 route pruning; catalogSemanticApi is a separate raw JSON-LD function. No /api or /v1 hosting rewrite is configured. All 15 SDK methods are mapped in [the contract audit](../../docs/audits/issue-1602-current-sdk-contract-2026-10-30.md). Prefix-only changes would not satisfy acceptance. Reconcile the supported SDK surface with the pruning decision before restoring/removing APIs; no fix or closure asserted.
 
 ### ISSUE-1603: Boardroom bug reporting delegates to an unauthorized role and repeats terminal tool denials
 - **Status:** 🟡 PARTIAL (2026-10-29; source repair awaiting publication and genuine app acceptance)

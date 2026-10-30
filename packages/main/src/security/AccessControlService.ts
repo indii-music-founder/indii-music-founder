@@ -49,6 +49,11 @@ class AccessControlService {
         });
     }
 
+    /** Current host-approved scope, refreshed for every MCP roots request. */
+    getApprovedPaths(): string[] {
+        return [...new Set([...this.getAllowedRoots(), ...this.authorizedPaths])];
+    }
+
     /**
      * Checks whether a resolved path is within the allowed roots.
      */
