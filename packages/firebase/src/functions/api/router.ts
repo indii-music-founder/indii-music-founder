@@ -16,6 +16,10 @@ import {
 } from '../security/arcjet';
 import { arcjetKey } from '../../config/secrets';
 import { requireVerifiedServerEntitlement } from '../auth/entitlements';
+import { sdkRoute } from './sdkRoute';
+import { executeSdkTrack } from './sdkTracks';
+import { executeSdkDistribution } from './sdkDistributions';
+import { executeSdkAccount } from './sdkAccount';
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -170,12 +174,53 @@ function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: s
         status = 503;
         code = 'UNAVAILABLE';
         break;
+      case 'data-loss':
+        status = 500;
+        code = 'DATA_LOSS';
+        break;
     }
     res.status(status).json(errorResponse(code, err.message, requestId));
   } else {
     res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
   }
 }
+
+/** Public SDK HTTP boundary. A verified Firebase principal and Arcjet decision
+ * precede every private data access. Submission is refused until the draft can
+ * be bound to the actual release assets, rights, and distributor delivery path.
+ */
+export const sdkApi = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
+  const requestId = generateRequestId();
+  try {
+    const route = sdkRoute(req.method, req.path.replace(/^\/api(?=\/)/, ''));
+    if (!route || route.operation === 'getCatalog') {
+      res.status(404).json(errorResponse('NOT_FOUND', 'SDK route not found', requestId));
+      return;
+    }
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const query = req.query as Record<string, unknown>;
+    const operation = route.operation;
+    let data: unknown;
+    if (operation === 'submitDistribution') {
+      throw new HttpsError('failed-precondition', 'Submission needs a verified release, media, clearance and distributor delivery binding.');
+    } else if (operation === 'listTracks' || operation === 'createTrack' || operation === 'getTrack' ||
+      operation === 'updateTrack' || operation === 'deleteTrack') {
+      data = await executeSdkTrack(principal.uid, operation, route.id, req.body, query);
+    } else if (operation === 'listDistributions' || operation === 'createDistribution' || operation === 'getDistribution') {
+      data = await executeSdkDistribution(principal.uid, operation, route.id, req.body, query);
+    } else {
+      data = await executeSdkAccount(principal.uid, operation, req.body, query);
+    }
+    if (operation === 'deleteTrack') {
+      res.status(204).end();
+      return;
+    }
+    res.status(operation === 'createTrack' || operation === 'createDistribution' ? 201 : 200).json(respond(data, requestId));
+  } catch (err) {
+    sendHttpErrorResponse(err, res, requestId);
+  }
+});
 
 // GET /api/profile - Get user profile
 export const getProfile = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {

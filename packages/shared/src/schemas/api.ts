@@ -15,7 +15,7 @@ export const TrackSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(255),
   description: z.string().optional(),
-  artistId: z.string().uuid(),
+  artistId: z.string().min(1), // Firebase owner UID, not necessarily a UUID
   genre: z.string().optional(),
   bpm: z.number().optional(),
   duration: z.number(), // milliseconds

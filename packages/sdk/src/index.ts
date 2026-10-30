@@ -6,8 +6,8 @@
  * import { createClient } from '@indii/sdk';
  *
  * const client = createClient({
- *   apiUrl: 'https://api.indii.music',
- *   apiKey: 'your-api-key'
+ *   apiUrl: 'https://app.indii.music',
+ *   idToken: await signedInFirebaseUser.getIdToken()
  * });
  *
  * const track = await client.getTrack('track-id');
