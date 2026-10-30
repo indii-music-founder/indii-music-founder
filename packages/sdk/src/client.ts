@@ -1,3 +1,4 @@
+import { decodeSdkResponse, sdkRequestHeaders, normalizeSdkBaseUrl } from './response';
 /**
  * indii SDK Client — Official TypeScript SDK for indii REST API
  *
@@ -20,7 +21,8 @@ import {
 
 export interface ClientConfig {
   apiUrl: string;
-  apiKey: string;
+  idToken?: string; // Firebase ID token for the signed-in account
+  apiKey?: string; // Deprecated alias; accepted for older SDK callers
   timeout?: number; // milliseconds
 }
 
@@ -36,22 +38,22 @@ export interface PaginationParams {
 
 export class indiiClient {
   private apiUrl: string;
-  private apiKey: string;
+  private idToken: string;
   private timeout: number;
   private baseHeaders: Record<string, string>;
 
   constructor(config: ClientConfig) {
-    this.apiUrl = config.apiUrl.replace(/\/$/, ''); // Remove trailing slash
-    this.apiKey = config.apiKey;
+    this.apiUrl = normalizeSdkBaseUrl(config.apiUrl);
+    this.idToken = config.idToken ?? config.apiKey ?? '';
     this.timeout = config.timeout ?? 30000;
     this.baseHeaders = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`,
+      ...(this.idToken ? { Authorization: `Bearer ${this.idToken}` } : {}),
       'User-Agent': `indii-sdk/0.1.0`,
     };
   }
 
-  private async request<T>(method: string, endpoint: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+  private async request<T>(method: string, endpoint: string, body?: unknown, opts?: RequestOptions, publicCatalog = false): Promise<T> {
     const url = `${this.apiUrl}/api${endpoint}`;
     const timeout = opts?.timeout ?? this.timeout;
     // Auto-retry only idempotent methods: a POST/PATCH that times out after
@@ -71,7 +73,8 @@ export class indiiClient {
 
         const response = await fetch(url, {
           method,
-          headers: this.baseHeaders,
+          headers: sdkRequestHeaders(this.baseHeaders, publicCatalog),
+          redirect: 'error',
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
         });
@@ -86,7 +89,7 @@ export class indiiClient {
           return undefined as T;
         }
         const data = await response.json();
-        return data.data as T;
+        return decodeSdkResponse(data, publicCatalog) as T;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
 
@@ -173,7 +176,7 @@ export class indiiClient {
   /** Read a public semantic catalog entity. Only the server's public projection is returned. */
   async getCatalogEntity(entityId: string): Promise<CatalogJsonLd> {
     const query = new URLSearchParams({ entityId });
-    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`);
+    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`, undefined, undefined, true);
     return CatalogJsonLdSchema.parse(value);
   }
 
@@ -185,7 +188,7 @@ export class indiiClient {
     const query = new URLSearchParams({ artistId });
     if (params.limit !== undefined) query.set('limit', String(params.limit));
     if (params.cursor) query.set('cursor', params.cursor);
-    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`);
+    const value = await this.request<unknown>('GET', `/catalog/v1?${query.toString()}`, undefined, undefined, true);
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
       throw new Error('Invalid semantic catalog feed response.');
     }

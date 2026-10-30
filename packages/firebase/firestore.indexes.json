@@ -1700,6 +1700,14 @@
       ]
     },
     {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "eventType", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "foundingArtistWaitlist",
       "queryScope": "COLLECTION",
       "fields": [

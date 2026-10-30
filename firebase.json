@@ -109,6 +109,14 @@
       ],
       "rewrites": [
         {
+          "function": { "functionId": "catalogSemanticApi" },
+          "source": "/api/catalog/v1"
+        },
+        {
+          "function": { "functionId": "sdkApi" },
+          "source": "/api/**"
+        },
+        {
           "function": {
             "functionId": "smartLinkRedirect"
           },
@@ -289,6 +297,14 @@
       ],
       "public": "dist/renderer",
       "rewrites": [
+        {
+          "function": { "functionId": "catalogSemanticApi" },
+          "source": "/api/catalog/v1"
+        },
+        {
+          "function": { "functionId": "sdkApi" },
+          "source": "/api/**"
+        },
         {
           "destination": "/index.html",
           "source": "**"

@@ -6552,7 +6552,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Broker unit tests verify that closing client and worker sockets without `{ type: 'ended' }` invokes `unsub()` and `commandsUnsub()` and removes `sessionId` from `pairs`, and malformed `navigation` events are rejected.
 
 ### ISSUE-1602: Official TypeScript SDK (`packages/sdk/src/client.ts`) is 100% incompatible with the deployed REST API (`packages/firebase/src/api/routes.ts`) — wrong base URL prefix (`/api/...` vs Cloud Function `/v1/...`), 11 of 13 SDK methods call non-existent REST routes (`404 Not Found`), and response envelope unwrapping (`data.data`) crashes on `/v1/catalog`
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-10-30; SDK metadata routes prepared, delivery and live acceptance pending)
 - **Severity:** 🟠 HIGH
 - **Module:** Official TypeScript SDK & Public REST API (`packages/sdk/src/client.ts`, `packages/firebase/src/api/routes.ts`)
 - **Classification:** Category A / B — Complete SDK-to-Backend REST API Contract Mismatch
@@ -6572,7 +6572,7 @@ outcome. Reproduce against current source before implementation or closure.
 
 ---
 
-- **Current-source reconciliation (2026-10-30):** The cited src/api/routes.ts is absent. Current functions/api/router.ts exports only getProfile/health after ISSUE-1442 route pruning; catalogSemanticApi is a separate raw JSON-LD function. No /api or /v1 hosting rewrite is configured. All 15 SDK methods are mapped in [the contract audit](../../docs/audits/issue-1602-current-sdk-contract-2026-10-30.md). Prefix-only changes would not satisfy acceptance. Reconcile the supported SDK surface with the pruning decision before restoring/removing APIs; no fix or closure asserted.
+- **Current-source reconciliation (2026-10-30):** The cited src/api/routes.ts is absent. The owner chose to restore the advertised API on current architecture. The SDK gateway and Hosting rewrites now prepare authenticated, owner-scoped track metadata, distribution drafts, event reads and profile methods; public catalog routes to the separate raw JSON-LD endpoint. The SDK decodes both envelope and JSON-LD shapes, and names Firebase ID tokens rather than arbitrary API keys. These are source changes awaiting exact-SHA CI and deployment; no live route is claimed. `submitDistribution` explicitly returns a failed precondition because an SDK draft is not bound to a full release, verified media/clearance or the actual distributor delivery pipeline. The advertised submission contract and genuine SDK-to-hosted integration acceptance remain open. See [the contract audit](../../docs/audits/issue-1602-current-sdk-contract-2026-10-30.md).
 
 ### ISSUE-1603: Boardroom bug reporting delegates to an unauthorized role and repeats terminal tool denials
 - **Status:** 🟡 PARTIAL (2026-10-29; source repair awaiting publication and genuine app acceptance)

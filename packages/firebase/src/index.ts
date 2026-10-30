@@ -131,12 +131,12 @@ export { processEncounterPipeline } from './functions/encounters/processEncounte
 export { onWhiteGloveAssetUploaded } from './functions/ingestion/onWhiteGloveAssetUploaded';
 export { onIswcAssigned } from './publishing/iswc';
 
-// REST API Router — ISSUE-1442: track-CRUD, distribution-REST, and
-// queryAnalytics routes removed (zero client callers; the live pipeline
-// writes Firestore directly).
+// REST API Router. The SDK gateway exposes owned metadata operations; its
+// submission operation remains fail closed until a real delivery binding exists.
 export {
     getProfile,
     health,
+    sdkApi,
 } from './functions/api/router';
 
 // Stripe Connect Functions

@@ -16,9 +16,11 @@ yarn add @indii/sdk
 import { createClient } from '@indii/sdk';
 
 const client = createClient({
-  apiUrl: 'https://api.indii.music',
-  apiKey: 'your-api-key'
+  apiUrl: 'https://app.indii.music',
+  idToken: await signedInFirebaseUser.getIdToken()
 });
+
+// Refresh the ID token and create a new client when Firebase rotates it.
 
 // Get a track
 const track = await client.getTrack('track-id');
@@ -85,8 +87,8 @@ const dist = await client.createDistribution({
   platforms: ['spotify', 'apple', 'amazon']
 });
 
-// Submit for distribution
-const submitted = await client.submitDistribution(distributionId);
+// The submission method is reserved for the release-delivery binding. It
+// currently returns a precondition error and does not claim delivery.
 ```
 
 ### Analytics
@@ -130,15 +132,15 @@ try {
 
 ```typescript
 const client = createClient({
-  apiUrl: 'https://api.indii.music',
-  apiKey: 'your-api-key',
+  apiUrl: 'https://app.indii.music',
+  idToken: await signedInFirebaseUser.getIdToken(),
   timeout: 30000 // Default: 30000ms
 });
 ```
 
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 22.0.0
 - TypeScript 5.0+
 
 ## License
