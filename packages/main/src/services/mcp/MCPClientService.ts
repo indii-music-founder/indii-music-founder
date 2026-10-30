@@ -1,3 +1,6 @@
+import { ListRootsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { pathToFileURL } from 'node:url';
+import { accessControlService } from '../../security/AccessControlService';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
@@ -80,10 +83,13 @@ export class MCPClientService {
                 version: '0.1.0',
             },
             {
-                capabilities: {},
+                capabilities: { roots: {} },
             }
         );
 
+        this.localClient.setRequestHandler(ListRootsRequestSchema, async () => ({
+            roots: accessControlService.getApprovedPaths().map(root => ({ uri: pathToFileURL(root).href })),
+        }));
         await this.localClient.connect(this.localTransport);
         log.info('[MCP] ✅ Connected to local MCP Server over Stdio');
 

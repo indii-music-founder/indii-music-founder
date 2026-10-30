@@ -1,3 +1,4 @@
+import { approvedFile } from './approvedFile.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -8,7 +9,6 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import ffmpeg from 'fluent-ffmpeg';
 import ffprobeStatic from 'ffprobe-static';
-import fs from 'fs';
 import path from 'path';
 import * as dotenv from 'dotenv';
 import { extractPdfContractText } from './pdf.js';
@@ -171,9 +171,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args } = request.params;
 
     if (name === 'read_wav_tags') {
-        const filePath = String(args?.filePath);
-        if (!filePath || !fs.existsSync(filePath)) {
-            throw new McpError(ErrorCode.InvalidParams, `File not found: ${filePath}`);
+        let filePath: string;
+        try {
+            const { roots } = await server.listRoots();
+            filePath = await approvedFile(args?.filePath, roots);
+        } catch {
+            throw new McpError(ErrorCode.InvalidParams, 'File access denied. Select the file or folder in the desktop app first.');
         }
 
         try {
@@ -207,9 +210,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     }
 
     if (name === 'read_pdf_contracts') {
-        const filePath = String(args?.filePath);
-        if (!filePath || !fs.existsSync(filePath)) {
-            throw new McpError(ErrorCode.InvalidParams, `File not found: ${filePath}`);
+        let filePath: string;
+        try {
+            const { roots } = await server.listRoots();
+            filePath = await approvedFile(args?.filePath, roots);
+        } catch {
+            throw new McpError(ErrorCode.InvalidParams, 'File access denied. Select the file or folder in the desktop app first.');
         }
 
         try {

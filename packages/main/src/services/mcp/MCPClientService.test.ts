@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync, realpathSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
 
 vi.mock('electron', () => ({
     app: {
         isPackaged: false,
         getAppPath: vi.fn().mockReturnValue('/mock/app/path'),
+        getPath: (name: string) => path.join(tmpdir(), `indii-component-${name}`),
     },
 }));
 
@@ -20,29 +20,6 @@ vi.mock('electron-log', () => ({
     },
 }));
 
-vi.mock('@modelcontextprotocol/sdk/client/index.js', () => {
-    return {
-        Client: vi.fn().mockImplementation(function() {
-            return {
-                connect: vi.fn().mockResolvedValue(undefined),
-                callTool: vi.fn().mockResolvedValue({
-                    content: [{ type: 'text', text: 'mocked response' }]
-                })
-            };
-        })
-    };
-});
-
-vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => {
-    return {
-        StdioClientTransport: vi.fn().mockImplementation(function() {
-            return {
-                close: vi.fn().mockResolvedValue(undefined)
-            };
-        })
-    };
-});
-
 describe('MCPClientService', () => {
     let service: InstanceType<typeof import('./MCPClientService').MCPClientService>;
     let tempDir: string;
@@ -51,8 +28,19 @@ describe('MCPClientService', () => {
         tempDir = mkdtempSync(path.join(tmpdir(), 'indii-mcp-test-'));
         const localServerPath = path.join(tempDir, 'local-index.js');
         const harnessServerPath = path.join(tempDir, 'harness-index.js');
-        writeFileSync(localServerPath, '');
-        writeFileSync(harnessServerPath, '');
+        // Real SDK servers over child stdio; this probes protocol wiring only.
+        const sdk = (entry: string) => JSON.stringify(pathToFileURL(require.resolve(entry)).href);
+        const source = `
+          const { Server } = await import(${sdk('@modelcontextprotocol/sdk/server/index.js')});
+          const { StdioServerTransport } = await import(${sdk('@modelcontextprotocol/sdk/server/stdio.js')});
+          const { CallToolRequestSchema, ListToolsRequestSchema } = await import(${sdk('@modelcontextprotocol/sdk/types.js')});
+          const server = new Server({name:'roots-protocol-check',version:'1'}, {capabilities:{tools:{}}});
+          server.setRequestHandler(ListToolsRequestSchema, async()=>({tools:[]}));
+          server.setRequestHandler(CallToolRequestSchema, async()=>({content:[{type:'text',text:JSON.stringify(await server.listRoots())}]}));
+          await server.connect(new StdioServerTransport());
+        `;
+        writeFileSync(localServerPath, `(async()=>{${source}})().catch(()=>process.exit(1));`);
+        writeFileSync(harnessServerPath, `(async()=>{${source}})().catch(()=>process.exit(1));`);
         process.env.INDII_LOCAL_MCP_SERVER_PATH = localServerPath;
         process.env.INDII_HARNESS_MCP_SERVER_PATH = harnessServerPath;
 
@@ -69,10 +57,7 @@ describe('MCPClientService', () => {
     });
 
     it('should connect successfully', async () => {
-        await service.connectLocal();
-
-        // Assert that the client was instantiated for both local and harness servers
-        expect(Client).toHaveBeenCalledTimes(2);
+        expect(await service.connectLocal()).toBe(true);
     });
 
     it('should skip local connection when the MCP server build is missing', async () => {
@@ -81,8 +66,7 @@ describe('MCPClientService', () => {
         const connected = await service.connectLocal();
 
         expect(connected).toBe(false);
-        expect(Client).not.toHaveBeenCalled();
-        expect(StdioClientTransport).not.toHaveBeenCalled();
+
     });
 
     it('should disconnect successfully', async () => {
@@ -104,6 +88,7 @@ describe('MCPClientService', () => {
 
         const response = await service.executeTool('test_tool', { arg: 'value' });
 
-        expect(response.content[0].text).toBe('mocked response');
+        const result = JSON.parse(response.content[0].text);
+        expect(result.roots.some((root: { uri: string }) => root.uri === pathToFileURL(realpathSync(tmpdir())).href)).toBe(true);
     });
 });
