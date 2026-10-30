@@ -43,7 +43,6 @@ export interface BlenderRenderOptions {
     engine?: BlenderRenderEngine; // Default 'BLENDER_EEVEE_NEXT'
     samples?: number; // Render sample count e.g. 64
     visualTokens?: BlenderVisualTokens;
-    customScriptPath?: string;
 }
 
 export interface BlenderRenderProgress {

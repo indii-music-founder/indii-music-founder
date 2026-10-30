@@ -12,69 +12,110 @@ import bpy
 import socket
 import threading
 import json
-import traceback
+import hmac
+import secrets
+import time
+import queue
 
 BRIDGE_SERVER = None
 BRIDGE_THREAD = None
 BRIDGE_RUNNING = False
+
+def validate_scene_command(action, params):
+    """Only bounded declarative commands may reach the Blender main thread."""
+    if not isinstance(params, dict):
+        raise ValueError("Command parameters must be an object.")
+    if action in ("ping", "get_scene_info"):
+        if params:
+            raise ValueError("This command accepts no parameters.")
+        return
+    if action == "set_frame":
+        if set(params) != {"frame"} or type(params["frame"]) is not int or not 1 <= params["frame"] <= 1000000:
+            raise ValueError("Frame must be an integer between 1 and 1000000.")
+        return
+    raise ValueError("Unsupported scene command. Python execution is not supported.")
+
 
 class IndiiBridgeServer:
     def __init__(self, host="127.0.0.1", port=9876):
         self.host = host
         self.port = port
         self.sock = None
+        self.token = secrets.token_hex(32)
+        self.slots = threading.BoundedSemaphore(8)
+        self.commands = queue.Queue(maxsize=8)
+        self.stopped = threading.Event()
+
+    def bind(self):
+        """Bind synchronously so the operator never announces a failed listener."""
+        if self.host != "127.0.0.1" or self.stopped.is_set():
+            raise ValueError("A new loopback bridge session is required.")
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind((self.host, self.port))
+            listener.listen(5)
+            listener.settimeout(1.0)
+            self.sock = listener
+        except Exception:
+            listener.close()
+            self.token = None
+            self.stopped.set()
+            raise
 
     def start(self):
-        global BRIDGE_RUNNING
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((self.host, self.port))
-        self.sock.listen(5)
-        self.sock.settimeout(1.0)
-        BRIDGE_RUNNING = True
-        print(f"[indii.music] Live 3D Bridge listening on {self.host}:{self.port}")
-
-        while BRIDGE_RUNNING:
+        while not self.stopped.is_set():
             try:
                 conn, addr = self.sock.accept()
+                if not self.slots.acquire(blocking=False):
+                    conn.close()
+                    continue
                 threading.Thread(target=self.handle_client, args=(conn,), daemon=True).start()
             except socket.timeout:
                 continue
-            except Exception as e:
-                if BRIDGE_RUNNING:
-                    print(f"[indii.music] Server accept error: {e}")
+            except OSError:
+                self.stopped.set()
                 break
 
     def handle_client(self, conn):
         try:
             conn.settimeout(10.0)
-            data = conn.recv(65536).decode('utf-8')
-            if not data:
-                return
-
-            req = json.loads(data)
+            data = bytearray()
+            deadline = time.monotonic() + 10.0
+            while b"\n" not in data:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ValueError("Bridge request timed out.")
+                conn.settimeout(remaining)
+                chunk = conn.recv(min(4096, 65537 - len(data)))
+                if not chunk:
+                    raise ValueError("Incomplete bridge request.")
+                data.extend(chunk)
+                if len(data) > 65536:
+                    raise ValueError("Bridge request too large.")
+            frame, trailing = bytes(data).split(b"\n", 1)
+            if trailing:
+                raise ValueError("Only one command is allowed per connection.")
+            req = json.loads(frame.decode('utf-8'))
+            credential = req.get("token") if isinstance(req, dict) else None
+            if not isinstance(credential, str) or len(credential) != 64 or not self.token or not hmac.compare_digest(credential, self.token):
+                raise ValueError("Bridge pairing required.")
             action = req.get("action", "ping")
             params = req.get("params", {})
+            validate_scene_command(action, params)
 
-            if action == "ping":
-                resp = {"status": "ok", "version": "1.0.0", "blender": bpy.app.version_string}
-            elif action == "get_scene_info":
-                resp = self.get_scene_info()
-            elif action == "exec_code":
-                code = params.get("code", "")
-                resp = self.execute_in_main_thread(code)
-            else:
-                resp = {"error": f"Unknown action: {action}"}
+            resp = self.execute_in_main_thread(action, params)
 
             conn.sendall(json.dumps(resp).encode('utf-8'))
         except Exception as e:
-            err_resp = {"error": str(e), "trace": traceback.format_exc()}
+            err_resp = {"status": "error", "error": "Bridge request rejected."}
             try:
                 conn.sendall(json.dumps(err_resp).encode('utf-8'))
             except Exception:
                 pass
         finally:
             conn.close()
+            self.slots.release()
 
     def get_scene_info(self):
         scene = bpy.context.scene
@@ -96,40 +137,74 @@ class IndiiBridgeServer:
             "objects": objects[:30] # Cap list for performance
         }
 
-    def execute_in_main_thread(self, code_str):
-        result_holder = {"done": False, "result": None, "error": None}
-
-        def runner():
+    def drain_commands(self):
+        """Registered by the operator on Blender's main thread, never a socket worker."""
+        if self.stopped.is_set():
+            global BRIDGE_RUNNING
+            if BRIDGE_SERVER is self:
+                BRIDGE_RUNNING = False
+            return None
+        for _ in range(8):
             try:
-                exec_globals = {"bpy": bpy, "context": bpy.context}
-                exec(code_str, exec_globals)
-                result_holder["result"] = "Execution completed successfully."
-            except Exception as e:
-                result_holder["error"] = str(e)
-            finally:
-                result_holder["done"] = True
+                job = self.commands.get_nowait()
+            except queue.Empty:
+                break
+            with job["lock"]:
+                if job["cancelled"] or self.stopped.is_set() or time.monotonic() >= job["deadline"]:
+                    job["response"] = {"status": "error", "error": "Command expired before execution."}
+                else:
+                    try:
+                        action, params = job["action"], job["params"]
+                        validate_scene_command(action, params)
+                        if action == "ping":
+                            response = {"status": "ok", "version": "1.0.0", "blender": bpy.app.version_string}
+                        elif action == "get_scene_info":
+                            response = {"status": "ok", "result": self.get_scene_info()}
+                        else:
+                            bpy.context.scene.frame_set(params["frame"])
+                            response = {"status": "ok", "result": {"frame": bpy.context.scene.frame_current}}
+                        job["response"] = response
+                    except Exception:
+                        job["response"] = {"status": "error", "error": "Scene command failed."}
+                job["done"].set()
+        return 0.05
 
-        bpy.app.timers.register(runner)
-
-        # Wait briefly for execution in main thread
-        import time
-        start_t = time.time()
-        while not result_holder["done"] and (time.time() - start_t) < 5.0:
-            time.sleep(0.05)
-
-        if result_holder["error"]:
-            return {"status": "error", "error": result_holder["error"]}
-        return {"status": "ok", "result": result_holder["result"]}
+    def execute_in_main_thread(self, action, params):
+        validate_scene_command(action, params)
+        job = {"action": action, "params": params, "deadline": time.monotonic() + 5.0,
+               "cancelled": False, "lock": threading.Lock(), "done": threading.Event(), "response": None}
+        self.commands.put_nowait(job)
+        if not job["done"].wait(5.0):
+            with job["lock"]:
+                # A completed command is reported truthfully; pending work is cancelled.
+                if not job["done"].is_set():
+                    job["cancelled"] = True
+                    return {"status": "error", "error": "Command timed out before execution."}
+        return job["response"]
 
     def stop(self):
         global BRIDGE_RUNNING
         BRIDGE_RUNNING = False
+        self.token = None
+        self.stopped.set()
         if self.sock:
             try:
                 self.sock.close()
             except Exception:
                 pass
         print("[indii.music] Live 3D Bridge stopped.")
+
+# The owner copies this session credential explicitly; it is never logged.
+class INDIIMUSIC_OT_CopyPairing(bpy.types.Operator):
+    bl_idname = "indii.copy_pairing"
+    bl_label = "Copy Pairing Code"
+
+    def execute(self, context):
+        if not BRIDGE_SERVER or not BRIDGE_SERVER.token:
+            return {'CANCELLED'}
+        context.window_manager.clipboard = BRIDGE_SERVER.token
+        self.report({'INFO'}, "Paste the code into indii desktop's Blender pairing field.")
+        return {'FINISHED'}
 
 # Operators
 class INDIIMUSIC_OT_StartBridge(bpy.types.Operator):
@@ -143,9 +218,18 @@ class INDIIMUSIC_OT_StartBridge(bpy.types.Operator):
             self.report({'INFO'}, "Bridge is already running.")
             return {'FINISHED'}
 
-        BRIDGE_SERVER = IndiiBridgeServer(port=9876)
-        BRIDGE_THREAD = threading.Thread(target=BRIDGE_SERVER.start, daemon=True)
-        BRIDGE_THREAD.start()
+        candidate = IndiiBridgeServer(port=9876)
+        try:
+            candidate.bind()
+            bpy.app.timers.register(candidate.drain_commands)
+            BRIDGE_THREAD = threading.Thread(target=candidate.start, daemon=True)
+            BRIDGE_SERVER = candidate
+            BRIDGE_RUNNING = True
+            BRIDGE_THREAD.start()
+        except Exception:
+            candidate.stop()
+            self.report({'ERROR'}, "Could not start the Blender bridge. Check whether port 9876 is already in use.")
+            return {'CANCELLED'}
         self.report({'INFO'}, "indii.music Live Bridge started on port 9876.")
         return {'FINISHED'}
 
@@ -157,6 +241,8 @@ class INDIIMUSIC_OT_StopBridge(bpy.types.Operator):
     def execute(self, context):
         global BRIDGE_SERVER
         if BRIDGE_SERVER:
+            if context.window_manager.clipboard == BRIDGE_SERVER.token:
+                context.window_manager.clipboard = ""
             BRIDGE_SERVER.stop()
         self.report({'INFO'}, "indii.music Live Bridge stopped.")
         return {'FINISHED'}
@@ -176,6 +262,7 @@ class INDIIMUSIC_PT_BridgePanel(bpy.types.Panel):
         box = layout.box()
         if BRIDGE_RUNNING:
             box.label(text="Status: Connected (Port 9876)", icon='CHECKMARK')
+            box.operator("indii.copy_pairing", text="Copy Pairing Code")
             box.operator("indii.stop_bridge", text="Stop Server", icon='PAUSE')
         else:
             box.label(text="Status: Offline", icon='CANCEL')
@@ -186,6 +273,7 @@ class INDIIMUSIC_PT_BridgePanel(bpy.types.Panel):
         layout.label(text="Awaiting commands from indii studio...")
 
 classes = (
+    INDIIMUSIC_OT_CopyPairing,
     INDIIMUSIC_OT_StartBridge,
     INDIIMUSIC_OT_StopBridge,
     INDIIMUSIC_PT_BridgePanel,

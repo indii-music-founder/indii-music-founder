@@ -567,7 +567,7 @@ if (!gotTheLock) {
             'upscale:ensure-engine', 'upscale:probe', 'upscale:run', 'upscale:cancel',
             'foundry:grant-session', 'foundry:revoke-grant', 'foundry:read-file', 'foundry:get-metadata',
             'foundry:save-hypothesis', 'foundry:load-hypothesis', 'foundry:list-hypotheses', 'foundry:book-statement',
-            'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
+            'blender:pair-session', 'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
             'rightsCopilot:launch-session', 'rightsCopilot:execute-step', 'rightsCopilot:close-session', 'rightsCopilot:get-session-status',
             'dev:heap-snapshot',
         ]);

@@ -156,8 +156,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        action: { type: 'string', enum: ['ping', 'get_scene_info', 'exec_code'], description: 'Action to execute' },
-                        params: { type: 'object', description: 'Action parameters (e.g. code: string)' }
+                        action: { type: 'string', enum: ['ping', 'get_scene_info', 'set_frame'], description: 'Action to execute' },
+                        params: { type: 'object', description: 'No parameters for ping/scene info; set_frame requires an integer frame from 1 to 1000000.' }
                     },
                     required: ['action'],
                 },

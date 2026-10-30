@@ -472,6 +472,7 @@ export interface ElectronAPI {
         listTemplates: () => Promise<any[]>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         renderMusicVideo: (req: any) => Promise<{ success: boolean; outputPath: string; error?: string }>;
+        pairSession: (token: string) => Promise<boolean>;
         sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onProgress: (callback: (progress: any) => void) => () => void;

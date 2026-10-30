@@ -11,6 +11,29 @@ import { existsSync } from 'fs';
 import type { RequestOptions } from '@modelcontextprotocol/sdk/shared/protocol.js';
 
 export class MCPClientService {
+    private blenderPairingToken = '';
+    private pairingInProgress = false;
+    private activeLocalCalls = 0;
+
+    public async pairBlender(token: string): Promise<void> {
+        if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Enter the current Blender session pairing code.');
+        if (this.pairingInProgress || this.activeLocalCalls > 0) throw new Error('Wait for active local operations before pairing Blender.');
+        this.pairingInProgress = true;
+        try {
+            if (this.localConnection) await this.localConnection;
+            await this.localTransport?.close();
+            this.localTransport = null;
+            this.localClient = null;
+            this.blenderPairingToken = token;
+            if (!await this.connectLocal()) throw new Error('The local Blender connection is unavailable.');
+        } catch (error) {
+            this.blenderPairingToken = '';
+            throw error;
+        } finally {
+            this.pairingInProgress = false;
+        }
+    }
+
     private localConnection: Promise<boolean> | null = null;
     private harnessConnection: Promise<boolean> | null = null;
     private localClient: Client | null = null;
@@ -74,7 +97,7 @@ export class MCPClientService {
         this.localTransport = new StdioClientTransport({
             command: process.execPath,
             args: [serverPath],
-            env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
+            env: { ...process.env, INDII_BLENDER_PAIRING_TOKEN: this.blenderPairingToken, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
         });
 
         this.localClient = new Client(
@@ -179,6 +202,7 @@ export class MCPClientService {
      * Disconnects all MCP connections
      */
     public async disconnect(): Promise<void> {
+        this.blenderPairingToken = '';
         if (this.localTransport) {
             try {
                 await this.localTransport.close();
@@ -253,6 +277,8 @@ export class MCPClientService {
             throw new Error(`MCP Client (${clientType}) is not connected for tool: ${toolName}`);
         }
 
+        if (clientType === 'local' && this.pairingInProgress) throw new Error('Blender pairing is in progress. Try again when pairing finishes.');
+        if (clientType === 'local') this.activeLocalCalls++;
         try {
             const response = await targetClient.callTool({
                 name: toolName,
@@ -262,6 +288,8 @@ export class MCPClientService {
         } catch (error) {
             log.error(`[MCP] Tool Call Error (${toolName} via ${clientType}):`, error);
             throw error;
+        } finally {
+            if (clientType === 'local') this.activeLocalCalls--;
         }
     }
 }

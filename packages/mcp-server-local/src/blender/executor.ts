@@ -39,6 +39,10 @@ export async function executeBlenderRender(
     onProgress?: (progress: BlenderRenderProgress) => void,
     signal?: AbortSignal
 ): Promise<{ success: boolean; outputPath: string; error?: string }> {
+    if ('customScriptPath' in options) throw new Error('Custom Python scripts are not supported. Choose a procedural template.');
+    if (!['audio_reactive_tunnel', 'vinyl_turntable', 'chrome_text', 'spectrum_bars', 'concert_stage'].includes(options.templateId)) {
+        throw new Error('Unknown procedural template.');
+    }
     signal?.throwIfAborted();
     const audio = await fs.promises.stat(options.audioFilePath).catch(() => null);
     if (!audio?.isFile() || audio.size === 0) {

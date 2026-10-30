@@ -378,6 +378,7 @@ export interface ElectronAPI {
         getStatus: () => Promise<import('../services/blender/types').BlenderStatus>;
         listTemplates: () => Promise<import('../services/blender/types').BlenderTemplateInfo[]>;
         renderMusicVideo: (req: import('../services/blender/types').BlenderRenderRequest) => Promise<{ success: boolean; outputPath: string; error?: string }>;
+        pairSession: (token: string) => Promise<boolean>;
         sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
         onProgress: (callback: (progress: import('../services/blender/types').BlenderRenderProgress) => void) => () => void;
     };

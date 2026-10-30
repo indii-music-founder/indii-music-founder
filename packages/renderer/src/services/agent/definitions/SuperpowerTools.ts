@@ -473,7 +473,7 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         parameters: {
             type: 'OBJECT',
             properties: {
-                action: { type: 'STRING', description: 'Action to execute (e.g. ping, run_script, get_scene_info).' },
+                action: { type: 'STRING', enum: ['ping', 'get_scene_info', 'set_frame'], description: 'Declarative scene command. Python execution is not supported.' },
                 params: { type: 'OBJECT', description: 'Parameters for the action.' }
             },
             required: ['action']

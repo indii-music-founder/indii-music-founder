@@ -8,6 +8,19 @@ import sys
 import os
 import json
 
+def validate_render_config(config):
+    """Reject executable configuration before any scene or filesystem mutation."""
+    if not isinstance(config, dict):
+        raise ValueError("Render configuration must be an object.")
+    if "customScriptPath" in config:
+        raise ValueError("Custom Python scripts are not supported. Choose a procedural template.")
+    if config.get("templateId") not in (
+        "audio_reactive_tunnel", "vinyl_turntable", "chrome_text",
+        "spectrum_bars", "concert_stage",
+    ):
+        raise ValueError("Unknown procedural template.")
+
+
 def clear_default_scene():
     """Removes all default objects, meshes, and lights."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -143,6 +156,8 @@ def main():
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
 
+    validate_render_config(config)
+
     print(f"[BlenderRunner] Loaded configuration for template: {config.get('templateId')}")
 
     # 1. Clear scene
@@ -175,29 +190,23 @@ def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, current_dir)
 
-    custom_script = config.get("customScriptPath")
-    if custom_script and os.path.exists(custom_script):
-        print(f"[BlenderRunner] Executing custom script: {custom_script}")
-        with open(custom_script, "r", encoding="utf-8") as sf:
-            exec(sf.read(), {"__file__": custom_script, "config": config})
+    # Load procedural template
+    if template_id == "vinyl_turntable":
+        from templates import vinyl_turntable
+        vinyl_turntable.build_scene(config)
+    elif template_id == "chrome_text":
+        from templates import chrome_text
+        chrome_text.build_scene(config)
+    elif template_id == "spectrum_bars":
+        from templates import spectrum_bars
+        spectrum_bars.build_scene(config)
+    elif template_id == "concert_stage":
+        from templates import concert_stage
+        concert_stage.build_scene(config)
     else:
-        # Load procedural template
-        if template_id == "vinyl_turntable":
-            from templates import vinyl_turntable
-            vinyl_turntable.build_scene(config)
-        elif template_id == "chrome_text":
-            from templates import chrome_text
-            chrome_text.build_scene(config)
-        elif template_id == "spectrum_bars":
-            from templates import spectrum_bars
-            spectrum_bars.build_scene(config)
-        elif template_id == "concert_stage":
-            from templates import concert_stage
-            concert_stage.build_scene(config)
-        else:
-            # Default audio_reactive_tunnel
-            from templates import audio_tunnel
-            audio_tunnel.build_scene(config)
+        # Default audio_reactive_tunnel
+        from templates import audio_tunnel
+        audio_tunnel.build_scene(config)
 
     # 7. Render Animation
     print(f"[BlenderRunner] Starting animation render (1 to {total_frames} frames)...")
