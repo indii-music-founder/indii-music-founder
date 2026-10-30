@@ -6569,6 +6569,8 @@ outcome. Reproduce against current source before implementation or closure.
 
 ---
 
+- **Current-source reconciliation (2026-10-30):** The cited src/api/routes.ts is absent. Current functions/api/router.ts exports only getProfile/health after ISSUE-1442 route pruning; catalogSemanticApi is a separate raw JSON-LD function. No /api or /v1 hosting rewrite is configured. All 15 SDK methods are mapped in [the contract audit](../../docs/audits/issue-1602-current-sdk-contract-2026-10-30.md). Prefix-only changes would not satisfy acceptance. Reconcile the supported SDK surface with the pruning decision before restoring/removing APIs; no fix or closure asserted.
+
 ### ISSUE-1603: Boardroom bug reporting delegates to an unauthorized role and repeats terminal tool denials
 - **Status:** 🟡 PARTIAL (2026-10-29; source repair awaiting publication and genuine app acceptance)
 - **Severity:** 🟠 HIGH
