@@ -4,8 +4,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-- Trigger declarations: **199** across **103** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **199**.
+- Trigger declarations: **200** across **103** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **200**.
 - Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
@@ -39,8 +39,9 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/agent/reportBugFn.ts:46` | `reportBugFn` | `onCall` | Present | Present |
 | `functions/agent/workflowExecutionCallables.ts:62` | `createWorkflowExecution` | `onCall` | Present | Present |
 | `functions/agent/workflowExecutionCallables.ts:128` | `manageWorkflowExecution` | `onCall` | Present | Present |
-| `functions/api/router.ts:181` | `getProfile` | `onRequest` | Present | Present |
-| `functions/api/router.ts:208` | `health` | `onRequest` | Present | Present |
+| `functions/api/router.ts:192` | `sdkApi` | `onRequest` | Present | Present |
+| `functions/api/router.ts:226` | `getProfile` | `onRequest` | Present | Present |
+| `functions/api/router.ts:253` | `health` | `onRequest` | Present | Present |
 | `functions/auth/entitlements.ts:383` | `provisionVerifiedFreeEntitlement` | `onCall` | Present | Present |
 | `functions/auth/handoff.ts:122` | `createHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/handoff.ts:186` | `redeemHandoffCode` | `onRequest` | Present | Present |
