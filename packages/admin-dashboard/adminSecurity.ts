@@ -24,3 +24,13 @@ export function isSingleLineEmailRecipient(value: unknown): value is string {
   }
   return true;
 }
+
+/** Both server-verified admission predicates must hold; truthy claim strings fail closed. */
+export function adminAdmissionAllowed(domainMatches: boolean, emailVerified: unknown): boolean {
+  return domainMatches === true && emailVerified === true;
+}
+
+/** Parse exactly one bearer credential; reject trailing credentials and header fragments. */
+export function parseAdminBearer(header: unknown): string | undefined {
+  return typeof header === 'string' ? header.match(/^Bearer\s+([^\s]+)$/i)?.[1] : undefined;
+}
