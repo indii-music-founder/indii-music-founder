@@ -17,7 +17,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import type { AgentConfig, ValidAgentId } from '../types';
+import type { AgentConfig, ToolFunctionResult, ValidAgentId } from '../types';
 import { MembershipService } from '@/services/MembershipService';
 import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
 import { importWithRetry } from '@/utils/dynamicImport';
@@ -159,7 +159,7 @@ vi.mock('@/core/events', () => ({
  * Build a minimal AgentConfig for testing.
  * Registers allowed_tool as an executable function.
  */
-function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): BaseAgent {
+function makeTestAgent(authorizedTools: string[], extraTools: string[] = [], toolResult?: ToolFunctionResult): BaseAgent {
     const allToolNames = ['allowed_tool', ...extraTools];
     const config: AgentConfig = {
         id: 'test-security-agent' as ValidAgentId,
@@ -178,7 +178,7 @@ function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): Ba
             }))
         }],
         functions: {
-            allowed_tool: vi.fn().mockResolvedValue({ success: true, data: 'allowed result' }),
+            allowed_tool: vi.fn().mockResolvedValue(toolResult ?? { success: true, data: 'allowed result' }),
         }
     };
     return new BaseAgent(config);
@@ -239,6 +239,36 @@ describe('BaseAgent Runtime Tool Authorization', () => {
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         expect(result.toolCalls).toHaveLength(1);
         expect(result.failure).toMatchObject({ code: 'TOOL_NOT_AUTHORIZED', retryable: false });
+    });
+
+    it('ends after one missing credential bridge result instead of retrying the model', async () => {
+        const agent = makeTestAgent(['allowed_tool'], [], {
+            success: false,
+            error: 'Credential vault not available: Electron API required for secure credential storage',
+            metadata: { errorCode: 'CREDENTIAL_STORAGE_UNAVAILABLE' },
+        });
+        mockFunctionCallThenText('allowed_tool');
+
+        const result = await agent.execute('check the connected account', { userId: 'u1', projectId: 'p1' });
+
+        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(result.toolCalls).toHaveLength(1);
+        expect(result.failure).toMatchObject({ code: 'AGENT_EXECUTION_FAILED', retryable: false, toolName: 'allowed_tool' });
+        expect(result.error).toContain('Credential vault not available');
+    });
+
+    it('still lets the agent explain an ordinary tool error', async () => {
+        const agent = makeTestAgent(['allowed_tool'], [], {
+            success: false,
+            error: 'Temporary lookup failure',
+            metadata: { errorCode: 'TOOL_EXECUTION_ERROR' },
+        });
+        mockFunctionCallThenText('allowed_tool');
+
+        const result = await agent.execute('check the connected account', { userId: 'u1', projectId: 'p1' });
+
+        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+        expect(result.text).toBe('Task complete.');
     });
 
     // --------------------------------------------------------------------------
