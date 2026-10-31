@@ -5,7 +5,8 @@ import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { arcjetKey } from '../config/secrets';
-import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { requireVerifiedServerEntitlement } from '../functions/auth/entitlements';
 
 import { McpToolRegistry } from './registry.js';
 import { mcpMessageUrl } from './messageUrl.js';
@@ -37,21 +38,26 @@ interface McpSession {
 // transport and misroute responses to the wrong user's stream).
 const sessions = new Map<string, McpSession>();
 
+export function isMcpCorsPreflight(method: string, path: string): boolean {
+    return method === 'OPTIONS' && (path === '/sse' || path === '/message');
+}
+
 async function verifyBearerToken(req: express.Request): Promise<admin.auth.DecodedIdToken> {
     const authHeader = req.get('Authorization') || '';
-    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    const match = authHeader.match(/^Bearer ([^\s]+)$/i);
     if (!match) {
         throw new Error('Missing or malformed Authorization header.');
     }
     return admin.auth().verifyIdToken(match[1]!);
 }
 
+function admittedUser(res: express.Response): admin.auth.DecodedIdToken | undefined {
+    return res.locals['mcpUser'] as admin.auth.DecodedIdToken | undefined;
+}
+
 app.get('/sse', async (req, res) => {
-    let decoded: admin.auth.DecodedIdToken;
-    try {
-        decoded = await verifyBearerToken(req);
-    } catch (error) {
-        console.warn('[MCP Server] SSE connection rejected: invalid or missing token.', error instanceof Error ? error.message : error);
+    const decoded = admittedUser(res);
+    if (!decoded) {
         res.status(401).send('Unauthorized');
         return;
     }
@@ -112,6 +118,11 @@ app.get('/sse', async (req, res) => {
 });
 
 app.post('/message', async (req, res) => {
+    const decoded = admittedUser(res);
+    if (!decoded) {
+        res.status(401).send('Unauthorized');
+        return;
+    }
     const sessionId = req.query.sessionId as string;
     const session = sessions.get(sessionId);
 
@@ -125,16 +136,9 @@ app.post('/message', async (req, res) => {
     // SAME uid the session was established with. A sessionId is a UUID
     // carried in a query string — verifying it here stops a leaked/guessed
     // sessionId from injecting messages into another user's session.
-    try {
-        const decoded = await verifyBearerToken(req);
-        if (decoded.uid !== session.context.user.uid) {
-            console.warn(`[MCP Server] Message rejected: token uid ${decoded.uid} does not match session uid ${session.context.user.uid}.`);
-            res.status(403).send('Forbidden');
-            return;
-        }
-    } catch (error) {
-        console.warn('[MCP Server] Message rejected: invalid or missing token.', error instanceof Error ? error.message : error);
-        res.status(401).send('Unauthorized');
+    if (decoded.uid !== session.context.user.uid) {
+        console.warn(`[MCP Server] Message rejected: token uid ${decoded.uid} does not match session uid ${session.context.user.uid}.`);
+        res.status(403).send('Forbidden');
         return;
     }
 
@@ -175,15 +179,45 @@ export const mcpEndpoint = onRequest(
         maxInstances: 1,
     },
     async (req, res) => {
+        // Browser Authorization headers trigger an unauthenticated CORS
+        // preflight. Let Express answer only the two gateway transport paths;
+        // no SSE or tool operation is dispatched by OPTIONS.
+        if (isMcpCorsPreflight(req.method, req.path)) {
+            return app(req, res);
+        }
+        let decoded: admin.auth.DecodedIdToken;
+        try {
+            decoded = await verifyBearerToken(req as express.Request);
+        } catch {
+            res.status(401).send('Unauthorized');
+            return;
+        }
+        if (decoded.firebase?.sign_in_provider === 'anonymous') {
+            res.status(403).send('Verified account required');
+            return;
+        }
+        let entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>>;
+        try {
+            entitlement = await requireVerifiedServerEntitlement(decoded.uid);
+        } catch (error) {
+            const code = (error as { code?: string })?.code;
+            const denied = code === 'failed-precondition' || code === 'permission-denied';
+            res.status(code === 'auth/user-not-found' ? 401 : denied ? 403 : 503)
+                .send(code === 'auth/user-not-found' ? 'Unauthorized'
+                    : denied ? 'Verified account required' : 'Account admission unavailable');
+            return;
+        }
         const protection = await protectAuthenticatedApiRequest(req as never, {
-            userId: 'mcp-gateway',
-            policy: 'verified-free',
-            operationId: `mcp-endpoint:${req.ip || 'gateway'}`,
+            userId: decoded.uid,
+            policy: policyClassForServerEntitlement({ tier: entitlement.tier, isAdmin: decoded.admin === true }),
+            operationId: `mcp-endpoint:${crypto.randomUUID()}`,
         });
         if (!protection.allowed) {
             res.status(protection.status || 429).send(protection.message || 'Too Many Requests');
             return;
         }
+        res.locals = res.locals || Object.create(null);
+        res.locals['mcpUser'] = decoded;
         return app(req, res);
     },
 );

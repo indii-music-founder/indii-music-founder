@@ -33,6 +33,8 @@ import { textContent } from './mcpContent';
 
 const context = (uid: string): McpContext => ({ user: { uid } as never });
 
+// Structural-only storage/event checks; mocked Firestore and Inngest are not
+// evidence that an authenticated artist can see or execute the campaign.
 describe('scheduleCampaignWaterfall MCP tool', () => {
     beforeEach(() => {
         ownedGetMock.mockReset();
@@ -67,13 +69,13 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
 
         const written = addMock.mock.calls[0][0];
         expect(Object.keys(written).sort()).toEqual(
-            ['budget', 'createdAt', 'emailOptIn', 'engine', 'events', 'initiatorUid', 'releaseId', 'startDate', 'status'].sort(),
+            ['budget', 'createdAt', 'emailOptIn', 'engine', 'events', 'initiatorUid', 'releaseId', 'startDate', 'status', 'userId'].sort(),
         );
         expect(written.initiatorUid).toBe('user-1');
+        expect(written.userId).toBe('user-1');
         expect(written.status).toBe('scheduled');
         expect(written.engine).toBe('inngest');
         expect(written.emailOptIn).toBe(false);
-        expect(written).not.toHaveProperty('userId');
         expect(written).not.toHaveProperty('extraField');
         expect(written.events.every((e: { status: string }) => e.status === 'planned')).toBe(true);
 
