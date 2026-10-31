@@ -12,6 +12,7 @@
  *    without recovered funds.
  * 3. Partial refunds claw nothing back on either flow.
  * 4. Binding guards: a reservation bound to a different session is refused.
+ * Provider/Firestore doubles below verify routing only, not a live Stripe dispute.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -167,6 +168,54 @@ async function deliverRefund(charge: Record<string, unknown>, session: Record<st
 }
 
 const baseCharge = { id: 'ch_1', payment_intent: 'pi_1', amount: 2500, amount_refunded: 2500, object: 'charge' };
+
+describe('dispute finance trail (ISSUE-1406)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupFirestore();
+  });
+
+  it.each([
+    'charge.dispute.created',
+    'charge.dispute.updated',
+    'charge.dispute.closed',
+    'charge.dispute.funds_withdrawn',
+    'charge.dispute.funds_reinstated',
+  ])('records %s without moving funds', async type => {
+    const event = {
+      id: `evt_${type}`, type, created: 100,
+      data: { object: { id: 'dp_1', charge: 'ch_1', amount: 2500, currency: 'usd', reason: 'fraudulent', status: type === 'charge.dispute.closed' ? 'won' : 'under_review' } },
+    };
+    mocks.mockConstructEvent.mockReturnValue(event);
+    const { stripeWebhook } = await import('./webhookHandler');
+    const res = makeRes();
+    await (stripeWebhook as unknown as (req: unknown, res: unknown) => Promise<void>)(
+      { headers: { 'stripe-signature': 'valid_sig' }, rawBody: Buffer.from('{}') }, res,
+    );
+
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+    expect(writes.find(w => w.path === `payment_disputes/dp_1/events/${event.id}`)?.data).toMatchObject({ type, occurredAt: 100 });
+    expect(writes.find(w => w.path === 'payment_disputes/dp_1')?.data).toMatchObject({ lastEventType: type });
+    expect(mocks.mockCreateReversal).not.toHaveBeenCalled();
+  });
+
+  it('keeps a late update in the audit trail without reverting a closed summary', async () => {
+    setupFirestore({ 'payment_disputes/dp_1': { lastEventCreated: 105, lastEventType: 'charge.dispute.closed', status: 'won' } });
+    mocks.mockConstructEvent.mockReturnValue({
+      id: 'evt_late', type: 'charge.dispute.updated', created: 104,
+      data: { object: { id: 'dp_1', charge: 'ch_1', amount: 2500, currency: 'usd', reason: 'fraudulent', status: 'under_review' } },
+    });
+    const { stripeWebhook } = await import('./webhookHandler');
+    const res = makeRes();
+    await (stripeWebhook as unknown as (req: unknown, res: unknown) => Promise<void>)(
+      { headers: { 'stripe-signature': 'valid_sig' }, rawBody: Buffer.from('{}') }, res,
+    );
+
+    expect(res.json).toHaveBeenCalledWith({ received: true });
+    expect(writes.some(w => w.path === 'payment_disputes/dp_1/events/evt_late')).toBe(true);
+    expect(writes.some(w => w.path === 'payment_disputes/dp_1')).toBe(false);
+  });
+});
 
 describe('marketplace refund clawback (ISSUE-1406)', () => {
   beforeEach(() => {

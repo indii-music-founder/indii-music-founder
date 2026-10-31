@@ -16,6 +16,7 @@ import { enqueueConversionEvent } from '../marketing/conversionEventOutbox';
 import { confirmPrintfulOrder } from '../pod/printfulApi';
 import { printfulApiKey } from '../config/secrets';
 import { buildConversionEventId } from '@indii/shared';
+import { shouldAdvanceDisputeSummary, type DisputeLifecycleEventType } from './disputeLifecycle';
 
 function maskId(id: string): string {
   if (!id) return '';
@@ -841,7 +842,7 @@ async function resolveChargeCheckoutSession(
  * platform does not silently absorb refund costs. Reservations, the purchase
  * doc, and revenue analytics are flipped to refunded in the same transaction.
  * Partial refunds are logged without clawback. Disputes remain a
- * finance-review record (handleChargeDisputeCreated) — funds are not yet
+ * finance-review record (handleChargeDisputeLifecycle) — funds are not yet
  * lost while a dispute is pending, and premature clawback would require a
  * re-credit path on `charge.dispute.closed` (deliberately not built yet).
  */
@@ -1155,24 +1156,37 @@ async function handleCreditPackRefund(
   logger.info(`[handleChargeRefunded] Reversed up to ${credits} credits for user ${maskId(userId)} (charge ${charge.id})`);
 }
 
-/**
- * Handle charge.dispute.created — record an early-warning doc for finance.
- * No automatic balance action: disputes are resolved out-of-band; this makes
- * them visible instead of silently landing in the unhandled-events log.
- */
-async function handleChargeDisputeCreated(event: Stripe.Event): Promise<void> {
+/** Record the complete dispute status trail for finance without moving money. */
+async function handleChargeDisputeLifecycle(event: Stripe.Event): Promise<void> {
   const dispute = event.data.object as Stripe.Dispute;
   const db = getFirestore();
-  // Deterministic ID keyed by the dispute — duplicate deliveries overwrite.
-  await db.collection('payment_disputes').doc(dispute.id).set({
-    chargeId: dispute.charge,
-    amount: dispute.amount,
-    currency: dispute.currency,
-    reason: dispute.reason,
-    status: dispute.status,
-    recordedAt: FieldValue.serverTimestamp(),
+  const disputeRef = db.collection('payment_disputes').doc(dispute.id);
+  const eventRef = disputeRef.collection('events').doc(event.id);
+  await db.runTransaction(async tx => {
+    const previous = await tx.get(disputeRef);
+    const type = event.type as DisputeLifecycleEventType;
+    tx.set(eventRef, {
+      type,
+      status: dispute.status,
+      amount: dispute.amount,
+      currency: dispute.currency,
+      occurredAt: event.created,
+      recordedAt: FieldValue.serverTimestamp(),
+    });
+    if (!shouldAdvanceDisputeSummary(previous.data(), { created: event.created, type, status: dispute.status })) return;
+    tx.set(disputeRef, {
+      chargeId: dispute.charge,
+      amount: dispute.amount,
+      currency: dispute.currency,
+      reason: dispute.reason,
+      status: dispute.status,
+      lastEventCreated: event.created,
+      lastEventType: type,
+      updatedAt: FieldValue.serverTimestamp(),
+      ...(!previous.exists ? { firstObservedAt: FieldValue.serverTimestamp() } : {}),
+    }, { merge: true });
   });
-  logger.warn(`[handleChargeDisputeCreated] Dispute ${dispute.id} recorded for finance review`);
+  logger.warn(`[handleChargeDisputeLifecycle] Dispute ${dispute.id} recorded for finance review (${event.type})`);
 }
 
 /**
@@ -1386,7 +1400,11 @@ export const stripeWebhook = onRequest({
         await handleChargeRefunded(event);
         break;
       case 'charge.dispute.created':
-        await handleChargeDisputeCreated(event);
+      case 'charge.dispute.updated':
+      case 'charge.dispute.closed':
+      case 'charge.dispute.funds_withdrawn':
+      case 'charge.dispute.funds_reinstated':
+        await handleChargeDisputeLifecycle(event);
         break;
       default:
         logger.warn({
