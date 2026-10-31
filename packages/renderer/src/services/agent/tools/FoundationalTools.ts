@@ -1,3 +1,4 @@
+import { auth } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -19,10 +20,7 @@ export const FoundationalTools = {
         }
     }),
 
-    /**
-     * Updates an agent's persistent procedural knowledge.
-     * Use this to remember user preferences or enforce new rules.
-     */
+    /** Saves a signed-in user's local agent preferences for future desktop sessions. */
     update_agent_memory: wrapTool('update_agent_memory', async (args: {
         agentId: string,
         action: 'add' | 'remove',
@@ -32,10 +30,14 @@ export const FoundationalTools = {
             // Construct path based on agentId
             const filePath = `agents/${args.agentId}/instructions.md`;
             
-            const result = await window.electronAPI!.agent.updateKnowledge(filePath, args.action, args.knowledge);
+            const user = auth.currentUser;
+            if (!user) return toolError('Sign in before saving local agent knowledge.', 'AUTH_REQUIRED');
+            const idToken = await user.getIdToken();
+            if (auth.currentUser?.uid !== user.uid) return toolError('Account changed before saving local agent knowledge.', 'AUTH_CHANGED');
+            const result = await window.electronAPI!.agent.updateKnowledge(filePath, args.action, args.knowledge, idToken);
             
             if (result.success) {
-                return toolSuccess(result, `SYSTEM UPDATE COMPLETE: Changes permanently written to ${args.agentId}.`);
+                return toolSuccess(result, `Local knowledge saved for ${args.agentId}; it will be read when the next desktop agent execution builds its prompt.`);
             } else {
                 return toolError(result.error || "Failed to update memory", "MEMORY_UPDATE_FAILED");
             }
@@ -56,7 +58,7 @@ export const FOUNDATIONAL_TOOL_DECLARATIONS = [
     },
     {
         name: 'update_agent_memory',
-        description: "Updates an agent's persistent procedural knowledge (instructions.md). Use this to remember user preferences or enforce new rules across sessions.",
+        description: "Saves or removes a signed-in user's local agent preference for future desktop sessions. Saved notes do not change tool permissions or security policy.",
         parameters: {
             type: 'object',
             properties: {
@@ -71,7 +73,7 @@ export const FOUNDATIONAL_TOOL_DECLARATIONS = [
                 },
                 knowledge: {
                     type: 'string',
-                    description: "The specific procedural instruction or rule to persist."
+                    description: "The specific user preference or note to save."
                 }
             },
             required: ['agentId', 'action', 'knowledge']

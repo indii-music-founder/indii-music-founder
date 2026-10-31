@@ -116,7 +116,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         readArtifact: (filename: string) => ipcRenderer.invoke('agent:read-artifact', filename),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         multiReplaceFileContent: (args: any) => ipcRenderer.invoke('agent:multi-replace-file-content', args),
-        updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content),
+        readKnowledge: (agentId: string, idToken: string) => ipcRenderer.invoke('agent:read-knowledge', agentId, idToken),
+        updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string, idToken: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content, idToken),
         getCapabilityRegistry: () => ipcRenderer.invoke('agent:get-capability-registry'),
     },
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
