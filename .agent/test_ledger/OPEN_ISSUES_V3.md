@@ -3123,6 +3123,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1437: Phantom module IDs and mobile/desktop gating drift route users to the wrong places
 
+- **2026-11-01 navigation decision (source branch `codex/screenwriter-phone-navigation`; structural only):** CRM and Analytics remain tabs within Marketing, retaining their legacy deep-link IDs. Capture remains the phone Quick Capture action; Founder Portal remains a post-checkout deep link. Screenwriter has its own registered destination and draft workflow, so the phone More drawer now exposes it through the existing feature and organization gates. Jev Choice judgments informed this product triage, but route registration and gates were checked in source; no permission or payment decision depends on Jev. The six MobileTabBar structural checks passed. Genuine desktop/phone navigation and reload acceptance remains outstanding, so this issue stays PARTIAL.
 - **Status:** 🟡 PARTIAL (2026-09-22 — nav surfaces fixed in `8e64e3ab9`: gating filter, phantom entry removal, phone Workspace access. Orphan surfacing/cutting decisions remain Tier 3 product calls)
 - **Severity:** 🟠 HIGH
 - **Module:** `appSlice.ts` / `MobileTabBar.tsx` / module reachability
