@@ -61,6 +61,12 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
         vi.clearAllMocks();
     });
 
+    it('preserves a lease permission error instead of claiming another runner owns the job', async () => {
+        vi.mocked(runTransaction).mockRejectedValueOnce(new Error('Missing or insufficient permissions.'));
+        await expect(agentGraphService.executeGraph(mockGraph, mockContext, 'Test', 'exec-denied'))
+            .rejects.toThrow('Missing or insufficient permissions.');
+    });
+
     it('rejects execution if execution is actively leased by another runner', async () => {
         const executionId = 'exec-leased';
 
@@ -145,7 +151,7 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
         expect(mockUpdate).toHaveBeenCalledWith(
             expect.anything(),
             expect.objectContaining({
-                lease: expect.objectContaining({
+                'metadata.lease': expect.objectContaining({
                     expiresAt: expect.any(Number),
                 })
             })

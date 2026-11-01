@@ -1,0 +1,26 @@
+{
+  "environment": "https://app.indii.music",
+  "observedConsoleEvidence": [
+    {
+      "timestamp": "2026-10-29T21:22:55.465Z",
+      "path": "Merch Designer autonomous image",
+      "message": "Request protection is temporarily unavailable.",
+      "code": "functions/unavailable",
+      "details": {
+        "code": "SECURITY_UNAVAILABLE",
+        "retryAfterSeconds": 60
+      }
+    },
+    {
+      "timestamp": "2026-10-29T21:26:16.952Z",
+      "path": "Merch Showroom Generate Mockup",
+      "message": "Operation failed: AppException: Invalid or unauthorized model ID."
+    },
+    {
+      "timestamp": "2026-10-29T21:28:19.775Z",
+      "path": "Merch Version History",
+      "message": "Failed to fetch design versions: FirebaseError: The query requires an index.",
+      "query": "designs where userId == current user orderBy lastModified desc"
+    }
+  ]
+}

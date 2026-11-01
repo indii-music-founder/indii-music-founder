@@ -22,6 +22,11 @@ vi.mock('@/services/creative/CreativeStorageService', () => ({
     },
 }));
 
+const { mockGenerateCompositeImage } = vi.hoisted(() => ({ mockGenerateCompositeImage: vi.fn() }));
+vi.mock('./ImageGenerationService', () => ({
+    ImageGeneration: { generateImages: mockGenerateCompositeImage }
+}));
+
 // Mock firebase service
 vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
@@ -105,6 +110,20 @@ describe('EditingService', () => {
         // Dynamic import to get fresh module each time
         const mod = await import('./EditingService');
         EditingService = new mod.EditingService();
+    });
+
+    describe('generateComposite', () => {
+        it('sends actual reference pixels through the shared image gateway', async () => {
+            mockGenerateCompositeImage.mockResolvedValueOnce([{ id: 'composite', url: 'https://example.com/result.png', prompt: 'Result' }]);
+            const images = [{ mimeType: 'image/png', data: 'reference-pixels' }];
+            const result = await EditingService.generateComposite({ images, prompt: 'Place artwork on a shirt' });
+            expect(mockGenerateCompositeImage).toHaveBeenCalledWith(expect.objectContaining({ sourceImages: images, model: 'pro', count: 1 }));
+            expect(result.url).toBe('https://example.com/result.png');
+        });
+        it('does not fabricate an image when the gateway returns no output', async () => {
+            mockGenerateCompositeImage.mockResolvedValueOnce([]);
+            await expect(EditingService.generateComposite({ images: [{ mimeType: 'image/png', data: 'pixels' }], prompt: 'A shirt' })).rejects.toThrow('without an image');
+        });
     });
 
     describe('editImage', () => {

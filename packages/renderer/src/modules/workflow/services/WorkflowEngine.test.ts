@@ -49,6 +49,11 @@ vi.mock('@/services/storage/repository', () => ({
     getWorkflowFromStorage: vi.fn().mockResolvedValue(null)
 }));
 
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: { uploadReferenceMedia: vi.fn().mockResolvedValue('gs://test-bucket/owned-reference.png') }
+}));
+vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'test-user' } }, db: {}, storage: {}, functions: {}, functionsWest1: {} }));
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Build a minimal linear workflow: input → dept/logic → output */
@@ -138,6 +143,28 @@ describe('WorkflowEngine', () => {
         );
     });
 
+    it('preserves the selected source image in a refinement request', async () => {
+        const node: CustomNode = { id: 'refine', type: 'departmentNode', position: { x: 300, y: 0 },
+            data: { nodeType: 'department', departmentName: 'Art Department', selectedJobId: 'art-upscale', prompt: 'Preserve composition', status: Status.PENDING } };
+        const { nodes, edges } = makeLinearWorkflow(node);
+        nodes[0]!.data = { nodeType: 'input', prompt: 'https://example.com/source.png', status: Status.PENDING };
+        edges[0]!.targetHandle = 'image_input';
+        await new WorkflowEngine(nodes, edges, mockSetNodes).run();
+        const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalledWith('test-user', 'https://example.com/source.png', 'image');
+        expect(ImageGeneration.generateImages).toHaveBeenCalledWith(expect.objectContaining({ referenceUris: ['gs://test-bucket/owned-reference.png'], resolution: '4K' }));
+    });
+
+    it('does not replace missing refinement input with unrelated text-to-image', async () => {
+        const node: CustomNode = { id: 'refine', type: 'departmentNode', position: { x: 300, y: 0 },
+            data: { nodeType: 'department', departmentName: 'Art Department', selectedJobId: 'art-upscale', status: Status.PENDING } };
+        const { nodes, edges } = makeLinearWorkflow(node);
+        await new WorkflowEngine(nodes, edges, mockSetNodes).run();
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        expect(ImageGeneration.generateImages).not.toHaveBeenCalled();
+    });
+
     // ── Video Department ──────────────────────────────────────────────────────
 
     it('executes Video Department (text-to-video) and calls VideoGeneration', async () => {
@@ -195,7 +222,7 @@ describe('WorkflowEngine', () => {
 
     // ── Social Media Department ───────────────────────────────────────────────
 
-    it('executes Social Media Department node and creates a post', async () => {
+    it('returns Social Media draft copy without creating a public post', async () => {
         const socialNode: CustomNode = {
             id: 'social',
             type: 'departmentNode',
@@ -214,7 +241,7 @@ describe('WorkflowEngine', () => {
             expect.anything()
         );
         const { SocialService } = await import('@/services/social/SocialService');
-        expect(SocialService.createPost).toHaveBeenCalledWith('AI generated text', []);
+        expect(SocialService.createPost).not.toHaveBeenCalled();
     });
 
     // ── Marketing Department ──────────────────────────────────────────────────

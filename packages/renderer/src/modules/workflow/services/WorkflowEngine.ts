@@ -1,8 +1,8 @@
 import { CustomNode, CustomEdge, DepartmentNodeData, LogicNodeData, InputNodeData, Status, SavedWorkflow } from '../types';
 import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { performanceVideoService, sonicProfileFromAnalysisReceipt } from '@/services/video/PerformanceVideoService';
 import { audioAnalysisReceiptService } from '@/services/audio/AudioAnalysisReceiptService';
@@ -191,7 +191,10 @@ export class WorkflowEngine {
                 }
                 const target = this.nodes.find(n => n.id === edge.target);
                 if (target) {
-                    this.executionQueue.push({ nodeId: target.id, inputs: { data: output } });
+                    this.executionQueue.push({
+                        nodeId: target.id,
+                        inputs: { data: output, ...(edge.targetHandle ? { [edge.targetHandle]: output } : {}) },
+                    });
                 }
             }
         } catch (err: unknown) {
@@ -229,14 +232,22 @@ export class WorkflowEngine {
 
             // ── Art Department ──────────────────────────────────────────────
             case 'Art Department': {
-                if (jobId === 'art-upscale' && inputs.image_input) {
-                    // Image-to-image refinement: use the prompt as a refinement instruction
+                if (jobId === 'art-upscale') {
+                    if (typeof inputs.image_input !== 'string' || !inputs.image_input.trim()) {
+                        throw new Error('A source image is required to refine an image.');
+                    }
+                    const uid = auth.currentUser?.uid;
+                    if (!uid) throw new Error('Sign in before refining an image.');
+                    const referenceUri = await CreativeStorageService.uploadReferenceMedia(uid, inputs.image_input, 'image');
                     const images = await ImageGeneration.generateImages({
                         prompt: `Refine and upscale: ${prompt}`,
+                        referenceUris: [referenceUri],
+                        resolution: '4K',
                         count: 1,
                         aspectRatio: '1:1',
                     });
-                    return images[0]?.url;
+                    if (!images[0]?.url) throw new Error('Image refinement completed without an image.');
+                    return images[0].url;
                 }
                 const images = await ImageGeneration.generateImages({ prompt, count: 1, aspectRatio: '1:1' });
                 return images[0]?.url;
@@ -333,18 +344,13 @@ export class WorkflowEngine {
 
             // ── Social Media Department ─────────────────────────────────────
             case 'Social Media Department': {
-                // Generate caption via Autonomous then schedule as a draft post
+                // Produce reviewable workflow copy. Publishing is a separate explicit action.
                 const captionRes = await AI.generateContent(
                     [{ role: 'user' as const, parts: [{ text: `Write a social media caption for: ${prompt}` }] }],
                     INTELLIGENCE_MODELS.TEXT.AGENT
                 );
                 const caption = getResponseText(captionRes);
 
-                // Schedule as a post (no real publish — leaves it as DRAFT for human approval)
-                const mediaUrls: string[] = typeof inputs.data === 'string' && inputs.data.startsWith('http')
-                    ? [inputs.data]
-                    : [];
-                await SocialService.createPost(caption, mediaUrls);
                 return caption;
             }
 

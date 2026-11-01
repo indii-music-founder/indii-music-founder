@@ -1,0 +1,39 @@
+{
+  "source": "Firebase functions_get_logs, authenticated read after official reauthorization",
+  "project": "indii-music-founder",
+  "filter": "resource.type=\"cloud_function\" OR (resource.type=\"cloud_run_revision\" AND labels.\"goog-managed-by\"=\"cloudfunctions\")\nseverity>=\"ERROR\"\ntimestamp>=\"2026-10-29T21:22:45Z\"\ntimestamp<=\"2026-10-29T21:23:05Z\"\n((\"[Arcjet] Decision failed\" OR \"[Arcjet] Protect call threw\"))",
+  "entries": [
+    {
+      "timestamp": "2026-10-29T21:22:54.469774Z",
+      "function": "generateimagev3",
+      "error": "[resource_exhausted] quota exceeded: log_drains (0/0 bytes), protected_requests (15712/10000 requests), total_requests (15712/10000 requests)",
+      "attempt": 1,
+      "policy": "admin",
+      "trace": "projects/indii-music-founder/traces/7dc2a7683ea0efb2bbb8669a45fca9f1"
+    },
+    {
+      "timestamp": "2026-10-29T21:23:03.378300Z",
+      "function": "getusagestats",
+      "error": "[resource_exhausted] quota exceeded: log_drains (0/0 bytes), protected_requests (15712/10000 requests), total_requests (15712/10000 requests)",
+      "attempt": 1,
+      "policy": "admin",
+      "trace": "projects/indii-music-founder/traces/01740da4ccb49a63dd64ece6ae19d11b"
+    },
+    {
+      "timestamp": "2026-10-29T21:23:03.457661Z",
+      "function": "getsubscription",
+      "error": "[resource_exhausted] quota exceeded: log_drains (0/0 bytes), protected_requests (15712/10000 requests), total_requests (15712/10000 requests)",
+      "attempt": 1,
+      "policy": "admin",
+      "trace": "projects/indii-music-founder/traces/8b1462c335a70d3bdd64ece6ae19dd3d"
+    },
+    {
+      "timestamp": "2026-10-29T21:23:04.742761Z",
+      "function": "typesafejudge",
+      "error": "[resource_exhausted] quota exceeded: log_drains (0/0 bytes), protected_requests (15712/10000 requests), total_requests (15712/10000 requests)",
+      "attempt": 1,
+      "policy": "verified-free",
+      "trace": "projects/indii-music-founder/traces/855ff76c8ebfa23bdd64ece6ae19d81b"
+    }
+  ]
+}

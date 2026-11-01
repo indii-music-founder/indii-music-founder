@@ -689,6 +689,27 @@ describe('creative gateway generateImageV3', () => {
     });
   });
 
+  it('uses generateContent when Vertex explicitly rejects the image model for Interactions', async () => {
+    mockInteractionsCreate.mockRejectedValue(new Error("400 Model 'gemini-3.1-flash-image' is not supported by the Interactions API."));
+    mockGenerateContent.mockResolvedValueOnce({ candidates: [{ content: { parts: [
+      { inlineData: { data: Buffer.from('image-bytes').toString('base64'), mimeType: 'image/png' } }
+    ] } }] });
+    const result = await callGenerateImage({ auth: { uid: 'user-123' }, data: {
+      prompt: 'A golden leaf', model: 'fast', costReservationId: 'image-unsupported-interaction-op'
+    } });
+    expect(mockInteractionsCreate).toHaveBeenCalledTimes(1);
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    expect((result as { resultUri: string }).resultUri).toContain('gs://test-bucket/creative/user-123/');
+  });
+
+  it('does not retry an Interactions safety rejection through another generation route', async () => {
+    mockInteractionsCreate.mockRejectedValue(new Error('400 Request blocked by safety policy'));
+    await expect(callGenerateImage({ auth: { uid: 'user-123' }, data: {
+      prompt: 'A golden leaf', model: 'fast', costReservationId: 'image-safety-rejected-op'
+    } })).rejects.toBeDefined();
+    expect(mockGenerateContent).not.toHaveBeenCalled();
+  });
+
   it('retries ONCE when Vertex returns an empty response, then succeeds (ISSUE-1378)', async () => {
     // Force the generateContent fallback path.
     mockInteractionsCreate.mockRejectedValue(new Error('Unsupported model interaction'));

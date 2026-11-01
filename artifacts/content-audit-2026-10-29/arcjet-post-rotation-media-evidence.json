@@ -1,0 +1,48 @@
+{
+  "observedAt": "2026-10-30T02:51:21Z",
+  "workflow": "Art & Merch > Designer > Generate image autonomously",
+  "secretVersion": "2",
+  "entries": [
+    {
+      "timestamp": "2026-10-30T02:51:19.684014Z",
+      "severity": "DEBUG",
+      "function": "generateimagev3",
+      "message": "{\"message\":\"Callable request verification passed\",\"verifications\":{\"auth\":\"VALID\",\"app\":\"VALID\"}}",
+      "trace": "projects/indii-music-founder/traces/fe0748aa4ff73cd5195aa422a92cc63a"
+    },
+    {
+      "timestamp": "2026-10-30T02:51:21.402203Z",
+      "severity": "DEBUG",
+      "function": "generateimagev3",
+      "message": "{\"operationId\":\"generate-image:176b432e-8eb0-4d25-94fe-deb589cbc127\",\"policy\":\"admin\",\"message\":\"[Arcjet] Request allowed\",\"decisionId\":\"req_01m65bg4cefperqf6k4515xszk\"}",
+      "trace": "projects/indii-music-founder/traces/fe0748aa4ff73cd5195aa422a92cc63a"
+    },
+    {
+      "timestamp": "2026-10-30T02:51:21.527518Z",
+      "severity": "DEFAULT",
+      "function": "generateimagev3",
+      "message": "[VertexClient] Initialized Vertex AI SDK for project=indii-music-founder, location=global, baseUrl=https://aiplatform.googleapis.com\n",
+      "trace": null
+    },
+    {
+      "timestamp": "2026-10-30T02:51:21.748154Z",
+      "severity": "DEFAULT",
+      "function": "generateimagev3",
+      "message": "[Gateway Debug] Raw Error Details for Image generation failed: {\n  error: BadRequestError: 400 Model 'gemini-3.1-flash-image' is not supported by the Interactions API.",
+      "trace": null
+    },
+    {
+      "timestamp": "2026-10-30T02:51:21.748394Z",
+      "severity": "DEFAULT",
+      "function": "generateimagev3",
+      "message": "[creativeGateway] Generation failed {\n  operation: 'Image generation',\n  jobId: 'ZvSNjm5d2Bs7zq1y7X9Q',\n  code: 'invalid-argument'\n}\n",
+      "trace": null
+    }
+  ],
+  "browser": {
+    "timestamp": "2026-10-30T02:51:21.988Z",
+    "code": "functions/invalid-argument",
+    "message": "Image generation failed: The generation request was rejected. Review the inputs and try again.",
+    "result": "No image or added layer; 44 assets, zero layers."
+  }
+}

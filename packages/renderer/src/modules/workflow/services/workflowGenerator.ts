@@ -154,6 +154,27 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
         systemInstruction
     );
 
+    if (!generated || !Array.isArray(generated.nodes) || !generated.nodes.length || !Array.isArray(generated.edges)) {
+        throw new Error('The workflow architect returned an incomplete graph. Please try again with a shorter request.');
+    }
+    const nodeIds = new Set<string>();
+    for (const node of generated.nodes) {
+        if (!node || typeof node.id !== 'string' || !node.id || nodeIds.has(node.id) ||
+            !node.data || !node.position || !Number.isFinite(node.position.x) || !Number.isFinite(node.position.y)) {
+            throw new Error('The workflow architect returned an invalid node. Please regenerate the workflow.');
+        }
+        nodeIds.add(node.id);
+        if (node.type === 'departmentNode') {
+            const definition = Object.values(NODE_REGISTRY).find(def => def.departmentName === node.data.departmentName);
+            if (!definition?.jobs.some(job => job.id === node.data.selectedJobId)) {
+                throw new Error('The workflow architect selected an unavailable job. Please regenerate the workflow.');
+            }
+        }
+    }
+    if (generated.edges.some(edge => !edge || !nodeIds.has(edge.source) || !nodeIds.has(edge.target))) {
+        throw new Error('The workflow architect returned a disconnected reference. Please regenerate the workflow.');
+    }
+
     // Post-processing to ensure internal consistency (status, etc)
     const nodes: SavedWorkflow['nodes'] = (generated.nodes || []).map((n: GeneratedNode, index: number) => ({
         ...n,

@@ -325,7 +325,7 @@ export default function RightPanel() {
                                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="px-4 pb-4">
+                                        <div className="px-4 pb-4 max-h-[40vh] overflow-y-auto overscroll-contain">
                                             <AssetSpotlight />
                                         </div>
                                     </motion.div>

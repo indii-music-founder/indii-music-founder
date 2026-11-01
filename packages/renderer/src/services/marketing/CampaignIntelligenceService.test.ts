@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CampaignIntelligence, CampaignIntelligenceService } from './CampaignIntelligenceService';
 import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { CampaignStatus, Platform } from '@/modules/marketing/types';
 
 // Mock AIService
@@ -10,6 +11,13 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
         generateImage: vi.fn(),
         generateText: vi.fn(),
         generateVideo: vi.fn(async () => 'https://mock-video-url.com/asset.mp4')
+    }
+}));
+
+vi.mock('@/services/video/VideoGenerationService', () => ({
+    VideoGeneration: {
+        generateVideo: vi.fn(async () => [{ id: 'video-job', url: 'https://example.com/video.mp4' }]),
+        waitForJob: vi.fn(async () => ({ videoUrl: 'https://example.com/completed.mp4' }))
     }
 }));
 
@@ -329,6 +337,18 @@ describe('CampaignIntelligenceService', () => {
             expect(AI.generateImage).toHaveBeenCalledTimes(1);
         });
 
+        it('never marks a failed final post complete', async () => {
+            vi.mocked(AI.generateText).mockResolvedValue('A leaf');
+            vi.mocked(AI.generateImage).mockRejectedValue(new Error('Generation rejected'));
+            const posts = [{ id: 'failed-last', platform: 'Instagram' as Platform, copy: 'Leaf',
+                imageAsset: { assetType: 'image' as const, title: '', imageUrl: '', caption: '' },
+                day: 1, status: CampaignStatus.PENDING }];
+            const progress = vi.fn();
+            const result = await CampaignIntelligence.generatePostImages(posts, progress);
+            expect(result[0]?.imageAsset.imageUrl).toBe('');
+            expect(progress.mock.calls.map(([event]) => event.status)).toEqual(['generating', 'error']);
+        });
+
         it('should call progress callback during batch processing', async () => {
             (AI.generateImage as ReturnType<typeof vi.fn>).mockResolvedValue('image');
             (AI.generateText as ReturnType<typeof vi.fn>).mockResolvedValue('prompt');
@@ -566,21 +586,33 @@ describe('CampaignIntelligenceService', () => {
         });
     });
 
-    describe('generateMarketingVideo (ISSUE-954)', () => {
-        it('is text-to-video only: never receives or forwards an audio reference', async () => {
-            const result = await CampaignIntelligence.generateMarketingVideo('A neon city at night', 'cyberpunk');
-
-            expect(result).toBe('https://mock-video-url.com/asset.mp4');
-            const [callArgs] = (AI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0] as [Record<string, unknown>];
-            expect(JSON.stringify(callArgs)).not.toMatch(/audio/i);
-            expect(callArgs.prompt).toContain('A neon city at night');
+    describe('generateMarketingVideo', () => {
+        it('uses the shared video gateway with supported vertical defaults', async () => {
+            vi.mocked(VideoGeneration.generateVideo).mockResolvedValueOnce([{ id: 'video-job', url: 'https://example.com/video.mp4' }] as never);
+            expect(await CampaignIntelligence.generateMarketingVideo('A golden leaf', 'screen print')).toBe('https://example.com/video.mp4');
+            expect(VideoGeneration.generateVideo).toHaveBeenLastCalledWith(expect.objectContaining({
+                durationSeconds: 8, aspectRatio: '9:16', model: 'fast', prompt: expect.stringContaining('A golden leaf')
+            }));
+            expect(AI.generateVideo).not.toHaveBeenCalled();
         });
 
-        it('merges an optional config without requiring an audio field', async () => {
-            await CampaignIntelligence.generateMarketingVideo('A prompt', 'anime', { durationSeconds: 8 });
+        it('waits for a queued job rather than returning an empty URL', async () => {
+            vi.mocked(VideoGeneration.generateVideo).mockResolvedValueOnce([{ id: 'queued-job', url: '' }] as never);
+            vi.mocked(VideoGeneration.waitForJob).mockResolvedValueOnce({ videoUrl: 'https://example.com/completed.mp4' } as never);
+            expect(await CampaignIntelligence.generateMarketingVideo('A leaf', 'watercolor', { durationSeconds: 6 })).toBe('https://example.com/completed.mp4');
+            expect(VideoGeneration.waitForJob).toHaveBeenCalledWith('queued-job');
+            expect(VideoGeneration.generateVideo).toHaveBeenLastCalledWith(expect.objectContaining({ durationSeconds: 6 }));
+        });
 
-            const [callArgs] = (AI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0] as [Record<string, unknown>];
-            expect((callArgs.config as Record<string, unknown>).durationSeconds).toBe(8);
+        it('preserves actionable gateway errors', async () => {
+            vi.mocked(VideoGeneration.generateVideo).mockRejectedValueOnce(new Error('Video quota exceeded'));
+            await expect(CampaignIntelligence.generateMarketingVideo('A leaf', 'documentary')).rejects.toThrow('Video quota exceeded');
+        });
+
+        it('rejects completion without usable media', async () => {
+            vi.mocked(VideoGeneration.generateVideo).mockResolvedValueOnce([{ id: 'empty-job', url: '' }] as never);
+            vi.mocked(VideoGeneration.waitForJob).mockResolvedValueOnce({ videoUrl: '' } as never);
+            await expect(CampaignIntelligence.generateMarketingVideo('A leaf', 'collage')).rejects.toThrow('without a video URL');
         });
     });
 });

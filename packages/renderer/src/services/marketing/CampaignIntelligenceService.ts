@@ -1,4 +1,5 @@
 import { AutonomousIntelligence as GenAI } from '@/services/intelligence/AutonomousIntelligence';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { auth, storage } from '@/services/firebase';
@@ -236,11 +237,8 @@ Ensure all versions respect the platform's character limit.
     /**
      * Generate a short-form video asset for marketing.
      *
-     * ISSUE-954: text-to-video only — GenAI.generateVideo below takes a
-     * text prompt and config, nothing audio-related. A previous `audioUrl`
-     * parameter was never referenced in this function body and no caller
-     * ever passed one; removed rather than kept as an unused parameter that
-     * implies audio-conditioned generation is possible here.
+     * Text-to-video only. The shared video service owns admission, durable jobs,
+     * and provider polling; a queued job is not a completed marketing asset.
      */
     async generateMarketingVideo(
         prompt: string,
@@ -262,20 +260,17 @@ The video should be visually striking, on-brand, and optimized for short-form so
 Focus on dynamic movements, high-quality textures, and brand alignment.
 `;
 
-        try {
-            return await GenAI.generateVideo({
-                jobId: `asset_${Date.now()}`,
-                prompt: enhancedPrompt,
-                model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
-                config: {
-                    durationSeconds: 15, // Default for short-form
-                    aspectRatio: '9:16', // Vertical for reels/tiktok
-                    ...config
-                }
-            });
-        } catch (_error: unknown) {
-            throw new Error('Failed to generate marketing video. Please try again.');
-        }
+        const results = await VideoGeneration.generateVideo({
+            prompt: enhancedPrompt,
+            model: 'fast',
+            durationSeconds: typeof config?.durationSeconds === 'number' ? config.durationSeconds : 8,
+            aspectRatio: config?.aspectRatio === '16:9' ? '16:9' : '9:16',
+        });
+        const job = results[0];
+        if (!job) throw new Error('Marketing video generation returned no job.');
+        const url = job.url || (await VideoGeneration.waitForJob(job.id)).videoUrl;
+        if (!url) throw new Error('Marketing video generation completed without a video URL.');
+        return url;
     }
 
     // =========================================================================
@@ -329,6 +324,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                         imageUrl
                     }
                 } as ScheduledPost);
+                onProgress?.({ current: i + 1, total, currentPostId: post.id, status: 'complete' });
 
             } catch (_error: unknown) {
                 if (onProgress) {
@@ -340,15 +336,6 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
                     });
                 }
             }
-        }
-
-        if (onProgress) {
-            onProgress({
-                current: total,
-                total,
-                currentPostId: postsNeedingImages[total - 1]?.id || '',
-                status: 'complete'
-            });
         }
 
         // Return all posts with updated ones merged in

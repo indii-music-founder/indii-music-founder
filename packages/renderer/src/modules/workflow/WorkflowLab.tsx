@@ -208,8 +208,14 @@ export default function WorkflowLab() {
                     { userId: user.uid, traceId: `manual-run-${crypto.randomUUID()}` },
                     '', // initial input
                     executionId
-                ).catch((e: unknown) => {
+                ).catch(async (e: unknown) => {
                     logger.error("Background graph execution failed", e);
+                    clearInterval(interval);
+                    setIsRunning(false);
+                    toastError(`Workflow failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                    await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
+                        logger.error('Failed to persist workflow failure', stateError);
+                    });
                 });
 
                 // Start polling state to update UI nodes

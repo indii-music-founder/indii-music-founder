@@ -376,39 +376,25 @@ export class EditingService {
         projectContext?: string;
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        const parts: Part[] = [];
-        options.images.forEach((img, idx) => {
-            parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
-            parts.push({ text: `[Reference ${idx + 1}]` });
+        if (!options.images.length) throw new Error('At least one reference image is required for a composite.');
+        const { ImageGeneration } = await import('./ImageGenerationService');
+        const prompt = `Combine these references. ${InputSanitizer.sanitize(options.prompt)} ${
+            options.projectContext ? InputSanitizer.sanitize(options.projectContext) : ''
+        }`;
+        const [result] = await ImageGeneration.generateImages({
+            prompt,
+            sourceImages: options.images,
+            model: 'pro',
+            count: 1,
+            ...(options.thoughtSignature ? { thoughtSignature: options.thoughtSignature } : {}),
         });
-
-        // Sanitize prompt
-        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
-        const sanitizedContext = options.projectContext ? InputSanitizer.sanitize(options.projectContext) : '';
-        parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
-
-        // Use rawGenerateContent with DIRECT image model (NOT text model)
-        const response = await AutonomousIntelligence.rawGenerateContent(
-            [{ role: 'user', parts }],
-            INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO,
-            { responseModalities: ['IMAGE'] },
-            undefined,
-            undefined,
-            { thoughtSignature: options.thoughtSignature || "context_engineering_is_the_way_to_go" }
-        );
-
-        const part = response.response.candidates?.[0]?.content?.parts?.[0];
-        if (part && 'inlineData' in part && part.inlineData) {
-            const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            const signature = (part as ContentPart).thoughtSignature;
-            return {
-                id: crypto.randomUUID(),
-                url,
-                prompt: "Composite",
-                thoughtSignature: signature
-            };
-        }
-        return null;
+        if (!result?.url) throw new Error('Composite generation completed without an image.');
+        return {
+            id: result.id,
+            url: result.url,
+            prompt: result.prompt || prompt,
+            thoughtSignature: result.thoughtSignature,
+        };
     }
 
     /**

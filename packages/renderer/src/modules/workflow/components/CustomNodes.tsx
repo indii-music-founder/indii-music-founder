@@ -13,7 +13,7 @@ export const LogicNode = UniversalNode;
 
 const NodeWrapper: React.FC<{ children: React.ReactNode, selected: boolean, className?: string }> = ({ children, selected, className = '' }) => (
     <div className={`
-        bg-black/60 backdrop-blur-2xl rounded-2xl border text-white shadow-2xl relative overflow-hidden group/node transition-all duration-300
+        bg-black/60 backdrop-blur-2xl rounded-2xl border text-white shadow-2xl relative overflow-visible group/node transition-all duration-300
         ${selected ? 'border-teal-400 shadow-[0_0_30px_rgba(45,212,191,0.3)]' : 'border-white/10 hover:border-white/20'}
         ${className}
     `}>
@@ -49,7 +49,7 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
                 type="source"
                 position={Position.Right}
                 id="output"
-                className="!bg-slate-400 !w-3 !h-3 !border-2 !border-[#1e293b]"
+                className="!bg-slate-400 !w-3 !h-3 !border-2 !border-[#1e293b] !z-20"
             />
             <div
                 className="w-full h-full text-left rounded-lg relative group bg-gray-900/50"

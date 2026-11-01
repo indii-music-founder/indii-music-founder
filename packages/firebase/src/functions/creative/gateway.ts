@@ -1417,7 +1417,10 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
             if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
             usedInteractions = true;
         } catch (e: unknown) {
-            if (e instanceof Error && e.message.includes('Unsupported model interaction')) {
+            if (e instanceof Error && (
+                e.message.includes('Unsupported model interaction')
+                || /Model ['"][^'"]+['"] is not supported by the Interactions API\.?/i.test(e.message)
+            )) {
                 console.log(`[generateImageV3] interactions.create unsupported for ${modelId}, falling back to models.generateContent`);
             } else {
                 throw e;

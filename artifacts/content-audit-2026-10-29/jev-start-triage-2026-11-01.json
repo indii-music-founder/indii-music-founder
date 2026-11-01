@@ -1,0 +1,57 @@
+{
+  "mode": "Live Jev advisory audit triage; not product acceptance",
+  "model": "jev-1.14.0",
+  "questions": {
+    "next_unit": {
+      "type": "choice",
+      "instructions": "Which unit most usefully reduces remaining audit uncertainty within the supplied authority?",
+      "criteria": {
+        "full_size_print": "Test local print preparation using the verified full-size saved illustration, inspect output and persistence.",
+        "repeat_rejected_images": "Repeat the already-rejected image requests unchanged.",
+        "change_authentication": "Find alternate credentials to inspect Firebase.",
+        "fix_features": "Repair generation and UI defects now.",
+        "wait_only": "Do no independent work while awaiting Firebase authorization."
+      }
+    },
+    "thumbnail_interpretation": {
+      "type": "choice",
+      "instructions": "What does the thumbnail print attempt substantiate?",
+      "criteria": {
+        "guard_only": "The enlargement limit handled an undersized input; full-size master printing remains unverified.",
+        "print_broken": "Print generation is confirmed broken for all valid source sizes.",
+        "print_pass": "Printing passed because a tool response was returned.",
+        "unknown": "No meaningful evidence was obtained."
+      }
+    }
+  },
+  "answers": {
+    "next_unit": {
+      "type": "choice",
+      "choice": "full_size_print",
+      "confidence": 1.0,
+      "probabilities": {
+        "full_size_print": 1.0,
+        "repeat_rejected_images": 0.0,
+        "change_authentication": 0.0,
+        "fix_features": 0.0,
+        "wait_only": 0.0
+      }
+    },
+    "thumbnail_interpretation": {
+      "type": "choice",
+      "choice": "guard_only",
+      "confidence": 1.0,
+      "probabilities": {
+        "guard_only": 1.0,
+        "print_broken": 0.0,
+        "print_pass": 0.0,
+        "unknown": 0.0
+      }
+    }
+  },
+  "usage": {
+    "input_tokens": 774,
+    "output_tokens": 119
+  },
+  "elapsedSeconds": 0.31
+}

@@ -179,7 +179,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
     return (
         <div className={`
-            w-[280px] bg-black/60 backdrop-blur-2xl rounded-2xl shadow-2xl border transition-all duration-300 relative overflow-hidden group/node
+            w-[280px] bg-black/60 backdrop-blur-2xl rounded-2xl shadow-2xl border transition-all duration-300 relative overflow-visible group/node
             ${borderColor}
         `}>
             {/* Header */}
@@ -213,7 +213,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                     background: DATA_TYPE_COLORS[input.type as DataType],
                                     border: '2px solid #1e293b'
                                 }}
-                                className="transition-transform hover:scale-150"
+                                className="z-20 transition-transform hover:scale-150"
                             />
                             {/* Tooltip for Input Type */}
                             <div className="absolute left-4 bg-black/90 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">
@@ -260,7 +260,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                     background: DATA_TYPE_COLORS[output.type as DataType],
                                     border: '2px solid #1e293b'
                                 }}
-                                className="transition-transform hover:scale-150"
+                                className="z-20 transition-transform hover:scale-150"
                             />
                             {/* Tooltip for Output Type */}
                             <div className="absolute right-4 bg-black/90 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">

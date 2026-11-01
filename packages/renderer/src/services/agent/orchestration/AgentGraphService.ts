@@ -10,7 +10,7 @@ import { agentGraphStateService } from './AgentGraphStateService';
 import { agentService } from '../AgentService';
 import { AgentEventBus } from '../governance/AgentEventBus';
 import { memoryBankService } from '../memory/MemoryBankService';
-import { doc, runTransaction } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 /**
@@ -211,7 +211,7 @@ export class AgentGraphService {
                 if (!snap.exists) return false;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 const now = Date.now();
-                const existingLease = data?.lease;
+                const existingLease = data?.metadata?.lease ?? data?.lease;
 
                 if (existingLease && existingLease.expiresAt > now && existingLease.holderId !== runnerId) {
                     logger.warn(`[AgentGraph] Execution ${executionId} is actively leased by ${existingLease.holderId} until ${new Date(existingLease.expiresAt).toISOString()}`);
@@ -219,18 +219,18 @@ export class AgentGraphService {
                 }
 
                 tx.update(ref, {
-                    lease: {
+                    'metadata.lease': {
                         holderId: runnerId,
                         acquiredAt: existingLease?.holderId === runnerId ? existingLease.acquiredAt : now,
                         expiresAt: now + leaseDurationMs,
                     },
-                    updatedAt: now,
+                    updatedAt: serverTimestamp(),
                 });
                 return true;
             });
         } catch (error) {
             logger.warn(`[AgentGraph] Failed to acquire distributed lease for ${executionId}:`, error);
-            return false;
+            throw error;
         }
     }
 
@@ -245,10 +245,10 @@ export class AgentGraphService {
                 const snap = await tx.get(ref);
                 if (!snap.exists) return;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
-                if (data?.lease?.holderId === runnerId) {
+                if ((data?.metadata?.lease ?? data?.lease)?.holderId === runnerId) {
                     tx.update(ref, {
-                        lease: null,
-                        updatedAt: Date.now(),
+                        'metadata.lease': null,
+                        updatedAt: serverTimestamp(),
                     });
                 }
             });
