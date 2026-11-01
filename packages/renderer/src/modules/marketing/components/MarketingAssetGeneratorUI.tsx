@@ -8,6 +8,7 @@ export default function MarketingAssetGeneratorUI() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [prompt, setPrompt] = useState<string>('');
     const [style, setStyle] = useState<string>('cinematic');
+    const [showMoreStyles, setShowMoreStyles] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isGenerating, setIsGenerating] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function MarketingAssetGeneratorUI() {
         setAvatarImage(null);
         setPrompt('');
         setStyle('cinematic');
+        setShowMoreStyles(false);
         setVideoUrl(null);
         setResultJobId(null);
         setError(null);
@@ -103,7 +105,15 @@ export default function MarketingAssetGeneratorUI() {
         { id: 'cinematic', label: 'Cinematic', desc: 'Moody, high contrast, filmic look' },
         { id: 'anime', label: 'Anime', desc: 'Japanese animation style, vibrant' },
         { id: '3d-render', label: '3D Render', desc: 'Octane render, glossy, surreal' },
-        { id: 'neon-cyberpunk', label: 'Cyberpunk', desc: 'Neon lights, futuristic, gritty' },
+        { id: 'analog-film', label: 'Analog Film', desc: 'Warm grain, soft halation, vintage color' },
+        { id: 'documentary', label: 'Documentary', desc: 'Candid framing, natural light, lived-in detail' },
+        { id: 'stop-motion', label: 'Stop Motion', desc: 'Handcrafted textures, tactile sets, playful movement' },
+        { id: 'watercolor', label: 'Watercolor', desc: 'Flowing pigment, paper textures, soft washes' },
+        { id: 'editorial', label: 'Editorial', desc: 'Bold composition, refined lighting, graphic simplicity' },
+        { id: 'soulful-monochrome', label: 'Soulful Monochrome', desc: 'Rich black and white, expressive shadows, timeless mood' },
+        { id: 'dreamlike', label: 'Dreamlike', desc: 'Soft focus, floating forms, gentle surrealism' },
+        { id: 'collage', label: 'Collage', desc: 'Cut-paper layers, mixed media, rhythmic transitions' },
+        { id: 'retro-print', label: 'Retro Print', desc: 'Screen-print texture, limited palettes, poster-inspired forms' },
     ];
 
     return (
@@ -281,26 +291,42 @@ export default function MarketingAssetGeneratorUI() {
                                         <textarea
                                             value={prompt}
                                             onChange={(e) => setPrompt(e.target.value)}
-                                            placeholder="E.g., A lone astronaut floating through a neon-lit cyber city, dynamic camera movement..."
+                                            placeholder="E.g., A slow tracking shot through a recording studio, warm amber light, film grain..."
                                             className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-marketing/50 resize-none transition-colors"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Aesthetic Style</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                            {styles.map(s => (
-                                                <div
+                                        <div className="flex items-center justify-between gap-3 mb-2">
+                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Aesthetic Style</span>
+                                            <button
+                                                type="button"
+                                                aria-expanded={showMoreStyles}
+                                                aria-controls="marketing-aesthetic-styles"
+                                                onClick={() => setShowMoreStyles(value => !value)}
+                                                className="text-xs font-medium text-dept-marketing rounded px-2 py-1 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dept-marketing"
+                                            >
+                                                {showMoreStyles ? 'Fewer styles' : 'More styles'}
+                                            </button>
+                                        </div>
+                                        <div id="marketing-aesthetic-styles" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                            {styles.filter((s, index) => showMoreStyles || index < 3 || s.id === style).map(s => (
+                                                <button
+                                                    type="button"
                                                     key={s.id}
-                                                    onClick={() => setStyle(s.id)}
-                                                    className={`cursor-pointer border rounded-xl p-4 transition-all ${style === s.id
+                                                    aria-pressed={style === s.id}
+                                                    onClick={() => {
+                                                        setStyle(s.id);
+                                                        setShowMoreStyles(false);
+                                                    }}
+                                                    className={`cursor-pointer text-left border rounded-xl p-4 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dept-marketing ${style === s.id
                                                         ? 'bg-dept-marketing/10 border-dept-marketing text-white'
                                                         : 'bg-white/[0.02] border-white/5 text-gray-400 py-4 hover:border-white/20'
                                                         }`}
                                                 >
-                                                    <h4 className={`font-bold mb-1 ${style === s.id ? 'text-dept-marketing' : 'text-gray-300'}`}>{s.label}</h4>
-                                                    <p className="text-[10px] opacity-80 leading-relaxed">{s.desc}</p>
-                                                </div>
+                                                    <span className={`block font-bold mb-1 ${style === s.id ? 'text-dept-marketing' : 'text-gray-300'}`}>{s.label}</span>
+                                                    <span className="block text-[10px] opacity-80 leading-relaxed">{s.desc}</span>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>

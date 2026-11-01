@@ -775,7 +775,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                     { label: 'Studio Minimal', prompt: 'Clean white studio background with soft professional lighting' },
                                     { label: 'Urban Street', prompt: 'Urban street scene with graffiti walls and city atmosphere' },
                                     { label: 'Nature', prompt: 'Outdoor natural setting with greenery and soft sunlight' },
-                                    { label: 'Cyberpunk', prompt: 'Neon-lit cyberpunk cityscape with futuristic atmosphere' },
+                                    { label: 'Analog Film', prompt: 'Warm analog film photography with soft halation, rich grain and natural lighting' },
                                     { label: 'Beach Sunset', prompt: 'Golden hour beach setting with warm sunset lighting' },
                                     { label: 'Industrial', prompt: 'Industrial warehouse setting with dramatic lighting' },
                                     { label: 'Fashion Runway', prompt: 'High fashion runway setting with dramatic spotlights' },
