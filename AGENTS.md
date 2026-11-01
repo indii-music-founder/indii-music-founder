@@ -57,3 +57,20 @@ Four registries: `.agent/skills/` (indii-authored, editable), `.agents/skills/`
 place), `skills/` (proprietary — `direct-distribution`), and `~/.agents/skills/`
 (user-global, e.g. graphify — may be absent). Full details in CLAUDE.md
 "Skill Registries" and `.agent/workflows/WIIL-skill.md`.
+
+## Founder creative directive — 2026-10-29
+
+Do not suggest, default to, or add Cyberpunk as a creative style or preset.
+Avoid cyberpunk imagery and language in generated creative directions unless
+the user explicitly requests it for that task. The founder prefers a broader
+range of distinct aesthetics; preserve Cinematic, Anime, and 3D Render and
+offer alternatives such as analog film, documentary, stop motion, watercolor,
+editorial, monochrome, dreamlike, collage, and retro print.
+
+## Founder UI directive — 2026-10-29
+
+Protect the space used for the artist's current task. Keep primary actions
+visible and understandable without instructions; collapse secondary panels
+and disclose advanced choices on demand. More options must not mean an
+always-expanded wall of buttons. Preserve selected choices and make expand,
+collapse, focus and exit controls accessible and clear about their effect.

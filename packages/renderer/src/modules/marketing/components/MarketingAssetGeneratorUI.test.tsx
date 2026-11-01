@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
 
 /**
@@ -9,6 +9,24 @@ import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
  * audio synchronization in that mode.
  */
 describe('MarketingAssetGeneratorUI (ISSUE-954)', () => {
+    it('keeps additional styles collapsed and preserves the selected alternative when choosing one', async () => {
+        render(<MarketingAssetGeneratorUI />);
+        fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+        const moreStyles = await screen.findByRole('button', { name: 'More styles' });
+        expect(moreStyles).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('button', { name: /^Analog Film/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Cyberpunk/i })).not.toBeInTheDocument();
+
+        fireEvent.click(moreStyles);
+        fireEvent.click(screen.getByRole('button', { name: /^Analog Film/ }));
+
+        expect(screen.getByRole('button', { name: /^Analog Film/ })).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByRole('button', { name: 'More styles' })).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('button', { name: /^Documentary/ })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Cinematic Moody/ })).toHaveAttribute('aria-pressed', 'false');
+    });
+
     it('reel mode (default) never offers an audio upload or implies synchronization', () => {
         render(<MarketingAssetGeneratorUI />);
 
