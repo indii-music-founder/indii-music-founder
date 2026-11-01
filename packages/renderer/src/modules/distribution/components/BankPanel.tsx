@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { distributionService } from '@/services/distribution/DistributionService';
+import { auth } from '@/services/firebase';
 import { Loader2, DollarSign, Landmark, Users, Plus, Trash2, PieChart, ArrowDownRight, Shield } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { TaxReport, WaterfallReport, WaterfallData } from '@/types/distribution';
@@ -15,21 +16,29 @@ export const BankPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'TAX' | 'WATERFALL'>('TAX');
 
     // Tax Engine State
-    const [userId, setUserId] = useState('user_123');
     const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
 
     // Waterfall Engine State
-    const [splits, setSplits] = useState<{ userId: string; percentage: number }[]>([
-        { userId: 'artist_01', percentage: 0.50 },
-        { userId: 'producer_01', percentage: 0.30 },
-        { userId: 'label_hq', percentage: 0.20 }
-    ]);
+    const [splits, setSplits] = useState<{ userId: string; percentage: number }[]>([]);
     const [waterfallReport, setWaterfallReport] = useState<WaterfallReport | null>(null);
+    const gross = Number(amount);
+    const validGross = amount.trim() !== '' && Number.isFinite(gross) && gross > 0;
+    const splitIds = splits.map(split => split.userId.trim());
+    const totalPercentage = splits.reduce((sum, split) => sum + split.percentage, 0);
+    const validSplits = splits.length > 0 && splitIds.every(Boolean)
+        && new Set(splitIds).size === splitIds.length
+        && splits.every(split => Number.isFinite(split.percentage) && split.percentage > 0 && split.percentage <= 1)
+        && Math.abs(totalPercentage - 1) < 0.001;
 
     const handleCalculateTax = async () => {
+        const userId = auth.currentUser?.uid;
+        if (!userId || !validGross) {
+            toastError('Sign in and enter a positive simulation amount.');
+            return;
+        }
         setLoading(true);
         try {
-            const result = await distributionService.calculateWithholding(userId, parseFloat(amount));
+            const result = await distributionService.calculateWithholding(userId, gross);
             setTaxReport(result);
             success('Tax compliance verified.');
         } catch (error: unknown) {
@@ -41,13 +50,17 @@ export const BankPanel: React.FC = () => {
     };
 
     const handleExecuteWaterfall = async () => {
+        if (!validGross || !validSplits) {
+            toastError('Enter a positive amount and complete splits totaling 100%.');
+            return;
+        }
         setLoading(true);
         try {
             const splitMap: Record<string, number> = {};
-            splits.forEach(s => splitMap[s.userId] = s.percentage);
+            splits.forEach(s => splitMap[s.userId.trim()] = s.percentage);
 
             const data: WaterfallData = {
-                gross: parseFloat(amount),
+                gross,
                 splits: splitMap
             };
 
@@ -74,14 +87,13 @@ export const BankPanel: React.FC = () => {
         const newSplits = [...splits];
         if (!newSplits[index]) return;
         if (field === 'percentage') {
-            newSplits[index]!.percentage = parseFloat(value as string) / 100;
+            const parsed = Number(value);
+            newSplits[index]!.percentage = value === '' || !Number.isFinite(parsed) ? 0 : parsed / 100;
         } else {
             newSplits[index]!.userId = value as string;
         }
         setSplits(newSplits);
     };
-
-    const totalPercentage = splits.reduce((sum, s) => sum + s.percentage, 0);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
@@ -150,8 +162,8 @@ export const BankPanel: React.FC = () => {
                                 <input
                                     data-testid="bank-tax-beneficiary-id"
                                     type="text"
-                                    value={userId}
-                                    onChange={(e) => setUserId(e.target.value)}
+                                    value={auth.currentUser?.uid ?? ''}
+                                    readOnly
                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-gray-300 focus:outline-none focus:border-dept-distribution/50 transition-all font-mono"
                                 />
                             </div>
@@ -159,7 +171,7 @@ export const BankPanel: React.FC = () => {
                             <button
                                 data-testid="bank-verify-tax-compliance"
                                 onClick={handleCalculateTax}
-                                disabled={loading}
+                                disabled={loading || !validGross || !auth.currentUser?.uid}
                                 className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
@@ -175,6 +187,7 @@ export const BankPanel: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={addSplit}
+                                    aria-label="Add split"
                                     className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-all"
                                 >
                                     <Plus className="w-4 h-4" />
@@ -220,7 +233,7 @@ export const BankPanel: React.FC = () => {
                             <button
                                 data-testid="bank-launch-waterfall"
                                 onClick={handleExecuteWaterfall}
-                                disabled={loading || Math.abs(totalPercentage - 1.0) > 0.001}
+                                disabled={loading || !validGross || !validSplits}
                                 className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <PieChart className="w-5 h-5" />}
