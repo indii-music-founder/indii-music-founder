@@ -6238,7 +6238,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Unit tests verify `APIHealthService` reports `'unhealthy'` / `'degraded'` when Firestore/Functions probes reject and `LicensingService.getCatalogTracksForSync()` returns user-owned tracks from `proprietaryIngestionReleases`.
 
 ### ISSUE-1582: `EntryCommandSyncService` defects — `EntryCommandSyncService.saveCustomCommand` silently swallows Firestore sync errors while reporting `{ ok: true }`, `hydrateCustomCommands` permanently caches `hydratedKeys` even when Firestore queries fail (preventing retry), and `saveToTeamScope` overwrites `ownerId` with the editor's UID (causing `PERMISSION_DENIED` on team command updates)
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-01; source repair awaiting genuine team and retry acceptance)
 - **Severity:** 🟠 HIGH
 - **Module:** Custom Slash Command Sync (`packages/renderer/src/services/commands/EntryCommandSyncService.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Swallowed Cloud Sync Failure, Poisoned Hydration Cache on Error & Broken Team Command Update Rule
@@ -6248,6 +6248,7 @@ outcome. Reproduce against current source before implementation or closure.
   3. **Jev (`jev-1.14.0`) Verification:** `issue_1582_real_bug` (Noul): **`0.97`**; `issue_1582_severity` (Score 0–4): **`3.99`** (`confidence: 1.00`, `P(4 = Critical) = 1.00`).
 - **Impact:** Transient network or App Check failures at startup permanently poison `hydratedKeys` so cloud/team slash commands never load during the session; team members cannot update shared team commands created by a teammate; and cloud sync failures are hidden behind `{ ok: true }`.
 - **Fix:** Propagate a success boolean from `loadCloudCommands()` so `hydrateCustomCommands()` only adds `cacheKey` to `this.hydratedKeys` when the query succeeds; preserve existing `ownerId` when updating an existing team command in `saveToTeamScope` (or surface `cloudSyncFailed: true` on `saveCustomCommand` result).
+- **2026-11-01 progress:** Cloud read failures now leave hydration retryable. Saving a team command reads its existing owner and preserves that ID. The save result and user-facing reply distinguish a synced command from one available only locally or only in personal scope. Existing mock-backed tests are structural only; genuine cross-member editing and offline-to-online retry still need acceptance.
 - **Acceptance:** Unit tests verify `hydrateCustomCommands` retries after a failed `loadCloudCommands` call, `saveToTeamScope` preserves `ownerId` on team command updates, and `saveCustomCommand` surfaces cloud sync errors to the caller.
 
 ### ISSUE-1583: `SocialService` & `UserProfileHeader` social graph breakdown — `followUser`, `unfollowUser`, `getFeed('following')`, `isFollowing`, and `recalculateStats` target unruled `users/{uid}/following` and `users/{targetId}/followers` (instead of `social_follows`) and attempt cross-user writes on `users/{targetId}`, while `UserProfileHeader` reads `users/{targetId}` directly (blocked by owner-only `firestore.rules`)
