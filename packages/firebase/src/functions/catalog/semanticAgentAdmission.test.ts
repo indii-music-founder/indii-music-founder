@@ -547,6 +547,7 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
   describe('mcpEndpoint', () => {
     it('returns 429 when Arcjet protection denies request', async () => {
+      mocks.verifyIdToken.mockResolvedValueOnce({ uid: 'user-mcp-1', firebase: { sign_in_provider: 'password' } });
       mocks.protectAuthenticatedApiRequest.mockResolvedValueOnce({
         allowed: false,
         status: 429,
@@ -562,7 +563,8 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
       await call(
         mcpEndpoint,
         {
-          headers: {},
+          headers: { authorization: 'Bearer valid-token' },
+          get: (name: string) => name.toLowerCase() === 'authorization' ? 'Bearer valid-token' : undefined,
           ip: '192.168.1.1',
         },
         res
@@ -573,20 +575,22 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
       expect(mocks.protectAuthenticatedApiRequest).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          userId: 'mcp-gateway',
-          operationId: 'mcp-endpoint:192.168.1.1',
+          userId: 'user-mcp-1',
+          operationId: expect.stringMatching(/^mcp-endpoint:/),
         })
       );
     });
 
     it('proceeds past Arcjet admission when allowed', async () => {
+      mocks.verifyIdToken.mockResolvedValueOnce({ uid: 'user-mcp-1', firebase: { sign_in_provider: 'password' } });
       mocks.protectAuthenticatedApiRequest.mockResolvedValueOnce({ allowed: true });
 
       const req = new Readable() as any;
       req._read = () => {};
       req.method = 'GET';
-      req.url = '/sse';
-      req.headers = {};
+      req.url = '/nonexistent';
+      req.headers = { authorization: 'Bearer valid-token' };
+      req.get = (name: string) => name.toLowerCase() === 'authorization' ? 'Bearer valid-token' : undefined;
       req.ip = '192.168.1.1';
 
       const res = new EventEmitter() as any;

@@ -48,7 +48,7 @@ import { HttpsError } from 'firebase-functions/v2/https';
 type RouterModule = typeof import('../router');
 // ISSUE-1442: the track-CRUD, distribution-REST, and queryAnalytics routes were
 // removed (zero client callers — the live pipeline writes Firestore directly).
-type EndpointName = 'getProfile' | 'health';
+type EndpointName = 'getProfile' | 'health' | 'sdkApi';
 
 let router: RouterModule;
 
@@ -86,10 +86,10 @@ describe('router Arcjet boundary', () => {
   });
 
   it('binds the managed Arcjet secret to every REST endpoint that invokes request protection', () => {
-    const endpointNames: EndpointName[] = ['getProfile', 'health'];
+    const endpointNames: EndpointName[] = ['getProfile', 'health', 'sdkApi'];
 
-    expect(endpointNames).toHaveLength(2);
-    expect(mocks.onRequest).toHaveBeenCalledTimes(2);
+    expect(endpointNames).toHaveLength(3);
+    expect(mocks.onRequest).toHaveBeenCalledTimes(3);
     for (const [options] of mocks.onRequest.mock.calls) {
       expect(options).toEqual({ secrets: [{ name: 'ARCJET_KEY' }] });
     }

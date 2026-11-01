@@ -14,7 +14,7 @@ vi.mock('firebase-admin', () => ({
 
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
-import { expressApp } from './index.js';
+import { expressApp, isMcpCorsPreflight } from './index.js';
 
 function requestApp(options: { method?: string; path: string; headers?: Record<string, string>; body?: string }): Promise<{ status: number; text: string; headers: Record<string, string> }> {
     return new Promise((resolve) => {
@@ -63,11 +63,19 @@ function requestApp(options: { method?: string; path: string; headers?: Record<s
     });
 }
 
-describe('mcpEndpoint auth gate', () => {
+// Structural-only checks of the internal Express app. They do not exercise
+// the deployed Firebase token, entitlement, or Arcjet admission boundary.
+describe('internal MCP app admission boundary', () => {
     beforeEach(() => {
         verifyIdTokenMock.mockReset();
     });
 
+    it('only recognizes the two browser transport preflights', () => {
+        expect(isMcpCorsPreflight('OPTIONS', '/sse')).toBe(true);
+        expect(isMcpCorsPreflight('OPTIONS', '/message')).toBe(true);
+        expect(isMcpCorsPreflight('POST', '/message')).toBe(false);
+        expect(isMcpCorsPreflight('OPTIONS', '/other')).toBe(false);
+    });
     it('rejects GET /sse with no Authorization header', async () => {
         const res = await requestApp({ path: '/sse' });
         expect(res.status).toBe(401);
@@ -79,16 +87,16 @@ describe('mcpEndpoint auth gate', () => {
         expect(res.status).toBe(401);
     });
 
-    it('rejects GET /sse when verifyIdToken throws (expired/invalid token)', async () => {
+    it('rejects GET /sse with a bearer header but no admitted principal', async () => {
         verifyIdTokenMock.mockRejectedValue(new Error('Firebase ID token has expired'));
         const res = await requestApp({ path: '/sse', headers: { Authorization: 'Bearer bad-token' } });
         expect(res.status).toBe(401);
-        expect(verifyIdTokenMock).toHaveBeenCalledWith('bad-token');
+        expect(verifyIdTokenMock).not.toHaveBeenCalled();
     });
 
     it('rejects POST /message with no Authorization header, even for an unknown session', async () => {
         const res = await requestApp({ method: 'POST', path: '/message?sessionId=nonexistent' });
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
     });
 
     it('never dispatches to a tool without a verified session', async () => {
@@ -98,6 +106,6 @@ describe('mcpEndpoint auth gate', () => {
             headers: { Authorization: 'Bearer whatever', 'Content-Type': 'application/json' },
             body: JSON.stringify({ method: 'tools/call', params: { name: 'stage_stripe_payouts', arguments: {} } }),
         });
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
     });
 });

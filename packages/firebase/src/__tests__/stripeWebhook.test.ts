@@ -835,9 +835,15 @@ describe('Stripe Webhook Handler (WO-8)', () => {
     });
 
     it('records a dispute for finance review without touching balances', async () => {
+        mocks.mockRunTransaction.mockImplementation(async (cb) => cb({
+            get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+            set: mocks.mockSet,
+            update: mocks.mockUpdate,
+        }));
         const event = {
             id: 'evt_dispute_1',
             type: 'charge.dispute.created',
+            created: 1761955200,
             data: { object: { id: 'dp_1', charge: 'ch_x', amount: 1500, currency: 'usd', reason: 'product_not_received', status: 'warning' } },
         } as unknown as Stripe.Event;
         mocks.mockConstructEvent.mockReturnValueOnce(event);
@@ -846,8 +852,8 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(jsonFn).toHaveBeenCalledWith({ received: true });
-        const disputeWrite = mocks.mockSet.mock.calls.find((c) => (c[0] as { reason?: string })?.reason === 'product_not_received');
+        const disputeWrite = mocks.mockSet.mock.calls.find((c) => (c[1] as { reason?: string })?.reason === 'product_not_received');
         expect(disputeWrite).toBeDefined();
-        expect(disputeWrite![0]).toMatchObject({ amount: 1500, status: 'warning' });
+        expect(disputeWrite![1]).toMatchObject({ amount: 1500, status: 'warning' });
     });
 });

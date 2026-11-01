@@ -34,6 +34,7 @@ import * as router from '../router';
 const EXPECTED_ENDPOINTS = [
   'getProfile',
   'health',
+  'sdkApi',
 ] as const;
 
 /**

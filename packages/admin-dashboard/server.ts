@@ -6,7 +6,7 @@ import { google } from 'googleapis';
 import { Resend } from 'resend';
 import { randomBytes } from 'node:crypto';
 import { aggregateProviderUsage, normalizeProviderEvent } from './providerTelemetry';
-import { escapeEmailHtml, isSingleLineEmailRecipient, matchesWebhookSecret } from './adminSecurity';
+import { parseAdminBearer, adminAdmissionAllowed, escapeEmailHtml, isSingleLineEmailRecipient, matchesWebhookSecret } from './adminSecurity';
 import { promises as dns } from 'node:dns';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -122,12 +122,12 @@ const recordAccess = (req: express.Request, decodedToken: admin.auth.DecodedIdTo
 
 // Auth Middleware
 const requireAdminAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const token = req.headers.authorization?.split('Bearer ')[1];
+  const token = parseAdminBearer(req.headers.authorization);
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
-    if (decodedToken.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
+    if (adminAdmissionAllowed(decodedToken.email?.endsWith(ADMIN_EMAIL_DOMAIN) === true, decodedToken.email_verified)) {
       Object.assign(req, { user: decodedToken });
       recordAccess(req, decodedToken);
       next();

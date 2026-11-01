@@ -86,6 +86,7 @@ export const scheduleCampaignWaterfall: IndiiMcpTool = {
             // Whitelisted, schema-declared fields only — never the raw args object.
             const campaignDoc: Record<string, unknown> = {
                 releaseId,
+                userId: actorUid,
                 initiatorUid: actorUid,
                 startDate: startDateString,
                 ...(budget !== undefined ? { budget } : {}),

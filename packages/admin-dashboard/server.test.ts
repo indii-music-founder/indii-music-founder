@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Structural HTTP routing checks with provider doubles; no genuine admin login is asserted.
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
@@ -223,9 +224,18 @@ describe('admin-dashboard server.ts', () => {
             expect(res.status).toBe(403);
         });
 
-        it('admits a verified @indii.music token and returns the real founders roster', async () => {
+        it.each([undefined, false, 'true'])('rejects an admin-domain claim without verified email (%s)', async (emailVerified) => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: emailVerified }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const res = await request('GET', '/api/founders', { headers: { Authorization: 'Bearer unverified-token' } });
+            expect(res.status).toBe(403);
+        });
+
+        it('admits a verified @indii.music token and returns the fetched founders roster', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
                 collection: vi.fn(() => makeQuery(makeSnapshot([
@@ -244,7 +254,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('never returns founders it did not fetch, even on a Firestore failure', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'failing-firestore-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'failing-firestore-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
                 collection: vi.fn(() => makeFailingQuery('firestore down')),
@@ -263,7 +273,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('returns canonical verified artists ahead of deduplicated legacy submissions', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
 
             const legacyQuery = makeQuery(makeSnapshot([
@@ -323,7 +333,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('returns an honest failure instead of exposing invented entries', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
                 collection: vi.fn(() => makeFailingQuery('firestore down')),
@@ -367,7 +377,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('validates required fields', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
 
             const res = await request('POST', '/api/waitlist/send-direct-email', {
@@ -382,7 +392,7 @@ describe('admin-dashboard server.ts', () => {
             process.env.RESEND_API_KEY = 'dummy';
             try {
                 vi.mocked(admin.auth).mockReturnValue({
-                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
                 } as unknown as ReturnType<typeof admin.auth>);
 
                 const res = await request('POST', '/api/waitlist/send-direct-email', {
@@ -401,7 +411,7 @@ describe('admin-dashboard server.ts', () => {
             process.env.RESEND_API_KEY = 're_test_live_key_123';
             try {
                 vi.mocked(admin.auth).mockReturnValue({
-                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
                 } as unknown as ReturnType<typeof admin.auth>);
 
                 const res = await request('POST', '/api/waitlist/send-direct-email', {
@@ -425,7 +435,7 @@ describe('admin-dashboard server.ts', () => {
             process.env.RESEND_API_KEY = 're_test_live_key_123';
             try {
                 vi.mocked(admin.auth).mockReturnValue({
-                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                    verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
                 } as unknown as ReturnType<typeof admin.auth>);
 
                 const res = await request('POST', '/api/waitlist/send-direct-email', {
@@ -451,7 +461,7 @@ describe('admin-dashboard server.ts', () => {
     describe('Artist CRM History & Notes Endpoints', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
         });
 
@@ -571,7 +581,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('returns all prospect assessments and calculated summary metrics', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
 
             const prospectsQuery = makeQuery(makeSnapshot([
@@ -657,7 +667,7 @@ describe('admin-dashboard server.ts', () => {
     describe('POST /api/prospects/notes', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', uid: 'founder-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'founder@indii.music', email_verified: true, uid: 'founder-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
         });
 
@@ -725,7 +735,7 @@ describe('admin-dashboard server.ts', () => {
     describe('GET /api/usage/summary', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true }),
             } as unknown as ReturnType<typeof admin.auth>);
         });
 
@@ -771,7 +781,7 @@ describe('admin-dashboard server.ts', () => {
     describe('GET /api/dns/status', () => {
         beforeEach(() => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true }),
             } as unknown as ReturnType<typeof admin.auth>);
         });
 
@@ -798,7 +808,7 @@ describe('admin-dashboard server.ts', () => {
     describe('GET /api/google/gmail/list — Workspace-not-linked signal (ISSUE-1310)', () => {
         it('returns an explicit unlinked signal, never a false-empty 200', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
                 collection: vi.fn(() => ({
@@ -815,7 +825,7 @@ describe('admin-dashboard server.ts', () => {
     describe('GET /api/admin/access-log — who entered the dashboard', () => {
         it('admits an @indii.music admin and returns the recorded entries', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             const query = makeQuery(makeSnapshot([
                 { id: 'log-2', data: { email: 'wiil@indii.music', ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Test' } },
@@ -840,7 +850,7 @@ describe('admin-dashboard server.ts', () => {
 
         it('fails closed with a 500 instead of fabricating an empty trail when Firestore is down', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'failing-audit-uid' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'failing-audit-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
                 collection: vi.fn(() => makeFailingQuery('firestore down')),

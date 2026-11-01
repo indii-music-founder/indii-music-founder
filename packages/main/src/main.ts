@@ -548,7 +548,7 @@ if (!gotTheLock) {
             'distribution:calculate-tax', 'distribution:certify-tax',
             'agent:get-history', 'agent:save-history', 'agent:delete-history', 'agent:extract-web-page',
             'agent:scan-directory', 'agent:create-artifact', 'agent:list-artifacts', 'agent:read-artifact',
-            'agent:multi-replace-file-content', 'agent:update-knowledge', 'agent:get-capability-registry',
+            'agent:multi-replace-file-content', 'agent:update-knowledge', 'agent:read-knowledge', 'agent:get-capability-registry',
             'computer:check-permissions', 'computer:authorize-approval', 'computer:begin-drive', 'computer:end-drive',
             'computer:screenshot', 'computer:list-apps', 'computer:open-app', 'computer:type', 'computer:abort',
             'computer:get-abort-state', 'computer:allowlist-get',

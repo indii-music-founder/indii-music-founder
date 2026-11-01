@@ -177,7 +177,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:41` | `createMarketplaceCheckout` | `onCall` | Present | Present |
 | `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |
-| `mcp/index.ts:169` | `mcpEndpoint` | `onRequest` | Present | Present |
+| `mcp/index.ts:173` | `mcpEndpoint` | `onRequest` | Present | Present |
 | `pod/checkout.ts:110` | `pod_createOrderCheckout` | `onCall` | Present | Present |
 | `pod/printful.ts:36` | `pod_printfulGetProducts` | `onCall` | Present | Present |
 | `pod/printful.ts:41` | `pod_printfulGetProduct` | `onCall` | Present | Present |
@@ -202,7 +202,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `stripe/splitEscrow.ts:207` | `signEscrow` | `onCall` | Present | Present |
 | `stripe/splitEscrow.ts:293` | `releaseEscrow` | `onCall` | Present | Present |
 | `stripe/taxForms.ts:14` | `requestTaxForms` | `onCall` | Present | Present |
-| `stripe/webhookHandler.ts:1270` | `stripeWebhook` | `onRequest` | Present | Present |
+| `stripe/webhookHandler.ts:1284` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |
 | `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
 | `subscription/createCheckoutSession.ts:19` | `createCheckoutSession` | `onCall` | Present | Present |

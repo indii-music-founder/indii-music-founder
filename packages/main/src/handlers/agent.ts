@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { verifiedAgentKnowledgeUid } from '../services/agent-knowledge-identity';
+import { AgentKnowledgeStore } from '../utils/agent-knowledge';
 import log from 'electron-log';
 import { app, ipcMain, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
@@ -15,6 +18,24 @@ const artifacts = () => new AgentArtifactStore(storagePaths().base);
 const ArtifactOptions = z.object({ artifactType: z.string().optional(), requestFeedback: z.boolean().optional() }).optional();
 
 export function registerAgentHandlers() {
+    const stores = new Map<string, AgentKnowledgeStore>();
+    const knowledgeFor = async (idToken: unknown) => {
+        const token = z.string().min(1).max(16000).parse(idToken);
+        const uid = await verifiedAgentKnowledgeUid(token);
+        if (!uid) throw new Error('Sign in before using local agent knowledge');
+        const key = createHash('sha256').update(uid).digest('hex');
+        let store = stores.get(key);
+        if (!store) {
+            store = new AgentKnowledgeStore(path.join(app.getPath('userData'), 'agent-knowledge', key));
+            stores.set(key, store);
+        }
+        return store;
+    };
+    const knowledgeId = (value: string) => value === 'generalist' ? 'conductor' : value;
+    ipcMain.handle('agent:read-knowledge', async (event: IpcMainInvokeEvent, agentId: string, idToken: string) => {
+        validateSender(event);
+        return (await knowledgeFor(idToken)).read(knowledgeId(agentId));
+    });
     // Agent History Persistence (Production Ready)
     ipcMain.handle('agent:save-history', async (event: IpcMainInvokeEvent, id: string, data: unknown) => {
         try {
@@ -118,22 +139,17 @@ export function registerAgentHandlers() {
         }
     });
 
-    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string) => {
+    ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string, idToken: string) => {
         try {
             validateSender(event);
             if (!filePath || typeof filePath !== 'string') {
                 throw new Error('Invalid file path for knowledge update');
             }
-            const agentsDir = path.join(process.cwd(), 'agents');
-            const resolvedPath = path.resolve(process.cwd(), filePath);
-            const rel = path.relative(agentsDir, resolvedPath);
-            if (rel.startsWith('..') || path.isAbsolute(rel)) {
-                throw new Error('Invalid file path for knowledge update');
-            }
-            
-            const { foundationalSkillService } = await import('../services/FoundationalSkillService');
-            const result = await foundationalSkillService.updateKnowledge(resolvedPath, action, content);
-            return { ...result, success: result.success ?? true };
+            const match = /^agents\/([a-z][a-z0-9_-]{0,63})\/(?:instructions|prompt)\.md$/.exec(filePath);
+            if (!match) throw new Error('Invalid agent knowledge target');
+            const result = await (await knowledgeFor(idToken)).update(knowledgeId(match[1]), action, content);
+            return { success: true, ...result };
+
         } catch (error) {
             log.error('Agent Update Knowledge Failed:', error);
             return { success: false, error: String(error) };
