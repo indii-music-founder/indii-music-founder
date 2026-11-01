@@ -808,7 +808,8 @@ export async function judgeExpenseCategorization(
         if (!catAns || typeof catAns.choice !== 'string') return null;
 
         const choice = catAns.choice;
-        const confidence = typeof catAns.confidence === 'number' ? catAns.confidence : 1.0;
+        const confidence = catAns.confidence;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
         const validCategories: ExpenseCategoryType[] = [
             'Equipment',
             'Software / Plugins',
