@@ -706,6 +706,23 @@ describe('judgeExpenseCategorization (Judgment 9)', () => {
         }
     );
 
+    it.each([undefined, NaN, -0.1, 1.1])(
+        'does not invent category confidence from %s',
+        async (confidence) => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: {
+                    answers: {
+                        category: { choice: 'Equipment', confidence },
+                        is_tax_deductible: { noul: 0.94 },
+                    },
+                },
+            }));
+
+            expect(await judgeExpenseCategorization('Sweetwater', 'Audio interface', 299)).toBeNull();
+        }
+    );
+
     it('returns null on empty vendor or failure', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Service down'); });
