@@ -70,7 +70,7 @@ const docWrites: Array<Record<string, unknown>> = [];
 async function call(data: Record<string, unknown>) {
   const { pod_createOrderCheckout } = await import('./checkout');
   return (pod_createOrderCheckout as unknown as (req: unknown) => Promise<unknown>)({
-    auth: { uid: 'u1', token: { email: 'u1@example.com' } },
+    auth: { uid: 'u1', token: { email: 'u1@example.com', email_verified: true } },
     data,
   });
 }

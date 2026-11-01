@@ -121,7 +121,7 @@ export const pod_createOrderCheckout = onCall({
   if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
     throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
   }
-  if (request.auth?.token?.email_verified === false) {
+  if (request.auth?.token?.email_verified !== true) {
     throw new HttpsError('permission-denied', 'Verified email is required.');
   }
 

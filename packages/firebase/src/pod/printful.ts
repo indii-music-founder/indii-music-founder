@@ -14,7 +14,7 @@ async function requireAuth(req: CallableRequest<unknown>, operation = 'pod'): Pr
     if (req.auth.token?.firebase?.sign_in_provider === 'anonymous') {
         throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
     }
-    if (req.auth.token?.email_verified === false) {
+    if (req.auth.token?.email_verified !== true) {
         throw new HttpsError('permission-denied', 'Verified email is required.');
     }
     if (req.rawRequest) {
