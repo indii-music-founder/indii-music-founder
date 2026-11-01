@@ -91,6 +91,19 @@ describe('MobileTabBar', () => {
         expect(screen.queryByRole('button', { name: 'Notes' })).not.toBeInTheDocument();
     });
 
+    it('offers Screenwriter on phones and honors its module gate', () => {
+        const state = mockStore();
+        const view = render(<MobileTabBar />);
+        openMoreDrawer();
+        fireEvent.click(screen.getByRole('button', { name: 'Screenwriter' }));
+        expect(state.setModule).toHaveBeenCalledWith('screenwriter');
+
+        mockGatedModules.mockReturnValue(new Set(['screenwriter']));
+        view.rerender(<MobileTabBar />);
+        openMoreDrawer();
+        expect(screen.queryByRole('button', { name: 'Screenwriter' })).not.toBeInTheDocument();
+    });
+
     it('never offers the phantom Audio Analyzer destination (ISSUE-1437)', () => {
         render(<MobileTabBar />);
         openMoreDrawer();

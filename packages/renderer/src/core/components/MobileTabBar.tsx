@@ -85,6 +85,7 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
         title: 'Tools',
         items: [
             { id: 'merch', label: 'Merchandise' },
+            { id: 'screenwriter', label: 'Screenwriter' },
             // ISSUE-1437: 'audio-analyzer' removed — it is a phantom id that silently
             // rewrites to Distribution/QC (appSlice setModule alias); offering it as a
             // destination landed users in a different module than the label promised.
