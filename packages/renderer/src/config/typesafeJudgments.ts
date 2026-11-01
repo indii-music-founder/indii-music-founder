@@ -819,11 +819,15 @@ export async function judgeExpenseCategorization(
         ];
         if (!validCategories.includes(choice as ExpenseCategoryType)) return null;
 
-        const taxProb = typeof taxAns === 'number'
+        const taxValue = typeof taxAns === 'number'
             ? taxAns
-            : Number((taxAns as { noul?: unknown })?.noul);
+            : (taxAns as { noul?: unknown } | null)?.noul;
+        const taxProb = typeof taxValue === 'number' ? taxValue : NaN;
 
-        const isTaxDeductible = Number.isFinite(taxProb) ? taxProb >= 0.65 : true;
+        // An absent or malformed tax answer is not evidence of deductibility.
+        // Returning null leaves the receipt's tax status unset for review.
+        if (!Number.isFinite(taxProb) || taxProb < 0 || taxProb > 1) return null;
+        const isTaxDeductible = taxProb >= 0.65;
 
         return {
             category: choice as ExpenseCategoryType,

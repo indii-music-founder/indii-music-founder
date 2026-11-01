@@ -689,6 +689,23 @@ describe('judgeExpenseCategorization (Judgment 9)', () => {
         });
     });
 
+    it.each([undefined, { noul: 'unknown' }, { noul: 1.4 }])(
+        'leaves tax status unset when the Jev tax answer is %s',
+        async (taxAnswer) => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: {
+                    answers: {
+                        category: { choice: 'Equipment', confidence: 0.95 },
+                        is_tax_deductible: taxAnswer,
+                    },
+                },
+            }));
+
+            expect(await judgeExpenseCategorization('Sweetwater', 'Audio interface', 299)).toBeNull();
+        }
+    );
+
     it('returns null on empty vendor or failure', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Service down'); });
