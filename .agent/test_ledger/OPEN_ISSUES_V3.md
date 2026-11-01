@@ -2360,7 +2360,8 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 
 ### ISSUE-1393: retention daemon was dead code + would crash on a missing index; webhook dispatcher never deployed (2026-08-20, perfection sweep)
 
-- **Status:** 🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.
+- **Status:** ✅ FIXED (2026-11-01 — missing exports and placements index reconciled against deployed state)
+- **Closure evidence:** The export/index repair landed in commit 8513fc6cd and the import-safe follow-up in commit 2179e43a9; CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/40907983651 later passed production deployment with both. On 2026-11-01, the authorized Firebase CLI listed `retentionDaemon`, `sendWebhookOnEvent`, `processWebhookQueue`, and `createWebhook` as ACTIVE in us-central1. The live placements COLLECTION index lists `status` ascending and `placedAt` ascending, matching the deploy-managed source; the original post-deploy placements query returned OK (recorded below). This resolves the missing-export/index defect. Successful delivery of a particular webhook and full retention outcomes remain separate acceptance claims.
 - **Reconciliation:** Historical live deployment closure is recorded below; reconcile its receipts and original acceptance before assigning a terminal status.
 
 - **Discovery:** /go perfection sweep — a composite-index coverage scan + dead-export sweep against index.ts found:
