@@ -73,7 +73,7 @@ describe('🛡️ Path Canonicalization Defenses', () => {
         const fakeEvent = { senderFrame: { url: 'file:///app/index.html' } };
         // Attempting to write into agents-other/secret.txt
         const resSibling = await handler!(fakeEvent, '../agents-other/secret.txt', 'add', 'data');
-        expect(resSibling).toEqual({ success: false, error: 'Error: Invalid file path for knowledge update' });
+        expect(resSibling).toEqual({ success: false, error: 'Error: Invalid agent knowledge target' });
     });
 
     it('should REJECT multi-replace on files outside current workspace root', async () => {
