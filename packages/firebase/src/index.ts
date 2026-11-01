@@ -1142,10 +1142,18 @@ export const inngestApi = onRequest(
         concurrency: 1,
     },
     async (req, res) => {
+        const callerIp = req.ip || req.socket?.remoteAddress;
+        if (!callerIp) {
+            res.status(503).send('Request protection could not identify the caller.');
+            return;
+        }
         const protection = await protectAuthenticatedApiRequest(req as never, {
-            userId: 'inngest-dispatcher',
+            // Inngest verifies its own signature inside serve(). Keep the
+            // pre-signature Arcjet bucket per caller so unsigned traffic from
+            // one IP cannot consume the shared callback allowance.
+            userId: `inngest-caller:${callerIp}`,
             policy: 'verified-free',
-            operationId: `inngest-api:${req.ip || 'inngest'}`,
+            operationId: `inngest-api:${callerIp}`,
         });
         if (!protection.allowed) {
             res.status(protection.status || 429).send(protection.message || 'Too Many Requests');

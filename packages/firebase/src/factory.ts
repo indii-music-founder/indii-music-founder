@@ -143,12 +143,24 @@ export function defineCallable<TData = unknown, TResponse = unknown>(
 ) {
     const mappedOptions = mapOptions(options);
     return onCall({ secrets: [arcjetKey], ...mappedOptions }, async (request: CallableRequest<TData>) => {
-        if (request.rawRequest) {
-            await protectAuthenticatedApiRequest(request.rawRequest as never, {
-                userId: request.auth?.uid || 'anonymous',
-                policy: 'verified-free',
-                operationId: `factory-callable:${request.auth?.uid || 'anonymous'}`,
-            });
+        if (!request.rawRequest) {
+            throw new HttpsError('unavailable', 'Request protection is unavailable.');
+        }
+        const callerIp = request.rawRequest.ip || request.rawRequest.socket?.remoteAddress;
+        if (!request.auth && !callerIp) {
+            throw new HttpsError('unavailable', 'Request protection could not identify the caller.');
+        }
+        const principal = request.auth?.uid || `anonymous:${callerIp}`;
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: principal,
+            policy: 'verified-free',
+            operationId: `factory-callable:${principal}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
         }
         // Normalize the request into our stable shape
         const stableRequest: StableCallableRequest<TData> = {
@@ -177,11 +189,21 @@ export function defineHttps(
     const mappedOptions = mapOptions(options) as HttpsOptions;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return onRequest({ secrets: [arcjetKey], ...mappedOptions }, async (req: any, res: any) => {
-        await protectAuthenticatedApiRequest(req as never, {
-            userId: 'anonymous-http',
+        const callerIp = req.ip || req.socket?.remoteAddress;
+        if (!callerIp) {
+            res.status(503).json({ error: 'Request protection could not identify the caller.' });
+            return;
+        }
+        const protection = await protectAuthenticatedApiRequest(req as never, {
+            userId: `anonymous-http:${callerIp}`,
             policy: 'verified-free',
-            operationId: `factory-https:${req.ip || 'anonymous'}`,
+            operationId: `factory-https:${callerIp}`,
         });
+        if (!protection.allowed) {
+            if (protection.retryAfterSeconds) res.set('Retry-After', String(protection.retryAfterSeconds));
+            res.status(protection.status).json({ error: protection.message });
+            return;
+        }
         return (handler as any)(req, res);
     });
 }
