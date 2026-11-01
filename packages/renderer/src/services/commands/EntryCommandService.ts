@@ -313,6 +313,7 @@ class EntryCommandService {
     const text = [
       `Saved ${saved.command.slash} as a reusable custom command.`,
       `Purpose: ${saved.command.summary}`,
+      ...(!saved.cloudSynced && saved.cloudSyncMessage ? [saved.cloudSyncMessage] : []),
       saved.command.harnessDomain ? `Harness domain: ${saved.command.harnessDomain}.` : 'Harness domain: custom conversation workflow.',
       `Intake: ${saved.command.intakeFields.map(field => field.label).join(', ')}.`,
       saved.command.approvalRequiredFor.length ? `Approval gates: ${saved.command.approvalRequiredFor.join(', ')}.` : '',

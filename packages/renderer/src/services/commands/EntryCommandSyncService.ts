@@ -44,68 +44,78 @@ class EntryCommandSyncService {
       return getCustomEntryCommands();
     }
 
-    const cloudCommands = await this.loadCloudCommands(user.uid, orgId);
+    let cloudCommands: EntryCommandDefinition[];
+    try {
+      cloudCommands = await this.loadCloudCommands(user.uid, orgId);
+    } catch (error) {
+      logger.warn('[EntryCommandSyncService] Cloud hydration failed; retry remains available.', error);
+      return getCustomEntryCommands();
+    }
     this.hydratedKeys.add(cacheKey);
     if (cloudCommands.length === 0) return getCustomEntryCommands();
 
     return mergeCustomEntryCommands(cloudCommands);
   }
 
-  async saveCustomCommand(command: EntryCommandDefinition, options: SyncOptions = {}): Promise<{ ok: true; command: EntryCommandDefinition } | { ok: false; reason: string }> {
+  async saveCustomCommand(command: EntryCommandDefinition, options: SyncOptions = {}): Promise<
+    | { ok: true; command: EntryCommandDefinition; cloudSynced: boolean; cloudSyncMessage?: string }
+    | { ok: false; reason: string }
+  > {
     const local = saveCustomEntryCommand(command);
-    if (!local.ok) return local;
+    if (local.ok === false) return local;
 
     const user = auth.currentUser;
     if (!user?.uid) {
-      return local;
+      return { ...local, cloudSynced: false, cloudSyncMessage: 'Sign in to sync this command across devices.' };
     }
 
     const orgId = options.orgId || getCurrentOrganizationId();
     const scope: EntryCommandSyncScope = options.scope || inferScope(orgId);
 
+    let userScopeSaved = false;
     try {
       await this.saveToUserScope(user.uid, local.command);
+      userScopeSaved = true;
       if (scope === 'team' && orgId && orgId !== 'org-default' && orgId !== 'personal') {
         await this.saveToTeamScope(user.uid, orgId, local.command);
       }
     } catch (error) {
       logger.warn('[EntryCommandSyncService] Cloud sync failed; command remains available locally.', error);
+      return {
+        ...local,
+        cloudSynced: false,
+        cloudSyncMessage: userScopeSaved
+          ? 'Saved to your personal commands, but team sync failed. Check team access and save again.'
+          : 'Saved on this device only. Cloud sync failed; save again when the connection returns.',
+      };
     }
 
-    return local;
+    return { ...local, cloudSynced: true };
   }
 
   private async loadCloudCommands(uid: string, orgId?: string): Promise<EntryCommandDefinition[]> {
     const commands: EntryCommandDefinition[] = [];
 
-    try {
-      const userSnapshot = await getDocs(query(
-        collection(db, 'entryCommands'),
-        where('ownerId', '==', uid),
-        where('scope', '==', 'user')
+    const userSnapshot = await getDocs(query(
+      collection(db, 'entryCommands'),
+      where('ownerId', '==', uid),
+      where('scope', '==', 'user')
+    ));
+    userSnapshot.forEach(snapshot => {
+      const command = fromPersistedCommand(snapshot.data());
+      if (command) commands.push(command);
+    });
+
+    if (orgId && orgId !== 'org-default' && orgId !== 'personal') {
+      const orgSnapshot = await getDocs(query(
+        collection(db, 'teamEntryCommands'),
+        where('orgId', '==', orgId),
+        where('scope', '==', 'team')
       ));
-      userSnapshot.forEach(snapshot => {
+      orgSnapshot.forEach(snapshot => {
         const command = fromPersistedCommand(snapshot.data());
         if (command) commands.push(command);
       });
-    } catch (error) {
-      logger.warn('[EntryCommandSyncService] Failed to load user entry commands.', error);
-    }
-
-    if (orgId && orgId !== 'org-default' && orgId !== 'personal') {
-      try {
-        const orgSnapshot = await getDocs(query(
-          collection(db, 'teamEntryCommands'),
-          where('orgId', '==', orgId),
-          where('scope', '==', 'team')
-        ));
-        orgSnapshot.forEach(snapshot => {
-          const command = fromPersistedCommand(snapshot.data());
-          if (command) commands.push(command);
-        });
-      } catch (error) {
-        logger.warn('[EntryCommandSyncService] Failed to load team entry commands.', error);
-      }
     }
 
     return commands;
@@ -117,8 +127,22 @@ class EntryCommandSyncService {
   }
 
   private async saveToTeamScope(uid: string, orgId: string, command: EntryCommandDefinition): Promise<void> {
-    const payload = toPersistedCommand(command, uid, 'team', orgId);
-    await setDoc(doc(db, 'teamEntryCommands', buildScopedCommandDocId(orgId, command.id)), payload, { merge: true });
+    const scopedId = buildScopedCommandDocId(orgId, command.id);
+    const existing = await getDocs(query(
+      collection(db, 'teamEntryCommands'),
+      where('orgId', '==', orgId),
+      where('scope', '==', 'team'),
+      where('id', '==', command.id)
+    ));
+    let ownerId: unknown = uid;
+    existing.forEach(snapshot => {
+      if (snapshot.id === scopedId) ownerId = snapshot.data()?.ownerId;
+    });
+    if (typeof ownerId !== 'string' || !ownerId) {
+      throw new Error('Existing team command has no valid owner.');
+    }
+    const payload = toPersistedCommand(command, ownerId, 'team', orgId);
+    await setDoc(doc(db, 'teamEntryCommands', scopedId), payload, { merge: true });
   }
 }
 
