@@ -24,6 +24,10 @@ vi.mock('@/services/distribution/DistributionService', () => ({
     },
 }));
 
+vi.mock('@/services/firebase', () => ({
+    auth: { currentUser: { uid: 'signed-in-user' } },
+}));
+
 describe('BankPanel — tax withholding percent/fraction handling', () => {
     it('displays 30.0%, subtracts $300, and nets $700 for $1,000 at a 30% rate', async () => {
         vi.mocked(distributionService.calculateWithholding).mockResolvedValue({
@@ -46,6 +50,8 @@ describe('BankPanel — tax withholding percent/fraction handling', () => {
         });
 
         expect(screen.getByTestId('bank-tax-net-disbursable')).toHaveTextContent('$700');
+        expect(screen.getByTestId('bank-tax-beneficiary-id')).toHaveValue('signed-in-user');
+        expect(distributionService.calculateWithholding).toHaveBeenCalledWith('signed-in-user', 1000);
         expect(screen.queryByText(/-\$-/)).not.toBeInTheDocument(); // never a negative levy/net
     });
 });
@@ -76,8 +82,15 @@ describe('BankPanel — waterfall contract (ISSUE-826)', () => {
 
         render(<BankPanel />);
 
-        // Component defaults: amount 1000, splits artist_01 50% / producer_01 30% / label_hq 20%
+        // Users enter their own split parties; the panel has no production placeholder IDs.
         fireEvent.click(screen.getByTestId('distro-subtab-waterfall'));
+        for (const [index, id, percent] of [
+            [0, 'artist_01', '50'], [1, 'producer_01', '30'], [2, 'label_hq', '20'],
+        ] as const) {
+            fireEvent.click(screen.getByRole('button', { name: 'Add split' }));
+            fireEvent.change(screen.getByTestId(`bank-split-user-${index}`), { target: { value: id } });
+            fireEvent.change(screen.getByTestId(`bank-split-percent-${index}`), { target: { value: percent } });
+        }
         fireEvent.click(screen.getByTestId('bank-launch-waterfall'));
 
         await waitFor(() => {
@@ -100,5 +113,17 @@ describe('BankPanel — waterfall contract (ISSUE-826)', () => {
         expect(screen.getByText(/Platform Fee \(15\.0%\)/)).toBeInTheDocument();
         // Timestamp rendered from processed_at
         expect(screen.getByText(/Processed:/)).toBeInTheDocument();
+    });
+
+    it('does not execute an incomplete or cleared split', () => {
+        render(<BankPanel />);
+        fireEvent.click(screen.getByTestId('distro-subtab-waterfall'));
+        fireEvent.click(screen.getByRole('button', { name: 'Add split' }));
+        fireEvent.change(screen.getByTestId('bank-split-user-0'), { target: { value: 'real-party' } });
+        fireEvent.change(screen.getByTestId('bank-split-percent-0'), { target: { value: '100' } });
+        fireEvent.change(screen.getByTestId('bank-split-percent-0'), { target: { value: '' } });
+        expect(screen.getByText('0.0%')).toBeInTheDocument();
+        expect(screen.getByTestId('bank-launch-waterfall')).toBeDisabled();
+        expect(distributionService.executeWaterfall).not.toHaveBeenCalled();
     });
 });
