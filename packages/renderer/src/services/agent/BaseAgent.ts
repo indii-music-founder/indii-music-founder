@@ -1564,16 +1564,60 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         const riskMeta = TOOL_RISK_REGISTRY[name];
                         if (riskMeta?.requiresApproval) {
                             logger.info(`[BaseAgent] Tool '${name}' requires approval (risk tier: ${riskMeta.riskTier}). Halting execution loop.`);
+                            const schema = this.toolSchemas.get(name);
+                            try {
+                                schema?.parse(args);
+                            } catch (error: unknown) {
+                                const message = error instanceof Error ? error.message : String(error);
+                                const invalidResult = toolError(`Invalid arguments for '${name}': ${message}`, 'INVALID_TOOL_ARGUMENTS');
+                                toolCalls.push({ name, args, result: invalidResult });
+                                fullPrompt += `\n[Tool ${name} rejected: invalid arguments. ${message}]\n`;
+                                continue;
+                            }
+                            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
+                            const selectedTool = this.functions[name] ?? TOOL_REGISTRY[name];
+                            if (!selectedTool || (name.startsWith('computer_') && selectedTool !== TOOL_REGISTRY[name])) {
+                                const message = `Tool '${name}' has no trusted approval implementation.`;
+                                toolCalls.push({ name, args, result: toolError(message, 'UNBOUND_APPROVAL_TOOL') });
+                                await executionContext.rollback();
+                                return { text: message, error: message, toolCalls };
+                            }
                             const approvalId = await toolApprovalService.createPendingApproval({
                                 agentId: this.id,
                                 toolName: name,
                                 args,
                                 riskTier: riskMeta.riskTier,
-                                description: riskMeta.description
+                                description: riskMeta.description,
+                                ...(!name.startsWith('computer_') ? {
+                                    execute: async (approvedArgs: ToolFunctionArgs): Promise<ToolFunctionResult> => {
+                                        const approvedExecutionContext = await ExecutionContextFactory.fromAgentContext({
+                                            userId: context?.userId,
+                                            projectId: context?.projectId,
+                                            traceId: context?.traceId,
+                                        }, this.id);
+                                        const approvedToolContext = new ToolExecutionContext(approvedExecutionContext);
+                                        try {
+                                            schema?.parse(approvedArgs);
+                                            const result = await selectedTool(approvedArgs, { ...enrichedContext, signal: undefined }, approvedToolContext);
+                                            if (result.success) await approvedExecutionContext.commit();
+                                            else await approvedExecutionContext.rollback();
+                                            return result;
+                                        } catch (error: unknown) {
+                                            await approvedExecutionContext.rollback();
+                                            throw error;
+                                        }
+                                    }
+                                } : {}),
                             });
+                            if (!approvalId) {
+                                const message = `Approval for '${name}' could not be saved. The tool was not executed.`;
+                                toolCalls.push({ name, args, result: toolError(message, 'APPROVAL_UNAVAILABLE') });
+                                await executionContext.rollback();
+                                return { text: message, error: message, toolCalls };
+                            }
                             const blockedResult: ToolFunctionResult = {
                                 success: false,
-                                error: `Tool '${name}' requires explicit approval before it can run (risk tier: ${riskMeta.riskTier}).${approvalId ? ` Approval request: ${approvalId}.` : ''}`
+                                error: `Tool '${name}' requires explicit approval before it can run (risk tier: ${riskMeta.riskTier}). Approval request: ${approvalId}.`
                             };
                             toolCalls.push({ name, args, result: blockedResult });
                             await executionContext.rollback();

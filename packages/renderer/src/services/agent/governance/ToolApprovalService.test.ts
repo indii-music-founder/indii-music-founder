@@ -48,6 +48,16 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 import { toolApprovalService } from './ToolApprovalService';
 
 describe('ToolApprovalService (ISSUE-1116)', () => {
+    async function bindApproval(toolName: string, args: Record<string, unknown>, execute: (args: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>) {
+        mocks.addDoc.mockResolvedValue({ id: 'approval-1' });
+        await toolApprovalService.createPendingApproval({
+            agentId: 'generalist', toolName, args, riskTier: 'destructive', description: 'requires approval', execute,
+        });
+        const record = mocks.addDoc.mock.lastCall?.[1];
+        mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => record });
+        return record;
+    }
+
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.currentUser = { uid: 'user-1', getIdToken: vi.fn().mockResolvedValue('identity-token') };
@@ -64,7 +74,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         it('returns null and does not write when unauthenticated', async () => {
             mocks.currentUser = null;
             const id = await toolApprovalService.createPendingApproval({
-                agentId: 'generalist', toolName: 'execute_code', args: {}, riskTier: 'destructive', description: 'runs code'
+                agentId: 'generalist', toolName: 'execute_code', args: {}, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
             });
             expect(id).toBeNull();
             expect(mocks.addDoc).not.toHaveBeenCalled();
@@ -73,12 +83,12 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         it('persists a pending record and returns its id', async () => {
             mocks.addDoc.mockResolvedValue({ id: 'approval-1' });
             const id = await toolApprovalService.createPendingApproval({
-                agentId: 'generalist', toolName: 'execute_code', args: { code: 'x' }, riskTier: 'destructive', description: 'runs code'
+                agentId: 'generalist', toolName: 'execute_code', args: { code: 'x' }, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
             });
             expect(id).toBe('approval-1');
             expect(mocks.addDoc).toHaveBeenCalledWith(
                 expect.anything(),
-                expect.objectContaining({ toolName: 'execute_code', status: 'pending', riskTier: 'destructive' })
+                expect.objectContaining({ toolName: 'execute_code', status: 'pending', riskTier: 'destructive', bindingSessionId: expect.any(String) })
             );
         });
     });
@@ -106,17 +116,16 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).not.toHaveBeenCalled();
         });
 
-        it('executes the EXACT original tool call and marks the approval executed', async () => {
-            const execCode = vi.fn().mockResolvedValue({ success: true, data: 'ran ok' });
-            mocks.toolRegistry = { execute_code: execCode };
-            mocks.getDoc.mockResolvedValue({
-                exists: () => true,
-                data: () => ({ status: 'pending', toolName: 'execute_code', args: { code: 'print(1)' } })
-            });
+        it('executes the selected agent-local implementation with original arguments, even when a global tool has the same name', async () => {
+            const localTool = vi.fn().mockResolvedValue({ success: true, data: 'ran ok' });
+            const globalTool = vi.fn().mockResolvedValue({ success: true, data: 'wrong implementation' });
+            mocks.toolRegistry = { execute_code: globalTool };
+            await bindApproval('execute_code', { code: 'print(1)' }, localTool);
 
             const result = await toolApprovalService.approve('approval-1');
 
-            expect(execCode).toHaveBeenCalledWith({ code: 'print(1)' });
+            expect(localTool).toHaveBeenCalledWith({ code: 'print(1)' });
+            expect(globalTool).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
             expect(result.data).toBe('ran ok');
             // First updateDoc call marks 'approved' (before execution), second marks 'executed'.
@@ -125,27 +134,64 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'executed' }));
         });
 
-        it('marks the approval failed when the tool no longer exists in the registry', async () => {
-            mocks.toolRegistry = {};
-            mocks.getDoc.mockResolvedValue({
-                exists: () => true,
-                data: () => ({ status: 'pending', toolName: 'deleted_tool', args: {} })
-            });
+        it('refuses a pending record without the original renderer binding', async () => {
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ status: 'pending', toolName: 'deleted_tool', args: {} }) });
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
-            expect(result.error).toMatch(/not found in registry/i);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'failed' }));
+            expect(result.error).toMatch(/original tool call/i);
+            expect(mocks.toolRegistry.deleted_tool).toBeUndefined();
         });
 
-        it('marks the approval failed (not thrown) when the tool itself throws', async () => {
-            mocks.toolRegistry = { execute_code: vi.fn().mockRejectedValue(new Error('sandbox crashed')) };
-            mocks.getDoc.mockResolvedValue({
-                exists: () => true,
-                data: () => ({ status: 'pending', toolName: 'execute_code', args: {} })
-            });
+        it('marks the approval failed (not thrown) when the bound tool itself throws', async () => {
+            await bindApproval('execute_code', {}, vi.fn().mockRejectedValue(new Error('sandbox crashed')));
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
             expect(result.error).toMatch(/sandbox crashed/);
+        });
+
+        it('refuses changed arguments before claiming or dispatching the approval', async () => {
+            const localTool = vi.fn().mockResolvedValue({ success: true });
+            const record = await bindApproval('execute_code', { code: 'safe' }, localTool);
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ ...record, args: { code: 'altered' } }) });
+
+            const result = await toolApprovalService.approve('approval-1');
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/original tool call/i);
+            expect(localTool).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).not.toHaveBeenCalled();
+        });
+
+        it('does not reinterpret a changed tool name as a computer approval', async () => {
+            const localTool = vi.fn().mockResolvedValue({ success: true });
+            const record = await bindApproval('execute_code', { code: 'safe' }, localTool);
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ ...record, toolName: 'computer_click' }) });
+
+            const result = await toolApprovalService.approve('approval-1');
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/original tool call/i);
+            expect(localTool).not.toHaveBeenCalled();
+            expect(mocks.httpsCallable).not.toHaveBeenCalled();
+        });
+
+        it('dispatches only once when two approval attempts race', async () => {
+            const localTool = vi.fn().mockResolvedValue({ success: true });
+            const record = await bindApproval('execute_code', { code: 'safe' }, localTool);
+            let status = 'pending';
+            let previous = Promise.resolve();
+            mocks.getDoc.mockImplementation(async () => ({ exists: () => true, data: () => ({ ...record, status }) }));
+            mocks.runTransaction.mockImplementation((_db, callback) => {
+                const attempt = previous.then(() => callback({
+                    get: mocks.getDoc,
+                    update: (_ref: unknown, patch: { status: string }) => { status = patch.status; mocks.updateDoc(_ref, patch); },
+                }));
+                previous = attempt.then(() => undefined, () => undefined);
+                return attempt;
+            });
+
+            const results = await Promise.all([toolApprovalService.approve('approval-1'), toolApprovalService.approve('approval-1')]);
+            expect(results.filter(result => result.success)).toHaveLength(1);
+            expect(results.filter(result => !result.success)).toHaveLength(1);
+            expect(localTool).toHaveBeenCalledTimes(1);
         });
 
         it('leaves computer approval transitions to main and the trusted backend', async () => {
@@ -174,6 +220,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         });
 
         it('marks the approval denied with the given reason', async () => {
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ status: 'pending', toolName: 'execute_code' }) });
             await toolApprovalService.deny('approval-1', 'too risky');
             expect(mocks.updateDoc).toHaveBeenCalledWith(
                 expect.anything(),

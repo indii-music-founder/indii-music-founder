@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { AgentConfig } from './types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
+const canonicalComputerClick = vi.hoisted(() => vi.fn());
+vi.mock('@/services/agent/tools', () => ({ TOOL_REGISTRY: { computer_click: canonicalComputerClick } }));
+
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
@@ -169,7 +172,7 @@ describe('BaseAgent Tool Validation', () => {
     describe('ISSUE-1116: pre-execution approval gate', () => {
         const executeCodeHandler = vi.fn().mockResolvedValue({ success: true, data: 'ran' });
 
-        it('halts before executing a tool explicitly marked requiresApproval:true (e.g. computer_click) and creates a pending approval', async () => {
+        it('halts before executing a canonical computer tool and creates a pending approval', async () => {
             const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
             const config: AgentConfig = {
@@ -181,8 +184,7 @@ describe('BaseAgent Tool Validation', () => {
                 systemPrompt: 'sys prompt',
                 tools: [{
                     functionDeclarations: [createTool('computer_click', 'Clicks the host desktop', z.object({ x: z.number(), y: z.number() }))]
-                }],
-                functions: { computer_click: executeCodeHandler }
+                }]
             };
             const gatedAgent = new BaseAgent(config);
 
@@ -203,6 +205,64 @@ describe('BaseAgent Tool Validation', () => {
             }));
             expect(response.error).toBe('AWAITING_TOOL_APPROVAL');
             expect(response.text).toContain('requires your explicit approval');
+        });
+
+        it('rejects an agent-local override of a computer tool before approval', async () => {
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const overridden = new BaseAgent({
+                id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'sys prompt',
+                tools: [{ functionDeclarations: [createTool('computer_click', 'Clicks the host desktop', z.object({ x: z.number(), y: z.number() }))] }],
+                functions: { computer_click: executeCodeHandler },
+            });
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Clicking...', functionCalls: () => [{ name: 'computer_click', args: { x: 10, y: 20 } }] }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            const response = await overridden.execute('Click something');
+            expect(executeCodeHandler).not.toHaveBeenCalled();
+            expect(mockCreatePendingApproval).not.toHaveBeenCalled();
+            expect(response.error).toMatch(/trusted approval implementation/i);
+        });
+
+        it('binds a local approval tool and validates arguments before creating the request', async () => {
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const localTool = vi.fn().mockResolvedValue({ success: true });
+            const approvedAgent = new BaseAgent({
+                id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'sys prompt',
+                tools: [{ functionDeclarations: [createTool('rotate_credentials', 'Rotates credentials', z.object({ service: z.string() }))] }],
+                functions: { rotate_credentials: localTool },
+            });
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Rotate...', functionCalls: () => [{ name: 'rotate_credentials', args: { service: 'music' } }] }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            const response = await approvedAgent.execute('Rotate credentials');
+            expect(response.error).toBe('AWAITING_TOOL_APPROVAL');
+            const boundCall = mockCreatePendingApproval.mock.lastCall?.[0] as { execute: (args: Record<string, unknown>) => Promise<unknown> };
+            expect(boundCall.execute).toBeTypeOf('function');
+            expect(localTool).not.toHaveBeenCalled();
+            await boundCall.execute({ service: 'music' });
+            expect(localTool).toHaveBeenCalledWith({ service: 'music' }, expect.any(Object), expect.any(Object));
+        });
+
+        it('does not create an approval for invalid tool arguments', async () => {
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const localTool = vi.fn().mockResolvedValue({ success: true });
+            const approvedAgent = new BaseAgent({
+                id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'sys prompt',
+                tools: [{ functionDeclarations: [createTool('rotate_credentials', 'Rotates credentials', z.object({ service: z.string() }))] }],
+                functions: { rotate_credentials: localTool },
+            });
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Rotate...', functionCalls: () => [{ name: 'rotate_credentials', args: { service: 99 } }] }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'I need a valid service name.' }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            await approvedAgent.execute('Rotate credentials');
+            expect(localTool).not.toHaveBeenCalled();
+            expect(mockCreatePendingApproval).not.toHaveBeenCalled();
         });
 
         it('does NOT gate an unclassified custom tool (e.g. test_tool) — only explicit requiresApproval:true entries', async () => {
@@ -226,8 +286,6 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     describe('ISSUE-1172: Artist Operating Profile autonomous-computer-control gate', () => {
-        const computerClickHandler = vi.fn().mockResolvedValue({ success: true, data: 'clicked' });
-
         const buildComputerAgent = () => new BaseAgent({
             id: 'generalist',
             name: 'Test Agent',
@@ -237,8 +295,7 @@ describe('BaseAgent Tool Validation', () => {
             systemPrompt: 'sys prompt',
             tools: [{
                 functionDeclarations: [createTool('computer_click', 'Clicks the desktop', z.object({ x: z.number(), y: z.number() }))]
-            }],
-            functions: { computer_click: computerClickHandler }
+            }]
         });
 
         it('blocks computer_click before even queuing an approval when AOP has not opted in', async () => {
@@ -257,7 +314,6 @@ describe('BaseAgent Tool Validation', () => {
 
             const response = await buildComputerAgent().execute('Click something');
 
-            expect(computerClickHandler).not.toHaveBeenCalled();
             expect(mockCreatePendingApproval).not.toHaveBeenCalled();
             expect(response.error).toBe('AUTONOMOUS_COMPUTER_CONTROL_DISABLED');
             expect(response.text).toContain('Autonomous Computer Control enabled in Settings > Automation');
@@ -279,7 +335,6 @@ describe('BaseAgent Tool Validation', () => {
 
             const response = await buildComputerAgent().execute('Click something');
 
-            expect(computerClickHandler).not.toHaveBeenCalled();
             expect(mockCreatePendingApproval).toHaveBeenCalledWith(expect.objectContaining({ toolName: 'computer_click' }));
             expect(response.error).toBe('AWAITING_TOOL_APPROVAL');
         });

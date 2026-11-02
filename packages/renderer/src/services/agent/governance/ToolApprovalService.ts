@@ -11,8 +11,9 @@
  * `pingMemoryInbox` writes (A2A-only, and also has no UI consumer).
  *
  * This service is the real fix: a persisted pending-approval record, and an
- * `approve()` that executes the EXACT original tool call (not a re-run of the LLM
- * turn, which could reason differently second time around) once a human says yes.
+ * `approve()` that executes the selected implementation with the original
+ * arguments (not a re-run of the LLM turn). Non-computer bindings are session
+ * scoped: after a reload, the approval must be requested again.
  *
  * Collection: users/{uid}/tool_approvals/{approvalId}
  */
@@ -47,12 +48,38 @@ export interface PendingToolApproval {
     args: ToolFunctionArgs;
     riskTier: ToolRiskTier;
     description: string;
+    /** Non-computer calls must resolve against their original renderer session binding. */
+    bindingSessionId?: string;
     status: 'pending' | 'approved' | 'denied' | 'executed' | 'failed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
     resolvedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
     denyReason?: string;
-    /** Populated after execution — never before. Absence means the action has not run. */
+    /** Populated after execution; absence is ambiguous if the renderer stopped after dispatch. */
     result?: { success: boolean; error?: string };
+}
+
+type BoundToolCall = {
+    userId: string;
+    agentId: string;
+    toolName: string;
+    argsJson: string;
+    riskTier: ToolRiskTier;
+    description: string;
+    execute: (args: ToolFunctionArgs) => Promise<ToolFunctionResult>;
+};
+
+function canonicalArgs(value: unknown): string {
+    const normalize = (item: unknown): unknown => {
+        if (Array.isArray(item)) return item.map(normalize);
+        if (item !== null && typeof item === 'object') {
+            return Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, nested]) => [key, normalize(nested)]));
+        }
+        return item;
+    };
+    const json = JSON.stringify(normalize(value));
+    if (json === undefined) throw new Error('Tool arguments must be JSON-serializable');
+    return json;
 }
 
 function getUserId(): string | null {
@@ -68,6 +95,7 @@ function getApprovalsRef() {
 
 class ToolApprovalService {
     private readonly rendererSessionId = crypto.randomUUID();
+    private readonly boundCalls = new Map<string, BoundToolCall>();
     /**
      * Called by BaseAgent.ts BEFORE executing a requiresApproval:true tool.
      * Persists the pending record and returns its id. Does NOT execute the tool.
@@ -78,24 +106,41 @@ class ToolApprovalService {
         args: ToolFunctionArgs;
         riskTier: ToolRiskTier;
         description: string;
+        execute?: (args: ToolFunctionArgs) => Promise<ToolFunctionResult>;
     }): Promise<string | null> {
         const ref = getApprovalsRef();
         if (!ref) {
             logger.warn('[ToolApprovalService] No auth — cannot create pending approval');
             return null;
         }
+        const isComputerApproval = input.toolName.startsWith('computer_');
+        if (!isComputerApproval && !input.execute) {
+            logger.warn('[ToolApprovalService] Refusing approval without a bound tool implementation');
+            return null;
+        }
+        const userId = getUserId();
+        if (!userId) return null;
+        const argsJson = canonicalArgs(input.args);
+        const args = JSON.parse(argsJson) as ToolFunctionArgs;
 
         const record: Omit<PendingToolApproval, 'id'> = {
             agentId: input.agentId,
             toolName: input.toolName,
-            args: input.args,
+            args,
             riskTier: input.riskTier,
             description: input.description,
             status: 'pending',
             createdAt: serverTimestamp(),
+            ...(!isComputerApproval ? { bindingSessionId: this.rendererSessionId } : {}),
         };
 
         const docRef = await addDoc(ref, record);
+        if (!isComputerApproval && input.execute) {
+            this.boundCalls.set(docRef.id, {
+                userId, agentId: input.agentId, toolName: input.toolName, argsJson,
+                riskTier: input.riskTier, description: input.description, execute: input.execute,
+            });
+        }
         logger.info(`[ToolApprovalService] Pending approval created: ${docRef.id} for ${input.toolName}`);
         return docRef.id;
     }
@@ -114,11 +159,26 @@ class ToolApprovalService {
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
         let approval: PendingToolApproval;
         let isComputerApproval = false;
+        const binding = this.boundCalls.get(approvalId);
+        const matchesBinding = (candidate: PendingToolApproval): boolean => {
+            try {
+                return Boolean(binding)
+                    && candidate.bindingSessionId === this.rendererSessionId
+                    && binding?.userId === uid
+                    && binding?.agentId === candidate.agentId
+                    && binding?.toolName === candidate.toolName
+                    && binding?.riskTier === candidate.riskTier
+                    && binding?.description === candidate.description
+                    && binding?.argsJson === canonicalArgs(candidate.args);
+            } catch {
+                return false;
+            }
+        };
         try {
             const snapshot = await getDoc(approvalDocRef);
             if (!snapshot.exists()) throw new Error(`Approval ${approvalId} not found`);
             const candidate = snapshot.data() as PendingToolApproval;
-            isComputerApproval = candidate.toolName.startsWith('computer_');
+            isComputerApproval = candidate.toolName.startsWith('computer_') && !candidate.bindingSessionId && !binding;
             if (isComputerApproval) {
                 if (candidate.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${candidate.status})`);
                 approval = candidate;
@@ -127,6 +187,7 @@ class ToolApprovalService {
                 if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                 const current = snap.data() as PendingToolApproval;
                 if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
+                if (!matchesBinding(current)) throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
                 transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
                 return current;
             });
@@ -134,36 +195,35 @@ class ToolApprovalService {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
 
-        const { TOOL_REGISTRY } = await import('../tools');
-        const toolFn = TOOL_REGISTRY[approval.toolName];
-        if (!toolFn) {
-            const failResult = { success: false, error: `Tool '${approval.toolName}' not found in registry` };
-            if (!isComputerApproval) await updateDoc(approvalDocRef, { status: 'failed', result: failResult });
-            return failResult;
-        }
-
         let result: ToolFunctionResult;
         try {
-            let executionArgs = approval.args;
-            if (approval.toolName.startsWith('computer_')) {
+            if (isComputerApproval) {
+                const { TOOL_REGISTRY } = await import('../tools');
+                const toolFn = TOOL_REGISTRY[approval.toolName];
+                if (!toolFn) throw new Error(`Tool '${approval.toolName}' not found in registry`);
                 const user = auth.currentUser;
                 if (!user || !window.electronAPI?.computer) throw new Error('Verified desktop sign-in is required for computer control.');
                 const idToken = await user.getIdToken();
                 const authorized = await window.electronAPI.computer.authorizeApproval({ idToken, approvalId, rendererSessionId: this.rendererSessionId });
                 if (!authorized.success || !authorized.data) throw new Error(authorized.error || 'Main-process computer authorization failed.');
-                executionArgs = {
+                const executionArgs = {
                     ...approval.args,
                     __computerAuthorizationToken: authorized.data.token,
                     __computerRendererSessionId: this.rendererSessionId,
                     __computerAgentId: approval.agentId,
                 };
+                result = await toolFn(executionArgs);
+            } else {
+                // Use the selected implementation and original arguments from the requesting turn.
+                // A reload loses this binding and fails closed instead of replaying a bare tool name.
+                result = await binding!.execute(JSON.parse(binding!.argsJson) as ToolFunctionArgs);
             }
-            result = await toolFn(executionArgs);
         } catch (err: unknown) {
             result = { success: false, error: err instanceof Error ? err.message : String(err) };
         }
 
         if (!isComputerApproval) {
+            this.boundCalls.delete(approvalId);
             await updateDoc(approvalDocRef, {
                 status: 'executed',
                 result: { success: result.success, error: result.error },
@@ -183,11 +243,18 @@ class ToolApprovalService {
             await httpsCallable(functions, 'denyComputerApproval')({ approvalId });
             return;
         }
-        await updateDoc(approvalDocRef, {
-            status: 'denied',
-            resolvedAt: serverTimestamp(),
-            ...(reason ? { denyReason: reason } : {}),
+        await runTransaction(db, async transaction => {
+            const current = await transaction.get(approvalDocRef);
+            if (!current.exists() || current.data().status !== 'pending') {
+                throw new Error(`Approval ${approvalId} is no longer pending`);
+            }
+            transaction.update(approvalDocRef, {
+                status: 'denied',
+                resolvedAt: serverTimestamp(),
+                ...(reason ? { denyReason: reason } : {}),
+            });
         });
+        this.boundCalls.delete(approvalId);
         logger.info(`[ToolApprovalService] Approval ${approvalId} denied${reason ? `: ${reason}` : ''}`);
     }
 
