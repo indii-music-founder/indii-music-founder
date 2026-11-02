@@ -4395,6 +4395,14 @@ describe('judgeStatementColumnLoss (Judgment 76)', () => {
         const result = await judgeStatementColumnLoss(['ISRC'], 'cdbaby');
         expect(result).toBeNull();
     });
+
+    it.each([undefined, null, '', '0.9', false, { noul: null }, { noul: '0.9' }, { noul: -0.1 }, { noul: 1.1 }, { noul: NaN }, { noul: Infinity }])(
+        'abstains from financial loss classification for malformed Jev answer %s', async answer => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { is_critical_loss: answer } } }));
+            expect(await judgeStatementColumnLoss(['Earnings (USD)'], 'distrokid')).toBeNull();
+        }
+    );
 });
 
 describe('judgeEventRetentionTier (Judgment 77)', () => {
@@ -4460,6 +4468,21 @@ describe('judgeEventRetentionTier (Judgment 77)', () => {
         });
 
         expect(await judgeEventRetentionTier('contract', 'message')).toBeNull();
+    });
+
+    it.each([
+        [{ score: null }, { noul: 0.9 }],
+        [{ score: '4' }, { noul: 0.9 }],
+        [{ score: -0.1 }, { noul: 0.9 }],
+        [{ score: 4.1 }, { noul: 0.9 }],
+        [{ score: Infinity }, { noul: 0.9 }],
+        [{ score: 3.5 }, { noul: null }],
+        [{ score: 3.5 }, { noul: '0.9' }],
+        [{ score: 3.5 }, { noul: 1.1 }],
+    ])('abstains from retention classification for invalid score or probability', async (permanence, isBusinessRecord) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { permanence, is_business_record: isBusinessRecord } } }));
+        expect(await judgeEventRetentionTier('contract signed', 'message')).toBeNull();
     });
 });
 

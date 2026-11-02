@@ -8876,6 +8876,17 @@ export const STATEMENT_COLUMN_LOSS_QUESTION = {
     },
 };
 
+function boundedJudgmentNumber(answer: unknown, field: 'noul' | 'score', max: number): number | null {
+    const value = typeof answer === 'number'
+        ? answer
+        : answer !== null && typeof answer === 'object' && !Array.isArray(answer)
+            ? (answer as Record<string, unknown>)[field]
+            : undefined;
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= max
+        ? value
+        : null;
+}
+
 /**
  * Semantically evaluate whether missing columns in a royalty statement represent
  * critical financial data loss requiring file quarantine.
@@ -8904,11 +8915,8 @@ export async function judgeStatementColumnLoss(
         });
 
         const ans = result.data.answers?.is_critical_loss;
-        const prob = typeof ans === 'number'
-            ? ans
-            : Number((ans as { noul?: unknown })?.noul);
-
-        if (!Number.isFinite(prob)) return null;
+        const prob = boundedJudgmentNumber(ans, 'noul', 1);
+        if (prob === null) return null;
 
         const isCriticalLoss = prob >= 0.70;
         return {
@@ -8995,15 +9003,9 @@ export async function judgeEventRetentionTier(
         const permAns = result.data.answers?.permanence;
         const bizAns = result.data.answers?.is_business_record;
 
-        const permScore = typeof permAns === 'number'
-            ? permAns
-            : Number((permAns as { score?: unknown })?.score);
-
-        const bizProb = typeof bizAns === 'number'
-            ? bizAns
-            : Number((bizAns as { noul?: unknown })?.noul);
-
-        if (!Number.isFinite(permScore) || !Number.isFinite(bizProb)) return null;
+        const permScore = boundedJudgmentNumber(permAns, 'score', EVENT_PERMANENCE_QUESTION.criteria.length - 1);
+        const bizProb = boundedJudgmentNumber(bizAns, 'noul', 1);
+        if (permScore === null || bizProb === null) return null;
 
         const isPermanentRecord = bizProb >= 0.70 || permScore >= 3;
         let recommendedTier: EventRetentionTier = 'working';
