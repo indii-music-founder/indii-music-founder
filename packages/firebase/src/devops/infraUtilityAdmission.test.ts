@@ -388,10 +388,23 @@ describe('Unit 23 Admission Security: Remaining Infrastructure, Utility & Video 
             expect(mocks.arcjet).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
-                    userId: 'inngest-dispatcher',
+                    userId: 'inngest-caller:192.168.1.1',
                     operationId: 'inngest-api:192.168.1.1',
                 })
             );
+        });
+
+        it('rejects a request without a caller IP before invoking Arcjet', async () => {
+            const res = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+
+            await call(inngestApi, { headers: {} }, res);
+
+            expect(res.status).toHaveBeenCalledWith(503);
+            expect(res.send).toHaveBeenCalledWith('Request protection could not identify the caller.');
+            expect(mocks.arcjet).not.toHaveBeenCalled();
         });
     });
 
