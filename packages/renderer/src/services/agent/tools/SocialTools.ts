@@ -21,22 +21,10 @@ export const SocialTools = {
         );
         const text = getResponseText(result);
 
-        // Auto-persist using the robust SocialService
-        let postId: string | null = null;
-        let persistMessage = "Post generated but failed to save to feed.";
-
-        try {
-            postId = await SocialService.createPost(text);
-            persistMessage = `Saved to Feed (ID: ${postId})`;
-        } catch (persistError: unknown) {
-            logger.warn('Failed to persist social post:', persistError);
-        }
-
         return toolSuccess({
             platform,
-            content: text,
-            postId
-        }, `Generated Post for ${platform}:\n${text}\n\n${persistMessage}`);
+            content: text
+        }, `Draft for ${platform}:\n${text}\n\nThis draft was not saved or posted.`);
     }),
 
     analyze_social_sentiment: wrapTool('analyze_social_sentiment', async ({ accounts }: { accounts: string[] }) => {
