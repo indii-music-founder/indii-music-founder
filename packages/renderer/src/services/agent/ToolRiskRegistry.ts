@@ -18,6 +18,15 @@ import type { ToolRiskTier, ToolRiskMetadata } from './types';
  * Tools not listed default to 'write' at runtime.
  */
 export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
+    credential_vault: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Retrieve, store, or delete credentials in the secure vault' },
+    multi_platform_autopost: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Queue posts for delivery to selected social platforms' },
+    dispatch_community_webhook: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Send a message to an external community webhook' },
+    set_asset_rights: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Change the recorded usage rights for a stored asset' },
+    scale_deployment: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Change the node count of a cloud deployment' },
+    restart_service: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Restart a cloud compute instance' },
+    stage_stripe_payouts: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Stage royalty payout figures and verify Stripe account readiness' },
+    blender_live_command: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Run a live command in the connected Blender instance' },
+    blender_render_music_video: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Start a Blender music video render' },
 
     // =========================================================================
     // READ — No side effects, safe to auto-approve

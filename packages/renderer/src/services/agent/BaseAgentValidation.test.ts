@@ -285,6 +285,35 @@ describe('BaseAgent Tool Validation', () => {
         });
     });
 
+    it.each([
+        'credential_vault',
+        'multi_platform_autopost',
+        'dispatch_community_webhook',
+        'set_asset_rights',
+        'scale_deployment',
+        'restart_service',
+        'stage_stripe_payouts',
+        'blender_live_command',
+        'blender_render_music_video',
+    ])('requires approval before executing %s', async (toolName) => {
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        const handler = vi.fn().mockResolvedValue({ success: true });
+        const guardedAgent = new BaseAgent({
+            id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'sys prompt',
+            tools: [{ functionDeclarations: [createTool(toolName, 'Consequential action', z.object({ value: z.string() }))] }],
+            functions: { [toolName]: handler },
+        });
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+            response: { text: () => 'Calling tool...', functionCalls: () => [{ name: toolName, args: { value: 'test' } }] },
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+        await guardedAgent.execute('Perform action');
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(mockCreatePendingApproval).toHaveBeenCalledOnce();
+        expect(mockCreatePendingApproval.mock.calls[0][0]).toEqual(expect.objectContaining({ toolName }));
+    });
+
     describe('ISSUE-1172: Artist Operating Profile autonomous-computer-control gate', () => {
         const buildComputerAgent = () => new BaseAgent({
             id: 'generalist',
