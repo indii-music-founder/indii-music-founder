@@ -174,7 +174,11 @@ function makeTestAgent(authorizedTools: string[], extraTools: string[] = [], too
             functionDeclarations: allToolNames.map(name => ({
                 name,
                 description: `Tool: ${name}`,
-                parameters: { type: 'OBJECT' as const, properties: {}, required: [] }
+                parameters: { type: 'OBJECT' as const, properties: {}, required: [] },
+                ...(name === 'allowed_tool' ? { riskMetadata: {
+                    riskTier: 'read' as const, permissionTier: 'builtin' as const,
+                    requiresApproval: false, description: 'Test permitted lookup',
+                } } : {}),
             }))
         }],
         functions: {

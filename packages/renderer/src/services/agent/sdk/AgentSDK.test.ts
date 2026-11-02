@@ -100,7 +100,8 @@ describe('Agent SDK Integration', () => {
                 functionDeclarations: [{
                     name: 'testTool',
                     description: 'A test tool',
-                    parameters: { type: 'OBJECT', properties: {} }
+                    parameters: { type: 'OBJECT', properties: {} },
+                    riskMetadata: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Test local tool' },
                 }]
             }, mockTool)
             .build();

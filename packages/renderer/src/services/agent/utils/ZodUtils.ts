@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType } from '../types';
+import { FunctionDeclaration, ToolParameters, ToolParameterSchema, SchemaType, ToolRiskMetadata } from '../types';
 
 /**
  * Converts a Zod schema to the ToolParamters format expected by the Autonomous SDK.
@@ -72,12 +72,14 @@ function mapSchema(schema: any): ToolParameterSchema {
 export function createTool<T extends z.ZodType>(
     name: string,
     description: string,
-    schema: T
+    schema: T,
+    riskMetadata?: ToolRiskMetadata
 ): FunctionDeclaration {
     return {
         name,
         description,
         parameters: zodToToolParameters(schema),
-        schema
+        schema,
+        riskMetadata
     };
 }

@@ -1,10 +1,11 @@
 import { FunctionDeclaration } from '../types';
-import { TOOL_RISK_REGISTRY } from '../ToolRiskRegistry';
+import { resolveToolRiskMetadata } from '../ToolRiskRegistry';
 import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
 
 export interface ToolPoolContext {
     agentId: string;
     moduleContext: string;
+    localToolNames?: ReadonlySet<string>;
     isReadOnly?: boolean;
     conversationMode?: 'direct' | 'department' | 'boardroom';
 }
@@ -47,6 +48,12 @@ export class ToolPoolAssembler {
             ...otherSuperpowers
         ];
 
+        // Do not advertise a callable that dispatch will reject.
+        pool = pool.filter(tool => resolveToolRiskMetadata(
+            tool.name,
+            context.localToolNames?.has(tool.name) ? tool : undefined,
+        ) !== undefined);
+
         // Avoid offering tools that the hierarchy will reject. In Boardroom,
         // managers coordinate with information notes; no peer manager executes
         // another manager's task. Direct mode is intentionally 1:1.
@@ -59,7 +66,10 @@ export class ToolPoolAssembler {
         // 2. Filter out destructive tools if in read-only mode
         if (context.isReadOnly) {
             pool = pool.filter(tool => {
-                const riskTier = TOOL_RISK_REGISTRY[tool.name]?.riskTier || 'write'; // Defaults to write if unknown
+                const riskTier = resolveToolRiskMetadata(
+                    tool.name,
+                    context.localToolNames?.has(tool.name) ? tool : undefined,
+                )?.riskTier;
                 return riskTier === 'read';
             });
         }

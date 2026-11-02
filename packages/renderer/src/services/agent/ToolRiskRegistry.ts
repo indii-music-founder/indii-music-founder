@@ -1,4 +1,5 @@
-import type { ToolRiskTier, ToolRiskMetadata } from './types';
+import type { FunctionDeclaration, ToolRiskTier, ToolRiskMetadata } from './types';
+import { ADDITIONAL_TOOL_RISK_CATALOG } from './AdditionalToolRiskCatalog';
 
 /**
  * ToolRiskRegistry — Centralized risk classification for all agent tools.
@@ -15,9 +16,10 @@ import type { ToolRiskTier, ToolRiskMetadata } from './types';
  * - 'write': Creates or mutates data. Create, save, update, generate, set, inject, export.
  * - 'destructive': Irreversible or high-impact. Delete, rotate, deploy, trigger_signature.
  *
- * Tools not listed default to 'write' at runtime.
+ * Dispatch rejects tools without a central entry or trusted declaration metadata.
  */
 export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
+    ...ADDITIONAL_TOOL_RISK_CATALOG,
     credential_vault: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Retrieve, store, or delete credentials in the secure vault' },
     multi_platform_autopost: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Queue posts for delivery to selected social platforms' },
     dispatch_community_webhook: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Send a message to an external community webhook' },
@@ -344,6 +346,16 @@ export function getToolRiskMetadata(toolName: string): ToolRiskMetadata {
         requiresApproval: true,
         description: 'Unknown tool implicitly treated as high-risk plugin'
     };
+}
+
+/** Dispatch only tools with an explicit reviewed classification. */
+export function resolveToolRiskMetadata(toolName: string, declaration?: FunctionDeclaration): ToolRiskMetadata | undefined {
+    const metadata = TOOL_RISK_REGISTRY[toolName] ?? (declaration?.name === toolName ? declaration.riskMetadata : undefined);
+    if (!metadata || !['read', 'write', 'destructive'].includes(metadata.riskTier)
+        || !['builtin', 'core', 'plugin'].includes(metadata.permissionTier)
+        || typeof metadata.requiresApproval !== 'boolean'
+        || typeof metadata.description !== 'string' || !metadata.description.trim()) return undefined;
+    return metadata;
 }
 
 export function getToolRiskTier(toolName: string): ToolRiskTier {

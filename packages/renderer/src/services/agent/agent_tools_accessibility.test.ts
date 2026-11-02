@@ -11,6 +11,10 @@ import { agentRegistry } from './registry';
 import { AGENT_CONFIGS } from './agentConfig';
 import { VALID_AGENT_IDS } from './types';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
+import { TOOL_RISK_REGISTRY, resolveToolRiskMetadata } from './ToolRiskRegistry';
+import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
+import { createTool } from './utils/ZodUtils';
+import { z } from 'zod';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -59,6 +63,60 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 describe('Agent Tool Accessibility Audit', () => {
+
+    it('has explicit risk metadata for every exposed or callable tool', () => {
+        const exposed = new Set([...Object.keys(TOOL_REGISTRY), ...SUPERPOWER_TOOLS.map(tool => tool.name)]);
+        for (const config of AGENT_CONFIGS) {
+            for (const declaration of config.tools.flatMap(group => group.functionDeclarations)) exposed.add(declaration.name);
+            for (const name of Object.keys(config.functions ?? {})) exposed.add(name);
+            for (const name of config.authorizedTools ?? []) exposed.add(name);
+        }
+        // CurriculumAgent declares these outside the department config registry.
+        exposed.add('create_learning_path');
+        exposed.add('generate_quiz');
+        expect([...exposed].filter(name => !TOOL_RISK_REGISTRY[name]).sort()).toEqual([]);
+    });
+
+    it('does not advertise unclassified tools and honors explicit local metadata', () => {
+        const unknown = createTool('unclassified_local_tool', 'Unknown', z.object({}));
+        const local = createTool('classified_local_tool', 'Classified', z.object({}), {
+            riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read local data',
+        });
+        const malformed = createTool('malformed_local_tool', 'Malformed', z.object({}));
+        malformed.riskMetadata = { riskTier: 'read', permissionTier: 'builtin', description: 'Missing approval decision' } as NonNullable<typeof malformed.riskMetadata>;
+        const unbound = createTool('unbound_global_tool', 'Unbound', z.object({}), {
+            riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Not bound to a local implementation',
+        });
+        const available = ToolPoolAssembler.assemble([unknown, local, malformed, unbound], {
+            agentId: 'generalist', moduleContext: 'creative', isReadOnly: true,
+            localToolNames: new Set(['classified_local_tool', 'malformed_local_tool']),
+        });
+        expect(available.map(tool => tool.name)).toContain('classified_local_tool');
+        expect(available.map(tool => tool.name)).not.toContain('unclassified_local_tool');
+        expect(available.map(tool => tool.name)).not.toContain('malformed_local_tool');
+        expect(available.map(tool => tool.name)).not.toContain('unbound_global_tool');
+    });
+
+    it('distinguishes draft preparation from external and binding actions', () => {
+        for (const name of ['deploy_email_newsletter', 'deploy_micro_ad_campaign', 'deploy_sms_blast', 'register_work_with_pro']) {
+            expect(TOOL_RISK_REGISTRY[name]?.requiresApproval).toBe(false);
+            expect(TOOL_RISK_REGISTRY[name]?.riskTier).toBe('write');
+        }
+        for (const name of ['send_email', 'report_bug', 'schedule_campaign_waterfall', 'schedule_task', 'subscribe_to_event', 'certify_tax_profile', 'issue_isrc', 'generate_live_epk']) {
+            expect(TOOL_RISK_REGISTRY[name]?.requiresApproval).toBe(true);
+        }
+        for (const name of ['validate_metadata', 'check_dsp_delivery_status', 'get_harness_run']) {
+            expect(TOOL_RISK_REGISTRY[name]?.riskTier).toBe('read');
+        }
+    });
+
+    it('does not let declaration metadata downgrade a centrally classified tool', () => {
+        const declaration = createTool('send_email', 'Send email', z.object({}), {
+            riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Incorrect override',
+        });
+        expect(resolveToolRiskMetadata('send_email', declaration)?.requiresApproval).toBe(true);
+        expect(resolveToolRiskMetadata('send_email', declaration)?.riskTier).toBe('write');
+    });
 
     describe('TOOL_REGISTRY Completeness', () => {
         it('should have all critical tools registered', () => {

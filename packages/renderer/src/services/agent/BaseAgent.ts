@@ -42,7 +42,7 @@ import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
 import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
-import { TOOL_RISK_REGISTRY } from './ToolRiskRegistry';
+import { resolveToolRiskMetadata } from './ToolRiskRegistry';
 import { toolApprovalService } from './governance/ToolApprovalService';
 import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
 import { hasAutonomousComputerControl } from '@indii/shared';
@@ -1066,6 +1066,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             {
                 agentId: this.id,
                 moduleContext: activeModule,
+                localToolNames: new Set(Object.keys(this.functions)),
                 isReadOnly: context?.isReadOnly === true,
                 conversationMode: context?.conversationMode,
             }
@@ -1494,14 +1495,14 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                         // Runtime tool authorization enforcement
                         // Build the allowed set: explicit authorizedTools > declared functionDeclarations > allow-all
-                        const declaredToolNames = this.tools.flatMap(
-                            (t: ToolDefinition) => t.functionDeclarations.map((d: FunctionDeclaration) => d.name)
-                        );
+                        const declarations = this.tools.flatMap((t: ToolDefinition) => t.functionDeclarations);
+                        const declaredToolNames = declarations.map((d: FunctionDeclaration) => d.name);
                         const authorizedTools: string[] | undefined = this.authorizedTools ?? (
                             declaredToolNames.length > 0 ? declaredToolNames : undefined
                         );
                         const universalTrashTools = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
-                        if (context?.isReadOnly && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read') {
+                        const riskMeta = resolveToolRiskMetadata(name, this.functions[name] ? declarations.find(d => d.name === name) : undefined);
+                        if (context?.isReadOnly && riskMeta?.riskTier !== 'read') {
                             const blockedResult = toolError('This response is for discussion only. No action was executed.', 'READ_ONLY_EXECUTION');
                             toolCalls.push({ name, args, result: blockedResult });
                             fullPrompt += `\n[Tool ${name} blocked: this is a read-only discussion.]\n`;
@@ -1520,6 +1521,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 error: message, failure, data: blockedResult, toolCalls,
                             };
                         }
+                        if (!riskMeta) {
+                            const blockedResult = toolError(`Tool '${name}' has no reviewed risk classification.`, 'UNCLASSIFIED_TOOL');
+                            toolCalls.push({ name, args, result: blockedResult });
+                            fullPrompt += `\n[Tool ${name} blocked: no reviewed risk classification.]\n`;
+                            continue;
+                        }
 
                         // ISSUE-1172 fix (re-ticketed from ISSUE-1115): Artist Operating Profile gate.
                         // Every `computer_*` tool above 'read' tier (computer_screenshot, computer_open_app,
@@ -1529,7 +1536,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         // is NOT opted in. This fires before the ISSUE-1116 approval-queue gate below so
                         // an artist who never opted in doesn't even get a pending-approval entry created —
                         // there is nothing to approve into until the capability itself is turned on.
-                        if (name.startsWith('computer_') && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read') {
+                        if (name.startsWith('computer_') && riskMeta.riskTier !== 'read') {
                             const aop = await artistOperatingProfileService.getProfile();
                             if (!hasAutonomousComputerControl(aop)) {
                                 logger.warn(`[BaseAgent] Tool '${name}' blocked: artist has not enabled Autonomous Computer Control (Artist Operating Profile).`);
@@ -1554,15 +1561,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         // human approves it via the RightPanel Approvals tab, which executes the
                         // exact original call directly (not a re-run of this LLM turn).
                         //
-                        // Deliberately reads TOOL_RISK_REGISTRY directly, NOT getToolRiskMetadata()'s
-                        // fail-closed "unknown tool -> requiresApproval:true" fallback. That default
-                        // was calibrated for A2AClient's narrower consult_specialist call site.
-                        // Applying it here would gate every agent-declared custom `functions` entry
-                        // that isn't in the global registry by name (most of them) -- a massive,
-                        // unintended blast radius. This gate only fires for tools EXPLICITLY marked
-                        // requiresApproval:true.
-                        const riskMeta = TOOL_RISK_REGISTRY[name];
-                        if (riskMeta?.requiresApproval) {
+                        if (riskMeta.requiresApproval) {
                             logger.info(`[BaseAgent] Tool '${name}' requires approval (risk tier: ${riskMeta.riskTier}). Halting execution loop.`);
                             const schema = this.toolSchemas.get(name);
                             try {
@@ -1629,7 +1628,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
 
                         const argsStr = elideBase64Payloads(JSON.stringify(args));
-                        const previousResult = context?.boardroomExecution && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read'
+                        const previousResult = context?.boardroomExecution && riskMeta.riskTier !== 'read'
                             ? completedBoardroomToolResult(name, args, toolCalls) : null;
                         if (previousResult) {
                             lastToolResult = previousResult;

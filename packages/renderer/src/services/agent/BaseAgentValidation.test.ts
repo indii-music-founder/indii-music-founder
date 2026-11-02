@@ -99,7 +99,8 @@ describe('BaseAgent Tool Validation', () => {
                         createTool(
                             'test_tool',
                             'A test tool',
-                            testToolSchema
+                            testToolSchema,
+                            { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Test local tool' }
                         )
                     ]
                 }
@@ -265,7 +266,7 @@ describe('BaseAgent Tool Validation', () => {
             expect(mockCreatePendingApproval).not.toHaveBeenCalled();
         });
 
-        it('does NOT gate an unclassified custom tool (e.g. test_tool) — only explicit requiresApproval:true entries', async () => {
+        it('runs an explicitly classified custom tool without approval', async () => {
             const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
             vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
@@ -282,6 +283,28 @@ describe('BaseAgent Tool Validation', () => {
 
             expect(testToolHandler).toHaveBeenCalled();
             expect(mockCreatePendingApproval).not.toHaveBeenCalled();
+        });
+
+        it('blocks an unclassified local implementation before dispatch', async () => {
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const handler = vi.fn().mockResolvedValue({ success: true });
+            const unclassifiedAgent = new BaseAgent({
+                id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'sys prompt',
+                tools: [{ functionDeclarations: [createTool('unclassified_local_tool', 'Unclassified local tool', z.object({ value: z.string() }))] }],
+                functions: { unclassified_local_tool: handler },
+            });
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Calling tool...', functionCalls: () => [{ name: 'unclassified_local_tool', args: { value: 'test' } }] },
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Tool unavailable.' },
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            const response = await unclassifiedAgent.execute('Perform action');
+
+            expect(handler).not.toHaveBeenCalled();
+            expect(mockCreatePendingApproval).not.toHaveBeenCalled();
+            expect(response.toolCalls?.[0]?.result).toEqual(expect.objectContaining({ success: false }));
         });
     });
 

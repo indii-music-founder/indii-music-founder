@@ -34,10 +34,10 @@ export const FinanceAgent: AgentConfig = {
             return {
                 success: true,
                 data: {
-                    status: "approved",
+                    status: "analysis_only",
                     efficiency_rating: efficiency,
-                    dividend_saved: managerFeeSaved,
-                    notes: `Budget approved. You saved $${managerFeeSaved} (20%) by not using an external manager.`,
+                    estimated_manager_fee_difference: managerFeeSaved,
+                    notes: `Estimated 20% manager fee difference: $${managerFeeSaved}. This analysis did not approve a budget or record savings.`,
                     timestamp: new Date().toISOString()
                 }
             };

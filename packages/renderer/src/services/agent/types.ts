@@ -47,12 +47,14 @@ export interface FunctionDeclaration {
     description: string;
     parameters: ToolParameters;
     schema?: ZodType;
+    /** Reviewed metadata for a trusted agent-local tool absent from the central registry. */
+    riskMetadata?: ToolRiskMetadata;
     /**
      * Risk classification for governance and permission gating.
      * - 'read': Safe, no side effects (e.g., list_projects, recall_memories)
      * - 'write': Creates or mutates data (e.g., create_project, save_memory)
      * - 'destructive': Irreversible or high-impact (e.g., rotate_credentials, deploy)
-     * Defaults to 'write' at runtime if not specified.
+     * Legacy display hint only; dispatch requires riskMetadata or a registry entry.
      */
     riskTier?: ToolRiskTier;
 }

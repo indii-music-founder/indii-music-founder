@@ -42,11 +42,13 @@ describe('FinanceAgent', () => {
     });
 
     describe('analyze_budget', () => {
-        it('should calculate budget and manager fee saved correctly', async () => {
+        it('calculates a fee estimate without claiming budget approval', async () => {
             const args = { amount: 10000, breakdown: 'Travel' };
             const result = await FinanceAgent.functions!.analyze_budget(args);
             expect(result.success).toBe(true);
-            expect(result.data?.dividend_saved).toBe(2000);
+            expect(result.data?.estimated_manager_fee_difference).toBe(2000);
+            expect(result.data?.status).toBe('analysis_only');
+            expect(result.data?.notes).toContain('did not approve a budget');
         });
     });
 
