@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialTools } from '../SocialTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { SocialService } from '@/services/social/SocialService';
 
 // Mock Dependencies
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
@@ -25,12 +24,6 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
         generateContent: vi.fn()
     },
     getResponseText: vi.fn().mockImplementation((r) => r?.response?.text ? r.response.text() : (typeof r === 'string' ? r : JSON.stringify(r)))
-}));
-
-vi.mock('@/services/social/SocialService', () => ({
-  SocialService: {
-    createPost: vi.fn(),
-  },
 }));
 
 vi.mock('@/core/config/intelligence-models', () => ({
@@ -63,10 +56,10 @@ describe('SocialTools', () => {
   });
 
   describe('generate_social_post', () => {
-    it('should generate content and persist it successfully', async () => {
-      // Setup Mocks
+    // Structural-only regression: the AI response is mocked, so this does not
+    // prove a signed-in customer path or production feed state.
+    it('returns reviewable draft copy without claiming a saved post', async () => {
       const mockGeneratedText = 'Exciting news! #LaunchDay';
-      const mockPostId = 'post-123';
 
       vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
         response: {
@@ -74,60 +67,18 @@ describe('SocialTools', () => {
         },
       } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
-      vi.mocked(SocialService.createPost).mockResolvedValueOnce(mockPostId);
-
-      // Execute Tool
       const result = await generate_social_post({
         platform: 'Twitter',
         topic: 'Product Launch',
         tone: 'excited'
       });
 
-      // Assertions
       expect(result.success).toBe(true);
       expect(result.data).toEqual({
         platform: 'Twitter',
         content: mockGeneratedText,
-        postId: mockPostId,
       });
-    });
-
-    it('should return content even if persistence fails (Resilience)', async () => {
-      // Setup Mocks
-      const mockGeneratedText = 'Resilience check! #Testing';
-
-      vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
-        response: {
-          text: () => mockGeneratedText,
-        },
-      } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
-
-      // Simulate DB Failure
-      vi.mocked(SocialService.createPost).mockRejectedValueOnce(new Error('Firestore unavailable'));
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
-
-      // Execute Tool
-      const result = await generate_social_post({
-        platform: 'LinkedIn',
-        topic: 'Resilience',
-      });
-
-      // Assertions
-      expect(result.success).toBe(true); // Tool should still succeed
-      expect(result.data).toEqual({
-        platform: 'LinkedIn',
-        content: mockGeneratedText,
-        postId: null, // Expect null on failure
-      });
-
-      // Verify the warning was logged
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to persist social post:',
-        expect.any(Error)
-      );
-      expect(result.message).toContain('failed to save');
-
-      consoleSpy.mockRestore();
+      expect(result.message).toContain('not saved or posted');
     });
   });
 });

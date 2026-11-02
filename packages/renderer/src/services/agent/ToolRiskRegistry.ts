@@ -168,7 +168,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     update_task_status: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Update status of a project task' },
 
     // Social & Marketing
-    generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+    generate_social_post: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Generate reviewable social copy; no feed or platform post' },
     schedule_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     create_campaign_brief: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
     dispatch_multi_platform_campaign: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Reserves recoupment ledger budget and provisions programmatic ad campaigns across Meta, TikTok, and Google Ads' },

@@ -116,7 +116,7 @@ export const SocialAgent: AgentConfig = {
             },
             {
                 name: "generate_social_post",
-                description: "Generate a social media post.",
+                description: "Generate reviewable social media draft copy without saving or posting it.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
