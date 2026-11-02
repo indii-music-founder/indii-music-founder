@@ -3,6 +3,7 @@ import {
     createTypesafeClient,
     TypesafeClientError,
     TYPESAFE_DEFAULT_MODEL,
+    TYPESAFE_MAX_STATE_CHARS,
 } from './typesafeClient.js';
 
 const okResponse = (body: unknown, headers: Record<string, string> = {}) =>
@@ -104,5 +105,70 @@ describe('typesafeClient (server-side System One transport)', () => {
     it('enforces question bounds at the transport boundary', async () => {
         const client = createTypesafeClient({ apiKey: 'k', fetchImpl: vi.fn() as unknown as typeof fetch });
         await expect(client.judge({ state: {}, questions: {} })).rejects.toMatchObject({ kind: 'shape' });
+    });
+
+    it.each(['json', 'text'] as const)('times out while reading a stalled %s body', async (bodyMethod) => {
+        vi.useFakeTimers();
+        try {
+            const fetchImpl = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve({
+                ok: bodyMethod === 'json',
+                status: bodyMethod === 'json' ? 200 : 500,
+                headers: { get: () => 'req-stalled' },
+                json: () => new Promise<unknown>(() => {}),
+                text: () => new Promise<string>(() => {}),
+            } as unknown as Response));
+            const client = createTypesafeClient({ apiKey: 'k', timeoutMs: 25, fetchImpl: fetchImpl as unknown as typeof fetch });
+            const pending = client.judge({ state: {}, questions: { q: { type: 'noul' } } });
+            const rejection = expect(pending).rejects.toMatchObject({ kind: 'timeout', requestId: 'req-stalled' });
+
+            await vi.advanceTimersByTimeAsync(25);
+            await rejection;
+            expect((fetchImpl.mock.calls[0][1] as RequestInit).signal?.aborted).toBe(true);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('rejects oversized or unserializable input before transport', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue(okResponse({ answers: { q: { noul: 0.5 } } }));
+        const client = createTypesafeClient({ apiKey: 'k', fetchImpl: fetchImpl as unknown as typeof fetch });
+        const questions = { q: { type: 'noul' } };
+        const textAtLimit = 'x'.repeat(TYPESAFE_MAX_STATE_CHARS - JSON.stringify({ text: '' }).length);
+
+        await client.judge({ state: { text: textAtLimit }, questions });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+        await expect(client.judge({ state: { text: `${textAtLimit}x` }, questions }))
+            .rejects.toMatchObject({ kind: 'shape' });
+        const circular: Record<string, unknown> = {};
+        circular.self = circular;
+        await expect(client.judge({ state: circular, questions })).rejects.toMatchObject({ kind: 'shape' });
+        await expect(client.judge({ state: {}, questions: { q: circular } })).rejects.toMatchObject({ kind: 'shape' });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses a valid per-call model override and rejects an invalid one before transport', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue(okResponse({ answers: { q: { noul: 0.5 } } }));
+        const client = createTypesafeClient({ apiKey: 'k', model: 'jev-latest', fetchImpl: fetchImpl as unknown as typeof fetch });
+        const input = { state: {}, questions: { q: { type: 'noul' } } };
+
+        await client.judge({ ...input, model: 'jev-1.13.0' });
+        expect(JSON.parse(String((fetchImpl.mock.calls[0][1] as RequestInit).body)).model).toBe('jev-1.13.0');
+        await expect(client.judge({ ...input, model: 'not-jev' })).rejects.toMatchObject({ kind: 'shape' });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears the deadline after a completed response', async () => {
+        vi.useFakeTimers();
+        try {
+            const fetchImpl = vi.fn().mockResolvedValue(okResponse({ answers: { q: { noul: 0.5 } } }));
+            const client = createTypesafeClient({ apiKey: 'k', timeoutMs: 25, fetchImpl: fetchImpl as unknown as typeof fetch });
+
+            await client.judge({ state: {}, questions: { q: { type: 'noul' } } });
+            const signal = (fetchImpl.mock.calls[0][1] as RequestInit).signal;
+            await vi.advanceTimersByTimeAsync(25);
+            expect(signal?.aborted).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

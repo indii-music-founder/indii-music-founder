@@ -101,64 +101,104 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
             if (questionCount === 0 || questionCount > TYPESAFE_MAX_QUESTIONS) {
                 throw new TypesafeClientError('shape', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
             }
+            const effectiveModel = input.model === undefined ? model : input.model;
+            if (typeof effectiveModel !== 'string' || !TYPESAFE_MODEL_PATTERN.test(effectiveModel)) {
+                throw new TypesafeClientError('shape', 'Unknown TypeSafe model.');
+            }
+
+            let requestBody: string;
+            try {
+                const stateJson = JSON.stringify(input.state);
+                if (!stateJson || stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
+                    throw new TypesafeClientError('shape', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
+                }
+                requestBody = JSON.stringify({ model: effectiveModel, state: input.state, questions: input.questions });
+                if (!requestBody) throw new TypesafeClientError('shape', 'TypeSafe judgment input is not serializable.');
+            } catch (err: unknown) {
+                if (err instanceof TypesafeClientError) throw err;
+                throw new TypesafeClientError('shape', 'TypeSafe judgment input is not serializable or exceeds the state budget.');
+            }
 
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            let response: Response;
+            let requestId: string | undefined;
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const timeoutError = () => new TypesafeClientError(
+                'timeout', `TypeSafe judgment timed out after ${timeoutMs}ms.`, undefined, requestId,
+            );
+            const deadline = new Promise<never>((_, reject) => {
+                timer = setTimeout(() => {
+                    reject(timeoutError());
+                    controller.abort();
+                }, timeoutMs);
+            });
             try {
-                response = await fetchImpl(`${baseURL}${TYPESAFE_SYSTEMONE_PATH}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({ model, state: input.state, questions: input.questions }),
-                    signal: controller.signal,
-                });
-            } catch (err: unknown) {
-                const aborted = err instanceof Error && err.name === 'AbortError';
-                throw new TypesafeClientError(
-                    aborted ? 'timeout' : 'unreachable',
-                    aborted ? `TypeSafe judgment timed out after ${timeoutMs}ms.` : 'TypeSafe judgment upstream is unreachable.',
-                );
+                const operation = async (): Promise<TypesafeJudgeResult> => {
+                    let response: Response;
+                    try {
+                        response = await fetchImpl(`${baseURL}${TYPESAFE_SYSTEMONE_PATH}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'application/json',
+                                Authorization: `Bearer ${apiKey}`,
+                            },
+                            body: requestBody,
+                            signal: controller.signal,
+                        });
+                    } catch (err: unknown) {
+                        if (controller.signal.aborted || (err instanceof Error && err.name === 'AbortError')) throw timeoutError();
+                        throw new TypesafeClientError('unreachable', 'TypeSafe judgment upstream is unreachable.');
+                    }
+
+                    requestId = response.headers.get('x-typesafe-request-id') ?? undefined;
+
+                    if (!response.ok) {
+                        let detail = '';
+                        try {
+                            detail = await response.text();
+                        } catch {
+                            if (controller.signal.aborted) throw timeoutError();
+                        }
+                        if (response.status === 429) {
+                            throw new TypesafeClientError('rate_limited', 'TypeSafe judgment rate limited.', response.status, requestId);
+                        }
+                        if (response.status === 401 || response.status === 403) {
+                            throw new TypesafeClientError('credentials', 'TypeSafe judgment credentials rejected.', response.status, requestId);
+                        }
+                        throw new TypesafeClientError(
+                            'upstream',
+                            `TypeSafe judgment upstream error (HTTP ${response.status})${detail ? `: ${detail.slice(0, 300)}` : ''}.`,
+                            response.status,
+                            requestId,
+                        );
+                    }
+
+                    let body: unknown;
+                    try {
+                        body = await response.json();
+                    } catch {
+                        if (controller.signal.aborted) throw timeoutError();
+                        throw new TypesafeClientError('shape', 'TypeSafe judgment returned an unexpected shape.', response.status, requestId);
+                    }
+                    if (!isPlainObject(body) || !isPlainObject(body.answers)) {
+                        throw new TypesafeClientError('shape', 'TypeSafe judgment returned an unexpected shape.', response.status, requestId);
+                    }
+
+                    const usage = isPlainObject(body.usage) ? body.usage : {};
+                    const finite = (value: unknown): number | undefined =>
+                        typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+
+                    return {
+                        answers: body.answers,
+                        requestId,
+                        inputTokens: finite(usage['input_tokens']),
+                        outputTokens: finite(usage['output_tokens']),
+                    };
+                };
+                return await Promise.race([operation(), deadline]);
             } finally {
                 clearTimeout(timer);
             }
-
-            const requestId = response.headers.get('x-typesafe-request-id') ?? undefined;
-
-            if (!response.ok) {
-                const detail = await response.text().catch(() => '');
-                if (response.status === 429) {
-                    throw new TypesafeClientError('rate_limited', 'TypeSafe judgment rate limited.', response.status, requestId);
-                }
-                if (response.status === 401 || response.status === 403) {
-                    throw new TypesafeClientError('credentials', 'TypeSafe judgment credentials rejected.', response.status, requestId);
-                }
-                throw new TypesafeClientError(
-                    'upstream',
-                    `TypeSafe judgment upstream error (HTTP ${response.status})${detail ? `: ${detail.slice(0, 300)}` : ''}.`,
-                    response.status,
-                    requestId,
-                );
-            }
-
-            const body = (await response.json().catch(() => null)) as unknown;
-            if (!isPlainObject(body) || !isPlainObject(body.answers)) {
-                throw new TypesafeClientError('shape', 'TypeSafe judgment returned an unexpected shape.', response.status, requestId);
-            }
-
-            const usage = isPlainObject(body.usage) ? body.usage : {};
-            const finite = (value: unknown): number | undefined =>
-                typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
-
-            return {
-                answers: body.answers,
-                requestId,
-                inputTokens: finite(usage['input_tokens']),
-                outputTokens: finite(usage['output_tokens']),
-            };
         },
     };
 }
