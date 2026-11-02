@@ -3,8 +3,8 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-10-29 — status reconciliation and preservation of October 28 findings; no new closure. Previous summary: 2026-10-16 (Logged ISSUE-1537–1551 — Round 1, Round 2 & Round 3 Jev-verified bug hunt across TypeSafe System One schemas, multi-tenant recoupment ledger & attribution isolation, campaign budget refinement, Google/TikTok ad adapters & CAPI deduplication, Mobile Remote media bridges, Arcjet/AppCheck & Studio lease security, `deductCredits` & `handleMicroTransactionCheckoutCompleted` Firestore read-after-write transaction crashes, Split Escrow deadlocks, Tax Form single-use token burn & path traversal, Shopify/PandaDoc webhook HMAC & numeric ID crashes, and Inngest durable execution & timeline polling crashes)
-> **Branch:** `main` (direct commits)
+> **Last updated:** 2026-11-02 — inventory rebaseline and status normalization for ISSUE-1608–1614; no new live closure. Previous summary: 2026-10-16 (Logged ISSUE-1537–1551 — Round 1, Round 2 & Round 3 Jev-verified bug hunt across TypeSafe System One schemas, multi-tenant recoupment ledger & attribution isolation, campaign budget refinement, Google/TikTok ad adapters & CAPI deduplication, Mobile Remote media bridges, Arcjet/AppCheck & Studio lease security, `deductCredits` & `handleMicroTransactionCheckoutCompleted` Firestore read-after-write transaction crashes, Split Escrow deadlocks, Tax Form single-use token burn & path traversal, Shopify/PandaDoc webhook HMAC & numeric ID crashes, and Inngest durable execution & timeline polling crashes)
+> **Delivery:** `main` by default; this objective uses user-authorized task branches.
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
 > same entry format (`### ISSUE-NNNN: <title>` with Status/Severity/Module/Evidence/Impact/Fix/Acceptance),
@@ -16,19 +16,22 @@
 > Cross-references resolve across `.agent/test_ledger/OPEN_ISSUES_V3.md` and the `archive/` folder.
 
 
-## Reconciliation snapshot — 2026-10-29
+## Reconciliation snapshot — 2026-11-02
 
-The numbered ledger now contains **88 nonterminal unique IDs**, including the
-50 October 28 findings imported below. ISSUE-1182 is a separate completed-research
-decision with implementation explicitly gated; it is not counted as an active
-defect. This is a ledger count, not a reproduced-defect or production-readiness
-verdict. Seven legacy entries (#1383 and #1390–1395) have been standardized as
-PARTIAL pending evidence reconciliation; their historical evidence is retained.
-No issue was closed by this reconciliation. Dated proposals remain separate.
+At `origin/main` baseline `d713233451110725b0d86f0194d39c45394a2736`, the numbered ledger
+contained **378 sections and 374 unique IDs**: 266 terminal-labelled, 100
+nonterminal, seven with missing standard status (#1608–1614), and one
+completed-research decision (#1182). The seven status rows are normalized
+below without closing their live acceptance. On this branch, the expected
+classification is 266 terminal-labelled, 107 nonterminal, zero ambiguous,
+and one decision. These are ledger counts, not verified defect or production
+readiness counts. Historical duplicate IDs 1122, 1308, 1309, and 1442 remain
+preserved. Earlier reconciliation for #1383 and #1390–1395 remains PARTIAL;
+their historical evidence is retained. Dated proposals remain separate.
 
 Reproduce counts with `node scripts/issue-ledger-inventory.mjs`. See
 [the execution plan](../../docs/ISSUE_COMPLETION_PLAN.md) and
-[the acceptance inventory](../../docs/audits/open-issues-v3-closure-inventory-2026-10-29.md).
+[the current acceptance inventory](../../docs/audits/open-issues-v3-closure-inventory-2026-11-02.md).
 
 ## Active Unresolved Issues (Migrated from V2 Ledger)
 
@@ -6870,7 +6873,8 @@ outcome. Reproduce against current source before implementation or closure.
 
 ### ISSUE-1608: Autonomous merchandise image generation aborts when the Interactions API rejects its image model instead of taking the supported fallback
 
-- **Status / severity:** CONFIRMED OPEN / HIGH — reproduced in production on 2026-10-29, after Arcjet admitted the real request. This supersedes the shared-admission BLOCKED result for this particular workflow; it is not an Arcjet failure.
+- **Status:** 🟡 PARTIAL (2026-11-02; source fallback repair merged, genuine image/design acceptance pending)
+- **Historical status / severity:** CONFIRMED OPEN / HIGH — reproduced in production on 2026-10-29, after Arcjet admitted the real request. This supersedes the shared-admission BLOCKED result for this particular workflow; it is not an Arcjet failure.
 - **Location:** Art & Merch Dept → New Design → Assets → Generate image autonomously. Backend `packages/firebase/src/functions/creative/gateway.ts:1398` (`imageAi.interactions.create`), `:1420-1424` (fallback error discriminator), `:1429` (`models.generateContent` fallback). Model selection at `:67-71` / `:383-388`.
 - **Reproduction:** Open a fresh design, click Generate image autonomously, enter `A minimalist cream and deep green vinyl record and leaf emblem, bold screen-print shapes, plain background, no text.`, then Generate. Wait for completion.
 - **Expected:** A generated image appears in Assets and can be added to the canvas; an explicitly unsupported Interactions image model is routed through the supported image-generation API.
@@ -6879,20 +6883,24 @@ outcome. Reproduce against current source before implementation or closure.
 - **Source finding / limits:** The inspected source falls back only when `e.message.includes('Unsupported model interaction')`; the observed provider wording is different. The real request ended without a fallback-completion log. No backend code was changed in this audit, and no claim is made that all image models or every calling surface fail identically. Current checkout and live compiled line numbers differ; live error is at `/workspace/lib/functions/creative/gateway.js:1184`.
 - **Deduplication / dependencies:** Existing August 18 Google APIs audit records that this model previously succeeded through the fallback. ISSUE-1392 covers the different TTS model/API route; ISSUE-1382 covers a different variations payload path; neither is this production fast-image fallback failure. ISSUE-1605 is the Showroom image-model-to-text-gateway contract defect. Reuse ISSUE-1608 for additional callers only after verifying their actual model/API path.
 - **Acceptance:** Real request succeeds after supported routing/error classification repair; inspect the returned image, add it to a design, verify persistence and downstream handoff, and prove rejection handling does not mask unrelated provider/auth errors. Structural tests alone do not close it.
+- **2026-11-02 source reconciliation:** Merged commit `2823a6345` added the observed `Model '…' is not supported by the Interactions API` discriminator in `gateway.ts` and retains the `models.generateContent` fallback. Successful generation, persistence, and design reuse after deployment are not recorded here.
 
 ### ISSUE-1609: Marketing image batch marks its last failed post Complete with no image and offers Apply & Save
 
-- **Status / severity:** CONFIRMED OPEN / MEDIUM. Real production batch run on 2026-10-29; distinct from the upstream generation failure in ISSUE-1608.
+- **Status:** 🟡 PARTIAL (2026-11-02; source progress repair merged, genuine image/save acceptance pending)
+- **Historical status / severity:** CONFIRMED OPEN / MEDIUM. Real production batch run on 2026-10-29; distinct from the upstream generation failure in ISSUE-1608.
 - **Location:** Marketing Department → Campaigns → `Indii vOS Launch: Empowering the Independent Sound` → Generate 4 Images. Source: `packages/renderer/src/services/marketing/CampaignIntelligenceService.ts:345-351` and `packages/renderer/src/modules/marketing/components/IntelligenceImageBatchModal.tsx:64-105, 275-315, 370-385`.
 - **Reproduction:** Open the existing pending campaign, choose Generate 4 Images, and start the batch. Wait until all four attempts finish. The observed run showed three Error cards and one Complete card, but the Complete card displayed a placeholder icon with no image element; browser DOM contained zero image elements in the dialog. “Retry Failed (3)” and “Apply & Save” were both enabled. No campaign save or execution was performed.
 - **Expected / actual:** A post is Complete only when a generated image URL exists and renders; a failed last post stays Error, and Save is unavailable with zero generated images. Actual last card was Complete without an image and Save was offered.
 - **Source cause:** `generatePostImages` emits a final progress callback with `currentPostId` equal to the last post and `status: complete` unconditionally, even when that post caught a generation error. The dialog maps that event to Complete at line 64, then its result reconciliation only resets `generating` to Error; the falsely Complete state survives. The `completedCount > 0` condition exposes Apply & Save.
 - **Evidence / limits:** `artifacts/content-audit-2026-10-29/marketing-campaign-images-appcheck.png` shows the four final cards, placeholder and save action. The browser also logged repeated `Unauthorized: Missing App Check token` on subscription/cost checks during this run. Per-post generation errors are swallowed in `generatePostImages`, so the precise upstream cause of all three failures is not established from the UI. This test does not prove campaign image generation never works, and the one Complete badge is not a successful image. No image was saved or posted.
 - **Acceptance:** Distinguish batch completion from each post’s outcome, reconcile status from actual `imageUrl`, require at least one real image to offer Save, show actionable per-post errors, and verify a real image can be generated, rendered, saved, reloaded and reused in a campaign.
+- **2026-11-02 source reconciliation:** Merged commit `2823a6345` now emits per-post `complete` only after `imageUrl` is assigned; caught failures emit `error`, and the dialog checks returned image URLs. A post-deployment image/render/save/reload run is still required.
 
 ### ISSUE-1610: Home Connect Mobile Remote opens Settings Profile instead of pairing and connection status
 
-- **Status / severity:** CONFIRMED OPEN / MEDIUM. Production navigation defect blocks the advertised direct route to the prerequisite for phone-based visual generation; pairing itself is separately unverified.
+- **Status:** 🔴 OPEN (2026-11-02; navigation repair and genuine pairing acceptance pending)
+- **Historical status / severity:** CONFIRMED OPEN / MEDIUM. Production navigation defect blocks the advertised direct route to the prerequisite for phone-based visual generation; pairing itself is separately unverified.
 - **Location:** Home → **Connect Mobile Remote — open pairing and connection status** (`https://app.indii.music/`). Source: `packages/renderer/src/modules/dashboard/components/EmptyState.tsx:286-295`, `packages/renderer/src/services/commands/EntryCommandService.ts:90-98`, `packages/renderer/src/modules/settings/SettingsNavigation.ts:17-30`, `packages/renderer/src/modules/settings/SettingsPanel.tsx:80-100`, `packages/renderer/src/hooks/useURLSync.ts:200-212`.
 - **Reproduction:** In the signed-in production Home screen, click the Connect Mobile Remote card. Wait for Settings to render. The agent chat says it is opening Mobile Remote settings, but the URL is `/settings` and **Profile** is selected. A direct visit to `/settings?section=remote` renders the intended **Mobile Remote** section, confirming it exists.
 - **Expected / actual:** Expected the Mobile Remote settings section with pairing and connection status. Actual the Profile section and no pairing controls on the destination screen. Evidence: `artifacts/content-audit-2026-10-29/mobile-remote-home-opens-profile.png`; direct section/prerequisite: `artifacts/content-audit-2026-10-29/mobile-remote-browser-prerequisite.png`.
@@ -6954,7 +6962,8 @@ The same golden-leaf request progressed from Understanding to `I’m coordinatin
 
 ### ISSUE-1611: Boardroom image request terminates with an unrelated historical response and no media
 
-- **Status / severity:** CONFIRMED OPEN / HIGH; production reproduction 2026-10-30.
+- **Status:** 🔴 OPEN (2026-11-02; current-message delegation and genuine media acceptance pending)
+- **Historical status / severity:** CONFIRMED OPEN / HIGH; production reproduction 2026-10-30.
 - **Location:** Home → Enter Boardroom → Ask indii; existing genuine signed-in W-avatar Chrome session. No account created or auth injected; actual plan unverified.
 - **Reproduction:** Submit `For this media QA check, generate exactly one square image of a single golden leaf on a deep navy background, flat screen print shapes, no text. Return the actual generated image. Do not publish or send anything.` Wait through Conductor delegation to Creative Director.
 - **Expected:** A real image result or an actionable generation/admission error.
@@ -6994,7 +7003,8 @@ Production existing signed-in account; actual plan remains unverified. Created o
 
 ### ISSUE-1612: Merchandise Showroom browser AI Upscale completes without enlarging the design asset
 
-- **Status / severity:** CONFIRMED OPEN / MEDIUM; production browser path, 2026-10-30.
+- **Status:** 🔴 OPEN (2026-11-02; output-dimension and downstream mockup acceptance pending)
+- **Historical status / severity:** CONFIRMED OPEN / MEDIUM; production browser path, 2026-10-30.
 - **Location:** Art & Merch → New Design → Text → Export to Showroom → PNG → Export → AI Upscale 4×. Existing genuine signed-in W-avatar account; actual plan unverified.
 - **Reproduction:** Create the text design through the UI as above. Inspect Asset image natural dimensions (1600×2000). Click AI Upscale 4×. Both upscale controls disable with ellipses, then return enabled. Inspect the same Asset preview.
 - **Expected / actual:** Expected 6400×8000 source and the advertised upscaled marker. Actual natural dimensions remain 1600×2000, no Upscaled note appears, and controls return to idle. No enlargement was applied. Earlier 2× attempt likewise produced no observed marker, but the decisive before/after dimension check here covers 4×.
@@ -7017,7 +7027,8 @@ Loaded stock Song → Performance Video, inspected Analyze Song / Beat-Sync Asse
 
 ### ISSUE-1613: Regional Tour Booking workflow treats an unsupported department fallback as a processed result
 
-- **Status / severity:** CONFIRMED OPEN / MEDIUM; production UI plus source correlation, 2026-10-30.
+- **Status:** 🔴 OPEN (2026-11-02; unsupported branch still returns a success-shaped fallback)
+- **Historical status / severity:** CONFIRMED OPEN / MEDIUM; production UI plus source correlation, 2026-10-30.
 - **Location:** Workflow Lab → Templates → Regional Tour Booking Playbook → Run Workflow; Live & Booking Department node.
 - **Reproduction:** Load the stock template; enter a fictional tour/flyer QA brief explicitly prohibiting contacts/bookings/publication; run. The booking node immediately displays `Processed by Live & Booking De...`.
 - **Expected / actual:** Expected a real supported preparation operation or an explicit unsupported/unavailable error. Actual node receives a generic processed string while no booking capability runs. This can make a multi-part flyer/tour workflow appear to have fulfilled a branch it did not execute.
@@ -7033,7 +7044,8 @@ Loaded the stock Single Release Waterfall Playbook through production UI. Submit
 
 ### ISSUE-1614: Workflow Tweet branch creates a global in-app post despite draft-only/no-post instructions
 
-- **Status / severity:** CONFIRMED OPEN / HIGH; production UI execution plus read-only persisted-record verification, 2026-10-30.
+- **Status:** 🟡 PARTIAL (2026-11-02; source side effect removed, genuine no-post acceptance and QA-post cleanup pending)
+- **Historical status / severity:** CONFIRMED OPEN / HIGH; production UI execution plus read-only persisted-record verification, 2026-10-30.
 - **Location:** Workflow Lab → Single Release Waterfall Playbook → Social Media Department/Tweet.
 - **Reproduction:** Run the template with the fictional Golden Leaf brief explicitly saying `Draft copy only; do not post, schedule, publish or send.` The image branch fails; marketing copy completes; social caption execution continues.
 - **Expected / actual:** Expected draft text only or an approval before a visible post. Actual global `posts/frcrfYzwWJkXEbcg5GRB` was created at 2026-10-31T03:27:52.981Z (October 30 local), under the real account, with generated Golden Leaf promotional caption options and mediaUrls=[], no draft/status field. No external social-platform delivery was established.
@@ -7041,6 +7053,7 @@ Loaded the stock Single Release Waterfall Playbook through production UI. Submit
 - **Containment:** Reloaded the audit tab after discovering the mismatch; that reload did not prevent the already-created record. Stopped additional workflow runs involving social branches. Asked founder authorization to remove only this exact test post; cleanup pending. No historical post modified.
 - **Dependencies / acceptance:** Use real draft storage and explicit publish approval, preserve no-post intent, and test that media/copy QA runs cannot create a global post without approval. Verify failed media branches do not silently publish text-only campaign fragments.
 - **Duplicate check:** Current V3 search for global posts/draft createPost/workflow publication found no matching defect.
+- **2026-11-02 source reconciliation:** Merged commit `2823a6345` changed the WorkflowEngine Social Media Department branch to return generated caption text without calling `SocialService.createPost`. This contains that source path, but no post-deployment run has proved the workflow creates no global post. The historical QA post remains pending separately authorized cleanup.
 
 ### Consolidated remaining media coverage — 2026-10-30
 

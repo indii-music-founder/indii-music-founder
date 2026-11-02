@@ -3,23 +3,27 @@
 ## Contract and current baseline
 
 Execute against `.agent/test_ledger/OPEN_ISSUES_V3.md`; V2 and the root
-`OPEN_ISSUES.md` are historical. The October 29 reconciliation preserves the
-50 unpublished October 28 findings, ISSUE-1553–1602, without importing unrelated
-source changes or treating their proposed fixes as independently reproduced.
+`OPEN_ISSUES.md` are historical. The October 29 reconciliation preserved the
+50 October 28 findings, ISSUE-1553–1602. The November 2 baseline also includes
+later numbered production findings through ISSUE-1623. Imported allegations
+remain subject to current-source verification.
 
-The current ledger has **89 nonterminal unique IDs**, **1 research decision**,
-and **264 terminal-labelled unique IDs**. Four historical duplicate IDs remain
-preserved. These are ledger classifications, not verified defect or acceptance
-counts. Seven legacy statuses (#1383, #1390–1395) now explicitly await evidence
-reconciliation. No issue was closed by this pass. The owner-reported Boardroom regression is
-tracked separately as ISSUE-1603 / GitHub #563. Run:
+At baseline `d713233451110725b0d86f0194d39c45394a2736`, the ledger had
+**378 numbered sections, 374 unique IDs, 100 nonterminal IDs, 7 ambiguous
+statuses, 1 research decision, and 266 terminal-labelled IDs**. ISSUE-1608–1614
+accounted for all seven ambiguous statuses. Their normalization makes 107
+nonterminal and zero ambiguous without closing any customer path. Four
+historical duplicate IDs remain preserved. These are ledger classifications,
+not freshly verified defect or acceptance counts. The seven older evidence
+rows (#1383, #1390–1395) still await reconciliation. ISSUE-1603 / GitHub #563
+remains partial in this ledger despite its GitHub issue being closed. Run:
 
 ```bash
 node scripts/issue-ledger-inventory.mjs
 node scripts/issue-ledger-inventory.mjs --json
 ```
 
-The [acceptance inventory](audits/open-issues-v3-closure-inventory-2026-10-29.md)
+The [current acceptance inventory](audits/open-issues-v3-closure-inventory-2026-11-02.md)
 links every pending ID to its finding, source paths and original acceptance.
 Dated intelligence proposals are separate work, not extra numbered defects.
 
@@ -31,7 +35,8 @@ repository's default mainline policy for future objectives.
 
 ## 1. Reconcile before rebuilding
 
-Compare each finding with current source and later evidence. Record the
+Compare each finding with current source and later evidence, including the
+October 29–31 production findings #1604–1623. Record the
 remaining acceptance, owner, prerequisites, implementation paths, and smallest
 observable next check. Historical probes, test totals, merged PRs, and semantic
 judgments do not prove current production behavior. Resolve contradictory
@@ -41,6 +46,10 @@ checkpoint language (#1158, #1510) and stale acceptance descriptions (#1406,
 The first delivery preserves findings, normalizes ambiguous statuses, supplies
 a reproducible inventory and retains the closure-evidence integrity guard.
 Subsequent deliveries implement confirmed gaps rather than bulk-closing rows.
+Prioritize #1614's unintended in-app post, #1609's false Complete state,
+#1617's stuck Running state, and #1618's repeated denied tools within their
+respective safety and workflow batches. Source repairs for #1608, #1609, and
+#1614 still need genuine post-deployment acceptance.
 
 ## 2. Establish safe boundaries for each journey
 
