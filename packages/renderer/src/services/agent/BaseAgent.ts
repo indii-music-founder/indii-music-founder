@@ -1519,12 +1519,10 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         this.loopDetector.recordToolCall(name, args);
 
                         // Runtime tool authorization enforcement
-                        // Build the allowed set: explicit authorizedTools > declared functionDeclarations > allow-all
+                        // Explicit agent policy wins; otherwise a call must be in the
+                        // reviewed pool actually offered to this execution.
                         const declarations = this.tools.flatMap((t: ToolDefinition) => t.functionDeclarations);
-                        const declaredToolNames = declarations.map((d: FunctionDeclaration) => d.name);
-                        const authorizedTools: string[] | undefined = this.authorizedTools ?? (
-                            declaredToolNames.length > 0 ? declaredToolNames : undefined
-                        );
+                        const authorizedTools = this.authorizedTools ?? allFunctions.map(tool => tool.name);
                         const universalTrashTools = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
                         const riskMeta = resolveToolRiskMetadata(name, this.functions[name] ? declarations.find(d => d.name === name) : undefined);
                         if (context?.isReadOnly && riskMeta?.riskTier !== 'read') {
@@ -1533,7 +1531,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             fullPrompt += `\n[Tool ${name} blocked: this is a read-only discussion.]\n`;
                             continue;
                         }
-                        if (authorizedTools !== undefined && !authorizedTools.includes(name) && !universalTrashTools.has(name)) {
+                        if (!authorizedTools.includes(name) && !universalTrashTools.has(name)) {
                             logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
                             const failure = unauthorizedToolFailure(this.id, name);
                             const message = `Tool '${name}' is not authorized for agent '${this.id}'.`;
