@@ -1,4 +1,5 @@
 import { delegatedAgentText } from './executionFailure';
+import { inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
 import { logger } from '@/utils/logger';
 import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy';
 import { v4 as uuidv4 } from 'uuid';
@@ -1851,6 +1852,7 @@ The user will see this plan and can approve it to start execution.`;
             } catch (_e: unknown) {
                 context = { ...parentContext };
             }
+            inheritExecutionTokenBudget(parentContext, context);
 
             // Ensure Living Context is present
             if (!context.livingContext) {
