@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getDocs, writeBatch } from 'firebase/firestore';
 
 const firestoreMocks = vi.hoisted(() => ({
     transactionSet: vi.fn(),
