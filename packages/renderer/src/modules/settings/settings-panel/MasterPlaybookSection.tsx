@@ -64,6 +64,7 @@ export const MasterPlaybookSection: React.FC = () => {
     const [rawMarkdown, setRawMarkdown] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadFailed, setLoadFailed] = useState(false);
     const brandColors = useStore((state) => state.userProfile?.brandKit?.colors) ?? EMPTY_BRAND_COLORS;
 
     useEffect(() => {
@@ -75,11 +76,15 @@ export const MasterPlaybookSection: React.FC = () => {
                 if (isMounted) {
                     setDirective(loaded);
                     setRawMarkdown(compileDirectiveToMarkdown(loaded));
+                    setLoadFailed(false);
                     setIsLoading(false);
                 }
             } catch (err) {
                 logger.error('[MasterPlaybookSection] Failed to load directive:', err);
-                if (isMounted) setIsLoading(false);
+                if (isMounted) {
+                    setLoadFailed(true);
+                    setIsLoading(false);
+                }
             }
         };
 
@@ -89,6 +94,7 @@ export const MasterPlaybookSection: React.FC = () => {
             if (isMounted) {
                 setDirective(updated);
                 setRawMarkdown(compileDirectiveToMarkdown(updated));
+                setLoadFailed(false);
             }
         });
 
@@ -197,6 +203,10 @@ export const MasterPlaybookSection: React.FC = () => {
                 <span>Loading Artist Master Directive...</span>
             </div>
         );
+    }
+
+    if (loadFailed) {
+        return <div role="alert" className="p-6 text-red-300">Artist Master Directive could not be loaded. Reopen this panel to retry.</div>;
     }
 
     return (
