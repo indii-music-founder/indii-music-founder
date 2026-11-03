@@ -241,6 +241,14 @@ describe('Security & Knowledge Callables Admission & Arcjet Protection', () => {
         ).rejects.toMatchObject({ code: 'permission-denied' });
       });
 
+      if (name === 'claimComputerApproval' || name === 'denyComputerApproval') {
+        it('requires an explicit verified-email claim', async () => {
+          await expect(invoke(baseRequest({
+            auth: { uid: 'missing_email_claim', token: { firebase: { sign_in_provider: 'password' } } },
+          }, data))).rejects.toMatchObject({ code: 'permission-denied' });
+        });
+      }
+
       it('enforces Arcjet rate limits on authenticated requests', async () => {
         mocks.protectAuthenticated.mockResolvedValueOnce({
           allowed: false,

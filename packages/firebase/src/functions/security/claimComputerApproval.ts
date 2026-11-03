@@ -6,6 +6,7 @@ import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { protectAuthenticatedApiRequest } from '../security/arcjet';
 
 type ExpectedApproval = { agentId: string; toolName: string; args: Record<string, unknown>; createdAtMs: number };
+const COMPUTER_APPROVAL_MAX_AGE_MS = 5 * 60_000;
 
 function canonical(value: unknown): string {
     if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -30,7 +31,7 @@ export const claimComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1',
     if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
         throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
     }
-    if (request.auth?.token?.email_verified === false) {
+    if (request.auth?.token?.email_verified !== true) {
         throw new HttpsError('permission-denied', 'A verified signed-in user is required.');
     }
     if (request.rawRequest) {
@@ -57,6 +58,10 @@ export const claimComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1',
         const data = snapshot.data() ?? {};
         const createdAtMs = data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : Number.NaN;
         if (data.status !== 'pending') throw new HttpsError('failed-precondition', `Computer approval is not pending (status: ${String(data.status)}).`);
+        const ageMs = Date.now() - createdAtMs;
+        if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > COMPUTER_APPROVAL_MAX_AGE_MS) {
+            throw new HttpsError('failed-precondition', 'Computer approval is expired or has an invalid creation time.');
+        }
         if (data.agentId !== expected.agentId || data.toolName !== expected.toolName || createdAtMs !== expected.createdAtMs || canonical(data.args ?? {}) !== canonical(expected.args)) {
             throw new HttpsError('failed-precondition', 'Computer approval scope changed before it could be claimed.');
         }
@@ -72,7 +77,7 @@ export const denyComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1', 
     if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
         throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
     }
-    if (request.auth?.token?.email_verified === false) {
+    if (request.auth?.token?.email_verified !== true) {
         throw new HttpsError('permission-denied', 'A verified signed-in user is required.');
     }
     if (request.rawRequest) {
