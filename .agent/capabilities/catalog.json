@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "ff10882545c2202529efdec100559181c3b3fbd00c5982b54364d284bf95fad0",
+  "sourceDigest": "1a5de5e87757c3c4c2dc64be6c3b45694421de3ed74c406c836860f4f8c863b5",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -1541,9 +1541,9 @@
       "path": "package.json",
       "mutable": true,
       "available": true,
-      "description": "npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
-      "descriptionHash": "df05f0147dfe97b2e65982442b6392115401cc5ce3a84e20e3ecf06d76df7bd6",
-      "contentHash": "2086df914d471c6d91cfd1b63aa7db5dc57067f16ce53d243a5d01276c34ed34",
+      "description": "npm run check:brace-resolution && npm run check:grpc-resolution && npm run check:test-quality && npm run validate:ci-node-runtime && npm run check:arcjet-inventory && npm run validate:mainline-workflows && npm run validate:capabilities && npm run check:functions && npm run check:deploy-guards && npm run security:frontend-api-boundary && npm run security:vertex-only && npm run security:vertex-routing && npm run check:workflow-exits && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src && eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts",
+      "descriptionHash": "f70326e57b8f500eb63c30dff2e69785c2ee1231ddedc317912fa7299a504084",
+      "contentHash": "58bc1432c84c54b094471ccdfb4a37b2d8836f0514021269a867c5e6a906cfdd",
       "state": "certified",
       "authority": "local-execution",
       "prerequisites": [
