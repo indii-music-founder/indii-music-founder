@@ -25,6 +25,7 @@ export const TYPESAFE_MAX_STATE_CHARS = 64_000;
 export const TYPESAFE_DEFAULT_TIMEOUT_MS = 20_000;
 
 export type TypesafeFailureKind =
+    | 'input'
     | 'unreachable'
     | 'timeout'
     | 'rate_limited'
@@ -95,28 +96,38 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
         model,
         async judge(input: TypesafeJudgeInput): Promise<TypesafeJudgeResult> {
             if (!isPlainObject(input.state) || !isPlainObject(input.questions)) {
-                throw new TypesafeClientError('shape', 'state and questions must be objects.');
+                throw new TypesafeClientError('input', 'state and questions must be objects.');
             }
             const questionCount = Object.keys(input.questions).length;
             if (questionCount === 0 || questionCount > TYPESAFE_MAX_QUESTIONS) {
-                throw new TypesafeClientError('shape', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
+                throw new TypesafeClientError('input', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
             }
             const effectiveModel = input.model === undefined ? model : input.model;
             if (typeof effectiveModel !== 'string' || !TYPESAFE_MODEL_PATTERN.test(effectiveModel)) {
-                throw new TypesafeClientError('shape', 'Unknown TypeSafe model.');
+                throw new TypesafeClientError('input', 'Unknown TypeSafe model.');
             }
 
             let requestBody: string;
             try {
                 const stateJson = JSON.stringify(input.state);
-                if (!stateJson || stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
-                    throw new TypesafeClientError('shape', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
+                if (!stateJson || !isPlainObject(JSON.parse(stateJson))) {
+                    throw new TypesafeClientError('input', 'TypeSafe judgment state must serialize to an object.');
                 }
-                requestBody = JSON.stringify({ model: effectiveModel, state: input.state, questions: input.questions });
-                if (!requestBody) throw new TypesafeClientError('shape', 'TypeSafe judgment input is not serializable.');
+                if (stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
+                    throw new TypesafeClientError('input', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
+                }
+                const questionsJson = JSON.stringify(input.questions);
+                const serializedQuestions: unknown = questionsJson ? JSON.parse(questionsJson) : undefined;
+                if (!isPlainObject(serializedQuestions) || Object.keys(serializedQuestions).length !== questionCount ||
+                    !Object.values(serializedQuestions).every(isPlainObject)) {
+                    throw new TypesafeClientError('input', 'TypeSafe judgment questions are not serializable.');
+                }
+                // Embed the exact state that passed the size check. A custom toJSON
+                // must not change the payload between validation and transmission.
+                requestBody = `{"model":${JSON.stringify(effectiveModel)},"state":${stateJson},"questions":${questionsJson}}`;
             } catch (err: unknown) {
                 if (err instanceof TypesafeClientError) throw err;
-                throw new TypesafeClientError('shape', 'TypeSafe judgment input is not serializable or exceeds the state budget.');
+                throw new TypesafeClientError('input', 'TypeSafe judgment input is not serializable or exceeds the state budget.');
             }
 
             const controller = new AbortController();

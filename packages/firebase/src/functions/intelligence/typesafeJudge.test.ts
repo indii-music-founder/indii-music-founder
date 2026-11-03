@@ -68,6 +68,18 @@ describe('typesafeJudge', () => {
         expect(mocks.fetch).not.toHaveBeenCalled();
     });
 
+    it('returns invalid-argument for an unserializable state or non-string model', async () => {
+        const circular: Record<string, unknown> = {};
+        circular.self = circular;
+        await expect(callJudge({ state: circular, questions: { q: validQuestion() } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ ...validPayload(), model: 42 }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { toJSON: () => null } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+
     it('forwards the payload verbatim with the bearer token and returns the answers', async () => {
         const result = await callJudge(validPayload());
 
