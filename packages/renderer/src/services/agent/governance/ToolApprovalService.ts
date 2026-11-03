@@ -69,16 +69,34 @@ type BoundToolCall = {
 };
 
 function canonicalArgs(value: unknown): string {
+    const active = new WeakSet<object>();
     const normalize = (item: unknown): unknown => {
-        if (Array.isArray(item)) return item.map(normalize);
-        if (item !== null && typeof item === 'object') {
+        if (item === null || typeof item === 'string' || typeof item === 'boolean') return item;
+        if (typeof item === 'number' && Number.isFinite(item)) return item;
+        if (typeof item !== 'object' || active.has(item)) {
+            throw new Error('Tool arguments must contain only finite JSON values');
+        }
+        if (!Array.isArray(item) && Object.getPrototypeOf(item) !== Object.prototype && Object.getPrototypeOf(item) !== null) {
+            throw new Error('Tool arguments must contain only plain JSON objects');
+        }
+        active.add(item);
+        try {
+            if (Array.isArray(item)) return Array.from(item, normalize);
+            if (Reflect.ownKeys(item).some(key => typeof key !== 'string' ||
+                !Object.getOwnPropertyDescriptor(item, key)?.enumerable ||
+                !('value' in (Object.getOwnPropertyDescriptor(item, key) ?? {})))) {
+                throw new Error('Tool arguments must contain only plain JSON fields');
+            }
             return Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, nested]) => [key, normalize(nested)]));
+        } finally {
+            active.delete(item);
         }
-        return item;
     };
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('Tool arguments must be a JSON object');
+    }
     const json = JSON.stringify(normalize(value));
-    if (json === undefined) throw new Error('Tool arguments must be JSON-serializable');
     return json;
 }
 
