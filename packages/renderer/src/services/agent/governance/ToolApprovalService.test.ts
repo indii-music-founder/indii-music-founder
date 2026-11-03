@@ -147,6 +147,27 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
             expect(result.error).toMatch(/sandbox crashed/);
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'failed' }));
+        });
+
+        it('records a returned tool failure as failed rather than executed', async () => {
+            await bindApproval('execute_code', {}, vi.fn().mockResolvedValue({ success: false, error: 'Provider rejected the action' }));
+            const result = await toolApprovalService.approve('approval-1');
+            expect(result.success).toBe(false);
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({
+                status: 'failed', result: { success: false, error: 'Provider rejected the action' },
+            }));
+        });
+
+        it('reports an ambiguous outcome when final result recording fails after dispatch', async () => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            await bindApproval('execute_code', {}, execute);
+            mocks.updateDoc.mockImplementationOnce(() => undefined).mockRejectedValueOnce(new Error('database unavailable'));
+            const result = await toolApprovalService.approve('approval-1');
+            expect(execute).toHaveBeenCalledOnce();
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/reconciliation/);
+            expect(result.error).toMatch(/do not retry automatically/i);
         });
 
         it('refuses changed arguments before claiming or dispatching the approval', async () => {

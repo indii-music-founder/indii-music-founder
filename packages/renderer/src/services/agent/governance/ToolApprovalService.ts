@@ -224,10 +224,18 @@ class ToolApprovalService {
 
         if (!isComputerApproval) {
             this.boundCalls.delete(approvalId);
-            await updateDoc(approvalDocRef, {
-                status: 'executed',
-                result: { success: result.success, error: result.error },
-            });
+            try {
+                await updateDoc(approvalDocRef, {
+                    status: result.success ? 'executed' : 'failed',
+                    result: { success: result.success, error: result.error },
+                });
+            } catch (error: unknown) {
+                logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`, error);
+                return {
+                    success: false,
+                    error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,
+                };
+            }
         }
 
         logger.info(`[ToolApprovalService] Approval ${approvalId} executed (${approval.toolName}): success=${result.success}`);
