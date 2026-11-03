@@ -67,7 +67,7 @@ import { sessionService } from './SessionService';
 import { ConversationSession } from '@/core/store/slices/agent';
 
 describe('SessionService Persistence (Dual Write)', () => {
-    const mockElectronSave = vi.fn().mockResolvedValue(undefined);
+    const mockElectronSave = vi.fn().mockResolvedValue({ success: true });
     const mockElectronDelete = vi.fn().mockResolvedValue(undefined);
 
     beforeEach(() => {
@@ -94,6 +94,7 @@ describe('SessionService Persistence (Dual Write)', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.unstubAllGlobals();
     });
 
@@ -128,6 +129,18 @@ describe('SessionService Persistence (Dual Write)', () => {
 
         // Verify Electron (Local)
         expect(mockElectronSave).toHaveBeenCalledWith('session-123', updates);
+    });
+
+    it('retries a local save when desktop IPC reports failure', async () => {
+        vi.useFakeTimers();
+        mockElectronSave.mockResolvedValueOnce({ success: false, error: 'disk busy' });
+        await sessionService.createSession({
+            id: 'session-123', title: 'Test Chat', createdAt: 1000, updatedAt: 1000,
+            messages: [], participants: ['indii'],
+        });
+
+        await vi.runOnlyPendingTimersAsync();
+        expect(mockElectronSave).toHaveBeenCalledTimes(2);
     });
 
     it('deleteSession should delete from Firestore AND Electron', async () => {

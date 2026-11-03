@@ -28,7 +28,7 @@ describe('PlatformBridgeService', () => {
                         render: mockRender.mockResolvedValue('/path/to/rendered.mp4'),
                     },
                     agent: {
-                        saveHistory: mockSaveHistory.mockResolvedValue(undefined),
+                        saveHistory: mockSaveHistory.mockResolvedValue({ success: true }),
                         deleteHistory: mockDeleteHistory.mockResolvedValue(undefined),
                     },
                 },
@@ -76,6 +76,12 @@ describe('PlatformBridgeService', () => {
 
             await bridge.deleteHistory('session-1');
             expect(mockDeleteHistory).toHaveBeenCalledWith('session-1');
+        });
+
+        it('reports a failed desktop history save to its caller', async () => {
+            mockSaveHistory.mockResolvedValueOnce({ success: false, error: 'disk full' });
+
+            await expect(new ElectronPlatformAdapter().saveHistory('session-1', { messages: [] })).rejects.toThrow('disk full');
         });
     });
 
@@ -153,6 +159,14 @@ describe('PlatformBridgeService', () => {
 
             await bridge.deleteHistory('session-web');
             expect(localStorage.getItem('indii_session_history_session-web')).toBeNull();
+        });
+
+        it('reports web storage quota failures to its caller', async () => {
+            vi.stubGlobal('localStorage', {
+                setItem: () => { throw new Error('quota exceeded'); },
+            });
+
+            await expect(new ElectronPlatformAdapter().saveHistory('session-web', { title: 'Web Chat' })).rejects.toThrow('quota exceeded');
         });
 
         it('exports a default singleton platformBridge instance', () => {
