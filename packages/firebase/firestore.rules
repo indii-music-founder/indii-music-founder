@@ -1118,20 +1118,56 @@ service cloud.firestore {
       match /tool_approvals/{approvalId} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly([
+            'agentId', 'toolName', 'args', 'riskTier', 'description',
+            'status', 'createdAt', 'bindingSessionId'
+          ]) &&
           request.resource.data.status == 'pending' &&
           request.resource.data.agentId is string &&
           request.resource.data.toolName is string &&
           request.resource.data.args is map &&
+          request.resource.data.riskTier in ['read', 'write', 'destructive'] &&
+          request.resource.data.description is string &&
+          request.resource.data.description.size() > 0 &&
+          (request.resource.data.toolName.matches('^computer_.*') ||
+            request.resource.data.get('bindingSessionId', null) is string) &&
           request.resource.data.createdAt == request.time;
         // Computer approvals are resolved only by trusted Admin SDK callables.
-        // Other approval families retain their existing owner-controlled state machine,
-        // but their authority-bearing identity and arguments are immutable.
+        // Non-computer transitions remain owner-controlled, so these records
+        // are workflow state rather than independent execution receipts.
         allow update: if isOwner(userId) &&
           !(resource.data.toolName.matches('^computer_.*')) &&
           request.resource.data.agentId == resource.data.agentId &&
           request.resource.data.toolName == resource.data.toolName &&
           request.resource.data.args == resource.data.args &&
-          request.resource.data.createdAt == resource.data.createdAt;
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.riskTier == resource.data.riskTier &&
+          request.resource.data.description == resource.data.description &&
+          request.resource.data.get('bindingSessionId', null) == resource.data.get('bindingSessionId', null) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'resolvedAt', 'denyReason', 'result'
+          ]) &&
+          (
+            (resource.data.status == 'pending' &&
+              request.resource.data.status == 'approved' &&
+              request.resource.data.resolvedAt == request.time &&
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt'])) ||
+            (resource.data.status == 'pending' &&
+              request.resource.data.status == 'denied' &&
+              request.resource.data.resolvedAt == request.time &&
+              request.resource.data.get('denyReason', '') is string &&
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt', 'denyReason'])) ||
+            (resource.data.status == 'approved' &&
+              request.resource.data.status in ['executed', 'failed'] &&
+              request.resource.data.result is map &&
+              request.resource.data.result.keys().hasAll(['success']) &&
+              request.resource.data.result.keys().hasOnly(['success', 'error']) &&
+              request.resource.data.result.success is bool &&
+              (!('error' in request.resource.data.result) || request.resource.data.result.error is string) &&
+              ((request.resource.data.status == 'executed' && request.resource.data.result.success == true) ||
+                (request.resource.data.status == 'failed' && request.resource.data.result.success == false)) &&
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'result']))
+          );
         allow delete: if false;
       }
       match /aop/{docId} { allow read, write: if isOwner(userId); }
