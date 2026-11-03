@@ -13,6 +13,7 @@ export interface MemoryBankResult {
 export interface MemorySearchResponse {
     results: MemoryBankResult[];
     hasMore: boolean;
+    unavailable?: boolean;
 }
 
 /**
@@ -70,7 +71,7 @@ class MemoryBankService {
             return { results: result.data.results || [], hasMore: result.data.hasMore ?? false };
         } catch (error) {
             logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
-            return { results: [], hasMore: false };
+            return { results: [], hasMore: false, unavailable: true };
         }
     }
 
@@ -81,8 +82,10 @@ class MemoryBankService {
     ): Promise<{ results: MemoryBankResult[]; hasMore: boolean; scopeMessage: string }> {
         const response = await this.searchMemories(userId, query, 100);
         const results = [...new Map(response.results.map(result => [result.id, result])).values()];
-        const scopeMessage = `Searched the first ranked memory page; found ${results.length} unique item(s).` +
-            (response.hasMore ? ' More matches may exist beyond this page.' : ' No further matches were reported.');
+        const scopeMessage = response.unavailable
+            ? 'Semantic memory search was unavailable; older memories were not checked.'
+            : `Searched the first ranked memory page; found ${results.length} unique item(s).` +
+                (response.hasMore ? ' More matches may exist beyond this page.' : ' No further matches were reported.');
         return { results, hasMore: response.hasMore, scopeMessage };
     }
 

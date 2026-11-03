@@ -80,4 +80,14 @@ describe('MemoryBankService', () => {
         expect(scoped.scopeMessage).toContain('More matches may exist');
         search.mockRestore();
     });
+
+    it('distinguishes an unavailable search from a completed empty search', async () => {
+        const search = vi.spyOn(memoryBankService, 'searchMemories').mockResolvedValueOnce({
+            results: [], hasMore: false, unavailable: true,
+        });
+        const scoped = await memoryBankService.searchMemoriesScoped('user-1', 'album');
+        expect(scoped.scopeMessage).toContain('unavailable');
+        expect(scoped.scopeMessage).toContain('were not checked');
+        search.mockRestore();
+    });
 });
