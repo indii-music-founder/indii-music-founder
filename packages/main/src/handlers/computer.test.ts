@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { registerComputerHandlers } from './computer';
+import { abortComputerControl, registerComputerHandlers } from './computer';
 
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
     showMessageBox: vi.fn().mockResolvedValue({ response: 1 }),
-    auth: { authorize: vi.fn(), consume: vi.fn(), beginDrive: vi.fn(), consumeDriveAction: vi.fn(), revoke: vi.fn(), revokeAllDriveSessions: vi.fn() },
+    auth: { authorize: vi.fn(), consume: vi.fn(), beginDrive: vi.fn(), consumeDriveAction: vi.fn(), revoke: vi.fn(), revokeAll: vi.fn() },
     execution: {
         getPermissionStatus: vi.fn(() => ({ supported: true })), screenshot: vi.fn().mockResolvedValue({ base64: 'secret' }), listApps: vi.fn().mockResolvedValue([]),
         openApp: vi.fn(), click: vi.fn(), key: vi.fn(), scroll: vi.fn(), abort: vi.fn(), isAborted: vi.fn(() => false),
@@ -72,7 +72,13 @@ describe('Computer IPC main-process security boundary', () => {
         expect(denied.success).toBe(false);
         expect(mocks.auth.consume).not.toHaveBeenCalled();
         await handlers['computer:abort'](good);
-        expect(mocks.auth.revokeAllDriveSessions).toHaveBeenCalledOnce();
+        expect(mocks.auth.revokeAll).toHaveBeenCalledOnce();
+    });
+
+    it('uses the same abort path for the global shortcut', () => {
+        abortComputerControl();
+        expect(mocks.execution.abort).toHaveBeenCalledOnce();
+        expect(mocks.auth.revokeAll).toHaveBeenCalledOnce();
     });
 
     it('always disables text injection at the boundary', async () => {
