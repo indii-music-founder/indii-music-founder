@@ -22,7 +22,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
     TEXT: {
         FAST: 'gemini-3.8-flash',
         LITE: 'gemini-3.1-flash-lite',
-        PRO: 'gemini-3.1-pro-preview',
+        PRO: 'gemini-4-argon',
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-001',
