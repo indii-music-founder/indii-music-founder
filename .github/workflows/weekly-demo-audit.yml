@@ -102,6 +102,8 @@ jobs:
 
       - name: Hour 1.2 — Typecheck
         id: h1_typecheck
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         if: success() || failure()
         run: |
           set +e
@@ -210,13 +212,13 @@ jobs:
       # ─── Hour 2 — Cold-start journey ──────────────────────────────────────
       - name: Hour 2 prep — Install Playwright
         id: h2_install
-        if: steps.h1_dev.outcome == 'success'
+        if: ${{ !cancelled() && steps.h1_dev.outcome == 'success' }}
         run: |
           npx playwright install --with-deps chromium
 
       - name: Hour 2 — Walk demo path with Playwright
         id: h2_walk
-        if: steps.h1_dev.outcome == 'success'
+        if: ${{ !cancelled() && steps.h2_install.outcome == 'success' }}
         timeout-minutes: 30
         run: node scripts/weekly-demo-audit.mjs 2>&1 | tee .agent/h2_walk.log
 
@@ -312,7 +314,7 @@ jobs:
             const title = `Weekly Demo Audit ${week} — ${verdict}`;
             const safeRead = p => { try { return fs.readFileSync(p, 'utf8'); } catch { return '_(not produced)_'; } };
             const h1 = safeRead('.agent/AUDIT_HOUR1.md');
-            const h2 = safeRead('.agent/AUDIT_HOUR2.md');
+            const h2 = '${{ steps.h2_walk.outcome }}' === 'skipped' ? '_(not produced)_' : safeRead('.agent/AUDIT_HOUR2.md');
             const h4 = safeRead('.agent/AUDIT_HOUR4.md');
             const h2_outcome = '${{ steps.h2_walk.outcome }}';
             const h1_dev_outcome = '${{ steps.h1_dev.outcome }}';

@@ -100,6 +100,8 @@ export function isCapabilityQuestion(task: string): boolean {
         new RegExp(String.raw`\bare (?:your|indii(?:'s)?|the|the other) (?:agents?'? |departments?'? )?tools? (?:available|ready|working|accessible|deployed|implemented)(?: right now| now)?\b`, 'i'),
         new RegExp(String.raw`\bdid (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:get|have) (?:their )?(?:requested )?tools?\b`, 'i'),
         new RegExp(String.raw`\bhave (?:the )?(?:other )?agents?(?: (?:the )?other \d+)? (?:gotten|received|got) (?:their )?(?:requested )?tools?\b`, 'i'),
+        /\bis (?:my |the )?(?:phone|mobile remote(?: control)?) (?:currently )?(?:paired|connected|communicating)\b/i,
+        /\bcan i (?:take|upload) (?:a |my )?(?:selfie|photo)\b[^.!?]*\b(?:phone|mobile remote)\b/i,
         /\b(?:is|are) (?:image|video)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
         /\b(?:is|are) (?:blender|3d video|visualizer)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
         new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make|render)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos|3d (?:video|videos)|blender|3d|visualizer)(?: (?:with|using) blender)?(?: right now| now)?\??$`, 'i'),
