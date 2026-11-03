@@ -564,6 +564,24 @@ describe('judgeOrchestrationComplexity (Judgment 7)', () => {
         expect(result).toBeNull();
     });
 
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'abstains from orchestration routing on invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { complexity: { choice: 'complex', confidence } } },
+            }));
+            expect(await judgeOrchestrationComplexity('Analyze then render')).toBeNull();
+        },
+    );
+
+    it('requires an exact declared Choice rather than normalizing a malformed one', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { complexity: { choice: 'COMPLEX', confidence: 0.95 } } },
+        }));
+        expect(await judgeOrchestrationComplexity('Analyze then render')).toBeNull();
+    });
+
     it('returns null on callable failure', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Proxy down'); });
@@ -635,6 +653,32 @@ describe('judgeCollaboratorRoleSemantics (Judgment 8)', () => {
             confidence: 0.98
         });
     });
+
+    it.each([undefined, null, '0', false, NaN, Infinity, -0.1, 1.1, 0.5])(
+        'abstains from agreement decisions on invalid or ambiguous Noul (%s)', async noul => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    category: { choice: 'producer', confidence: 0.95 },
+                    requires_agreement: { noul },
+                } },
+            }));
+            expect(await judgeCollaboratorRoleSemantics('Beat Producer')).toBeNull();
+        },
+    );
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'abstains when Choice confidence is invalid (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    category: { choice: 'producer', confidence },
+                    requires_agreement: { noul: 0.9 },
+                } },
+            }));
+            expect(await judgeCollaboratorRoleSemantics('Beat Producer')).toBeNull();
+        },
+    );
 
     it('returns null on failure or empty input', async () => {
         mocks.enabled.mockReturnValue(true);
@@ -902,6 +946,24 @@ describe('judgeVideoTreatmentPreset (Judgment 12)', () => {
         const result = await judgeVideoTreatmentPreset('completely unrelated floating fruit');
         expect(result).toBeNull();
     });
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'does not select a treatment from invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { preset: { choice: 'neon-night', confidence } } },
+            }));
+            expect(await judgeVideoTreatmentPreset('neon stage lights')).toBeNull();
+        },
+    );
+
+    it('rejects a Choice outside the declared treatment options', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { preset: { choice: '__proto__', confidence: 0.99 } } },
+        }));
+        expect(await judgeVideoTreatmentPreset('unknown direction')).toBeNull();
+    });
 });
 
 describe('judgeVideoAspectRatioIntent (Judgment 13)', () => {
@@ -1028,6 +1090,24 @@ describe('judgeFanToMerchSku (Judgment 15)', () => {
 
         const result = await judgeFanToMerchSku('Do you have guitar pedals for sale', PRODUCTS);
         expect(result).toBeNull();
+    });
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'does not select a SKU from invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { matched_sku: { choice: 'sku_hoodie_blk', confidence } } },
+            }));
+            expect(await judgeFanToMerchSku('black hoodie', PRODUCTS)).toBeNull();
+        },
+    );
+
+    it('rejects a SKU absent from the active product candidates', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { matched_sku: { choice: 'sku_retired', confidence: 0.99 } } },
+        }));
+        expect(await judgeFanToMerchSku('retired item', PRODUCTS)).toBeNull();
     });
 });
 

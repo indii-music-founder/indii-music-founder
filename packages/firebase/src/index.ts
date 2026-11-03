@@ -79,7 +79,7 @@ import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '.
 import { checkOperationBudget, claimOperationReservation, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from './functions/security/arcjet';
 import { requireVerifiedCreativeAdmission } from './functions/creative/legacyAdmission';
-import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
+import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservationCoversTextStreamCost } from './functions/creative/textStreamAdmission';
 import { resolveVertexEndpointResource } from './lib/vertexRouting';
 import {
     classifySpecialistFailure,
@@ -1452,6 +1452,14 @@ export const generateContentStream = onRequest(
                     logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     await voidAgentStreamReservation('unauthorized-model');
                     res.status(400).send('Invalid or unauthorized model ID.');
+                    return;
+                }
+
+                const reservationSnapshot = await admin.firestore().collection('costLedger').doc(costReservationId).get();
+                const requiredCost = minimumTextStreamReservationCost(contents, config, modelId);
+                if (!reservationSnapshot.exists || !reservationCoversTextStreamCost(reservationSnapshot.data()?.estimatedCost, requiredCost)) {
+                    await voidAgentStreamReservation('under-reserved');
+                    res.status(409).send('Agent-stream cost reservation is too small for this request. Reserve the full estimated cost and retry.');
                     return;
                 }
 

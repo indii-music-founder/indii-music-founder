@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
-import { getDoc } from 'firebase/firestore';
+import { getDoc, setDoc } from 'firebase/firestore';
 
 
 
@@ -61,6 +61,18 @@ describe('MembershipService (Ledger Budget Checks)', () => {
             exists: () => false,
             data: () => undefined
         });
+    });
+
+    it.each([NaN, Infinity, -Infinity, -0.01])('rejects an invalid cost estimate (%s)', async (cost) => {
+        const result = await MembershipService.checkBudget(cost);
+        expect(result.allowed).toBe(false);
+        expect(result.remainingBudget).toBe(0);
+        expect(getDoc).not.toHaveBeenCalled();
+    });
+
+    it.each([NaN, Infinity, -Infinity, -0.01, 0])('does not record an invalid spend amount (%s)', async (amount) => {
+        await MembershipService.recordSpend(MOCK_USER_ID, amount);
+        expect(setDoc).not.toHaveBeenCalled();
     });
 
     it('💸 halts execution exactly when the $1.00 Hard Limit is breached', async () => {

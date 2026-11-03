@@ -123,10 +123,8 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
       if (!collab.hasAgreement) {
         missingAgreements.push(collab.id);
         
-        // Jev judgment takes precedence when present; otherwise falls back to deterministic heuristic
-        const isProducer = collab.requiresProducerAgreement !== undefined
-          ? collab.requiresProducerAgreement
-          : collab.roles.some(r => {
+        // A semantic judgment may add a producer gate but cannot remove one for a known role.
+        const isProducer = collab.requiresProducerAgreement === true || collab.roles.some(r => {
               const lower = r.toLowerCase();
               // Exclude executive producer from requiring track-level audio producer agreement
               if (lower.includes('executive')) return false;

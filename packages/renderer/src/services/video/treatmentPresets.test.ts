@@ -43,6 +43,7 @@ describe('treatment presets', () => {
     it('returns undefined when nothing matches', () => {
         expect(resolveTreatmentPreset('fluffy purple marshmallow')).toBeUndefined();
         expect(resolveTreatmentPreset('')).toBeUndefined();
+        expect(resolveTreatmentPreset('cyber')).toBeUndefined();
     });
 
     it('resolves a preset into concrete project treatment values', () => {

@@ -619,15 +619,16 @@ export async function judgeOrchestrationComplexity(
         const answer = result.data.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer !== 'object') return null;
 
-        const choice = typeof answer.choice === 'string' ? answer.choice.toLowerCase() : null;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const choice = answer.choice;
+        const confidence = answer.confidence;
 
         const validPaths: OrchestrationPathType[] = ['simple', 'parallel', 'complex'];
-        if (!choice || !validPaths.includes(choice as OrchestrationPathType)) {
+        if (typeof choice !== 'string' || !validPaths.includes(choice as OrchestrationPathType)) {
             return null;
         }
 
-        if (confidence < ORCHESTRATION_PATH_MIN_CONFIDENCE) {
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < ORCHESTRATION_PATH_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 
@@ -673,6 +674,9 @@ export interface RoleSemanticJudgment {
     confidence: number;
 }
 
+export const PRODUCER_AGREEMENT_YES_MIN = 0.70;
+export const PRODUCER_AGREEMENT_NO_MAX = 0.30;
+
 /**
  * Semantically judge collaborator role strings to determine their primary category
  * and whether a standard producer agreement is legally required.
@@ -707,17 +711,18 @@ export async function judgeCollaboratorRoleSemantics(
         if (!catAns || typeof catAns.choice !== 'string') return null;
 
         const choice = catAns.choice.toLowerCase();
-        const confidence = typeof catAns.confidence === 'number' ? catAns.confidence : 1.0;
+        const confidence = catAns.confidence;
         const validCategories: CollaboratorRoleCategory[] = ['producer', 'writer', 'featured_artist', 'engineer', 'other'];
         if (!validCategories.includes(choice as CollaboratorRoleCategory)) return null;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
 
         const agreeProb = typeof agreeAns === 'number'
             ? agreeAns
-            : Number((agreeAns as { noul?: unknown })?.noul);
+            : (agreeAns as { noul?: unknown } | null)?.noul;
 
-        const isProducerRequiringAgreement = Number.isFinite(agreeProb)
-            ? agreeProb >= 0.70
-            : choice === 'producer';
+        if (typeof agreeProb !== 'number' || !Number.isFinite(agreeProb) || agreeProb < 0 || agreeProb > 1 ||
+            (agreeProb > PRODUCER_AGREEMENT_NO_MAX && agreeProb < PRODUCER_AGREEMENT_YES_MIN)) return null;
+        const isProducerRequiringAgreement = agreeProb >= PRODUCER_AGREEMENT_YES_MIN;
 
         return {
             roleCategory: choice as CollaboratorRoleCategory,
@@ -1043,7 +1048,7 @@ export const VIDEO_TREATMENT_QUESTION = {
         'amber-night-cinematic': 'Night, warm amber streetlights, moody, cinematic Detroit glow, dark shadows.',
         'clean-grid': 'Minimalist, tech, clean studio lines, modern neutral aesthetic, structured grid.',
         'bold-arrival': 'High impact, big statement, dramatic entrance, punchy contrast, bold reveal.',
-        'neon-night': 'Electric cyan/magenta, synthwave, vaporwave, club rave, cyber glow.',
+        'neon-night': 'Electric cyan/magenta, nightlife, colored stage lighting, club rave.',
         'vinyl-warm': 'Nostalgic analog, soul, jazz, retro vinyl groove, warm sepia/brown tones.',
         'cold-blue': 'Clinical precision, icy blue, crisp winter, detached atmospheric calm.',
         'sunset-punch': 'Warm golden hour, summer sunset, vibrant orange/red, high energy.',
@@ -1078,9 +1083,11 @@ export async function judgeVideoTreatmentPreset(
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const confidence = answer.confidence;
 
-        if (choice === VIDEO_TREATMENT_NONE || confidence < VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE) {
+        if (!Object.hasOwn(VIDEO_TREATMENT_QUESTION.criteria, choice) || choice === VIDEO_TREATMENT_NONE ||
+            typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 
@@ -1319,9 +1326,10 @@ export async function judgeFanToMerchSku(
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const confidence = answer.confidence;
 
-        if (choice === MERCH_SKU_NONE || confidence < MERCH_SKU_MIN_CONFIDENCE) {
+        if (choice === MERCH_SKU_NONE || typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < MERCH_SKU_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 

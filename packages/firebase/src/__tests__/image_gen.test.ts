@@ -56,6 +56,7 @@ vi.mock('firebase-admin', () => {
         id: 'mock-doc',
         set: vi.fn().mockResolvedValue(undefined),
         update: vi.fn().mockResolvedValue(undefined),
+        get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ estimatedCost: 1 }) }),
     };
     const mockTx = {
         get: vi.fn().mockResolvedValue({ data: () => undefined, exists: false }),
@@ -288,6 +289,33 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateContentStream', () => {
+        it('voids an under-reserved stream before provider submission', async () => {
+            const originalDb = admin.firestore();
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({
+                        get: vi.fn().mockResolvedValue({ exists: true, data: () => ({ estimatedCost: 0.001 }) }),
+                    })),
+                })),
+            } as unknown as ReturnType<typeof admin.firestore>);
+            try {
+                const req: any = {
+                    method: 'POST',
+                    headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
+                    body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'prompt' }] }] },
+                };
+                const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn(), end: vi.fn() };
+                vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
+
+                generateContentStream(req, res);
+                await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(409));
+                expect(mocks.generateContentStream).not.toHaveBeenCalled();
+                expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+            } finally {
+                vi.mocked(admin.firestore).mockReturnValue(originalDb);
+            }
+        });
+
         it('returns a truthful typed application-capacity error before provider submission', async () => {
             const req: any = {
                 method: 'POST',

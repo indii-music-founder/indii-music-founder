@@ -82,4 +82,28 @@ describe('Button Interaction', () => {
     expect(link).toHaveAttribute('href', '/link')
     expect(link).toHaveClass('bg-primary') // Inherits button styles
   })
+
+  it.each(['disabled', 'loading'] as const)('blocks the child anchor and both click handlers while %s', state => {
+    const parentClick = vi.fn()
+    const childClick = vi.fn()
+    const childCapture = vi.fn()
+    const buttonRef = React.createRef<HTMLButtonElement>()
+    const childRef = React.createRef<HTMLAnchorElement>()
+    render(
+      <Button asChild ref={buttonRef} disabled={state === 'disabled'} isLoading={state === 'loading'} onClick={parentClick}>
+        <a ref={childRef} href="/checkout" onClick={childClick} onClickCapture={childCapture}>Checkout</a>
+      </Button>
+    )
+    const anchor = screen.getByText('Checkout')
+    expect(buttonRef.current).toBe(anchor)
+    expect(childRef.current).toBe(anchor)
+    expect(anchor).not.toHaveAttribute('href')
+    expect(anchor).toHaveAttribute('aria-disabled', 'true')
+    expect(anchor).toHaveAttribute('tabindex', '-1')
+    fireEvent.click(anchor)
+    fireEvent.keyDown(anchor, { key: 'Enter' })
+    expect(parentClick).not.toHaveBeenCalled()
+    expect(childClick).not.toHaveBeenCalled()
+    expect(childCapture).not.toHaveBeenCalled()
+  })
 })

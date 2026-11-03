@@ -8,7 +8,7 @@ interface SkeletonProps {
 }
 
 const Shimmer = ({ className }: SkeletonProps) => (
-    <div className={cn("bg-white/5 animate-pulse rounded-xl", className)} />
+    <div aria-hidden="true" className={cn("bg-white/5 motion-safe:animate-pulse rounded-xl", className)} />
 );
 
 // For Creative Studio, Video Studio, Merch
@@ -154,7 +154,7 @@ export function LoadingFallback() {
 
     if (isTimedOut) {
         return (
-            <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[50] flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+            <div role="alert" className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[50] flex flex-col items-center justify-center p-6 text-center motion-safe:animate-in motion-safe:fade-in">
                 <div className="text-4xl mb-4">⏳</div>
                 <h3 className="text-lg font-bold text-white mb-2">Loading is taking longer than expected</h3>
                 <p className="text-gray-400 text-sm max-w-sm mb-6">
@@ -187,8 +187,8 @@ export function LoadingFallback() {
     }
 
     return (
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm animate-in fade-in duration-200 z-[40]">
-            <SkeletonComponent />
+        <div role="status" aria-label="Loading module" className="absolute inset-0 bg-background/95 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in duration-200 z-[40]">
+            <div aria-hidden="true"><SkeletonComponent /></div>
         </div>
     );
 }

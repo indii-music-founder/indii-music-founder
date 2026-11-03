@@ -37,6 +37,7 @@ import { logger } from '@/utils/logger';
 import { RateLimiter } from './RateLimiter';
 import { secureRandomInt } from '@/utils/crypto-random';
 import { CostControlService } from '@/services/billing/CostControlService';
+import { estimateAgentStreamCost } from './billing/estimateAgentStreamCost';
 
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
@@ -423,10 +424,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         await httpsCallable<{ operationId: string }, { voided: true }>(functions, 'voidAgentStreamCostReservation')({ operationId });
     }
 
-    private async reserveAgentStream(userId: string, model: string, streaming: boolean): Promise<string> {
+    private async reserveAgentStream(userId: string, model: string, streaming: boolean, estimatedCost: number): Promise<string> {
         const costCheck = await CostControlService.checkAndReserve({
             operationType: 'agent_stream',
-            estimatedCost: 0.001,
+            estimatedCost,
             userId,
             metadata: { model, streaming },
         });
@@ -738,7 +739,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             ]);
 
                             const [reservationId, preparedHeaders] = await Promise.all([
-                                this.reserveAgentStream(userId, modelName, false),
+                                this.reserveAgentStream(userId, modelName, false,
+                                    estimateAgentStreamCost(prompt, systemInstruction, tools, modelName, mergedConfig.maxOutputTokens)),
                                 this.prepareBackendRequestHeaders(),
                             ]);
                             costReservationId = reservationId;
@@ -960,7 +962,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         ]);
 
                         const [reservationId, preparedHeaders] = await Promise.all([
-                            this.reserveAgentStream(userId, modelName, true),
+                            this.reserveAgentStream(userId, modelName, true,
+                                estimateAgentStreamCost(prompt, systemInstruction, tools, modelName, mergedConfig.maxOutputTokens)),
                             this.prepareBackendRequestHeaders(),
                         ]);
                         costReservationId = reservationId;

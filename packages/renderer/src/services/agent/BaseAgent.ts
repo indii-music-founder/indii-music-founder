@@ -1264,7 +1264,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     undefined,
                     allFunctions,
                     1500000, // Per-request context ceiling; distinct from the run allowance.
-                    generationConfig.maxOutputTokens
+                    generationConfig.maxOutputTokens // Reserve the full configured output allowance
                 );
 
                 if (tokenEstimate.willExceed) {

@@ -50,6 +50,16 @@ describe('TokenEstimator', () => {
         warn.mockRestore();
     });
 
+    it.each([NaN, Infinity, -1])('blocks an invalid remaining budget (%s)', (budget) => {
+        const est = TokenEstimator.estimate('prompt', undefined, NO_TOOLS, budget, 10);
+        expect(est.willExceed).toBe(true);
+    });
+
+    it.each([NaN, Infinity, -1])('blocks an invalid output allowance (%s)', (output) => {
+        const est = TokenEstimator.estimate('prompt', undefined, NO_TOOLS, 100_000, output);
+        expect(est.willExceed).toBe(true);
+    });
+
     it('handles functionCall and functionResponse parts', () => {
         const est = TokenEstimator.estimate(
             parts(
@@ -58,8 +68,15 @@ describe('TokenEstimator', () => {
             ),
             undefined, NO_TOOLS, 100_000, 0
         );
-        // call: 20 flat; response: ceil(JSON.stringify(part).length / 4)
+        // Small calls retain the 20-token floor; responses use serialized size.
         const respPart = { functionResponse: { name: 'x', response: { text: 'f'.repeat(100) } } };
         expect(est.inputTokens).toBe(20 + Math.ceil(JSON.stringify(respPart).length / 4));
+    });
+
+    it('accounts for large function-call arguments', () => {
+        const call = { functionCall: { name: 'write', args: { body: 'x'.repeat(40_000) } } };
+        const est = TokenEstimator.estimate(parts(call), undefined, NO_TOOLS, 5_000, 0);
+        expect(est.inputTokens).toBe(Math.ceil(JSON.stringify(call).length / 4));
+        expect(est.willExceed).toBe(true);
     });
 });

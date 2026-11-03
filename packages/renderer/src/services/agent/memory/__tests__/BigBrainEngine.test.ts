@@ -66,13 +66,13 @@ vi.mock('../MemoryBankService', () => ({
             ],
             hasMore: false,
         }),
-        searchMemoriesAllPages: vi.fn().mockResolvedValue({
+        searchMemoriesScoped: vi.fn().mockResolvedValue({
             results: [
                 { id: 'bank-1', memory: 'User prefers warm color palettes' },
                 { id: 'bank-2', memory: 'Always use formal language' },
             ],
-            totalPages: 1,
-            scopeMessage: 'Searched memory across 1 page(s), found 2 matching memory item(s).',
+            hasMore: false,
+            scopeMessage: 'Searched the first ranked memory page; found 2 unique item(s).',
         }),
     },
 }));
@@ -114,17 +114,29 @@ describe('BigBrainEngine', () => {
             ],
             hasMore: false,
         });
-        vi.mocked(memoryBankService.searchMemoriesAllPages).mockResolvedValue({
+        vi.mocked(memoryBankService.searchMemoriesScoped).mockResolvedValue({
             results: [
                 { id: 'bank-1', memory: 'User prefers warm color palettes' } as any,
                 { id: 'bank-2', memory: 'Always use formal language' } as any,
             ],
-            totalPages: 1,
-            scopeMessage: 'Searched memory across 1 page(s), found 2 matching memory item(s).',
+            hasMore: false,
+            scopeMessage: 'Searched the first ranked memory page; found 2 unique item(s).',
         });
     });
 
     describe('assembleContext', () => {
+        it('does not promote an unrelated first memory into user alignment', async () => {
+            vi.mocked(memoryBankService.searchMemories).mockResolvedValueOnce({
+                results: [
+                    { id: 'unrelated', memory: 'The album shipped yesterday' } as any,
+                    { id: 'preference', memory: 'Always use formal language' } as any,
+                ],
+                hasMore: false,
+            });
+            const context = await bigBrainEngine.assembleContext('user-1', 'generalist', 'Help with a release');
+            expect(context.alignmentRules).toEqual(['Always use formal language']);
+        });
+
         it('should assemble context from all layers in parallel', async () => {
             const context = await bigBrainEngine.assembleContext(
                 'user-1',

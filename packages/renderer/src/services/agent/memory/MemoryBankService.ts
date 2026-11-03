@@ -13,6 +13,7 @@ export interface MemoryBankResult {
 export interface MemorySearchResponse {
     results: MemoryBankResult[];
     hasMore: boolean;
+    unavailable?: boolean;
 }
 
 /**
@@ -70,35 +71,22 @@ class MemoryBankService {
             return { results: result.data.results || [], hasMore: result.data.hasMore ?? false };
         } catch (error) {
             logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
-            return { results: [], hasMore: false };
+            return { results: [], hasMore: false, unavailable: true };
         }
     }
 
-    /**
-     * Paginated memory search — fetches all matching results across pages.
-     * @returns all matching results with honest search scope metrics
-     */
-    async searchMemoriesAllPages(
+    /** The backend exposes one ranked vector page and no continuation cursor. */
+    async searchMemoriesScoped(
         userId: string,
         query: string,
-        maxPages: number = 10
-    ): Promise<{ results: MemoryBankResult[]; totalPages: number; scopeMessage: string }> {
-        const allResults: MemoryBankResult[] = [];
-        let page = 0;
-        let hasMore = true;
-
-        while (hasMore && page < maxPages) {
-            const response = await this.searchMemories(userId, query, 100);
-            allResults.push(...response.results);
-            hasMore = response.hasMore;
-            page++;
-        }
-
-        const scopeMessage = allResults.length > 0
-            ? `Searched memory across ${page} page(s), found ${allResults.length} matching memory item(s).`
-            : `Searched memory across ${page} page(s), found no matching results.`;
-
-        return { results: allResults, totalPages: page, scopeMessage };
+    ): Promise<{ results: MemoryBankResult[]; hasMore: boolean; scopeMessage: string }> {
+        const response = await this.searchMemories(userId, query, 100);
+        const results = [...new Map(response.results.map(result => [result.id, result])).values()];
+        const scopeMessage = response.unavailable
+            ? 'Semantic memory search was unavailable; older memories were not checked.'
+            : `Searched the first ranked memory page; found ${results.length} unique item(s).` +
+                (response.hasMore ? ' More matches may exist beyond this page.' : ' No further matches were reported.');
+        return { results, hasMore: response.hasMore, scopeMessage };
     }
 
     /**
