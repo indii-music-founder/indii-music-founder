@@ -5882,7 +5882,13 @@ export type TaxComplianceStatus =
     | 'VALID_W8BEN_COMPLETE'
     | 'MISSING_REQUIRED_TIN'
     | 'MISSING_SIGNATURE'
+    | 'REQUIRES_MANUAL_REVIEW'
     | 'INVALID_DOCUMENT';
+
+const TAX_COMPLIANCE_STATUSES: ReadonlySet<string> = new Set<TaxComplianceStatus>([
+    'VALID_W9_COMPLETE', 'VALID_W8BEN_COMPLETE', 'MISSING_REQUIRED_TIN',
+    'MISSING_SIGNATURE', 'REQUIRES_MANUAL_REVIEW', 'INVALID_DOCUMENT',
+]);
 
 export interface TaxDocumentInput {
     documentTitle: string;
@@ -5911,7 +5917,10 @@ export async function judgeTaxFormCompliance(
     let fallbackStatus: TaxComplianceStatus = 'VALID_W9_COMPLETE';
     let fallbackScore = 5;
 
-    if (!input.hasExtractedTinOrSsn) {
+    if (input.declaredFormType === 'UNKNOWN') {
+        fallbackStatus = 'INVALID_DOCUMENT';
+        fallbackScore = 1;
+    } else if (!input.hasExtractedTinOrSsn) {
         fallbackStatus = 'MISSING_REQUIRED_TIN';
         fallbackScore = 2;
     } else if (!input.hasSignaturePresent) {
@@ -5920,22 +5929,19 @@ export async function judgeTaxFormCompliance(
     } else if (input.declaredFormType === 'W8BEN') {
         fallbackStatus = 'VALID_W8BEN_COMPLETE';
         fallbackScore = 5;
-    } else if (input.declaredFormType === 'UNKNOWN') {
-        fallbackStatus = 'INVALID_DOCUMENT';
-        fallbackScore = 1;
     }
 
-    const missingTin = fallbackStatus === 'MISSING_REQUIRED_TIN';
+    const missingTin = !input.hasExtractedTinOrSsn;
     const isExempt = fallbackStatus === 'VALID_W9_COMPLETE' || fallbackStatus === 'VALID_W8BEN_COMPLETE';
 
     if (!judgmentsAvailable()) {
         return {
-            status: fallbackStatus,
-            isWithholdingExempt: isExempt,
+            status: isExempt ? 'REQUIRES_MANUAL_REVIEW' : fallbackStatus,
+            isWithholdingExempt: false,
             missingRequiredTin: missingTin,
             complianceScore: fallbackScore,
             validationBlurb: isExempt
-                ? `Deterministic tax clearance: ${input.extractedLegalName} verified (${input.declaredFormType}).`
+                ? 'Tax form fields are present; manual verification is required before disbursement.'
                 : `Tax compliance hold: ${fallbackStatus}.`,
         };
     }
@@ -5993,31 +5999,44 @@ export async function judgeTaxFormCompliance(
         const tinAns = ans?.missing_tin as { noul?: unknown } | number | undefined;
         const comAns = ans?.compliance_score as { score?: unknown } | number | undefined;
 
-        const resolvedStatus = (typeof staAns?.choice === 'string' ? staAns.choice : fallbackStatus) as TaxComplianceStatus;
-        const tinProb = typeof tinAns === 'number'
-            ? tinAns
-            : Number((tinAns as { noul?: unknown })?.noul ?? (missingTin ? 0.9 : 0.1));
-        const resolvedComp = oneIndexedScore(comAns, fallbackScore);
-
-        const approved = resolvedStatus === 'VALID_W9_COMPLETE' || resolvedStatus === 'VALID_W8BEN_COMPLETE';
+        const selectedStatus = staAns?.choice;
+        const tinProb = boundedJudgmentNumber(tinAns, 'noul', 1);
+        const compScore = boundedJudgmentNumber(comAns, 'score', 4);
+        if (typeof selectedStatus !== 'string' || !TAX_COMPLIANCE_STATUSES.has(selectedStatus) || tinProb === null || compScore === null) {
+            return {
+                status: isExempt ? 'REQUIRES_MANUAL_REVIEW' : fallbackStatus,
+                isWithholdingExempt: false,
+                missingRequiredTin: missingTin,
+                complianceScore: fallbackScore,
+                validationBlurb: 'Tax form judgment requires manual review before disbursement.',
+            };
+        }
+        const modelStatus = selectedStatus as TaxComplianceStatus;
+        const modelMissingTin = tinProb >= 0.5;
+        const resolvedStatus = !isExempt ? fallbackStatus
+            : modelMissingTin ? 'MISSING_REQUIRED_TIN'
+                : modelStatus;
+        const fieldsAppearComplete = isExempt && !modelMissingTin &&
+            (resolvedStatus === 'VALID_W9_COMPLETE' || resolvedStatus === 'VALID_W8BEN_COMPLETE') &&
+            resolvedStatus === fallbackStatus;
 
         return {
-            status: resolvedStatus,
-            isWithholdingExempt: approved,
-            missingRequiredTin: tinProb >= 0.5,
-            complianceScore: Math.max(1, Math.min(5, Math.round(resolvedComp) || fallbackScore)),
-            validationBlurb: approved
-                ? `System One validated tax compliance for ${input.extractedLegalName} (${resolvedStatus}).`
+            status: fieldsAppearComplete ? 'REQUIRES_MANUAL_REVIEW' : resolvedStatus,
+            isWithholdingExempt: false,
+            missingRequiredTin: missingTin || modelMissingTin,
+            complianceScore: Math.max(1, Math.min(5, Math.round(compScore + 1) || fallbackScore)),
+            validationBlurb: fieldsAppearComplete
+                ? `Tax form fields appear complete for ${input.extractedLegalName}; manual verification is required before disbursement.`
                 : `Tax compliance alert: ${resolvedStatus} (disbursement on hold).`,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'tax form compliance judgment');
         return {
-            status: fallbackStatus,
-            isWithholdingExempt: isExempt,
+            status: isExempt ? 'REQUIRES_MANUAL_REVIEW' : fallbackStatus,
+            isWithholdingExempt: false,
             missingRequiredTin: missingTin,
             complianceScore: fallbackScore,
-            validationBlurb: `Fallback tax audit: ${fallbackStatus}.`,
+            validationBlurb: 'Tax form judgment unavailable; manual review required before disbursement.',
         };
     }
 }

@@ -3411,7 +3411,7 @@ describe('judgeTaxFormCompliance (Judgment 54)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('detects missing TIN/SSN and validates complete W-9 offline', async () => {
+    it('detects missing TIN/SSN and holds complete-looking W-9 for review offline', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const missingTin = await judgeTaxFormCompliance({
@@ -3434,12 +3434,12 @@ describe('judgeTaxFormCompliance (Judgment 54)', () => {
             extractedLegalName: 'John Doe Music LLC',
         });
 
-        expect(validW9.status).toBe('VALID_W9_COMPLETE');
-        expect(validW9.isWithholdingExempt).toBe(true);
+        expect(validW9.status).toBe('REQUIRES_MANUAL_REVIEW');
+        expect(validW9.isWithholdingExempt).toBe(false);
         expect(validW9.missingRequiredTin).toBe(false);
     });
 
-    it('validates foreign W-8BEN form through Jev online callable', async () => {
+    it('keeps foreign W-8BEN on manual hold after Jev review', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
@@ -3460,10 +3460,47 @@ describe('judgeTaxFormCompliance (Judgment 54)', () => {
             countryOfCitizenship: 'Japan',
         });
 
-        expect(result.status).toBe('VALID_W8BEN_COMPLETE');
-        expect(result.isWithholdingExempt).toBe(true);
+        expect(result.status).toBe('REQUIRES_MANUAL_REVIEW');
+        expect(result.isWithholdingExempt).toBe(false);
         expect(result.missingRequiredTin).toBe(false);
         expect(result.complianceScore).toBe(5);
+    });
+
+    it('does not clear known missing tax fields when Jev claims the form is complete', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            status: { choice: 'VALID_W9_COMPLETE' }, missing_tin: { noul: 0.01 }, compliance_score: { score: 4 },
+        } } }));
+
+        const result = await judgeTaxFormCompliance({
+            documentTitle: 'Draft W9', declaredFormType: 'W9', hasExtractedTinOrSsn: false,
+            hasSignaturePresent: false, extractedLegalName: 'Artist',
+        });
+
+        expect(result.status).toBe('MISSING_REQUIRED_TIN');
+        expect(result.missingRequiredTin).toBe(true);
+        expect(result.isWithholdingExempt).toBe(false);
+    });
+
+    it.each([
+        { status: 'UNKNOWN', tin: { noul: 0.01 }, score: { score: 4 } },
+        { status: 'VALID_W9_COMPLETE', tin: { noul: '0.01' }, score: { score: 4 } },
+        { status: 'VALID_W9_COMPLETE', tin: { noul: null }, score: { score: 4 } },
+        { status: 'VALID_W9_COMPLETE', tin: { noul: 1.2 }, score: { score: 4 } },
+        { status: 'VALID_W9_COMPLETE', tin: { noul: 0.01 }, score: { score: 8 } },
+    ])('holds malformed tax judgments: $status $tin $score', async ({ status, tin, score }) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            status: { choice: status }, missing_tin: tin, compliance_score: score,
+        } } }));
+
+        const result = await judgeTaxFormCompliance({
+            documentTitle: 'W9', declaredFormType: 'W9', hasExtractedTinOrSsn: true,
+            hasSignaturePresent: true, extractedLegalName: 'Artist',
+        });
+
+        expect(result.status).toBe('REQUIRES_MANUAL_REVIEW');
+        expect(result.isWithholdingExempt).toBe(false);
     });
 });
 
