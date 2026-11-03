@@ -335,7 +335,7 @@ class BigBrainEngine {
             const content = res.memory;
             // Only include if it sounds like a rule or preference
             const isRule = /prefer|like|always|never|should|must|avoid|style|tone/i.test(content);
-            if (!isRule && result.length > 0) continue; 
+            if (!isRule) continue;
 
             if (currentChars + content.length > maxChars) break;
             result.push(content);

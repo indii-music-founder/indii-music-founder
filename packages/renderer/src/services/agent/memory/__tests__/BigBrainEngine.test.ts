@@ -125,6 +125,18 @@ describe('BigBrainEngine', () => {
     });
 
     describe('assembleContext', () => {
+        it('does not promote an unrelated first memory into user alignment', async () => {
+            vi.mocked(memoryBankService.searchMemories).mockResolvedValueOnce({
+                results: [
+                    { id: 'unrelated', memory: 'The album shipped yesterday' } as any,
+                    { id: 'preference', memory: 'Always use formal language' } as any,
+                ],
+                hasMore: false,
+            });
+            const context = await bigBrainEngine.assembleContext('user-1', 'generalist', 'Help with a release');
+            expect(context.alignmentRules).toEqual(['Always use formal language']);
+        });
+
         it('should assemble context from all layers in parallel', async () => {
             const context = await bigBrainEngine.assembleContext(
                 'user-1',
