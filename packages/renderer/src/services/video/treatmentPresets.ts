@@ -71,7 +71,7 @@ export const VIDEO_TREATMENT_PRESETS: Record<VideoTreatmentPresetId, VideoTreatm
     'neon-night': {
         id: 'neon-night',
         label: 'Neon Night',
-        matches: ['neon', 'electric', 'synthwave', 'vaporwave', 'club', 'rave', 'cyber'],
+        matches: ['neon', 'electric', 'club', 'rave'],
         background: {
             kind: 'radial-glow',
             color: '#07070D',
@@ -180,7 +180,7 @@ export async function resolveTreatmentPresetAsync(
     artistBrandVibe?: string
 ): Promise<VideoTreatmentPreset | undefined> {
     const semanticChoice = await judgeVideoTreatmentPreset(direction, artistBrandVibe);
-    if (semanticChoice && semanticChoice in VIDEO_TREATMENT_PRESETS) {
+    if (semanticChoice && Object.hasOwn(VIDEO_TREATMENT_PRESETS, semanticChoice)) {
         return VIDEO_TREATMENT_PRESETS[semanticChoice as VideoTreatmentPresetId];
     }
     return resolveTreatmentPreset(direction);

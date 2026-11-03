@@ -1048,7 +1048,7 @@ export const VIDEO_TREATMENT_QUESTION = {
         'amber-night-cinematic': 'Night, warm amber streetlights, moody, cinematic Detroit glow, dark shadows.',
         'clean-grid': 'Minimalist, tech, clean studio lines, modern neutral aesthetic, structured grid.',
         'bold-arrival': 'High impact, big statement, dramatic entrance, punchy contrast, bold reveal.',
-        'neon-night': 'Electric cyan/magenta, synthwave, vaporwave, club rave, cyber glow.',
+        'neon-night': 'Electric cyan/magenta, nightlife, colored stage lighting, club rave.',
         'vinyl-warm': 'Nostalgic analog, soul, jazz, retro vinyl groove, warm sepia/brown tones.',
         'cold-blue': 'Clinical precision, icy blue, crisp winter, detached atmospheric calm.',
         'sunset-punch': 'Warm golden hour, summer sunset, vibrant orange/red, high energy.',
@@ -1083,9 +1083,11 @@ export async function judgeVideoTreatmentPreset(
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const confidence = answer.confidence;
 
-        if (choice === VIDEO_TREATMENT_NONE || confidence < VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE) {
+        if (!Object.hasOwn(VIDEO_TREATMENT_QUESTION.criteria, choice) || choice === VIDEO_TREATMENT_NONE ||
+            typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < VIDEO_TREATMENT_CHOICE_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 
