@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
+import { logger } from '@/utils/logger';
 type EventCallback<T = unknown> = (data: T) => void;
 
 export type EventType =
@@ -54,7 +55,17 @@ class EventBus {
 
     emit<T>(event: EventType, data: T): void {
         if (!this.listeners[event]) return;
-        this.listeners[event]?.forEach(callback => callback(data));
+        for (const callback of [...(this.listeners[event] || [])]) {
+            try {
+                callback(data);
+            } catch (error) {
+                // Subscribers are diagnostics/UI observers; one broken listener
+                // must not prevent another listener or the caller from running.
+                // Do not log the payload, which can contain private agent data.
+                const errorType = error instanceof Error ? error.name : typeof error;
+                logger.warn(`[EventBus] ${event} listener failed (${errorType})`);
+            }
+        }
 
         // Log all events for debugging (optional, can be removed in prod)
         // logger.debug(`[EventBus] ${event}:`, data);
