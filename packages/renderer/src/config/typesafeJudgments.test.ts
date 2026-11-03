@@ -1465,13 +1465,13 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         expect(result).toBeNull();
     });
 
-    it('accepts boundary answers without inventing an advisory', async () => {
+    it.each([0, 1.43, 3])('accepts a valid Score position %s', async (score) => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 scope: { choice: 'MASTER_ONLY' },
                 producerReq: { probability: 0 },
-                risk: { score: 0 },
+                risk: { score },
             } },
         }));
 
@@ -1482,7 +1482,7 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         expect(result).toEqual({
             rightsScope: 'MASTER_ONLY',
             needsProducerAgreement: false,
-            splitRiskLevel: 0,
+            splitRiskLevel: score,
             advisories: [],
         });
     });

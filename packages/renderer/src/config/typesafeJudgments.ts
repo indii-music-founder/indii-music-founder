@@ -2167,7 +2167,7 @@ export async function judgeSplitSheetVerification(
             producerProbability < 0 || producerProbability > 1
         ) return null;
         if (
-            typeof riskScore !== 'number' || !Number.isInteger(riskScore) ||
+            typeof riskScore !== 'number' || !Number.isFinite(riskScore) ||
             riskScore < 0 || riskScore > 3
         ) return null;
 
