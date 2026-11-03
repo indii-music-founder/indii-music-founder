@@ -619,15 +619,16 @@ export async function judgeOrchestrationComplexity(
         const answer = result.data.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer !== 'object') return null;
 
-        const choice = typeof answer.choice === 'string' ? answer.choice.toLowerCase() : null;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const choice = answer.choice;
+        const confidence = answer.confidence;
 
         const validPaths: OrchestrationPathType[] = ['simple', 'parallel', 'complex'];
-        if (!choice || !validPaths.includes(choice as OrchestrationPathType)) {
+        if (typeof choice !== 'string' || !validPaths.includes(choice as OrchestrationPathType)) {
             return null;
         }
 
-        if (confidence < ORCHESTRATION_PATH_MIN_CONFIDENCE) {
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < ORCHESTRATION_PATH_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 
