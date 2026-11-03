@@ -60,4 +60,34 @@ describe('MemoryBankService', () => {
         expect(result).toEqual({ results: [], hasMore: false });
         expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it('reports one ranked page without repeating a cursorless search', async () => {
+        const search = vi.spyOn(memoryBankService, 'searchMemories').mockResolvedValueOnce({
+            results: [
+                { id: 'a', memory: 'First' },
+                { id: 'a', memory: 'First' },
+                { id: 'b', memory: 'Second' },
+            ],
+            hasMore: true,
+        });
+
+        const scoped = await memoryBankService.searchMemoriesScoped('user-1', 'album');
+
+        expect(search).toHaveBeenCalledTimes(1);
+        expect(scoped.results.map(item => item.id)).toEqual(['a', 'b']);
+        expect(scoped.hasMore).toBe(true);
+        expect(scoped.scopeMessage).toContain('first ranked memory page');
+        expect(scoped.scopeMessage).toContain('More matches may exist');
+        search.mockRestore();
+    });
+
+    it('distinguishes an unavailable search from a completed empty search', async () => {
+        const search = vi.spyOn(memoryBankService, 'searchMemories').mockResolvedValueOnce({
+            results: [], hasMore: false, unavailable: true,
+        });
+        const scoped = await memoryBankService.searchMemoriesScoped('user-1', 'album');
+        expect(scoped.scopeMessage).toContain('unavailable');
+        expect(scoped.scopeMessage).toContain('were not checked');
+        search.mockRestore();
+    });
 });

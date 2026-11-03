@@ -284,9 +284,9 @@ class BigBrainEngine {
 
         if (!userMessage) return '';
 
-        // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall with pagination
+        // 1. Semantic search via the ranked first page exposed by MemoryBankService.
         try {
-            const { results: mem0Results, scopeMessage } = await memoryBankService.searchMemoriesAllPages(userId, userMessage, 5);
+            const { results: mem0Results, scopeMessage } = await memoryBankService.searchMemoriesScoped(userId, userMessage);
             if (scopeMessage) {
                 lines.push(`[Search Scope] ${scopeMessage}`);
             }
