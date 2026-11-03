@@ -501,6 +501,10 @@ class MembershipServiceImpl {
      * @returns A promise that resolves when the spend is recorded.
      */
     async recordSpend(userId: string, amount: number): Promise<void> {
+        if (!Number.isFinite(amount) || amount <= 0) {
+            logger.error('[MembershipService] Refusing invalid spend amount:', amount);
+            return;
+        }
         const dateKey = this.getTodayKey();
         const usageRef = doc(db, 'users', userId, 'usage', dateKey);
 
@@ -558,6 +562,10 @@ class MembershipServiceImpl {
      * @returns A promise resolving to an approval status, remaining budget, and whether explicit user consent is required.
      */
     async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number; requiresApproval: boolean }> {
+        if (!Number.isFinite(estimatedCost) || estimatedCost < 0) {
+            logger.error('[MembershipService] Refusing invalid budget estimate:', estimatedCost);
+            return { allowed: false, remainingBudget: 0, requiresApproval: false };
+        }
         // GOD MODE: Bypass for Builder
         if (await this.isBuilderAccount()) {
             return { allowed: true, remainingBudget: Infinity, requiresApproval: false };
