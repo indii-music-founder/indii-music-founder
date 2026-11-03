@@ -53,7 +53,8 @@ class EventBus {
                 // Subscribers are diagnostics/UI observers; one broken listener
                 // must not prevent another listener or the caller from running.
                 // Do not log the payload, which can contain private agent data.
-                logger.warn(`[EventBus] ${event} listener failed`, error);
+                const errorType = error instanceof Error ? error.name : typeof error;
+                logger.warn(`[EventBus] ${event} listener failed (${errorType})`);
             }
         }
 

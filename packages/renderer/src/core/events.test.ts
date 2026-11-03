@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { events } from './events';
+import { logger } from '@/utils/logger';
 
 describe('EventBus', () => {
     it('continues delivering after a subscriber throws', () => {
-        const first = vi.fn(() => { throw new Error('observer failed'); });
+        const warning = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+        const first = vi.fn(() => { throw new Error('private detail'); });
         const second = vi.fn();
         const offFirst = events.on('AGENT_ACTION', first);
         const offSecond = events.on('AGENT_ACTION', second);
@@ -12,9 +14,11 @@ describe('EventBus', () => {
             expect(() => events.emit('AGENT_ACTION', payload)).not.toThrow();
             expect(first).toHaveBeenCalledWith(payload);
             expect(second).toHaveBeenCalledWith(payload);
+            expect(warning).toHaveBeenCalledWith('[EventBus] AGENT_ACTION listener failed (Error)');
         } finally {
             offFirst();
             offSecond();
+            warning.mockRestore();
         }
     });
 
