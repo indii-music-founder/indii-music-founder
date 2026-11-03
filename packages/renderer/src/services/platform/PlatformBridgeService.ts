@@ -113,17 +113,14 @@ export class ElectronPlatformAdapter implements PlatformBridge {
 
     async saveHistory(id: string, data: unknown): Promise<void> {
         if (this.api?.agent?.saveHistory) {
-            await this.api.agent.saveHistory(id, data);
+            const result = await this.api.agent.saveHistory(id, data);
+            if (!result.success) throw new Error(result.error || 'Failed to save local history.');
             return;
         }
 
         // Web fallback: persist to localStorage with isolation
-        try {
-            if (typeof localStorage !== 'undefined') {
-                localStorage.setItem(`indii_session_history_${id}`, JSON.stringify(data));
-            }
-        } catch (e) {
-            logger.warn(`[PlatformBridge] Failed to save history to web storage for ${id}:`, e);
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(`indii_session_history_${id}`, JSON.stringify(data));
         }
     }
 
