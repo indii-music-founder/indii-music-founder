@@ -6032,7 +6032,13 @@ export type DistributionBlockerType =
     | 'UNREGISTERED_ISRC'
     | 'MISSING_COLLABORATOR_SPLITS'
     | 'TERRITORY_CONFLICT'
+    | 'REQUIRES_RELEASE_REVIEW'
     | 'READY_FOR_DELIVERY';
+
+const DISTRIBUTION_BLOCKERS: ReadonlySet<string> = new Set<DistributionBlockerType>([
+    'MISSING_QC_FINGERPRINT', 'NON_COMPLIANT_COVER_ART', 'UNREGISTERED_ISRC',
+    'MISSING_COLLABORATOR_SPLITS', 'TERRITORY_CONFLICT', 'READY_FOR_DELIVERY',
+]);
 
 export interface DistributionPreFlightInput {
     releaseTitle: string;
@@ -6053,23 +6059,24 @@ export interface DistributionBlockerVerdict {
 }
 
 /**
- * TypeSafe System One (Jev) distribution pre-flight gatekeeper:
- * Evaluates draft releases against DSP ingestion specs and provides 1-click unblocker routing.
+ * TypeSafe System One (Jev) distribution preflight guidance. Supplied fields
+ * cannot establish that a release passed delivery review.
  */
 export async function judgeDistributionBlocker(
     input: DistributionPreFlightInput
 ): Promise<DistributionBlockerVerdict> {
-    let fallbackBlocker: DistributionBlockerType = 'READY_FOR_DELIVERY';
+    let fallbackBlocker: DistributionBlockerType = 'REQUIRES_RELEASE_REVIEW';
     let fallbackScore = 5;
-    let fallbackUrl = '#submit';
-    let fallbackBlurb = 'All requirements satisfied. Release is ready for automated DSP delivery.';
+    let fallbackUrl = '#release-review';
+    let fallbackBlurb = 'Provided preflight fields appear complete. Verify the release and delivery requirements before submission.';
 
     if (!input.hasFingerprint) {
         fallbackBlocker = 'MISSING_QC_FINGERPRINT';
         fallbackScore = 2;
         fallbackUrl = '#audio-qc';
         fallbackBlurb = 'Canonical audio fingerprint and LUFS QC validation required before submission.';
-    } else if (input.coverArtWidth < 3000 || input.coverArtHeight < 3000) {
+    } else if (!Number.isFinite(input.coverArtWidth) || !Number.isFinite(input.coverArtHeight) ||
+        input.coverArtWidth < 3000 || input.coverArtHeight < 3000 || input.coverArtWidth !== input.coverArtHeight) {
         fallbackBlocker = 'NON_COMPLIANT_COVER_ART';
         fallbackScore = 2;
         fallbackUrl = '#cover-art';
@@ -6084,14 +6091,14 @@ export async function judgeDistributionBlocker(
         fallbackScore = 3;
         fallbackUrl = '#splits';
         fallbackBlurb = 'Collaborator splits must be confirmed to avoid downstream royalty dispute holds.';
-    } else if (input.territoriesDeclaredCount === 0) {
+    } else if (!Number.isSafeInteger(input.territoriesDeclaredCount) || input.territoriesDeclaredCount <= 0) {
         fallbackBlocker = 'TERRITORY_CONFLICT';
         fallbackScore = 3;
         fallbackUrl = '#territories';
         fallbackBlurb = 'At least one distribution territory must be declared.';
     }
 
-    const isReady = fallbackBlocker === 'READY_FOR_DELIVERY';
+    const isReady = false;
 
     if (!judgmentsAvailable()) {
         return {
@@ -6123,7 +6130,7 @@ export async function judgeDistributionBlocker(
                 blocker: {
                     type: 'choice' as const,
                     instructions:
-                        'Identify the primary blocking requirement preventing automated DSP distribution: ' +
+                        'Identify a missing requirement from the supplied preflight fields: ' +
                         'MISSING_QC_FINGERPRINT, NON_COMPLIANT_COVER_ART, UNREGISTERED_ISRC, ' +
                         'MISSING_COLLABORATOR_SPLITS, TERRITORY_CONFLICT, or READY_FOR_DELIVERY.',
                     criteria: {
@@ -6132,18 +6139,18 @@ export async function judgeDistributionBlocker(
                         UNREGISTERED_ISRC: 'Missing official ISRC sound recording identifier.',
                         MISSING_COLLABORATOR_SPLITS: 'Collaborator ownership percentages are undocumented.',
                         TERRITORY_CONFLICT: 'No distribution territories have been declared.',
-                        READY_FOR_DELIVERY: 'All distribution requirements met; release is ready for ingestion.',
+                        READY_FOR_DELIVERY: 'No missing requirement is apparent in the supplied fields; release review remains required.',
                     },
                 },
                 readiness_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the release packaging readiness from 1 (unready) to 5 (production ready).',
+                    instructions: 'Rate completeness of the supplied preflight fields from 1 (incomplete) to 5 (apparently complete). This is not delivery clearance.',
                     criteria: [
                         'Missing multiple critical broadcast prerequisites.',
                         'Major blocker present requiring immediate asset correction.',
                         'Minor metadata gaps resolvable in 1 click.',
                         'Substantially complete; awaiting final sign-off.',
-                        'Fully compliant and ready for automated delivery.',
+                        'Supplied fields appear complete; release review is still required.',
                     ],
                 },
             },
@@ -6153,8 +6160,21 @@ export async function judgeDistributionBlocker(
         const bloAns = ans?.blocker as { choice?: unknown } | undefined;
         const reaAns = ans?.readiness_score as { score?: unknown } | number | undefined;
 
-        const resolvedBlocker = (typeof bloAns?.choice === 'string' ? bloAns.choice : fallbackBlocker) as DistributionBlockerType;
-        const resolvedScore = oneIndexedScore(reaAns, fallbackScore);
+        const selectedBlocker = bloAns?.choice;
+        const readinessScore = boundedJudgmentNumber(reaAns, 'score', 4);
+        if (typeof selectedBlocker !== 'string' || !DISTRIBUTION_BLOCKERS.has(selectedBlocker) || readinessScore === null) {
+            return {
+                blocker: fallbackBlocker,
+                isReady: false,
+                readinessScore: fallbackScore,
+                unblockActionUrl: fallbackUrl,
+                guidanceBlurb: 'Distribution judgment requires review before submission.',
+            };
+        }
+        const resolvedBlocker: DistributionBlockerType = fallbackBlocker === 'REQUIRES_RELEASE_REVIEW' && selectedBlocker !== 'READY_FOR_DELIVERY'
+            ? selectedBlocker as DistributionBlockerType
+            : fallbackBlocker;
+        const resolvedScore = Math.min(readinessScore + 1, fallbackScore);
 
         const urlMap: Record<DistributionBlockerType, string> = {
             MISSING_QC_FINGERPRINT: '#audio-qc',
@@ -6162,19 +6182,18 @@ export async function judgeDistributionBlocker(
             UNREGISTERED_ISRC: '#isrc-assign',
             MISSING_COLLABORATOR_SPLITS: '#splits',
             TERRITORY_CONFLICT: '#territories',
+            REQUIRES_RELEASE_REVIEW: '#release-review',
             READY_FOR_DELIVERY: '#submit',
         };
 
-        const resolvedReady = resolvedBlocker === 'READY_FOR_DELIVERY';
-
         return {
             blocker: resolvedBlocker,
-            isReady: resolvedReady,
+            isReady: false,
             readinessScore: Math.max(1, Math.min(5, Math.round(resolvedScore) || fallbackScore)),
             unblockActionUrl: urlMap[resolvedBlocker] || fallbackUrl,
-            guidanceBlurb: resolvedReady
-                ? `System One cleared "${input.releaseTitle}" for instant delivery (readiness: ${resolvedScore}/5).`
-                : `Distribution hold: ${resolvedBlocker}. Resolve via 1-click action.`,
+            guidanceBlurb: resolvedBlocker === 'REQUIRES_RELEASE_REVIEW'
+                ? `Preflight fields for "${input.releaseTitle}" appear complete; release review is still required.`
+                : `Distribution hold: ${resolvedBlocker}. Review the missing requirement before submission.`,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'distribution blocker guidance judgment');
