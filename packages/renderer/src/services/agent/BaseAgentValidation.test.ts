@@ -85,6 +85,8 @@ describe('BaseAgent Tool Validation', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(AutonomousIntelligence.generateContent).mockReset();
 
         const config: AgentConfig = {
             id: 'generalist',
@@ -140,6 +142,23 @@ describe('BaseAgent Tool Validation', () => {
 
         expect(testToolHandler).toHaveBeenCalled();
         expect(response.text).toContain('Tool execution confirmed');
+    });
+
+    it('does not execute a classified local tool absent from the offered pool', async () => {
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        const undisclosedHandler = vi.fn().mockResolvedValue({ success: true });
+        const undisclosedAgent = new BaseAgent({
+            id: 'generalist', name: 'Test Agent', description: 'Test', color: '#fff',
+            category: 'specialist', systemPrompt: 'sys prompt', tools: [],
+            functions: { check_api_status: undisclosedHandler },
+        });
+        vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+            response: { text: () => 'Checking API...', functionCalls: () => [{ name: 'check_api_status', args: {} }] },
+        } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+        const response = await undisclosedAgent.execute('Check API status');
+        expect(undisclosedHandler).not.toHaveBeenCalled();
+        expect(response.error).toContain('not authorized');
     });
 
     it('should block tool execution when args are invalid', async () => {
