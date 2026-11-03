@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   AnimatePresence,
   motion,
+  useReducedMotion,
   type TargetAndTransition,
   type Transition,
   type Variant,
@@ -130,17 +131,8 @@ const AnimationComponent: React.FC<{
         {segment}
       </motion.span>
     ) : (
-      <motion.span className='inline-block whitespace-pre'>
-        {segment.split('').map((char, charIndex) => (
-          <motion.span
-            key={`char-${charIndex}`}
-            aria-hidden='true'
-            variants={variants}
-            className='inline-block whitespace-pre'
-          >
-            {char}
-          </motion.span>
-        ))}
+      <motion.span variants={variants} className='inline-block whitespace-pre'>
+        {segment}
       </motion.span>
     );
 
@@ -161,6 +153,12 @@ AnimationComponent.displayName = 'AnimationComponent';
 
 const splitText = (text: string, per: PerType) => {
   if (per === 'line') return text.split('\n');
+  if (per === 'char') {
+    if (typeof Intl.Segmenter === 'function') {
+      return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text), part => part.segment);
+    }
+    return Array.from(text);
+  }
   return text.split(/(\s+)/);
 };
 
@@ -223,6 +221,7 @@ export function TextEffect({
   segmentTransition,
   style,
 }: TextEffectProps) {
+  const reducedMotion = useReducedMotion();
   const segments = splitText(children, per);
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
 
@@ -263,6 +262,10 @@ export function TextEffect({
     }),
   };
 
+  if (reducedMotion) {
+    return trigger ? React.createElement(as, { className, style }, children) : null;
+  }
+
   return (
     <AnimatePresence mode='popLayout'>
       {trigger && (
@@ -276,16 +279,18 @@ export function TextEffect({
           onAnimationStart={onAnimationStart}
           style={style}
         >
-          {per !== 'line' ? <span className='sr-only'>{children}</span> : null}
-          {segments.map((segment, index) => (
-            <AnimationComponent
-              key={`${per}-${index}-${segment}`}
-              segment={segment}
-              variants={computedVariants.item}
-              per={per}
-              segmentWrapperClassName={segmentWrapperClassName}
-            />
-          ))}
+          <span className='sr-only'>{children}</span>
+          <span aria-hidden='true'>
+            {segments.map((segment, index) => (
+              <AnimationComponent
+                key={`${per}-${index}-${segment}`}
+                segment={segment}
+                variants={computedVariants.item}
+                per={per}
+                segmentWrapperClassName={segmentWrapperClassName}
+              />
+            ))}
+          </span>
         </MotionTag>
       )}
     </AnimatePresence>
