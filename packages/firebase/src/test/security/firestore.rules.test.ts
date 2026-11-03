@@ -1228,6 +1228,38 @@ describe('Firestore Security Rules', () => {
             await assertFails(setDoc(doc(alice, 'users', ALICE_UID, 'tool_approvals', 'forged'), { ...pending, status: 'approved' }));
             await assertFails(setDoc(doc(bob, 'users', ALICE_UID, 'tool_approvals', 'cross-user'), pending));
         });
+
+        it('keeps non-computer approval identity fixed and permits only ordered result transitions', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'tool_approvals', 'local-1');
+            await assertSucceeds(setDoc(ref, {
+                ...pending, toolName: 'execute_code', bindingSessionId: 'renderer-1',
+            }));
+
+            await assertFails(updateDoc(ref, { riskTier: 'read' }));
+            await assertFails(updateDoc(ref, { description: 'Harmless action' }));
+            await assertFails(updateDoc(ref, { bindingSessionId: 'renderer-2' }));
+            await assertFails(updateDoc(ref, { status: 'executed', result: { success: true } }));
+            await assertSucceeds(updateDoc(ref, { status: 'approved', resolvedAt: serverTimestamp() }));
+            await assertFails(updateDoc(ref, { status: 'pending' }));
+            await assertFails(updateDoc(ref, { status: 'executed', result: { success: false } }));
+            await assertSucceeds(updateDoc(ref, { status: 'executed', result: { success: true } }));
+            await assertFails(updateDoc(ref, { status: 'approved' }));
+        });
+
+        it('allows denial from pending but no later execution', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'tool_approvals', 'local-2');
+            await assertSucceeds(setDoc(ref, {
+                ...pending, toolName: 'execute_code', bindingSessionId: 'renderer-1',
+            }));
+            await assertSucceeds(updateDoc(ref, {
+                status: 'denied', resolvedAt: serverTimestamp(), denyReason: 'No thanks',
+            }));
+            await assertFails(updateDoc(ref, { status: 'executed', result: { success: true } }));
+        });
     });
 
     // ──────────────────────────────────────────────────────────────────────
