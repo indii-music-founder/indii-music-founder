@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getDocs, writeBatch } from 'firebase/firestore';
 
 const firestoreMocks = vi.hoisted(() => ({
     transactionSet: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(), toMillis: () => Date.now() })
     },
     doc: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
+    collection: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
     runTransaction: firestoreMocks.runTransaction,
     updateDoc: vi.fn(),
     writeBatch: vi.fn(),
@@ -171,5 +173,33 @@ describe('SessionService Persistence (Dual Write)', () => {
             expect.anything(),
             expect.objectContaining({ messageStorage: 'subcollection' })
         );
+    });
+
+    it('clears long histories in bounded batches before updating the session', async () => {
+        const deleteMessage = vi.fn();
+        const commit = vi.fn().mockResolvedValue(undefined);
+        vi.mocked(getDocs).mockResolvedValueOnce({
+            docs: Array.from({ length: 801 }, (_, i) => ({ ref: { path: `messages/${i}` } })),
+        } as unknown as Awaited<ReturnType<typeof getDocs>>);
+        vi.mocked(writeBatch).mockImplementation(() => ({ delete: deleteMessage, commit }) as unknown as ReturnType<typeof writeBatch>);
+
+        await sessionService.clearMessages('session-123');
+
+        expect(writeBatch).toHaveBeenCalledTimes(3);
+        expect(deleteMessage).toHaveBeenCalledTimes(801);
+        expect(commit).toHaveBeenCalledTimes(3);
+        expect(mockUpdate).toHaveBeenCalledAfter(commit);
+    });
+
+    it('does not mark the session cleared when a delete batch fails', async () => {
+        vi.mocked(getDocs).mockResolvedValueOnce({
+            docs: [{ ref: { path: 'messages/1' } }],
+        } as unknown as Awaited<ReturnType<typeof getDocs>>);
+        vi.mocked(writeBatch).mockReturnValueOnce({
+            delete: vi.fn(), commit: vi.fn().mockRejectedValue(new Error('write unavailable')),
+        } as unknown as ReturnType<typeof writeBatch>);
+
+        await expect(sessionService.clearMessages('session-123')).rejects.toThrow('write unavailable');
+        expect(mockUpdate).not.toHaveBeenCalled();
     });
 });
