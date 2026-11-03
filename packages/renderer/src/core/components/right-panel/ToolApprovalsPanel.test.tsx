@@ -5,7 +5,7 @@ import ToolApprovalsPanel from './ToolApprovalsPanel';
 
 vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
 vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
-    toolApprovalService: { onPendingApprovals: (callback: (items: unknown[]) => void) => { callback([]); return () => {}; }, approve: vi.fn(), deny: vi.fn() },
+    toolApprovalService: { onPendingApprovals: (callback: (items: unknown[]) => void) => { callback([]); return () => {}; }, approve: vi.fn(), deny: vi.fn(), canApproveInThisSession: vi.fn(() => true) },
 }));
 vi.mock('motion/react', () => ({ motion: new Proxy({}, { get: (_target, property: string) => ({ children, ...props }: any) => React.createElement(property, props, children) }) }));
 

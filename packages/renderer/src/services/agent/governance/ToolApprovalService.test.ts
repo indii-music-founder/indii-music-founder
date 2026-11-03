@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
     isFirebaseE2EMockEnabled: vi.fn(() => false),
     currentUser: null as { uid: string; getIdToken: () => Promise<string> } | null,
-    addDoc: vi.fn(),
+    setDoc: vi.fn(),
     updateDoc: vi.fn(),
     getDoc: vi.fn(),
     runTransaction: vi.fn(),
@@ -32,8 +32,8 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     return {
         ...actual,
         collection: vi.fn(() => ({ __collection: true })),
-        doc: vi.fn(() => ({ __doc: true })),
-        addDoc: mocks.addDoc,
+        doc: vi.fn(() => ({ id: 'approval-1', __doc: true })),
+        setDoc: mocks.setDoc,
         updateDoc: mocks.updateDoc,
         getDoc: mocks.getDoc,
         runTransaction: mocks.runTransaction,
@@ -49,11 +49,10 @@ import { toolApprovalService } from './ToolApprovalService';
 
 describe('ToolApprovalService (ISSUE-1116)', () => {
     async function bindApproval(toolName: string, args: Record<string, unknown>, execute: (args: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>) {
-        mocks.addDoc.mockResolvedValue({ id: 'approval-1' });
         await toolApprovalService.createPendingApproval({
             agentId: 'generalist', toolName, args, riskTier: 'destructive', description: 'requires approval', execute,
         });
-        const record = mocks.addDoc.mock.lastCall?.[1];
+        const record = mocks.setDoc.mock.lastCall?.[1];
         mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => record });
         return record;
     }
@@ -77,19 +76,45 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
                 agentId: 'generalist', toolName: 'execute_code', args: {}, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
             });
             expect(id).toBeNull();
-            expect(mocks.addDoc).not.toHaveBeenCalled();
+            expect(mocks.setDoc).not.toHaveBeenCalled();
         });
 
         it('persists a pending record and returns its id', async () => {
-            mocks.addDoc.mockResolvedValue({ id: 'approval-1' });
             const id = await toolApprovalService.createPendingApproval({
                 agentId: 'generalist', toolName: 'execute_code', args: { code: 'x' }, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
             });
             expect(id).toBe('approval-1');
-            expect(mocks.addDoc).toHaveBeenCalledWith(
+            expect(mocks.setDoc).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({ toolName: 'execute_code', status: 'pending', riskTier: 'destructive', bindingSessionId: expect.any(String) })
             );
+        });
+
+        it('binds the selected implementation before publishing the pending record', async () => {
+            mocks.setDoc.mockImplementationOnce(async (_ref, record) => {
+                expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' })).toBe(true);
+            });
+            await toolApprovalService.createPendingApproval({
+                agentId: 'generalist', toolName: 'execute_code', args: { code: 'x' }, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
+            });
+        });
+
+        it('removes the local binding when pending persistence fails', async () => {
+            let record: Record<string, unknown> = {};
+            mocks.setDoc.mockImplementationOnce(async (_ref, value) => { record = value; throw new Error('write failed'); });
+            await expect(toolApprovalService.createPendingApproval({
+                agentId: 'generalist', toolName: 'execute_code', args: {}, riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
+            })).rejects.toThrow('write failed');
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' } as never)).toBe(false);
+        });
+    });
+
+    describe('local availability', () => {
+        it('cannot approve a pending non-computer record without this renderer binding', async () => {
+            const record = await bindApproval('execute_code', { code: 'safe' }, vi.fn());
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' })).toBe(true);
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'other-session' })).toBe(false);
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1', args: { code: 'altered' } })).toBe(false);
         });
     });
 

@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
     toolApprovalService: {
         onPendingApprovals: mocks.onPendingApprovals,
+        canApproveInThisSession: vi.fn(() => true),
         approve: mocks.approve,
         deny: mocks.deny,
     },

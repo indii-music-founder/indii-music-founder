@@ -150,13 +150,16 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                                 </span>
                             </div>
                             <p className="text-xs text-gray-400">{approval.description}</p>
+                            {!toolApprovalService.canApproveInThisSession(approval) && (
+                                <p className="text-xs text-amber-300">This action was requested in another session. Approve it there, or deny it here and request it again.</p>
+                            )}
                             <pre className="text-[10px] text-gray-500 bg-black/40 rounded p-2 overflow-x-auto max-h-24">
                                 {JSON.stringify(approval.args, null, 2)}
                             </pre>
                             <div className="flex items-center gap-2 pt-1">
                                 <button
                                     onClick={() => handleApprove(approval.id)}
-                                    disabled={busyId === approval.id}
+                                    disabled={busyId === approval.id || !toolApprovalService.canApproveInThisSession(approval)}
                                     className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50"
                                 >
                                     <Check size={12} /> Approve

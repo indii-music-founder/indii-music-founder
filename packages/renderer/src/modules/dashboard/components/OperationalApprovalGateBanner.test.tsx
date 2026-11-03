@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     onPendingApprovals: vi.fn(),
     approve: vi.fn(),
     deny: vi.fn(),
+    canApproveInThisSession: vi.fn(() => true),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
 }));
@@ -16,6 +17,7 @@ vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
         onPendingApprovals: mocks.onPendingApprovals,
         approve: mocks.approve,
         deny: mocks.deny,
+        canApproveInThisSession: mocks.canApproveInThisSession,
     },
 }));
 
@@ -60,6 +62,7 @@ describe('OperationalApprovalGateBanner', () => {
         vi.clearAllMocks();
         mocks.approve.mockResolvedValue({ success: true });
         mocks.deny.mockResolvedValue(undefined);
+        mocks.canApproveInThisSession.mockReturnValue(true);
     });
 
     it('renders null when there are no pending approvals', () => {
@@ -97,6 +100,18 @@ describe('OperationalApprovalGateBanner', () => {
         expect(screen.getByText('destructive')).toBeInTheDocument();
         expect(screen.getByText('Final submission to DSP distribution pipeline')).toBeInTheDocument();
         expect(screen.queryByTestId('banner-approve-all-btn')).not.toBeInTheDocument();
+    });
+
+    it('leaves a pending action from another session visible but not approvable here', () => {
+        mocks.canApproveInThisSession.mockReturnValue(false);
+        mocks.onPendingApprovals.mockImplementation((callback) => {
+            callback([{ id: 'remote-1', toolName: 'send_email', riskTier: 'write', description: 'Send email', status: 'pending' }]);
+            return vi.fn();
+        });
+        render(<OperationalApprovalGateBanner />);
+        expect(screen.getByText(/requested in another session/i)).toBeInTheDocument();
+        expect(screen.getByTestId('banner-approve-btn')).toBeDisabled();
+        expect(screen.getByTestId('banner-deny-btn')).toBeEnabled();
     });
 
     it('approves a single gate and displays success toast', async () => {

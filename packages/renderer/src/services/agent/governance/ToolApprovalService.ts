@@ -20,7 +20,7 @@
 import {
     collection,
     doc,
-    addDoc,
+    setDoc,
     updateDoc,
     onSnapshot,
     query,
@@ -96,6 +96,23 @@ function getApprovalsRef() {
 class ToolApprovalService {
     private readonly rendererSessionId = crypto.randomUUID();
     private readonly boundCalls = new Map<string, BoundToolCall>();
+
+    canApproveInThisSession(approval: PendingToolApproval & { id: string }): boolean {
+        if (approval.status !== 'pending') return false;
+        if (approval.toolName.startsWith('computer_')) return !approval.bindingSessionId;
+        const binding = this.boundCalls.get(approval.id);
+        try {
+            return Boolean(binding && binding.userId === getUserId()
+                && approval.bindingSessionId === this.rendererSessionId
+                && binding.agentId === approval.agentId
+                && binding.toolName === approval.toolName
+                && binding.riskTier === approval.riskTier
+                && binding.description === approval.description
+                && binding.argsJson === canonicalArgs(approval.args));
+        } catch {
+            return false;
+        }
+    }
     /**
      * Called by BaseAgent.ts BEFORE executing a requiresApproval:true tool.
      * Persists the pending record and returns its id. Does NOT execute the tool.
@@ -134,12 +151,18 @@ class ToolApprovalService {
             ...(!isComputerApproval ? { bindingSessionId: this.rendererSessionId } : {}),
         };
 
-        const docRef = await addDoc(ref, record);
+        const docRef = doc(ref);
         if (!isComputerApproval && input.execute) {
             this.boundCalls.set(docRef.id, {
                 userId, agentId: input.agentId, toolName: input.toolName, argsJson,
                 riskTier: input.riskTier, description: input.description, execute: input.execute,
             });
+        }
+        try {
+            await setDoc(docRef, record);
+        } catch (error) {
+            this.boundCalls.delete(docRef.id);
+            throw error;
         }
         logger.info(`[ToolApprovalService] Pending approval created: ${docRef.id} for ${input.toolName}`);
         return docRef.id;

@@ -72,7 +72,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         let successCount = 0;
         let failCount = 0;
 
-        for (const item of pendingApprovals) {
+        for (const item of pendingApprovals.filter(item => toolApprovalService.canApproveInThisSession(item))) {
             try {
                 const res = await toolApprovalService.approve(item.id);
                 if (res?.success) {
@@ -95,6 +95,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         setApprovalBusyId(null);
     };
 
+    const approvableCount = pendingApprovals.filter(item => toolApprovalService.canApproveInThisSession(item)).length;
     const isMultiple = pendingApprovals.length > 1;
 
     return (
@@ -128,7 +129,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                             </div>
                         </div>
 
-                        {isMultiple && (
+                        {approvableCount > 1 && (
                             <button
                                 type="button"
                                 disabled={approvalBusyId !== null}
@@ -137,7 +138,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                 className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black font-black text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/40 transition-all disabled:opacity-50 self-end sm:self-center"
                             >
                                 <CheckCheck size={14} />
-                                Approve All ({pendingApprovals.length})
+                                Approve All ({approvableCount})
                             </button>
                         )}
                     </div>
@@ -146,6 +147,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                     <div className={`grid gap-2.5 ${isMultiple ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                         {pendingApprovals.map((item, index) => {
                             const isBusy = approvalBusyId === item.id || approvalBusyId === 'all';
+                            const canApprove = toolApprovalService.canApproveInThisSession(item);
                             const riskColor = item.riskTier === 'destructive'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                 : item.riskTier === 'write'
@@ -168,12 +170,13 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                         <p className="text-[11px] text-gray-300 leading-snug mt-1 line-clamp-2">
                                             {item.description || 'Action awaiting authorization'}
                                         </p>
+                                        {!canApprove && <p className="text-[11px] text-amber-300 mt-1">Requested in another session. Approve it there, or deny and request again.</p>}
                                     </div>
 
                                     <div className="flex items-center gap-2 pt-1 border-t border-white/5">
                                         <button
                                             type="button"
-                                            disabled={isBusy}
+                                            disabled={isBusy || !canApprove}
                                             onClick={() => handleApprove(item.id)}
                                             data-testid={index === 0 ? 'banner-approve-btn' : `banner-approve-btn-${item.id}`}
                                             className="flex-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all disabled:opacity-50"

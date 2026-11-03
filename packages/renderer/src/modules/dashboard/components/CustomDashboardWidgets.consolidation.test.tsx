@@ -67,6 +67,7 @@ vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
         onPendingApprovals: mocks.onPendingApprovals,
         approve: mocks.approve,
         deny: mocks.deny,
+        canApproveInThisSession: vi.fn(() => true),
     },
 }));
 
