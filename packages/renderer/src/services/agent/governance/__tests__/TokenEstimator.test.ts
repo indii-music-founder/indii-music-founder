@@ -50,6 +50,16 @@ describe('TokenEstimator', () => {
         warn.mockRestore();
     });
 
+    it.each([NaN, Infinity, -1])('blocks an invalid remaining budget (%s)', (budget) => {
+        const est = TokenEstimator.estimate('prompt', undefined, NO_TOOLS, budget, 10);
+        expect(est.willExceed).toBe(true);
+    });
+
+    it.each([NaN, Infinity, -1])('blocks an invalid output allowance (%s)', (output) => {
+        const est = TokenEstimator.estimate('prompt', undefined, NO_TOOLS, 100_000, output);
+        expect(est.willExceed).toBe(true);
+    });
+
     it('handles functionCall and functionResponse parts', () => {
         const est = TokenEstimator.estimate(
             parts(
