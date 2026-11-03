@@ -24,7 +24,7 @@ export function Skeleton({ className }: SkeletonProps) {
     return (
         <div
             aria-hidden="true"
-            className={cn('animate-pulse rounded-md bg-white/5', className)}
+            className={cn('motion-safe:animate-pulse rounded-md bg-white/5', className)}
         />
     );
 }
