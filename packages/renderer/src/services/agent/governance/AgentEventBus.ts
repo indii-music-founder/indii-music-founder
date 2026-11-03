@@ -58,7 +58,12 @@ export class AgentEventBus {
         events.emit('AGENT_ACTION', {
             agentId: payload.agentId,
             action: type,
-            details: `Tool: ${payload.toolName}${payload.durationMs ? ` (${payload.durationMs}ms)` : ''}`
+            details: `Tool: ${payload.toolName}${payload.durationMs !== undefined ? ` (${payload.durationMs}ms)` : ''}`,
+            toolName: payload.toolName,
+            targetContext: payload.targetContext,
+            timestamp: payload.timestamp,
+            durationMs: payload.durationMs,
+            errorMessage: payload.errorMessage,
         });
 
         // This acts as a shim for existing systems to consume, while
@@ -76,7 +81,9 @@ export class AgentEventBus {
         events.emit('AGENT_ACTION', {
             agentId: payload.agentId,
             action: type,
-            details: `Session: ${payload.sessionId} ${payload.reason ? ` - ${payload.reason}` : ''}`
+            details: `Session: ${payload.sessionId} ${payload.reason ? ` - ${payload.reason}` : ''}`,
+            sessionId: payload.sessionId,
+            durationMs: payload.durationMs,
         });
     }
 
@@ -92,7 +99,9 @@ export class AgentEventBus {
         events.emit('AGENT_ACTION', {
             agentId: 'graph-orchestrator',
             action: type,
-            details: `Graph: ${graphId} | Exec: ${executionId}${details ? ` | ${details}` : ''}`
+            details: `Graph: ${graphId} | Exec: ${executionId}${details ? ` | ${details}` : ''}`,
+            graphId,
+            executionId,
         });
     }
 
@@ -109,7 +118,10 @@ export class AgentEventBus {
         events.emit('AGENT_ACTION', {
             agentId: 'graph-orchestrator',
             action: type,
-            details: `Node: ${nodeId} (Graph: ${graphId}) | Exec: ${executionId}${details ? ` | ${details}` : ''}`
+            details: `Node: ${nodeId} (Graph: ${graphId}) | Exec: ${executionId}${details ? ` | ${details}` : ''}`,
+            graphId,
+            nodeId,
+            executionId,
         });
     }
 

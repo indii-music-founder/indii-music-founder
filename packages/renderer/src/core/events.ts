@@ -14,6 +14,15 @@ export interface AgentActionEvent {
     agentId: string;
     action: string;
     details: string;
+    timestamp?: number;
+    durationMs?: number;
+    toolName?: string;
+    targetContext?: string;
+    errorMessage?: string;
+    sessionId?: string;
+    graphId?: string;
+    executionId?: string;
+    nodeId?: string;
 }
 
 export interface DepartmentRequestEvent {
