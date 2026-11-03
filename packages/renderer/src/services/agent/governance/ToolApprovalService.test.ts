@@ -46,6 +46,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 import { toolApprovalService } from './ToolApprovalService';
+import { where } from 'firebase/firestore';
 
 describe('ToolApprovalService (ISSUE-1116)', () => {
     async function bindApproval(toolName: string, args: Record<string, unknown>, execute: (args: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>) {
@@ -306,6 +307,22 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(typeof unsub).toBe('function');
             expect(callback).not.toHaveBeenCalled();
             expect(mocks.onSnapshot).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onUnresolvedApprovals', () => {
+        it('includes claimed actions that no longer appear in the pending query', () => {
+            mocks.onSnapshot.mockImplementation((_query, callback) => {
+                callback({ forEach: (visit: (doc: unknown) => void) => visit({
+                    id: 'claimed-1', data: () => ({ status: 'claimed', toolName: 'computer_click' }),
+                }) });
+                return () => {};
+            });
+            const callback = vi.fn();
+            toolApprovalService.onUnresolvedApprovals(callback);
+
+            expect(where).toHaveBeenCalledWith('status', 'in', ['pending', 'approved', 'claimed']);
+            expect(callback).toHaveBeenCalledWith([expect.objectContaining({ id: 'claimed-1', status: 'claimed' })]);
         });
     });
 });
