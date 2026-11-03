@@ -2413,6 +2413,26 @@ describe('Firestore Security Rules', () => {
     // ROOT OWNER-FIELD INTEGRITY
     // ──────────────────────────────────────────────────────────────────────
 
+    it('keeps session messages deletable while fencing new writes during session deletion', async () => {
+        if (requireEmulator()) return;
+        const sessionPath = 'sessions/deleting-session';
+        await testEnv.withSecurityRulesDisabled(async context => {
+            await setDoc(doc(context.firestore(), sessionPath), { userId: ALICE_UID, orgId: ORG_ID });
+        });
+        const alice = verifiedCtx(ALICE_UID).firestore();
+        const session = doc(alice, sessionPath);
+        const existing = doc(alice, `${sessionPath}/messages/existing`);
+        const incoming = doc(alice, `${sessionPath}/messages/incoming`);
+
+        await assertSucceeds(setDoc(existing, { text: 'Existing message' }));
+        await assertSucceeds(updateDoc(session, { deletingAt: serverTimestamp() }));
+        await assertFails(setDoc(incoming, { text: 'Late message' }));
+        await assertFails(updateDoc(existing, { text: 'Late edit' }));
+        await assertFails(updateDoc(session, { deletingAt: null }));
+        await assertSucceeds(deleteDoc(existing));
+        await assertSucceeds(deleteDoc(session));
+    });
+
     describe('root owner-scoped collections pin every authority field', () => {
         const ownerScopedCollections = [
             ['composition_drafts', 'userId'],

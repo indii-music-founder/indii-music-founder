@@ -29,7 +29,7 @@ describe('PlatformBridgeService', () => {
                     },
                     agent: {
                         saveHistory: mockSaveHistory.mockResolvedValue(undefined),
-                        deleteHistory: mockDeleteHistory.mockResolvedValue(undefined),
+                        deleteHistory: mockDeleteHistory.mockResolvedValue({ success: true }),
                     },
                 },
             });
@@ -76,6 +76,12 @@ describe('PlatformBridgeService', () => {
 
             await bridge.deleteHistory('session-1');
             expect(mockDeleteHistory).toHaveBeenCalledWith('session-1');
+        });
+
+        it('reports a failed desktop history deletion', async () => {
+            mockDeleteHistory.mockResolvedValueOnce({ success: false, error: 'disk unavailable' });
+
+            await expect(new ElectronPlatformAdapter().deleteHistory('session-1')).rejects.toThrow('disk unavailable');
         });
     });
 

@@ -137,12 +137,24 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
     }
 
     async deleteSession(id: string): Promise<void> {
+        if (!auth.currentUser?.uid) throw new Error('User must be authenticated to delete an agent session.');
+        const sessionRef = doc(db, 'sessions', id);
+        const messagesRef = collection(db, 'sessions', id, 'messages');
+
+        // Fence concurrent appends before removing child documents. Firestore
+        // does not cascade subcollections when a parent document is deleted.
+        await updateDoc(sessionRef, { deletingAt: serverTimestamp() });
+        while (true) {
+            const snapshot = await getDocs(query(messagesRef, limit(400)));
+            if (snapshot.empty) break;
+            const batch = writeBatch(db);
+            snapshot.docs.forEach(message => batch.delete(message.ref));
+            await batch.commit();
+        }
         await this.delete(id);
 
         // KEEPER: Dual Write for Local Persistence (Cross-platform decoupled)
-        platformBridge.deleteHistory(id).catch((err: any) => {
-            logger.error('[SessionService] Failed to delete local history:', err);
-        });
+        await platformBridge.deleteHistory(id);
     }
 
     private saveToLocal(id: string, data: any, attempt = 1) {
