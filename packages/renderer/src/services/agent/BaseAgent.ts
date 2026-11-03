@@ -26,6 +26,7 @@ import {
     validateHubAndSpoke
 } from './types';
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
+import { executionTokenBudget, inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
@@ -873,6 +874,8 @@ export class BaseAgent implements SpecializedAgent {
             agentIdentity: this.identityCard,
         });
         enrichedContext.signal = signal;
+        const tokenBudget = executionTokenBudget(context ?? enrichedContext, 1_500_000);
+        if (context) inheritExecutionTokenBudget(context, enrichedContext);
         enrichedContext.assetReferences = context?.assetReferences;
 
         // Agent Canvas Context Injection: If agent canvas has active panels, inject lightweight overview
@@ -1260,7 +1263,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     requestContents,
                     undefined,
                     allFunctions,
-                    1500000, // Safe ceiling for 2M token context window (leaves room for 500K output)
+                    1500000, // Per-request context ceiling; distinct from the run allowance.
                     generationConfig.maxOutputTokens // Reserve the full configured output allowance
                 );
 
@@ -1284,6 +1287,16 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 if (signal?.aborted) {
                     throw new Error(signal.reason || 'Agent execution aborted via signal.');
+                }
+
+                let tokenReservation = tokenBudget.reserve(tokenEstimate.totalProjected);
+                if (tokenReservation === null) {
+                    executionContext.rollback();
+                    return {
+                        text: 'Task halted: The cumulative token allowance for this execution is exhausted.',
+                        error: 'Cumulative Token Budget Exceeded',
+                        toolCalls
+                    };
                 }
 
                 logger.debug(`BaseAgent calling AutonomousIntelligence.generateContentStream for ${this.id}, iteration ${iterations}`);
@@ -1320,6 +1333,17 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 if (!streamResult || !streamResult.response) {
                     logger.debug(`[BaseAgent] generateContentStream returned empty or is not mocked. Falling back to generateContent for test compatibility.`);
+                    // A failed or empty stream may still have been billed. Retain that
+                    // reservation and reserve the fallback call independently.
+                    tokenReservation = tokenBudget.reserve(tokenEstimate.totalProjected);
+                    if (tokenReservation === null) {
+                        executionContext.rollback();
+                        return {
+                            text: 'Task halted: The cumulative token allowance for this execution is exhausted.',
+                            error: 'Cumulative Token Budget Exceeded',
+                            toolCalls
+                        };
+                    }
                     const contentResult = await AutonomousIntelligence.generateContent(
                         requestContents,
                         resolvedModel,
@@ -1427,6 +1451,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 // LEDGER: Record Spend based on Token Usage
                 const usage = response.usage?.();
+                tokenBudget.settle(tokenReservation, usage?.totalTokenCount);
                 if (usage && context?.userId) {
                     const pricing = MODEL_PRICING[INTELLIGENCE_MODELS.TEXT.AGENT];
                     // Ensure we are using a text model pricing schema (input/output)

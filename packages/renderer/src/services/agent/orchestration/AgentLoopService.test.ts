@@ -3,6 +3,7 @@ import { agentLoopService } from './AgentLoopService';
 import { maestroBatchingService } from '../MaestroBatchingService';
 import { judgeTransientError } from '@/config/typesafeJudgments';
 import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
+import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 
 // Mock dependencies
 vi.mock('../MaestroBatchingService', () => ({
@@ -113,6 +114,28 @@ describe('AgentLoopService', () => {
         // Second iteration
         expect(execution?.history[1]?.passed).toBe(true);
         expect(execution?.history[1]?.feedback).toBe('PASS');
+    });
+
+    it('halts before a judge call when the shared execution allowance is exhausted', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-budget-exhausted',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review a result',
+            verifiabilityCriteria: 'Must be valid',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
+            maxIterations: 3,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+        const context = { userId: 'user1', projectId: 'proj1' };
+        executionTokenBudget(context, 1_500_000).reserve(1_500_000);
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([{ success: true, text: 'Action taken' }]);
+
+        const executionId = await agentLoopService.startLoop(def, context);
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        expect(agentLoopService.getExecution(executionId)?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
     it('should fail if max iterations are reached', async () => {

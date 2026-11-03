@@ -14,6 +14,9 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { FirestoreService } from '../../FirestoreService';
 import { heuristicTransientError, judgeTransientError } from '@/config/typesafeJudgments';
 import { TokenEstimator } from '../governance/TokenEstimator';
+import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+
+class ExecutionTokenBudgetExceeded extends Error {}
 
 /**
  * Service to orchestrate the Autonomous Agent Looping System.
@@ -172,6 +175,9 @@ export class AgentLoopService {
      */
     private async runLoop(definition: AgentLoopDefinition, execution: AgentLoopExecution, context: AgentContext): Promise<void> {
         let isSatisfied = false;
+        // The same context is passed to every retry and iteration. The agent runner
+        // inherits this ledger after cloning the context for delegated execution.
+        const tokenBudget = executionTokenBudget(context, 1_500_000);
 
         while (execution.currentIteration <= definition.maxIterations && !isSatisfied) {
             execution.status = AgentLoopStatusEnum.enum.EXECUTING;
@@ -200,7 +206,17 @@ export class AgentLoopService {
             execution.updatedAt = Date.now();
             await this.persistExecution(context.userId, execution);
 
-            const evaluation = await this.evaluateOutcome(definition, actionResult);
+            let evaluation: { passed: boolean; feedback: string };
+            try {
+                evaluation = await this.evaluateOutcome(definition, actionResult, tokenBudget);
+            } catch (error) {
+                if (!(error instanceof ExecutionTokenBudgetExceeded)) throw error;
+                execution.status = AgentLoopStatusEnum.enum.FAILED;
+                execution.updatedAt = Date.now();
+                await this.persistExecution(context.userId, execution);
+                logger.warn(`[AgentLoop] Execution ${execution.id} halted: cumulative token allowance exhausted.`);
+                return;
+            }
 
             // 4. Record iteration history
             const iterationRecord: AgentLoopIteration = {
@@ -326,7 +342,7 @@ export class AgentLoopService {
         return { output: `Execution error: ${msg}`, isTransientFailure: false };
     }
 
-    private async evaluateOutcome(definition: AgentLoopDefinition, agentOutput: string): Promise<{ passed: boolean, feedback: string }> {
+    private async evaluateOutcome(definition: AgentLoopDefinition, agentOutput: string, tokenBudget: ExecutionTokenBudget): Promise<{ passed: boolean, feedback: string }> {
         if (definition.judgeMode === 'DETERMINISTIC_TEST') {
             return { passed: true, feedback: 'Deterministic test passed.' };
         }
@@ -349,17 +365,23 @@ Respond in JSON format only:
 }
 `;
 
-        try {
-            const aiService = FirebaseIntelligenceService.getInstance();
-            const genResult = await aiService.generateContent(
+        const judgeInstruction = 'You are an impartial judge. Only return valid JSON.';
+        const generateJudge = async () => {
+            const estimate = TokenEstimator.estimate(prompt, judgeInstruction, [], 1_500_000, 300);
+            const reservation = estimate.willExceed ? null : tokenBudget.reserve(estimate.totalProjected);
+            if (reservation === null) throw new ExecutionTokenBudgetExceeded();
+            const result = await FirebaseIntelligenceService.getInstance().generateContent(
                 prompt,
                 INTELLIGENCE_MODELS.TEXT.FAST,
-                {
-                    temperature: 0.1,
-                    maxOutputTokens: 300,
-                },
-                'You are an impartial judge. Only return valid JSON.'
+                { temperature: 0.1, maxOutputTokens: 300 },
+                judgeInstruction
             );
+            tokenBudget.settle(reservation, result?.response?.usageMetadata?.totalTokenCount);
+            return result;
+        };
+
+        try {
+            const genResult = await generateJudge();
 
             const rawResponse = genResult?.response as {
                 text?: () => string;
@@ -384,18 +406,13 @@ Respond in JSON format only:
                 feedback: parsed.feedback || 'No specific feedback.'
             };
         } catch (error) {
+            if (error instanceof ExecutionTokenBudgetExceeded) throw error;
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
             if (await this.resolveTransient(error, { action: 'evaluateOutcome' })) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
-                    const aiService = FirebaseIntelligenceService.getInstance();
-                    const retryResult = await aiService.generateContent(
-                        prompt,
-                        INTELLIGENCE_MODELS.TEXT.FAST,
-                        { temperature: 0.1, maxOutputTokens: 300 },
-                        'You are an impartial judge. Only return valid JSON.'
-                    );
+                    const retryResult = await generateJudge();
                     const rawResponse = retryResult?.response as {
                         text?: () => string;
                         candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
@@ -416,6 +433,7 @@ Respond in JSON format only:
                         feedback: parsed.feedback || 'No specific feedback.'
                     };
                 } catch (retryErr) {
+                    if (retryErr instanceof ExecutionTokenBudgetExceeded) throw retryErr;
                     logger.error('[AgentLoop] Evaluation retry also failed:', retryErr);
                 }
             }
