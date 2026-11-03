@@ -65,7 +65,8 @@ export class TokenEstimator {
                         inputTokens += Math.max(258, Math.ceil(partStr.length / this.CHARS_PER_TOKEN));
                     }
                     if ('functionCall' in part) {
-                        inputTokens += 20;
+                        const callStr = JSON.stringify(part);
+                        inputTokens += Math.max(20, Math.ceil(callStr.length / this.CHARS_PER_TOKEN));
                     }
                     if ('functionResponse' in part) {
                         const respStr = JSON.stringify(part);
