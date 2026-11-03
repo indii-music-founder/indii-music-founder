@@ -1570,10 +1570,15 @@ export async function judgeDynamicDashboardLayout(
         const primAns = result.data.answers?.primary_module as { choice?: unknown } | undefined;
         const varAns = result.data.answers?.layout_variant as { choice?: unknown } | undefined;
 
-        if (!primAns || typeof primAns.choice !== 'string') return null;
+        if (typeof primAns?.choice !== 'string' ||
+            !availableModules.includes(primAns.choice as DynamicComponentKey) ||
+            (varAns?.choice !== 'compact' && varAns?.choice !== 'expanded')) return null;
 
-        const primary = primAns.choice as DynamicComponentKey;
-        const variant = varAns?.choice === 'expanded' ? 'expanded' : 'compact';
+        const primary = (context.hasPendingSplits || context.unmatchedRoyaltiesCount > 0) &&
+            availableModules.includes('RoyaltySplitTable')
+            ? 'RoyaltySplitTable'
+            : primAns.choice as DynamicComponentKey;
+        const variant = context.hasPendingSplits ? 'expanded' : varAns.choice;
 
         // Order modules placing primary first, then preserving remaining available modules
         const ordered = [primary, ...availableModules.filter((m) => m !== primary)];

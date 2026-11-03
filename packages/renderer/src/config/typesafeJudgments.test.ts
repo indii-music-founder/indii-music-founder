@@ -1225,6 +1225,34 @@ describe('judgeDynamicDashboardLayout (Judgment 18)', () => {
         });
     });
 
+    it('keeps unresolved splits first despite a conflicting model layout', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            primary_module: { choice: 'CampaignMonitor' }, layout_variant: { choice: 'compact' },
+        } } }));
+
+        const result = await judgeDynamicDashboardLayout(
+            { hasPendingSplits: true, unmatchedRoyaltiesCount: 2, activeAdCampaigns: 1 },
+            [...MODULES]
+        );
+        expect(result?.orderedModules[0]).toBe('RoyaltySplitTable');
+        expect(result?.layoutVariant).toBe('expanded');
+    });
+
+    it('abstains when the model selects an unavailable module or invalid variant', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const context = { hasPendingSplits: false, unmatchedRoyaltiesCount: 0, activeAdCampaigns: 0 };
+        mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: {
+            primary_module: { choice: 'StemInspector' }, layout_variant: { choice: 'compact' },
+        } } }));
+        expect(await judgeDynamicDashboardLayout(context, ['CampaignMonitor'])).toBeNull();
+
+        mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: {
+            primary_module: { choice: 'CampaignMonitor' }, layout_variant: { choice: 'floating' },
+        } } }));
+        expect(await judgeDynamicDashboardLayout(context, ['CampaignMonitor'])).toBeNull();
+    });
+
     it('returns null on failure so caller can fall back to local heuristic', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => {
