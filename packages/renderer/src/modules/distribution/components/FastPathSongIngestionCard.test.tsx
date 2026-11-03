@@ -1,84 +1,50 @@
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FastPathSongIngestionCard } from './FastPathSongIngestionCard';
 
+const audioFile = new File(['audio bytes'], 'Detroit_Midnight_master_v3_final_4416.wav', { type: 'audio/wav' });
+
 describe('FastPathSongIngestionCard', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('renders the empty upload dropzone prompt initially', () => {
-        render(<FastPathSongIngestionCard artistName="indii founder" />);
-
-        expect(screen.getByText('Fast-Path Song Ingestion')).toBeInTheDocument();
-        expect(screen.getByText(/Drag & drop your master audio recording/i)).toBeInTheDocument();
-        expect(screen.getByText(/automatic 44.1kHz \/ 24-bit validation/i)).toBeInTheDocument();
-    });
-
-    it('processes dropped audio master, cleans title, and displays Jev insight cards', async () => {
-        const onCompleteMock = vi.fn();
-
-        render(
-            <FastPathSongIngestionCard
-                artistName="Sarah Vance"
-                onComplete={onCompleteMock}
-            />
-        );
-
-        const fakeAudioFile = new File(['fake-audio-bytes'], 'Detroit_Midnight_master_v3_final_4416.wav', {
-            type: 'audio/wav',
-        });
-
-        const dropzone = screen.getByText(/Drag & drop your master audio recording/i).closest('div');
-        expect(dropzone).not.toBeNull();
-
-        // Simulate file drop
-        fireEvent.drop(dropzone!, {
-            dataTransfer: {
-                files: [fakeAudioFile],
-            },
-        });
-
-        await waitFor(() => {
-            // Title should be cleaned of DAW noise
-            expect(screen.getByText('Detroit Midnight')).toBeInTheDocument();
-        });
-
-        // Verify Jev insight cards render
-        expect(screen.getByText(/Listener Feed Viral Hook/i)).toBeInTheDocument();
-        expect(screen.getByText(/DDEX Genre & Mood/i)).toBeInTheDocument();
-        expect(screen.getByText(/Automated POD Merch Sync/i)).toBeInTheDocument();
-        expect(screen.getByText(/Rights & Distribution Clearance/i)).toBeInTheDocument();
-
-        expect(screen.getByText('Publish to Backstage & DSPs')).toBeInTheDocument();
-
-        expect(onCompleteMock).toHaveBeenCalledTimes(1);
-        const result = onCompleteMock.mock.calls[0]![0];
-        expect(result.cleanedTitle).toBe('Detroit Midnight');
-        expect(result.versionType).toBe('Original');
-        expect(result.sampleRate).toBe(44100);
-    });
-
-    it('resets analysis when user clicks "Upload another master"', async () => {
+    it('shows an accessible file selector without claiming verification', () => {
         render(<FastPathSongIngestionCard artistName="Sarah Vance" />);
 
-        const fakeAudioFile = new File(['fake-audio-bytes'], 'Summer_Reverie_Remix.mp3', {
-            type: 'audio/mp3',
+        expect(screen.getByRole('heading', { name: 'Song file preview' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Choose an audio file or drag it here')).toBeInTheDocument();
+        expect(screen.queryByText(/ready for delivery/i)).not.toBeInTheDocument();
+    });
+
+    it('reports only filename and file properties from a selected file', () => {
+        const onComplete = vi.fn();
+        render(<FastPathSongIngestionCard artistName="Sarah Vance" onComplete={onComplete} />);
+
+        fireEvent.change(screen.getByLabelText('Choose an audio file or drag it here'), { target: { files: [audioFile] } });
+
+        expect(screen.getByRole('heading', { name: 'Detroit Midnight' })).toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent('distribution readiness have not been verified');
+        expect(screen.queryByRole('button', { name: /publish/i })).not.toBeInTheDocument();
+        expect(onComplete).toHaveBeenCalledWith({
+            file: audioFile, cleanedTitle: 'Detroit Midnight', artistName: 'Sarah Vance', versionType: 'Original',
         });
+    });
 
-        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-        fireEvent.change(input, { target: { files: [fakeAudioFile] } });
-
-        await waitFor(() => {
-            expect(screen.getByText('Summer Reverie')).toBeInTheDocument();
+    it('accepts a dropped audio file and resets for another selection', () => {
+        render(<FastPathSongIngestionCard />);
+        fireEvent.drop(screen.getByText('Choose an audio file or drag it here').parentElement!, {
+            dataTransfer: { files: [audioFile] },
         });
+        expect(screen.getByRole('heading', { name: 'Detroit Midnight' })).toBeInTheDocument();
 
-        const resetButton = screen.getByText('Upload another master');
-        fireEvent.click(resetButton);
+        fireEvent.click(screen.getByRole('button', { name: 'Choose another file' }));
+        expect(screen.getByLabelText('Choose an audio file or drag it here')).toBeInTheDocument();
+    });
 
-        await waitFor(() => {
-            expect(screen.getByText(/Drag & drop your master audio recording/i)).toBeInTheDocument();
+    it('ignores non-audio files', () => {
+        const onComplete = vi.fn();
+        render(<FastPathSongIngestionCard onComplete={onComplete} />);
+        fireEvent.change(screen.getByLabelText('Choose an audio file or drag it here'), {
+            target: { files: [new File(['text'], 'notes.txt', { type: 'text/plain' })] },
         });
+        expect(onComplete).not.toHaveBeenCalled();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 });
