@@ -1152,7 +1152,7 @@ describe('judgeUploadCopyrightRisk (Judgment 17)', () => {
         vi.clearAllMocks();
     });
 
-    it('auto-approves clean track with verified documentation', async () => {
+    it('routes low-risk metadata to rights review', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
@@ -1168,8 +1168,8 @@ describe('judgeUploadCopyrightRisk (Judgment 17)', () => {
             isHighRisk: false,
             hazardProbability: 0.05,
             provenanceScore: 3,
-            status: 'auto_approved',
-            reason: 'Clean upload: verified artist documentation and low spam hazard.',
+            status: 'needs_rights_review',
+            reason: 'No elevated risk found in the supplied metadata; rights and provenance still require review.',
         });
     });
 
@@ -1192,6 +1192,21 @@ describe('judgeUploadCopyrightRisk (Judgment 17)', () => {
             status: 'flagged_for_review',
             reason: 'Upload held for review: risk probability 88%, provenance score 0.0/3.',
         });
+    });
+
+    it.each([
+        [{ noul: '0.05' }, { score: 3 }],
+        [{ noul: -0.1 }, { score: 3 }],
+        [{ noul: 0.05 }, { score: 4 }],
+        [{ noul: 0.05 }, { score: Number.NaN }],
+    ])('abstains on malformed risk or provenance evidence', async (hazard, provenance) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            unauthorized_or_spam_hazard: hazard,
+            documentation_provenance: provenance,
+        } } }));
+
+        expect(await judgeUploadCopyrightRisk('Artist', 'Track', 'Metadata')).toBeNull();
     });
 });
 

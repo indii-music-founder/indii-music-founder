@@ -1419,7 +1419,7 @@ export const COPYRIGHT_RISK_QUESTIONS = {
             'hallmarks of automated bot spam, mass AI-generated slurry, or unauthorized copyrighted sample usage?',
         criteria: {
             true: 'High probability of stolen audio, unlicensed third-party loops, or automated spam-bot upload.',
-            false: 'Legitimate independent artist original upload with clean documentation.',
+            false: 'No suspicious signal apparent in the supplied metadata; rights remain unverified.',
         },
     },
     documentation_provenance: {
@@ -1428,8 +1428,8 @@ export const COPYRIGHT_RISK_QUESTIONS = {
         criteria: [
             'Suspicious / Zero documentation — blank credits, disposable anonymous account',
             'Incomplete — basic track title but missing songwriter or contributor declarations',
-            'Sufficient — verified artist profile with clear songwriting / production credits',
-            'Exemplary — comprehensive split agreements, ISRC registration, and verified identity',
+            'Sufficient — metadata claims an artist profile and songwriting / production credits',
+            'Exemplary — metadata claims split agreements, ISRC registration, and artist identity',
         ],
     },
 };
@@ -1438,7 +1438,7 @@ export interface CopyrightTriageVerdict {
     isHighRisk: boolean;
     hazardProbability: number;
     provenanceScore: number;
-    status: 'auto_approved' | 'flagged_for_review';
+    status: 'needs_rights_review' | 'flagged_for_review';
     reason: string;
 }
 
@@ -1469,24 +1469,19 @@ export async function judgeUploadCopyrightRisk(
         const hazardAns = answers?.unauthorized_or_spam_hazard;
         const provAns = answers?.documentation_provenance;
 
-        const hazardProb = typeof hazardAns === 'number'
-            ? hazardAns
-            : Number((hazardAns as { noul?: unknown })?.noul);
+        const hazardProb = boundedJudgmentNumber(hazardAns, 'noul', 1);
+        const provScore = boundedJudgmentNumber(provAns, 'score', COPYRIGHT_RISK_QUESTIONS.documentation_provenance.criteria.length - 1);
 
-        const provScore = typeof provAns === 'number'
-            ? provAns
-            : Number((provAns as { score?: unknown })?.score);
-
-        if (!Number.isFinite(hazardProb) || !Number.isFinite(provScore)) {
+        if (hazardProb === null || provScore === null) {
             return null;
         }
 
         const isHighRisk = hazardProb >= 0.45 || provScore <= 1.0;
-        const status = isHighRisk ? 'flagged_for_review' : 'auto_approved';
+        const status = isHighRisk ? 'flagged_for_review' : 'needs_rights_review';
 
         const reason = isHighRisk
             ? `Upload held for review: risk probability ${Math.round(hazardProb * 100)}%, provenance score ${provScore.toFixed(1)}/3.`
-            : 'Clean upload: verified artist documentation and low spam hazard.';
+            : 'No elevated risk found in the supplied metadata; rights and provenance still require review.';
 
         return {
             isHighRisk,
