@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { useMotionValue, useSpring, motion, useTransform } from 'motion/react';
+import { useMotionValue, useSpring, motion, useTransform, useReducedMotion } from 'motion/react';
 
 export function AnimatedNumber({
     value,
@@ -11,6 +11,10 @@ export function AnimatedNumber({
     className?: string;
     precision?: number;
 }) {
+    const reducedMotion = useReducedMotion();
+    const safePrecision = Number.isFinite(precision) ? Math.max(0, Math.min(6, Math.trunc(precision))) : 0;
+    const finiteValue = Number.isFinite(value) ? value : null;
+    const accessibleValue = finiteValue === null ? '—' : finiteValue.toFixed(safePrecision);
     const motionValue = useMotionValue(0);
     const springValue = useSpring(motionValue, {
         damping: 30,
@@ -18,12 +22,19 @@ export function AnimatedNumber({
     });
 
     const displayValue = useTransform(springValue, (latest) =>
-        latest.toFixed(precision)
+        latest.toFixed(safePrecision)
     );
 
     useEffect(() => {
-        motionValue.set(value);
-    }, [value, motionValue]);
+        if (finiteValue !== null) motionValue.set(finiteValue);
+    }, [finiteValue, motionValue]);
 
-    return <motion.span className={className}>{displayValue}</motion.span>;
+    if (reducedMotion || finiteValue === null) {
+        return <span className={className}>{accessibleValue}</span>;
+    }
+
+    return <span className={className}>
+        <span className="sr-only">{accessibleValue}</span>
+        <motion.span aria-hidden="true">{displayValue}</motion.span>
+    </span>;
 }
