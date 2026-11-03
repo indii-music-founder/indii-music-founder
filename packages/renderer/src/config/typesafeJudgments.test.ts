@@ -3571,7 +3571,7 @@ describe('judgeDistributionBlocker (Judgment 55)', () => {
         expect(badArt.unblockActionUrl).toBe('#cover-art');
     });
 
-    it('approves compliant release ready for automated delivery', async () => {
+    it('requires release review even when the model calls supplied fields ready', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
@@ -3592,10 +3592,27 @@ describe('judgeDistributionBlocker (Judgment 55)', () => {
             territoriesDeclaredCount: 195,
         });
 
-        expect(result.blocker).toBe('READY_FOR_DELIVERY');
-        expect(result.isReady).toBe(true);
+        expect(result.blocker).toBe('REQUIRES_RELEASE_REVIEW');
+        expect(result.isReady).toBe(false);
         expect(result.readinessScore).toBe(5);
-        expect(result.unblockActionUrl).toBe('#submit');
+        expect(result.unblockActionUrl).toBe('#release-review');
+    });
+
+    it('keeps a measured blocker when the model gives permissive guidance', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            blocker: { choice: 'READY_FOR_DELIVERY' }, readiness_score: { score: 4 },
+        } } }));
+
+        const result = await judgeDistributionBlocker({
+            releaseTitle: 'Unsquare Art', hasFingerprint: true,
+            coverArtWidth: 3000, coverArtHeight: 4000, hasIsrc: true,
+            hasSplitsDocumented: true, territoriesDeclaredCount: 1,
+        });
+
+        expect(result.blocker).toBe('NON_COMPLIANT_COVER_ART');
+        expect(result.isReady).toBe(false);
+        expect(result.readinessScore).toBe(2);
     });
 });
 
