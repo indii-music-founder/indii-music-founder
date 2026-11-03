@@ -4388,6 +4388,10 @@ export type PrintTechnique =
     | 'ALL_OVER_SUBLIMATION'
     | 'SCREEN_PRINT_COMPLIANT';
 
+const PRINT_TECHNIQUES: ReadonlySet<string> = new Set<PrintTechnique>([
+    'DTG_DIRECT_TO_GARMENT', 'EMBROIDERY', 'ALL_OVER_SUBLIMATION', 'SCREEN_PRINT_COMPLIANT',
+]);
+
 export interface MerchPrintInput {
     productType: string;
     garmentColorName: string;
@@ -4424,7 +4428,7 @@ export async function judgeMerchPrintViability(
         fallbackSafe = false;
         fallbackContrast = 1;
         fallbackWarning = 'Dark artwork on dark fabric causes muddy low-contrast prints. Consider using white or neon artwork.';
-    } else if (input.designResolutionDpi < 150) {
+    } else if (!Number.isFinite(input.designResolutionDpi) || input.designResolutionDpi < 150) {
         fallbackSafe = false;
         fallbackContrast = 2;
         fallbackWarning = `Resolution (${input.designResolutionDpi} DPI) is below the 150 DPI minimum manufacturing threshold.`;
@@ -4491,13 +4495,21 @@ export async function judgeMerchPrintViability(
         const safeAns = ans?.is_safe as { noul?: unknown } | number | undefined;
         const contAns = ans?.contrast as { score?: unknown } | number | undefined;
 
-        const resolvedTech = (typeof techAns?.choice === 'string' ? techAns.choice : fallbackTechnique) as PrintTechnique;
-        const safeProb = typeof safeAns === 'number'
-            ? safeAns
-            : Number((safeAns as { noul?: unknown })?.noul ?? (fallbackSafe ? 0.9 : 0.1));
-        const resolvedContrast = oneIndexedScore(contAns, fallbackContrast);
+        const selectedTechnique = techAns?.choice;
+        const safeProb = boundedJudgmentNumber(safeAns, 'noul', 1);
+        const contrastScore = boundedJudgmentNumber(contAns, 'score', 4);
+        if (typeof selectedTechnique !== 'string' || !PRINT_TECHNIQUES.has(selectedTechnique) || safeProb === null || contrastScore === null) {
+            return {
+                recommendedTechnique: fallbackTechnique,
+                isPrintSafe: false,
+                contrastScore: fallbackContrast,
+                warningOrGuidance: fallbackWarning || 'Print recommendation requires review before ordering.',
+            };
+        }
+        const resolvedTech = selectedTechnique as PrintTechnique;
+        const resolvedContrast = contrastScore + 1;
 
-        const isSafe = safeProb >= 0.5 && resolvedContrast >= 2;
+        const isSafe = fallbackSafe && safeProb >= 0.5 && resolvedContrast >= 2;
 
         return {
             recommendedTechnique: resolvedTech,

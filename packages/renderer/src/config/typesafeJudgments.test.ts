@@ -2665,6 +2665,12 @@ describe('judgeMerchPrintViability (Judgment 44)', () => {
         expect(lowDpi.contrastScore).toBe(2);
         expect(lowDpi.warningOrGuidance).toContain('minimum manufacturing threshold');
 
+        const invalidDpi = await judgeMerchPrintViability({
+            productType: 'Hoodie', garmentColorName: 'White', garmentHex: '#ffffff',
+            artworkDominantHex: '#ff0055', isVectorArtwork: false, designResolutionDpi: Number.NaN,
+        });
+        expect(invalidDpi.isPrintSafe).toBe(false);
+
         // Beanie / Cap defaults to embroidery
         const cap = await judgeMerchPrintViability({
             productType: 'Snapback Cap',
@@ -2703,6 +2709,52 @@ describe('judgeMerchPrintViability (Judgment 44)', () => {
         expect(result.isPrintSafe).toBe(true);
         expect(result.contrastScore).toBe(4);
         expect(result.warningOrGuidance).toBeUndefined();
+    });
+
+    it('keeps physical manufacturing blockers authoritative over a safe Jev answer', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                technique: { choice: 'DTG_DIRECT_TO_GARMENT' },
+                is_safe: { noul: 0.99 },
+                contrast: { score: 4 },
+            } },
+        }));
+
+        const base = {
+            productType: 'Hoodie', garmentColorName: 'White', garmentHex: '#ffffff',
+            artworkDominantHex: '#ff0055', isVectorArtwork: false, designResolutionDpi: 300,
+        };
+        const lowResolution = await judgeMerchPrintViability({ ...base, designResolutionDpi: 72 });
+        const darkOnDark = await judgeMerchPrintViability({
+            ...base, garmentColorName: 'Black', garmentHex: '#000000', artworkDominantHex: '#121212',
+        });
+
+        expect(lowResolution.isPrintSafe).toBe(false);
+        expect(lowResolution.warningOrGuidance).toContain('150 DPI');
+        expect(darkOnDark.isPrintSafe).toBe(false);
+        expect(darkOnDark.warningOrGuidance).toContain('Dark artwork');
+    });
+
+    it.each([
+        { technique: 'UNKNOWN_TECHNIQUE', safe: { noul: 0.99 }, contrast: { score: 3 } },
+        { technique: 'DTG_DIRECT_TO_GARMENT', safe: { noul: '0.99' }, contrast: { score: 3 } },
+        { technique: 'DTG_DIRECT_TO_GARMENT', safe: { noul: null }, contrast: { score: 3 } },
+        { technique: 'DTG_DIRECT_TO_GARMENT', safe: { noul: 1.5 }, contrast: { score: 3 } },
+        { technique: 'DTG_DIRECT_TO_GARMENT', safe: { noul: 0.99 }, contrast: { score: '3' } },
+    ])('holds a malformed Jev print recommendation for review: $technique $safe $contrast', async ({ technique, safe, contrast }) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { technique: { choice: technique }, is_safe: safe, contrast } },
+        }));
+
+        const result = await judgeMerchPrintViability({
+            productType: 'Hoodie', garmentColorName: 'White', garmentHex: '#ffffff',
+            artworkDominantHex: '#ff0055', isVectorArtwork: false, designResolutionDpi: 300,
+        });
+
+        expect(result.isPrintSafe).toBe(false);
+        expect(result.warningOrGuidance).toContain('review');
     });
 });
 
