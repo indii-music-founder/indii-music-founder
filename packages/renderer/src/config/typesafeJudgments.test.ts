@@ -2755,6 +2755,42 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         expect(result.vibeAlignmentScore).toBe(5);
         expect(result.moderationFlag).toBeUndefined();
     });
+
+    it('keeps local toxic and spam blockers authoritative over a permissive Jev answer', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE' },
+                approved: { noul: 0.99 },
+                vibe: { score: 4 },
+            } },
+        }));
+
+        const toxic = await judgeFanCommentModeration('This song is trash go die');
+        const spam = await judgeFanCommentModeration('check out my crypto profile');
+
+        expect(toxic.isApproved).toBe(false);
+        expect(toxic.moderationFlag).toContain('toxic');
+        expect(spam.isApproved).toBe(false);
+        expect(spam.moderationFlag).toContain('spam');
+    });
+
+    it.each([
+        { intent: 'UNKNOWN_INTENT', approved: { noul: 0.99 } },
+        { intent: 'GENUINE_FAN_PRAISE', approved: { noul: '0.99' } },
+        { intent: 'GENUINE_FAN_PRAISE', approved: { noul: null } },
+        { intent: 'GENUINE_FAN_PRAISE', approved: { noul: 1.5 } },
+    ])('holds a comment for review when Jev returns malformed moderation data: $intent $approved', async ({ intent, approved }) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { intent: { choice: intent }, approved, vibe: { score: 4 } } },
+        }));
+
+        const result = await judgeFanCommentModeration('Great track');
+
+        expect(result.isApproved).toBe(false);
+        expect(result.moderationFlag).toContain('review');
+    });
 });
 
 describe('judgeSyncLicensingMoodFit (Judgment 46)', () => {
