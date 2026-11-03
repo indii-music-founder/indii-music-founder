@@ -2155,9 +2155,25 @@ export async function judgeSplitSheetVerification(
         const prodAns = ans?.producerReq as { probability?: unknown } | undefined;
         const riskAns = ans?.risk as { score?: unknown } | undefined;
 
-        const rightsScope = (typeof scopeAns?.choice === 'string' ? scopeAns.choice : 'AMBIGUOUS') as SplitSheetVerificationResult['rightsScope'];
-        const needsProducerAgreement = typeof prodAns?.probability === 'number' ? prodAns.probability >= 0.5 : false;
-        const splitRiskLevel = typeof riskAns?.score === 'number' ? Math.round(riskAns.score) : 1;
+        const scope = scopeAns?.choice;
+        const producerProbability = prodAns?.probability;
+        const riskScore = riskAns?.score;
+        if (
+            scope !== 'MASTER_AND_PUBLISHING' && scope !== 'MASTER_ONLY' &&
+            scope !== 'PUBLISHING_ONLY' && scope !== 'AMBIGUOUS'
+        ) return null;
+        if (
+            typeof producerProbability !== 'number' || !Number.isFinite(producerProbability) ||
+            producerProbability < 0 || producerProbability > 1
+        ) return null;
+        if (
+            typeof riskScore !== 'number' || !Number.isInteger(riskScore) ||
+            riskScore < 0 || riskScore > 3
+        ) return null;
+
+        const rightsScope = scope;
+        const needsProducerAgreement = producerProbability >= 0.5;
+        const splitRiskLevel = riskScore;
 
         const advisories: string[] = [];
         if (needsProducerAgreement) {

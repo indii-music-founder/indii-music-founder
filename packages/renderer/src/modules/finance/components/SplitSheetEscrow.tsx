@@ -59,9 +59,7 @@ export function SplitSheetEscrow() {
             })),
             releaseTitle
         ).then((res) => {
-            if (active && res) {
-                setSplitAudit(res);
-            }
+            if (active) setSplitAudit(res);
         }).catch(() => {});
         return () => {
             active = false;

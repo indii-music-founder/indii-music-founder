@@ -1445,6 +1445,48 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         );
     });
 
+    it.each([
+        { scope: { choice: 'UNKNOWN' }, producerReq: { probability: 0.85 }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: {}, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: '0.85' }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 1.2 }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: Number.NaN }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: 3.5 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: 4 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: Number.POSITIVE_INFINITY } },
+    ])('withholds the split audit for an invalid Jev answer %#', async (answers) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+
+        const result = await judgeSplitSheetVerification([
+            { name: 'Producer', role: 'Producer', splitPct: 40 },
+        ]);
+
+        expect(result).toBeNull();
+    });
+
+    it('accepts boundary answers without inventing an advisory', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                scope: { choice: 'MASTER_ONLY' },
+                producerReq: { probability: 0 },
+                risk: { score: 0 },
+            } },
+        }));
+
+        const result = await judgeSplitSheetVerification([
+            { name: 'Artist', role: 'Artist', splitPct: 100 },
+        ]);
+
+        expect(result).toEqual({
+            rightsScope: 'MASTER_ONLY',
+            needsProducerAgreement: false,
+            splitRiskLevel: 0,
+            advisories: [],
+        });
+    });
+
     it('returns null on failure', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => {
