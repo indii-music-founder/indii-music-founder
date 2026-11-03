@@ -2905,6 +2905,43 @@ describe('judgeSyncLicensingMoodFit (Judgment 46)', () => {
         expect(result.hasExplicitLyricHazard).toBe(false);
         expect(result.syncPitchDeckBlurb).toContain('DARK_THRILLER_SUSPENSE');
     });
+
+    it('keeps the catalog explicit-lyrics hazard when Jev rates it safe', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            scene: { choice: 'DARK_THRILLER_SUSPENSE' },
+            hazard: { noul: 0.01 },
+            fit_score: { score: 4 },
+        } } }));
+
+        const result = await judgeSyncLicensingMoodFit({
+            trackTitle: 'Explicit Track', genre: 'Rap', bpm: 110, moodTags: [],
+            sceneBrief: 'Dark scene', hasExplicitLyrics: true,
+        });
+
+        expect(result.hasExplicitLyricHazard).toBe(true);
+    });
+
+    it.each([
+        { scene: 'UNLISTED_SCENE', hazard: { noul: 0.01 }, fit: { score: 4 } },
+        { scene: 'UPBEAT_COMMERCIAL', hazard: { noul: '0.01' }, fit: { score: 4 } },
+        { scene: 'UPBEAT_COMMERCIAL', hazard: { noul: null }, fit: { score: 4 } },
+        { scene: 'UPBEAT_COMMERCIAL', hazard: { noul: -0.1 }, fit: { score: 4 } },
+        { scene: 'UPBEAT_COMMERCIAL', hazard: { noul: 0.01 }, fit: { score: 8 } },
+    ])('requires review for malformed sync judgments: $scene $hazard $fit', async ({ scene, hazard, fit }) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            scene: { choice: scene }, hazard, fit_score: fit,
+        } } }));
+
+        const result = await judgeSyncLicensingMoodFit({
+            trackTitle: 'Unverified Track', genre: 'Pop', bpm: 110, moodTags: [],
+            sceneBrief: 'Bright ad', hasExplicitLyrics: false,
+        });
+
+        expect(result.hasExplicitLyricHazard).toBe(true);
+        expect(result.syncPitchDeckBlurb).toContain('requires review');
+    });
 });
 
 describe('judgeCameraAngleContinuity (Judgment 47)', () => {

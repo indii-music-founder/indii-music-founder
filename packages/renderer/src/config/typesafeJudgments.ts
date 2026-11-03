@@ -4687,6 +4687,11 @@ export type SyncSceneCategory =
     | 'CLUB_PARTY_NIGHTLIFE'
     | 'NOT_SUITABLE';
 
+const SYNC_SCENE_CATEGORIES: ReadonlySet<string> = new Set<SyncSceneCategory>([
+    'HIGH_OCTANE_ACTION', 'INTIMATE_EMOTIONAL_DRAMA', 'UPBEAT_COMMERCIAL',
+    'DARK_THRILLER_SUSPENSE', 'CLUB_PARTY_NIGHTLIFE', 'NOT_SUITABLE',
+]);
+
 export interface SyncPlacementInput {
     trackTitle: string;
     genre: string;
@@ -4792,16 +4797,24 @@ export async function judgeSyncLicensingMoodFit(
         const hazAns = ans?.hazard as { noul?: unknown } | number | undefined;
         const fitAns = ans?.fit_score as { score?: unknown } | number | undefined;
 
-        const resolvedScene = (typeof sceAns?.choice === 'string' ? sceAns.choice : fallbackCategory) as SyncSceneCategory;
-        const hazProb = typeof hazAns === 'number'
-            ? hazAns
-            : Number((hazAns as { noul?: unknown })?.noul ?? (input.hasExplicitLyrics ? 0.9 : 0.1));
-        const resolvedFit = oneIndexedScore(fitAns, fallbackScore);
+        const selectedScene = sceAns?.choice;
+        const hazProb = boundedJudgmentNumber(hazAns, 'noul', 1);
+        const fitScore = boundedJudgmentNumber(fitAns, 'score', 4);
+        if (typeof selectedScene !== 'string' || !SYNC_SCENE_CATEGORIES.has(selectedScene) || hazProb === null || fitScore === null) {
+            return {
+                recommendedScene: fallbackCategory,
+                syncFitScore: fallbackScore,
+                hasExplicitLyricHazard: true,
+                syncPitchDeckBlurb: `Sync fit for ${input.trackTitle} requires review before pitching.`,
+            };
+        }
+        const resolvedScene = selectedScene as SyncSceneCategory;
+        const resolvedFit = fitScore + 1;
 
         return {
             recommendedScene: resolvedScene,
             syncFitScore: Math.max(1, Math.min(5, Math.round(resolvedFit) || fallbackScore)),
-            hasExplicitLyricHazard: hazProb >= 0.5,
+            hasExplicitLyricHazard: input.hasExplicitLyrics || hazProb >= 0.5,
             syncPitchDeckBlurb: `System One matched "${input.trackTitle}" to ${resolvedScene} (sync fit: ${resolvedFit}/5).`,
         };
     } catch (err: unknown) {
