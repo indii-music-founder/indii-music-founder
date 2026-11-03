@@ -116,9 +116,14 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
     async clearMessages(sessionId: string): Promise<void> {
         const snapshot = await getDocs(collection(db, 'sessions', sessionId, 'messages'));
-        const batch = writeBatch(db);
-        snapshot.docs.forEach(message => batch.delete(message.ref));
-        await batch.commit();
+        // Firestore batches have a finite write limit. Leave room for index
+        // accounting and commit each chunk before marking the parent cleared.
+        const batchSize = 400;
+        for (let start = 0; start < snapshot.docs.length; start += batchSize) {
+            const batch = writeBatch(db);
+            snapshot.docs.slice(start, start + batchSize).forEach(message => batch.delete(message.ref));
+            await batch.commit();
+        }
         await this.update(sessionId, { updatedAt: serverTimestamp(), messageStorage: 'subcollection' } as unknown as Partial<SessionDocument>);
     }
 
