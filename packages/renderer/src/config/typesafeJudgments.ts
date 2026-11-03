@@ -917,11 +917,9 @@ export type CommandDestinationModule =
     | 'creative'
     | 'distribution'
     | 'publishing'
-    | 'rights'
-    | 'analytics'
+    | 'legal'
+    | 'marketing'
     | 'settings'
-    | 'profile'
-    | 'observability'
     | 'none';
 
 export const COMMAND_INTENT_MIN_CONFIDENCE = 0.65;
@@ -936,13 +934,11 @@ export const COMMAND_TARGET_MODULE_QUESTION = {
         creative: 'Album artwork, canvas, video editor, generative visuals, visual branding, photo shoot, Veo video generation.',
         distribution: 'Distributor delivery (Spotify, Apple Music), DDEX, metadata pre-flight QC, release packaging, audio loudness inspection.',
         publishing: 'Songwriting splits, mechanical royalties, PRO registration (ASCAP, BMI), copyright filing, composition catalogs.',
-        rights: 'Master recording rights, split sheet agreements, work-for-hire contracts, legal contracts, licenses.',
-        analytics: 'Streaming audience metrics, playlist charting, radio plays, demographic listener insights, performance stats.',
+        legal: 'Master recording rights, split sheet agreements, work-for-hire contracts, legal contracts, licenses.',
+        marketing: 'Artist profile, bio, press kit, visual brand identity, social links, streaming audience metrics, playlist charting, radio plays, and listener insights.',
         settings: 'App preferences, API keys, audio hardware configuration, keyboard shortcuts, account profile settings.',
-        profile: 'Artist bio, social links, press kit, EPK, artist brand identity.',
-        observability: 'Ops dashboard, internal system health, background jobs, logs.',
         none: 'The query is nonsensical or unrelated to any of these application modules.',
-    },
+    } satisfies Record<CommandDestinationModule, string>,
 };
 
 export const COMMAND_INTENT_ACTION_QUESTION = {
@@ -989,32 +985,34 @@ export async function judgeCommandIntent(
         const modAns = result.data.answers?.target_module as { choice?: unknown; confidence?: unknown } | undefined;
         const actAns = result.data.answers?.intent_action as { choice?: unknown } | undefined;
 
-        if (!modAns || typeof modAns.choice !== 'string') return null;
+        if (!modAns || typeof modAns.choice !== 'string' ||
+            !Object.hasOwn(COMMAND_TARGET_MODULE_QUESTION.criteria, modAns.choice)) return null;
 
-        const modChoice = modAns.choice.toLowerCase() as CommandDestinationModule;
-        const confidence = typeof modAns.confidence === 'number' ? modAns.confidence : 1.0;
+        const modChoice = modAns.choice as CommandDestinationModule;
+        const confidence = modAns.confidence;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < 0 || confidence > 1) return null;
 
         if (confidence < COMMAND_INTENT_MIN_CONFIDENCE || modChoice === 'none') {
             return null;
         }
 
-        const action = typeof actAns?.choice === 'string' && actAns.choice !== 'none'
+        const action = typeof actAns?.choice === 'string' &&
+            Object.hasOwn(COMMAND_INTENT_ACTION_QUESTION.criteria, actAns.choice) && actAns.choice !== 'none'
             ? actAns.choice
             : null;
 
-        const MODULE_LABELS: Record<string, string> = {
+        const MODULE_LABELS: Record<Exclude<CommandDestinationModule, 'none'>, string> = {
             finance: 'Finance & Royalties',
             creative: 'Creative Studio (Art & Video)',
             distribution: 'Distribution & Pre-Flight QC',
             publishing: 'Publishing & Songwriting',
-            rights: 'Rights & Split Sheets',
-            analytics: 'Streaming Analytics',
+            legal: 'Legal & Split Sheets',
+            marketing: 'Marketing & Artist Profile',
             settings: 'Settings & Preferences',
-            profile: 'Artist Profile & EPK',
-            observability: 'Ops Dashboard',
         };
 
-        const suggestedLabel = MODULE_LABELS[modChoice] || modChoice;
+        const suggestedLabel = MODULE_LABELS[modChoice];
 
         return {
             targetModule: modChoice,

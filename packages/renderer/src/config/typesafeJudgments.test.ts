@@ -835,6 +835,38 @@ describe('judgeCommandIntent (Judgment 11)', () => {
         const result = await judgeCommandIntent('gibberish query asdfghjkl');
         expect(result).toBeNull();
     });
+
+    it.each([
+        { choice: 'finance' },
+        { choice: 'finance', confidence: '0.9' },
+        { choice: 'finance', confidence: Number.NaN },
+        { choice: 'finance', confidence: Number.POSITIVE_INFINITY },
+        { choice: 'finance', confidence: -0.1 },
+        { choice: 'finance', confidence: 1.1 },
+        { choice: 'rights', confidence: 0.99 },
+        { choice: 'profile', confidence: 0.99 },
+        { choice: 'unknown', confidence: 0.99 },
+    ])('does not suggest an untrusted module answer %#', async (target_module) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { target_module } } }));
+
+        expect(await judgeCommandIntent('show my artist profile')).toBeNull();
+    });
+
+    it('routes artist profile and audience queries to the visible marketing destination', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            target_module: { choice: 'marketing', confidence: 0.9 },
+            intent_action: { choice: 'INVALID' },
+        } } }));
+
+        expect(await judgeCommandIntent('show my artist profile')).toEqual({
+            targetModule: 'marketing',
+            action: null,
+            suggestedLabel: 'Marketing & Artist Profile',
+            confidence: 0.9,
+        });
+    });
 });
 
 describe('judgeVideoTreatmentPreset (Judgment 12)', () => {

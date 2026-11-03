@@ -74,6 +74,9 @@ export function UnifiedCommandMenu() {
 
     const [searchQuery, setSearchQuery] = React.useState('');
     const [suggestedIntent, setSuggestedIntent] = React.useState<CommandIntentJudgment | null>(null);
+    const eligibleSuggestedIntent = suggestedIntent && generatedSections.some(section =>
+        section.items.some(item => item.id === suggestedIntent.targetModule)
+    ) ? suggestedIntent : null;
 
     React.useEffect(() => {
         if (!isCommandMenuOpen) {
@@ -88,8 +91,11 @@ export function UnifiedCommandMenu() {
             return;
         }
 
+        let active = true;
+        setSuggestedIntent(null);
         const timer = setTimeout(async () => {
             const verdict = await judgeCommandIntent(trimmed);
+            if (!active) return;
             if (verdict && verdict.targetModule && verdict.targetModule !== 'none') {
                 setSuggestedIntent(verdict);
             } else {
@@ -97,7 +103,10 @@ export function UnifiedCommandMenu() {
             }
         }, 200);
 
-        return () => clearTimeout(timer);
+        return () => {
+            active = false;
+            clearTimeout(timer);
+        };
     }, [searchQuery, isCommandMenuOpen]);
 
     // Toggle the menu when ⌘K is pressed
@@ -178,20 +187,20 @@ export function UnifiedCommandMenu() {
 
                 <Command.List className="max-h-[50vh] overflow-y-auto px-2 py-4 custom-scrollbar text-sm font-medium">
                     <Command.Empty className="py-6 text-center text-slate-400">
-                        {suggestedIntent && suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none' ? (
+                        {eligibleSuggestedIntent && eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none' ? (
                             <div className="flex flex-col items-center gap-2">
                                 <span className="text-slate-400">No exact command matches for &quot;{searchQuery}&quot;.</span>
                                 <button
                                     type="button"
                                     onClick={() => runCommand(() => {
-                                        if (suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none') {
-                                            setModule(suggestedIntent.targetModule as ModuleId);
+                                        if (eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none') {
+                                            setModule(eligibleSuggestedIntent.targetModule);
                                         }
                                     })}
                                     className="mt-2 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors border border-amber-500/30"
                                 >
                                     <Sparkles className="w-4 h-4 text-amber-400" />
-                                    <span>Open {suggestedIntent.suggestedLabel}</span>
+                                    <span>Open {eligibleSuggestedIntent.suggestedLabel}</span>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 uppercase font-mono tracking-wider ml-1">AI Match</span>
                                 </button>
                             </div>
@@ -200,19 +209,19 @@ export function UnifiedCommandMenu() {
                         )}
                     </Command.Empty>
 
-                    {suggestedIntent && suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none' && (
+                    {eligibleSuggestedIntent && eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none' && (
                         <Command.Group heading="Suggested by indii AI" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-amber-500/10 [&_[cmdk-item][data-selected]]:text-white">
                             <Command.Item
-                                value={`${searchQuery} ${suggestedIntent.suggestedLabel} ${suggestedIntent.targetModule}`}
+                                value={`${searchQuery} ${eligibleSuggestedIntent.suggestedLabel} ${eligibleSuggestedIntent.targetModule}`}
                                 onSelect={() => runCommand(() => {
-                                    if (suggestedIntent.targetModule && suggestedIntent.targetModule !== 'none') {
-                                        setModule(suggestedIntent.targetModule as ModuleId);
+                                    if (eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none') {
+                                        setModule(eligibleSuggestedIntent.targetModule);
                                     }
                                 })}
                                 className={itemClass}
                             >
                                 <Sparkles className="w-4 h-4 text-amber-400" />
-                                <span className="text-amber-200 font-semibold">{suggestedIntent.suggestedLabel}</span>
+                                <span className="text-amber-200 font-semibold">{eligibleSuggestedIntent.suggestedLabel}</span>
                                 <span className="text-xs text-slate-400 ml-2">Matched intent: &quot;{searchQuery}&quot;</span>
                                 <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">AI match</span>
                             </Command.Item>

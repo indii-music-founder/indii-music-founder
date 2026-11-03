@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedCommandMenu } from './UnifiedCommandMenu';
 import { useStore } from '@/core/store';
+import { judgeCommandIntent } from '@/config/typesafeJudgments';
 
 // jsdom doesn't implement scrollIntoView; cmdk calls it on mount to keep the
 // selected item in view. Stub it so the dialog can render in tests at all.
@@ -9,6 +10,10 @@ Element.prototype.scrollIntoView = vi.fn();
 
 vi.mock('@/core/store', () => ({
     useStore: vi.fn(),
+}));
+
+vi.mock('@/config/typesafeJudgments', () => ({
+    judgeCommandIntent: vi.fn(),
 }));
 
 vi.mock('@/modules/debug', () => ({
@@ -20,7 +25,7 @@ vi.mock('@/hooks/useGodMode', () => ({
     useGodMode: () => mockUseGodMode(),
 }));
 
-const mockCanAccessModule = vi.fn(() => true);
+const mockCanAccessModule = vi.fn((_id: string) => true);
 vi.mock('@/core/context/OrganizationAccessContext', () => ({
     useOrganizationAccess: () => ({ canAccessModule: mockCanAccessModule }),
 }));
@@ -112,6 +117,59 @@ describe('UnifiedCommandMenu', () => {
 
         expect(screen.queryByText('Art & Merch Dept')).not.toBeInTheDocument();
         expect(screen.getByText('Publishing Department')).toBeInTheDocument();
+    });
+
+    it('does not show a Jev suggestion for a gated or inaccessible module', async () => {
+        const judge = vi.mocked(judgeCommandIntent);
+        judge.mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
+        mockGatedModules.mockReturnValue(new Set(['finance']));
+        render(<UnifiedCommandMenu />);
+        fireEvent.change(screen.getByPlaceholderText(/Search commands/i), { target: { value: 'show my royalties' } });
+
+        await waitFor(() => expect(judge).toHaveBeenCalledWith('show my royalties'));
+        await act(async () => { await judge.mock.results[0]?.value; });
+        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
+    });
+
+    it('shows an eligible Jev suggestion', async () => {
+        vi.mocked(judgeCommandIntent).mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
+        const setModule = vi.fn();
+        mockFlatStore({ setModule });
+        render(<UnifiedCommandMenu />);
+        fireEvent.change(screen.getByPlaceholderText(/Search commands/i), { target: { value: 'show my royalties' } });
+
+        expect(await screen.findByText('Suggested by indii AI')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Finance & Royalties').closest('[cmdk-item]')!);
+        expect(setModule).toHaveBeenCalledWith('finance');
+    });
+
+    it('does not let a Jev suggestion bypass organization access', async () => {
+        const judge = vi.mocked(judgeCommandIntent);
+        judge.mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
+        mockCanAccessModule.mockImplementation((id) => id !== 'finance');
+        render(<UnifiedCommandMenu />);
+        fireEvent.change(screen.getByPlaceholderText(/Search commands/i), { target: { value: 'show my royalties' } });
+
+        await waitFor(() => expect(judge).toHaveBeenCalledWith('show my royalties'));
+        await act(async () => { await judge.mock.results[0]?.value; });
+        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
+    });
+
+    it('ignores an older Jev answer after the search changes', async () => {
+        let resolveFirst!: (value: Awaited<ReturnType<typeof judgeCommandIntent>>) => void;
+        const judge = vi.mocked(judgeCommandIntent);
+        judge.mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }));
+        render(<UnifiedCommandMenu />);
+        const input = screen.getByPlaceholderText(/Search commands/i);
+        fireEvent.change(input, { target: { value: 'show my royalties' } });
+        await waitFor(() => expect(judge).toHaveBeenCalledWith('show my royalties'));
+
+        fireEvent.change(input, { target: { value: 'make artwork' } });
+        await act(async () => {
+            resolveFirst({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
+        });
+
+        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
     });
 
     it('shows a Recent section from navigation history', () => {
