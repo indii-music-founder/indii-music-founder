@@ -74,31 +74,16 @@ class MemoryBankService {
         }
     }
 
-    /**
-     * Paginated memory search — fetches all matching results across pages.
-     * @returns all matching results with honest search scope metrics
-     */
-    async searchMemoriesAllPages(
+    /** The backend exposes one ranked vector page and no continuation cursor. */
+    async searchMemoriesScoped(
         userId: string,
         query: string,
-        maxPages: number = 10
-    ): Promise<{ results: MemoryBankResult[]; totalPages: number; scopeMessage: string }> {
-        const allResults: MemoryBankResult[] = [];
-        let page = 0;
-        let hasMore = true;
-
-        while (hasMore && page < maxPages) {
-            const response = await this.searchMemories(userId, query, 100);
-            allResults.push(...response.results);
-            hasMore = response.hasMore;
-            page++;
-        }
-
-        const scopeMessage = allResults.length > 0
-            ? `Searched memory across ${page} page(s), found ${allResults.length} matching memory item(s).`
-            : `Searched memory across ${page} page(s), found no matching results.`;
-
-        return { results: allResults, totalPages: page, scopeMessage };
+    ): Promise<{ results: MemoryBankResult[]; hasMore: boolean; scopeMessage: string }> {
+        const response = await this.searchMemories(userId, query, 100);
+        const results = [...new Map(response.results.map(result => [result.id, result])).values()];
+        const scopeMessage = `Searched the first ranked memory page; found ${results.length} unique item(s).` +
+            (response.hasMore ? ' More matches may exist beyond this page.' : ' No further matches were reported.');
+        return { results, hasMore: response.hasMore, scopeMessage };
     }
 
     /**
