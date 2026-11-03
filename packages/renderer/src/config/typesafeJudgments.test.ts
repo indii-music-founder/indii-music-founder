@@ -1541,8 +1541,8 @@ describe('judgeCampaignBidAction (Judgment 26)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    action: { choice: 'SCALE_UP' },
-                    confidence: { score: 2.7 },
+                    action: { choice: 'SCALE_UP', confidence: 0.84 },
+                    evidence: { score: 2.7 },
                 },
             },
         }));
@@ -1557,8 +1557,11 @@ describe('judgeCampaignBidAction (Judgment 26)', () => {
         });
 
         expect(result.action).toBe('SCALE_UP');
-        expect(result.confidenceScore).toBe(0.9);
+        expect(result.confidenceScore).toBe(0.84);
+        expect(result.evidenceScore).toBeCloseTo(0.9);
+        expect(result.decisionSource).toBe('jev');
         expect(result.auditReason).toContain('SCALE_UP');
+        expect(result.auditReason).toContain('2.7/3');
     });
 
     it('falls back to PAUSE heuristic on low ROAS when Jev is offline', async () => {
@@ -1574,7 +1577,57 @@ describe('judgeCampaignBidAction (Judgment 26)', () => {
         });
 
         expect(result.action).toBe('PAUSE');
-        expect(result.confidenceScore).toBe(0.9);
+        expect(result.confidenceScore).toBeNull();
+        expect(result.evidenceScore).toBeNull();
+        expect(result.decisionSource).toBe('heuristic');
+    });
+
+    it('does not invent statistical evidence when Jev omits its Score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { action: { choice: 'HOLD', confidence: 0.62 } } },
+        }));
+
+        const result = await judgeCampaignBidAction({
+            campaignId: 'camp_3', spendToDateCents: 3000, roas: 1.8,
+            ctr: 0.012, frequency: 2.1, targetGenreAudience: 'Soul',
+        });
+
+        expect(result).toMatchObject({
+            action: 'HOLD', confidenceScore: 0.62, evidenceScore: null, decisionSource: 'jev',
+        });
+    });
+
+    it.each([undefined, NaN, -0.1, 1.1])('uses a labeled heuristic when Choice confidence is invalid (%s)', async confidence => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { action: { choice: 'SCALE_UP', confidence }, evidence: { score: 2.7 } } },
+        }));
+
+        const result = await judgeCampaignBidAction({
+            campaignId: 'camp_4', spendToDateCents: 8000, roas: 0.4,
+            ctr: 0.005, frequency: 4.2, targetGenreAudience: 'Pop',
+        });
+
+        expect(result).toMatchObject({
+            action: 'PAUSE', confidenceScore: null, evidenceScore: null, decisionSource: 'heuristic',
+        });
+    });
+
+    it.each([Infinity, -0.1, 3.1, '2.7'])('rejects malformed statistical evidence (%s)', async score => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { action: { choice: 'HOLD', confidence: 0.7 }, evidence: { score } } },
+        }));
+
+        const result = await judgeCampaignBidAction({
+            campaignId: 'camp_5', spendToDateCents: 3000, roas: 1.8,
+            ctr: 0.012, frequency: 2.1, targetGenreAudience: 'Soul',
+        });
+
+        expect(result).toMatchObject({
+            action: 'HOLD', confidenceScore: 0.7, evidenceScore: null, decisionSource: 'jev',
+        });
     });
 });
 

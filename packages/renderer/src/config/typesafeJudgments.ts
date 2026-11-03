@@ -2210,7 +2210,11 @@ export type ExecutionAction = 'SCALE_UP' | 'SCALE_DOWN' | 'PAUSE' | 'HOLD';
 
 export interface CampaignDecisionContract {
     action: ExecutionAction;
-    confidenceScore: number;
+    /** Jev Choice confidence; absent for deterministic heuristic decisions. */
+    confidenceScore: number | null;
+    /** Normalized Jev-rated evidence strength; not Choice confidence or a statistical test. */
+    evidenceScore: number | null;
+    decisionSource: 'jev' | 'heuristic';
     auditReason: string;
 }
 
@@ -2227,11 +2231,17 @@ export const CAMPAIGN_BID_ACTION_QUESTION = {
     },
 };
 
-export const CAMPAIGN_CONFIDENCE_SCORE_QUESTION = {
+export const CAMPAIGN_EVIDENCE_SCORE_QUESTION = {
     type: 'score' as const,
     instructions:
-        'Score the statistical confidence of this campaign adjustment decision (0 = low data/uncertain, 3 = statistically decisive).',
-    criteria: ['Insufficient data or uncertain.', 'Early directional evidence.', 'Strong evidence with adequate sample.', 'Statistically decisive evidence.'],
+        'Rate the strength of evidence for this campaign adjustment from the supplied metrics. ' +
+        'Do not infer sample size, conversions, or statistical significance when those values are absent.',
+    criteria: [
+        'Too little data to assess the adjustment.',
+        'Early directional evidence from the supplied metrics.',
+        'Several metrics support the same adjustment, but sample adequacy is unverified.',
+        'Several metrics support the adjustment and supplied sample data establishes adequacy.',
+    ],
 };
 
 export async function judgeCampaignBidAction(
@@ -2242,27 +2252,35 @@ export async function judgeCampaignBidAction(
         if (snapshot.roas >= 2.5 && snapshot.ctr >= 0.015 && snapshot.frequency < 2.5) {
             return {
                 action: 'SCALE_UP',
-                confidenceScore: 0.85,
+                confidenceScore: null,
+                evidenceScore: null,
+                decisionSource: 'heuristic',
                 auditReason: 'Fallback heuristic: High ROAS and strong CTR with low frequency.',
             };
         }
         if (snapshot.roas < 0.8 || snapshot.frequency > 3.8) {
             return {
                 action: 'PAUSE',
-                confidenceScore: 0.9,
+                confidenceScore: null,
+                evidenceScore: null,
+                decisionSource: 'heuristic',
                 auditReason: 'Fallback heuristic: Unprofitable ROAS or severe audience ad fatigue.',
             };
         }
         if (snapshot.roas < 1.3 || snapshot.ctr < 0.008) {
             return {
                 action: 'SCALE_DOWN',
-                confidenceScore: 0.75,
+                confidenceScore: null,
+                evidenceScore: null,
+                decisionSource: 'heuristic',
                 auditReason: 'Fallback heuristic: Soft performance below target return.',
             };
         }
         return {
             action: 'HOLD',
-            confidenceScore: 0.7,
+            confidenceScore: null,
+            evidenceScore: null,
+            decisionSource: 'heuristic',
             auditReason: 'Fallback heuristic: Balanced metrics within target bounds.',
         };
     };
@@ -2282,26 +2300,32 @@ export async function judgeCampaignBidAction(
             state: { metrics: snapshot },
             questions: {
                 action: CAMPAIGN_BID_ACTION_QUESTION,
-                confidence: CAMPAIGN_CONFIDENCE_SCORE_QUESTION,
+                evidence: CAMPAIGN_EVIDENCE_SCORE_QUESTION,
             },
         });
 
         const ans = result.data.answers;
-        const actAns = ans?.action as { choice?: unknown } | undefined;
-        const confAns = ans?.confidence as { score?: unknown } | undefined;
-
-        const action = (typeof actAns?.choice === 'string' ? actAns.choice : 'HOLD') as ExecutionAction;
-        const scoreNorm = typeof confAns?.score === 'number' ? Math.min(1.0, confAns.score / 3.0) : 0.8;
-
+        const actAns = ans?.action as { choice?: unknown; confidence?: unknown } | undefined;
+        const evidenceAns = ans?.evidence as { score?: unknown } | undefined;
+        const action = actAns?.choice;
+        const confidence = actAns?.confidence;
         const validActions: ExecutionAction[] = ['SCALE_UP', 'SCALE_DOWN', 'PAUSE', 'HOLD'];
-        if (!validActions.includes(action)) {
+        if (typeof action !== 'string' || !validActions.includes(action as ExecutionAction) ||
+            typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
             return fallbackDecision();
         }
 
+        const rawEvidence = evidenceAns?.score;
+        const evidenceScore = typeof rawEvidence === 'number' && Number.isFinite(rawEvidence) &&
+            rawEvidence >= 0 && rawEvidence <= 3 ? rawEvidence / 3 : null;
+
         return {
-            action,
-            confidenceScore: scoreNorm,
-            auditReason: `Jev System One classification (${action}) verified with confidence ${(scoreNorm * 100).toFixed(0)}%.`,
+            action: action as ExecutionAction,
+            confidenceScore: confidence,
+            evidenceScore,
+            decisionSource: 'jev',
+            auditReason: `Jev System One classification (${action}) with Choice confidence ${(confidence * 100).toFixed(0)}%` +
+                (evidenceScore === null ? '; evidence rating unavailable.' : `; Jev-rated evidence strength ${rawEvidence}/3.`),
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'campaign bid action judgment');
