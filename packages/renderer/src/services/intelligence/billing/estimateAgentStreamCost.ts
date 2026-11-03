@@ -8,7 +8,13 @@ export function estimateAgentStreamCost(
     model: string,
     maxOutputTokens: unknown,
 ): number {
-    const serialized = JSON.stringify({ prompt, systemInstruction, tools });
+    // Mirror the backend's serialized contents envelope. A raw string is
+    // wrapped as one user content before submission; pricing the raw string
+    // alone can round one cent-microstep below the server's admission floor.
+    const contents = typeof prompt === 'string'
+        ? [{ role: 'user', parts: [{ text: prompt }] }]
+        : prompt;
+    const serialized = JSON.stringify({ contents, systemInstruction, tools });
     if (typeof serialized !== 'string') throw new Error('Cannot estimate an unserializable AI request');
     // Fine-tuned endpoint IDs use their base model's rate. Unknown text models
     // use the highest declared text rate instead of a zero-cost fallback.

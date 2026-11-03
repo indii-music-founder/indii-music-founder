@@ -20,4 +20,15 @@ describe('estimateAgentStreamCost', () => {
         const expanded = estimateAgentStreamCost('prompt', 'x'.repeat(40_000), [{ schema: 'x'.repeat(40_000) }], 'gemini-3.1-pro-preview', 1);
         expect(expanded).toBeGreaterThan(plain);
     });
+
+    it('prices the backend contents envelope at rounding boundaries', () => {
+        const prompt = 'x'.repeat(3_117);
+        const client = estimateAgentStreamCost(prompt, undefined, [], 'gemini-3.1-pro-preview', 1);
+        const serverEnvelope = JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            tools: [],
+        });
+        const serverFloor = Math.max(0.001, Math.ceil(((Math.ceil(serverEnvelope.length / 4) * 1.25 + 10) / 1_000_000) * 100_000) / 100_000);
+        expect(client).toBeGreaterThanOrEqual(serverFloor);
+    });
 });
