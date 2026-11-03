@@ -50,7 +50,7 @@ export interface PendingToolApproval {
     description: string;
     /** Non-computer calls must resolve against their original renderer session binding. */
     bindingSessionId?: string;
-    status: 'pending' | 'approved' | 'denied' | 'executed' | 'failed';
+    status: 'pending' | 'approved' | 'claimed' | 'denied' | 'executed' | 'failed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
     resolvedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
     denyReason?: string;
@@ -303,6 +303,21 @@ class ToolApprovalService {
             callback(approvals);
         }, (error) => {
             logger.error('[ToolApprovalService] onPendingApprovals listener error:', error);
+        });
+    }
+
+    /** Show claimed calls until a recorded outcome resolves their ambiguity. */
+    onUnresolvedApprovals(callback: (approvals: (PendingToolApproval & { id: string })[]) => void): Unsubscribe {
+        const ref = getApprovalsRef();
+        if (!ref) return () => {};
+
+        const q = query(ref, where('status', 'in', ['pending', 'approved', 'claimed']), orderBy('createdAt', 'desc'));
+        return onSnapshot(q, snapshot => {
+            const approvals: (PendingToolApproval & { id: string })[] = [];
+            snapshot.forEach(d => approvals.push({ ...(d.data() as PendingToolApproval), id: d.id }));
+            callback(approvals);
+        }, error => {
+            logger.error('[ToolApprovalService] onUnresolvedApprovals listener error:', error);
         });
     }
 }

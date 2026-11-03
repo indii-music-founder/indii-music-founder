@@ -80,7 +80,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
     const [busyId, setBusyId] = useState<string | null>(null);
 
     useEffect(() => {
-        const unsubscribe = toolApprovalService.onPendingApprovals(setApprovals);
+        const unsubscribe = toolApprovalService.onUnresolvedApprovals(setApprovals);
         return unsubscribe;
     }, []);
 
@@ -123,7 +123,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                     </div>
                     Approvals{approvals.length > 0 ? ` (${approvals.length})` : ''}
                 </h3>
-                <button onClick={toggleRightPanel} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+                <button onClick={toggleRightPanel} aria-label="Close approvals panel" className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
                     <ChevronRight size={16} />
                 </button>
             </div>
@@ -132,7 +132,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                 {approvals.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-32 text-center opacity-50">
                         <ShieldAlert size={28} className="mb-2 text-red-400" />
-                        <p className="text-sm">No pending approvals</p>
+                        <p className="text-sm">No pending or unresolved actions</p>
                         <p className="text-xs mt-1">Destructive actions (computer_click, rotate_credentials, etc.) pause here before running</p>
                     </div>
                 ) : (
@@ -150,13 +150,17 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                                 </span>
                             </div>
                             <p className="text-xs text-gray-400">{approval.description}</p>
-                            {!toolApprovalService.canApproveInThisSession(approval) && (
+                            {approval.status !== 'pending' ? (
+                                <p className="text-xs text-amber-300" role="status">
+                                    Outcome needs review. This action was claimed, but no final result is recorded. It may have run; do not request it again until reconciled.
+                                </p>
+                            ) : !toolApprovalService.canApproveInThisSession(approval) && (
                                 <p className="text-xs text-amber-300">This action was requested in another session. Approve it there, or deny it here and request it again.</p>
                             )}
                             <pre className="text-[10px] text-gray-500 bg-black/40 rounded p-2 overflow-x-auto max-h-24">
                                 {JSON.stringify(approval.args, null, 2)}
                             </pre>
-                            <div className="flex items-center gap-2 pt-1">
+                            {approval.status === 'pending' && <div className="flex items-center gap-2 pt-1">
                                 <button
                                     onClick={() => handleApprove(approval.id)}
                                     disabled={busyId === approval.id || !toolApprovalService.canApproveInThisSession(approval)}
@@ -171,7 +175,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                                 >
                                     <X size={12} /> Deny
                                 </button>
-                            </div>
+                            </div>}
                         </motion.div>
                     ))
                 )}
