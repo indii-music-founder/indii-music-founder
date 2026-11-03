@@ -636,6 +636,32 @@ describe('judgeCollaboratorRoleSemantics (Judgment 8)', () => {
         });
     });
 
+    it.each([undefined, null, '0', false, NaN, Infinity, -0.1, 1.1, 0.5])(
+        'abstains from agreement decisions on invalid or ambiguous Noul (%s)', async noul => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    category: { choice: 'producer', confidence: 0.95 },
+                    requires_agreement: { noul },
+                } },
+            }));
+            expect(await judgeCollaboratorRoleSemantics('Beat Producer')).toBeNull();
+        },
+    );
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'abstains when Choice confidence is invalid (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    category: { choice: 'producer', confidence },
+                    requires_agreement: { noul: 0.9 },
+                } },
+            }));
+            expect(await judgeCollaboratorRoleSemantics('Beat Producer')).toBeNull();
+        },
+    );
+
     it('returns null on failure or empty input', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Proxy down'); });

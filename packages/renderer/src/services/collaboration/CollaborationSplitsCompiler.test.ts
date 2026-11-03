@@ -244,6 +244,21 @@ describe('CollaborationSplitsCompiler', () => {
     );
   });
 
+  it('does not let a semantic no clear the producer agreement gate for a known producer role', () => {
+    const input: CollaborationSplitsInput = {
+      trackId: 'track-producer', trackTitle: 'Beat',
+      collaborators: [{
+        id: 'producer-1', name: 'Pat', roles: ['Beat Producer'],
+        contributionNotes: 'Made the beat', proposedSplit: 100,
+        approvalStatus: 'approved', hasAgreement: false,
+        requiresProducerAgreement: false,
+      }],
+    };
+    const run = compiler.compile(input, ctx);
+    expect(run.findings).toContainEqual(expect.objectContaining({ title: 'Missing Producer Agreement' }));
+    expect(run.approvalGates).toContainEqual(expect.objectContaining({ riskTier: 'blocked' }));
+  });
+
   it('should asynchronously enrich collaborator roles via judgeCollaboratorRoleSemantics in compileAsync', async () => {
     const judgeSpy = vi.spyOn(typesafeJudgments, 'judgeCollaboratorRoleSemantics');
     judgeSpy.mockImplementation(async (role: string) => {

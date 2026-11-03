@@ -673,6 +673,9 @@ export interface RoleSemanticJudgment {
     confidence: number;
 }
 
+export const PRODUCER_AGREEMENT_YES_MIN = 0.70;
+export const PRODUCER_AGREEMENT_NO_MAX = 0.30;
+
 /**
  * Semantically judge collaborator role strings to determine their primary category
  * and whether a standard producer agreement is legally required.
@@ -707,17 +710,18 @@ export async function judgeCollaboratorRoleSemantics(
         if (!catAns || typeof catAns.choice !== 'string') return null;
 
         const choice = catAns.choice.toLowerCase();
-        const confidence = typeof catAns.confidence === 'number' ? catAns.confidence : 1.0;
+        const confidence = catAns.confidence;
         const validCategories: CollaboratorRoleCategory[] = ['producer', 'writer', 'featured_artist', 'engineer', 'other'];
         if (!validCategories.includes(choice as CollaboratorRoleCategory)) return null;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
 
         const agreeProb = typeof agreeAns === 'number'
             ? agreeAns
-            : Number((agreeAns as { noul?: unknown })?.noul);
+            : (agreeAns as { noul?: unknown } | null)?.noul;
 
-        const isProducerRequiringAgreement = Number.isFinite(agreeProb)
-            ? agreeProb >= 0.70
-            : choice === 'producer';
+        if (typeof agreeProb !== 'number' || !Number.isFinite(agreeProb) || agreeProb < 0 || agreeProb > 1 ||
+            (agreeProb > PRODUCER_AGREEMENT_NO_MAX && agreeProb < PRODUCER_AGREEMENT_YES_MIN)) return null;
+        const isProducerRequiringAgreement = agreeProb >= PRODUCER_AGREEMENT_YES_MIN;
 
         return {
             roleCategory: choice as CollaboratorRoleCategory,
