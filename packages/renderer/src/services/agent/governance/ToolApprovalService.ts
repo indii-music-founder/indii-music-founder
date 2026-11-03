@@ -250,7 +250,10 @@ class ToolApprovalService {
             try {
                 await updateDoc(approvalDocRef, {
                     status: result.success ? 'executed' : 'failed',
-                    result: { success: result.success, error: result.error },
+                    result: {
+                        success: result.success,
+                        ...(typeof result.error === 'string' ? { error: result.error } : {}),
+                    },
                 });
             } catch (error: unknown) {
                 logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`, error);

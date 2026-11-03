@@ -146,6 +146,11 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             const globalTool = vi.fn().mockResolvedValue({ success: true, data: 'wrong implementation' });
             mocks.toolRegistry = { execute_code: globalTool };
             await bindApproval('execute_code', { code: 'print(1)' }, localTool);
+            mocks.updateDoc.mockImplementation((_ref, patch) => {
+                if (patch.result && Object.values(patch.result).includes(undefined)) {
+                    throw new Error('Firestore does not accept undefined fields');
+                }
+            });
 
             const result = await toolApprovalService.approve('approval-1');
 
@@ -157,6 +162,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(1, expect.anything(), expect.objectContaining({ status: 'approved' }));
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'executed' }));
+            expect(mocks.updateDoc.mock.calls[1]?.[1]).toEqual({ status: 'executed', result: { success: true } });
         });
 
         it('refuses a pending record without the original renderer binding', async () => {
