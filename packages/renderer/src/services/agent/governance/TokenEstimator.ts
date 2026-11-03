@@ -84,8 +84,10 @@ export class TokenEstimator {
             inputTokens += this.TOOL_BASE_TOKENS + Math.ceil(toolStr.length / this.CHARS_PER_TOKEN);
         }
 
+        const validBudget = Number.isFinite(remainingBudget) && remainingBudget >= 0;
+        const validOutput = Number.isFinite(expectedOutputTokens) && expectedOutputTokens >= 0;
         const totalProjected = inputTokens + expectedOutputTokens;
-        const willExceed = totalProjected > remainingBudget;
+        const willExceed = !validBudget || !validOutput || totalProjected > remainingBudget;
 
         if (willExceed) {
             logger.warn(`[TokenEstimator] Execution Blocked: Projected usage (${totalProjected}) exceeds remaining budget (${remainingBudget}). Input Tokens: ${inputTokens}, Tool Count: ${tools.length}`);

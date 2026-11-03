@@ -1261,7 +1261,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     undefined,
                     allFunctions,
                     1500000, // Safe ceiling for 2M token context window (leaves room for 500K output)
-                    1000     // Expected output tokens
+                    generationConfig.maxOutputTokens // Reserve the full configured output allowance
                 );
 
                 if (tokenEstimate.willExceed) {
