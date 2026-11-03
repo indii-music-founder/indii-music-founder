@@ -92,8 +92,7 @@ import { registerSFTPHandlers } from './handlers/sftp';
 import { sftpService } from './services/SFTPService';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
-import { registerComputerHandlers } from './handlers/computer';
-import { computerExecutionService } from './services/ComputerExecutionService';
+import { abortComputerControl, registerComputerHandlers } from './handlers/computer';
 import { registerBrandHandlers } from './handlers/brand';
 import { registerPublicistHandlers } from './handlers/publicist';
 import { registerMarketingHandlers } from './handlers/marketing';
@@ -502,7 +501,7 @@ if (!gotTheLock) {
         // claimed by the OS/another app) is non-fatal — the in-app abort button still works.
         try {
             const registered = globalShortcut.register('CommandOrControl+Shift+Escape', () => {
-                computerExecutionService.abort();
+                abortComputerControl();
                 log.warn('[Main] Computer control kill switch triggered via global hotkey.');
             });
             if (!registered) {

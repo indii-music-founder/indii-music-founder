@@ -81,6 +81,7 @@ export class ComputerAuthorizationService {
     private readonly capabilities = new Map<string, Capability>();
     private readonly driveCapabilities = new Map<string, DriveCapability>();
     private readonly pendingClaims = new Set<string>();
+    private abortGeneration = 0;
 
     constructor(
         private readonly backend: ComputerAuthorizationBackend,
@@ -90,6 +91,7 @@ export class ComputerAuthorizationService {
     ) {}
 
     async authorize(input: { idToken: string; approvalId: string; rendererId: number; rendererSessionId: string; confirm: (scope: ComputerApprovalScope) => Promise<boolean> }): Promise<{ token: string; expiresAt: number }> {
+        const generation = this.abortGeneration;
         if (!input.idToken || !input.approvalId || !input.rendererSessionId) throw new Error('Computer authorization requires identity, approval, and renderer session.');
         const identity = await this.backend.verifyIdentity(input.idToken);
         if (!identity.uid) throw new Error('Computer authorization requires a verified signed-in user.');
@@ -109,6 +111,7 @@ export class ComputerAuthorizationService {
         try {
             const scope = { userId: identity.uid, approvalId: approval.id, agentId: approval.agentId, toolName: approval.toolName, action, args: normalizeComputerArgs(action, approval.args) };
             if (!await input.confirm(scope)) throw new Error('Computer approval was cancelled by the user.');
+            if (generation !== this.abortGeneration) throw new Error('Computer control was aborted during approval.');
             claimed = await this.backend.claimApproval(identity.uid, approval, input.idToken);
         } finally {
             this.pendingClaims.delete(claimKey);
@@ -116,6 +119,7 @@ export class ComputerAuthorizationService {
         if (claimed.status !== 'claimed' || claimed.userId !== identity.uid || claimed.id !== approval.id || claimed.agentId !== approval.agentId || claimed.toolName !== approval.toolName || digest(action, claimed.args) !== digest(action, approval.args)) {
             throw new Error('Trusted approval claim did not preserve the approved scope.');
         }
+        if (generation !== this.abortGeneration) throw new Error('Computer control was aborted during approval.');
         this.prune();
         const token = randomBytes(32).toString('base64url');
         const expiresAt = this.now() + this.capabilityTtlMs;
@@ -174,6 +178,13 @@ export class ComputerAuthorizationService {
     }
 
     revokeAllDriveSessions(): void {
+        for (const session of this.driveCapabilities.values()) session.revoked = true;
+        this.prune();
+    }
+
+    revokeAll(): void {
+        this.abortGeneration += 1;
+        for (const capability of this.capabilities.values()) capability.state = 'revoked';
         for (const session of this.driveCapabilities.values()) session.revoked = true;
         this.prune();
     }

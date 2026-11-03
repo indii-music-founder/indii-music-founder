@@ -86,4 +86,41 @@ describe('ComputerAuthorizationService boundary', () => {
         expect(() => service.consumeDriveAction({ sessionToken: drive.sessionToken, rendererId: 7, rendererSessionId: authInput.rendererSessionId, agentId: 'agent-1', action: 'click' })).not.toThrow();
         expect(() => service.consumeDriveAction({ sessionToken: drive.sessionToken, rendererId: 7, rendererSessionId: authInput.rendererSessionId, agentId: 'agent-1', action: 'open_app' })).toThrow(/does not cover/);
     });
+
+    it('revokes action and drive tokens when computer control is aborted', async () => {
+        const { service } = setup();
+        const { token } = await service.authorize(authInput);
+        const action = { token, rendererId: 7, rendererSessionId: authInput.rendererSessionId,
+            agentId: 'agent-1', toolName: 'computer_click', action: 'click' as const,
+            args: { x: 10, y: 20, button: 'left' } };
+        service.revokeAll();
+        expect(() => service.consume(action)).toThrow(/missing, revoked/);
+
+        const driveApproval = approval({ toolName: 'computer_drive', args: { goal: 'Open settings', maxSteps: 2 } });
+        const drive = setup({ getApproval: vi.fn().mockResolvedValue(driveApproval) }).service;
+        const driveToken = await drive.authorize(authInput);
+        const session = drive.beginDrive({ token: driveToken.token, rendererId: 7,
+            rendererSessionId: authInput.rendererSessionId, agentId: 'agent-1', args: driveApproval.args });
+        drive.revokeAll();
+        expect(() => drive.consumeDriveAction({ sessionToken: session.sessionToken, rendererId: 7,
+            rendererSessionId: authInput.rendererSessionId, agentId: 'agent-1', action: 'click' })).toThrow(/missing or revoked/);
+    });
+
+    it('does not mint a token if abort happens during native confirmation', async () => {
+        const { service, backend } = setup();
+        await expect(service.authorize({
+            ...authInput, confirm: async () => { service.revokeAll(); return true; },
+        })).rejects.toThrow(/aborted during approval/);
+        expect(backend.claimApproval).not.toHaveBeenCalled();
+    });
+
+    it('does not mint a token if abort happens while the trusted claim is in flight', async () => {
+        const { service } = setup({
+            claimApproval: vi.fn().mockImplementation(async (_uid, stored) => {
+                service.revokeAll();
+                return { ...stored, status: 'claimed' };
+            }),
+        });
+        await expect(service.authorize(authInput)).rejects.toThrow(/aborted during approval/);
+    });
 });

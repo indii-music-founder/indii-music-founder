@@ -9,6 +9,10 @@ import { ComputerAuthorizationService, type ComputerAction, type ComputerApprova
 import { FirebaseComputerAuthorizationBackend } from '../services/computer/FirebaseComputerAuthorizationBackend';
 
 const authorizationService = new ComputerAuthorizationService(new FirebaseComputerAuthorizationBackend());
+export function abortComputerControl(): void {
+    computerExecutionService.abort();
+    authorizationService.revokeAll();
+}
 const SessionId = z.string().min(16).max(256);
 const Token = z.string().min(32).max(256);
 const Authorization = z.object({ token: Token, rendererSessionId: SessionId, agentId: z.string().min(1).max(128) }).strict();
@@ -121,7 +125,7 @@ export function registerComputerHandlers() {
         catch (error) { return failure('Computer type denied', error); }
     });
     ipcMain.handle('computer:abort', async event => {
-        try { validateSender(event); computerExecutionService.abort(); authorizationService.revokeAllDriveSessions(); return { success: true, data: { aborted: true } }; }
+        try { validateSender(event); abortComputerControl(); return { success: true, data: { aborted: true } }; }
         catch (error) { return failure('Computer abort failed', error); }
     });
     ipcMain.handle('computer:get-abort-state', async event => {
