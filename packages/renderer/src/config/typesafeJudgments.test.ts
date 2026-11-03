@@ -902,6 +902,24 @@ describe('judgeVideoTreatmentPreset (Judgment 12)', () => {
         const result = await judgeVideoTreatmentPreset('completely unrelated floating fruit');
         expect(result).toBeNull();
     });
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'does not select a treatment from invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { preset: { choice: 'neon-night', confidence } } },
+            }));
+            expect(await judgeVideoTreatmentPreset('neon stage lights')).toBeNull();
+        },
+    );
+
+    it('rejects a Choice outside the declared treatment options', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { preset: { choice: '__proto__', confidence: 0.99 } } },
+        }));
+        expect(await judgeVideoTreatmentPreset('unknown direction')).toBeNull();
+    });
 });
 
 describe('judgeVideoAspectRatioIntent (Judgment 13)', () => {
