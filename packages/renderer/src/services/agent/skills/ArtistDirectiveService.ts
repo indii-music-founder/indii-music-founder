@@ -77,8 +77,8 @@ export class ArtistDirectiveService {
 
     /**
      * Retrieves the living Artist Master Directive for the user.
-     * Fail-closed: returns DEFAULT_ARTIST_MASTER_DIRECTIVE if unauthenticated,
-     * in E2E mock mode, or if the document does not yet exist.
+     * Returns defaults only when no directive has been stored. A stored directive
+     * that cannot be read or parsed must never be treated as an empty playbook.
      */
     async getDirective(explicitUid?: string): Promise<ArtistMasterDirective> {
         if (isFirebaseE2EMockEnabled()) {
@@ -97,7 +97,7 @@ export class ArtistDirectiveService {
         try {
             const snap = await getDoc(getDirectiveDocRef(uid));
             const data = snap.data();
-            if (!snap.exists() || !data || Object.keys(data).length === 0) {
+            if (!snap.exists()) {
                 this.cachedDirective = DEFAULT_ARTIST_MASTER_DIRECTIVE;
                 this.cachedUid = uid;
                 return DEFAULT_ARTIST_MASTER_DIRECTIVE;
@@ -105,20 +105,14 @@ export class ArtistDirectiveService {
 
             const rawData = normalizeStoredDirective(data);
             const parsed = ArtistMasterDirectiveSchema.safeParse(rawData);
-            if (!parsed.success) {
-                logger.warn(
-                    '[ArtistDirectiveService] Stored directive failed schema validation, falling back to defaults',
-                    parsed.error
-                );
-                return DEFAULT_ARTIST_MASTER_DIRECTIVE;
-            }
+            if (!parsed.success) throw new Error('Stored artist directive failed schema validation');
 
             this.cachedDirective = parsed.data;
             this.cachedUid = uid;
             return parsed.data;
         } catch (err) {
             logger.error('[ArtistDirectiveService] getDirective failed', err);
-            return DEFAULT_ARTIST_MASTER_DIRECTIVE;
+            throw err;
         }
     }
 
@@ -181,7 +175,12 @@ export class ArtistDirectiveService {
         modifiedBy: 'user' | 'agent' = 'agent',
         explicitUid?: string
     ): Promise<{ success: boolean; error?: string; directive?: ArtistMasterDirective }> {
-        const current = await this.getDirective(explicitUid);
+        let current: ArtistMasterDirective;
+        try {
+            current = await this.getDirective(explicitUid);
+        } catch {
+            return { success: false, error: 'Artist directive could not be loaded' };
+        }
         const section = current.sections[sectionKey];
 
         if (!section) {
@@ -252,12 +251,10 @@ export class ArtistDirectiveService {
                     callback(parsed.data);
                 } else {
                     logger.warn('[ArtistDirectiveService] Real-time snapshot validation failed', parsed.error);
-                    callback(DEFAULT_ARTIST_MASTER_DIRECTIVE);
                 }
             },
             err => {
                 logger.error('[ArtistDirectiveService] onSnapshot listener error', err);
-                callback(DEFAULT_ARTIST_MASTER_DIRECTIVE);
             }
         );
     }

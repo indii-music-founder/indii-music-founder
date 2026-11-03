@@ -187,14 +187,8 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         }
 
         // 8.5 Resolve Tier 0 Artist Master Directive (Living User Skill)
-        let artistMasterDirectiveBlock = '';
-        try {
-            const directiveObj = await artistDirectiveService.getDirective(userId);
-            artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(directiveObj);
-        } catch (err) {
-            logger.warn('[ContextPipeline] Failed to resolve artist master directive:', err);
-            artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(null);
-        }
+        const directiveObj = await artistDirectiveService.getDirective(userId);
+        const artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(directiveObj);
 
         // 9. Assemble Pipeline Context
         return {

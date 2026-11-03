@@ -48,14 +48,35 @@ describe('ArtistDirectiveService', () => {
         expect(directive.lastModifiedReason).toBe('Conductor calibrated mastering profile');
     });
 
-    it('falls back to default if stored directive fails schema validation', async () => {
+    it('rejects a corrupt stored directive without replacing it', async () => {
         vi.mocked(getDoc).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({ schemaVersion: 'corrupt-version', sections: {} }),
         } as any);
 
-        const directive = await service.getDirective('user-test-123');
-        expect(directive).toEqual(DEFAULT_ARTIST_MASTER_DIRECTIVE);
+        await expect(service.getDirective('user-test-123')).rejects.toThrow('Stored artist directive failed schema validation');
+        expect(setDoc).not.toHaveBeenCalled();
+    });
+
+    it('does not refine or save when the stored directive cannot be read', async () => {
+        vi.mocked(getDoc).mockRejectedValueOnce(new Error('permission denied'));
+
+        const result = await service.refineSection('sonicSpecs', 'New rule', 'add_rule', undefined, 'agent', 'user-test-123');
+
+        expect(result).toEqual({ success: false, error: 'Artist directive could not be loaded' });
+        expect(setDoc).not.toHaveBeenCalled();
+    });
+
+    it('does not emit defaults for an invalid live directive', () => {
+        const callback = vi.fn();
+        vi.mocked(onSnapshot).mockImplementationOnce(((_ref: any, onNext: (snap: any) => void) => {
+            onNext({ exists: () => true, data: () => ({ sections: {} }) });
+            return () => {};
+        }) as any);
+
+        service.subscribeToDirective('user-test-123', callback);
+
+        expect(callback).not.toHaveBeenCalled();
     });
 
     it('saves a valid directive to Firestore', async () => {
