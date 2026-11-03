@@ -22,4 +22,16 @@ describe('GlobalKeyboardOrchestrator registration cleanup', () => {
         expect(first).not.toHaveBeenCalled();
         expect(second).toHaveBeenCalledOnce();
     });
+
+    it('offers the newest modal Escape handler the key before an older dialog', () => {
+        const older = vi.fn();
+        const newer = vi.fn((event: KeyboardEvent) => event.preventDefault());
+        cleanups.push(globalKeyboardOrchestrator.register({ id: 'older', key: 'Escape', priority: 'modal', ignoreInput: true, handler: older }));
+        cleanups.push(globalKeyboardOrchestrator.register({ id: 'newer', key: 'Escape', priority: 'modal', ignoreInput: true, handler: newer }));
+
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+
+        expect(newer).toHaveBeenCalledOnce();
+        expect(older).not.toHaveBeenCalled();
+    });
 });

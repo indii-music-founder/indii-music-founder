@@ -29,7 +29,12 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
         id: 'mobile-drawer-escape',
         key: 'Escape',
         priority: 'modal',
-        handler: () => onClose()
+        ignoreInput: true,
+        handler: (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+        }
     }, [onClose], isOpen);
 
     return (

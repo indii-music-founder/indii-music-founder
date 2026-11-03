@@ -91,7 +91,11 @@ export function ShareTargetHandler() {
         key: 'Escape',
         priority: 'modal',
         ignoreInput: true,
-        handler: () => { void handleDismiss(); },
+        handler: (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            void handleDismiss();
+        },
     }, [sharedItem, searchParams], isShareAction);
 
     const handleOpenInConductor = async () => {

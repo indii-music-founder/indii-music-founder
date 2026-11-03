@@ -12,7 +12,11 @@ export function useModalAccessibility(isOpen: boolean, onClose: () => void) {
         key: 'Escape',
         priority: 'modal',
         ignoreInput: true,
-        handler: onClose,
+        handler: (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+        },
     }, [shortcutId, onClose], isOpen);
 
     return dialogRef;

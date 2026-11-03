@@ -214,8 +214,12 @@ const QuickNotesDrawerContent: React.FC<QuickNotesDrawerContentProps> = ({ onClo
             id: 'quick-notes-escape',
             key: 'Escape',
             priority: 'modal',
-            ignoreInput: false,
-            handler: () => onClose(),
+            ignoreInput: true,
+            handler: (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onClose();
+            },
         },
         [onClose],
         true

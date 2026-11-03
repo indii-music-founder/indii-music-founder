@@ -149,10 +149,11 @@ export const useKeyboardShortcutsHint = () => {
         handler: (e) => {
             if (showShortcuts) {
                 e.preventDefault();
+                e.stopPropagation();
                 setShowShortcuts(false);
             }
         }
-    }, [showShortcuts]);
+    }, [showShortcuts], showShortcuts);
 
     return { showShortcuts, setShowShortcuts };
 };

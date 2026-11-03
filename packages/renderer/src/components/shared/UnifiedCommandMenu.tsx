@@ -1,5 +1,6 @@
 import React from 'react';
 import { Command } from 'cmdk';
+import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -149,7 +150,7 @@ export function UnifiedCommandMenu() {
                 setCommandMenuOpen(false);
             }
         }
-    }, [isCommandMenuOpen, setCommandMenuOpen]);
+    }, [isCommandMenuOpen, setCommandMenuOpen], isCommandMenuOpen);
 
     // Run a command and close the menu
     const runCommand = (command: () => void) => {
@@ -175,6 +176,8 @@ export function UnifiedCommandMenu() {
                 }}
                 onClick={e => e.stopPropagation()}
             >
+                <DialogTitle className="sr-only">Global Command Menu</DialogTitle>
+                <DialogDescription className="sr-only">Search commands and navigate the app.</DialogDescription>
                 <div className="flex items-center border-b border-white/5 px-4 h-14">
                     <Command.Input
                         autoFocus

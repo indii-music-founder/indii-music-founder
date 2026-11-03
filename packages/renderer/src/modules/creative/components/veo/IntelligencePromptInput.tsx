@@ -166,13 +166,14 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
         key: 'Escape',
         ignoreInput: true,
         priority: 'modal',
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         handler: (e) => {
             if (openCategory) {
+                e.preventDefault();
+                e.stopPropagation();
                 setOpenCategory(null);
             }
         }
-    }, [openCategory]);
+    }, [openCategory], Boolean(openCategory));
 
     const handleTagClick = useCallback((tag: string) => {
         const newPrompt = prompt ? `${prompt}, ${tag}` : tag;

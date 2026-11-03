@@ -27,6 +27,8 @@ interface ModalProps {
     onClose: () => void;
     /** Must match the `id` of the element providing the dialog title (aria-labelledby) */
     titleId: string;
+    /** Optional id of the dialog's explanatory text. */
+    descriptionId?: string;
     children: React.ReactNode;
     /** Max-width class for the inner panel. Defaults to 'max-w-2xl' */
     maxWidth?: string;
@@ -37,7 +39,7 @@ interface ModalProps {
     overlayZIndex?: number;
 }
 
-export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2xl', className = '', portal = false, overlayZIndex }: ModalProps) {
+export function Modal({ isOpen, onClose, titleId, descriptionId, children, maxWidth = 'max-w-2xl', className = '', portal = false, overlayZIndex }: ModalProps) {
     const trapRef = useFocusTrap(isOpen);
 
     // Escape key closes modal
@@ -45,7 +47,12 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
         id: 'ui-modal-escape',
         key: 'Escape',
         priority: 'modal',
-        handler: () => onClose()
+        ignoreInput: true,
+        handler: (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+        }
     }, [onClose], isOpen);
 
     const content = (
@@ -55,6 +62,7 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby={titleId}
+                    aria-describedby={descriptionId}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}

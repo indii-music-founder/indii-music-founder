@@ -56,8 +56,9 @@ class KeyboardOrchestrator {
         // Ensure initialized
         this.init();
 
-        this.listeners.push(options);
-        // Sort highest priority first
+        // Most recently mounted surface wins ties (notably stacked dialogs).
+        this.listeners.unshift(options);
+        // Sort highest priority first; stable sorting preserves newest-first ties.
         this.listeners.sort((a, b) => PRIORITY_LEVELS[b.priority || 'normal'] - PRIORITY_LEVELS[a.priority || 'normal']);
         
         return () => {

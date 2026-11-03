@@ -119,7 +119,12 @@ export const MobileTabBar: React.FC = () => {
         id: 'mobile-more-drawer-escape',
         key: 'Escape',
         priority: 'modal',
-        handler: () => setIsMoreOpen(false),
+        ignoreInput: true,
+        handler: (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsMoreOpen(false);
+        },
     }, [], isMoreOpen);
 
     // Only render on phone-class viewports

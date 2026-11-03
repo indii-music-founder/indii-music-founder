@@ -31,6 +31,8 @@ const FOCUSABLE_SELECTORS = [
     '[contenteditable="true"]',
 ].join(', ');
 
+const activeTrapContainers: HTMLElement[] = [];
+
 export function useFocusTrap(isActive: boolean = true) {
     const containerRef = useRef<HTMLDivElement>(null);
     // Capture the trigger during render. React's autoFocus runs before layout
@@ -58,6 +60,12 @@ export function useFocusTrap(isActive: boolean = true) {
             const firstElement = elements[0]!;
             const lastElement = elements[elements.length - 1]!;
 
+            if (!containerRef.current?.contains(document.activeElement)) {
+                e.preventDefault();
+                (e.shiftKey ? lastElement : firstElement).focus();
+                return;
+            }
+
             if (e.shiftKey) {
                 // Shift+Tab: If focus is on first element, wrap to last
                 if (document.activeElement === firstElement) {
@@ -77,6 +85,9 @@ export function useFocusTrap(isActive: boolean = true) {
     useLayoutEffect(() => {
         if (!isActive || !containerRef.current) return;
 
+        const container = containerRef.current;
+        activeTrapContainers.push(container);
+
         const activeElement = document.activeElement as HTMLElement | null;
         const alreadyFocusedInside = !!activeElement && containerRef.current.contains(activeElement);
 
@@ -93,8 +104,16 @@ export function useFocusTrap(isActive: boolean = true) {
         }
 
         return () => {
-            // Restore focus to previously focused element
-            if (previousFocusRef.current && previousFocusRef.current.focus) {
+            const index = activeTrapContainers.lastIndexOf(container);
+            if (index !== -1) activeTrapContainers.splice(index, 1);
+            const nextTrap = activeTrapContainers.at(-1);
+            if (nextTrap?.isConnected) {
+                const previousFocus = previousFocusRef.current;
+                const target = previousFocus?.isConnected && nextTrap.contains(previousFocus)
+                    ? previousFocus
+                    : nextTrap.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
+                target?.focus();
+            } else if (previousFocusRef.current?.isConnected) {
                 previousFocusRef.current.focus();
             }
         };

@@ -192,13 +192,14 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
         key: 'Escape',
         ignoreInput: true,
         priority: 'modal',
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         handler: (e) => {
             if (openCategory) {
+                e.preventDefault();
+                e.stopPropagation();
                 setOpenCategory(null);
             }
         }
-    }, [openCategory]);
+    }, [openCategory], Boolean(openCategory));
 
     const handleImprove = useCallback(async () => {
         if (!currentPrompt.trim() || !onSetPrompt) return;

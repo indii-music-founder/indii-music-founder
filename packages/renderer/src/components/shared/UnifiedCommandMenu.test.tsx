@@ -55,6 +55,16 @@ describe('UnifiedCommandMenu', () => {
         mockFlatStore();
     });
 
+    it('opens with the global shortcut while closed', () => {
+        const setCommandMenuOpen = vi.fn();
+        mockFlatStore({ isCommandMenuOpen: false, setCommandMenuOpen });
+        render(<UnifiedCommandMenu />);
+
+        fireEvent.keyDown(window, { key: 'k', metaKey: true, bubbles: true, cancelable: true });
+
+        expect(setCommandMenuOpen).toHaveBeenCalledWith(true);
+    });
+
     // ISSUE-1269: the sidebar pill routing to `observability` under the name
     // "Command Center" was removed. This locks in its replacement: a god-mode-only
     // command palette entry under a distinct name, so it cannot silently regain
