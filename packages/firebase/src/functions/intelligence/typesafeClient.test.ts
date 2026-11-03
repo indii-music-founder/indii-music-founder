@@ -104,7 +104,7 @@ describe('typesafeClient (server-side System One transport)', () => {
 
     it('enforces question bounds at the transport boundary', async () => {
         const client = createTypesafeClient({ apiKey: 'k', fetchImpl: vi.fn() as unknown as typeof fetch });
-        await expect(client.judge({ state: {}, questions: {} })).rejects.toMatchObject({ kind: 'shape' });
+        await expect(client.judge({ state: {}, questions: {} })).rejects.toMatchObject({ kind: 'input' });
     });
 
     it.each(['json', 'text'] as const)('times out while reading a stalled %s body', async (bodyMethod) => {
@@ -138,12 +138,34 @@ describe('typesafeClient (server-side System One transport)', () => {
         await client.judge({ state: { text: textAtLimit }, questions });
         expect(fetchImpl).toHaveBeenCalledTimes(1);
         await expect(client.judge({ state: { text: `${textAtLimit}x` }, questions }))
-            .rejects.toMatchObject({ kind: 'shape' });
+            .rejects.toMatchObject({ kind: 'input' });
         const circular: Record<string, unknown> = {};
         circular.self = circular;
-        await expect(client.judge({ state: circular, questions })).rejects.toMatchObject({ kind: 'shape' });
-        await expect(client.judge({ state: {}, questions: { q: circular } })).rejects.toMatchObject({ kind: 'shape' });
+        await expect(client.judge({ state: circular, questions })).rejects.toMatchObject({ kind: 'input' });
+        await expect(client.judge({ state: {}, questions: { q: circular } })).rejects.toMatchObject({ kind: 'input' });
         expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends only the state serialization that passed the size check', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue(okResponse({ answers: { q: { noul: 0.5 } } }));
+        const client = createTypesafeClient({ apiKey: 'k', fetchImpl: fetchImpl as unknown as typeof fetch });
+        let serializations = 0;
+        const changingState = { toJSON: () => {
+            serializations += 1;
+            return serializations === 1 ? { title: 'safe' } : { text: 'x'.repeat(TYPESAFE_MAX_STATE_CHARS) };
+        } };
+
+        await client.judge({ state: changingState, questions: { q: { type: 'noul' } } });
+        expect(serializations).toBe(1);
+        expect(JSON.parse(String((fetchImpl.mock.calls[0][1] as RequestInit).body)).state).toEqual({ title: 'safe' });
+    });
+
+    it('rejects state that serializes to a non-object', async () => {
+        const fetchImpl = vi.fn();
+        const client = createTypesafeClient({ apiKey: 'k', fetchImpl: fetchImpl as unknown as typeof fetch });
+        await expect(client.judge({ state: { toJSON: () => null }, questions: { q: { type: 'noul' } } }))
+            .rejects.toMatchObject({ kind: 'input' });
+        expect(fetchImpl).not.toHaveBeenCalled();
     });
 
     it('uses a valid per-call model override and rejects an invalid one before transport', async () => {
@@ -153,7 +175,7 @@ describe('typesafeClient (server-side System One transport)', () => {
 
         await client.judge({ ...input, model: 'jev-1.13.0' });
         expect(JSON.parse(String((fetchImpl.mock.calls[0][1] as RequestInit).body)).model).toBe('jev-1.13.0');
-        await expect(client.judge({ ...input, model: 'not-jev' })).rejects.toMatchObject({ kind: 'shape' });
+        await expect(client.judge({ ...input, model: 'not-jev' })).rejects.toMatchObject({ kind: 'input' });
         expect(fetchImpl).toHaveBeenCalledTimes(1);
     });
 

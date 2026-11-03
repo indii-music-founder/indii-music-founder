@@ -81,12 +81,20 @@ export const typesafeJudge = onCall(
             throw new HttpsError('invalid-argument', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
         }
 
-        const stateJson = JSON.stringify(input.state);
-        if (stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
+        let stateJson: string;
+        try {
+            stateJson = JSON.stringify(input.state);
+        } catch {
+            throw new HttpsError('invalid-argument', 'state must be serializable.');
+        }
+        if (!stateJson || stateJson.length > TYPESAFE_MAX_STATE_CHARS) {
             throw new HttpsError('invalid-argument', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
         }
 
         let model: string | undefined;
+        if (input.model !== undefined && typeof input.model !== 'string') {
+            throw new HttpsError('invalid-argument', 'model must be a TypeSafe model name.');
+        }
         if (typeof input.model === 'string') {
             // Truthful capability: an unknown model name is rejected, never
             // silently substituted with the default.
@@ -107,6 +115,7 @@ export const typesafeJudge = onCall(
             return { answers: result.answers };
         } catch (err: unknown) {
             if (err instanceof TypesafeClientError) {
+                if (err.kind === 'input') throw new HttpsError('invalid-argument', err.message);
                 console.error(`[typesafeJudge] upstream ${err.kind}${err.status ? ` ${err.status}` : ''}: ${err.message}`);
                 switch (err.kind) {
                     case 'unreachable':
