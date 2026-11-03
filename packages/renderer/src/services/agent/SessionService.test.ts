@@ -6,11 +6,13 @@ const firestoreMocks = vi.hoisted(() => ({
     transactionUpdate: vi.fn(),
     transactionGet: vi.fn(),
     runTransaction: vi.fn(),
+    batchDelete: vi.fn(),
+    batchCommit: vi.fn().mockResolvedValue(undefined),
 }));
 
 // 1. Mock External Dependencies (Firebase/Firestore)
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+  serverTimestamp: vi.fn(() => 'server-timestamp'),
     where: vi.fn(),
     orderBy: vi.fn(),
     limit: vi.fn(),
@@ -23,7 +25,8 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
     runTransaction: firestoreMocks.runTransaction,
     updateDoc: vi.fn(),
-    writeBatch: vi.fn(),
+    query: vi.fn((ref: unknown) => ref),
+    writeBatch: vi.fn(() => ({ delete: firestoreMocks.batchDelete, commit: firestoreMocks.batchCommit })),
     getDocs: vi.fn(),
 }));
 
@@ -65,15 +68,17 @@ vi.mock('../OrganizationService', () => ({
 }));
 
 // 4. Import System Under Test
+import { getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 import { sessionService } from './SessionService';
 import { ConversationSession } from '@/core/store/slices/agent';
 
 describe('SessionService Persistence (Dual Write)', () => {
     const mockElectronSave = vi.fn().mockResolvedValue({ success: true });
-    const mockElectronDelete = vi.fn().mockResolvedValue(undefined);
+    const mockElectronDelete = vi.fn().mockResolvedValue({ success: true });
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(getDocs).mockResolvedValue({ empty: true, docs: [] } as Awaited<ReturnType<typeof getDocs>>);
         firestoreMocks.transactionGet.mockResolvedValue({
             exists: () => true,
             data: () => ({ messageStorage: 'array', messages: [{ id: 'legacy', role: 'user', text: 'Earlier', timestamp: 1 }] }),
@@ -149,10 +154,42 @@ describe('SessionService Persistence (Dual Write)', () => {
         await sessionService.deleteSession('session-123');
 
         // Verify Firestore (Cloud)
+        expect(updateDoc).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ deletingAt: expect.anything() }));
         expect(mockDelete).toHaveBeenCalledWith('session-123');
 
         // Verify Electron (Local)
         expect(mockElectronDelete).toHaveBeenCalledWith('session-123');
+    });
+
+    it('deletes child messages in bounded batches before deleting the parent', async () => {
+        const firstPage = Array.from({ length: 400 }, (_, index) => ({ ref: { path: `message-${index}` } }));
+        const secondPage = [{ ref: { path: 'message-400' } }];
+        vi.mocked(getDocs)
+            .mockResolvedValueOnce({ empty: false, docs: firstPage } as Awaited<ReturnType<typeof getDocs>>)
+            .mockResolvedValueOnce({ empty: false, docs: secondPage } as Awaited<ReturnType<typeof getDocs>>);
+
+        await sessionService.deleteSession('session-123');
+
+        expect(writeBatch).toHaveBeenCalledTimes(2);
+        expect(firestoreMocks.batchDelete).toHaveBeenCalledTimes(401);
+        expect(firestoreMocks.batchCommit).toHaveBeenCalledTimes(2);
+        expect(firestoreMocks.batchCommit.mock.invocationCallOrder[1]).toBeLessThan(mockDelete.mock.invocationCallOrder[0]!);
+    });
+
+    it('leaves the fenced parent for retry when child deletion fails', async () => {
+        vi.mocked(getDocs).mockResolvedValueOnce({ empty: false, docs: [{ ref: { path: 'message-1' } }] } as Awaited<ReturnType<typeof getDocs>>);
+        firestoreMocks.batchCommit.mockRejectedValueOnce(new Error('batch failed'));
+
+        await expect(sessionService.deleteSession('session-123')).rejects.toThrow('batch failed');
+        expect(mockDelete).not.toHaveBeenCalled();
+        expect(mockElectronDelete).not.toHaveBeenCalled();
+    });
+
+    it('reports a local deletion failure after cloud cleanup', async () => {
+        mockElectronDelete.mockResolvedValueOnce({ success: false, error: 'disk unavailable' });
+
+        await expect(sessionService.deleteSession('session-123')).rejects.toThrow('disk unavailable');
+        expect(mockDelete).toHaveBeenCalledWith('session-123');
     });
 
     it('should handle missing electronAPI gracefully', async () => {

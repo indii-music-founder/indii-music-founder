@@ -126,17 +126,14 @@ export class ElectronPlatformAdapter implements PlatformBridge {
 
     async deleteHistory(id: string): Promise<void> {
         if (this.api?.agent?.deleteHistory) {
-            await this.api.agent.deleteHistory(id);
+            const result = await this.api.agent.deleteHistory(id);
+            if (!result.success) throw new Error(result.error || 'Failed to delete local history.');
             return;
         }
 
         // Web fallback: remove from localStorage
-        try {
-            if (typeof localStorage !== 'undefined') {
-                localStorage.removeItem(`indii_session_history_${id}`);
-            }
-        } catch (e) {
-            logger.warn(`[PlatformBridge] Failed to remove history from web storage for ${id}:`, e);
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(`indii_session_history_${id}`);
         }
     }
 }
