@@ -107,6 +107,29 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             })).rejects.toThrow('write failed');
             expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' } as never)).toBe(false);
         });
+
+        it.each([
+            { value: undefined },
+            { value: Number.NaN },
+            { value: new Date() },
+            { value: new Array<string>(2) },
+        ])('rejects arguments that would change when saved as JSON', async args => {
+            await expect(toolApprovalService.createPendingApproval({
+                agentId: 'generalist', toolName: 'execute_code', args,
+                riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
+            })).rejects.toThrow(/Tool arguments/);
+            expect(mocks.setDoc).not.toHaveBeenCalled();
+        });
+
+        it('rejects cyclic arguments without publishing a pending approval', async () => {
+            const args: Record<string, unknown> = {};
+            args.self = args;
+            await expect(toolApprovalService.createPendingApproval({
+                agentId: 'generalist', toolName: 'execute_code', args,
+                riskTier: 'destructive', description: 'runs code', execute: vi.fn(),
+            })).rejects.toThrow(/Tool arguments/);
+            expect(mocks.setDoc).not.toHaveBeenCalled();
+        });
     });
 
     describe('local availability', () => {
