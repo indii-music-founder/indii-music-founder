@@ -18,6 +18,20 @@ export class HistoryManager {
     private readonly MAX_RECENT_TURNS = 15;
     // Threshold before we trigger summarization logic
     private readonly MAX_TOTAL_TURNS = 25;
+    private readonly SUMMARY_INPUT_CHARS = 8_000;
+    private summaryCache: {
+        sessionId: string | null;
+        source: Array<Pick<AgentMessage, 'id' | 'role' | 'text'>>;
+        summary: string;
+    } | null = null;
+    private summaryQueue: Promise<void> = Promise.resolve();
+
+    private cleanHistory(history: AgentMessage[]): AgentMessage[] {
+        return history.filter(m =>
+            (m.role === 'user' || m.role === 'model') &&
+            m.text && m.text.trim() !== ''
+        );
+    }
 
     /**
      * Retrieves the recent conversation history from the store.
@@ -29,17 +43,8 @@ export class HistoryManager {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
-        const currentHistory = state.conversationMode === 'boardroom' ? state.agentHistory : state.agentHistory;
-
-        // Filter out system messages and internal logs for the conversation window
-        const cleanHistory = (currentHistory || []).filter(m =>
-            (m.role === 'user' || m.role === 'model') &&
-            m.text &&
-            m.text.trim() !== ''
-        );
-
         // Get the last N messages
-        return cleanHistory.slice(-this.MAX_TOTAL_TURNS);
+        return this.cleanHistory(state.agentHistory || []).slice(-this.MAX_TOTAL_TURNS);
     }
 
     /**
@@ -65,7 +70,7 @@ export class HistoryManager {
         const state = useStore.getState();
         const userId = state.userProfile?.uid;
 
-        const history = await this.getRecentHistory();
+        const history = this.cleanHistory(state.agentHistory || []);
 
         // 1. Semantic Recall (Tier 2 Integration)
         let semanticRecall = '';
@@ -90,9 +95,10 @@ export class HistoryManager {
         const recentWindow = history.slice(-this.MAX_RECENT_TURNS);
         const olderTurns = history.slice(0, -this.MAX_RECENT_TURNS);
 
-        // 3. Summarize older turns
-        const historicalText = this.formatHistory(olderTurns);
-        const summary = await SummaryService.summarize(historicalText);
+        // 3. Fold every older turn into a bounded rolling summary. The active
+        // store retains the full session; getRecentHistory() is only a display
+        // window and must not decide what the summarizer can see.
+        const summary = await this.summarizeOlder(state.activeSessionId || null, olderTurns);
 
         // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
@@ -104,6 +110,37 @@ ${semanticRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
 `.trim();
+    }
+
+    private summarizeOlder(sessionId: string | null, olderTurns: AgentMessage[]): Promise<string> {
+        const work = this.summaryQueue.then(async () => {
+            const cache = this.summaryCache;
+            const reusable = cache?.sessionId === sessionId
+                && cache.source.length <= olderTurns.length
+                && cache.source.every((message, index) => {
+                    const current = olderTurns[index];
+                    return current?.id === message.id && current.role === message.role && current.text === message.text;
+                });
+            const summarizedCount = reusable ? cache.source.length : 0;
+            let summary = reusable ? cache.summary : '';
+            const newHistory = this.formatHistory(olderTurns.slice(summarizedCount));
+
+            for (let offset = 0; offset < newHistory.length; offset += this.SUMMARY_INPUT_CHARS) {
+                const chunk = newHistory.slice(offset, offset + this.SUMMARY_INPUT_CHARS);
+                summary = await SummaryService.summarize(summary
+                    ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n${chunk}`
+                    : chunk);
+            }
+
+            this.summaryCache = {
+                sessionId,
+                source: olderTurns.map(({ id, role, text }) => ({ id, role, text })),
+                summary,
+            };
+            return summary;
+        });
+        this.summaryQueue = work.then(() => undefined, () => undefined);
+        return work;
     }
 
     /**

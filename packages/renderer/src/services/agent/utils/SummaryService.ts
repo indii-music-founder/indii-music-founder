@@ -19,6 +19,7 @@ export class SummaryService {
 
         Logger.info('SummaryService', 'Compressing conversation history...');
 
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
         try {
             const prompt = `
             You are the Indii Memory Summarizer.
@@ -52,7 +53,7 @@ export class SummaryService {
             );
 
             const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new Error('SummaryService generation timed out after 15000ms')), 15000);
+                timeoutId = setTimeout(() => reject(new Error('SummaryService generation timed out after 15000ms')), 15000);
             });
 
             const response = await Promise.race([summarizePromise, timeoutPromise]);
@@ -64,12 +65,14 @@ export class SummaryService {
                 ? response.response.text()
                 : (response.response.text as unknown as string || '');
             const summary = rawText.trim();
+            if (!summary) throw new Error('SummaryService returned an empty summary');
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
         } catch (error: unknown) {
-            Logger.warn('SummaryService', 'Failed to generate summary, using truncated history fallback:', error);
-            // Fallback: return truncated original text if summarization fails
-            return `[Truncated History] ... ${text.slice(-500)}`;
+            Logger.warn('SummaryService', 'Failed to generate a complete history summary:', error);
+            throw error;
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
 }
