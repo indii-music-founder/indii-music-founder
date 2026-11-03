@@ -4527,6 +4527,11 @@ export type CommentClassification =
     | 'SPAM_PROMOTION'
     | 'HARASSMENT_TOXIC';
 
+const COMMENT_CLASSIFICATIONS: ReadonlySet<string> = new Set<CommentClassification>([
+    'GENUINE_FAN_PRAISE', 'LYRIC_INTERPRETATION', 'COMMUNITY_DISCUSSION',
+    'SPAM_PROMOTION', 'HARASSMENT_TOXIC',
+]);
+
 export interface FanCommentVerdict {
     intent: CommentClassification;
     isApproved: boolean;
@@ -4625,13 +4630,21 @@ export async function judgeFanCommentModeration(
         const appAns = ans?.approved as { noul?: unknown } | number | undefined;
         const vibAns = ans?.vibe as { score?: unknown } | number | undefined;
 
-        const resolvedIntent = (typeof intAns?.choice === 'string' ? intAns.choice : fallbackIntent) as CommentClassification;
-        const appProb = typeof appAns === 'number'
-            ? appAns
-            : Number((appAns as { noul?: unknown })?.noul ?? (fallbackApproved ? 0.9 : 0.1));
+        const selectedIntent = intAns?.choice;
+        const appProb = boundedJudgmentNumber(appAns, 'noul', 1);
         const resolvedVibe = oneIndexedScore(vibAns, fallbackScore);
 
-        const isApproved = appProb >= 0.5 && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
+        if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent) || appProb === null) {
+            return {
+                intent: fallbackIntent,
+                isApproved: false,
+                vibeAlignmentScore: fallbackScore,
+                moderationFlag: fallbackFlag || 'Comment requires moderation review.',
+            };
+        }
+        const resolvedIntent = selectedIntent as CommentClassification;
+
+        const isApproved = fallbackApproved && appProb >= 0.5 && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
 
         return {
             intent: resolvedIntent,
