@@ -16,6 +16,22 @@ function FocusHarness({ active = true }: { active?: boolean }) {
     );
 }
 
+function StackedFocusHarness() {
+    const lowerRef = useFocusTrap(true);
+    const upperRef = useFocusTrap(true);
+    return (
+        <>
+            <div ref={lowerRef}><button>Lower first</button><button>Lower last</button></div>
+            <div ref={upperRef}><button>Upper first</button><button>Upper middle</button><button>Upper last</button></div>
+        </>
+    );
+}
+
+function EmptyFocusHarness() {
+    const ref = useFocusTrap(true);
+    return <div ref={ref} data-testid="empty-dialog">Loading</div>;
+}
+
 describe('useFocusTrap', () => {
     afterEach(() => globalKeyboardOrchestrator.dispose());
 
@@ -44,5 +60,32 @@ describe('useFocusTrap', () => {
         unmount();
 
         expect(document.activeElement).toBe(document.body);
+    });
+
+    it('lets only the top trap handle Tab in stacked dialogs', () => {
+        render(<StackedFocusHarness />);
+        const upperFirst = screen.getByRole('button', { name: 'Upper first' });
+        const upperMiddle = screen.getByRole('button', { name: 'Upper middle' });
+        const upperLast = screen.getByRole('button', { name: 'Upper last' });
+
+        upperMiddle.focus();
+        const middleTab = fireEvent.keyDown(upperMiddle, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(middleTab).toBe(true);
+        expect(upperMiddle).toHaveFocus();
+
+        upperLast.focus();
+        const wrapped = fireEvent.keyDown(upperLast, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(wrapped).toBe(false);
+        expect(upperFirst).toHaveFocus();
+    });
+
+    it('keeps focus on a dialog with no focusable descendants', () => {
+        render(<EmptyFocusHarness />);
+        const dialog = screen.getByTestId('empty-dialog');
+        expect(dialog).toHaveFocus();
+
+        const tab = fireEvent.keyDown(dialog, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(tab).toBe(false);
+        expect(dialog).toHaveFocus();
     });
 });

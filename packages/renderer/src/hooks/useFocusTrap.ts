@@ -54,8 +54,16 @@ export function useFocusTrap(isActive: boolean = true) {
         ignoreInput: true, // Needs to run even when focus is in an input
         priority: 'modal',
         handler: (e) => {
+            // Stacked dialogs register separate Tab handlers. Only the top
+            // trap may redirect focus, even when it does not need to wrap.
+            if (activeTrapContainers.at(-1) !== containerRef.current) return;
             const elements = getFocusableElements();
-            if (elements.length === 0) return;
+            if (elements.length === 0) {
+                e.preventDefault();
+                if (containerRef.current && !containerRef.current.hasAttribute('tabindex')) containerRef.current.tabIndex = -1;
+                containerRef.current?.focus();
+                return;
+            }
 
             const firstElement = elements[0]!;
             const lastElement = elements[elements.length - 1]!;
@@ -99,13 +107,18 @@ export function useFocusTrap(isActive: boolean = true) {
 
         // Focus the first focusable element inside the trap
         const focusable = getFocusableElements();
+        const originalTabIndex = container.getAttribute('tabindex');
+        if (focusable.length === 0 && originalTabIndex === null) container.tabIndex = -1;
         if (!alreadyFocusedInside && focusable.length > 0) {
             focusable[0]!.focus();
+        } else if (!alreadyFocusedInside) {
+            container.focus();
         }
 
         return () => {
             const index = activeTrapContainers.lastIndexOf(container);
             if (index !== -1) activeTrapContainers.splice(index, 1);
+            if (originalTabIndex === null && container.tabIndex === -1) container.removeAttribute('tabindex');
             const nextTrap = activeTrapContainers.at(-1);
             if (nextTrap?.isConnected) {
                 const previousFocus = previousFocusRef.current;
