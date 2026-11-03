@@ -1029,6 +1029,24 @@ describe('judgeFanToMerchSku (Judgment 15)', () => {
         const result = await judgeFanToMerchSku('Do you have guitar pedals for sale', PRODUCTS);
         expect(result).toBeNull();
     });
+
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'does not select a SKU from invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { matched_sku: { choice: 'sku_hoodie_blk', confidence } } },
+            }));
+            expect(await judgeFanToMerchSku('black hoodie', PRODUCTS)).toBeNull();
+        },
+    );
+
+    it('rejects a SKU absent from the active product candidates', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { matched_sku: { choice: 'sku_retired', confidence: 0.99 } } },
+        }));
+        expect(await judgeFanToMerchSku('retired item', PRODUCTS)).toBeNull();
+    });
 });
 
 describe('judgeAestheticMoodTagging (Judgment 16)', () => {

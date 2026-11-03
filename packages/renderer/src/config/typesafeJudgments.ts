@@ -1319,9 +1319,10 @@ export async function judgeFanToMerchSku(
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
-        const confidence = typeof answer.confidence === 'number' ? answer.confidence : 1.0;
+        const confidence = answer.confidence;
 
-        if (choice === MERCH_SKU_NONE || confidence < MERCH_SKU_MIN_CONFIDENCE) {
+        if (choice === MERCH_SKU_NONE || typeof confidence !== 'number' || !Number.isFinite(confidence) ||
+            confidence < MERCH_SKU_MIN_CONFIDENCE || confidence > 1) {
             return null;
         }
 
