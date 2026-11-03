@@ -564,6 +564,24 @@ describe('judgeOrchestrationComplexity (Judgment 7)', () => {
         expect(result).toBeNull();
     });
 
+    it.each([undefined, null, '0.9', NaN, Infinity, -0.1, 1.1])(
+        'abstains from orchestration routing on invalid confidence (%s)', async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { complexity: { choice: 'complex', confidence } } },
+            }));
+            expect(await judgeOrchestrationComplexity('Analyze then render')).toBeNull();
+        },
+    );
+
+    it('requires an exact declared Choice rather than normalizing a malformed one', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { complexity: { choice: 'COMPLEX', confidence: 0.95 } } },
+        }));
+        expect(await judgeOrchestrationComplexity('Analyze then render')).toBeNull();
+    });
+
     it('returns null on callable failure', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Proxy down'); });
