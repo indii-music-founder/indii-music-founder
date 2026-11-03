@@ -36,14 +36,58 @@ const Button = React.memo(React.forwardRef<HTMLButtonElement, ButtonProps>(
             icon: "h-10 w-10",
         }
 
+        const isBlocked = disabled || isLoading
+        if (asChild && isBlocked) {
+            const child = React.Children.only(children)
+            if (!React.isValidElement<React.HTMLAttributes<HTMLElement> & React.RefAttributes<HTMLElement> & { href?: string; disabled?: boolean; 'data-loading'?: boolean }>(child)) {
+                throw new Error("Button asChild requires one element")
+            }
+            const childProps = child.props
+            return React.cloneElement(child, {
+                ...props,
+                ref: (node: HTMLElement | null) => {
+                    for (const target of [(child as React.ReactElement & { ref?: React.Ref<HTMLElement> }).ref, ref as React.Ref<HTMLElement>]) {
+                        if (typeof target === 'function') target(node)
+                        else if (target && typeof target !== 'string') (target as React.MutableRefObject<HTMLElement | null>).current = node
+                    }
+                },
+                className: cn(baseStyles, variants[variant], sizes[size], childProps.className, className),
+                'aria-disabled': true,
+                'data-loading': isLoading,
+                tabIndex: -1,
+                href: undefined,
+                disabled: typeof child.type === 'string' && child.type === 'button' ? true : undefined,
+                onClick: (event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                },
+                onClickCapture: (event: React.MouseEvent<HTMLElement>) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                },
+                onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                },
+                onKeyDownCapture: (event: React.KeyboardEvent<HTMLElement>) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                },
+            })
+        }
+
         const Comp = asChild ? Slot : "button"
 
         return (
             <Comp
                 className={cn(baseStyles, variants[variant], sizes[size], className)}
                 ref={ref}
-                {...(asChild ? {} : { disabled: disabled || isLoading })}
-                aria-disabled={disabled || isLoading}
+                {...(asChild ? {} : { disabled: isBlocked })}
+                aria-disabled={isBlocked}
                 data-loading={isLoading}
                 {...props}
             >
