@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
 import { MODEL_PRICING, getModelKey } from '@/core/config/intelligence-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
@@ -11,6 +11,7 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
+    static readonly MAX_DELEGATION_DEPTH = 3;
 
     // Part 1: Map to track local start times for duration calculation
     private static startTimeMap: Map<string, number> = new Map();
@@ -56,8 +57,6 @@ export class TraceService {
                 agentId,
                 input,
                 status: 'pending',
-                startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
-
                 steps: [],
                 swarmId: (metadata?.swarmId as string | undefined) || (parentTraceId ? null : traceId),
                 metadata: {
@@ -66,7 +65,10 @@ export class TraceService {
                 }
             };
 
-            await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
+            await setDoc(doc(db, this.COLLECTION, traceId), {
+                ...cleanFirestoreData(trace),
+                startTime: serverTimestamp()
+            });
             return traceId;
         } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
@@ -170,33 +172,24 @@ export class TraceService {
             metadata,
             usage
         };
+        const cleanStep = cleanFirestoreData({ step }).step;
+        const stepAppend = arrayUnion(cleanStep);
 
         const ref = doc(db, this.COLLECTION, traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
-                steps: arrayUnion(step)
-            }));
-
-            // If we have usage, also update the total trace usage
             if (usage) {
-                const traceDoc = await getDoc(ref);
-                const currentTrace = traceDoc.data() as AgentTrace;
-                const totalUsage = currentTrace.totalUsage || {
-                    promptTokens: 0,
-                    candidatesTokens: 0,
-                    totalTokens: 0,
-                    estimatedCost: 0
-                };
-
-                await updateDoc(ref, cleanFirestoreData({
-                    totalUsage: {
-                        promptTokens: totalUsage.promptTokens + (usage.promptTokens || 0),
-                        candidatesTokens: totalUsage.candidatesTokens + (usage.candidatesTokens || 0),
-                        totalTokens: totalUsage.totalTokens + (usage.totalTokens || 0),
-                        estimatedCost: (totalUsage.estimatedCost || 0) + (usage.estimatedCost || 0)
-                    }
-                }));
+                // Server transforms atomically append the step and add its usage,
+                // without a client read that can race with another writer.
+                await updateDoc(ref, {
+                    steps: stepAppend,
+                    'totalUsage.promptTokens': increment(usage.promptTokens),
+                    'totalUsage.candidatesTokens': increment(usage.candidatesTokens),
+                    'totalUsage.totalTokens': increment(usage.totalTokens),
+                    'totalUsage.estimatedCost': increment(usage.estimatedCost || 0)
+                });
+            } else {
+                await updateDoc(ref, { steps: stepAppend });
             }
         } catch (error: unknown) {
             logger.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
@@ -224,12 +217,12 @@ export class TraceService {
         this.startTimeMap.delete(traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
+            await updateDoc(ref, {
                 status: 'completed',
                 endTime: serverTimestamp(),
-                durationMs,
-                ...(output ? { output } : {})
-            }));
+                ...(durationMs !== undefined ? { durationMs } : {}),
+                ...(output !== undefined ? { output: cleanFirestoreData({ output }).output } : {})
+            });
         } catch (error: unknown) {
             logger.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
         }
@@ -248,40 +241,41 @@ export class TraceService {
         this.startTimeMap.delete(traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
+            await updateDoc(ref, {
                 status: 'failed',
                 endTime: serverTimestamp(),
-                durationMs,
+                ...(durationMs !== undefined ? { durationMs } : {}),
                 error
-            }));
+            });
         } catch (e: unknown) {
             logger.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
         }
     }
 
-    /**
-     * Get the recursion depth of a trace by traversing parentTraceIds
-     */
+    /** Resolve the bounded parent chain. Unknown or unreadable ancestry blocks delegation. */
     static async getTraceDepth(traceId: string): Promise<number> {
         if (this.isE2EMode) return 0;
-        if (!traceId || !db) return 0;
+        if (!traceId || !db) return this.MAX_DELEGATION_DEPTH;
 
         try {
-            const docRef = doc(db, this.COLLECTION, traceId);
-            const docSnap = await getDoc(docRef);
-
-            if (!docSnap.exists()) return 0;
-
-            const data = docSnap.data() as AgentTrace;
-            const parentTraceId = data.metadata?.parentTraceId as string | undefined;
-
-            if (!parentTraceId) return 0;
-
-            // Tail recursive depth check
-            return 1 + (await this.getTraceDepth(parentTraceId));
-        } catch (error) {
-            logger.error(`[TraceService] Error calculating depth for ${traceId}:`, error);
-            return 0;
+            const visited = new Set<string>();
+            let currentId = traceId;
+            let depth = 0;
+            while (depth < this.MAX_DELEGATION_DEPTH) {
+                if (visited.has(currentId)) return this.MAX_DELEGATION_DEPTH;
+                visited.add(currentId);
+                const trace = await getDoc(doc(db, this.COLLECTION, currentId));
+                if (!trace.exists()) return this.MAX_DELEGATION_DEPTH;
+                const parentId = (trace.data() as AgentTrace).metadata?.parentTraceId;
+                if (parentId === undefined || parentId === null || parentId === '') return depth;
+                if (typeof parentId !== 'string') return this.MAX_DELEGATION_DEPTH;
+                currentId = parentId;
+                depth += 1;
+            }
+            return this.MAX_DELEGATION_DEPTH;
+        } catch {
+            logger.error('[TraceService] Could not verify delegation depth');
+            return this.MAX_DELEGATION_DEPTH;
         }
     }
 
