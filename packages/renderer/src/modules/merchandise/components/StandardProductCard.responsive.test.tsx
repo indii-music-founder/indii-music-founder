@@ -60,4 +60,31 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
         expect(img).toHaveAttribute('loading', 'lazy');
         expect(img).toHaveAttribute('decoding', 'async');
     });
+
+    it('updates visible badges and reviews when a snapshot reuses the tags array', () => {
+        const { rerender, container } = render(<StandardProductCard product={mockProduct} />);
+        expect(screen.queryByText('Best Seller')).not.toBeInTheDocument();
+
+        rerender(<StandardProductCard product={{
+            ...mockProduct,
+            isBestSeller: true,
+            reviewCount: 12,
+            rating: 2,
+        }} />);
+
+        expect(screen.getByText('Best Seller')).toBeInTheDocument();
+        expect(screen.getByText('(12 reviews)')).toBeInTheDocument();
+        expect(container.querySelectorAll('svg.fill-primary')).toHaveLength(2);
+
+        rerender(<StandardProductCard product={{
+            ...mockProduct,
+            isBestSeller: false,
+            reviewCount: 3,
+            rating: 4,
+        }} />);
+
+        expect(screen.queryByText('Best Seller')).not.toBeInTheDocument();
+        expect(screen.getByText('(3 reviews)')).toBeInTheDocument();
+        expect(container.querySelectorAll('svg.fill-primary')).toHaveLength(4);
+    });
 });

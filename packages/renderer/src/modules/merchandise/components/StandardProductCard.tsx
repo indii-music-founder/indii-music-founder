@@ -75,6 +75,9 @@ function arePropsEqual(prevProps: StandardProductCardProps, nextProps: StandardP
     if (prev.title !== next.title) return false;
     if (prev.image !== next.image) return false;
     if (prev.price !== next.price) return false;
+    if (prev.isBestSeller !== next.isBestSeller) return false;
+    if (prev.rating !== next.rating) return false;
+    if (prev.reviewCount !== next.reviewCount) return false;
 
     // 3. Check tags array
     if (prev.tags === next.tags) return true;
