@@ -1035,73 +1035,59 @@ describe('judgeStreamVelocityAnomaly (Judgment 14)', () => {
         vi.clearAllMocks();
     });
 
-    it('diagnoses organic viral surge with low fraud penalty hazard', async () => {
+    it('labels an explicit social clue without certifying its source', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
+        const judge = vi.fn(async (_request: { questions: Record<string, unknown> }) => ({
             data: {
                 answers: {
-                    root_cause: { choice: 'organic_viral_surge' },
-                    dsp_penalty_hazard: { noul: 0.05 },
-                    severity: { score: 1 },
+                    context_signal: { choice: 'social_discovery_mentioned', confidence: 0.86 },
                 },
             },
         }));
+        mocks.httpsCallable.mockReturnValue(judge);
 
         const result = await judgeStreamVelocityAnomaly('Track One', 350, 'TikTok audio trend');
         expect(result).toEqual({
-            rootCause: 'organic_viral_surge',
-            dspPenaltyHazard: false,
-            hazardProbability: 0.05,
-            severityScore: 1,
-            recommendation: 'Viral traction detected! Consider boosting with social clips and playlist pitching.',
+            contextSignal: 'social_discovery_mentioned',
+            contextConfidence: 0.86,
+            recommendation: 'The note is an unverified clue. Review the provider traffic sources and recent promotion; ask your distributor or label to investigate any unexplained spike.',
         });
+        expect(Object.keys(judge.mock.calls[0]![0].questions)).toEqual(['context_signal']);
     });
 
-    it('flags artificial stream farm hazard when hazard probability is high', async () => {
+    it('keeps a repeated-play note as an unverified clue', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    root_cause: { choice: 'botting_stream_farm_hazard' },
-                    dsp_penalty_hazard: { noul: 0.92 },
-                    severity: { score: 3 },
+                    context_signal: { choice: 'repeated_plays_mentioned', confidence: 0.91 },
                 },
             },
         }));
 
         const result = await judgeStreamVelocityAnomaly('Track Two', 800, 'Repeated looped short plays');
-        expect(result).toEqual({
-            rootCause: 'botting_stream_farm_hazard',
-            dspPenaltyHazard: true,
-            hazardProbability: 0.92,
-            severityScore: 3,
-            recommendation: 'Warning: Pattern flagged for artificial streaming risk. Contact distributor to verify traffic source.',
-        });
+        expect(result?.contextSignal).toBe('repeated_plays_mentioned');
+        expect(result?.recommendation).toContain('unverified clue');
     });
 
     it.each([
-        { root_cause: { choice: 'unknown' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 1 } },
-        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: null }, severity: { score: 1 } },
-        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 1.2 }, severity: { score: 1 } },
-        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: '0.05' }, severity: { score: 1 } },
-        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: null } },
-        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 3.2 } },
+        { context_signal: { choice: 'unknown', confidence: 0.9 } },
+        { context_signal: { choice: 'social_discovery_mentioned' } },
+        { context_signal: { choice: 'social_discovery_mentioned', confidence: null } },
+        { context_signal: { choice: 'social_discovery_mentioned', confidence: '0.9' } },
+        { context_signal: { choice: 'social_discovery_mentioned', confidence: 0.49 } },
+        { context_signal: { choice: 'social_discovery_mentioned', confidence: 1.2 } },
     ])('withholds a verdict when an answer is invalid: %j', async answers => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
-        expect(await judgeStreamVelocityAnomaly('Track', 300)).toBeNull();
+        expect(await judgeStreamVelocityAnomaly('Track', 300, 'A social campaign was active')).toBeNull();
     });
 
-    it('preserves a fractional severity score', async () => {
+    it('does not call Jev when the source note or spike is invalid', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: {
-                root_cause: { choice: 'organic_viral_surge' },
-                dsp_penalty_hazard: { noul: 0.05 },
-                severity: { score: 1.5 },
-            } },
-        }));
-        expect((await judgeStreamVelocityAnomaly('Track', 300))?.severityScore).toBe(1.5);
+        expect(await judgeStreamVelocityAnomaly('Track', 300)).toBeNull();
+        expect(await judgeStreamVelocityAnomaly('Track', Number.NaN, 'Playlist mentioned')).toBeNull();
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 });
 
