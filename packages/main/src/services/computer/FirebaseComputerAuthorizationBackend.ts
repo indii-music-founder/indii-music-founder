@@ -22,9 +22,11 @@ function decodeFields(fields: Record<string, FirestoreValue>): Record<string, un
 
 export class FirebaseComputerAuthorizationBackend implements ComputerAuthorizationBackend {
     private readonly projectId: string;
+    private readonly requestTimeoutMs: number;
 
-    constructor(projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'indii-music-founder') {
+    constructor(projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || 'indii-music-founder', requestTimeoutMs = 8_000) {
         this.projectId = projectId;
+        this.requestTimeoutMs = requestTimeoutMs;
     }
 
     async verifyIdentity(idToken: string): Promise<VerifiedComputerIdentity> {
@@ -38,7 +40,7 @@ export class FirebaseComputerAuthorizationBackend implements ComputerAuthorizati
 
     private async getDocument(path: string, idToken: string): Promise<Record<string, unknown> | null> {
         const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(this.projectId)}/databases/(default)/documents/${path}`;
-        const response = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` } });
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` }, signal: AbortSignal.timeout(this.requestTimeoutMs) });
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Authorization policy lookup failed (${response.status}).`);
         const body = await response.json() as { fields?: Record<string, FirestoreValue> };
@@ -76,8 +78,12 @@ export class FirebaseComputerAuthorizationBackend implements ComputerAuthorizati
             method: 'POST',
             headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ data: { approvalId: approval.id, expected: { agentId: approval.agentId, toolName: approval.toolName, args: approval.args, createdAtMs: approval.createdAtMs } } }),
+            signal: AbortSignal.timeout(this.requestTimeoutMs),
         });
-        const body = await response.json().catch(() => ({})) as { result?: StoredComputerApproval; error?: { message?: string } };
+        const body = await response.json().catch(() => {
+            if (response.ok) throw new Error('Trusted approval claim response was unavailable; check the approval state before retrying.');
+            return {};
+        }) as { result?: StoredComputerApproval; error?: { message?: string } };
         if (!response.ok || !body.result) throw new Error(body.error?.message || `Trusted approval claim failed (${response.status}).`);
         return body.result;
     }
