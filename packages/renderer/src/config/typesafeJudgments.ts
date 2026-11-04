@@ -857,6 +857,7 @@ export interface DetectedVisualCandidate {
 }
 
 export const BRAND_MARK_NONE = 'none';
+export const BRAND_MARK_MIN_CONFIDENCE = 0.5;
 
 /**
  * Choice-judge which detected visual candidate represents the artist's brand logo mark.
@@ -899,7 +900,11 @@ export async function judgeBrandMarkCandidate(
         });
 
         const answer = result.data.answers?.logo_mark as { choice?: unknown; confidence?: unknown } | undefined;
-        if (!answer || typeof answer.choice !== 'string') return null;
+        if (!answer || typeof answer.choice !== 'string'
+            || typeof answer.confidence !== 'number'
+            || !Number.isFinite(answer.confidence)
+            || answer.confidence < BRAND_MARK_MIN_CONFIDENCE
+            || answer.confidence > 1) return null;
 
         const choice = answer.choice;
         if (choice === BRAND_MARK_NONE || !candidates.some((c) => c.id === choice)) {

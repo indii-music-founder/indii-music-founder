@@ -818,6 +818,20 @@ describe('judgeBrandMarkCandidate (Judgment 10)', () => {
         const result = await judgeBrandMarkCandidate(candidates);
         expect(result).toBeNull();
     });
+
+    it.each([undefined, NaN, -0.1, 0.49, 1.1])(
+        'abstains from a brand mark choice with confidence %s',
+        async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { logo_mark: { choice: 'obj_0', confidence } } }
+            }));
+
+            expect(await judgeBrandMarkCandidate([
+                { id: 'obj_0', label: 'logo', boxDescription: '[0, 0, 10, 10]' }
+            ])).toBeNull();
+        }
+    );
 });
 
 describe('judgeCommandIntent (Judgment 11)', () => {

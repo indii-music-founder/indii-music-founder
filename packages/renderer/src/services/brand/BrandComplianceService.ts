@@ -112,8 +112,8 @@ export function createDefaultVisionProbe(): ComplianceVisionProbe {
 
                 let selected = objects.find((o) => o.label.toLowerCase().includes('logo'));
 
-                // When multiple candidates exist or no explicit "logo" label exists,
-                // let Jev choice-judge the true brand mark candidate.
+                // A label-based guess is insufficient when several objects compete.
+                // An explicit "none" or unavailable judgment must not preserve it.
                 if (objects.length > 1) {
                     try {
                         const { judgeBrandMarkCandidate } = await import('@/config/typesafeJudgments');
@@ -123,14 +123,10 @@ export function createDefaultVisionProbe(): ComplianceVisionProbe {
                             boxDescription: `[ymin: ${Math.round(o.box.ymin)}, xmin: ${Math.round(o.box.xmin)}, ymax: ${Math.round(o.box.ymax)}, xmax: ${Math.round(o.box.xmax)}]`,
                         }));
                         const chosenId = await judgeBrandMarkCandidate(candidates);
-                        if (chosenId && chosenId.startsWith('obj_')) {
-                            const idx = Number(chosenId.replace('obj_', ''));
-                            if (!Number.isNaN(idx) && objects[idx]) {
-                                selected = objects[idx];
-                            }
-                        }
-                    } catch (e) {
-                        logger.debug('[BrandCompliance] Jev logo disambiguation skipped, keeping default match:', e);
+                        selected = chosenId ? objects[candidates.findIndex(candidate => candidate.id === chosenId)] : undefined;
+                    } catch {
+                        logger.debug('[BrandCompliance] Logo disambiguation unavailable');
+                        selected = undefined;
                     }
                 }
 
