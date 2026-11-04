@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Utility/config types use any by design */
 import { logger } from '@/utils/logger';
-type EventCallback<T = unknown> = (data: T) => void;
+type EventCallback<T = unknown> = (data: T) => unknown;
 
 export type EventType =
     | 'AGENT_ACTION'
@@ -55,15 +55,22 @@ class EventBus {
 
     emit<T>(event: EventType, data: T): void {
         if (!this.listeners[event]) return;
+        const reportListenerFailure = (error: unknown) => {
+            // Do not log the payload, which can contain private agent data.
+            const errorType = error instanceof Error ? error.name : typeof error;
+            logger.warn(`[EventBus] ${event} listener failed (${errorType})`);
+        };
         for (const callback of [...(this.listeners[event] || [])]) {
             try {
-                callback(data);
+                const result = callback(data);
+                if (result && typeof result === 'object' && 'then' in result &&
+                    typeof result.then === 'function') {
+                    void Promise.resolve(result).catch(reportListenerFailure);
+                }
             } catch (error) {
                 // Subscribers are diagnostics/UI observers; one broken listener
                 // must not prevent another listener or the caller from running.
-                // Do not log the payload, which can contain private agent data.
-                const errorType = error instanceof Error ? error.name : typeof error;
-                logger.warn(`[EventBus] ${event} listener failed (${errorType})`);
+                reportListenerFailure(error);
             }
         }
 
