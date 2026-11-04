@@ -9,6 +9,10 @@ type CameraCapabilities = MediaTrackCapabilities & {
     zoom?: Range;
     exposureCompensation?: Range;
 };
+type CameraSettings = MediaTrackSettings & {
+    zoom?: number;
+    exposureCompensation?: number;
+};
 
 // eslint-disable-next-line react-refresh/only-export-components -- pure crop geometry is shared with focused tests
 export function cropToRatio(width: number, height: number, ratio: Ratio): { sx: number; sy: number; width: number; height: number } {
@@ -85,9 +89,10 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
             const track = stream.getVideoTracks()[0];
             let caps: CameraCapabilities | undefined;
             try { caps = track?.getCapabilities?.() as CameraCapabilities | undefined; } catch { /* Optional hardware controls unavailable. */ }
+            const settings = track?.getSettings() as CameraSettings | undefined;
             setCapabilities(caps ?? null);
-            setZoom(caps?.zoom ? track.getSettings().zoom ?? caps.zoom.min : null);
-            setExposure(caps?.exposureCompensation ? (track.getSettings() as { exposureCompensation?: number }).exposureCompensation ?? 0 : null);
+            setZoom(caps?.zoom ? settings?.zoom ?? caps.zoom.min : null);
+            setExposure(caps?.exposureCompensation ? settings?.exposureCompensation ?? 0 : null);
             setIsReady(true);
         }).catch(() => {
             if (!cancelled) setError('Camera access failed. Use your phone camera instead.');

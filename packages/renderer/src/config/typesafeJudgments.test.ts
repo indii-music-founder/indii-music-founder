@@ -832,6 +832,20 @@ describe('judgeBrandMarkCandidate (Judgment 10)', () => {
         const result = await judgeBrandMarkCandidate(candidates);
         expect(result).toBeNull();
     });
+
+    it.each([undefined, NaN, -0.1, 0.49, 1.1])(
+        'abstains from a brand mark choice with confidence %s',
+        async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { logo_mark: { choice: 'obj_0', confidence } } }
+            }));
+
+            expect(await judgeBrandMarkCandidate([
+                { id: 'obj_0', label: 'logo', boxDescription: '[0, 0, 10, 10]' }
+            ])).toBeNull();
+        }
+    );
 });
 
 describe('judgeCommandIntent (Judgment 11)', () => {
@@ -2883,7 +2897,7 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    intent: { choice: 'GENUINE_FAN_PRAISE' },
+                    intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.92 },
                     approved: { noul: 0.99 },
                     vibe: { score: 4 },
                 },
@@ -2902,7 +2916,7 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
-                intent: { choice: 'GENUINE_FAN_PRAISE' },
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.92 },
                 approved: { noul: 0.99 },
                 vibe: { score: 4 },
             } },
@@ -2922,16 +2936,60 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: '0.99' } },
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: null } },
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: 1.5 } },
-    ])('holds a comment for review when Jev returns malformed moderation data: $intent $approved', async ({ intent, approved }) => {
+    ])('holds a comment when Jev returns malformed moderation data: $intent $approved', async ({ intent, approved }) => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: { intent: { choice: intent }, approved, vibe: { score: 4 } } },
+            data: { answers: { intent: { choice: intent, confidence: 0.92 }, approved, vibe: { score: 4 } } },
         }));
 
         const result = await judgeFanCommentModeration('Great track');
 
         expect(result.isApproved).toBe(false);
-        expect(result.moderationFlag).toContain('review');
+        expect(result.moderationFlag).toContain('could not be checked');
+    });
+
+    it.each([undefined, NaN, 0.49, 1.1])('holds a comment when intent confidence is %s', async confidence => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence },
+                approved: { noul: 0.99 },
+                vibe: { score: 4 },
+            } },
+        }));
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+    });
+
+    it('holds an uncertain approval and does not highlight an invalid vibe score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValueOnce(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.9 },
+                approved: { noul: 0.6 },
+                vibe: { score: 4 },
+            } },
+        })).mockReturnValueOnce(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.9 },
+                approved: { noul: 0.95 },
+                vibe: { score: 'unknown' },
+            } },
+        }));
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        const approved = await judgeFanCommentModeration('Great track');
+        expect(approved.isApproved).toBe(true);
+        expect(approved.vibeAlignmentScore).toBe(3);
+    });
+
+    it('holds comments during a Jev outage and its cooldown', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('service unavailable'); });
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        expect(mocks.httpsCallable).toHaveBeenCalledOnce();
     });
 });
 
@@ -4098,7 +4156,7 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('detects underwater contract hazard offline when recoupment exceeds term', async () => {
+    it('reports a streaming-only run rate without declaring a contract underwater', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const underwater = await judgeContractRecoupmentPace({
@@ -4109,10 +4167,9 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 36,
         });
 
-        expect(underwater.recoupmentPace).toBe('UNDERWATER_HAZARD');
-        expect(underwater.riskScore).toBe(5);
-        expect(underwater.estimatedMonthsToFullRecoup).toBe(90);
-        expect(underwater.strategicRecommendation).toContain('underwater');
+        expect(underwater.status).toBe('RUN_RATE_AVAILABLE');
+        expect(underwater.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(90);
+        expect(underwater.projectionNote).toContain('Other revenue, costs, and contract terms are not assessed');
     });
 
     it('recognizes fully recouped deal offline', async () => {
@@ -4125,21 +4182,13 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             monthsSinceRelease: 18,
         });
 
-        expect(clear.recoupmentPace).toBe('FAST_TRACK');
-        expect(clear.riskScore).toBe(1);
-        expect(clear.estimatedMonthsToFullRecoup).toBe(0);
+        expect(clear.status).toBe('ADVANCE_COVERED');
+        expect(clear.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(0);
+        expect(clear.projectionNote).toContain('Check the contract ledger');
     });
 
-    it('evaluates recoupment pace through Jev online callable', async () => {
+    it('uses arithmetic rather than a Jev opinion when judgments are enabled', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    pace_status: { choice: 'FAST_TRACK' },
-                    underwater_risk_score: { score: 0 },
-                },
-            },
-        }));
 
         const result = await judgeContractRecoupmentPace({
             advanceAmount: 10_000,
@@ -4149,9 +4198,46 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 24,
         });
 
-        expect(result.recoupmentPace).toBe('FAST_TRACK');
-        expect(result.riskScore).toBe(1);
-        expect(result.estimatedMonthsToFullRecoup).toBe(2);
+        expect(result.status).toBe('RUN_RATE_AVAILABLE');
+        expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(2);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('does not invent a finite horizon from zero or negative streaming net', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        for (const monthlyStreamingNetRevenue of [0, -100]) {
+            const result = await judgeContractRecoupmentPace({
+                advanceAmount: 10_000,
+                recoupedAmount: 5_000,
+                monthlyStreamingNetRevenue,
+                monthsSinceRelease: 3,
+            });
+
+            expect(result.status).toBe('NO_CURRENT_STREAMING_RUN_RATE');
+            expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
+        }
+    });
+
+    it('rejects invalid financial inputs and unbounded results', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const valid = {
+            advanceAmount: 10_000,
+            recoupedAmount: 5_000,
+            monthlyStreamingNetRevenue: 500,
+            monthsSinceRelease: 3,
+        };
+
+        await expect(judgeContractRecoupmentPace({ ...valid, advanceAmount: Number.NaN })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, recoupedAmount: -1 })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, contractTermMonths: -36 })).rejects.toThrow(RangeError);
+        const overflow = await judgeContractRecoupmentPace({
+            ...valid,
+            advanceAmount: Number.MAX_VALUE,
+            recoupedAmount: 0,
+            monthlyStreamingNetRevenue: Number.MIN_VALUE,
+        });
+        expect(overflow.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
     });
 });
 
@@ -4170,10 +4256,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'TOUR_ANNOUNCEMENT',
         });
 
-        expect(spam.isSpamTriggerRisk).toBe(true);
-        expect(spam.openRateScore).toBe(1);
+        expect(spam.hasSpamStyleSignal).toBe(true);
+        expect(spam.copyQualityScore).toBe(1);
         expect(spam.urgencyLevel).toBe('OVERHYPED_SPAMMY');
-        expect(spam.suggestedSubjectLine).toContain('Tour Dates');
+        expect(spam.suggestedSubjectLine).toBe('New tour dates are here');
     });
 
     it('rates authentic compelling subject line highly offline', async () => {
@@ -4184,10 +4270,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'MERCH_DROP',
         });
 
-        expect(clean.isSpamTriggerRisk).toBe(false);
-        expect(clean.openRateScore).toBe(5);
+        expect(clean.hasSpamStyleSignal).toBe(false);
+        expect(clean.copyQualityScore).toBe(5);
         expect(clean.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
-        expect(clean.predictedOpenRatePercent).toBeGreaterThan(40);
+        expect(clean.suggestedSubjectLine).toBe('Limited Edition Vinyl & Hoodies — Official Release Now Live');
     });
 
     it('scores subject line through Jev online callable', async () => {
@@ -4195,8 +4281,8 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    open_rate_potential: { score: 3 },
-                    spam_filter_risk: { probability: 0.05 },
+                    copy_quality: { score: 3 },
+                    spam_style_signal: { probability: 0.05 },
                 },
             },
         }));
@@ -4206,9 +4292,48 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'SINGLE_RELEASE',
         });
 
-        expect(result.openRateScore).toBe(4);
-        expect(result.isSpamTriggerRisk).toBe(false);
+        expect(result.copyQualityScore).toBe(4);
+        expect(result.hasSpamStyleSignal).toBe(false);
         expect(result.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
+        expect(result.suggestedSubjectLine).toBe('Secret listening room link for our upcoming single');
+    });
+
+    it('keeps an obvious pressure signal even when Jev rates the copy safe', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 4 },
+                spam_style_signal: { probability: 0 },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'BUY NOW FREE TICKETS',
+            campaignType: 'TOUR_ANNOUNCEMENT',
+        });
+
+        expect(result.hasSpamStyleSignal).toBe(true);
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.suggestedSubjectLine).toBe('New tour dates are here');
+    });
+
+    it('ignores malformed Jev Score and Noul answers', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 9 },
+                spam_style_signal: { probability: Number.NaN },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'Hello from us',
+            campaignType: 'SINGLE_RELEASE',
+        });
+
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.hasSpamStyleSignal).toBe(false);
+        expect(result.suggestedSubjectLine).toBe('Hello from us');
     });
 });
 
@@ -4219,7 +4344,7 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('flags bot stream farm attack offline based on high skip and low saves', async () => {
+    it('flags an unusual pattern for review without diagnosing bot traffic', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const botFarm = await judgeStreamingFraudRisk({
@@ -4230,13 +4355,12 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             savesPerStreamRatio: 0.001,
         });
 
-        expect(botFarm.rootCause).toBe('BOTTING_FARM_HAZARD');
-        expect(botFarm.dspPenaltyHazard).toBe(true);
-        expect(botFarm.fraudProbability).toBeGreaterThan(0.9);
-        expect(botFarm.actionGuidance).toContain('CRITICAL');
+        expect(botFarm.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(botFarm.observedSignals).toEqual(['VELOCITY_SPIKE', 'HIGH_SKIP_RATE', 'LOW_SAVE_RATE']);
+        expect(botFarm.actionGuidance).toContain('distributor or label');
     });
 
-    it('validates organic viral surge offline with high listener saves', async () => {
+    it('does not certify a high-save surge as organic', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const organic = await judgeStreamingFraudRisk({
@@ -4247,13 +4371,12 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             savesPerStreamRatio: 0.08,
         });
 
-        expect(organic.rootCause).toBe('ORGANIC_VIRAL');
-        expect(organic.dspPenaltyHazard).toBe(false);
-        expect(organic.fraudProbability).toBeLessThan(0.1);
-        expect(organic.actionGuidance).toContain('viral surge');
+        expect(organic.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(organic.observedSignals).toEqual(['VELOCITY_SPIKE']);
+        expect(organic.actionGuidance).toContain('traffic sources');
     });
 
-    it('processes streaming spike diagnosis via Jev online callable', async () => {
+    it('does not ask Jev to infer a source or penalty from aggregate numbers', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
@@ -4309,6 +4432,19 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
         expect(result.dspPenaltyHazard).toBe(true);
         expect(result.rootCause).toBe('BOTTING_FARM_HAZARD');
         expect(judge).not.toHaveBeenCalled();
+        expect(result.trafficReview).toBe('NO_STRONG_PATTERN');
+        expect(result.observedSignals).toEqual([]);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('rejects invalid metric ranges', async () => {
+        const valid = {
+            trackTitle: 'Track', velocityRatio: 2, skipRatePercent: 20,
+            primaryCountryCode: 'US', savesPerStreamRatio: 0.02,
+        };
+        await expect(judgeStreamingFraudRisk({ ...valid, velocityRatio: Number.NaN })).rejects.toThrow(RangeError);
+        await expect(judgeStreamingFraudRisk({ ...valid, skipRatePercent: 101 })).rejects.toThrow(RangeError);
+        await expect(judgeStreamingFraudRisk({ ...valid, savesPerStreamRatio: -0.1 })).rejects.toThrow(RangeError);
     });
 });
 
