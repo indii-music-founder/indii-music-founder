@@ -4949,6 +4949,7 @@ export async function judgeCameraAngleContinuity(
 
 export type ColorGradePreset =
     | 'TEAL_AND_ORANGE_BLOCKBUSTER'
+    | 'EDITORIAL_BLUE_HOUR'
     | 'NEON_CYBER_NOCTURNE'
     | 'WARM_GOLDEN_HOUR'
     | 'DESATURATED_GRITTY_NOIR'
@@ -4980,10 +4981,13 @@ export async function judgeVideoColorGradeMood(
     const genre = input.genre.toLowerCase();
     const vibe = input.intendedVibe.toLowerCase();
     const moods = input.moodTags.map(m => m.toLowerCase());
+    const cyberpunkRequested = vibe.includes('cyberpunk') || moods.some(m => m.includes('cyberpunk'));
 
     let fallbackPreset: ColorGradePreset = 'WARM_GOLDEN_HOUR';
-    if (genre.includes('synth') || genre.includes('electronic') || vibe.includes('cyber') || vibe.includes('club')) {
+    if (cyberpunkRequested) {
         fallbackPreset = 'NEON_CYBER_NOCTURNE';
+    } else if (genre.includes('synth') || genre.includes('electronic') || vibe.includes('club')) {
+        fallbackPreset = 'EDITORIAL_BLUE_HOUR';
     } else if (genre.includes('hip-hop') || genre.includes('trap') || genre.includes('rock') || vibe.includes('gritty') || vibe.includes('dark')) {
         fallbackPreset = 'DESATURATED_GRITTY_NOIR';
     } else if (genre.includes('pop') || genre.includes('indie') || vibe.includes('dream') || vibe.includes('pastel')) {
@@ -5027,11 +5031,11 @@ export async function judgeVideoColorGradeMood(
                     type: 'choice' as const,
                     instructions:
                         'Select the optimal cinematic color grade preset to visually express this music track: ' +
-                        'TEAL_AND_ORANGE_BLOCKBUSTER, NEON_CYBER_NOCTURNE, WARM_GOLDEN_HOUR, ' +
-                        'DESATURATED_GRITTY_NOIR, PASTEL_DREAM_POP, or VINTAGE_SEPIA_VINYL.',
+                        'Choose from the declared criteria, honoring only styles the artist requested.',
                     criteria: {
                         TEAL_AND_ORANGE_BLOCKBUSTER: 'High contrast, rich skin tones against deep teal shadows; commercial, punchy, cinematic.',
-                        NEON_CYBER_NOCTURNE: 'Electric cyan, magenta, and deep indigo night palette; synthwave, club, techno aesthetic.',
+                        EDITORIAL_BLUE_HOUR: 'Cobalt blue, soft amber and deep slate with restrained contrast for electronic music.',
+                        ...(cyberpunkRequested ? { NEON_CYBER_NOCTURNE: 'The artist explicitly requested a cyberpunk night palette with electric cyan and magenta.' } : {}),
                         WARM_GOLDEN_HOUR: 'Soft amber highlights, glowing golden warmth, organic naturalistic film stock for indie/acoustic.',
                         DESATURATED_GRITTY_NOIR: 'High-contrast monochrome or near-monochrome with deep blacks; aggressive hip-hop, metal, or crime noir.',
                         PASTEL_DREAM_POP: 'Ethereal washed pastel highlights, soft contrast, dreamlike nostalgic haze.',
@@ -5061,10 +5065,15 @@ export async function judgeVideoColorGradeMood(
         const claAns = ans?.clash_hazard as { noul?: unknown } | number | undefined;
         const synAns = ans?.synergy_score as { score?: unknown } | number | undefined;
 
-        const resolvedPreset = (typeof preAns?.choice === 'string' ? preAns.choice : fallbackPreset) as ColorGradePreset;
-        const clashProb = typeof claAns === 'number'
-            ? claAns
-            : Number((claAns as { noul?: unknown })?.noul ?? (clashingHazard ? 0.75 : 0.1));
+        const allowedPresets: ColorGradePreset[] = [
+            'TEAL_AND_ORANGE_BLOCKBUSTER', 'EDITORIAL_BLUE_HOUR', 'WARM_GOLDEN_HOUR',
+            'DESATURATED_GRITTY_NOIR', 'PASTEL_DREAM_POP', 'VINTAGE_SEPIA_VINYL',
+            ...(cyberpunkRequested ? ['NEON_CYBER_NOCTURNE' as const] : []),
+        ];
+        const resolvedPreset = allowedPresets.find(preset => preset === preAns?.choice) ?? fallbackPreset;
+        const rawClash = typeof claAns === 'number' ? claAns : (claAns as { noul?: unknown } | null)?.noul;
+        const clashProb = typeof rawClash === 'number' && Number.isFinite(rawClash) && rawClash >= 0 && rawClash <= 1
+            ? rawClash : (clashingHazard ? 0.75 : 0.1);
         const resolvedSynergy = oneIndexedScore(synAns, fallbackScore);
 
         return {
