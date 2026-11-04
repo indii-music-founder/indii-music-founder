@@ -50,10 +50,10 @@ const DEFAULT_SCENES: StoryboardScene[] = [
         id: '1',
         sceneNumber: 1,
         heading: 'EXT. CITY ALLEY - NIGHT',
-        description: 'Neon glowing signs flicker. Slick puddles on concrete reflect vibrant magenta and cyan lights. Rain droplets splash slowly on the pavement.',
+        description: 'Storefront lights glow through the rain. Puddles on the sidewalk reflect passing traffic as the artist walks toward the venue.',
         cameraAngle: 'Extreme Wide Shot - Slow tracking lateral pan',
         duration: 5,
-        veoPrompt: 'Cinematic wide tracking shot of a rainy neon alley at night, reflections in puddles, photorealistic 8k, slow motion.'
+        veoPrompt: 'Documentary wide tracking shot of an artist walking through a rainy city alley at night, reflections in puddles, natural light.'
     },
     {
         id: '2',
@@ -68,17 +68,17 @@ const DEFAULT_SCENES: StoryboardScene[] = [
         id: '3',
         sceneNumber: 3,
         heading: 'EXT. ROOFTOP OVERLOOK - DAWN',
-        description: 'The sky breaks into gold and violet gradients. The artist stands at the ledge, overlooking a massive futuristic cityscape. Wind blows through their jacket.',
+        description: 'The sky breaks into gold and violet gradients. The artist stands at the ledge, overlooking the waking city. Wind blows through their jacket.',
         cameraAngle: 'High Angle Crane Shot - Orbit rotation',
         duration: 7,
-        veoPrompt: 'Epic drone orbit shot of a singer on a rooftop looking at a gold and purple sunrise over a huge cyber city, wind blowing, premium CGI look.'
+        veoPrompt: 'Slow crane orbit of a singer on a rooftop at sunrise, warm light over the waking city, wind moving their jacket, analog film texture.'
     }
 ];
 
 function createDefaultDraft(): ScreenwriterDraft {
     return {
         activeTab: 'scriptwriter',
-        songConcept: 'An independent artist walking through a neon-lit rain-slicked city alleyway, with reflections of holographic advertisements detailing their journey.',
+        songConcept: 'An independent artist walks through a rainy city toward a show, then watches sunrise from a rooftop after the performance.',
         selectedTone: 'cinematic',
         scenes: DEFAULT_SCENES,
         selectedSceneId: DEFAULT_SCENES[0]?.id ?? '1',

@@ -61,7 +61,7 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
                 position: { x: 50, y: 250 },
                 data: {
                     nodeType: 'input',
-                    prompt: 'A cyberpunk detective in the rain',
+                    prompt: 'A documentary portrait of a musician backstage before a show',
                     status: Status.PENDING
                 }
             },

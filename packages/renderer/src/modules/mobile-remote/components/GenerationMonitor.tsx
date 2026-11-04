@@ -40,7 +40,7 @@ const STYLE_PRESETS = [
     { label: 'Cinematic', prefix: 'Cinematic, dramatic lighting, film grain, ' },
     { label: 'Album Art', prefix: 'Music album cover art, bold typography space, ' },
     { label: 'Streetwear', prefix: 'Luxury streetwear aesthetic, urban, high fashion, ' },
-    { label: 'Neon', prefix: 'Neon lights, cyberpunk, vibrant colors, night scene, ' },
+    { label: 'Neon', prefix: 'Colorful neon lights, night scene, reflective surfaces, ' },
     { label: 'Minimal', prefix: 'Minimalist, clean, negative space, elegant, ' },
     { label: 'Vintage', prefix: 'Retro vintage, 35mm film, faded colors, nostalgic, ' },
 ];

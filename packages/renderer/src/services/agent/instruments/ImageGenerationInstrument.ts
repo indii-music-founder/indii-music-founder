@@ -51,7 +51,7 @@ export class ImageGenerationInstrument implements Instrument {
     examples: [
       {
         input: {
-          prompt: 'A futuristic city at sunset, cyberpunk style',
+          prompt: 'A city skyline at sunset, warm analog film photography',
           aspectRatio: '16:9',
           count: 1
         },
