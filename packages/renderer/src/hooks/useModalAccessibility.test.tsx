@@ -26,4 +26,22 @@ describe('useModalAccessibility', () => {
         expect(closeSecond).toHaveBeenCalledOnce();
         expect(closeFirst).not.toHaveBeenCalled();
     });
+
+    it('keeps Escape on the top dialog after a lower callback changes', () => {
+        const closeFirst = vi.fn();
+        const closeSecond = vi.fn();
+        const dialogs = (onFirstClose: () => void) => <>
+            <TestDialog name="First" onClose={onFirstClose} />
+            <TestDialog name="Second" onClose={closeSecond} />
+        </>;
+        const { rerender } = render(dialogs(closeFirst));
+
+        rerender(dialogs(() => closeFirst()));
+        fireEvent.keyDown(screen.getByRole('textbox', { name: 'Second input' }), {
+            key: 'Escape', code: 'Escape', bubbles: true, cancelable: true,
+        });
+
+        expect(closeSecond).toHaveBeenCalledOnce();
+        expect(closeFirst).not.toHaveBeenCalled();
+    });
 });

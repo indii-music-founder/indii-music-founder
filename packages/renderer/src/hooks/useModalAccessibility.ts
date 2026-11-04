@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { useFocusTrap } from './useFocusTrap';
+import { isTopFocusTrap, useFocusTrap } from './useFocusTrap';
 import { useGlobalShortcut } from './useGlobalShortcut';
 
 /** Shared keyboard contract for custom modal surfaces that cannot use Modal. */
@@ -13,6 +13,7 @@ export function useModalAccessibility(isOpen: boolean, onClose: () => void) {
         priority: 'modal',
         ignoreInput: true,
         handler: (event) => {
+            if (!isTopFocusTrap(dialogRef.current)) return;
             event.preventDefault();
             event.stopPropagation();
             onClose();
