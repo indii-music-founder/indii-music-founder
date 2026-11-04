@@ -7389,21 +7389,19 @@ export async function judgeContractRecoupmentPace(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 64: Direct-to-Fan Email Subject Line Optimizer (Domain: Marketing)
+// Judgment 64: Direct-to-Fan Email Subject Line Copy Review (Domain: Marketing)
 // ---------------------------------------------------------------------------
 
 export interface EmailSubjectInput {
     subjectLine: string;
     campaignType: 'MERCH_DROP' | 'TOUR_ANNOUNCEMENT' | 'SINGLE_RELEASE' | 'EXCLUSIVE_CONTENT';
-    recipientCount?: number;
 }
 
 export interface EmailSubjectVerdict {
-    openRateScore: number; // 1 to 5
-    isSpamTriggerRisk: boolean;
+    copyQualityScore: number; // 1 to 5; qualitative copy review, not an open-rate estimate
+    hasSpamStyleSignal: boolean;
     urgencyLevel: 'HEALTHY_ANTICIPATION' | 'OVERHYPED_SPAMMY' | 'PASSIVE_BLAND';
     suggestedSubjectLine: string;
-    predictedOpenRatePercent: number;
 }
 
 export async function judgeDirectToFanEmailSubjectLine(
@@ -7412,7 +7410,7 @@ export async function judgeDirectToFanEmailSubjectLine(
     const text = input.subjectLine.trim();
 
     const isAllCaps = text.length > 5 && text === text.toUpperCase();
-    const spamWordMatch = /\b(free|\$\$\$|act now|limited time|guaranteed|winner|urgent|100%|buy now)\b/i.test(text);
+    const spamWordMatch = /\b(free|act now|limited time|guaranteed|winner|urgent|buy now)\b|\$\$\$|100%/i.test(text);
     const hasSpamRisk = isAllCaps || spamWordMatch;
 
     let urgency: EmailSubjectVerdict['urgencyLevel'] = 'HEALTHY_ANTICIPATION';
@@ -7420,34 +7418,28 @@ export async function judgeDirectToFanEmailSubjectLine(
     else if (text.length < 15 || !/new|drop|tonight|live|presave|ticket|vinyl/i.test(text)) urgency = 'PASSIVE_BLAND';
 
     let fallbackScore = 3;
-    let predictedRate = 34.0;
     if (hasSpamRisk) {
         fallbackScore = 1;
-        predictedRate = 14.5;
     } else if (urgency === 'HEALTHY_ANTICIPATION' && text.length >= 25 && text.length <= 60) {
         fallbackScore = 5;
-        predictedRate = 48.5;
     } else if (urgency === 'PASSIVE_BLAND') {
         fallbackScore = 2;
-        predictedRate = 22.0;
     }
 
-    let suggestion = text;
-    if (input.campaignType === 'MERCH_DROP' && hasSpamRisk) {
-        suggestion = 'Limited Edition Vinyl & Hoodies — Official Release Now Live';
-    } else if (input.campaignType === 'TOUR_ANNOUNCEMENT') {
-        suggestion = 'Detroit to NYC: Fall Tour Dates & Artist Presale Access';
-    } else if (input.campaignType === 'SINGLE_RELEASE') {
-        suggestion = 'My new single is out everywhere at midnight (listen first)';
-    }
+    const safeSuggestion = {
+        MERCH_DROP: 'New merch is here',
+        TOUR_ANNOUNCEMENT: 'New tour dates are here',
+        SINGLE_RELEASE: 'Listen to the new single',
+        EXCLUSIVE_CONTENT: 'An update for you',
+    }[input.campaignType];
+    const suggestion = hasSpamRisk ? safeSuggestion : text;
 
     if (!judgmentsAvailable()) {
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 
@@ -7462,54 +7454,53 @@ export async function judgeDirectToFanEmailSubjectLine(
             state: {
                 subject: text.slice(0, 150),
                 type: input.campaignType,
-                recipients: input.recipientCount || 1000,
             },
             questions: {
-                open_rate_potential: {
+                copy_quality: {
                     type: 'score' as const,
-                    instructions: 'Score the open-rate conversion strength of this email subject line from 1 to 5.',
+                    instructions: 'Rate the clarity and appeal of this subject line as copy. Do not predict open rates or email deliverability.',
                     criteria: [
-                        'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
-                        'Bland or passive copy with below-average expected open rates.',
-                        'Standard competent notification subject line.',
-                        'Compelling artist-to-fan direct voice with high open anticipation.',
-                        'Exceptional subject line with curiosity gap and authentic high engagement.',
+                        'Confusing or pressuring copy.',
+                        'Generic copy with little useful detail.',
+                        'Clear, serviceable notification.',
+                        'Specific, engaging artist-to-fan voice.',
+                        'Especially clear and engaging copy.',
                     ],
                 },
-                spam_filter_risk: {
+                spam_style_signal: {
                     type: 'noul' as const,
-                    instructions: 'Does this subject line trigger ISP email spam filters (excessive punctuation, ALL CAPS, spam keywords)?',
+                    instructions: 'Does this subject line use obvious spam-style formatting or pressure language? Assess text only, not ISP filtering.',
                     criteria: {
-                        true: 'High risk of inbox spam tab placement.',
-                        false: 'Clean subject line that passes standard DMARC/spam filter evaluation.',
+                        true: 'Uses all caps, excessive punctuation, or pressure language.',
+                        false: 'Does not show those text patterns.',
                     },
                 },
             },
         });
 
         const ans = result.data.answers;
-        const scAns = ans?.open_rate_potential as { score?: unknown } | number | undefined;
-        const spAns = ans?.spam_filter_risk as { probability?: unknown } | undefined;
-
-        const resolvedScore = oneIndexedScore(scAns, fallbackScore);
-        const spamProb = typeof spAns?.probability === 'number' ? spAns.probability : (hasSpamRisk ? 0.8 : 0.1);
-        const finalSpam = spamProb >= 0.5;
+        const scAns = ans?.copy_quality as { score?: unknown } | undefined;
+        const spAns = ans?.spam_style_signal as { probability?: unknown } | undefined;
+        const rawScore = scAns?.score;
+        const rawSpamProb = spAns?.probability;
+        const validScore = typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4;
+        const validSpamProb = typeof rawSpamProb === 'number' && Number.isFinite(rawSpamProb) && rawSpamProb >= 0 && rawSpamProb <= 1;
+        const resolvedScore = validScore ? rawScore + 1 : fallbackScore;
+        const finalSpam = hasSpamRisk || (validSpamProb && rawSpamProb >= 0.5);
 
         return {
-            openRateScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
-            isSpamTriggerRisk: finalSpam,
+            copyQualityScore: finalSpam ? Math.min(2, Math.round(resolvedScore)) : Math.round(resolvedScore),
+            hasSpamStyleSignal: finalSpam,
             urgencyLevel: finalSpam ? 'OVERHYPED_SPAMMY' : (resolvedScore >= 4 ? 'HEALTHY_ANTICIPATION' : 'PASSIVE_BLAND'),
-            suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: Math.round(15 + resolvedScore * 7.5),
+            suggestedSubjectLine: finalSpam ? safeSuggestion : text,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'direct-to-fan email subject line judgment');
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 }

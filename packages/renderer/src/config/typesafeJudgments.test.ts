@@ -4170,10 +4170,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'TOUR_ANNOUNCEMENT',
         });
 
-        expect(spam.isSpamTriggerRisk).toBe(true);
-        expect(spam.openRateScore).toBe(1);
+        expect(spam.hasSpamStyleSignal).toBe(true);
+        expect(spam.copyQualityScore).toBe(1);
         expect(spam.urgencyLevel).toBe('OVERHYPED_SPAMMY');
-        expect(spam.suggestedSubjectLine).toContain('Tour Dates');
+        expect(spam.suggestedSubjectLine).toBe('New tour dates are here');
     });
 
     it('rates authentic compelling subject line highly offline', async () => {
@@ -4184,10 +4184,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'MERCH_DROP',
         });
 
-        expect(clean.isSpamTriggerRisk).toBe(false);
-        expect(clean.openRateScore).toBe(5);
+        expect(clean.hasSpamStyleSignal).toBe(false);
+        expect(clean.copyQualityScore).toBe(5);
         expect(clean.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
-        expect(clean.predictedOpenRatePercent).toBeGreaterThan(40);
+        expect(clean.suggestedSubjectLine).toBe('Limited Edition Vinyl & Hoodies — Official Release Now Live');
     });
 
     it('scores subject line through Jev online callable', async () => {
@@ -4195,8 +4195,8 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    open_rate_potential: { score: 3 },
-                    spam_filter_risk: { probability: 0.05 },
+                    copy_quality: { score: 3 },
+                    spam_style_signal: { probability: 0.05 },
                 },
             },
         }));
@@ -4206,9 +4206,48 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'SINGLE_RELEASE',
         });
 
-        expect(result.openRateScore).toBe(4);
-        expect(result.isSpamTriggerRisk).toBe(false);
+        expect(result.copyQualityScore).toBe(4);
+        expect(result.hasSpamStyleSignal).toBe(false);
         expect(result.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
+        expect(result.suggestedSubjectLine).toBe('Secret listening room link for our upcoming single');
+    });
+
+    it('keeps an obvious pressure signal even when Jev rates the copy safe', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 4 },
+                spam_style_signal: { probability: 0 },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'BUY NOW FREE TICKETS',
+            campaignType: 'TOUR_ANNOUNCEMENT',
+        });
+
+        expect(result.hasSpamStyleSignal).toBe(true);
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.suggestedSubjectLine).toBe('New tour dates are here');
+    });
+
+    it('ignores malformed Jev Score and Noul answers', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 9 },
+                spam_style_signal: { probability: Number.NaN },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'Hello from us',
+            campaignType: 'SINGLE_RELEASE',
+        });
+
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.hasSpamStyleSignal).toBe(false);
+        expect(result.suggestedSubjectLine).toBe('Hello from us');
     });
 });
 
