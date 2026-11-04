@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 import { AgentFeedbackEvent, AgentActionContext, FeedbackRating } from '@/types/agent-feedback';
 import { Timestamp } from 'firebase/firestore';
 import { alwaysOnMemoryEngine } from '@/services/agent/memory/AlwaysOnMemoryEngine';
+import { auth } from '@/services/firebase';
 
 export interface AgentFeedbackSlice {
     // Data
@@ -15,7 +16,7 @@ export interface AgentFeedbackSlice {
     // Actions
     openFeedbackWidget: (context: AgentActionContext) => void;
     closeFeedbackWidget: () => void;
-    submitFeedback: (userId: string, rating: FeedbackRating, comment?: string, sharedGlobally?: boolean) => Promise<void>;
+    submitFeedback: (rating: FeedbackRating, comment?: string) => Promise<boolean>;
 }
 
 export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, get) => ({
@@ -37,12 +38,14 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
         });
     },
 
-    submitFeedback: async (userId, rating, comment, sharedGlobally = false) => {
+    submitFeedback: async (rating, comment) => {
         const { currentFeedbackContext } = get();
         if (!currentFeedbackContext) {
             logger.warn('[AgentFeedbackSlice] Cannot submit feedback without an active context.');
-            return;
+            return false;
         }
+        const userId = auth.currentUser?.uid;
+        if (!userId) return false;
 
         try {
             // Persist the feedback as a strategic rule in Always-On Memory
@@ -50,13 +53,8 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
                 ? `Strategic Feedback for ${currentFeedbackContext.actionType}: ${comment}`
                 : `User ${rating === 'positive' ? 'approved' : 'rejected'} agent action: ${currentFeedbackContext.actionType}`;
 
-            try {
-                // Using the formal saveFeedback method to ensure it's categorized correctly
-                await alwaysOnMemoryEngine.saveFeedback(ruleText, rating);
-                logger.info(`[AgentFeedbackSlice] Successfully saved strategic rule to AlwaysOnMemory for user ${userId}`);
-            } catch (memoryError: unknown) {
-                logger.error('[AgentFeedbackSlice] Failed to save rule to AlwaysOnMemory (non-blocking):', memoryError);
-            }
+            // Keep the widget open if the memory pipeline fails or skips the rule.
+            await alwaysOnMemoryEngine.saveFeedback(userId, ruleText, rating);
 
             const newEvent: AgentFeedbackEvent = {
                 id: crypto.randomUUID(),
@@ -66,7 +64,7 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
                 rating,
                 comment,
                 isProcessed: true,
-                sharedGlobally,
+                sharedGlobally: false,
             };
 
             set((state) => ({
@@ -76,8 +74,10 @@ export const createAgentFeedbackSlice: StateCreator<AgentFeedbackSlice> = (set, 
             }));
 
             logger.info(`[AgentFeedbackSlice] Feedback submitted for action: ${currentFeedbackContext.actionType}`);
+            return true;
         } catch (error: unknown) {
             logger.error('[AgentFeedbackSlice] Failed to submit feedback:', error);
+            return false;
         }
     },
 });

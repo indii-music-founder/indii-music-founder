@@ -136,6 +136,21 @@ describe('AlwaysOnMemoryEngine', () => {
         engine.stop();
     });
 
+    it('does not report skipped feedback as a stored memory', async () => {
+        await engine.start('test-user-123');
+        const ingest = vi.spyOn(engine, 'ingest')
+            .mockResolvedValueOnce('Skipped: duplicate')
+            .mockResolvedValueOnce('📥 Stored: artist rule');
+
+        await expect(engine.saveFeedback('test-user-123', 'Avoid sponsored posts', 'negative'))
+            .rejects.toThrow('Feedback memory was not stored');
+        await expect(engine.saveFeedback('test-user-123', 'Avoid sponsored posts', 'negative'))
+            .resolves.toContain('Stored: artist rule');
+        await expect(engine.saveFeedback('other-artist', 'Avoid sponsored posts', 'negative'))
+            .rejects.toThrow('not active for the signed-in artist');
+        ingest.mockRestore();
+    });
+
     describe('Lifecycle', () => {
         it('should start the engine for a user', async () => {
             await engine.start('test-user-123');
