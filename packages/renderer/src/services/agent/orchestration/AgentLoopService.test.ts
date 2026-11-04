@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { agentLoopService } from './AgentLoopService';
 import { maestroBatchingService } from '../MaestroBatchingService';
 import { judgeTransientError } from '@/config/typesafeJudgments';
 import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { FirestoreService } from '../../FirestoreService';
 
 // Mock dependencies
 vi.mock('../MaestroBatchingService', () => ({
@@ -32,6 +33,42 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => ({
 describe('AgentLoopService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it('does not dispatch a new loop when its first checkpoint cannot be saved', async () => {
+        vi.spyOn(FirestoreService.prototype, 'set').mockRejectedValueOnce(new Error('offline'));
+        const def: AgentLoopDefinition = {
+            id: 'loop-checkpoint-failure', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: Date.now(), updatedAt: Date.now(),
+        };
+
+        await expect(agentLoopService.startLoop(def, { userId: 'user1' }))
+            .rejects.toThrow('Loop checkpoint could not be saved; no action was dispatched.');
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
+    it('keeps a saved loop unchanged when its resume checkpoint fails', async () => {
+        vi.spyOn(FirestoreService.prototype, 'set').mockRejectedValueOnce(new Error('offline'));
+        const def: AgentLoopDefinition = {
+            id: 'loop-resume-checkpoint-failure', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 2,
+            createdAt: Date.now(), updatedAt: Date.now(),
+        };
+        const saved = {
+            id: 'saved-checkpoint-failure', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+
+        await expect(agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' }))
+            .rejects.toThrow('Loop checkpoint could not be saved; no action was dispatched.');
+        expect(agentLoopService.getExecution(saved.id)).toBe(saved);
+        expect(saved.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
     it('should run a deterministic test loop and complete immediately', async () => {
