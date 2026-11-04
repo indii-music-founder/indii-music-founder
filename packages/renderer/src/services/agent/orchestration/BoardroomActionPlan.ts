@@ -34,7 +34,7 @@ export interface BoardroomActionStep {
     requiresApproval?: boolean;
 }
 
-export type BoardroomStepStatus = 'completed' | 'response' | 'pending' | 'partial' | 'failed' | 'skipped';
+export type BoardroomStepStatus = 'completed' | 'response' | 'pending' | 'partial' | 'failed' | 'uncertain' | 'skipped';
 export interface BoardroomStepReceipt {
     stepId: string;
     agentId: string;
@@ -115,7 +115,7 @@ export function boardroomDependencyField(response: AgentResponse, path?: string)
 }
 
 /** Classify real receipts, never a model's claim that it finished something. */
-export function receiptForBoardroomStep(step: BoardroomActionStep, response: AgentResponse): BoardroomStepReceipt {
+export function receiptForBoardroomStep(step: BoardroomActionStep, response: AgentResponse, outcomeUncertain = false): BoardroomStepReceipt {
     const results = (response.toolCalls ?? []).map(call => toolResult(call.result));
     const pending = results.some(result => {
         const status = String(result?.status ?? result?.data?.status ?? '').toLowerCase();
@@ -123,7 +123,8 @@ export function receiptForBoardroomStep(step: BoardroomActionStep, response: Age
     }) || /AWAITING_.*APPROVAL/.test(response.error ?? '');
     const failed = Boolean(response.error) || results.some(result => !result || !result.success);
     const persistenceWarning = results.some(result => result?.data?.gallerySaved === false || result?.data?.versionRecorded === false);
-    const status: BoardroomStepStatus = pending ? 'pending'
+    const status: BoardroomStepStatus = outcomeUncertain ? 'uncertain'
+        : pending ? 'pending'
         : failed ? results.some(result => result?.success) ? 'partial' : 'failed'
         : persistenceWarning ? 'partial'
         : results.length ? 'completed' : 'response';
@@ -142,7 +143,8 @@ export function readyBoardroomSteps(steps: BoardroomActionStep[], receipts: Boar
 export function formatBoardroomReceipt(receipt: BoardroomStepReceipt, founderDiagnostics = false): string {
     const labels: Record<BoardroomStepStatus, string> = {
         completed: 'Tool results received', response: 'Response prepared; no external action verified',
-        pending: 'Waiting; work is not complete', partial: 'Partially completed', failed: 'Step failed', skipped: 'Not executed',
+        pending: 'Waiting; work is not complete', partial: 'Partially completed', failed: 'Step failed',
+        uncertain: 'Action outcome unknown; check its effect before retrying', skipped: 'Not executed',
     };
     const details = (receipt.response.toolCalls ?? []).map(call => {
         const result = toolResult(call.result);
@@ -151,7 +153,7 @@ export function formatBoardroomReceipt(receipt: BoardroomStepReceipt, founderDia
     });
     if (receipt.status === 'response') details.push(receipt.response.text);
     if (receipt.status === 'pending' && /AWAITING_.*APPROVAL/.test(receipt.response.error ?? '')) {
-        details.push('Review the request in the Approvals panel. The action has not run.');
+        details.push('Review the pending request in the Approvals panel before further work.');
     }
     if (receipt.response.error && founderDiagnostics) details.push(receipt.response.error);
     return `${labels[receipt.status]}${details.length ? `\n${details.join('\n')}` : ''}`;
