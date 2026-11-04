@@ -19,6 +19,12 @@ import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/E
 class ExecutionTokenBudgetExceeded extends Error {}
 class InvalidEvaluationResponse extends Error {}
 
+function requireConfiguredJudge(definition: AgentLoopDefinition): void {
+    if (definition.judgeMode === 'DETERMINISTIC_TEST') {
+        throw new Error('Deterministic loop evaluation is unavailable: no verifier is configured.');
+    }
+}
+
 function parseEvaluationResponse(result: {
     response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
 }): { passed: boolean; feedback: string } {
@@ -78,6 +84,7 @@ export class AgentLoopService {
      * Start a new loop based on the definition.
      */
     async startLoop(definition: AgentLoopDefinition, context: AgentContext): Promise<string> {
+        requireConfiguredJudge(definition);
         const executionId = uuidv4();
         
         const execution: AgentLoopExecution = {
@@ -137,6 +144,7 @@ export class AgentLoopService {
         executionId: string,
         context: AgentContext
     ): Promise<AgentLoopExecution> {
+        requireConfiguredJudge(definition);
         const userId = context.userId;
         const execution = await this.getExecutionAsync(userId, executionId);
         if (!execution) {
@@ -367,9 +375,7 @@ export class AgentLoopService {
     }
 
     private async evaluateOutcome(definition: AgentLoopDefinition, agentOutput: string, tokenBudget: ExecutionTokenBudget): Promise<{ passed: boolean, feedback: string }> {
-        if (definition.judgeMode === 'DETERMINISTIC_TEST') {
-            return { passed: true, feedback: 'Deterministic test passed.' };
-        }
+        requireConfiguredJudge(definition);
 
         // LLM_EVALUATION Mode (LLM as a judge)
         const prompt = `
