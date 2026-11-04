@@ -146,6 +146,15 @@ describe('AlwaysOnMemoryEngine', () => {
             await engine.start('test-user-123');
             engine.stop();
             expect(engine.running).toBe(false);
+            await expect(engine.ingest('After stop')).rejects.toThrow('Engine not started');
+            await expect(engine.query('After stop?')).rejects.toThrow('Engine not started');
+            await expect(engine.deleteMemory('old-memory')).rejects.toThrow('Engine not started');
+            await expect(engine.clearAll()).rejects.toThrow('Engine not started');
+            expect(await engine.consolidateNow()).toBe('Engine not started');
+            expect(await engine.getAllMemories()).toEqual([]);
+            expect(await engine.getInsights()).toEqual([]);
+            expect((await engine.getStatus()).startedAt).toBeUndefined();
+            expect(mockGetDocs).not.toHaveBeenCalled();
         });
 
         it('should not start twice for the same user', async () => {
@@ -228,16 +237,6 @@ describe('AlwaysOnMemoryEngine', () => {
 
             const result = await engine.ingest('already stored content');
             expect(result).toContain('Skipped');
-        });
-
-        it('should handle calls after stop gracefully', async () => {
-            // The singleton retains state, so after stop it still has the user ID.
-            // A fresh getInstance() without start() should throw.
-            const freshEngine = AlwaysOnMemoryEngine.getInstance();
-            freshEngine.stop();
-            // Ingestion should still work if userId is retained from prior start
-            // This is by design — stop() only disables the consolidation timer
-            expect(freshEngine.running).toBe(false);
         });
     });
 
