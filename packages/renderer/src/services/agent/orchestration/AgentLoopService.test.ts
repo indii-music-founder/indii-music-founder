@@ -273,6 +273,24 @@ describe('AgentLoopService', () => {
         expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
+    it('does not judge a successful batch with empty output', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-empty-output', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review a result', verifiabilityCriteria: 'Must be valid',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: Date.now(), updatedAt: Date.now(),
+        };
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: '   ', data: { taskId: 'task-1' } },
+        ]);
+        const executionId = await agentLoopService.startLoop(def, { userId: 'user1' });
+        await vi.waitFor(() => expect(agentLoopService.getExecution(executionId)?.status)
+            .toBe(AgentLoopStatusEnum.enum.FAILED));
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(agentLoopService.getExecution(executionId)?.history[0]?.feedback)
+            .toContain('Agent returned no evaluable output.');
+    });
+
     it('should fail if max iterations are reached', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-test-3',

@@ -374,7 +374,11 @@ export class AgentLoopService {
                 }]);
 
                 if (results && results.length > 0 && results[0]!.success) {
-                    return { output: results[0]!.message || 'No text output.', failureKind: null };
+                    const output = results[0]!.message;
+                    if (typeof output !== 'string' || !output.trim()) {
+                        return { output: 'Agent returned no evaluable output.', failureKind: 'non-transient' };
+                    }
+                    return { output, failureKind: null };
                 }
 
                 const errorMsg = results?.[0]?.error || 'Action failed.';
