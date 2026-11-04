@@ -107,7 +107,7 @@ export const OPTION_WHITELISTS: Record<string, string[]> = {
     genre: ['House', 'Techno', 'Hip-Hop', 'R&B', 'Pop', 'Indie', 'Electronic', 'Rock', 'Other'],
     goals: ['Grow fanbase', 'Get playlisted', 'Touring', 'Sync licensing', 'Label deal', 'Brand partnerships'],
     mood: ['Dark & moody', 'Euphoric', 'Introspective', 'High-energy', 'Chill', 'Melancholic'],
-    aesthetic_style: ['Retro 80s', 'Synthwave', 'Cyberpunk', 'Minimalist', 'Maximalist', 'Vintage', 'Futuristic', 'Organic/Natural', 'Abstract', 'Cinematic'],
+    aesthetic_style: ['Cinematic', 'Anime', '3D Render', 'Minimalist', 'Analog Film', 'Documentary', 'Watercolor', 'Editorial', 'Monochrome', 'Retro Print', 'Other'],
     color_vibe: ['Vibrant & Neon', 'Muted & Earthy', 'Black & White', 'Pastels', 'High Contrast', 'Monochrome', 'Warm tones', 'Cool tones'],
     font_style: ['Bold & Geometric', 'Elegant Serif', 'Clean Sans-Serif', 'Vintage/Retro', 'Handwritten', 'Tech/Mono', 'Display/Decorative'],
     distributor: ['Symphonic', 'CD Baby', 'DistroKid', 'TuneCore'],

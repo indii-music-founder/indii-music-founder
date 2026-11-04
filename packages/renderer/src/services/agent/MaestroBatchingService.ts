@@ -76,8 +76,8 @@ export class MaestroBatchingService {
         // Recursive Delegation Guard
         if (task.traceId) {
             const depth = await TraceService.getTraceDepth(task.traceId);
-            if (depth >= 3) {
-                const errorMsg = `[Maestro] Delegation depth limit (3) exceeded for task ${id}. Aborting to prevent infinite recursion.`;
+            if (depth >= TraceService.MAX_DELEGATION_DEPTH) {
+                const errorMsg = `[Maestro] Delegation depth limit (${TraceService.MAX_DELEGATION_DEPTH}) reached or ancestry could not be verified for task ${id}.`;
                 logger.warn(errorMsg);
                 useStore.getState().updateBatchTask(id, { status: 'error', error: errorMsg });
                 throw new Error(errorMsg);

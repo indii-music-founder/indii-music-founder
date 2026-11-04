@@ -91,7 +91,7 @@ describe('PythonBridge', () => {
                         );
            });
 
-           it('should redact sensitive arguments in console logs', async () => {
+           it('keeps all argument values out of logs while passing them to the script', async () => {
                  const logSpy = vi.spyOn(log, 'info');
                  const mockProcess = new EventEmitter() as any;
                  mockProcess.stdout = new EventEmitter();
@@ -108,21 +108,32 @@ describe('PythonBridge', () => {
                   await PythonBridge.runScript(
                           'test',
                           'test.py',
-                          ['--user', 'admin', '--password', 'plain_text_password', '--key', 'private_key_content']
+                          ['--user', 'private_artist_name', '--password', 'plain_text_password', '--key', 'private_key_content']
                         );
 
-                  expect(logSpy).toHaveBeenCalledWith(
-                          expect.not.stringContaining('plain_text_password')
-                        );
-                 expect(logSpy).toHaveBeenCalledWith(
-                         expect.not.stringContaining('private_key_content')
-                       );
-                 expect(logSpy).toHaveBeenCalledWith(
-                         expect.stringContaining('--password')
-                       );
-                 expect(logSpy).toHaveBeenCalledWith(
-                         expect.stringContaining('[REDACTED]')
-                       );
+                  expect(spawn).toHaveBeenCalledWith(expect.any(String), expect.arrayContaining([
+                          '--user', 'private_artist_name', '--password', 'plain_text_password', '--key', 'private_key_content'
+                  ]), expect.any(Object));
+                  const logged = JSON.stringify(logSpy.mock.calls);
+                  expect(logged).not.toContain('private_artist_name');
+                  expect(logged).not.toContain('plain_text_password');
+                  expect(logged).not.toContain('private_key_content');
+           });
+
+           it('returns stderr to the caller without writing it to logs', async () => {
+                  const mockProcess = new EventEmitter() as any;
+                  mockProcess.stdout = new EventEmitter();
+                  mockProcess.stderr = new EventEmitter();
+                  (spawn as unknown as any).mockReturnValue(mockProcess);
+
+                  const pending = PythonBridge.runScript('test', 'test.py');
+                  setTimeout(() => {
+                          mockProcess.stderr.emit('data', 'private failure detail 7b42');
+                          mockProcess.emit('close', 1);
+                  }, 0);
+
+                  await expect(pending).rejects.toThrow('private failure detail 7b42');
+                  expect(JSON.stringify(vi.mocked(log.error).mock.calls)).not.toContain('private failure detail 7b42');
            });
 
             it('should reject with clean diagnostic message when python runtime is missing (ENOENT)', async () => {

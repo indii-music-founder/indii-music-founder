@@ -4,6 +4,7 @@ import { createTool } from './utils/ZodUtils';
 import { z } from 'zod';
 import { AgentConfig } from './types';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { logger } from '@/utils/logger';
 
 const canonicalComputerClick = vi.hoisted(() => vi.fn());
 vi.mock('@/services/agent/tools', () => ({ TOOL_REGISTRY: { computer_click: canonicalComputerClick } }));
@@ -142,6 +143,30 @@ describe('BaseAgent Tool Validation', () => {
 
         expect(testToolHandler).toHaveBeenCalled();
         expect(response.text).toContain('Tool execution confirmed');
+    });
+
+    it('does not log tool arguments while dispatching a call', async () => {
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        const sensitiveValue = 'private-value-do-not-log';
+        const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+        try {
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: {
+                    text: () => 'Calling tool...',
+                    functionCalls: () => [{ name: 'test_tool', args: { requiredString: sensitiveValue, positiveNumber: 1 } }],
+                },
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: { text: () => 'Done.' },
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            await agent.execute('Task');
+
+            expect(testToolHandler).toHaveBeenCalled();
+            expect(JSON.stringify(debug.mock.calls)).not.toContain(sensitiveValue);
+        } finally {
+            debug.mockRestore();
+        }
     });
 
     it('does not execute a classified local tool absent from the offered pool', async () => {

@@ -247,7 +247,7 @@ export default function ShowroomUI() {
                         <textarea 
                             value={showroomState.sceneDescription}
                             onChange={(e) => setShowroomState({ sceneDescription: e.target.value })}
-                            placeholder="Describe the environment, lighting, and mood (e.g. A cyberpunk street at night with neon reflections)..."
+                            placeholder="Describe the environment, lighting, and mood (e.g. A quiet city street at dusk on analog film)..."
                             className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors resize-none leading-relaxed"
                         />
                     </div>

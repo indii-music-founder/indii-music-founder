@@ -89,7 +89,7 @@ export default function DirectGenerationTab() {
         'Cinematic Lighting',
         '8k Photorealistic',
         'Watercolor Vibe',
-        'Cyberpunk Neo-Noir',
+        'Editorial Portrait',
         'Leica SL2 50mm',
         'Analog Film Grain',
         '3D Octane Render',

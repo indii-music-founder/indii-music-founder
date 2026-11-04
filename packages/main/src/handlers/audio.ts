@@ -81,7 +81,7 @@ const measureLoudness = (filePath: string): Promise<LoudnessMeasurement> => new 
 
 export function registerAudioHandlers() {
     ipcMain.handle('audio:analyze', async (event, filePath) => {
-        log.info('Audio analysis requested for:', filePath);
+        log.info('Audio analysis requested');
 
         try {
             validateSender(event);
@@ -100,8 +100,8 @@ export function registerAudioHandlers() {
                         else resolve({ format: metadata.format, streams: metadata.streams });
                     });
                 }),
-                measureLoudness(validatedPath).catch(error => {
-                    log.warn(`[AudioHandler] EBU R128 measurement unavailable; keeping analysis non-certified: ${error instanceof Error ? error.message : String(error)}`);
+                measureLoudness(validatedPath).catch(() => {
+                    log.warn('[AudioHandler] EBU R128 measurement unavailable; keeping analysis non-certified');
                     return null;
                 }),
             ]);
@@ -124,7 +124,7 @@ export function registerAudioHandlers() {
             const proxyBase64 = proxyBuffer.toString('base64');
             
             // Clean up the temp file silently
-            fs.promises.unlink(tempProxyPath).catch(err => log.warn('Failed to delete temp proxy file:', err));
+            fs.promises.unlink(tempProxyPath).catch(() => log.warn('Failed to delete temp proxy file'));
 
             log.info(`Analysis Complete. Hash: ${hash.substring(0, 8)}... Proxy Size: ${(proxyBuffer.length / 1024).toFixed(1)} KB`);
 
@@ -158,7 +158,7 @@ export function registerAudioHandlers() {
                 proxyBase64
             };
         } catch (error) {
-            log.error("Audio analysis failed:", error);
+            log.error('Audio analysis failed');
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -167,7 +167,7 @@ export function registerAudioHandlers() {
     });
 
     ipcMain.handle('audio:lookup-metadata', async (event, hash) => {
-        log.info('[Main] Metadata lookup requested for hash:', hash);
+        log.info('[Main] Metadata lookup requested');
         try {
             validateSender(event);
             // Schema Validation
@@ -177,7 +177,7 @@ export function registerAudioHandlers() {
             // const token = await authService.getToken(); 
             return await apiService.getSongMetadata(validatedHash);
         } catch (error) {
-            log.error("[Main] Metadata lookup failed:", error);
+            log.error('[Main] Metadata lookup failed');
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
@@ -191,7 +191,7 @@ export function registerAudioHandlers() {
             // the standard { success: false } envelope instead of a raw
             // TypeError escaping the handler.
             const { inputPath, outputPath, targetFormat, bitRate, sampleRate } = options || {};
-            log.info(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
+            log.info('[Main] Transcoding started');
 
             validateSender(event);
 
@@ -223,13 +223,13 @@ export function registerAudioHandlers() {
                         resolve({ success: true, path: validatedOutputPath });
                     })
                     .on('error', (err) => {
-                        log.error('[Main] Transcoding failed:', err);
+                        log.error('[Main] Transcoding failed');
                         resolve({ success: false, error: err.message });
                     })
                     .save(validatedOutputPath);
             });
         } catch (error) {
-            log.error('[Main] Transcode setup failed:', error);
+            log.error('[Main] Transcode setup failed');
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     });
@@ -237,7 +237,7 @@ export function registerAudioHandlers() {
     ipcMain.handle('audio:master', async (event, options) => {
         try {
             const { inputPath, outputPath, style } = options || {};
-            log.info(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
+            log.info('[Main] Mastering requested');
 
             validateSender(event);
 
@@ -257,7 +257,7 @@ export function registerAudioHandlers() {
 
             return await masteringService.masterAudio(validatedInputPath, validatedOutputPath, style);
         } catch (error) {
-            log.error('[Main] Audio mastering setup failed:', error);
+            log.error('[Main] Audio mastering setup failed');
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     });

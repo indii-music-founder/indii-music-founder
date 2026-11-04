@@ -117,6 +117,7 @@ vi.mock('motion/react', () => ({
         }
     }),
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useReducedMotion: () => false,
 }));
 
 describe('RightPanel', () => {

@@ -43,8 +43,8 @@ export class BlenderService {
             if (text) {
                 return JSON.parse(text) as BlenderStatusResult;
             }
-        } catch (err) {
-            log.warn('[BlenderService] MCP status check error, running local fallback detection:', err);
+        } catch {
+            log.warn('[BlenderService] MCP status check failed; running local fallback detection');
         }
 
         // Direct fallback detection
@@ -73,8 +73,8 @@ export class BlenderService {
             if (text) {
                 return JSON.parse(text) as unknown[];
             }
-        } catch (err) {
-            log.warn('[BlenderService] MCP list templates error:', err);
+        } catch {
+            log.warn('[BlenderService] MCP list templates failed');
         }
         return [];
     }
@@ -87,7 +87,7 @@ export class BlenderService {
         onProgress?: RequestOptions['onprogress'],
         signal?: AbortSignal
     ): Promise<{ success: boolean; outputPath: string; error?: string }> {
-        log.info('[BlenderService] Initiating headless render:', request);
+        log.info('[BlenderService] Initiating headless render');
 
         // Security check on paths
         const audioPath = path.resolve(request.audioFilePath);
@@ -130,7 +130,7 @@ export class BlenderService {
             }
             return { success: false, outputPath, error: 'Blender did not return a verified render result.' };
         } catch (error) {
-            log.error('[BlenderService] Render execution failed:', error);
+            log.error('[BlenderService] Render execution failed');
             return {
                 success: false,
                 outputPath,
@@ -155,7 +155,7 @@ export class BlenderService {
             }
             return result;
         } catch (error) {
-            log.error('[BlenderService] Live command error:', error);
+            log.error('[BlenderService] Live command failed');
             throw error;
         }
     }

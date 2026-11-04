@@ -31,26 +31,13 @@ export class PythonBridge {
         return path.join(root, 'execution', scriptName);
     }
 
-    private static redactArgs(args: string[]): string {
-        const sensitiveFlags = ['--password', '--key', '--token', '-p', '--api-key'];
-        const redacted = [...args];
-        for (let i = 0; i < redacted.length; i++) {
-            if (sensitiveFlags.includes(redacted[i]!)) {
-                if (i + 1 < redacted.length) {
-                    redacted[i + 1] = '[REDACTED]';
-                }
-            }
-        }
-        return redacted.join(' ');
-    }
-
     static async runScript(
         category: string,
         scriptName: string,
         args: string[] = [],
         onProgress?: (progress: number, logLine?: string) => void,
         env: NodeJS.ProcessEnv = {},
-        sensitiveArgsIndices: number[] = [],
+        _sensitiveArgsIndices: number[] = [],
         signal?: AbortSignal
     ): Promise<unknown> {
         return new Promise((resolve, reject) => {
@@ -74,21 +61,7 @@ export class PythonBridge {
 
             const python = this.getPythonPath();
 
-            // Redact sensitive args for logging
-            const sensitiveFlags = ['--password', '--key', '--access-token', '--refresh-token', '--api-key', '--secret'];
-            const redactedArgs = args.map((arg, index) => {
-                // Explicitly sensitive argument by index
-                if (sensitiveArgsIndices.includes(index)) {
-                    return '[REDACTED]';
-                }
-                // Check if the PREVIOUS argument was a sensitive flag
-                if (index > 0 && sensitiveFlags.includes(args[index - 1]!)) {
-                    return '[REDACTED]';
-                }
-                return arg;
-            });
-
-            log.info(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
+            log.info(`[PythonBridge] Executing ${category}/${scriptName} (${args.length} arguments)`);
 
             const childProcess = spawn(python, [fullScriptPath, ...args], {
                 env: { ...process.env, ...env }
@@ -132,7 +105,7 @@ export class PythonBridge {
 
             childProcess.on('close', (code) => {
                 if (code !== 0) {
-                    log.error(`[PythonBridge] Script failed with code ${code}. Stderr: ${stderr}`);
+                    log.error(`[PythonBridge] ${category}/${scriptName} failed with code ${code}`);
                     return reject(new Error(`Python script execution failed: ${stderr || 'Unknown error'}`));
                 }
 

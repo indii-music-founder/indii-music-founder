@@ -275,7 +275,7 @@ export function buildCreativeControlsState(
             omniSourceVideoLabel: null,
             activePosePreset: 'guitar_solo',
             lyricsText: '',
-            typographyStyle: 'cyberpunk',
+            typographyStyle: 'minimal-infographic',
             visualizerColor: '#8B5CF6',
         },
         setStudioControls: (controls) => set((state: StoreState) => ({ studioControls: { ...state.studioControls, ...controls } })),

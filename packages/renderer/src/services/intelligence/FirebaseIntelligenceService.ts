@@ -576,7 +576,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     if (!receivedComplete) throw new AppException(AppErrorCode.NETWORK_ERROR, 'AI stream ended before billing settlement completed.', { retryable: true });
                     controller.close();
                     const finalResponse = buildWrappedResponse();
-                    logger.debug(`[FirebaseIntelligenceService] Final built response:`, JSON.stringify(finalResponse.functionCalls()));
+                    logger.debug(`[FirebaseIntelligenceService] Stream completed with ${finalResponse.functionCalls()?.length ?? 0} function calls`);
                     resolveWrappedResponse(finalResponse);
                 } catch (error) {
                     // ISSUE-1359: a stream that dies mid-body (server instance
@@ -1026,14 +1026,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         tools?: Tool[],
         options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number }
     ): Promise<GenerateContentResult> {
-        // [DEBUG] Log payload for deep diagnosis
-        try {
-            // Security: Redact PII from logs
-            const sanitizedForLog = this.sanitizePrompt(prompt);
-            logger.debug('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
-            logger.debug('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
-            logger.debug('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
-        } catch (_e: unknown) { /* Ignore logging errors */ }
+        logger.debug('[FirebaseIntelligenceService] generateContent request');
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
