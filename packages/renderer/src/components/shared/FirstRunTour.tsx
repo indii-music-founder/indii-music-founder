@@ -30,6 +30,7 @@ const TOUR_KEY = 'indii_tour_completed_v1';
 
 export function FirstRunTour() {
     const driverRef = useRef<Driver | null>(null);
+    const manualStartTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [tourCompleted, setTourCompleted] = useState(() => {
         if (typeof window === 'undefined') return true;
         return localStorage.getItem(TOUR_KEY) === 'true';
@@ -167,14 +168,7 @@ export function FirstRunTour() {
             trackedIntroClosed.current = true;
             void trackFounderFunnelEvent('founder_intro_panels_closed');
         }
-        // Auto-start if not completed, and both panels are dismissed
-        if (!tourCompleted && isEntryAssistantDismissed && cookieConsentResolved) {
-            const timeout = setTimeout(() => {
-                startTour();
-            }, 1500); // wait for layouts to settle after panels disappear
-            return () => clearTimeout(timeout);
-        }
-    }, [tourCompleted, isEntryAssistantDismissed, cookieConsentResolved]);
+    }, [isEntryAssistantDismissed, cookieConsentResolved]);
 
     // Support manual restarts via custom event
     useEffect(() => {
@@ -182,9 +176,15 @@ export function FirstRunTour() {
         const handleStart = () => {
             localStorage.removeItem(TOUR_KEY);
             setTourCompleted(false);
-            setTimeout(() => startTour(), 500);
+            if (manualStartTimeout.current) clearTimeout(manualStartTimeout.current);
+            manualStartTimeout.current = setTimeout(() => {
+                manualStartTimeout.current = null;
+                startTour();
+            }, 500);
         };
         const handleDismiss = () => {
+            if (manualStartTimeout.current) clearTimeout(manualStartTimeout.current);
+            manualStartTimeout.current = null;
             localStorage.setItem(TOUR_KEY, 'true');
             setTourCompleted(true);
             driverRef.current?.destroy();
@@ -195,12 +195,13 @@ export function FirstRunTour() {
         window.addEventListener('indii:dismiss_tour', handleDismiss);
 
         return () => {
+            if (manualStartTimeout.current) clearTimeout(manualStartTimeout.current);
             window.removeEventListener('indii:start_tour', handleStart);
             window.removeEventListener('indii:dismiss_tour', handleDismiss);
         };
     }, []);
 
-    if (tourCompleted) {
+    if (tourCompleted || !isEntryAssistantDismissed || !cookieConsentResolved) {
         return null;
     }
 
@@ -221,7 +222,7 @@ export function FirstRunTour() {
                 }}
                 className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 motion-safe:transition-all"
                 title="Dismiss Tour"
-                aria-label="Dismiss Tour Options"
+                aria-label="Dismiss tour prompt"
             >
                 <X size={14} />
             </button>
