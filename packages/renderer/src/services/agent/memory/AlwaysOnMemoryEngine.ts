@@ -151,7 +151,7 @@ export class AlwaysOnMemoryEngine {
     }
 
     /**
-     * Stop the engine and clear all timers.
+     * Stop the engine, release its owner, and clear all timers.
      */
     public stop(): void {
         if (this.consolidationTimer) {
@@ -159,6 +159,11 @@ export class AlwaysOnMemoryEngine {
             this.consolidationTimer = null;
         }
         this.isRunning = false;
+        this.userId = '';
+        this.config = null;
+        this.startedAt = null;
+        this.lastConsolidatedAt = null;
+        this.lastIngestedAt = null;
         logger.info('[AlwaysOnMemoryEngine] 🧠 Engine stopped');
     }
 
