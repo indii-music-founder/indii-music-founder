@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MaestroBatchingService, batchTaskUpdateFromResult, toMaestroBatchResult } from './MaestroBatchingService';
+import { TraceService } from './observability/TraceService';
 
 describe('Maestro batch result contract', () => {
     it('does not turn a resolved agent error into a successful action', () => {
@@ -62,7 +63,23 @@ describe('MaestroBatchingService', () => {
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.useRealTimers();
+    });
+
+    it('does not queue a delegated task when ancestry cannot be verified', async () => {
+        vi.spyOn(TraceService, 'getTraceDepth').mockResolvedValue(TraceService.MAX_DELEGATION_DEPTH);
+
+        await expect(service.executeTask({
+            description: 'Delegated action',
+            agentId: 'marketing',
+            priority: 'HIGH',
+            params: {},
+            traceId: 'unreadable-trace'
+        })).rejects.toThrow('ancestry could not be verified');
+
+        expect(updateBatchTaskMock).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ status: 'error' }));
+        expect(TraceService.getTraceDepth).toHaveBeenCalledWith('unreadable-trace');
     });
 
     it('should pool tasks and execute them in a batch', async () => {
