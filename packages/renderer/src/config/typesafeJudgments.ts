@@ -301,9 +301,9 @@ export async function judgeTransientError(
         });
 
         const answer = result.data.answers?.transient;
-        const probability = typeof answer === 'number' ? answer : Number((answer as { noul?: unknown })?.noul);
-        if (!Number.isFinite(probability)) {
-            logger.warn('[typesafeJudgments] transient judgment returned a non-numeric answer — keeping heuristic.');
+        const probability = boundedJudgmentNumber(answer, 'noul', 1);
+        if (probability === null) {
+            logger.warn('[typesafeJudgments] transient judgment returned an invalid probability — keeping heuristic.');
             return null;
         }
 

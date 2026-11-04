@@ -232,6 +232,20 @@ describe('judgeTransientError decision bands', () => {
         expect(verdict).toBeNull();
     });
 
+    it.each([null, '0.9', { noul: null }, { noul: '0.9' }, -0.1, 1.1, { noul: 1.1 }])(
+        'abstains from an invalid transient probability %j', async answer => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { transient: answer } } }));
+            expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
+        },
+    );
+
+    it('accepts a bounded Noul response object', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { transient: { noul: 0.8 } } } }));
+        expect(await judgeTransientError(new Error('timeout'), false)).toBe(true);
+    });
+
     it('keeps the documented band constants honest', () => {
         expect(TRANSIENT_ADOPT_MIN).toBeGreaterThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(0.5);
