@@ -136,13 +136,24 @@ export function AnomalyDetector() {
 
     async function handleInvestigate(alert: Anomaly) {
         setInvestigating((prev) => new Set([...prev, alert.id]));
-        const verdict = await judgeStreamVelocityAnomaly(
-            alert.trackName,
-            alert.pctIncrease,
-            `Date: ${alert.date}. Confidence: ${alert.confidence}.`
-        );
-        if (verdict) {
-            setInvestigationReports((prev) => ({ ...prev, [alert.id]: verdict }));
+        try {
+            const verdict = await judgeStreamVelocityAnomaly(
+                alert.trackName,
+                alert.pctIncrease,
+                `Date: ${alert.date}. Confidence: ${alert.confidence}.`
+            );
+            setInvestigationReports((prev) => {
+                if (verdict) return { ...prev, [alert.id]: verdict };
+                const next = { ...prev };
+                delete next[alert.id];
+                return next;
+            });
+        } finally {
+            setInvestigating((prev) => {
+                const next = new Set(prev);
+                next.delete(alert.id);
+                return next;
+            });
         }
     }
 
@@ -326,7 +337,7 @@ export function AnomalyDetector() {
                                                     <span>
                                                         {report.dspPenaltyHazard
                                                             ? `DSP Penalty Risk (${Math.round(report.hazardProbability * 100)}%)`
-                                                            : `Verified Source: ${report.rootCause.replace(/_/g, ' ')}`}
+                                                            : `Possible cause: ${report.rootCause.replace(/_/g, ' ')}`}
                                                     </span>
                                                     <span className="ml-auto text-[9px] px-1 py-0.2 rounded bg-white/10 font-mono">Jev</span>
                                                 </div>

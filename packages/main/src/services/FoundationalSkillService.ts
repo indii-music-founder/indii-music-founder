@@ -48,7 +48,8 @@ export class FoundationalSkillService {
 
     private runPythonScript(scriptPath: string, args: string[]): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
-            log.info(`[FoundationalService] Running script: ${scriptPath} with args: ${args.join(' ')}`);
+            const scriptName = path.basename(scriptPath);
+            log.info(`[FoundationalService] Running ${scriptName} (${args.length} arguments)`);
 
             // python3 can be missing (packaged Windows, macOS without CLT) and
             // scripts can hang. Without an 'error' listener the spawn failure
@@ -65,13 +66,13 @@ export class FoundationalSkillService {
 
             const pythonProcess = spawn('python3', [scriptPath, ...args]);
             const timeout = setTimeout(() => {
-                log.error(`[FoundationalService] Script timed out after ${timeoutMs / 1000}s — killing: ${scriptPath}`);
+                log.error(`[FoundationalService] ${scriptName} timed out after ${timeoutMs / 1000}s`);
                 pythonProcess.kill('SIGKILL');
                 settle(() => reject(new Error(`Python script timed out after ${timeoutMs / 1000}s.`)));
             }, timeoutMs);
 
             pythonProcess.on('error', (err) => {
-                log.error(`[FoundationalService] Failed to spawn python3 for ${scriptPath}:`, err);
+                log.error(`[FoundationalService] Failed to spawn python3 for ${scriptName} (${err.name})`);
                 settle(() => reject(err));
             });
 
@@ -95,12 +96,12 @@ export class FoundationalSkillService {
                         } else {
                             settle(() => resolve({ success: true, message: stdout.trim() }));
                         }
-                    } catch (e) {
-                        log.warn(`[FoundationalService] JSON parse failed, returning raw string. Error:`, e);
+                    } catch {
+                        log.warn(`[FoundationalService] JSON parse failed for ${scriptName}; returning raw string`);
                         settle(() => resolve({ success: true, message: stdout.trim() }));
                     }
                 } else {
-                    log.error(`[FoundationalService] Script failed with code ${code}. Stderr: ${stderr}`);
+                    log.error(`[FoundationalService] ${scriptName} failed with code ${code}`);
                     settle(() => reject(new Error(stderr || `Script exited with code ${code}`)));
                 }
             });

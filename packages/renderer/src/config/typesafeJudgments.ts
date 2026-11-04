@@ -301,9 +301,9 @@ export async function judgeTransientError(
         });
 
         const answer = result.data.answers?.transient;
-        const probability = typeof answer === 'number' ? answer : Number((answer as { noul?: unknown })?.noul);
-        if (!Number.isFinite(probability)) {
-            logger.warn('[typesafeJudgments] transient judgment returned a non-numeric answer — keeping heuristic.');
+        const probability = boundedJudgmentNumber(answer, 'noul', 1);
+        if (probability === null) {
+            logger.warn('[typesafeJudgments] transient judgment returned an invalid probability — keeping heuristic.');
             return null;
         }
 
@@ -857,6 +857,7 @@ export interface DetectedVisualCandidate {
 }
 
 export const BRAND_MARK_NONE = 'none';
+export const BRAND_MARK_MIN_CONFIDENCE = 0.5;
 
 /**
  * Choice-judge which detected visual candidate represents the artist's brand logo mark.
@@ -899,7 +900,11 @@ export async function judgeBrandMarkCandidate(
         });
 
         const answer = result.data.answers?.logo_mark as { choice?: unknown; confidence?: unknown } | undefined;
-        if (!answer || typeof answer.choice !== 'string') return null;
+        if (!answer || typeof answer.choice !== 'string'
+            || typeof answer.confidence !== 'number'
+            || !Number.isFinite(answer.confidence)
+            || answer.confidence < BRAND_MARK_MIN_CONFIDENCE
+            || answer.confidence > 1) return null;
 
         const choice = answer.choice;
         if (choice === BRAND_MARK_NONE || !candidates.some((c) => c.id === choice)) {
@@ -1236,18 +1241,15 @@ export async function judgeStreamVelocityAnomaly(
         const hazardAns = result.data.answers?.dsp_penalty_hazard;
         const sevAns = result.data.answers?.severity;
 
-        if (!rootAns || typeof rootAns.choice !== 'string') return null;
+        if (!rootAns || typeof rootAns.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_ROOT_CAUSE_QUESTION.criteria, rootAns.choice)) return null;
 
         const rootCause = rootAns.choice as AnomalyRootCauseType;
-        const hazardProb = typeof hazardAns === 'number'
-            ? hazardAns
-            : Number((hazardAns as { noul?: unknown })?.noul);
+        const hazardProb = boundedJudgmentNumber(hazardAns, 'noul', 1);
+        const severityScore = boundedJudgmentNumber(sevAns, 'score', STREAM_ANOMALY_SEVERITY_QUESTION.criteria.length - 1);
+        if (hazardProb === null || severityScore === null) return null;
 
-        const severityScore = typeof sevAns === 'number'
-            ? sevAns
-            : Number((sevAns as { score?: unknown })?.score);
-
-        const dspPenaltyHazard = Number.isFinite(hazardProb) ? hazardProb >= 0.50 : false;
+        const dspPenaltyHazard = hazardProb >= 0.50;
 
         let recommendation = 'Track streaming shows healthy organic growth.';
         if (dspPenaltyHazard) {
@@ -1261,8 +1263,8 @@ export async function judgeStreamVelocityAnomaly(
         return {
             rootCause,
             dspPenaltyHazard,
-            hazardProbability: Number.isFinite(hazardProb) ? hazardProb : 0,
-            severityScore: Number.isFinite(severityScore) ? severityScore : 0,
+            hazardProbability: hazardProb,
+            severityScore,
             recommendation,
         };
     } catch (err: unknown) {
@@ -1349,7 +1351,7 @@ export type AestheticCultureTag =
     | 'midnight-lo-fi'
     | 'detroit-electro-soul'
     | 'analog-bedroom-pop'
-    | 'synthwave-cyberpunk'
+    | 'retro-synthwave'
     | 'dark-ambient-trap'
     | 'golden-era-boom-bap'
     | 'indie-folk-acoustic'
@@ -1366,7 +1368,7 @@ export const AESTHETIC_TAG_QUESTION = {
         'midnight-lo-fi': 'Chilled beats, vinyl crackle, mellow piano, late night study or relax aesthetic.',
         'detroit-electro-soul': 'Detroit techno/electro grooves, Motown soul harmony, punchy 808s, futuristic funk.',
         'analog-bedroom-pop': 'Warm tape saturation, dreamy guitar hooks, introspective DIY indie songwriting.',
-        'synthwave-cyberpunk': 'Retro 80s analog synthesizers, neon night drives, driving basslines, arpeggios.',
+        'retro-synthwave': 'Retro 80s analog synthesizers, night drives, driving basslines, arpeggios.',
         'dark-ambient-trap': 'Sub-bass 808s, atmospheric dark pads, moody modern trap cadences.',
         'golden-era-boom-bap': 'Dusty vinyl drum breaks, sample chops, classic East/Midwest hip-hop lyricism.',
         'indie-folk-acoustic': 'Fingerpicked acoustic guitars, intimate vocal harmonies, organic warmth.',
@@ -1397,7 +1399,8 @@ export async function judgeAestheticMoodTagging(
         });
 
         const answer = result.data.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
-        if (!answer || typeof answer.choice !== 'string') return null;
+        if (!answer || typeof answer.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(AESTHETIC_TAG_QUESTION.criteria, answer.choice)) return null;
 
         const choice = answer.choice as AestheticCultureTag;
         return choice;
@@ -4551,6 +4554,9 @@ export interface FanCommentVerdict {
     moderationFlag?: string;
 }
 
+export const COMMENT_MODERATION_APPROVAL_MIN = 0.7;
+export const COMMENT_MODERATION_INTENT_CONFIDENCE_MIN = 0.5;
+
 /**
  * TypeSafe System One (Jev) listener comment moderator:
  * Sub-50ms instant safety filter for track timeline comments and fan wall messages.
@@ -4584,7 +4590,15 @@ export async function judgeFanCommentModeration(
         fallbackScore = 5;
     }
 
+    const reviewVerdict = (): FanCommentVerdict => ({
+        intent: fallbackIntent,
+        isApproved: false,
+        vibeAlignmentScore: Math.min(fallbackScore, 3),
+        moderationFlag: fallbackFlag || 'Comment could not be checked. Please try again.',
+    });
+
     if (!judgmentsAvailable()) {
+        if (typesafeJudgmentsEnabled()) return reviewVerdict();
         return {
             intent: fallbackIntent,
             isApproved: fallbackApproved,
@@ -4638,34 +4652,24 @@ export async function judgeFanCommentModeration(
         });
 
         const ans = result?.data?.answers;
-        if (!ans) {
-            return {
-                intent: fallbackIntent,
-                isApproved: fallbackApproved,
-                vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag,
-            };
-        }
+        if (!ans) return reviewVerdict();
 
-        const intAns = ans?.intent as { choice?: unknown } | undefined;
+        const intAns = ans?.intent as { choice?: unknown; confidence?: unknown } | undefined;
         const appAns = ans?.approved as { noul?: unknown } | number | undefined;
         const vibAns = ans?.vibe as { score?: unknown } | number | undefined;
 
         const selectedIntent = intAns?.choice;
         const appProb = boundedJudgmentNumber(appAns, 'noul', 1);
-        const resolvedVibe = oneIndexedScore(vibAns, fallbackScore);
+        const resolvedVibe = oneIndexedScore(vibAns, 3);
 
-        if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent) || appProb === null) {
-            return {
-                intent: fallbackIntent,
-                isApproved: false,
-                vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag || 'Comment requires moderation review.',
-            };
-        }
+        if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent)
+            || typeof intAns?.confidence !== 'number' || !Number.isFinite(intAns.confidence)
+            || intAns.confidence < COMMENT_MODERATION_INTENT_CONFIDENCE_MIN || intAns.confidence > 1
+            || appProb === null) return reviewVerdict();
         const resolvedIntent = selectedIntent as CommentClassification;
 
-        const isApproved = fallbackApproved && appProb >= 0.5 && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
+        const isApproved = fallbackApproved && appProb >= COMMENT_MODERATION_APPROVAL_MIN
+            && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
 
         return {
             intent: resolvedIntent,
@@ -4675,12 +4679,7 @@ export async function judgeFanCommentModeration(
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'fan comment moderation judgment');
-        return {
-            intent: fallbackIntent,
-            isApproved: fallbackApproved,
-            vibeAlignmentScore: fallbackScore,
-            moderationFlag: fallbackFlag,
-        };
+        return reviewVerdict();
     }
 }
 
@@ -6979,6 +6978,7 @@ export type AestheticStyleTag =
     | 'retro_synthwave'
     | 'minimalist_modernist'
     | 'cyberpunk_futuristic'
+    | 'editorial_futurist'
     | 'grungy_analog_lofi'
     | 'warm_organic_earthy'
     | 'high_gloss_glamour'
@@ -7028,9 +7028,12 @@ export async function judgeArtistDnaOnboarding(
     } else if (raw.includes('minimal') || raw.includes('clean') || raw.includes('modern')) {
         aesthetic = 'minimalist_modernist';
         palette = ['#09090b', '#27272a', '#71717a', '#d4d4d8', '#ffffff'];
-    } else if (raw.includes('cyber') || raw.includes('future') || raw.includes('matrix')) {
+    } else if (raw.includes('cyberpunk')) {
         aesthetic = 'cyberpunk_futuristic';
         palette = ['#020617', '#10b981', '#06b6d4', '#d946ef', '#f0abfc'];
+    } else if (raw.includes('future') || raw.includes('matrix')) {
+        aesthetic = 'editorial_futurist';
+        palette = ['#111827', '#374151', '#9ca3af', '#d1d5db', '#f9fafb'];
     } else if (raw.includes('lofi') || raw.includes('lo-fi') || raw.includes('analog') || raw.includes('tape')) {
         aesthetic = 'grungy_analog_lofi';
         palette = ['#292524', '#78716c', '#b45309', '#d97706', '#fef3c7'];
@@ -7052,6 +7055,17 @@ export async function judgeArtistDnaOnboarding(
     else if (maturity >= 4) focus = 'streaming_scale';
 
     const fallbackSummary = `Calibrated DNA for ${archetype.replace('_', ' ')} with ${aesthetic.replace(/_/g, ' ')} visual identity.`;
+    const aestheticCriteria = {
+        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
+        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
+        editorial_futurist: 'Architectural future, restrained materials, editorial framing and clean light.',
+        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
+        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
+        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
+        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
+        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
+        ...(raw.includes('cyberpunk') ? { cyberpunk_futuristic: 'The artist explicitly requested this style.' } : {}),
+    };
 
     if (!judgmentsAvailable()) {
         return {
@@ -7095,16 +7109,7 @@ export async function judgeArtistDnaOnboarding(
                 aesthetic_choice: {
                     type: 'choice' as const,
                     instructions: 'Select the optimal visual aesthetic style for this artist brand identity.',
-                    criteria: {
-                        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
-                        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
-                        cyberpunk_futuristic: 'Cyber tech, dystopian glow, chrome textures, futuristic digital.',
-                        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
-                        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
-                        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
-                        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
-                        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
-                    },
+                    criteria: aestheticCriteria,
                 },
                 maturity_score: {
                     type: 'score' as const,
@@ -7126,7 +7131,8 @@ export async function judgeArtistDnaOnboarding(
         const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
 
         const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
-        const resolvedAesthetic = (typeof aesAns?.choice === 'string' ? aesAns.choice : aesthetic) as AestheticStyleTag;
+        const resolvedAesthetic = (typeof aesAns?.choice === 'string' &&
+            Object.prototype.hasOwnProperty.call(aestheticCriteria, aesAns.choice) ? aesAns.choice : aesthetic) as AestheticStyleTag;
         const rawMat = oneIndexedScore(matAns, maturity);
 
         return {
@@ -7260,145 +7266,83 @@ export async function judgeStemSeparationAcousticPurity(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 63: Advance Recoupment Pace & Risk Forecaster (Domain: Finance & Legal)
+// Judgment 63: Advance Recoupment Run Rate (Domain: Finance & Legal)
 // ---------------------------------------------------------------------------
 
 export interface ContractRecoupmentInput {
     advanceAmount: number;
     recoupedAmount: number;
     monthlyStreamingNetRevenue: number;
+    /** Retained for caller compatibility; a release date does not establish when a contract term began. */
     monthsSinceRelease: number;
+    /** Retained for caller compatibility; term length alone cannot determine recoupment risk. */
     contractTermMonths?: number;
 }
 
 export interface ContractRecoupmentVerdict {
-    recoupmentPace: 'FAST_TRACK' | 'HEALTHY_ON_SCHEDULE' | 'UNDERWATER_HAZARD';
-    estimatedMonthsToFullRecoup: number;
-    riskScore: number; // 1 to 5 (5 = severe underwater deal debt)
-    strategicRecommendation: string;
+    status: 'ADVANCE_COVERED' | 'RUN_RATE_AVAILABLE' | 'NO_CURRENT_STREAMING_RUN_RATE';
+    /** Straight-line streaming-only scenario; null means no finite projection. */
+    monthsToCoverRemainingAdvanceAtCurrentRate: number | null;
+    projectionNote: string;
 }
 
 export async function judgeContractRecoupmentPace(
     input: ContractRecoupmentInput
 ): Promise<ContractRecoupmentVerdict> {
-    const unrecouped = Math.max(0, input.advanceAmount - input.recoupedAmount);
-    const monthlyNet = Math.max(1, input.monthlyStreamingNetRevenue);
-    const termMonths = input.contractTermMonths || 36;
-
-    const runRateMonths = Math.ceil(unrecouped / monthlyNet);
-
-    let pace: ContractRecoupmentVerdict['recoupmentPace'] = 'HEALTHY_ON_SCHEDULE';
-    let risk = 2;
-    let recommendation = 'Streaming cash flow is pacing within healthy amortization parameters.';
-
-    if (unrecouped === 0) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = 'Fully recouped! All future net royalties flow directly to artist payout.';
-    } else if (runRateMonths <= termMonths * 0.5) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = `Rapid velocity: estimated full recoupment in ${runRateMonths} months, well ahead of contract term.`;
-    } else if (runRateMonths > termMonths) {
-        pace = 'UNDERWATER_HAZARD';
-        risk = 5;
-        recommendation = `Deal is underwater. At current pace ($${monthlyNet.toFixed(0)}/mo), recoupment will require ${runRateMonths} months, exceeding contract term (${termMonths} mos). Consider releasing a remix pack or renegotiating distribution fees.`;
-    } else if (runRateMonths > termMonths * 0.8) {
-        pace = 'HEALTHY_ON_SCHEDULE';
-        risk = 3;
-        recommendation = `Tight margin: estimated recoupment in ${runRateMonths} months near the end of the ${termMonths}-month term.`;
+    const { advanceAmount, recoupedAmount, monthlyStreamingNetRevenue, monthsSinceRelease, contractTermMonths } = input;
+    if (
+        !Number.isFinite(advanceAmount) || advanceAmount < 0 ||
+        !Number.isFinite(recoupedAmount) || recoupedAmount < 0 ||
+        !Number.isFinite(monthlyStreamingNetRevenue) ||
+        !Number.isFinite(monthsSinceRelease) || monthsSinceRelease < 0 ||
+        (contractTermMonths !== undefined && (!Number.isFinite(contractTermMonths) || contractTermMonths <= 0))
+    ) {
+        throw new RangeError('Recoupment inputs must be finite, advances and elapsed months non-negative, and contract terms positive.');
     }
 
-    if (!judgmentsAvailable()) {
+    const remainingAdvance = Math.max(0, advanceAmount - recoupedAmount);
+    if (remainingAdvance === 0) {
         return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'ADVANCE_COVERED',
+            monthsToCoverRemainingAdvanceAtCurrentRate: 0,
+            projectionNote: 'The recorded recoupment covers the advance. Check the contract ledger for other recoupable costs before treating royalties as payable.',
         };
     }
 
-    try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: {
-                advance: input.advanceAmount,
-                recouped: input.recoupedAmount,
-                unrecouped,
-                monthlyNet,
-                monthsActive: input.monthsSinceRelease,
-                termMonths,
-                runRateMonths,
-            },
-            questions: {
-                pace_status: {
-                    type: 'choice' as const,
-                    instructions: 'Classify financial recoupment velocity against industry norms.',
-                    criteria: {
-                        FAST_TRACK: 'Recouping significantly faster than expected, releasing artist royalty payments early.',
-                        HEALTHY_ON_SCHEDULE: 'Pacing within expected amortization window.',
-                        UNDERWATER_HAZARD: 'Severe shortfall where advance will not recoup before contract renewal/term end.',
-                    },
-                },
-                underwater_risk_score: {
-                    type: 'score' as const,
-                    instructions: 'Rate financial underwater deal risk from 1 (safe/profitable) to 5 (extreme unrecouped debt trap).',
-                    criteria: [
-                        'Zero financial risk — deal already recouped or nearly clear.',
-                        'Low risk — strong streaming velocity ensures comfortable clearance.',
-                        'Moderate risk — reliant on sustained streaming catalog stability.',
-                        'Elevated risk — streaming decay threatens timely debt clearance.',
-                        'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
-                    ],
-                },
-            },
-        });
-
-        const ans = result.data.answers;
-        const paceAns = ans?.pace_status as { choice?: unknown } | undefined;
-        const riskAns = ans?.underwater_risk_score as { score?: unknown } | number | undefined;
-
-        const resolvedPace = (typeof paceAns?.choice === 'string' ? paceAns.choice : pace) as ContractRecoupmentVerdict['recoupmentPace'];
-        const resolvedRisk = oneIndexedScore(riskAns, risk);
-
+    // A model cannot infer contract terms or industry norms from these four numbers.
+    // Only calculate the scenario where this entire monthly streaming net remains available for recoupment.
+    const monthsAtCurrentRate = monthlyStreamingNetRevenue > 0
+        ? Math.ceil(remainingAdvance / monthlyStreamingNetRevenue)
+        : null;
+    if (monthsAtCurrentRate === null || !Number.isFinite(monthsAtCurrentRate)) {
         return {
-            recoupmentPace: resolvedPace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: Math.min(5, Math.max(1, Math.round(resolvedRisk))),
-            strategicRecommendation: recommendation,
-        };
-    } catch (err: unknown) {
-        noteJudgmentFailure(err, 'contract recoupment pace judgment');
-        return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'NO_CURRENT_STREAMING_RUN_RATE',
+            monthsToCoverRemainingAdvanceAtCurrentRate: null,
+            projectionNote: 'No finite streaming-only projection is available at the current monthly net rate. Other revenue, costs, and contract terms are not assessed.',
         };
     }
+
+    return {
+        status: 'RUN_RATE_AVAILABLE',
+        monthsToCoverRemainingAdvanceAtCurrentRate: monthsAtCurrentRate,
+        projectionNote: `If the entire current monthly net streaming amount remains available for recoupment, the remaining advance would take ${monthsAtCurrentRate} months to cover. Other revenue, costs, and contract terms are not assessed.`,
+    };
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 64: Direct-to-Fan Email Subject Line Optimizer (Domain: Marketing)
+// Judgment 64: Direct-to-Fan Email Subject Line Copy Review (Domain: Marketing)
 // ---------------------------------------------------------------------------
 
 export interface EmailSubjectInput {
     subjectLine: string;
     campaignType: 'MERCH_DROP' | 'TOUR_ANNOUNCEMENT' | 'SINGLE_RELEASE' | 'EXCLUSIVE_CONTENT';
-    recipientCount?: number;
 }
 
 export interface EmailSubjectVerdict {
-    openRateScore: number; // 1 to 5
-    isSpamTriggerRisk: boolean;
+    copyQualityScore: number; // 1 to 5; qualitative copy review, not an open-rate estimate
+    hasSpamStyleSignal: boolean;
     urgencyLevel: 'HEALTHY_ANTICIPATION' | 'OVERHYPED_SPAMMY' | 'PASSIVE_BLAND';
     suggestedSubjectLine: string;
-    predictedOpenRatePercent: number;
 }
 
 export async function judgeDirectToFanEmailSubjectLine(
@@ -7407,7 +7351,7 @@ export async function judgeDirectToFanEmailSubjectLine(
     const text = input.subjectLine.trim();
 
     const isAllCaps = text.length > 5 && text === text.toUpperCase();
-    const spamWordMatch = /\b(free|\$\$\$|act now|limited time|guaranteed|winner|urgent|100%|buy now)\b/i.test(text);
+    const spamWordMatch = /\b(free|act now|limited time|guaranteed|winner|urgent|buy now)\b|\$\$\$|100%/i.test(text);
     const hasSpamRisk = isAllCaps || spamWordMatch;
 
     let urgency: EmailSubjectVerdict['urgencyLevel'] = 'HEALTHY_ANTICIPATION';
@@ -7415,34 +7359,28 @@ export async function judgeDirectToFanEmailSubjectLine(
     else if (text.length < 15 || !/new|drop|tonight|live|presave|ticket|vinyl/i.test(text)) urgency = 'PASSIVE_BLAND';
 
     let fallbackScore = 3;
-    let predictedRate = 34.0;
     if (hasSpamRisk) {
         fallbackScore = 1;
-        predictedRate = 14.5;
     } else if (urgency === 'HEALTHY_ANTICIPATION' && text.length >= 25 && text.length <= 60) {
         fallbackScore = 5;
-        predictedRate = 48.5;
     } else if (urgency === 'PASSIVE_BLAND') {
         fallbackScore = 2;
-        predictedRate = 22.0;
     }
 
-    let suggestion = text;
-    if (input.campaignType === 'MERCH_DROP' && hasSpamRisk) {
-        suggestion = 'Limited Edition Vinyl & Hoodies — Official Release Now Live';
-    } else if (input.campaignType === 'TOUR_ANNOUNCEMENT') {
-        suggestion = 'Detroit to NYC: Fall Tour Dates & Artist Presale Access';
-    } else if (input.campaignType === 'SINGLE_RELEASE') {
-        suggestion = 'My new single is out everywhere at midnight (listen first)';
-    }
+    const safeSuggestion = {
+        MERCH_DROP: 'New merch is here',
+        TOUR_ANNOUNCEMENT: 'New tour dates are here',
+        SINGLE_RELEASE: 'Listen to the new single',
+        EXCLUSIVE_CONTENT: 'An update for you',
+    }[input.campaignType];
+    const suggestion = hasSpamRisk ? safeSuggestion : text;
 
     if (!judgmentsAvailable()) {
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 
@@ -7457,60 +7395,59 @@ export async function judgeDirectToFanEmailSubjectLine(
             state: {
                 subject: text.slice(0, 150),
                 type: input.campaignType,
-                recipients: input.recipientCount || 1000,
             },
             questions: {
-                open_rate_potential: {
+                copy_quality: {
                     type: 'score' as const,
-                    instructions: 'Score the open-rate conversion strength of this email subject line from 1 to 5.',
+                    instructions: 'Rate the clarity and appeal of this subject line as copy. Do not predict open rates or email deliverability.',
                     criteria: [
-                        'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
-                        'Bland or passive copy with below-average expected open rates.',
-                        'Standard competent notification subject line.',
-                        'Compelling artist-to-fan direct voice with high open anticipation.',
-                        'Exceptional subject line with curiosity gap and authentic high engagement.',
+                        'Confusing or pressuring copy.',
+                        'Generic copy with little useful detail.',
+                        'Clear, serviceable notification.',
+                        'Specific, engaging artist-to-fan voice.',
+                        'Especially clear and engaging copy.',
                     ],
                 },
-                spam_filter_risk: {
+                spam_style_signal: {
                     type: 'noul' as const,
-                    instructions: 'Does this subject line trigger ISP email spam filters (excessive punctuation, ALL CAPS, spam keywords)?',
+                    instructions: 'Does this subject line use obvious spam-style formatting or pressure language? Assess text only, not ISP filtering.',
                     criteria: {
-                        true: 'High risk of inbox spam tab placement.',
-                        false: 'Clean subject line that passes standard DMARC/spam filter evaluation.',
+                        true: 'Uses all caps, excessive punctuation, or pressure language.',
+                        false: 'Does not show those text patterns.',
                     },
                 },
             },
         });
 
         const ans = result.data.answers;
-        const scAns = ans?.open_rate_potential as { score?: unknown } | number | undefined;
-        const spAns = ans?.spam_filter_risk as { probability?: unknown } | undefined;
-
-        const resolvedScore = oneIndexedScore(scAns, fallbackScore);
-        const spamProb = typeof spAns?.probability === 'number' ? spAns.probability : (hasSpamRisk ? 0.8 : 0.1);
-        const finalSpam = spamProb >= 0.5;
+        const scAns = ans?.copy_quality as { score?: unknown } | undefined;
+        const spAns = ans?.spam_style_signal as { probability?: unknown } | undefined;
+        const rawScore = scAns?.score;
+        const rawSpamProb = spAns?.probability;
+        const validScore = typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4;
+        const validSpamProb = typeof rawSpamProb === 'number' && Number.isFinite(rawSpamProb) && rawSpamProb >= 0 && rawSpamProb <= 1;
+        const resolvedScore = validScore ? rawScore + 1 : fallbackScore;
+        const finalSpam = hasSpamRisk || (validSpamProb && rawSpamProb >= 0.5);
 
         return {
-            openRateScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
-            isSpamTriggerRisk: finalSpam,
+            copyQualityScore: finalSpam ? Math.min(2, Math.round(resolvedScore)) : Math.round(resolvedScore),
+            hasSpamStyleSignal: finalSpam,
             urgencyLevel: finalSpam ? 'OVERHYPED_SPAMMY' : (resolvedScore >= 4 ? 'HEALTHY_ANTICIPATION' : 'PASSIVE_BLAND'),
-            suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: Math.round(15 + resolvedScore * 7.5),
+            suggestedSubjectLine: finalSpam ? safeSuggestion : text,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'direct-to-fan email subject line judgment');
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 65: Streaming Spike Root Cause & Fraud Triage (Domain: Analytics)
+// Judgment 65: Streaming Metrics Review Signal (Domain: Analytics)
 // ---------------------------------------------------------------------------
 
 export interface StreamingFraudInput {
@@ -7522,11 +7459,15 @@ export interface StreamingFraudInput {
 }
 
 export interface StreamingFraudVerdict {
-    rootCause: 'ORGANIC_VIRAL' | 'EDITORIAL_PLAYLIST' | 'ALGORITHMIC_RADIO' | 'BOTTING_FARM_HAZARD' | 'DISTRIBUTOR_REPORTING_BATCH';
-    dspPenaltyHazard: boolean;
-    fraudProbability: number;
+    trafficReview: 'REVIEW_UNUSUAL_PATTERN' | 'NO_STRONG_PATTERN';
+    observedSignals: Array<'VELOCITY_SPIKE' | 'HIGH_SKIP_RATE' | 'LOW_SAVE_RATE'>;
     actionGuidance: string;
 }
+
+const STREAMING_FRAUD_CAUSES: ReadonlySet<string> = new Set([
+    'ORGANIC_VIRAL', 'EDITORIAL_PLAYLIST', 'ALGORITHMIC_RADIO',
+    'BOTTING_FARM_HAZARD', 'DISTRIBUTOR_REPORTING_BATCH',
+]);
 
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
@@ -7556,14 +7497,15 @@ export async function judgeStreamingFraudRisk(
         guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
     }
 
-    if (!judgmentsAvailable()) {
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
-    }
+    const fallback = (): StreamingFraudVerdict => ({
+        rootCause,
+        dspPenaltyHazard: penaltyHazard,
+        fraudProbability: fraudProb,
+        actionGuidance: guidance,
+    });
+
+    // The concrete high-skip, low-save signal cannot be cleared by a semantic judgment.
+    if (!judgmentsAvailable() || isBottingIndicators) return fallback();
 
     try {
         const functions = getFunctions();
@@ -7605,26 +7547,48 @@ export async function judgeStreamingFraudRisk(
 
         const ans = result.data.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const riskAns = ans?.penalty_risk as { probability?: unknown } | undefined;
-
-        const resolvedCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : rootCause) as StreamingFraudVerdict['rootCause'];
-        const prob = typeof riskAns?.probability === 'number' ? riskAns.probability : fraudProb;
+        const prob = boundedJudgmentNumber(ans?.penalty_risk, 'noul', 1);
+        if (typeof causeAns?.choice !== 'string' || !STREAMING_FRAUD_CAUSES.has(causeAns.choice) || prob === null) {
+            return fallback();
+        }
+        const resolvedCause = causeAns.choice as StreamingFraudVerdict['rootCause'];
+        if (resolvedCause === 'BOTTING_FARM_HAZARD' && prob < 0.5) return fallback();
 
         return {
             rootCause: resolvedCause,
             dspPenaltyHazard: prob >= 0.5,
             fraudProbability: prob,
-            actionGuidance: prob >= 0.5 ? 'CRITICAL: Bot stream farm attack detected. Contact distributor to avoid DSP penalties.' : guidance,
+            actionGuidance: prob >= 0.5 ? 'Possible artificial streaming risk. Contact your distributor to review the traffic.' : guidance,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'streaming fraud risk judgment');
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
+        return fallback();
     }
+    const { velocityRatio, skipRatePercent, savesPerStreamRatio } = input;
+    if (
+        !Number.isFinite(velocityRatio) || velocityRatio < 0 ||
+        !Number.isFinite(skipRatePercent) || skipRatePercent < 0 || skipRatePercent > 100 ||
+        !Number.isFinite(savesPerStreamRatio) || savesPerStreamRatio < 0 || savesPerStreamRatio > 1
+    ) {
+        throw new RangeError('Streaming velocity, skip rate, and save ratio must be finite and within their stated ranges.');
+    }
+
+    const observedSignals: StreamingFraudVerdict['observedSignals'] = [];
+    if (velocityRatio > 4) observedSignals.push('VELOCITY_SPIKE');
+    if (skipRatePercent > 75) observedSignals.push('HIGH_SKIP_RATE');
+    if (savesPerStreamRatio < 0.005) observedSignals.push('LOW_SAVE_RATE');
+
+    // Aggregate engagement cannot identify a playlist, prove artificial streams,
+    // or predict a DSP enforcement decision. It can only prompt source review.
+    const needsReview = observedSignals.includes('VELOCITY_SPIKE') &&
+        (observedSignals.length > 1 || velocityRatio > 8);
+    return {
+        trafficReview: needsReview ? 'REVIEW_UNUSUAL_PATTERN' : 'NO_STRONG_PATTERN',
+        observedSignals,
+        actionGuidance: needsReview
+            ? 'Review the traffic sources and any recent promotion in your provider analytics. If the spike remains unexplained, share the details with your distributor or label for investigation.'
+            : 'These aggregate metrics do not establish the traffic source or rule out artificial streams. Check provider analytics if you see an unexplained change or receive a distributor notice.',
+    };
 }
 
 // ---------------------------------------------------------------------------

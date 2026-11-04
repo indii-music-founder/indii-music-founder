@@ -4,6 +4,7 @@ import { AutonomousIntelligence as AI } from '@/services/intelligence/Autonomous
 import { agentRegistry } from '../registry';
 import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
+import { logger } from '@/utils/logger';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -171,6 +172,21 @@ describe('AgentOrchestrator', () => {
             );
 
             expect(result).toBe('generalist');
+        });
+
+        it('does not log or trace malformed model text', async () => {
+            const rawResponse = 'private-routing-output-do-not-log {broken';
+            vi.mocked(AI.generateContent).mockResolvedValue({
+                response: { text: () => rawResponse },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+            const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+            try {
+                expect(await orchestrator.determineAgent(createMockContext(), 'Route this task')).toBe('generalist');
+                expect(JSON.stringify(warn.mock.calls)).not.toContain(rawResponse);
+                expect(JSON.stringify(vi.mocked(TraceService.addStep).mock.calls)).not.toContain(rawResponse);
+            } finally {
+                warn.mockRestore();
+            }
         });
 
         it('normalizes case in agent ID', async () => {
