@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
 import { MODEL_PRICING, getModelKey } from '@/core/config/intelligence-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
@@ -57,8 +57,6 @@ export class TraceService {
                 agentId,
                 input,
                 status: 'pending',
-                startTime: serverTimestamp() as unknown as import('firebase/firestore').Timestamp,
-
                 steps: [],
                 swarmId: (metadata?.swarmId as string | undefined) || (parentTraceId ? null : traceId),
                 metadata: {
@@ -67,7 +65,10 @@ export class TraceService {
                 }
             };
 
-            await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
+            await setDoc(doc(db, this.COLLECTION, traceId), {
+                ...cleanFirestoreData(trace),
+                startTime: serverTimestamp()
+            });
             return traceId;
         } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
@@ -171,33 +172,24 @@ export class TraceService {
             metadata,
             usage
         };
+        const cleanStep = cleanFirestoreData({ step }).step;
+        const stepAppend = arrayUnion(cleanStep);
 
         const ref = doc(db, this.COLLECTION, traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
-                steps: arrayUnion(step)
-            }));
-
-            // If we have usage, also update the total trace usage
             if (usage) {
-                const traceDoc = await getDoc(ref);
-                const currentTrace = traceDoc.data() as AgentTrace;
-                const totalUsage = currentTrace.totalUsage || {
-                    promptTokens: 0,
-                    candidatesTokens: 0,
-                    totalTokens: 0,
-                    estimatedCost: 0
-                };
-
-                await updateDoc(ref, cleanFirestoreData({
-                    totalUsage: {
-                        promptTokens: totalUsage.promptTokens + (usage.promptTokens || 0),
-                        candidatesTokens: totalUsage.candidatesTokens + (usage.candidatesTokens || 0),
-                        totalTokens: totalUsage.totalTokens + (usage.totalTokens || 0),
-                        estimatedCost: (totalUsage.estimatedCost || 0) + (usage.estimatedCost || 0)
-                    }
-                }));
+                // Server transforms atomically append the step and add its usage,
+                // without a client read that can race with another writer.
+                await updateDoc(ref, {
+                    steps: stepAppend,
+                    'totalUsage.promptTokens': increment(usage.promptTokens),
+                    'totalUsage.candidatesTokens': increment(usage.candidatesTokens),
+                    'totalUsage.totalTokens': increment(usage.totalTokens),
+                    'totalUsage.estimatedCost': increment(usage.estimatedCost || 0)
+                });
+            } else {
+                await updateDoc(ref, { steps: stepAppend });
             }
         } catch (error: unknown) {
             logger.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
@@ -225,12 +217,12 @@ export class TraceService {
         this.startTimeMap.delete(traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
+            await updateDoc(ref, {
                 status: 'completed',
                 endTime: serverTimestamp(),
-                durationMs,
-                ...(output ? { output } : {})
-            }));
+                ...(durationMs !== undefined ? { durationMs } : {}),
+                ...(output !== undefined ? { output: cleanFirestoreData({ output }).output } : {})
+            });
         } catch (error: unknown) {
             logger.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
         }
@@ -249,12 +241,12 @@ export class TraceService {
         this.startTimeMap.delete(traceId);
 
         try {
-            await updateDoc(ref, cleanFirestoreData({
+            await updateDoc(ref, {
                 status: 'failed',
                 endTime: serverTimestamp(),
-                durationMs,
+                ...(durationMs !== undefined ? { durationMs } : {}),
                 error
-            }));
+            });
         } catch (e: unknown) {
             logger.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
         }

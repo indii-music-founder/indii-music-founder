@@ -20,7 +20,7 @@ export const updateProfileFunction: FunctionDeclaration = {
             brand_description: { type: 'STRING', description: 'Visual brand description — aesthetic, style, colors, mood (Permanent).' },
             colors: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Brand color palette as hex codes or color names.' },
             fonts: { type: 'STRING', description: 'Brand fonts or typography preferences.' },
-            aesthetic_style: { type: 'STRING', description: 'Visual aesthetic style (e.g., "Cyberpunk", "Minimalist", "Retro 80s", "Synthwave").' },
+            aesthetic_style: { type: 'STRING', description: 'Visual aesthetic style (e.g., "Cinematic", "Anime", "3D Render", "Watercolor").' },
             negative_prompt: { type: 'STRING', description: 'Things to AVOID in Intelligence-generated content (e.g., "no neon colors, no cartoons").' },
             visuals_acknowledged: { type: 'BOOLEAN', description: 'Set to true when user confirms they have no visual assets yet (e.g., "None yet - starting fresh"). This marks visuals as complete so we stop asking.' },
             career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TraceService } from '../TraceService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { doc, setDoc, getDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
@@ -11,6 +13,7 @@ vi.mock('firebase/firestore', () => ({
     getDoc: vi.fn(),
     updateDoc: vi.fn(),
     arrayUnion: vi.fn(),
+    increment: vi.fn(),
     serverTimestamp: vi.fn(() => 'mock-timestamp'),
     query: vi.fn(),
     where: vi.fn()
@@ -35,6 +38,15 @@ describe('TraceService', () => {
     });
 
     describe('startTrace', () => {
+        it('preserves the Firestore server timestamp sentinel', async () => {
+            const timestamp = { isEqual: vi.fn() } as unknown as ReturnType<typeof serverTimestamp>;
+            vi.mocked(serverTimestamp).mockReturnValue(timestamp);
+
+            await TraceService.startTrace('user-1', 'orchestrator', 'Hello');
+
+            expect(setDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ startTime: timestamp }));
+        });
+
         it('should generate a root swarmId if none provided', async () => {
             const _traceId = await TraceService.startTrace('user-1', 'orchestrator', 'Hello');
 
@@ -70,6 +82,53 @@ describe('TraceService', () => {
                     swarmId: null
                 })
             );
+        });
+    });
+
+    describe('addStepWithUsage', () => {
+        it('appends a step and increments all usage totals in one update', async () => {
+            const union = { isEqual: vi.fn() } as unknown as ReturnType<typeof arrayUnion>;
+            vi.mocked(arrayUnion).mockReturnValue(union);
+            vi.mocked(increment).mockImplementation(value => ({ operand: value, isEqual: vi.fn() } as unknown as ReturnType<typeof increment>));
+
+            await TraceService.addStepWithUsage('trace-1', 'routing', { chosen: 'generalist' }, 'unknown-model', {
+                promptTokenCount: 3,
+                candidatesTokenCount: 2,
+                totalTokenCount: 5
+            });
+
+            expect(updateDoc).toHaveBeenCalledOnce();
+            expect(updateDoc).toHaveBeenCalledWith(expect.anything(), {
+                steps: union,
+                'totalUsage.promptTokens': expect.objectContaining({ operand: 3 }),
+                'totalUsage.candidatesTokens': expect.objectContaining({ operand: 2 }),
+                'totalUsage.totalTokens': expect.objectContaining({ operand: 5 }),
+                'totalUsage.estimatedCost': expect.objectContaining({ operand: 0 })
+            });
+            expect(arrayUnion).toHaveBeenCalledWith(expect.objectContaining({ type: 'routing' }));
+        });
+
+        it('uses one append when the step has no usage', async () => {
+            const union = { isEqual: vi.fn() } as unknown as ReturnType<typeof arrayUnion>;
+            vi.mocked(arrayUnion).mockReturnValue(union);
+
+            await TraceService.addStep('trace-1', 'thought', 'No model usage');
+
+            expect(updateDoc).toHaveBeenCalledOnce();
+            expect(updateDoc).toHaveBeenCalledWith(expect.anything(), { steps: union });
+            expect(increment).not.toHaveBeenCalled();
+        });
+
+        it('preserves the server timestamp sentinel on completion', async () => {
+            const timestamp = { isEqual: vi.fn() } as unknown as ReturnType<typeof serverTimestamp>;
+            vi.mocked(serverTimestamp).mockReturnValue(timestamp);
+
+            await TraceService.completeTrace('trace-1', 'done');
+
+            expect(updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+                endTime: timestamp,
+                output: 'done'
+            }));
         });
     });
 

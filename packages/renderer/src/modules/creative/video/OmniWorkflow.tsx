@@ -277,7 +277,7 @@ export default function OmniWorkflow() {
 
     // Local Interactive States
     const [isRemixing, setIsRemixing] = useState(false);
-    const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
+    const [remixPrompt, setRemixPrompt] = useState('Remix performance into an analog film concert scene with dramatic stage lighting');
     // Launch from the only input required by Omni: a text prompt. Users can
     // opt into image/reference/video editing modes when they add that media.
     const [omniTask, setOmniTaskState] = useState<OmniTask>(() => {

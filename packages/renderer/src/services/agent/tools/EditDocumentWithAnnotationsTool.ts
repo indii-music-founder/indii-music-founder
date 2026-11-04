@@ -45,7 +45,7 @@ export const EditDocumentWithAnnotationsTool: any = {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: async (args: any) => {
-        logger.debug('[EditDocumentWithAnnotationsTool] Executing document edit:', args);
+        logger.debug('[EditDocumentWithAnnotationsTool] Executing document edit');
         
         let spatialPrompt = `Spatial Document Edit Request for ID: ${args.documentId}\n`;
         if (args.globalInstruction) {

@@ -82,8 +82,8 @@ export class DigitalHandshake {
         // Resolve destructiveness: riskTier metadata takes precedence over legacy boolean
         const effectivelyDestructive = requiresApproval || isDestructive || (resolvedRiskTier === 'destructive');
 
-        // Read-only tools never require a handshake (unless compute is exceeded or armor blocked)
-        if (resolvedRiskTier === 'read' && !computeExceeded && !armorBlocked) {
+        // A read-tier tool may still be explicitly marked destructive or require approval.
+        if (resolvedRiskTier === 'read' && !computeExceeded && !armorBlocked && !effectivelyDestructive) {
             if (toolName) await this.logAuditTrail(directive.userId, 'TOOL_AUTO_APPROVED', { toolName, riskTier: resolvedRiskTier }, agentIdentity);
             return true;
         }
