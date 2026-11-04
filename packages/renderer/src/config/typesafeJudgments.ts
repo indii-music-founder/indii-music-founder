@@ -4637,7 +4637,16 @@ export async function judgeFanCommentModeration(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result?.data?.answers;
+        if (!ans) {
+            return {
+                intent: fallbackIntent,
+                isApproved: fallbackApproved,
+                vibeAlignmentScore: fallbackScore,
+                moderationFlag: fallbackFlag,
+            };
+        }
+
         const intAns = ans?.intent as { choice?: unknown } | undefined;
         const appAns = ans?.approved as { noul?: unknown } | number | undefined;
         const vibAns = ans?.vibe as { score?: unknown } | number | undefined;
@@ -4649,9 +4658,9 @@ export async function judgeFanCommentModeration(
         if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent) || appProb === null) {
             return {
                 intent: fallbackIntent,
-                isApproved: fallbackApproved,
+                isApproved: false,
                 vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag,
+                moderationFlag: fallbackFlag || 'Comment requires moderation review.',
             };
         }
         const resolvedIntent = selectedIntent as CommentClassification;
