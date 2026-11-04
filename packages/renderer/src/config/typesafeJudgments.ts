@@ -7519,6 +7519,11 @@ export interface StreamingFraudVerdict {
     actionGuidance: string;
 }
 
+const STREAMING_FRAUD_CAUSES: ReadonlySet<string> = new Set([
+    'ORGANIC_VIRAL', 'EDITORIAL_PLAYLIST', 'ALGORITHMIC_RADIO',
+    'BOTTING_FARM_HAZARD', 'DISTRIBUTOR_REPORTING_BATCH',
+]);
+
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
 ): Promise<StreamingFraudVerdict> {
@@ -7547,14 +7552,15 @@ export async function judgeStreamingFraudRisk(
         guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
     }
 
-    if (!judgmentsAvailable()) {
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
-    }
+    const fallback = (): StreamingFraudVerdict => ({
+        rootCause,
+        dspPenaltyHazard: penaltyHazard,
+        fraudProbability: fraudProb,
+        actionGuidance: guidance,
+    });
+
+    // The concrete high-skip, low-save signal cannot be cleared by a semantic judgment.
+    if (!judgmentsAvailable() || isBottingIndicators) return fallback();
 
     try {
         const functions = getFunctions();
@@ -7596,25 +7602,22 @@ export async function judgeStreamingFraudRisk(
 
         const ans = result.data.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const riskAns = ans?.penalty_risk as { probability?: unknown } | undefined;
-
-        const resolvedCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : rootCause) as StreamingFraudVerdict['rootCause'];
-        const prob = typeof riskAns?.probability === 'number' ? riskAns.probability : fraudProb;
+        const prob = boundedJudgmentNumber(ans?.penalty_risk, 'noul', 1);
+        if (typeof causeAns?.choice !== 'string' || !STREAMING_FRAUD_CAUSES.has(causeAns.choice) || prob === null) {
+            return fallback();
+        }
+        const resolvedCause = causeAns.choice as StreamingFraudVerdict['rootCause'];
+        if (resolvedCause === 'BOTTING_FARM_HAZARD' && prob < 0.5) return fallback();
 
         return {
             rootCause: resolvedCause,
             dspPenaltyHazard: prob >= 0.5,
             fraudProbability: prob,
-            actionGuidance: prob >= 0.5 ? 'CRITICAL: Bot stream farm attack detected. Contact distributor to avoid DSP penalties.' : guidance,
+            actionGuidance: prob >= 0.5 ? 'Possible artificial streaming risk. Contact your distributor to review the traffic.' : guidance,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'streaming fraud risk judgment');
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
+        return fallback();
     }
 }
 
