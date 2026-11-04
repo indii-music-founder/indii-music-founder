@@ -78,6 +78,7 @@ export class AlwaysOnMemoryEngine {
     private config: AlwaysOnMemoryConfig | null = null;
     private consolidationTimer: ReturnType<typeof setInterval> | null = null;
     private isRunning = false;
+    private ownerVersion = 0;
     private isConsolidating = false;
     private isIngesting = false;
     private startedAt: Date | null = null;
@@ -129,6 +130,7 @@ export class AlwaysOnMemoryEngine {
         }
 
         this.userId = userId;
+        this.ownerVersion++;
         this.config = {
             userId,
             ...DEFAULT_ENGINE_CONFIG,
@@ -159,12 +161,23 @@ export class AlwaysOnMemoryEngine {
             this.consolidationTimer = null;
         }
         this.isRunning = false;
+        this.ownerVersion++;
         this.userId = '';
         this.config = null;
         this.startedAt = null;
         this.lastConsolidatedAt = null;
         this.lastIngestedAt = null;
         logger.info('[AlwaysOnMemoryEngine] 🧠 Engine stopped');
+    }
+
+    private isCurrentOwner(userId: string, version: number): boolean {
+        return this.isRunning && this.userId === userId && this.ownerVersion === version;
+    }
+
+    private requireCurrentOwner(userId: string, version: number): void {
+        if (!this.isCurrentOwner(userId, version)) {
+            throw new Error('Memory engine account changed during operation');
+        }
     }
 
     /**
@@ -344,13 +357,17 @@ export class AlwaysOnMemoryEngine {
     public async query(question: string): Promise<string> {
         if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
 
         try {
             // Step 1: Fetch all memories (most recent first)
             const memories = await this.getAllMemories(500);
+            this.requireCurrentOwner(userId, ownerVersion);
 
             // Step 2: Fetch consolidation insights
             const insights = await this.getInsights(10);
+            this.requireCurrentOwner(userId, ownerVersion);
 
             // Step 4: Build a context block for the LLM (even if memories are empty)
             const memoryBlock = memories.length > 0
@@ -397,9 +414,10 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 0,
                 { temperature: 0.3 } as Record<string, unknown>
             );
+            this.requireCurrentOwner(userId, ownerVersion);
 
             // Step 6: Reinforce accessed memories (boost importance of relevant ones)
-            this.reinforceAccessedMemories(memories, answer).catch(err => {
+            this.reinforceAccessedMemories(userId, ownerVersion, memories, answer).catch(err => {
                 logger.error('[AlwaysOnMemoryEngine] Reinforcement failed:', err);
             });
 
@@ -441,6 +459,8 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get the current status of the engine.
      */
     public async getStatus(): Promise<AlwaysOnEngineStatus> {
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
         const status: AlwaysOnEngineStatus = {
             isRunning: this.isRunning,
             isConsolidating: this.isConsolidating,
@@ -455,29 +475,42 @@ If appropriate, suggest that the user can ingest relevant information to build a
             lastIngestedAt: this.lastIngestedAt || undefined,
         };
 
-        if (!this.userId || this.isE2EMode) return status;
+        if (!userId || this.isE2EMode) return status;
+        const staleStatus: AlwaysOnEngineStatus = {
+            ...status,
+            isRunning: false,
+            isConsolidating: false,
+            isIngesting: false,
+            startedAt: undefined,
+            lastConsolidatedAt: undefined,
+            lastIngestedAt: undefined,
+        };
 
         try {
             // Get total count
-            const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
+            const memoryRef = collection(db, 'users', userId, 'alwaysOnMemories');
             const totalSnap = await getCountFromServer(query(memoryRef, where('isActive', '==', true)));
+            if (!this.isCurrentOwner(userId, ownerVersion)) return staleStatus;
             status.totalMemories = totalSnap.data().count;
 
             // Get unconsolidated count
             const unconsolidatedSnap = await getCountFromServer(
                 query(memoryRef, where('consolidated', '==', false), where('isActive', '==', true))
             );
+            if (!this.isCurrentOwner(userId, ownerVersion)) return staleStatus;
             status.unconsolidatedCount = unconsolidatedSnap.data().count;
 
             // Get insights count
-            const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
+            const insightRef = collection(db, 'users', userId, 'consolidationInsights');
             const insightSnap = await getCountFromServer(query(insightRef));
+            if (!this.isCurrentOwner(userId, ownerVersion)) return staleStatus;
             status.totalInsights = insightSnap.data().count;
 
             // Get tier breakdown (fetch a sample to estimate)
             const tierSample = await getDocs(
                 query(memoryRef, where('isActive', '==', true), limit(1000))
             );
+            if (!this.isCurrentOwner(userId, ownerVersion)) return staleStatus;
             for (const doc of tierSample.docs) {
                 const data = doc.data();
                 const tier = (data.tier || 'working') as MemoryTier;
@@ -492,6 +525,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             logger.error('[AlwaysOnMemoryEngine] Status fetch failed:', error);
         }
 
+        if (!this.isCurrentOwner(userId, ownerVersion)) return staleStatus;
         return status;
     }
 
@@ -503,9 +537,11 @@ If appropriate, suggest that the user can ingest relevant information to build a
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) return [];
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
 
         try {
-            const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
+            const memoryRef = collection(db, 'users', userId, 'alwaysOnMemories');
             let q = query(
                 memoryRef,
                 where('isActive', '==', true),
@@ -525,6 +561,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
             // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
             const snapshot = await getDocs(query(q, limit(maxCount)));
+            if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             if (snapshot.docs.length === maxCount) {
                 logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
             }
@@ -574,9 +611,11 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async getInsights(maxCount: number = 10): Promise<ConsolidationInsight[]> {
         if (!this.userId || this.isE2EMode) return [];
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
 
         try {
-            const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
+            const insightRef = collection(db, 'users', userId, 'consolidationInsights');
             const q = query(
                 insightRef,
                 orderBy('createdAt', 'desc'),
@@ -584,6 +623,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             );
 
             const snapshot = await getDocs(q);
+            if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
@@ -612,13 +652,16 @@ If appropriate, suggest that the user can ingest relevant information to build a
     public async clearAll(): Promise<{ memoriesDeleted: number; insightsDeleted: number }> {
         if (!this.userId) throw new Error('Engine not started');
         if (this.isE2EMode) return { memoriesDeleted: 0, insightsDeleted: 0 };
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
 
         let memoriesDeleted = 0;
         let insightsDeleted = 0;
 
         // Delete all memories (batch by 500 to respect Firestore write limits)
-        const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
+        const memoryRef = collection(db, 'users', userId, 'alwaysOnMemories');
         let memoryBatch = await getDocs(query(memoryRef, limit(500)));
+        this.requireCurrentOwner(userId, ownerVersion);
         while (!memoryBatch.empty) {
             const memBatch = writeBatch(db);
             for (const doc of memoryBatch.docs) {
@@ -626,12 +669,15 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 memoriesDeleted++;
             }
             if (memoriesDeleted > 0) await memBatch.commit();
+            this.requireCurrentOwner(userId, ownerVersion);
             memoryBatch = await getDocs(query(memoryRef, limit(500)));
+            this.requireCurrentOwner(userId, ownerVersion);
         }
 
         // Delete all insights (batch by 500 to respect Firestore write limits)
-        const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
+        const insightRef = collection(db, 'users', userId, 'consolidationInsights');
         let insightBatch = await getDocs(query(insightRef, limit(500)));
+        this.requireCurrentOwner(userId, ownerVersion);
         while (!insightBatch.empty) {
             const insBatch = writeBatch(db);
             for (const doc of insightBatch.docs) {
@@ -639,19 +685,24 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 insightsDeleted++;
             }
             if (insightsDeleted > 0) await insBatch.commit();
+            this.requireCurrentOwner(userId, ownerVersion);
             insightBatch = await getDocs(query(insightRef, limit(500)));
+            this.requireCurrentOwner(userId, ownerVersion);
         }
 
         // Delete all ingestion events (batch by 500 to respect Firestore write limits)
-        const eventRef = collection(db, 'users', this.userId, 'ingestionEvents');
+        const eventRef = collection(db, 'users', userId, 'ingestionEvents');
         let eventBatch = await getDocs(query(eventRef, limit(500)));
+        this.requireCurrentOwner(userId, ownerVersion);
         while (!eventBatch.empty) {
             const evtBatch = writeBatch(db);
             for (const doc of eventBatch.docs) {
                 evtBatch.delete(doc.ref);
             }
             if (!eventBatch.empty) await evtBatch.commit();
+            this.requireCurrentOwner(userId, ownerVersion);
             eventBatch = await getDocs(query(eventRef, limit(500)));
+            this.requireCurrentOwner(userId, ownerVersion);
         }
 
         logger.info(
@@ -670,13 +721,16 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Memories that prove useful get an importance boost.
      */
     private async reinforceAccessedMemories(
+        userId: string,
+        ownerVersion: number,
         memories: AlwaysOnMemory[],
         answer: string
     ): Promise<void> {
         // Find memory IDs referenced in the answer
         for (const memory of memories) {
+            if (!this.isCurrentOwner(userId, ownerVersion)) return;
             if (answer.includes(memory.id) || answer.includes(`Memory ${memory.id}`)) {
-                await MemoryConsolidator.reinforceMemory(this.userId, memory.id, 0.03);
+                await MemoryConsolidator.reinforceMemory(userId, memory.id, 0.03);
             }
         }
     }

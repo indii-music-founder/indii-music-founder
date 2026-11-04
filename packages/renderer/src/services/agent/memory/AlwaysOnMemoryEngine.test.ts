@@ -172,6 +172,18 @@ describe('AlwaysOnMemoryEngine', () => {
             expect(mockGetDocs).not.toHaveBeenCalled();
         });
 
+        it('discards a previous owner read that finishes after an account switch', async () => {
+            await engine.start('user-1');
+            let finishRead!: (snapshot: { docs: Array<{ id: string; data: () => object }> }) => void;
+            mockGetDocs.mockReturnValueOnce(new Promise(resolve => { finishRead = resolve; }));
+
+            const read = engine.getAllMemories();
+            await engine.start('user-2');
+            finishRead({ docs: [{ id: 'user-1-memory', data: () => ({ content: 'private' }) }] });
+
+            expect(await read).toEqual([]);
+        });
+
         it('should not start twice for the same user', async () => {
             await engine.start('test-user-123');
             await engine.start('test-user-123'); // Should not throw
@@ -336,6 +348,18 @@ describe('AlwaysOnMemoryEngine', () => {
             expect(answer).toContain('ingest information');
             expect(mockGenerateText).toHaveBeenCalled();
         });
+
+        it('does not synthesize an answer from memories after the owner changes', async () => {
+            let finishRead!: (snapshot: { docs: []; empty: boolean }) => void;
+            mockGetDocs.mockReturnValueOnce(new Promise(resolve => { finishRead = resolve; }));
+
+            const answer = engine.query('What did the previous artist save?');
+            await engine.start('user-2');
+            finishRead({ docs: [], empty: true });
+
+            expect(await answer).toContain('account changed');
+            expect(mockGenerateText).not.toHaveBeenCalled();
+        });
     });
 
     describe('Status', () => {
@@ -381,6 +405,20 @@ describe('AlwaysOnMemoryEngine', () => {
 
             expect(result.memoriesDeleted).toBeGreaterThanOrEqual(0);
             expect(result.insightsDeleted).toBeGreaterThanOrEqual(0);
+        });
+
+        it('does not continue a reset under a different account', async () => {
+            let finishRead!: (snapshot: { docs: []; empty: boolean }) => void;
+            mockGetDocs.mockReset().mockReturnValueOnce(
+                new Promise(resolve => { finishRead = resolve; })
+            );
+
+            const clearing = engine.clearAll();
+            await engine.start('user-2');
+            finishRead({ docs: [], empty: true });
+
+            await expect(clearing).rejects.toThrow('account changed');
+            expect(mockWriteBatch).not.toHaveBeenCalled();
         });
     });
 });

@@ -149,9 +149,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
             }).catch(err => logger.error('Failed to load AssetObserver', err));
 
             // Initialize Always-On Memory Engine — starts background consolidation
-            import('@/services/agent/memory/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
-                if (isMounted) alwaysOnMemoryEngine.start(user.uid);
-            }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
+            useStore.getState().startMemoryEngine(user.uid);
 
             // Initialize Push Notification foreground listener
             let pushUnsub: (() => void) | null = null;
@@ -188,9 +186,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
                     assetObserver.stop();
                 }).catch(() => { /* module already unloaded */ });
-                import('@/services/agent/memory/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
-                    alwaysOnMemoryEngine.stop();
-                }).catch(() => { /* module already unloaded */ });
+                useStore.getState().stopMemoryEngine();
             };
         }
     }, [isAccountBoundaryReady, user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
