@@ -71,7 +71,7 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
-    it('should run a deterministic test loop and complete immediately', async () => {
+    it('refuses deterministic mode before dispatch when no verifier exists', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-test-1',
             trigger: AgentLoopTriggerEnum.enum.MANUAL,
@@ -85,21 +85,8 @@ describe('AgentLoopService', () => {
 
         const context = { userId: 'user1', projectId: 'proj1' } as any;
 
-        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
-            { success: true, message: 'Action taken', data: { taskId: 'task-1' } }
-        ]);
-
-        const executionId = await agentLoopService.startLoop(def, context);
-        
-        // Wait for async loop to finish
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        const execution = agentLoopService.getExecution(executionId);
-        expect(execution).toBeDefined();
-        expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
-        expect(execution?.history).toHaveLength(1);
-        expect(execution?.history[0]?.output).toBe('Action taken');
-        expect(execution?.history[0]?.passed).toBe(true);
+        await expect(agentLoopService.startLoop(def, context)).rejects.toThrow('no verifier is configured');
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
     it('should run an LLM evaluation loop that iterates once before passing', async () => {
@@ -274,7 +261,7 @@ describe('AgentLoopService', () => {
             trigger: AgentLoopTriggerEnum.enum.MANUAL,
             goal: 'Resilient Task',
             verifiabilityCriteria: 'Must succeed',
-            judgeMode: AgentLoopJudgeModeEnum.enum.DETERMINISTIC_TEST,
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
             maxIterations: 2,
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -286,6 +273,9 @@ describe('AgentLoopService', () => {
         vi.mocked(maestroBatchingService.executeBatch)
             .mockResolvedValueOnce([{ success: false, error: 'Rate limit 429: RESOURCE_EXHAUSTED', data: { taskId: 'task-1' } }])
             .mockResolvedValueOnce([{ success: true, message: 'Success after retry', data: { taskId: 'task-2' } }]);
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'PASS' }) }
+        });
 
         const executionId = await agentLoopService.startLoop(def, context);
 
@@ -335,7 +325,7 @@ describe('AgentLoopService', () => {
             trigger: AgentLoopTriggerEnum.enum.MANUAL,
             goal: 'Resume goal',
             verifiabilityCriteria: 'Resume criteria',
-            judgeMode: AgentLoopJudgeModeEnum.enum.DETERMINISTIC_TEST,
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
             maxIterations: 3,
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -360,6 +350,9 @@ describe('AgentLoopService', () => {
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
             { success: true, message: 'Resumed output', data: { taskId: 'task-1' } }
         ]);
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'PASS' }) }
+        });
 
         const resumed = await agentLoopService.resumeLoop(def, executionId, context);
         expect(resumed.id).toBe(executionId);
@@ -371,6 +364,30 @@ describe('AgentLoopService', () => {
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.history).toHaveLength(2);
         expect(execution?.history[1]?.iteration).toBe(2);
+    });
+
+    it('refuses to resume an old deterministic loop without a verifier', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-deterministic-resume',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result',
+            verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.DETERMINISTIC_TEST,
+            maxIterations: 2,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+        const executionId = 'saved-deterministic-exec';
+        const saved = {
+            id: executionId, loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(executionId, saved);
+
+        await expect(agentLoopService.resumeLoop(def, executionId, { userId: 'user1' }))
+            .rejects.toThrow('no verifier is configured');
+        expect(agentLoopService.getExecution(executionId)).toBe(saved);
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
     it('should halt immediately when TypeSafe judgment classifies a keyword-matching error as non-transient', async () => {
