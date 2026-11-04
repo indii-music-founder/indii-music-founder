@@ -64,6 +64,28 @@ describe('HistoryManager compaction', () => {
         }
     });
 
+    it('counts the prior summary against every later summarizer input', async () => {
+        const history = messages(17).map((message, index) => index === 0 ? { ...message, text: 'x'.repeat(18_000) } : message);
+        vi.mocked(useStore.getState).mockReturnValue({ agentHistory: history, activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
+        vi.mocked(SummaryService.summarize).mockResolvedValue('s'.repeat(1_000));
+
+        await new HistoryManager().getCompiledView();
+
+        expect(SummaryService.summarize).toHaveBeenCalledTimes(3);
+        for (const [input] of vi.mocked(SummaryService.summarize).mock.calls) {
+            expect(input.length).toBeLessThanOrEqual(8_000);
+        }
+    });
+
+    it('does not silently truncate an upstream summary that cannot fit', async () => {
+        const history = messages(17).map((message, index) => index === 0 ? { ...message, text: 'x'.repeat(18_000) } : message);
+        vi.mocked(useStore.getState).mockReturnValue({ agentHistory: history, activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
+        vi.mocked(SummaryService.summarize).mockResolvedValue('s'.repeat(8_000));
+
+        await expect(new HistoryManager().getCompiledView()).rejects.toThrow('Conversation summary exceeds the summarizer input budget.');
+        expect(SummaryService.summarize).toHaveBeenCalledTimes(1);
+    });
+
     it('does not cache a failed summary as complete history', async () => {
         const manager = new HistoryManager();
         vi.mocked(useStore.getState).mockReturnValue({ agentHistory: messages(30), activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
