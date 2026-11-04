@@ -53,6 +53,8 @@ export interface PendingToolApproval {
     status: 'pending' | 'approved' | 'claimed' | 'denied' | 'executed' | 'failed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
     resolvedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    /** Persisted before a non-computer implementation is called. */
+    claimedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
     denyReason?: string;
     /** Populated after execution; absence is ambiguous if the renderer stopped after dispatch. */
     result?: { success: boolean; error?: string };
@@ -234,6 +236,20 @@ class ToolApprovalService {
             });
         } catch (error: unknown) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+
+        if (!isComputerApproval) {
+            try {
+                // A durable claim separates approval from the point where a side effect may start.
+                await updateDoc(approvalDocRef, { status: 'claimed', claimedAt: serverTimestamp() });
+            } catch {
+                this.boundCalls.delete(approvalId);
+                logger.error(`[ToolApprovalService] Approval ${approvalId} dispatch claim could not be recorded; tool was not run`);
+                return {
+                    success: false,
+                    error: 'Tool was not run because its dispatch claim could not be saved. Review the approval state before requesting it again.',
+                };
+            }
         }
 
         let result: ToolFunctionResult;

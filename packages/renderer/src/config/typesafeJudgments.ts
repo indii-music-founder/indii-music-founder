@@ -1154,59 +1154,33 @@ export async function judgeVideoAspectRatioIntent(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 14: stream velocity anomaly & fraud diagnostics (consumer: AnomalyDetector)
+// Judgment 14: stream anomaly context clues (consumer: AnomalyDetector)
 // ---------------------------------------------------------------------------
 
-export type AnomalyRootCauseType =
-    | 'organic_viral_surge'
-    | 'editorial_playlist_placement'
-    | 'algorithmic_radio_surge'
-    | 'botting_stream_farm_hazard'
-    | 'distributor_reporting_anomaly'
-    | 'expected_release_spike';
+export type StreamContextSignal =
+    | 'social_discovery_mentioned'
+    | 'playlist_mentioned'
+    | 'repeated_plays_mentioned'
+    | 'reporting_delay_mentioned'
+    | 'no_source_clue';
 
-export const STREAM_ANOMALY_ROOT_CAUSE_QUESTION = {
+export const STREAM_ANOMALY_CONTEXT_QUESTION = {
     type: 'choice' as const,
     instructions:
-        'A sudden spike or drop in streaming velocity occurred for a music track. Based on the velocity spike percentage, ' +
-        'track history, and contextual behavior, classify the most probable root cause.',
+        'Classify only what the supplied note explicitly mentions about a streaming spike. ' +
+        'The note is unverified; do not infer the actual traffic source, artificial streaming, or DSP enforcement.',
     criteria: {
-        organic_viral_surge: 'Spike driven by social media discovery (TikTok/Reels/Shorts), high save rate, genuine listener engagement.',
-        editorial_playlist_placement: 'Sharp jump coinciding with Friday release or verified DSP editorial playlist addition (e.g. New Music Friday).',
-        algorithmic_radio_surge: 'Gradual acceleration driven by Spotify Discover Weekly, Release Radar, or Autoplay with healthy completion rate.',
-        botting_stream_farm_hazard: 'Abnormal looped plays, repetitive short durations, near-zero saves, high risk of DSP artificial stream penalties.',
-        distributor_reporting_anomaly: 'Multi-month batch reporting backlog posted on a single day, or duplicate reporting period batch.',
-        expected_release_spike: 'Normal day 1–3 peak following a planned and announced release campaign.',
+        social_discovery_mentioned: 'The note explicitly mentions social discovery or a social campaign.',
+        playlist_mentioned: 'The note explicitly mentions a playlist placement.',
+        repeated_plays_mentioned: 'The note explicitly mentions repetitive or looped plays.',
+        reporting_delay_mentioned: 'The note explicitly mentions a distributor reporting delay or batch.',
+        no_source_clue: 'The note gives no clue about a traffic source.',
     },
-};
-
-export const STREAM_DSP_PENALTY_HAZARD_QUESTION = {
-    type: 'noul' as const,
-    instructions:
-        'Does this streaming spike present an actionable risk of triggering DSP artificial streaming penalties, ' +
-        'withholding of royalties, or track takedown (e.g. Spotify artificial stream fee or Apple takedown)?',
-    criteria: {
-        true: 'High risk of artificial streaming detection — requires immediate distributor notification.',
-        false: 'Benign variance or organic promotional spike.',
-    },
-};
-
-export const STREAM_ANOMALY_SEVERITY_QUESTION = {
-    type: 'score' as const,
-    instructions: 'Score the financial and business severity of this anomaly for the artist career.',
-    criteria: [
-        'Informational — benign organic growth or minor reporting delay',
-        'Low — noteworthy promotional surge; monitor playlist retention',
-        'Medium — significant variance or potential distributor fee deduction requiring audit',
-        'Critical — high probability of fraud flag, royalty freeze, or catalog delisting',
-    ],
 };
 
 export interface StreamAnomalyVerdict {
-    rootCause: AnomalyRootCauseType;
-    dspPenaltyHazard: boolean;
-    hazardProbability: number;
-    severityScore: number;
+    contextSignal: StreamContextSignal;
+    contextConfidence: number;
     recommendation: string;
 }
 
@@ -1215,7 +1189,9 @@ export async function judgeStreamVelocityAnomaly(
     pctIncrease: number,
     context?: string
 ): Promise<StreamAnomalyVerdict | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!Number.isFinite(pctIncrease) || pctIncrease < 0) return null;
+    const note = context?.trim();
+    if (!note || !judgmentsAvailable()) return null;
 
     try {
         const functions = getFunctions();
@@ -1228,44 +1204,23 @@ export async function judgeStreamVelocityAnomaly(
             state: {
                 trackName: trackName.slice(0, 100),
                 pctIncrease,
-                context: (context || '').slice(0, 300),
+                context: note.slice(0, 300),
             },
             questions: {
-                root_cause: STREAM_ANOMALY_ROOT_CAUSE_QUESTION,
-                dsp_penalty_hazard: STREAM_DSP_PENALTY_HAZARD_QUESTION,
-                severity: STREAM_ANOMALY_SEVERITY_QUESTION,
+                context_signal: STREAM_ANOMALY_CONTEXT_QUESTION,
             },
         });
 
-        const rootAns = result.data.answers?.root_cause as { choice?: unknown } | undefined;
-        const hazardAns = result.data.answers?.dsp_penalty_hazard;
-        const sevAns = result.data.answers?.severity;
-
-        if (!rootAns || typeof rootAns.choice !== 'string' ||
-            !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_ROOT_CAUSE_QUESTION.criteria, rootAns.choice)) return null;
-
-        const rootCause = rootAns.choice as AnomalyRootCauseType;
-        const hazardProb = boundedJudgmentNumber(hazardAns, 'noul', 1);
-        const severityScore = boundedJudgmentNumber(sevAns, 'score', STREAM_ANOMALY_SEVERITY_QUESTION.criteria.length - 1);
-        if (hazardProb === null || severityScore === null) return null;
-
-        const dspPenaltyHazard = hazardProb >= 0.50;
-
-        let recommendation = 'Track streaming shows healthy organic growth.';
-        if (dspPenaltyHazard) {
-            recommendation = 'Warning: Pattern flagged for artificial streaming risk. Contact distributor to verify traffic source.';
-        } else if (rootCause === 'organic_viral_surge') {
-            recommendation = 'Viral traction detected! Consider boosting with social clips and playlist pitching.';
-        } else if (rootCause === 'editorial_playlist_placement') {
-            recommendation = 'Editorial playlist spike confirmed. Monitor listener saves and followers.';
-        }
+        const answer = result.data.answers?.context_signal as { choice?: unknown; confidence?: unknown } | undefined;
+        if (!answer || typeof answer.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_CONTEXT_QUESTION.criteria, answer.choice) ||
+            typeof answer.confidence !== 'number' || !Number.isFinite(answer.confidence) ||
+            answer.confidence < 0.5 || answer.confidence > 1) return null;
 
         return {
-            rootCause,
-            dspPenaltyHazard,
-            hazardProbability: hazardProb,
-            severityScore,
-            recommendation,
+            contextSignal: answer.choice as StreamContextSignal,
+            contextConfidence: answer.confidence,
+            recommendation: 'The note is an unverified clue. Review the provider traffic sources and recent promotion; ask your distributor or label to investigate any unexplained spike.',
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'stream velocity anomaly judgment');
@@ -7464,106 +7419,9 @@ export interface StreamingFraudVerdict {
     actionGuidance: string;
 }
 
-const STREAMING_FRAUD_CAUSES: ReadonlySet<string> = new Set([
-    'ORGANIC_VIRAL', 'EDITORIAL_PLAYLIST', 'ALGORITHMIC_RADIO',
-    'BOTTING_FARM_HAZARD', 'DISTRIBUTOR_REPORTING_BATCH',
-]);
-
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
 ): Promise<StreamingFraudVerdict> {
-    const isBottingIndicators = input.skipRatePercent > 75 && input.savesPerStreamRatio < 0.005 && input.velocityRatio > 4.0;
-    const isOrganicSaves = input.savesPerStreamRatio >= 0.04;
-
-    let rootCause: StreamingFraudVerdict['rootCause'] = 'ORGANIC_VIRAL';
-    let fraudProb = 0.08;
-    let penaltyHazard = false;
-    let guidance = 'Organic listener growth detected. Maintain campaign velocity.';
-
-    if (isBottingIndicators) {
-        rootCause = 'BOTTING_FARM_HAZARD';
-        fraudProb = 0.92;
-        penaltyHazard = true;
-        guidance = 'CRITICAL: High probability of bot stream farm attack. High skip rate and near-zero save ratio risk DSP strikes ($10/track Spotify penalty) or catalog takedown. Immediately notify your distributor.';
-    } else if (input.velocityRatio > 8.0 && isOrganicSaves) {
-        rootCause = 'ORGANIC_VIRAL';
-        fraudProb = 0.05;
-        penaltyHazard = false;
-        guidance = 'Healthy viral surge: strong listener saves (>4%) validate legitimate fan discovery.';
-    } else if (input.skipRatePercent < 35 && input.velocityRatio > 2.0) {
-        rootCause = 'EDITORIAL_PLAYLIST';
-        fraudProb = 0.02;
-        penaltyHazard = false;
-        guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
-    }
-
-    const fallback = (): StreamingFraudVerdict => ({
-        rootCause,
-        dspPenaltyHazard: penaltyHazard,
-        fraudProbability: fraudProb,
-        actionGuidance: guidance,
-    });
-
-    // The concrete high-skip, low-save signal cannot be cleared by a semantic judgment.
-    if (!judgmentsAvailable() || isBottingIndicators) return fallback();
-
-    try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: {
-                title: input.trackTitle.slice(0, 150),
-                velocity: input.velocityRatio,
-                skipRate: input.skipRatePercent,
-                country: input.primaryCountryCode,
-                savesRatio: input.savesPerStreamRatio,
-            },
-            questions: {
-                cause: {
-                    type: 'choice' as const,
-                    instructions: 'Diagnose the root cause of this sudden streaming velocity spike.',
-                    criteria: {
-                        ORGANIC_VIRAL: 'Legitimate social discovery with high listener engagement and saves.',
-                        EDITORIAL_PLAYLIST: 'Official DSP editorial or radio playlist placement with sustained completion rate.',
-                        ALGORITHMIC_RADIO: 'Release Radar or Discover Weekly algorithmic recommendation.',
-                        BOTTING_FARM_HAZARD: 'Server-center bot farm traffic with extreme skip rates and abnormal repeat loops.',
-                        DISTRIBUTOR_REPORTING_BATCH: 'Multi-month backlogged distributor settlement posted as a single batch.',
-                    },
-                },
-                penalty_risk: {
-                    type: 'noul' as const,
-                    instructions: 'Does this streaming surge represent actionable risk of DSP artificial stream penalties or takedowns?',
-                    criteria: {
-                        true: 'High risk of artificial streaming fee or catalog takedown.',
-                        false: 'Legitimate listener traffic safe from DSP penalties.',
-                    },
-                },
-            },
-        });
-
-        const ans = result.data.answers;
-        const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const prob = boundedJudgmentNumber(ans?.penalty_risk, 'noul', 1);
-        if (typeof causeAns?.choice !== 'string' || !STREAMING_FRAUD_CAUSES.has(causeAns.choice) || prob === null) {
-            return fallback();
-        }
-        const resolvedCause = causeAns.choice as StreamingFraudVerdict['rootCause'];
-        if (resolvedCause === 'BOTTING_FARM_HAZARD' && prob < 0.5) return fallback();
-
-        return {
-            rootCause: resolvedCause,
-            dspPenaltyHazard: prob >= 0.5,
-            fraudProbability: prob,
-            actionGuidance: prob >= 0.5 ? 'Possible artificial streaming risk. Contact your distributor to review the traffic.' : guidance,
-        };
-    } catch (err: unknown) {
-        noteJudgmentFailure(err, 'streaming fraud risk judgment');
-        return fallback();
-    }
     const { velocityRatio, skipRatePercent, savesPerStreamRatio } = input;
     if (
         !Number.isFinite(velocityRatio) || velocityRatio < 0 ||

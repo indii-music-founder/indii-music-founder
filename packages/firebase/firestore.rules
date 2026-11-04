@@ -1145,7 +1145,7 @@ service cloud.firestore {
           request.resource.data.description == resource.data.description &&
           request.resource.data.get('bindingSessionId', null) == resource.data.get('bindingSessionId', null) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'status', 'resolvedAt', 'denyReason', 'result'
+            'status', 'resolvedAt', 'claimedAt', 'denyReason', 'result'
           ]) &&
           (
             (resource.data.status == 'pending' &&
@@ -1158,6 +1158,10 @@ service cloud.firestore {
               request.resource.data.get('denyReason', '') is string &&
               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolvedAt', 'denyReason'])) ||
             (resource.data.status == 'approved' &&
+              request.resource.data.status == 'claimed' &&
+              request.resource.data.claimedAt == request.time &&
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt'])) ||
+            (resource.data.status == 'claimed' &&
               request.resource.data.status in ['executed', 'failed'] &&
               request.resource.data.result is map &&
               request.resource.data.result.keys().hasAll(['success']) &&

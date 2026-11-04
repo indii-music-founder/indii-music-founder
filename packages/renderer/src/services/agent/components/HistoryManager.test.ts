@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '@/core/store';
 import { SummaryService } from '../utils/SummaryService';
+import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 import { HistoryManager } from './HistoryManager';
 
 vi.mock('@/core/store', () => ({ useStore: { getState: vi.fn() } }));
@@ -30,6 +31,34 @@ describe('HistoryManager compaction', () => {
         expect(vi.mocked(SummaryService.summarize).mock.calls[0]?.[0]).toContain('Oldest standing instruction');
         expect(view).toContain('Compressed prior turns');
         expect(view).toContain('Turn 39');
+    });
+
+    it('keeps saved memories out of history when the knowledge base is disabled', async () => {
+        vi.mocked(useStore.getState).mockReturnValue({
+            agentHistory: messages(2), userProfile: { uid: 'user-1' }, isKnowledgeBaseEnabled: false,
+        } as ReturnType<typeof useStore.getState>);
+
+        const view = await new HistoryManager().getCompiledView();
+
+        expect(view).toContain('Oldest standing instruction');
+        expect(alwaysOnMemoryEngine.retrieve).not.toHaveBeenCalled();
+        expect(view).not.toContain('Saved Memories');
+    });
+
+    it('labels enabled recent memories without claiming they match the query', async () => {
+        vi.mocked(useStore.getState).mockReturnValue({
+            agentHistory: messages(2), userProfile: { uid: 'user-1' }, isKnowledgeBaseEnabled: true,
+        } as ReturnType<typeof useStore.getState>);
+        vi.mocked(alwaysOnMemoryEngine.retrieve).mockResolvedValueOnce([
+            { summary: 'Artist prefers analog film visuals', content: 'Saved preference' } as never,
+        ]);
+
+        const view = await new HistoryManager().getCompiledView();
+
+        expect(alwaysOnMemoryEngine.retrieve).toHaveBeenCalledWith({ limit: 3 });
+        expect(view).toContain('Recent Saved Memories');
+        expect(view).toContain('Artist prefers analog film visuals');
+        expect(view).not.toContain('Semantic Recall');
     });
 
     it('exposes only the older-turn summary for direct provider chat', async () => {

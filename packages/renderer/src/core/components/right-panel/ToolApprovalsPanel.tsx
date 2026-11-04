@@ -150,7 +150,11 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                                 </span>
                             </div>
                             <p className="text-xs text-gray-400">{approval.description}</p>
-                            {approval.status !== 'pending' ? (
+                            {approval.status === 'approved' ? (
+                                <p className="text-xs text-amber-300" role="status">
+                                    Approval was recorded, but dispatch was not confirmed. Review this action before requesting it again.
+                                </p>
+                            ) : approval.status === 'claimed' ? (
                                 <p className="text-xs text-amber-300" role="status">
                                     Outcome needs review. This action was claimed, but no final result is recorded. It may have run; do not request it again until reconciled.
                                 </p>

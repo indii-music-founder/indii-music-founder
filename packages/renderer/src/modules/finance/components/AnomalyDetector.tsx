@@ -10,7 +10,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertTriangle, TrendingUp, Eye, EyeOff, X, Search, ShieldCheck, ShieldAlert, Sparkles } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Eye, EyeOff, X, Search, Sparkles } from 'lucide-react';
 import { judgeStreamVelocityAnomaly, type StreamAnomalyVerdict } from '@/config/typesafeJudgments';
 
 /* ================================================================== */
@@ -37,7 +37,7 @@ const TRACK_NAMES: Record<string, string> = {};
 // Static stream data (14 days)
 const STREAM_DATA: DailyStream[] = [];
 
-type Confidence = 'High' | 'Medium' | 'Low';
+type SpikeSize = 'Large' | 'Medium' | 'Small';
 
 interface Anomaly {
     id: string;
@@ -45,15 +45,24 @@ interface Anomaly {
     trackName: string;
     date: string;
     pctIncrease: number;
-    confidence: Confidence;
+    spikeSize: SpikeSize;
+    sourceContext?: string;
     message: string;
     dismissed: boolean;
 }
 
-const CONFIDENCE_COLORS: Record<Confidence, string> = {
-    High: 'text-red-400 bg-red-500/10 border-red-500/20',
+const SPIKE_SIZE_COLORS: Record<SpikeSize, string> = {
+    Large: 'text-red-400 bg-red-500/10 border-red-500/20',
     Medium: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
-    Low: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    Small: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+};
+
+const CONTEXT_SIGNAL_LABELS: Record<StreamAnomalyVerdict['contextSignal'], string> = {
+    social_discovery_mentioned: 'Social discovery mentioned',
+    playlist_mentioned: 'Playlist mentioned',
+    repeated_plays_mentioned: 'Repeated plays mentioned',
+    reporting_delay_mentioned: 'Reporting delay mentioned',
+    no_source_clue: 'No source clue in the note',
 };
 
 function detectAnomalies(data: DailyStream[]): Anomaly[] {
@@ -68,7 +77,7 @@ function detectAnomalies(data: DailyStream[]): Anomaly[] {
             const current = row[key];
             if (current > avg * THRESHOLD) {
                 const pct = Math.round((current / avg - 1) * 100);
-                const confidence: Confidence = pct > 500 ? 'High' : pct > 200 ? 'Medium' : 'Low';
+                const spikeSize: SpikeSize = pct > 500 ? 'Large' : pct > 200 ? 'Medium' : 'Small';
                 const trackName = TRACK_NAMES[key] ?? key;
                 anomalies.push({
                     id: `${key}-${row.date}`,
@@ -76,8 +85,8 @@ function detectAnomalies(data: DailyStream[]): Anomaly[] {
                     trackName,
                     date: row.label,
                     pctIncrease: pct,
-                    confidence,
-                    message: `'${trackName}' spiked ${pct}% on ${row.label} — possible viral TikTok or botting`,
+                    spikeSize,
+                    message: `'${trackName}' rose ${pct}% on ${row.label}. Review provider data to understand the source.`,
                     dismissed: false,
                 });
             }
@@ -135,12 +144,13 @@ export function AnomalyDetector() {
     }
 
     async function handleInvestigate(alert: Anomaly) {
+        if (!alert.sourceContext?.trim()) return;
         setInvestigating((prev) => new Set([...prev, alert.id]));
         try {
             const verdict = await judgeStreamVelocityAnomaly(
                 alert.trackName,
                 alert.pctIncrease,
-                `Date: ${alert.date}. Confidence: ${alert.confidence}.`
+                alert.sourceContext
             );
             setInvestigationReports((prev) => {
                 if (verdict) return { ...prev, [alert.id]: verdict };
@@ -213,13 +223,13 @@ export function AnomalyDetector() {
                             <AlertTriangle size={20} className="text-amber-400" />
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-gray-300">DSP Streaming Data Not Connected</p>
+                            <p className="text-sm font-bold text-gray-300">Daily Streaming Data Unavailable</p>
                             <p className="text-[11px] text-gray-500 mt-1 max-w-[260px] mx-auto">
-                                Connect your distributor accounts in the Distribution module to start monitoring daily stream anomalies.
+                                Daily stream data is not connected to this view. Anomaly monitoring is unavailable here.
                             </p>
                         </div>
                         <span className="text-[10px] text-amber-400/60 bg-amber-500/5 border border-amber-500/10 px-3 py-1 rounded-full">
-                            Not yet connected
+                            Monitoring unavailable
                         </span>
                     </div>
                 ) : (
@@ -271,7 +281,7 @@ export function AnomalyDetector() {
             </div>
 
             {/* Alert List */}
-            <div className="space-y-2">
+            {STREAM_DATA.length > 0 && <div className="space-y-2">
                 <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active Alerts</h3>
                 <AnimatePresence>
                     {activeAlerts.length === 0 && (
@@ -301,8 +311,8 @@ export function AnomalyDetector() {
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs text-gray-200">{alert.message}</p>
                                         <div className="flex items-center gap-2 mt-1.5">
-                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${CONFIDENCE_COLORS[alert.confidence]}`}>
-                                                {alert.confidence} confidence
+                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${SPIKE_SIZE_COLORS[alert.spikeSize]}`}>
+                                                {alert.spikeSize} spike
                                             </span>
                                             <span className="text-[10px] text-gray-500">+{alert.pctIncrease}% spike</span>
                                         </div>
@@ -314,7 +324,7 @@ export function AnomalyDetector() {
                                                 className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1.5"
                                             >
                                                 <Sparkles size={10} className="animate-spin text-yellow-400" />
-                                                Analyzing velocity patterns with Jev System One…
+                                                Reading the supplied source note with Jev…
                                             </motion.p>
                                         )}
 
@@ -322,23 +332,11 @@ export function AnomalyDetector() {
                                             <motion.div
                                                 initial={{ opacity: 0, y: 4 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className={`mt-2.5 p-2 rounded-lg border text-xs ${
-                                                    report.dspPenaltyHazard
-                                                        ? 'bg-red-500/10 border-red-500/30 text-red-200'
-                                                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
-                                                }`}
+                                                className="mt-2.5 p-2 rounded-lg border text-xs bg-amber-500/10 border-amber-500/30 text-amber-100"
                                             >
                                                 <div className="flex items-center gap-1.5 font-bold mb-1">
-                                                    {report.dspPenaltyHazard ? (
-                                                        <ShieldAlert size={13} className="text-red-400" />
-                                                    ) : (
-                                                        <ShieldCheck size={13} className="text-emerald-400" />
-                                                    )}
-                                                    <span>
-                                                        {report.dspPenaltyHazard
-                                                            ? `DSP Penalty Risk (${Math.round(report.hazardProbability * 100)}%)`
-                                                            : `Possible cause: ${report.rootCause.replace(/_/g, ' ')}`}
-                                                    </span>
+                                                    <AlertTriangle size={13} className="text-amber-400" />
+                                                    <span>Unverified context: {CONTEXT_SIGNAL_LABELS[report.contextSignal]}</span>
                                                     <span className="ml-auto text-[9px] px-1 py-0.2 rounded bg-white/10 font-mono">Jev</span>
                                                 </div>
                                                 <p className="text-[11px] text-gray-300 leading-relaxed">{report.recommendation}</p>
@@ -346,18 +344,16 @@ export function AnomalyDetector() {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                                        <button
-                                            onClick={() => handleInvestigate(alert)}
-                                            disabled={isInvestigating}
-                                            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50 ${
-                                                report
-                                                    ? 'bg-emerald-500/10 text-emerald-400'
-                                                    : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400'
-                                            }`}
-                                        >
-                                            <Search size={9} />
-                                            {report ? 'Diagnosed' : isInvestigating ? 'Analyzing…' : 'Investigate'}
-                                        </button>
+                                        {alert.sourceContext?.trim() && (
+                                            <button
+                                                onClick={() => handleInvestigate(alert)}
+                                                disabled={isInvestigating}
+                                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400"
+                                            >
+                                                <Search size={9} />
+                                                {report ? 'Review note' : isInvestigating ? 'Reading…' : 'Review note'}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleDismiss(alert.id)}
                                             className="p-1 rounded-lg hover:bg-white/10 text-gray-500 hover:text-gray-300 transition-colors"
@@ -370,7 +366,7 @@ export function AnomalyDetector() {
                         );
                     })}
                 </AnimatePresence>
-            </div>
+            </div>}
         </div>
     );
 }

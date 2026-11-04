@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TraceService } from '../TraceService';
 import { setDoc, getDoc, updateDoc, arrayUnion, increment, serverTimestamp } from 'firebase/firestore';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { doc, setDoc, getDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
