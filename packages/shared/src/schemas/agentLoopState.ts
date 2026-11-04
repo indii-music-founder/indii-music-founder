@@ -34,6 +34,16 @@ export const AgentLoopDefinitionSchema = z.object({
 });
 export type AgentLoopDefinition = z.infer<typeof AgentLoopDefinitionSchema>;
 
+export const AgentLoopDefinitionSnapshotSchema = AgentLoopDefinitionSchema.pick({
+    id: true,
+    trigger: true,
+    goal: true,
+    verifiabilityCriteria: true,
+    judgeMode: true,
+    maxIterations: true,
+});
+export type AgentLoopDefinitionSnapshot = z.infer<typeof AgentLoopDefinitionSnapshotSchema>;
+
 export const AgentLoopIterationSchema = z.object({
     iteration: z.number().int().positive(),
     prompt: z.string(),
@@ -47,6 +57,8 @@ export type AgentLoopIteration = z.infer<typeof AgentLoopIterationSchema>;
 export const AgentLoopExecutionSchema = z.object({
     id: z.string(),
     loopId: z.string(),
+    // Older checkpoints have no snapshot and cannot be resumed safely.
+    definitionSnapshot: AgentLoopDefinitionSnapshotSchema.optional(),
     status: AgentLoopStatusEnum.default('IDLE'),
     currentIteration: z.number().int().nonnegative().default(0),
     history: z.array(AgentLoopIterationSchema).default([]),

@@ -3,7 +3,8 @@ import {
     AgentLoopDefinition, 
     AgentLoopExecution, 
     AgentLoopStatusEnum,
-    AgentLoopIteration
+    AgentLoopIteration,
+    AgentLoopDefinitionSnapshot,
 } from '@indii/shared';
 import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
@@ -23,6 +24,26 @@ function requireConfiguredJudge(definition: AgentLoopDefinition): void {
     if (definition.judgeMode === 'DETERMINISTIC_TEST') {
         throw new Error('Deterministic loop evaluation is unavailable: no verifier is configured.');
     }
+}
+
+function snapshotDefinition(definition: AgentLoopDefinition): AgentLoopDefinitionSnapshot {
+    return {
+        id: definition.id,
+        trigger: definition.trigger,
+        goal: definition.goal,
+        verifiabilityCriteria: definition.verifiabilityCriteria,
+        judgeMode: definition.judgeMode,
+        maxIterations: definition.maxIterations,
+    };
+}
+
+function definitionMatches(snapshot: AgentLoopDefinitionSnapshot, definition: AgentLoopDefinition): boolean {
+    return snapshot.id === definition.id &&
+        snapshot.trigger === definition.trigger &&
+        snapshot.goal === definition.goal &&
+        snapshot.verifiabilityCriteria === definition.verifiabilityCriteria &&
+        snapshot.judgeMode === definition.judgeMode &&
+        snapshot.maxIterations === definition.maxIterations;
 }
 
 function parseEvaluationResponse(result: {
@@ -107,6 +128,7 @@ export class AgentLoopService {
         const execution: AgentLoopExecution = {
             id: executionId,
             loopId: definition.id,
+            definitionSnapshot: snapshotDefinition(definition),
             status: AgentLoopStatusEnum.enum.EXECUTING,
             currentIteration: 1,
             history: [],
@@ -189,6 +211,9 @@ export class AgentLoopService {
                 logger.info(`[AgentLoop] Execution ${executionId} already completed.`);
                 this.activeRuns.delete(executionId);
                 return execution;
+            }
+            if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
+                throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
 
             logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);

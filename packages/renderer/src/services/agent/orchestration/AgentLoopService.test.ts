@@ -6,6 +6,15 @@ import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, Agen
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { FirestoreService } from '../../FirestoreService';
 
+const snapshotOf = (definition: AgentLoopDefinition) => ({
+    id: definition.id,
+    trigger: definition.trigger,
+    goal: definition.goal,
+    verifiabilityCriteria: definition.verifiabilityCriteria,
+    judgeMode: definition.judgeMode,
+    maxIterations: definition.maxIterations,
+});
+
 // Mock dependencies
 vi.mock('../MaestroBatchingService', () => ({
     maestroBatchingService: {
@@ -72,6 +81,32 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
+    it('refuses a same-ID definition edit and an unverifiable legacy checkpoint', async () => {
+        const definition: AgentLoopDefinition = {
+            id: 'snapshot-loop', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Original goal', verifiabilityCriteria: 'Original criterion',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 2,
+            createdAt: 1000, updatedAt: 1000,
+        };
+        const saved = {
+            id: 'snapshot-execution', loopId: definition.id,
+            definitionSnapshot: snapshotOf(definition), status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+        const edited = { ...definition, verifiabilityCriteria: 'Different criterion' };
+
+        await expect(agentLoopService.resumeLoop(edited, saved.id, { userId: 'user1' }))
+            .rejects.toThrow('saved loop definition is missing or has changed');
+        const legacy = { ...saved, id: 'legacy-execution', definitionSnapshot: undefined };
+        (agentLoopService as any).executionStore.set(legacy.id, legacy);
+        (agentLoopService as any).executionOwners.set(legacy.id, 'user1');
+        await expect(agentLoopService.resumeLoop(definition, legacy.id, { userId: 'user1' }))
+            .rejects.toThrow('saved loop definition is missing or has changed');
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
     it('does not dispatch a cached loop from another user account', async () => {
         const saved = {
             id: 'other-user-execution', loopId: 'owner-loop', status: AgentLoopStatusEnum.enum.FAILED,
@@ -107,6 +142,7 @@ describe('AgentLoopService', () => {
         });
 
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1' });
+        expect(agentLoopService.getExecution('user1', executionId)?.definitionSnapshot).toEqual(snapshotOf(def));
         await expect(agentLoopService.resumeLoop(def, executionId, { userId: 'user1' }))
             .rejects.toThrow('already running');
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
@@ -126,6 +162,7 @@ describe('AgentLoopService', () => {
         };
         const saved = {
             id: 'saved-active-resume', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
+            definitionSnapshot: snapshotOf(def),
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
         (agentLoopService as any).executionStore.set(saved.id, saved);
@@ -170,6 +207,7 @@ describe('AgentLoopService', () => {
         };
         const saved = {
             id: 'saved-checkpoint-failure', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
+            definitionSnapshot: snapshotOf(def),
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
         (agentLoopService as any).executionStore.set(saved.id, saved);
@@ -467,6 +505,7 @@ describe('AgentLoopService', () => {
         (agentLoopService as any).executionStore.set(executionId, {
             id: executionId,
             loopId: def.id,
+            definitionSnapshot: snapshotOf(def),
             status: AgentLoopStatusEnum.enum.FAILED,
             currentIteration: 2,
             history: [
