@@ -21,7 +21,7 @@ import type {
 import type { Directive } from '@/services/directive/DirectiveTypes';
 import { DirectiveService } from '@/services/directive/DirectiveService';
 import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import type { HandshakeRequest } from '@/services/agent/governance/DigitalHandshake';
 
 export interface MemoryInboxItem extends HandshakeRequest {
@@ -115,8 +115,10 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     // Engine Lifecycle
     startMemoryEngine: (userId: string) => {
+        if (auth.currentUser?.uid !== userId) return;
         alwaysOnMemoryEngine.start(userId).then(() => {
             alwaysOnMemoryEngine.getStatus().then(status => {
+                if (auth.currentUser?.uid !== userId) return;
                 set({ alwaysOnEngineStatus: status });
             }).catch(e => logger.warn('[MemoryAgentSlice] Status refresh after start failed:', e));
         }).catch(e => logger.error('[MemoryAgentSlice] Failed to start memory engine:', e));
@@ -125,13 +127,23 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     stopMemoryEngine: () => {
         alwaysOnMemoryEngine.stop();
-        set({ alwaysOnEngineStatus: { ...defaultEngineStatus } });
+        set({
+            alwaysOnMemories: [],
+            alwaysOnInsights: [],
+            alwaysOnIngestionEvents: [],
+            activeDirectives: [],
+            memoryInboxItems: [],
+            selectedMemoryId: null,
+            alwaysOnEngineStatus: { ...defaultEngineStatus },
+        });
         logger.info('[MemoryAgentSlice] 🧠 Memory engine stopped');
     },
 
     // Data Loading
     loadAlwaysOnMemories: async () => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             const { memoryFilterCategory, memoryFilterTier } = get();
 
             // Fetch using the singleton's getAllMemories (filters applied client-side)
@@ -161,7 +173,9 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 return scoreB - scoreA;
             });
 
-            set({ alwaysOnMemories: memories.slice(0, 100) });
+            if (auth.currentUser?.uid === userId) {
+                set({ alwaysOnMemories: memories.slice(0, 100) });
+            }
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load memories:', error);
         }
@@ -169,8 +183,10 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     loadAlwaysOnInsights: async () => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             const insights = await alwaysOnMemoryEngine.getInsights(50);
-            set({ alwaysOnInsights: insights });
+            if (auth.currentUser?.uid === userId) set({ alwaysOnInsights: insights });
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load insights:', error);
         }
@@ -178,8 +194,9 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     loadDirectives: async (userId: string) => {
         try {
+            if (auth.currentUser?.uid !== userId) return;
             const directives = await DirectiveService.getAllDirectives(userId);
-            set({ activeDirectives: directives });
+            if (auth.currentUser?.uid === userId) set({ activeDirectives: directives });
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load directives:', error);
         }
@@ -187,6 +204,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     loadMemoryInbox: async (userId: string) => {
         try {
+            if (auth.currentUser?.uid !== userId) return;
             const inboxRef = collection(db, `users/${userId}/memoryInbox`);
             const snapshot = await getDocs(inboxRef);
             const items = snapshot.docs
@@ -205,7 +223,7 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
                 return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
             });
-            set({ memoryInboxItems: items });
+            if (auth.currentUser?.uid === userId) set({ memoryInboxItems: items });
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to load memory inbox:', error);
         }
@@ -213,11 +231,12 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     updateMemoryInboxItemStatus: async (userId: string, itemId: string, status: 'APPROVED' | 'REJECTED') => {
         try {
+            if (auth.currentUser?.uid !== userId) return;
             const itemRef = doc(db, `users/${userId}/memoryInbox`, itemId);
             await updateDoc(itemRef, { status });
 
             // Reload the inbox
-            await get().loadMemoryInbox(userId);
+            if (auth.currentUser?.uid === userId) await get().loadMemoryInbox(userId);
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to update memory inbox item:', error);
         }
@@ -225,8 +244,10 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     refreshAlwaysOnEngineStatus: async () => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             const status = await alwaysOnMemoryEngine.getStatus();
-            set({ alwaysOnEngineStatus: status });
+            if (auth.currentUser?.uid === userId) set({ alwaysOnEngineStatus: status });
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Failed to refresh status:', error);
         }
@@ -235,13 +256,17 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
     // Operations
     ingestMemoryText: async (text: string, source?: MemorySource) => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return '';
             // ingest() returns a human-readable result string, not an ID
             const resultMsg = await alwaysOnMemoryEngine.ingest(text, source || 'user_input');
+            if (auth.currentUser?.uid !== userId) return '';
             // Refresh memories list + status
             const [memories, status] = await Promise.all([
                 alwaysOnMemoryEngine.getAllMemories(100),
                 alwaysOnMemoryEngine.getStatus(),
             ]);
+            if (auth.currentUser?.uid !== userId) return '';
             set({ alwaysOnMemories: memories, alwaysOnEngineStatus: status });
             return resultMsg.startsWith('📥') ? 'ok' : '';
         } catch (error: unknown) {
@@ -252,6 +277,8 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     triggerMemoryConsolidation: async () => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             set(state => ({
                 alwaysOnEngineStatus: {
                     ...state.alwaysOnEngineStatus,
@@ -259,12 +286,14 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
                 },
             }));
             await alwaysOnMemoryEngine.consolidateNow();
+            if (auth.currentUser?.uid !== userId) return;
             // Refresh all data
             const [memories, insights, status] = await Promise.all([
                 alwaysOnMemoryEngine.getAllMemories(100),
                 alwaysOnMemoryEngine.getInsights(50),
                 alwaysOnMemoryEngine.getStatus(),
             ]);
+            if (auth.currentUser?.uid !== userId) return;
             set({
                 alwaysOnMemories: memories,
                 alwaysOnInsights: insights,
@@ -274,21 +303,26 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             logger.error('[MemoryAgentSlice] Consolidation failed:', error);
             // Refresh status to clear isConsolidating flag
             try {
+                const userId = auth.currentUser?.uid;
+                if (!userId) return;
                 const status = await alwaysOnMemoryEngine.getStatus();
-                set({ alwaysOnEngineStatus: status });
+                if (auth.currentUser?.uid === userId) set({ alwaysOnEngineStatus: status });
             } catch (__e: unknown) { /* non-blocking */ }
         }
     },
 
     deleteAlwaysOnMemory: async (memoryId: string) => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             await alwaysOnMemoryEngine.deleteMemory(memoryId);
+            if (auth.currentUser?.uid !== userId) return;
             set(state => ({
                 alwaysOnMemories: state.alwaysOnMemories.filter(m => m.id !== memoryId),
                 selectedMemoryId: state.selectedMemoryId === memoryId ? null : state.selectedMemoryId,
             }));
             const status = await alwaysOnMemoryEngine.getStatus();
-            set({ alwaysOnEngineStatus: status });
+            if (auth.currentUser?.uid === userId) set({ alwaysOnEngineStatus: status });
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Delete failed:', error);
         }
@@ -296,7 +330,12 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     queryAlwaysOnMemory: async (question: string) => {
         try {
-            return await alwaysOnMemoryEngine.query(question);
+            const userId = auth.currentUser?.uid;
+            if (!userId) return 'Memory engine is not available for this account.';
+            const answer = await alwaysOnMemoryEngine.query(question);
+            return auth.currentUser?.uid === userId
+                ? answer
+                : 'Memory query ended after the account changed.';
         } catch (error: unknown) {
             logger.error('[MemoryAgentSlice] Query failed:', error);
             return `Failed to query memory: ${error instanceof Error ? error.message : String(error)}`;
@@ -305,7 +344,10 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
 
     clearAllAlwaysOnMemories: async () => {
         try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) return;
             await alwaysOnMemoryEngine.clearAll();
+            if (auth.currentUser?.uid !== userId) return;
             set({
                 alwaysOnMemories: [],
                 alwaysOnInsights: [],
