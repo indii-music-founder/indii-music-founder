@@ -67,10 +67,12 @@ export function FirstRunTour() {
 
         void trackFounderFunnelEvent('founder_tour_started');
 
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
         const d = driver({
             showProgress: true,
-            animate: true,
-            smoothScroll: true,
+            animate: !reduceMotion,
+            smoothScroll: !reduceMotion,
             overlayColor: 'rgba(0, 0, 0, 0.75)',
             stagePadding: 6,
             stageRadius: 10,
@@ -206,7 +208,7 @@ export function FirstRunTour() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2">
             <button
                 onClick={() => startTour()}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/30"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold motion-safe:transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/30"
             >
                 <Play size={12} className="fill-current" />
                 Start Tour
@@ -217,7 +219,7 @@ export function FirstRunTour() {
                     setTourCompleted(true);
                     void trackFounderFunnelEvent('founder_tour_dismissed');
                 }}
-                className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 transition-all"
+                className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 motion-safe:transition-all"
                 title="Dismiss Tour"
                 aria-label="Dismiss Tour Options"
             >
