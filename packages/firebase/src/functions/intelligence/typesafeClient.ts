@@ -22,6 +22,7 @@ export const TYPESAFE_DEFAULT_MODEL = 'jev-latest';
 export const TYPESAFE_MODEL_PATTERN = /^jev-[a-z0-9.-]+$/;
 export const TYPESAFE_MAX_QUESTIONS = 20;
 export const TYPESAFE_MAX_STATE_CHARS = 64_000;
+export const TYPESAFE_MAX_QUESTION_CHARS = 64_000;
 export const TYPESAFE_DEFAULT_TIMEOUT_MS = 20_000;
 
 export type TypesafeFailureKind =
@@ -117,6 +118,9 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
                     throw new TypesafeClientError('input', `state exceeds the ${TYPESAFE_MAX_STATE_CHARS} character budget.`);
                 }
                 const questionsJson = JSON.stringify(input.questions);
+                if (questionsJson && questionsJson.length > TYPESAFE_MAX_QUESTION_CHARS) {
+                    throw new TypesafeClientError('input', `questions exceed the ${TYPESAFE_MAX_QUESTION_CHARS} character budget.`);
+                }
                 const serializedQuestions: unknown = questionsJson ? JSON.parse(questionsJson) : undefined;
                 if (!isPlainObject(serializedQuestions) || Object.keys(serializedQuestions).length !== questionCount ||
                     !Object.values(serializedQuestions).every(isPlainObject)) {
