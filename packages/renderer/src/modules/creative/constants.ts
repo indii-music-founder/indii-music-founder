@@ -93,7 +93,7 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
     },
     "Fashion": {
         "High Fashion": ["Haute Couture", "Avant-Garde", "Runway", "Met Gala Style", "Editorial Fashion"],
-        "Street/Urban": ["Streetwear", "Techwear", "Athleisure", "Hip-Hop Style", "Skater Style", "Cyber-Goth"],
+        "Street/Urban": ["Streetwear", "Techwear", "Athleisure", "Hip-Hop Style", "Skater Style", "Vintage Workwear"],
         "Historical": ["Victorian", "Edwardian", "Roaring 20s", "Medieval Armor", "Renaissance", "1950s Pin-up"],
         "Sci-Fi/Fantasy": ["Cybernetic Armor", "Space Suit", "Steampunk Attire", "Elven Robes", "Post-Apocalyptic Rags"]
     },
@@ -135,7 +135,7 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
     },
     "Environment": {
         "Nature": ["Deep Forest", "Tropical Beach", "Arctic Tundra", "Desert Dunes", "Mountain Peak", "Underwater Coral Reef"],
-        "Urban": ["Cyber City", "New York Streets", "Tokyo Neon", "Industrial District", "Subway Station", "Rooftop"],
+        "Urban": ["Detroit Streets", "New York Streets", "Tokyo Neon", "Industrial District", "Subway Station", "Rooftop"],
         "Indoor": ["Cozy Bedroom", "Futuristic Laboratory", "Ancient Library", "Messy Kitchen", "Minimalist Office", "Art Gallery"],
         "Fantastic": ["Alien Planet", "Floating Island", "Dungeon", "Magic School", "Cloud Kingdom", "Hellscape"]
     },
