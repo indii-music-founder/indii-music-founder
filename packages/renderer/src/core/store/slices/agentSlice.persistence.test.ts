@@ -135,7 +135,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
             .mockRejectedValueOnce(new Error('offline'))
             .mockRejectedValueOnce(new Error('offline'));
 
-        store.updateAgentMessage('update-failure', { text: 'First edit' });
+        store.updateAgentMessage('update-failure', { text: 'First edit', isStreaming: true });
         await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(1));
         store.updateAgentMessage('update-failure', { text: 'Latest edit' });
         await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(4), { timeout: 5000 });
@@ -194,6 +194,48 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         ]);
     });
 
+    it('coalesces streaming text and persists the final update after a slow token write', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        store.addAgentMessage({ id: 'stream-order', role: 'model', text: '', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledWith(sessionId, expect.objectContaining({ id: 'stream-order' })));
+
+        let releaseFirst: (() => void) | undefined;
+        mockUpdateMessage.mockImplementationOnce(() => new Promise<void>(resolve => { releaseFirst = resolve; }));
+        store.updateAgentMessage('stream-order', { text: 'A' });
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(1));
+        store.updateAgentMessage('stream-order', { text: 'AB' });
+        store.updateAgentMessage('stream-order', { text: 'ABC' });
+        store.updateAgentMessage('stream-order', { isStreaming: false });
+        expect(mockUpdateMessage).toHaveBeenCalledTimes(1);
+
+        releaseFirst?.();
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(3));
+        expect(mockUpdateMessage.mock.calls).toEqual([
+            [sessionId, 'stream-order', { text: 'A' }],
+            [sessionId, 'stream-order', { text: 'ABC' }],
+            [sessionId, 'stream-order', { isStreaming: false }],
+        ]);
+    });
+
+    it('keeps text on each side of a metadata update in call order', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        store.addAgentMessage({ id: 'metadata-boundary', role: 'model', text: '', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledWith(sessionId, expect.objectContaining({ id: 'metadata-boundary' })));
+
+        store.updateAgentMessage('metadata-boundary', { text: 'before' });
+        store.updateAgentMessage('metadata-boundary', { metadata: { source: 'agent' } });
+        store.updateAgentMessage('metadata-boundary', { text: 'after' });
+
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(3));
+        expect(mockUpdateMessage.mock.calls).toEqual([
+            [sessionId, 'metadata-boundary', { text: 'before' }],
+            [sessionId, 'metadata-boundary', { metadata: { source: 'agent' } }],
+            [sessionId, 'metadata-boundary', { text: 'after' }],
+        ]);
+    });
+
     it('should persist cleared history to SessionService', async () => {
         const store = useStore.getState();
         const sessionId = store.activeSessionId;
@@ -212,6 +254,16 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
         // Expectation: The empty message list should be persisted
         expect(sessionService.clearMessages).toHaveBeenCalledWith(sessionId);
+    });
+
+    it('does not persist a late update to a message cleared from the session', async () => {
+        const store = useStore.getState();
+        store.addAgentMessage({ id: 'cleared-stream', role: 'model', text: 'old', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalled());
+        store.clearAgentHistory();
+        store.updateAgentMessage('cleared-stream', { text: 'late token' });
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalled());
+        expect(mockUpdateMessage).not.toHaveBeenCalled();
     });
 
     it('waits for earlier appends before clearing history', async () => {

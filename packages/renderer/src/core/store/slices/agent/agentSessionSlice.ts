@@ -9,6 +9,7 @@ const agentSessionRuntimeStartedAt = Date.now();
 const pendingMessageIds = new Map<string, Set<string>>();
 const messageWriteChains = new Map<string, Promise<void>>();
 const sessionClearChains = new Map<string, Promise<void>>();
+const pendingTextWrites = new Map<string, { latest: string }>();
 const recoveredInterruptedMessageIds = new Set<string>();
 /**
  * Pins every locally-appended message to the session it was appended to.
@@ -61,7 +62,7 @@ function enqueueMessageWrite(
     label: string,
     onFailure?: () => void,
     onSuccess?: () => void,
-): void {
+): Promise<void> {
     const key = messageWriteKey(sessionId, messageId);
     const previous = messageWriteChains.get(key) ?? Promise.resolve();
     const clearBarrier = sessionClearChains.get(sessionId) ?? Promise.resolve();
@@ -76,6 +77,36 @@ function enqueueMessageWrite(
             }
         });
     messageWriteChains.set(key, next);
+    return next;
+}
+
+function enqueueStreamingText(
+    sessionId: string,
+    messageId: string,
+    text: string,
+    setSaveStatus: (text: string, failed: boolean) => void,
+): void {
+    const key = messageWriteKey(sessionId, messageId);
+    const pending = pendingTextWrites.get(key);
+    if (pending) {
+        pending.latest = text;
+        return;
+    }
+
+    const entry = { latest: text };
+    pendingTextWrites.set(key, entry);
+    void enqueueMessageWrite(sessionId, messageId, async () => {
+        const { sessionService } = await import('@/services/agent/SessionService');
+        let written: string;
+        do {
+            written = entry.latest;
+            await sessionService.updateMessage(sessionId, messageId, { text: written });
+        } while (entry.latest !== written);
+    }, 'Streaming message update',
+    () => setSaveStatus(entry.latest, true),
+    () => setSaveStatus(entry.latest, false)).finally(() => {
+        if (pendingTextWrites.get(key) === entry) pendingTextWrites.delete(key);
+    });
 }
 
 function markMessagePending(sessionId: string, messageId: string): void {
@@ -504,6 +535,7 @@ export function buildAgentSessionState(
 
             const session = state.sessions[sessionId];
             if (!session) return {};
+            if (!session.messages.some(msg => msg.id === id)) return {};
             const updatedMessages = session.messages.map(msg =>
                 msg.id === id ? { ...msg, ...updates } : msg
             );
@@ -513,16 +545,15 @@ export function buildAgentSessionState(
                 await sessionService.updateMessage(sessionId, id, updates);
             };
 
-            // Metadata carries response/assignment correlation and must follow
-            // the initial append and earlier metadata transitions exactly.
-            // Streaming text-only updates stay concurrent to avoid building a
-            // token-by-token persistence backlog.
-            if ('metadata' in updates) {
-                enqueueMessageWrite(sessionId, id, persistUpdate, 'Message metadata update',
-                    () => setUpdateSaveStatus(sessionId, id, updates, true),
-                    () => setUpdateSaveStatus(sessionId, id, updates, false));
+            // Coalesce rapid text tokens into one ordered write lane. Other
+            // fields form an ordering boundary so a final response cannot be
+            // overwritten by a slower earlier token write.
+            if (Object.keys(updates).length === 1 && typeof updates.text === 'string') {
+                enqueueStreamingText(sessionId, id, updates.text,
+                    (text, failed) => setUpdateSaveStatus(sessionId, id, { text }, failed));
             } else {
-                void persistMessageWrite(persistUpdate, 'Message update',
+                pendingTextWrites.delete(messageWriteKey(sessionId, id));
+                void enqueueMessageWrite(sessionId, id, persistUpdate, 'Message update',
                     () => setUpdateSaveStatus(sessionId, id, updates, true),
                     () => setUpdateSaveStatus(sessionId, id, updates, false));
             }
