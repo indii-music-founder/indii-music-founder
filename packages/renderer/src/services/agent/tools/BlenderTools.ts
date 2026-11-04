@@ -29,7 +29,7 @@ export const BlenderTools: Record<string, AnyToolFunction> = {
     blender_render_music_video: wrapTool('blender_render_music_video', async (args: Record<string, unknown>) => {
         const audioFilePath = String(args.audioFilePath ?? '');
         const outputVideoPath = String(args.outputVideoPath ?? '');
-        const templateId = String(args.templateId ?? 'audio_reactive_tunnel') as BlenderTemplateId;
+        const templateId = String(args.templateId ?? 'vinyl_turntable') as BlenderTemplateId;
 
         if (!audioFilePath) return toolError('Parameter "audioFilePath" is required.');
         if (!outputVideoPath) return toolError('Parameter "outputVideoPath" is required.');

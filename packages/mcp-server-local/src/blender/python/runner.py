@@ -186,7 +186,7 @@ def main():
     setup_output_format(output_path)
 
     # 6. Execute Template or Custom Script
-    template_id = config.get("templateId", "audio_reactive_tunnel")
+    template_id = config["templateId"]
     current_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, current_dir)
 
@@ -203,8 +203,7 @@ def main():
     elif template_id == "concert_stage":
         from templates import concert_stage
         concert_stage.build_scene(config)
-    else:
-        # Default audio_reactive_tunnel
+    elif template_id == "audio_reactive_tunnel":
         from templates import audio_tunnel
         audio_tunnel.build_scene(config)
 

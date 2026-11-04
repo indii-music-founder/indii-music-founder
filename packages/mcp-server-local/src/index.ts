@@ -390,7 +390,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
             const renderOptions: BlenderRenderOptions = {
                 audioFilePath: String(args?.audioFilePath),
                 outputVideoPath: String(args?.outputVideoPath),
-                templateId: (args?.templateId as BlenderTemplateId) ?? 'audio_reactive_tunnel',
+                templateId: (args?.templateId as BlenderTemplateId) ?? 'vinyl_turntable',
                 bpm: args?.bpm ? Number(args.bpm) : undefined,
                 durationSeconds: args?.durationSeconds ? Number(args.durationSeconds) : 30,
                 fps: args?.fps ? Number(args.fps) : 30,
