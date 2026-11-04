@@ -465,12 +465,6 @@ describe('AgentLoopService', () => {
             { success: false, error: 'Network policy rejected: caller unauthorized', data: { taskId: 'task-1' } }
         ]);
 
-        mockGenerateContent.mockResolvedValueOnce({
-            response: {
-                text: () => JSON.stringify({ passed: false, feedback: 'Request was blocked by network policy.' })
-            }
-        });
-
         const executionId = await agentLoopService.startLoop(def, context);
 
         // Wait for loop execution
@@ -481,7 +475,8 @@ describe('AgentLoopService', () => {
         // Because JEV classified it as non-transient, executeBatch was called only once (no retry backoff)
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
-        expect(execution?.history[0]?.feedback).toBe('Request was blocked by network policy.');
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(execution?.history[0]?.feedback).toContain('Network policy rejected: caller unauthorized');
     });
 
     it('should retry evaluation when evaluation error is classified as transient by resolveTransient', async () => {

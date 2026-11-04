@@ -251,11 +251,21 @@ export class AgentLoopService {
             const prompt = this.buildIterationPrompt(definition, execution);
 
             // 2. Execute Action with exponential backoff on transient errors
-            const { output: actionResult, isTransientFailure } = await this.executeActionWithRetry(prompt, context);
+            const { output: actionResult, failureKind } = await this.executeActionWithRetry(prompt, context);
 
-            if (isTransientFailure) {
-                // Do not burn the iteration count on transient infrastructure failures
-                logger.warn(`[AgentLoop] Execution ${execution.id} halted due to persistent transient infrastructure failure: ${actionResult}`);
+            if (failureKind) {
+                logger.warn(`[AgentLoop] Execution ${execution.id} halted after ${failureKind} action error: ${actionResult}`);
+                if (failureKind === 'non-transient') {
+                    execution.history.push({
+                        iteration: execution.currentIteration,
+                        prompt,
+                        output: actionResult,
+                        feedback: `Action did not report success: ${actionResult}`,
+                        passed: false,
+                        timestamp: Date.now()
+                    });
+                }
+                // Transient infrastructure failures do not burn an iteration.
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
                 execution.updatedAt = Date.now();
                 await this.persistExecution(context.userId, execution);
@@ -348,7 +358,7 @@ export class AgentLoopService {
         context: AgentContext,
         maxRetries: number = 3,
         backoffBaseMs: number = 200
-    ): Promise<{ output: string; isTransientFailure: boolean }> {
+    ): Promise<{ output: string; failureKind: 'transient' | 'non-transient' | null }> {
         let lastError: unknown = null;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -364,7 +374,7 @@ export class AgentLoopService {
                 }]);
 
                 if (results && results.length > 0 && results[0]!.success) {
-                    return { output: results[0]!.message || 'No text output.', isTransientFailure: false };
+                    return { output: results[0]!.message || 'No text output.', failureKind: null };
                 }
 
                 const errorMsg = results?.[0]?.error || 'Action failed.';
@@ -380,7 +390,7 @@ export class AgentLoopService {
                     break;
                 }
 
-                return { output: errorMsg, isTransientFailure: false };
+                return { output: errorMsg, failureKind: 'non-transient' };
             } catch (error) {
                 lastError = error;
                 if (await this.resolveTransient(error, { retryAttempt: attempt, action: 'executeBatch' }) && attempt < maxRetries) {
@@ -396,11 +406,11 @@ export class AgentLoopService {
 
         if (lastError && (await this.resolveTransient(lastError, { action: 'executeBatchExhausted' }))) {
             const msg = lastError instanceof Error ? lastError.message : String(lastError);
-            return { output: `Infrastructure timeout/error: ${msg}`, isTransientFailure: true };
+            return { output: `Infrastructure timeout/error: ${msg}`, failureKind: 'transient' };
         }
 
         const msg = lastError instanceof Error ? lastError.message : String(lastError);
-        return { output: `Execution error: ${msg}`, isTransientFailure: false };
+        return { output: `Execution error: ${msg}`, failureKind: 'non-transient' };
     }
 
     private async evaluateOutcome(definition: AgentLoopDefinition, agentOutput: string, tokenBudget: ExecutionTokenBudget): Promise<{ passed: boolean, feedback: string }> {
