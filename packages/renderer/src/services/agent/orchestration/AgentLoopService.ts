@@ -303,7 +303,7 @@ export class AgentLoopService {
                 }]);
 
                 if (results && results.length > 0 && results[0]!.success) {
-                    return { output: results[0]!.text || 'No text output.', isTransientFailure: false };
+                    return { output: results[0]!.message || 'No text output.', isTransientFailure: false };
                 }
 
                 const errorMsg = results?.[0]?.error || 'Action failed.';

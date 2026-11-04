@@ -1136,7 +1136,7 @@ export class AgentService {
                 const subtask = subtasks[i];
                 combinedReport += `### 🤖 ${subtask?.agentId.toUpperCase()}\n`;
                 combinedReport += `**Task**: ${subtask?.subtask}\n`;
-                combinedReport += `${res.text || res.message || 'Execution failed'}\n\n---\n\n`;
+                combinedReport += `${res.message || 'Execution failed'}\n\n---\n\n`;
             });
 
             updateAgentMessage(responseId, {

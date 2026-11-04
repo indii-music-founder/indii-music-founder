@@ -7,6 +7,13 @@ import { TraceService } from './observability/TraceService';
 
 export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
 
+export interface MaestroBatchResult {
+    success: boolean;
+    message?: string;
+    error?: string;
+    data: { taskId: string; thoughtSignature?: string };
+}
+
 export interface BatchedTask {
     id: string;
     description: string;
@@ -23,7 +30,7 @@ export interface BatchedTask {
 }
 
 export class MaestroBatchingService {
-    private batcher: RequestBatcher<BatchedTask, any>;
+    private batcher: RequestBatcher<BatchedTask, MaestroBatchResult>;
 
     constructor() {
         this.batcher = new RequestBatcher(
@@ -35,7 +42,7 @@ export class MaestroBatchingService {
     /**
      * Orchestrate a task execution via the batcher.
      */
-    async executeTask(task: Omit<BatchedTask, 'id' | 'status'>): Promise<any> {
+    async executeTask(task: Omit<BatchedTask, 'id' | 'status'>): Promise<MaestroBatchResult> {
         const id = crypto.randomUUID();
         const fullTask: BatchedTask = {
             ...task,
@@ -71,7 +78,7 @@ export class MaestroBatchingService {
      * Processes a collected batch of tasks.
      * Sorts by priority before execution.
      */
-    private async processBatch(tasks: BatchedTask[]): Promise<any[]> {
+    private async processBatch(tasks: BatchedTask[]): Promise<MaestroBatchResult[]> {
         // 1. Sort by priority: URGENT (0) > HIGH (1) > MEDIUM (2) > LOW (3)
         const priorityMap: Record<TaskPriority, number> = {
             'URGENT': 0,
@@ -92,13 +99,13 @@ export class MaestroBatchingService {
         // 2. Execute tasks
         // Execute in parallel but store results mapped by ID so we return them in the exact
         // original `tasks` request order. This satisfies RequestBatcher's index assumption.
-        const resultsMap = new Map<string, any>();
+        const resultsMap = new Map<string, MaestroBatchResult>();
         await Promise.all(sortedTasks.map(async (t) => {
             const result = await this.executeIndividualTask(t);
             resultsMap.set(t.id, result);
         }));
 
-        return tasks.map(t => resultsMap.get(t.id));
+        return tasks.map(t => resultsMap.get(t.id)!);
     }
 
     private agentRunner: AgentRunner | null = null;
@@ -110,7 +117,7 @@ export class MaestroBatchingService {
         this.agentRunner = runner;
     }
 
-    private async executeIndividualTask(task: BatchedTask): Promise<any> {
+    private async executeIndividualTask(task: BatchedTask): Promise<MaestroBatchResult> {
         logger.debug(`[Maestro] Executing task ${task.id} for agent ${task.agentId} (Priority: ${task.priority})`);
 
         try {
@@ -143,7 +150,7 @@ export class MaestroBatchingService {
     /**
      * Orchestrate multiple tasks as a single logical batch.
      */
-    async executeBatch(tasks: Omit<BatchedTask, 'id' | 'status'>[]): Promise<any[]> {
+    async executeBatch(tasks: Omit<BatchedTask, 'id' | 'status'>[]): Promise<MaestroBatchResult[]> {
         return Promise.all(tasks.map(t => this.executeTask(t)));
     }
 }

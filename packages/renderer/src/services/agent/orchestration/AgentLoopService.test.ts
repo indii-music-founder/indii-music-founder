@@ -49,7 +49,7 @@ describe('AgentLoopService', () => {
         const context = { userId: 'user1', projectId: 'proj1' } as any;
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
-            { success: true, text: 'Action taken' } as any
+            { success: true, message: 'Action taken', data: { taskId: 'task-1' } }
         ]);
 
         const executionId = await agentLoopService.startLoop(def, context);
@@ -81,8 +81,8 @@ describe('AgentLoopService', () => {
 
         // Maestro fails first time, succeeds second time
         vi.mocked(maestroBatchingService.executeBatch)
-            .mockResolvedValueOnce([{ success: true, text: 'Found 1 venue' } as any])
-            .mockResolvedValueOnce([{ success: true, text: 'Found 3 venues' } as any]);
+            .mockResolvedValueOnce([{ success: true, message: 'Found 1 venue', data: { taskId: 'task-1' } }])
+            .mockResolvedValueOnce([{ success: true, message: 'Found 3 venues', data: { taskId: 'task-2' } }]);
 
         // LLM Judge fails first time, passes second time
         mockGenerateContent
@@ -110,6 +110,7 @@ describe('AgentLoopService', () => {
         // First iteration
         expect(execution?.history[0]?.passed).toBe(false);
         expect(execution?.history[0]?.feedback).toBe('Need 2 more venues');
+        expect(mockGenerateContent.mock.calls[0]?.[0]).toContain('Found 1 venue');
 
         // Second iteration
         expect(execution?.history[1]?.passed).toBe(true);
@@ -129,7 +130,7 @@ describe('AgentLoopService', () => {
         };
         const context = { userId: 'user1', projectId: 'proj1' };
         executionTokenBudget(context, 1_500_000).reserve(1_500_000);
-        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([{ success: true, text: 'Action taken' }]);
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([{ success: true, message: 'Action taken', data: { taskId: 'task-1' } }]);
 
         const executionId = await agentLoopService.startLoop(def, context);
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -153,7 +154,7 @@ describe('AgentLoopService', () => {
         const context = { userId: 'user1', projectId: 'proj1' } as any;
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
-            { success: true, text: 'Still failing' } as any
+            { success: true, message: 'Still failing', data: { taskId: 'task-1' } }
         ]);
 
         mockGenerateContent.mockResolvedValue({
@@ -189,8 +190,8 @@ describe('AgentLoopService', () => {
 
         // First attempt fails with 429 rate limit, second attempt succeeds
         vi.mocked(maestroBatchingService.executeBatch)
-            .mockResolvedValueOnce([{ success: false, error: 'Rate limit 429: RESOURCE_EXHAUSTED' } as any])
-            .mockResolvedValueOnce([{ success: true, text: 'Success after retry' } as any]);
+            .mockResolvedValueOnce([{ success: false, error: 'Rate limit 429: RESOURCE_EXHAUSTED', data: { taskId: 'task-1' } }])
+            .mockResolvedValueOnce([{ success: true, message: 'Success after retry', data: { taskId: 'task-2' } }]);
 
         const executionId = await agentLoopService.startLoop(def, context);
 
@@ -219,7 +220,7 @@ describe('AgentLoopService', () => {
 
         // Persistent timeout error
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
-            { success: false, error: 'Connection timeout after 30000ms' } as any
+            { success: false, error: 'Connection timeout after 30000ms', data: { taskId: 'task-1' } }
         ]);
 
         const executionId = await agentLoopService.startLoop(def, context);
@@ -263,7 +264,7 @@ describe('AgentLoopService', () => {
         });
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
-            { success: true, text: 'Resumed output' } as any
+            { success: true, message: 'Resumed output', data: { taskId: 'task-1' } }
         ]);
 
         const resumed = await agentLoopService.resumeLoop(def, executionId, context);
@@ -297,7 +298,7 @@ describe('AgentLoopService', () => {
         vi.mocked(judgeTransientError).mockResolvedValueOnce(false);
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
-            { success: false, error: 'Network policy rejected: caller unauthorized' } as any
+            { success: false, error: 'Network policy rejected: caller unauthorized', data: { taskId: 'task-1' } }
         ]);
 
         mockGenerateContent.mockResolvedValueOnce({
@@ -334,7 +335,7 @@ describe('AgentLoopService', () => {
         const context = { userId: 'user1', projectId: 'proj1' } as any;
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValue([
-            { success: true, text: 'Action result' } as any
+            { success: true, message: 'Action result', data: { taskId: 'task-1' } }
         ]);
 
         // First evaluation attempt fails with a transient 503 error, retry succeeds
