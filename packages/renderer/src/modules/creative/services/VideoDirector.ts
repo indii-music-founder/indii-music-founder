@@ -81,7 +81,7 @@ export class VideoDirector {
                     : (typeof feedback.score === 'number' && feedback.score < 6);
 
                 if (shouldTriggerReshoot) {
-                    logger.info(`[VideoDirector] Jev verified video reshoot required (defect: ${jevDecision?.primaryDefect || 'defect'}, aesthetic: ${jevDecision?.aestheticScore})`);
+                    logger.info(`[VideoDirector] Reshoot suggested by ${jevDecision ? 'Jev critique advisory' : 'director score fallback'}.`);
                     // 4. Reshoot
                     throw { retry: true, refinedPrompt: feedback.refined_prompt };
                 }
