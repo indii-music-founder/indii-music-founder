@@ -36,6 +36,62 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it('does not return another user’s cached loop execution', async () => {
+        const saved = {
+            id: 'owner-scoped-execution', loopId: 'owner-loop', status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+        const fetch = vi.spyOn(FirestoreService.prototype, 'get').mockResolvedValue(null);
+
+        expect(agentLoopService.getExecution('user2', saved.id)).toBeUndefined();
+        expect(agentLoopService.getExecution('user1', saved.id)).toBe(saved);
+        expect(await agentLoopService.getExecutionAsync(undefined, saved.id)).toBeNull();
+        expect(await agentLoopService.getExecutionAsync('user2', saved.id)).toBeNull();
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(await agentLoopService.getExecutionAsync('user1', saved.id)).toBe(saved);
+    });
+
+    it('rejects a saved execution paired with a different loop definition', async () => {
+        const saved = {
+            id: 'mismatched-definition', loopId: 'original-loop', status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+        const definition: AgentLoopDefinition = {
+            id: 'different-loop', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: 1000, updatedAt: 1000,
+        };
+
+        await expect(agentLoopService.resumeLoop(definition, saved.id, { userId: 'user1' }))
+            .rejects.toThrow('belongs to a different loop definition');
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
+    it('does not dispatch a cached loop from another user account', async () => {
+        const saved = {
+            id: 'other-user-execution', loopId: 'owner-loop', status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+        vi.spyOn(FirestoreService.prototype, 'get').mockResolvedValue(null);
+        const definition: AgentLoopDefinition = {
+            id: saved.loopId, trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: 1000, updatedAt: 1000,
+        };
+
+        await expect(agentLoopService.resumeLoop(definition, saved.id, { userId: 'user2' }))
+            .rejects.toThrow('not found to resume');
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
     it('rejects resuming a new loop while its action is still running', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-active-start', trigger: AgentLoopTriggerEnum.enum.MANUAL,
@@ -56,7 +112,7 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
 
         finishBatch([{ success: true, message: 'Action result', data: { taskId: 'task-1' } }]);
-        await vi.waitFor(() => expect(agentLoopService.getExecution(executionId)?.status)
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status)
             .toBe(AgentLoopStatusEnum.enum.COMPLETED));
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
     });
@@ -73,6 +129,7 @@ describe('AgentLoopService', () => {
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
         (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
             { success: true, message: 'Action result', data: { taskId: 'task-1' } },
         ]);
@@ -84,7 +141,7 @@ describe('AgentLoopService', () => {
         await expect(agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' }))
             .rejects.toThrow('already running');
         await first;
-        await vi.waitFor(() => expect(agentLoopService.getExecution(saved.id)?.status)
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', saved.id)?.status)
             .toBe(AgentLoopStatusEnum.enum.COMPLETED));
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
     });
@@ -116,10 +173,11 @@ describe('AgentLoopService', () => {
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
         (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
 
         await expect(agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' }))
             .rejects.toThrow('Loop checkpoint could not be saved; no action was dispatched.');
-        expect(agentLoopService.getExecution(saved.id)).toBe(saved);
+        expect(agentLoopService.getExecution('user1', saved.id)).toBe(saved);
         expect(saved.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
@@ -179,7 +237,7 @@ describe('AgentLoopService', () => {
         // Wait for async loop to finish
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.history).toHaveLength(2);
@@ -218,7 +276,7 @@ describe('AgentLoopService', () => {
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
@@ -245,7 +303,7 @@ describe('AgentLoopService', () => {
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
@@ -269,7 +327,7 @@ describe('AgentLoopService', () => {
         const executionId = await agentLoopService.startLoop(def, context);
         await new Promise(resolve => setTimeout(resolve, 50));
 
-        expect(agentLoopService.getExecution(executionId)?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(agentLoopService.getExecution('user1', executionId)?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
@@ -284,10 +342,10 @@ describe('AgentLoopService', () => {
             { success: true, message: '   ', data: { taskId: 'task-1' } },
         ]);
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1' });
-        await vi.waitFor(() => expect(agentLoopService.getExecution(executionId)?.status)
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status)
             .toBe(AgentLoopStatusEnum.enum.FAILED));
         expect(mockGenerateContent).not.toHaveBeenCalled();
-        expect(agentLoopService.getExecution(executionId)?.history[0]?.feedback)
+        expect(agentLoopService.getExecution('user1', executionId)?.history[0]?.feedback)
             .toContain('Agent returned no evaluable output.');
     });
 
@@ -320,7 +378,7 @@ describe('AgentLoopService', () => {
         // Wait for async loop to finish
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(execution?.history).toHaveLength(2); // maxIterations = 2
@@ -353,7 +411,7 @@ describe('AgentLoopService', () => {
         // Wait for backoff retry and completion
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.currentIteration).toBe(1); // Succeeded on iteration 1 (did not burn iteration)
@@ -383,7 +441,7 @@ describe('AgentLoopService', () => {
         // Wait for retries to exhaust
         await new Promise(resolve => setTimeout(resolve, 2500));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         // LLM judge should NOT have been called with the timeout error string
@@ -417,6 +475,7 @@ describe('AgentLoopService', () => {
             createdAt: 1000,
             updatedAt: 1000,
         });
+        (agentLoopService as any).executionOwners.set(executionId, 'user1');
 
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
             { success: true, message: 'Resumed output', data: { taskId: 'task-1' } }
@@ -431,7 +490,7 @@ describe('AgentLoopService', () => {
         // Wait for loop completion
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.history).toHaveLength(2);
         expect(execution?.history[1]?.iteration).toBe(2);
@@ -454,10 +513,11 @@ describe('AgentLoopService', () => {
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
         (agentLoopService as any).executionStore.set(executionId, saved);
+        (agentLoopService as any).executionOwners.set(executionId, 'user1');
 
         await expect(agentLoopService.resumeLoop(def, executionId, { userId: 'user1' }))
             .rejects.toThrow('no verifier is configured');
-        expect(agentLoopService.getExecution(executionId)).toBe(saved);
+        expect(agentLoopService.getExecution('user1', executionId)).toBe(saved);
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
@@ -488,7 +548,7 @@ describe('AgentLoopService', () => {
         // Wait for loop execution
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         // Because JEV classified it as non-transient, executeBatch was called only once (no retry backoff)
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
@@ -529,7 +589,7 @@ describe('AgentLoopService', () => {
         // Wait for backoff retry and evaluation
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const execution = agentLoopService.getExecution(executionId);
+        const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
         expect(execution?.history[0]?.passed).toBe(true);

@@ -61,6 +61,7 @@ function parseEvaluationResponse(result: {
 export class AgentLoopService {
     // In-memory cache for fast synchronous lookups and offline capability
     private executionStore: Map<string, AgentLoopExecution> = new Map();
+    private executionOwners: Map<string, string> = new Map();
     private readonly activeRuns = new Set<string>();
 
     private getService(userId: string): FirestoreService<AgentLoopExecution> {
@@ -77,11 +78,13 @@ export class AgentLoopService {
                 throw new Error('Loop checkpoint could not be saved; no action was dispatched.');
             }
             this.executionStore.set(execution.id, execution);
+            this.executionOwners.set(execution.id, userId);
             useStore.getState().updateLoopExecution(execution);
             return;
         }
 
         this.executionStore.set(execution.id, execution);
+        if (userId) this.executionOwners.set(execution.id, userId);
         useStore.getState().updateLoopExecution(execution);
 
         if (!userId) return;
@@ -129,25 +132,28 @@ export class AgentLoopService {
     }
 
     /**
-     * Fetch the current state of a loop execution synchronously from memory.
+     * Fetch the current state of a user's loop execution synchronously from memory.
      */
-    getExecution(executionId: string): AgentLoopExecution | undefined {
-        return this.executionStore.get(executionId);
+    getExecution(userId: string, executionId: string): AgentLoopExecution | undefined {
+        return this.executionOwners.get(executionId) === userId
+            ? this.executionStore.get(executionId)
+            : undefined;
     }
 
     /**
      * Fetch the current state of a loop execution asynchronously, falling back to Firestore.
      */
     async getExecutionAsync(userId: string | undefined, executionId: string): Promise<AgentLoopExecution | null> {
-        const cached = this.executionStore.get(executionId);
-        if (cached) return cached;
         if (!userId) return null;
+        const cached = this.executionStore.get(executionId);
+        if (cached && this.executionOwners.get(executionId) === userId) return cached;
 
         try {
             const service = this.getService(userId);
             const doc = await service.get(executionId);
             if (doc) {
                 this.executionStore.set(executionId, doc);
+                this.executionOwners.set(executionId, userId);
                 return doc;
             }
         } catch (error) {
@@ -174,6 +180,9 @@ export class AgentLoopService {
             const execution = await this.getExecutionAsync(userId, executionId);
             if (!execution) {
                 throw new Error(`Execution ${executionId} not found to resume`);
+            }
+            if (execution.loopId !== definition.id) {
+                throw new Error(`Execution ${executionId} belongs to a different loop definition.`);
             }
 
             if (execution.status === AgentLoopStatusEnum.enum.COMPLETED) {
