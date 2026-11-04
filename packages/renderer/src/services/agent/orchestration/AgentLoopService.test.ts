@@ -36,6 +36,59 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it('rejects resuming a new loop while its action is still running', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-active-start', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: Date.now(), updatedAt: Date.now(),
+        };
+        let finishBatch!: (result: Array<{ success: boolean; message: string; data: { taskId: string } }>) => void;
+        vi.mocked(maestroBatchingService.executeBatch).mockImplementationOnce(() =>
+            new Promise(resolve => { finishBatch = resolve; }));
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'PASS' }) },
+        });
+
+        const executionId = await agentLoopService.startLoop(def, { userId: 'user1' });
+        await expect(agentLoopService.resumeLoop(def, executionId, { userId: 'user1' }))
+            .rejects.toThrow('already running');
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
+
+        finishBatch([{ success: true, message: 'Action result', data: { taskId: 'task-1' } }]);
+        await vi.waitFor(() => expect(agentLoopService.getExecution(executionId)?.status)
+            .toBe(AgentLoopStatusEnum.enum.COMPLETED));
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('allows only one concurrent resume of a saved execution', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-active-resume', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: Date.now(), updatedAt: Date.now(),
+        };
+        const saved = {
+            id: 'saved-active-resume', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
+            currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Action result', data: { taskId: 'task-1' } },
+        ]);
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'PASS' }) },
+        });
+
+        const first = agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' });
+        await expect(agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' }))
+            .rejects.toThrow('already running');
+        await first;
+        await vi.waitFor(() => expect(agentLoopService.getExecution(saved.id)?.status)
+            .toBe(AgentLoopStatusEnum.enum.COMPLETED));
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
+    });
+
     it('does not dispatch a new loop when its first checkpoint cannot be saved', async () => {
         vi.spyOn(FirestoreService.prototype, 'set').mockRejectedValueOnce(new Error('offline'));
         const def: AgentLoopDefinition = {

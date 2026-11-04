@@ -61,6 +61,7 @@ function parseEvaluationResponse(result: {
 export class AgentLoopService {
     // In-memory cache for fast synchronous lookups and offline capability
     private executionStore: Map<string, AgentLoopExecution> = new Map();
+    private readonly activeRuns = new Set<string>();
 
     private getService(userId: string): FirestoreService<AgentLoopExecution> {
         return new FirestoreService<AgentLoopExecution>(`users/${userId}/agentLoopExecutions`);
@@ -110,13 +111,19 @@ export class AgentLoopService {
             updatedAt: Date.now()
         };
 
-        await this.persistExecution(context.userId, execution, true);
+        this.activeRuns.add(executionId);
+        try {
+            await this.persistExecution(context.userId, execution, true);
+        } catch (error) {
+            this.activeRuns.delete(executionId);
+            throw error;
+        }
         logger.info(`[AgentLoop] Starting loop execution ${executionId} for definition ${definition.id}`);
 
         // Start processing asynchronously so it doesn't block the caller
-        this.runLoop(definition, execution, context).catch(err => {
+        void this.runLoop(definition, execution, context).catch(err => {
             logger.error(`[AgentLoop] Error in loop execution ${executionId}:`, err);
-        });
+        }).finally(() => this.activeRuns.delete(executionId));
 
         return executionId;
     }
@@ -158,26 +165,36 @@ export class AgentLoopService {
         context: AgentContext
     ): Promise<AgentLoopExecution> {
         requireConfiguredJudge(definition);
-        const userId = context.userId;
-        const execution = await this.getExecutionAsync(userId, executionId);
-        if (!execution) {
-            throw new Error(`Execution ${executionId} not found to resume`);
+        if (this.activeRuns.has(executionId)) {
+            throw new Error(`Execution ${executionId} is already running.`);
         }
+        this.activeRuns.add(executionId);
+        try {
+            const userId = context.userId;
+            const execution = await this.getExecutionAsync(userId, executionId);
+            if (!execution) {
+                throw new Error(`Execution ${executionId} not found to resume`);
+            }
 
-        if (execution.status === AgentLoopStatusEnum.enum.COMPLETED) {
-            logger.info(`[AgentLoop] Execution ${executionId} already completed.`);
-            return execution;
+            if (execution.status === AgentLoopStatusEnum.enum.COMPLETED) {
+                logger.info(`[AgentLoop] Execution ${executionId} already completed.`);
+                this.activeRuns.delete(executionId);
+                return execution;
+            }
+
+            logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
+            const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
+            await this.persistExecution(userId, resumedExecution, true);
+
+            void this.runLoop(definition, resumedExecution, context).catch(err => {
+                logger.error(`[AgentLoop] Error in resumed loop execution ${executionId}:`, err);
+            }).finally(() => this.activeRuns.delete(executionId));
+
+            return resumedExecution;
+        } catch (error) {
+            this.activeRuns.delete(executionId);
+            throw error;
         }
-
-        logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
-        const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
-        await this.persistExecution(userId, resumedExecution, true);
-
-        this.runLoop(definition, resumedExecution, context).catch(err => {
-            logger.error(`[AgentLoop] Error in resumed loop execution ${executionId}:`, err);
-        });
-
-        return resumedExecution;
     }
 
     /**
