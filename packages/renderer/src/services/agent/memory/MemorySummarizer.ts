@@ -33,7 +33,7 @@ function safeParseJson<T>(raw: string, fallback: T): T {
                 // Final fallback
             }
         }
-        logger.warn('[MemorySummarizer] Failed to parse Autonomous JSON response:', raw.slice(0, 200));
+        logger.warn('[MemorySummarizer] Failed to parse Autonomous JSON response');
         return fallback;
     }
 }
