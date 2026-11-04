@@ -21,11 +21,13 @@ interface EarningsTableProps {
 export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableProps) => {
     const [currentPage, setCurrentPage] = useState(1);
 
-    const totalPages = Math.ceil(data.length / pageSize);
-    const startIndex = (currentPage - 1) * pageSize;
+    const effectivePageSize = Number.isSafeInteger(pageSize) && pageSize > 0 ? pageSize : 10;
+    const totalPages = Math.max(1, Math.ceil(data.length / effectivePageSize));
+    const visiblePage = Math.min(currentPage, totalPages);
+    const startIndex = (visiblePage - 1) * effectivePageSize;
     const paginatedData = useMemo(() =>
-        data.slice(startIndex, startIndex + pageSize),
-        [data, startIndex, pageSize]);
+        data.slice(startIndex, startIndex + effectivePageSize),
+        [data, startIndex, effectivePageSize]);
 
     if (data.length === 0) {
         return (
@@ -59,10 +61,9 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence>
                             {paginatedData.map((row, index) => (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                <ContextMenu.Root {...({ key: row.releaseId } as any)}>
+                                <ContextMenu.Root key={row.releaseId}>
                                     <ContextMenu.Trigger asChild>
                                         <motion.tr
                                             initial={{ opacity: 0, y: 10 }}
@@ -118,19 +119,23 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
             {totalPages > 1 && (
                 <div className="flex items-center justify-between px-2 pt-2">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                        Page {currentPage} of {totalPages} <span className="ml-2 font-mono text-gray-600">({data.length} total records)</span>
+                        Page {visiblePage} of {totalPages} <span className="ml-2 font-mono text-gray-600">({data.length} total records)</span>
                     </p>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
+                            type="button"
+                            aria-label="Previous earnings page"
+                            onClick={() => setCurrentPage(Math.max(1, visiblePage - 1))}
+                            disabled={visiblePage === 1}
                             className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                         >
                             <ChevronLeft size={16} className="text-white" />
                         </button>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
+                            type="button"
+                            aria-label="Next earnings page"
+                            onClick={() => setCurrentPage(Math.min(totalPages, visiblePage + 1))}
+                            disabled={visiblePage === totalPages}
                             className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                         >
                             <ChevronRight size={16} className="text-white" />
