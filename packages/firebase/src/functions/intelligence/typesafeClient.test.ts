@@ -4,6 +4,7 @@ import {
     TypesafeClientError,
     TYPESAFE_DEFAULT_MODEL,
     TYPESAFE_MAX_STATE_CHARS,
+    TYPESAFE_MAX_QUESTION_CHARS,
 } from './typesafeClient.js';
 
 const okResponse = (body: unknown, headers: Record<string, string> = {}) =>
@@ -143,6 +144,18 @@ describe('typesafeClient (server-side System One transport)', () => {
         circular.self = circular;
         await expect(client.judge({ state: circular, questions })).rejects.toMatchObject({ kind: 'input' });
         await expect(client.judge({ state: {}, questions: { q: circular } })).rejects.toMatchObject({ kind: 'input' });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+    });
+
+    it('bounds the serialized question payload before transport', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue(okResponse({ answers: {} }));
+        const client = createTypesafeClient({ apiKey: 'k', fetchImpl: fetchImpl as unknown as typeof fetch });
+        const promptAtLimit = 'x'.repeat(TYPESAFE_MAX_QUESTION_CHARS - JSON.stringify({ q: { prompt: '' } }).length);
+
+        await client.judge({ state: {}, questions: { q: { prompt: promptAtLimit } } });
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+        await expect(client.judge({ state: {}, questions: { q: { prompt: `${promptAtLimit}x` } } }))
+            .rejects.toMatchObject({ kind: 'input' });
         expect(fetchImpl).toHaveBeenCalledTimes(1);
     });
 
