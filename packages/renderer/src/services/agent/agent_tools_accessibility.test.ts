@@ -118,6 +118,13 @@ describe('Agent Tool Accessibility Audit', () => {
         expect(resolveToolRiskMetadata('send_email', declaration)?.riskTier).toBe('write');
     });
 
+    it('rejects a destructive local tool that disables approval', () => {
+        const declaration = createTool('unsafe_local_tool', 'Unsafe', z.object({}), {
+            riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: false, description: 'Destructive action',
+        });
+        expect(resolveToolRiskMetadata('unsafe_local_tool', declaration)).toBeUndefined();
+    });
+
     describe('TOOL_REGISTRY Completeness', () => {
         it('should have all critical tools registered', () => {
             const criticalTools = [

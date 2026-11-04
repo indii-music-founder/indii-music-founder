@@ -18,6 +18,7 @@ describe('creativeControlsSlice — view-mode navigation history (ISSUE-1375)', 
         expect(s.viewMode).toBe('direct');
         expect(s._viewModeHistory).toEqual(['direct']);
         expect(s._viewModeIndex).toBe(0);
+        expect(s.studioControls.typographyStyle).toBe('minimal-infographic');
     });
 
     it('records switches in order and dedupes consecutive repeats', () => {

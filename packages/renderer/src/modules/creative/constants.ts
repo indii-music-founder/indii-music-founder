@@ -59,7 +59,7 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Natural": ["Golden Hour", "Blue Hour", "Overcast Soft", "Direct Sunlight", "Dappled Light", "Moonlight", "Bioluminescence"],
         "Studio": ["Three-Point Setup", "Rembrandt Lighting", "Butterfly Lighting", "Softbox", "Beauty Dish", "Rim Lighting", "Ring Light"],
         "Atmospheric": ["Volumetric Fog", "God Rays", "Haze", "Smoke", "Lens Flares", "Caustics (Water Refraction)"],
-        "Artistic": ["Neon Cyberpunk", "Chiaroscuro", "Silhouette", "Double Exposure", "Blacklight UV", "Strobe/Flash"]
+        "Artistic": ["Practical Stage Light", "Chiaroscuro", "Silhouette", "Double Exposure", "Blacklight UV", "Strobe/Flash"]
     },
     "Film Stock": {
         "Color Negative": ["Kodak Portra 160", "Kodak Portra 400", "Kodak Portra 800", "Kodak Ektar 100", "Fujifilm Pro 400H", "CineStill 800T"],
@@ -80,14 +80,14 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Craft": ["Claymation", "Paper Cutout", "Origami", "Stained Glass", "Mosaic", "Wood Carving", "Embroidery"]
     },
     "Style": {
-        "Futuristic": ["Cyberpunk", "Sci-Fi", "Space Opera", "Solarpunk", "High-Tech", "Post-Human"],
+        "Futuristic": ["Retro Future", "Sci-Fi", "Space Opera", "Solarpunk", "High-Tech", "Post-Human"],
         "Retro/Vintage": ["Steampunk", "Dieselpunk", "Retro 80s", "Synthwave", "Vaporwave", "Art Deco", "Mid-Century Modern"],
         "Artistic Movements": ["Surrealism", "Impressionism", "Cubism", "Pop Art", "Abstract Expressionism", "Minimalism", "Bauhaus"],
         "Thematic": ["Noir", "Gothic", "Fantasy", "Grimdark", "Whimsical", "Cottagecore", "Psychedelic"]
     },
     "Color": {
         "Schemes": ["Monochromatic", "Analogous", "Complementary", "Split-Complementary", "Triadic", "Tetradic"],
-        "Palettes": ["Teal and Orange", "Cyberpunk Neon", "Pastel", "Earth Tones", "Black & White", "Sepia", "Vibrant/Saturated"],
+        "Palettes": ["Teal and Orange", "Muted Jewel Tones", "Pastel", "Earth Tones", "Black & White", "Sepia", "Vibrant/Saturated"],
         "Characteristics": ["High Contrast", "Low Contrast", "Muted/Desaturated", "Color Graded", "Technicolor", "Cross-Processed"],
         "Effects": ["Iridescent", "Metallic", "Glossy", "Matte", "Fluorescent", "Infrared"]
     },
@@ -100,7 +100,7 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
     "Architecture": {
         "Modern": ["Modernist", "Brutalist", "Bauhaus", "Minimalist Concrete", "Glass Skyscraper", "Parametric Design"],
         "Historical": ["Gothic Revival", "Art Deco", "Neo-Classical", "Victorian Mansion", "Ancient Roman", "Traditional Japanese"],
-        "Futuristic": ["Cyberpunk Cityscape", "Arcology", "Space Station Interior", "Floating City", "Underwater Dome", "Biophilic Design"],
+        "Futuristic": ["Art Deco Cityscape", "Arcology", "Space Station Interior", "Floating City", "Underwater Dome", "Biophilic Design"],
         "Vernacular": ["Log Cabin", "Mediterranean Villa", "Industrial Loft", "Suburban House", "Nomadic Tent"]
     },
     "Texture": {
@@ -125,7 +125,7 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Ancient": ["Prehistoric", "Stone Age", "Bronze Age", "Ancient Egypt", "Ancient Greece", "Roman Empire"],
         "History": ["Medieval", "Renaissance", "Victorian Era", "Wild West", "Industrial Revolution", "Roaring 20s"],
         "20th Century": ["1950s Atomic Age", "1960s Psychedelic", "1970s Disco", "1980s Retro", "1990s Grunge", "Y2K Aesthetic"],
-        "Future": ["Near Future", "Cyberpunk 2077", "Post-Apocalyptic", "Space Age", "Futuristic 3000"]
+        "Future": ["Near Future", "Retro Future", "Post-Apocalyptic", "Space Age", "Futuristic 3000"]
     },
     "Mood": {
         "Positive": ["Happy", "Joyful", "Peaceful", "Romantic", "Whimsical", "Energetic", "Triumphant"],

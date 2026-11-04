@@ -89,4 +89,10 @@ describe('DigitalHandshake', () => {
         expect(result).toBe(false);
         expect(DirectiveService.updateStatus).toHaveBeenCalledWith('user_123', 'test-doc', 'WAITING_ON_HANDSHAKE');
     });
+
+    test('should honor an explicit destructive action even for a read-tier tool', async () => {
+        const result = await DigitalHandshake.require(baseDirective, 'Sensitive read', true, 'read_history');
+        expect(result).toBe(false);
+        expect(DirectiveService.updateStatus).toHaveBeenCalledWith('user_123', 'test-doc', 'WAITING_ON_HANDSHAKE');
+    });
 });

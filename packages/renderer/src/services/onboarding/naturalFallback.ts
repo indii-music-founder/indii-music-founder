@@ -84,7 +84,7 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
     aestheticStyle: {
         name: 'aesthetic style',
         why: "Your aesthetic is the visual language that connects your music to your audience",
-        examples: ["Cyberpunk", "Minimalist", "Retro 80s"]
+        examples: ["Cinematic", "Watercolor", "Retro Print"]
     }
 };
 

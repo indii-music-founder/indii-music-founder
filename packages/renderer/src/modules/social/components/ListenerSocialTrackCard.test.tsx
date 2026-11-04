@@ -1,12 +1,19 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { httpsCallable } from 'firebase/functions';
+import { featureFlags } from '@/config/featureFlags';
+import { __resetJudgmentCooldownForTests } from '@/config/typesafeJudgments';
 import { ListenerSocialTrackCard } from './ListenerSocialTrackCard';
 
 describe('ListenerSocialTrackCard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(httpsCallable).mockReset();
+        __resetJudgmentCooldownForTests();
     });
+
+    afterEach(() => vi.restoreAllMocks());
 
     it('renders track metadata, viral hook preview bar, and initial fan discussion', async () => {
         render(
@@ -61,6 +68,14 @@ describe('ListenerSocialTrackCard', () => {
     });
 
     it('submits a valid fan comment and adds it to the conversation list', async () => {
+        vi.spyOn(featureFlags, 'isEnabled').mockReturnValue(true);
+        vi.mocked(httpsCallable).mockReturnValue(vi.fn().mockResolvedValue({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.94 },
+                approved: { noul: 0.98 },
+                vibe: { score: 3 },
+            } },
+        }) as never);
         render(
             <ListenerSocialTrackCard
                 trackTitle="Detroit Midnight"

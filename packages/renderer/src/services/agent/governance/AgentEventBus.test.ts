@@ -33,4 +33,19 @@ describe('AgentEventBus', () => {
             off();
         }
     });
+
+    it('reports a resolved failed tool result as a failed execution', () => {
+        const received: AgentActionEvent[] = [];
+        const off = events.on<AgentActionEvent>('AGENT_ACTION', event => received.push(event));
+        try {
+            AgentEventBus.emitToolResult('agent-1', 'publish', Date.now(), { success: false, error: 'permission denied' });
+            AgentEventBus.emitToolResult('agent-1', 'lookup', Date.now(), { success: true });
+            expect(received[0]).toMatchObject({
+                action: 'TOOL_EXECUTION_FAILED', toolName: 'publish', errorMessage: 'permission denied',
+            });
+            expect(received[1]).toMatchObject({ action: 'TOOL_EXECUTION_COMPLETE', toolName: 'lookup' });
+        } finally {
+            off();
+        }
+    });
 });

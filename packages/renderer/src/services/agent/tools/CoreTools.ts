@@ -74,7 +74,7 @@ export const CoreTools = {
         const { requestApproval } = useStore.getState();
         const actionType = args.type || 'default';
 
-        logger.info(`[CoreTools] Requesting approval for: ${args.content} (type: ${actionType})`);
+        logger.info('[CoreTools] Requesting approval');
 
         const approved = await requestApproval(args.content, actionType);
 

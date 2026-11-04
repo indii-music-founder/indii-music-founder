@@ -14,7 +14,9 @@ export function cleanFirestoreData<T extends Record<string, any>>(data: T): T {
             return; // Skip undefined
         }
 
-        if (value !== null && typeof value === 'object' && !(value instanceof Date) && !(value.constructor?.name === 'Timestamp')) {
+        const isPlainObject = value !== null && typeof value === 'object'
+            && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+        if (Array.isArray(value) || isPlainObject) {
             result[key] = cleanFirestoreData(value);
         } else {
             result[key] = value;
