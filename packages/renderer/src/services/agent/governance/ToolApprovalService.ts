@@ -307,7 +307,7 @@ class ToolApprovalService {
             });
         });
         this.boundCalls.delete(approvalId);
-        logger.info(`[ToolApprovalService] Approval ${approvalId} denied${reason ? `: ${reason}` : ''}`);
+        logger.info(`[ToolApprovalService] Approval ${approvalId} denied`);
     }
 
     /** Live list of pending approvals for the current user — feeds the RightPanel Approvals tab. */

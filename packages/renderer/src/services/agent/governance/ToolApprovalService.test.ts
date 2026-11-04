@@ -47,6 +47,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 import { toolApprovalService } from './ToolApprovalService';
 import { where } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 describe('ToolApprovalService (ISSUE-1116)', () => {
     async function bindApproval(toolName: string, args: Record<string, unknown>, execute: (args: Record<string, unknown>) => Promise<{ success: boolean; error?: string; data?: unknown }>) {
@@ -296,12 +297,15 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         });
 
         it('marks the approval denied with the given reason', async () => {
+            const info = vi.spyOn(logger, 'info').mockImplementation(() => {});
             mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({ status: 'pending', toolName: 'execute_code' }) });
-            await toolApprovalService.deny('approval-1', 'too risky');
+            await toolApprovalService.deny('approval-1', 'private account detail');
             expect(mocks.updateDoc).toHaveBeenCalledWith(
                 expect.anything(),
-                expect.objectContaining({ status: 'denied', denyReason: 'too risky' })
+                expect.objectContaining({ status: 'denied', denyReason: 'private account detail' })
             );
+            expect(info).toHaveBeenCalledWith('[ToolApprovalService] Approval approval-1 denied');
+            info.mockRestore();
         });
     });
 
