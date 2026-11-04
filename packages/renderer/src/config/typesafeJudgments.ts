@@ -7265,127 +7265,67 @@ export async function judgeStemSeparationAcousticPurity(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 63: Advance Recoupment Pace & Risk Forecaster (Domain: Finance & Legal)
+// Judgment 63: Advance Recoupment Run Rate (Domain: Finance & Legal)
 // ---------------------------------------------------------------------------
 
 export interface ContractRecoupmentInput {
     advanceAmount: number;
     recoupedAmount: number;
     monthlyStreamingNetRevenue: number;
+    /** Retained for caller compatibility; a release date does not establish when a contract term began. */
     monthsSinceRelease: number;
+    /** Retained for caller compatibility; term length alone cannot determine recoupment risk. */
     contractTermMonths?: number;
 }
 
 export interface ContractRecoupmentVerdict {
-    recoupmentPace: 'FAST_TRACK' | 'HEALTHY_ON_SCHEDULE' | 'UNDERWATER_HAZARD';
-    estimatedMonthsToFullRecoup: number;
-    riskScore: number; // 1 to 5 (5 = severe underwater deal debt)
-    strategicRecommendation: string;
+    status: 'ADVANCE_COVERED' | 'RUN_RATE_AVAILABLE' | 'NO_CURRENT_STREAMING_RUN_RATE';
+    /** Straight-line streaming-only scenario; null means no finite projection. */
+    monthsToCoverRemainingAdvanceAtCurrentRate: number | null;
+    projectionNote: string;
 }
 
 export async function judgeContractRecoupmentPace(
     input: ContractRecoupmentInput
 ): Promise<ContractRecoupmentVerdict> {
-    const unrecouped = Math.max(0, input.advanceAmount - input.recoupedAmount);
-    const monthlyNet = Math.max(1, input.monthlyStreamingNetRevenue);
-    const termMonths = input.contractTermMonths || 36;
-
-    const runRateMonths = Math.ceil(unrecouped / monthlyNet);
-
-    let pace: ContractRecoupmentVerdict['recoupmentPace'] = 'HEALTHY_ON_SCHEDULE';
-    let risk = 2;
-    let recommendation = 'Streaming cash flow is pacing within healthy amortization parameters.';
-
-    if (unrecouped === 0) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = 'Fully recouped! All future net royalties flow directly to artist payout.';
-    } else if (runRateMonths <= termMonths * 0.5) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = `Rapid velocity: estimated full recoupment in ${runRateMonths} months, well ahead of contract term.`;
-    } else if (runRateMonths > termMonths) {
-        pace = 'UNDERWATER_HAZARD';
-        risk = 5;
-        recommendation = `Deal is underwater. At current pace ($${monthlyNet.toFixed(0)}/mo), recoupment will require ${runRateMonths} months, exceeding contract term (${termMonths} mos). Consider releasing a remix pack or renegotiating distribution fees.`;
-    } else if (runRateMonths > termMonths * 0.8) {
-        pace = 'HEALTHY_ON_SCHEDULE';
-        risk = 3;
-        recommendation = `Tight margin: estimated recoupment in ${runRateMonths} months near the end of the ${termMonths}-month term.`;
+    const { advanceAmount, recoupedAmount, monthlyStreamingNetRevenue, monthsSinceRelease, contractTermMonths } = input;
+    if (
+        !Number.isFinite(advanceAmount) || advanceAmount < 0 ||
+        !Number.isFinite(recoupedAmount) || recoupedAmount < 0 ||
+        !Number.isFinite(monthlyStreamingNetRevenue) ||
+        !Number.isFinite(monthsSinceRelease) || monthsSinceRelease < 0 ||
+        (contractTermMonths !== undefined && (!Number.isFinite(contractTermMonths) || contractTermMonths <= 0))
+    ) {
+        throw new RangeError('Recoupment inputs must be finite, advances and elapsed months non-negative, and contract terms positive.');
     }
 
-    if (!judgmentsAvailable()) {
+    const remainingAdvance = Math.max(0, advanceAmount - recoupedAmount);
+    if (remainingAdvance === 0) {
         return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'ADVANCE_COVERED',
+            monthsToCoverRemainingAdvanceAtCurrentRate: 0,
+            projectionNote: 'The recorded recoupment covers the advance. Check the contract ledger for other recoupable costs before treating royalties as payable.',
         };
     }
 
-    try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: {
-                advance: input.advanceAmount,
-                recouped: input.recoupedAmount,
-                unrecouped,
-                monthlyNet,
-                monthsActive: input.monthsSinceRelease,
-                termMonths,
-                runRateMonths,
-            },
-            questions: {
-                pace_status: {
-                    type: 'choice' as const,
-                    instructions: 'Classify financial recoupment velocity against industry norms.',
-                    criteria: {
-                        FAST_TRACK: 'Recouping significantly faster than expected, releasing artist royalty payments early.',
-                        HEALTHY_ON_SCHEDULE: 'Pacing within expected amortization window.',
-                        UNDERWATER_HAZARD: 'Severe shortfall where advance will not recoup before contract renewal/term end.',
-                    },
-                },
-                underwater_risk_score: {
-                    type: 'score' as const,
-                    instructions: 'Rate financial underwater deal risk from 1 (safe/profitable) to 5 (extreme unrecouped debt trap).',
-                    criteria: [
-                        'Zero financial risk — deal already recouped or nearly clear.',
-                        'Low risk — strong streaming velocity ensures comfortable clearance.',
-                        'Moderate risk — reliant on sustained streaming catalog stability.',
-                        'Elevated risk — streaming decay threatens timely debt clearance.',
-                        'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
-                    ],
-                },
-            },
-        });
-
-        const ans = result.data.answers;
-        const paceAns = ans?.pace_status as { choice?: unknown } | undefined;
-        const riskAns = ans?.underwater_risk_score as { score?: unknown } | number | undefined;
-
-        const resolvedPace = (typeof paceAns?.choice === 'string' ? paceAns.choice : pace) as ContractRecoupmentVerdict['recoupmentPace'];
-        const resolvedRisk = oneIndexedScore(riskAns, risk);
-
+    // A model cannot infer contract terms or industry norms from these four numbers.
+    // Only calculate the scenario where this entire monthly streaming net remains available for recoupment.
+    const monthsAtCurrentRate = monthlyStreamingNetRevenue > 0
+        ? Math.ceil(remainingAdvance / monthlyStreamingNetRevenue)
+        : null;
+    if (monthsAtCurrentRate === null || !Number.isFinite(monthsAtCurrentRate)) {
         return {
-            recoupmentPace: resolvedPace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: Math.min(5, Math.max(1, Math.round(resolvedRisk))),
-            strategicRecommendation: recommendation,
-        };
-    } catch (err: unknown) {
-        noteJudgmentFailure(err, 'contract recoupment pace judgment');
-        return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'NO_CURRENT_STREAMING_RUN_RATE',
+            monthsToCoverRemainingAdvanceAtCurrentRate: null,
+            projectionNote: 'No finite streaming-only projection is available at the current monthly net rate. Other revenue, costs, and contract terms are not assessed.',
         };
     }
+
+    return {
+        status: 'RUN_RATE_AVAILABLE',
+        monthsToCoverRemainingAdvanceAtCurrentRate: monthsAtCurrentRate,
+        projectionNote: `If the entire current monthly net streaming amount remains available for recoupment, the remaining advance would take ${monthsAtCurrentRate} months to cover. Other revenue, costs, and contract terms are not assessed.`,
+    };
 }
 
 // ---------------------------------------------------------------------------

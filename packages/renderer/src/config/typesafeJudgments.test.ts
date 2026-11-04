@@ -4098,7 +4098,7 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('detects underwater contract hazard offline when recoupment exceeds term', async () => {
+    it('reports a streaming-only run rate without declaring a contract underwater', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const underwater = await judgeContractRecoupmentPace({
@@ -4109,10 +4109,9 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 36,
         });
 
-        expect(underwater.recoupmentPace).toBe('UNDERWATER_HAZARD');
-        expect(underwater.riskScore).toBe(5);
-        expect(underwater.estimatedMonthsToFullRecoup).toBe(90);
-        expect(underwater.strategicRecommendation).toContain('underwater');
+        expect(underwater.status).toBe('RUN_RATE_AVAILABLE');
+        expect(underwater.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(90);
+        expect(underwater.projectionNote).toContain('Other revenue, costs, and contract terms are not assessed');
     });
 
     it('recognizes fully recouped deal offline', async () => {
@@ -4125,21 +4124,13 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             monthsSinceRelease: 18,
         });
 
-        expect(clear.recoupmentPace).toBe('FAST_TRACK');
-        expect(clear.riskScore).toBe(1);
-        expect(clear.estimatedMonthsToFullRecoup).toBe(0);
+        expect(clear.status).toBe('ADVANCE_COVERED');
+        expect(clear.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(0);
+        expect(clear.projectionNote).toContain('Check the contract ledger');
     });
 
-    it('evaluates recoupment pace through Jev online callable', async () => {
+    it('uses arithmetic rather than a Jev opinion when judgments are enabled', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    pace_status: { choice: 'FAST_TRACK' },
-                    underwater_risk_score: { score: 0 },
-                },
-            },
-        }));
 
         const result = await judgeContractRecoupmentPace({
             advanceAmount: 10_000,
@@ -4149,9 +4140,46 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 24,
         });
 
-        expect(result.recoupmentPace).toBe('FAST_TRACK');
-        expect(result.riskScore).toBe(1);
-        expect(result.estimatedMonthsToFullRecoup).toBe(2);
+        expect(result.status).toBe('RUN_RATE_AVAILABLE');
+        expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(2);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('does not invent a finite horizon from zero or negative streaming net', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        for (const monthlyStreamingNetRevenue of [0, -100]) {
+            const result = await judgeContractRecoupmentPace({
+                advanceAmount: 10_000,
+                recoupedAmount: 5_000,
+                monthlyStreamingNetRevenue,
+                monthsSinceRelease: 3,
+            });
+
+            expect(result.status).toBe('NO_CURRENT_STREAMING_RUN_RATE');
+            expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
+        }
+    });
+
+    it('rejects invalid financial inputs and unbounded results', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const valid = {
+            advanceAmount: 10_000,
+            recoupedAmount: 5_000,
+            monthlyStreamingNetRevenue: 500,
+            monthsSinceRelease: 3,
+        };
+
+        await expect(judgeContractRecoupmentPace({ ...valid, advanceAmount: Number.NaN })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, recoupedAmount: -1 })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, contractTermMonths: -36 })).rejects.toThrow(RangeError);
+        const overflow = await judgeContractRecoupmentPace({
+            ...valid,
+            advanceAmount: Number.MAX_VALUE,
+            recoupedAmount: 0,
+            monthlyStreamingNetRevenue: Number.MIN_VALUE,
+        });
+        expect(overflow.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
     });
 });
 
