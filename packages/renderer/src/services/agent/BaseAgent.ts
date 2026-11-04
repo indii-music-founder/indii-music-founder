@@ -1312,22 +1312,16 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             { thoughtSignature: currentThoughtSignature, signal } as any // options
                         );
                     } catch (err: unknown) {
-                        // If it's a real rate limit or model error, propagate it. If it's a mock destructure error, let fallback handle it.
-                        const msg = err instanceof Error ? err.message : String(err);
-                        if (msg.includes('destructure') || msg.includes('undefined')) {
-                            logger.debug(`[BaseAgent] generateContentStream threw mock/destructure error. Trying generateContent fallback.`);
-                        } else {
-                            const recovered = this.recoverRateLimitedPostToolTurn(err, lastToolResult, toolCalls);
-                            if (recovered) {
-                                if (lastToolResult?.success && executionContext.hasUncommittedChanges()) {
-                                    await executionContext.commit();
-                                } else if (!lastToolResult?.success) {
-                                    await executionContext.rollback();
-                                }
-                                return recovered;
+                        const recovered = this.recoverRateLimitedPostToolTurn(err, lastToolResult, toolCalls);
+                        if (recovered) {
+                            if (lastToolResult?.success && executionContext.hasUncommittedChanges()) {
+                                await executionContext.commit();
+                            } else if (!lastToolResult?.success) {
+                                await executionContext.rollback();
                             }
-                            throw err;
+                            return recovered;
                         }
+                        throw err;
                     }
                 }
 
