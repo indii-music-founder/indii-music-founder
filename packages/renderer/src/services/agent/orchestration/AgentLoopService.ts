@@ -60,7 +60,20 @@ export class AgentLoopService {
         return new FirestoreService<AgentLoopExecution>(`users/${userId}/agentLoopExecutions`);
     }
 
-    private async persistExecution(userId: string | undefined, execution: AgentLoopExecution): Promise<void> {
+    private async persistExecution(userId: string | undefined, execution: AgentLoopExecution, requiredBeforeDispatch = false): Promise<void> {
+        if (requiredBeforeDispatch) {
+            if (!userId) throw new Error('A signed-in user is required to save the loop checkpoint before execution.');
+            try {
+                await this.getService(userId).set(execution.id, execution);
+            } catch (error) {
+                logger.warn(`[AgentLoop] Initial checkpoint could not be saved for ${execution.id}:`, error);
+                throw new Error('Loop checkpoint could not be saved; no action was dispatched.');
+            }
+            this.executionStore.set(execution.id, execution);
+            useStore.getState().updateLoopExecution(execution);
+            return;
+        }
+
         this.executionStore.set(execution.id, execution);
         useStore.getState().updateLoopExecution(execution);
 
@@ -90,7 +103,7 @@ export class AgentLoopService {
             updatedAt: Date.now()
         };
 
-        await this.persistExecution(context.userId, execution);
+        await this.persistExecution(context.userId, execution, true);
         logger.info(`[AgentLoop] Starting loop execution ${executionId} for definition ${definition.id}`);
 
         // Start processing asynchronously so it doesn't block the caller
@@ -149,15 +162,14 @@ export class AgentLoopService {
         }
 
         logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
-        execution.status = AgentLoopStatusEnum.enum.EXECUTING;
-        execution.updatedAt = Date.now();
-        await this.persistExecution(userId, execution);
+        const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
+        await this.persistExecution(userId, resumedExecution, true);
 
-        this.runLoop(definition, execution, context).catch(err => {
+        this.runLoop(definition, resumedExecution, context).catch(err => {
             logger.error(`[AgentLoop] Error in resumed loop execution ${executionId}:`, err);
         });
 
-        return execution;
+        return resumedExecution;
     }
 
     /**
