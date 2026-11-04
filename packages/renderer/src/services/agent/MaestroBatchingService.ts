@@ -2,7 +2,7 @@
 import { logger } from '@/utils/logger';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { useStore } from '@/core/store';
-import { AgentRunner } from './types';
+import { AgentRunner, type AgentResponse } from './types';
 import { TraceService } from './observability/TraceService';
 
 export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
@@ -12,6 +12,26 @@ export interface MaestroBatchResult {
     message?: string;
     error?: string;
     data: { taskId: string; thoughtSignature?: string };
+}
+
+export function toMaestroBatchResult(result: AgentResponse, taskId: string): MaestroBatchResult {
+    const error = result.error || result.failure?.code;
+    return {
+        success: !error,
+        message: result.text,
+        ...(error ? { error } : {}),
+        data: { taskId, thoughtSignature: result.thoughtSignature }
+    };
+}
+
+export function batchTaskUpdateFromResult(result: MaestroBatchResult): {
+    status: 'completed' | 'error';
+    result: MaestroBatchResult;
+    error?: string;
+} {
+    return result.success
+        ? { status: 'completed', result }
+        : { status: 'error', result, error: result.error || 'Agent did not report success.' };
 }
 
 export interface BatchedTask {
@@ -66,7 +86,7 @@ export class MaestroBatchingService {
 
         try {
             const result = await this.batcher.add(fullTask);
-            useStore.getState().updateBatchTask(id, { status: 'completed', result });
+            useStore.getState().updateBatchTask(id, batchTaskUpdateFromResult(result));
             return result;
         } catch (error: unknown) {
             useStore.getState().updateBatchTask(id, { status: 'error', error: error instanceof Error ? error.message : String(error) });
@@ -132,11 +152,7 @@ export class MaestroBatchingService {
                 task.traceId
             );
 
-            return {
-                success: true,
-                message: result.text,
-                data: { taskId: task.id, thoughtSignature: result.thoughtSignature }
-            };
+            return toMaestroBatchResult(result, task.id);
         } catch (error: unknown) {
             logger.error(`[Maestro] Task ${task.id} failed:`, error);
             return {

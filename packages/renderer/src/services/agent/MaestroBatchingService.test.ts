@@ -1,5 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MaestroBatchingService } from './MaestroBatchingService';
+import { MaestroBatchingService, batchTaskUpdateFromResult, toMaestroBatchResult } from './MaestroBatchingService';
+
+describe('Maestro batch result contract', () => {
+    it('does not turn a resolved agent error into a successful action', () => {
+        expect(toMaestroBatchResult({ text: 'Tool was blocked', error: 'TOOL_NOT_AUTHORIZED' }, 'task-1'))
+            .toMatchObject({ success: false, message: 'Tool was blocked', error: 'TOOL_NOT_AUTHORIZED' });
+        expect(toMaestroBatchResult({
+            text: 'Action stopped',
+            failure: { code: 'AGENT_EXECUTION_FAILED', retryable: false, agentId: 'generalist', recovery: 'review_failure' }
+        }, 'task-2')).toMatchObject({ success: false, error: 'AGENT_EXECUTION_FAILED' });
+    });
+
+    it('keeps a successful agent response successful', () => {
+        expect(toMaestroBatchResult({ text: 'Prepared package' }, 'task-3'))
+            .toMatchObject({ success: true, message: 'Prepared package', data: { taskId: 'task-3' } });
+    });
+
+    it('marks a resolved agent failure as an error in the task list', () => {
+        const result = toMaestroBatchResult({ text: 'Tool was blocked', error: 'TOOL_NOT_AUTHORIZED' }, 'task-4');
+        expect(batchTaskUpdateFromResult(result)).toMatchObject({
+            status: 'error', error: 'TOOL_NOT_AUTHORIZED', result,
+        });
+    });
+});
 
 // Create specific mock functions to track calls
 const addBatchTaskMock = vi.fn();
