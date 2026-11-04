@@ -4378,62 +4378,13 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
 
     it('does not ask Jev to infer a source or penalty from aggregate numbers', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    cause: { choice: 'EDITORIAL_PLAYLIST' },
-                    penalty_risk: { noul: 0.01 },
-                },
-            },
-        }));
-
         const result = await judgeStreamingFraudRisk({
-            trackTitle: 'Velvet Voltage',
-            velocityRatio: 3.2,
-            skipRatePercent: 28,
-            primaryCountryCode: 'GB',
-            savesPerStreamRatio: 0.05,
+            trackTitle: 'Velvet Voltage', velocityRatio: 8.5, skipRatePercent: 88,
+            primaryCountryCode: 'GB', savesPerStreamRatio: 0.001,
         });
 
-        expect(result.rootCause).toBe('EDITORIAL_PLAYLIST');
-        expect(result.dspPenaltyHazard).toBe(false);
-        expect(result.fraudProbability).toBe(0.01);
-    });
-
-    it.each([
-        { cause: { choice: 'UNKNOWN' }, penalty_risk: { noul: 0.9 } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: null } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: '0.9' } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: 1.2 } },
-        { cause: { choice: 'BOTTING_FARM_HAZARD' }, penalty_risk: { noul: 0.01 } },
-    ])('keeps the deterministic verdict for invalid or inconsistent answers: %j', async answers => {
-        mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
-        const result = await judgeStreamingFraudRisk({
-            trackTitle: 'Track', velocityRatio: 2, skipRatePercent: 20,
-            primaryCountryCode: 'US', savesPerStreamRatio: 0.02,
-        });
-        expect(result).toEqual({
-            rootCause: 'ORGANIC_VIRAL', dspPenaltyHazard: false, fraudProbability: 0.08,
-            actionGuidance: 'Organic listener growth detected. Maintain campaign velocity.',
-        });
-    });
-
-    it('does not let Jev clear concrete botting indicators', async () => {
-        mocks.enabled.mockReturnValue(true);
-        const judge = vi.fn(async () => ({ data: { answers: {
-            cause: { choice: 'ORGANIC_VIRAL' }, penalty_risk: { noul: 0.01 },
-        } } }));
-        mocks.httpsCallable.mockReturnValue(judge);
-        const result = await judgeStreamingFraudRisk({
-            trackTitle: 'Track', velocityRatio: 8, skipRatePercent: 88,
-            primaryCountryCode: 'US', savesPerStreamRatio: 0.001,
-        });
-        expect(result.dspPenaltyHazard).toBe(true);
-        expect(result.rootCause).toBe('BOTTING_FARM_HAZARD');
-        expect(judge).not.toHaveBeenCalled();
-        expect(result.trafficReview).toBe('NO_STRONG_PATTERN');
-        expect(result.observedSignals).toEqual([]);
+        expect(result.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(result.observedSignals).toEqual(['VELOCITY_SPIKE', 'HIGH_SKIP_RATE', 'LOW_SAVE_RATE']);
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
