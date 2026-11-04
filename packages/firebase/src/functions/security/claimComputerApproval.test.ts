@@ -13,6 +13,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 vi.mock('firebase-admin/firestore', () => {
     class Timestamp {
         constructor(private readonly millis: number) {}
+        static fromMillis(millis: number) { return new Timestamp(millis); }
         toMillis() { return this.millis; }
     }
     return {
@@ -48,7 +49,7 @@ describe('claimComputerApproval expiry', () => {
         mocks.get.mockImplementation(async () => ({
             exists: true,
             data: () => ({ status: 'pending', agentId: 'generalist', toolName: 'computer_click',
-                args, createdAt: new Timestamp(currentCreatedMs) }),
+                args, createdAt: Timestamp.fromMillis(currentCreatedMs) }),
         }));
     });
 
@@ -63,7 +64,7 @@ describe('claimComputerApproval expiry', () => {
         mocks.get.mockImplementation(async () => ({
             exists: true,
             data: () => ({ status: 'pending', agentId: 'generalist', toolName: 'computer_click',
-                args, createdAt: new Timestamp(expiredMs) }),
+                args, createdAt: Timestamp.fromMillis(expiredMs) }),
         }));
         await expect(invoke(request())).rejects.toMatchObject({ code: 'failed-precondition' });
         expect(mocks.update).not.toHaveBeenCalled();
