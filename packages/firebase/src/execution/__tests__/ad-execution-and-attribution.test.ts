@@ -123,6 +123,14 @@ describe('Multi-Platform Ad Execution & Attribution Contracts', () => {
         expect(parsed.success).toBe(false);
     });
 
+    it('rejects campaign IDs that cannot be used as bounded Firestore document IDs', () => {
+        const valid = buildMockDirective();
+        expect(UnifiedCampaignDirectiveSchema.safeParse({ ...valid, directiveId: 'dir_campaign_01' }).success).toBe(true);
+        for (const directiveId of ['short', 'dir/another', 'dir with spaces', 'x'.repeat(121)]) {
+            expect(UnifiedCampaignDirectiveSchema.safeParse({ ...valid, directiveId }).success).toBe(false);
+        }
+    });
+
     it('validates UnifiedAttributionEvent SHA-256 pre-hashed userData at the schema boundary', () => {
         const validEvent: UnifiedAttributionEvent = {
             eventId: 'evt_dedup_1001',
@@ -1179,7 +1187,77 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
         ).rejects.toThrow(/Directive artistId must match the authenticated user/i);
     });
 
+    it('claims each directive once and returns its stored result without provisioning again', async () => {
+        const executions = new Map<string, Record<string, unknown>>();
+        const makeRef = (id: string) => ({
+            id,
+            async update(patch: Record<string, unknown>) {
+                executions.set(id, { ...executions.get(id), ...patch });
+            },
+        });
+        const executionDb = {
+            collection: () => ({ doc: () => ({ collection: () => ({ doc: makeRef }) }) }),
+            runTransaction: async <T>(callback: (tx: {
+                get(ref: ReturnType<typeof makeRef>): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
+                create(ref: ReturnType<typeof makeRef>, data: Record<string, unknown>): void;
+            }) => Promise<T>): Promise<T> => callback({
+                get: async ref => ({ exists: executions.has(ref.id), data: () => executions.get(ref.id) }),
+                create: (ref, data) => { executions.set(ref.id, data); },
+            }),
+        } as unknown as FirebaseFirestore.Firestore;
+        const providerFetch = vi.fn(async () => jsonResponse({ id: 'meta_campaign_1' }));
+        const adapter = new MetaAdAdapter({
+            adAccountId: '1', accessToken: 'MOCK_KEY_DO_NOT_USE', facebookPageId: 'p1', pixelId: 'px1',
+        }, providerFetch);
+        const ledger = new InMemoryFinanceRecoupmentLedger({ ledger_recoup_01: 200_000 });
+        const directive = buildMockDirective({
+            triggeredBy: 'MANUAL_OVERRIDE',
+            platforms: ['META'],
+            budgetAllocation: {
+                currency: 'USD', totalBudgetCents: 50_000, dailyBudgetCents: 10_000,
+                platformSplitPercentages: { META: 100 },
+            },
+        });
+        const deps = {
+            adapters: [adapter],
+            ledger: ledger as unknown as FirestoreFinanceRecoupmentLedger,
+            executionDb,
+        };
+
+        const first = await handleExecuteUnifiedCampaignDirective('artist_detroit_01', directive, deps);
+        const providerCalls = providerFetch.mock.calls.length;
+        expect(providerCalls).toBeGreaterThan(0);
+        expect(executions.get(directive.directiveId)).toMatchObject({ status: 'completed', result: first });
+
+        expect(await handleExecuteUnifiedCampaignDirective('artist_detroit_01', directive, deps)).toEqual(first);
+        expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+        await expect(handleExecuteUnifiedCampaignDirective('artist_detroit_01', {
+            ...directive,
+            budgetAllocation: { ...directive.budgetAllocation, totalBudgetCents: 60_000 },
+        }, deps)).rejects.toThrow(/already used for different inputs/);
+        expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+
+        executions.set(directive.directiveId, { ...executions.get(directive.directiveId), status: 'claimed' });
+        await expect(handleExecuteUnifiedCampaignDirective('artist_detroit_01', directive, deps))
+            .rejects.toThrow(/outcome is unresolved/);
+        expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+
+        const interrupted = { ...directive, directiveId: 'dir_interrupted_01', triggeredBy: 'MARKETING_AGENT' as const };
+        await expect(handleExecuteUnifiedCampaignDirective('artist_detroit_01', interrupted, {
+            ...deps,
+            allocationJudge: async () => { throw new Error('Allocation service interrupted'); },
+        })).rejects.toThrow(/Allocation service interrupted/);
+        expect(executions.get(interrupted.directiveId)).toMatchObject({ status: 'claimed' });
+        await expect(handleExecuteUnifiedCampaignDirective('artist_detroit_01', interrupted, deps))
+            .rejects.toThrow(/outcome is unresolved/);
+        expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+    });
+
     it('executes handleExecuteUnifiedCampaignDirective and handleIngestUnifiedAttributionEvent end-to-end', async () => {
+        const metaFetch = vi.fn(async () => jsonResponse({ id: 'm_callable_1', events_received: 1, fbtrace_id: 'fb_call_trace' }));
+        const executionDb = {
+            collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({ update: vi.fn() }) }) }) }),
+        } as unknown as FirebaseFirestore.Firestore;
         const persistedResults: unknown[] = [];
         const accounts = new Map<string, Record<string, unknown>>([
             ['ledger_recoup_01', { artistId: 'artist_detroit_01', availableBalanceCents: 200_000 }],
@@ -1224,7 +1302,7 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
                 facebookPageId: 'p1',
                 pixelId: 'px1',
             },
-            vi.fn(async () => jsonResponse({ id: 'm_callable_1', events_received: 1, fbtrace_id: 'fb_call_trace' })),
+            metaFetch,
         );
 
         const directive = buildMockDirective({
@@ -1244,6 +1322,8 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
                 adapters: [metaAdapter],
                 ledger: new FirestoreFinanceRecoupmentLedger({ db: ledgerDb }),
                 allocationJudge: async (dir) => heuristicCampaignJudgment(dir),
+                executionDb,
+                claimExecution: async () => null,
                 onReceiptPersist: async (res) => {
                     persistedResults.push(res);
                 },
@@ -1253,6 +1333,21 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
         expect(execResult.totalCommittedBudgetCents).toBe(50_000);
         expect(execResult.receipts).toHaveLength(1);
         expect(persistedResults).toHaveLength(1);
+        const providerCalls = metaFetch.mock.calls.length;
+
+        const cached = await handleExecuteUnifiedCampaignDirective(
+            'artist_detroit_01', directive,
+            {
+                adapters: [metaAdapter],
+                ledger: new FirestoreFinanceRecoupmentLedger({ db: ledgerDb }),
+                executionDb,
+                claimExecution: async () => execResult,
+                onReceiptPersist: async () => { throw new Error('Replay must not persist or provision'); },
+            },
+        );
+        expect(cached).toEqual(execResult);
+        expect(persistedResults).toHaveLength(1);
+        expect(metaFetch).toHaveBeenCalledTimes(providerCalls);
 
         const dedupMap = new Map<string, Record<string, unknown>>();
         const dedupDb: FirestoreLikeDb = {

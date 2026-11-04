@@ -561,6 +561,7 @@ export const MarketingTools = {
         startTimeIso?: string;
         endTimeIso?: string;
     }) => {
+        const directiveId = args.directiveId || `dir_${crypto.randomUUID()}`;
         try {
             const { auth, functions } = await importWithRetry(() => import('@/services/firebase'));
             const uid = auth.currentUser?.uid;
@@ -578,7 +579,7 @@ export const MarketingTools = {
             >(functions, 'executeUnifiedCampaignDirective');
 
             const directivePayload = {
-                directiveId: args.directiveId || `dir_${Date.now()}`,
+                directiveId,
                 triggeredBy: 'MARKETING_AGENT' as const,
                 artistId: uid,
                 ledgerAccountId: args.ledgerAccountId,
@@ -627,8 +628,8 @@ export const MarketingTools = {
             const msg = error instanceof Error ? error.message : String(error);
             logger.warn('[MarketingTools] dispatch_multi_platform_campaign failed:', error);
             return toolError(
-                `Multi-platform campaign execution did not complete: ${msg}`,
-                'CAMPAIGN_EXECUTION_FAILED',
+                `Campaign directive ${directiveId} has an unconfirmed outcome: ${msg}. Check the execution record and ad accounts before requesting another campaign.`,
+                'CAMPAIGN_OUTCOME_UNCONFIRMED',
             );
         }
     }),

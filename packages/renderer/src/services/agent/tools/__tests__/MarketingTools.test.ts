@@ -255,5 +255,35 @@ describe('MarketingTools', () => {
             expect(attrRes.success).toBe(true);
             expect(attrRes.message).toContain('AttributionBus');
         });
+
+        it('keeps a failed campaign call identifiable and warns against a blind retry', async () => {
+            const { httpsCallable } = await import('firebase/functions');
+            vi.mocked(httpsCallable).mockReturnValue((async () => {
+                throw new Error('Connection dropped after submission');
+            }) as unknown as ReturnType<typeof httpsCallable>);
+
+            const result = await MarketingTools.dispatch_multi_platform_campaign({
+                directiveId: 'dir_retry_001',
+                ledgerAccountId: 'ledger_01',
+                objective: 'DSP_STREAM_CONVERSION',
+                platforms: ['META'],
+                totalBudgetCents: 50_000,
+                dailyBudgetCents: 10_000,
+                platformSplitPercentages: { META: 100 },
+                releaseId: 'rel_01',
+                isrc: 'US-S1Z-26-00412',
+                smartlinkId: 'sl_01',
+                smartlinkUrl: 'https://indii.link/midnight',
+                videoAssetIds: ['vid_01'],
+                imageAssetIds: ['img_01'],
+                geoLocations: ['US'],
+                genreTaxonomyTags: ['electronic'],
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('CAMPAIGN_OUTCOME_UNCONFIRMED');
+            expect(result.error).toContain('dir_retry_001');
+            expect(result.error).toContain('Check the execution record and ad accounts');
+        });
     });
 });
