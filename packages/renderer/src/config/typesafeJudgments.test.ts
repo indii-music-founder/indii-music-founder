@@ -1531,7 +1531,7 @@ describe('judgeVideoReshootRequirement (Judgment 23)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    reshootNeeded: { probability: 0.2 },
+                    reshootNeeded: { noul: 0.2 },
                     aestheticQuality: { score: 2.8 },
                     defect: { choice: 'NONE' },
                 },
@@ -1556,7 +1556,7 @@ describe('judgeVideoReshootRequirement (Judgment 23)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    reshootNeeded: { probability: 0.95 },
+                    reshootNeeded: { noul: 0.95 },
                     aestheticQuality: { score: 0.8 },
                     defect: { choice: 'GLITCH_ARTIFACT' },
                 },
@@ -1574,6 +1574,21 @@ describe('judgeVideoReshootRequirement (Judgment 23)', () => {
             aestheticScore: 0.8,
             primaryDefect: 'GLITCH_ARTIFACT',
         });
+    });
+
+    it.each([
+        { reshootNeeded: { probability: 0.95 }, aestheticQuality: { score: 0.8 }, defect: { choice: 'GLITCH_ARTIFACT' } },
+        { reshootNeeded: { noul: null }, aestheticQuality: { score: 0.8 }, defect: { choice: 'GLITCH_ARTIFACT' } },
+        { reshootNeeded: { noul: 1.1 }, aestheticQuality: { score: 0.8 }, defect: { choice: 'GLITCH_ARTIFACT' } },
+        { reshootNeeded: { noul: 0.95 }, aestheticQuality: { score: 3.5 }, defect: { choice: 'GLITCH_ARTIFACT' } },
+        { reshootNeeded: { noul: 0.95 }, aestheticQuality: { score: 0.8 }, defect: { choice: 'UNDECLARED' } },
+    ])('abstains from an invalid reshoot judgment: %j', async answers => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+
+        await expect(judgeVideoReshootRequirement({
+            prompt: 'stage performance', critique: 'hands are warped', score1to10: 3,
+        })).resolves.toBeNull();
     });
 });
 

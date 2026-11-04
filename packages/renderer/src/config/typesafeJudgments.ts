@@ -1917,13 +1917,14 @@ export async function judgeVideoReshootRequirement(
         });
 
         const ans = result.data.answers;
-        const noul = ans?.reshootNeeded as { probability?: unknown } | undefined;
-        const score = ans?.aestheticQuality as { score?: unknown } | undefined;
         const choice = ans?.defect as { choice?: unknown } | undefined;
 
-        const reshootProb = typeof noul?.probability === 'number' ? noul.probability : 0;
-        const aestheticScore = typeof score?.score === 'number' ? score.score : 2.0;
-        const defect = (typeof choice?.choice === 'string' ? choice.choice : 'NONE') as VideoReshootDecision['primaryDefect'];
+        const reshootProb = boundedJudgmentNumber(ans?.reshootNeeded, 'noul', 1);
+        const aestheticScore = boundedJudgmentNumber(ans?.aestheticQuality, 'score', VIDEO_AESTHETIC_SCORE_QUESTION.criteria.length - 1);
+        if (reshootProb === null || aestheticScore === null ||
+            typeof choice?.choice !== 'string' ||
+            !Object.hasOwn(VIDEO_DEFECT_CHOICE_QUESTION.criteria, choice.choice)) return null;
+        const defect = choice.choice as VideoReshootDecision['primaryDefect'];
 
         // Reshoot strictly if reshoot probability >= 0.75 AND aesthetic quality < 1.5
         const shouldReshoot = reshootProb >= 0.75 && aestheticScore < 1.5;
