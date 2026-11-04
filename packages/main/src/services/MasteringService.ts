@@ -5,7 +5,7 @@ import path from 'path';
 
 export class MasteringService {
     async masterAudio(inputPath: string, outputPath: string, style: string): Promise<{ success: boolean; path?: string; error?: string }> {
-        log.info(`[MasteringService] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
+        log.info('[MasteringService] Mastering started');
 
         try {
             const getFilterForStyle = (s: string) => {
@@ -32,13 +32,13 @@ export class MasteringService {
                         resolve({ success: true, path: outputPath });
                     })
                     .on('error', (err) => {
-                        log.error('[MasteringService] Mastering failed:', err);
+                        log.error('[MasteringService] Mastering failed');
                         resolve({ success: false, error: err.message });
                     })
                     .save(outputPath);
             });
         } catch (error) {
-            log.error('[MasteringService] Audio mastering setup failed:', error);
+            log.error('[MasteringService] Audio mastering setup failed');
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }
