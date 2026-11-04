@@ -1640,11 +1640,11 @@ export const THEME_PALETTES: Record<string, ThemeTokens> = {
         textHex: '#fef3c7',
         waveformGradient: ['#b45309', '#f59e0b'],
     },
-    'cyber-neon': {
-        surfaceHex: '#090d16',
-        accentHex: '#06b6d4',
-        textHex: '#cffafe',
-        waveformGradient: ['#0891b2', '#a855f7'],
+    'editorial-cobalt': {
+        surfaceHex: '#101827',
+        accentHex: '#6d8ce8',
+        textHex: '#e8ecf8',
+        waveformGradient: ['#355d9b', '#8f9ac0'],
     },
     'midnight-lofi': {
         surfaceHex: '#121118',
@@ -1684,7 +1684,7 @@ export const THEME_PALETTE_QUESTION = {
         'Select the ONE aesthetic color palette that best embodies the musical mood and genre of this track.',
     criteria: {
         'amber-vinyl': 'Warm analog vinyl, acoustic soul, organic instruments, retro warmth.',
-        'cyber-neon': 'Futuristic synthwave, electro, driving digital rhythms, electric night.',
+        'editorial-cobalt': 'Cool blue editorial color, clean contrast, energetic electronic rhythm.',
         'midnight-lofi': 'Chill lo-fi study beats, jazzy piano, mellow late night vibes.',
         'acid-house': 'High-energy electronic, acid basslines, 90s warehouse rave.',
         'grunge-charcoal': 'Raw garage rock, punk, industrial metal, moody dark grit.',
@@ -1714,7 +1714,9 @@ export async function judgeAestheticThemeDerivation(
         if (!ans || typeof ans.choice !== 'string') return null;
 
         const choice = ans.choice;
-        return THEME_PALETTES[choice] || null;
+        return Object.hasOwn(THEME_PALETTE_QUESTION.criteria, choice)
+            ? THEME_PALETTES[choice] ?? null
+            : null;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'theme derivation judgment');
         return null;
@@ -2494,18 +2496,34 @@ export async function judgeAudioToVisualTokens(
         const isBright = profile.spectralCentroidHz > 3000;
 
         return {
-            paletteTheme: isLoud && isBright ? 'cyber-neon' : isFast ? 'acid-house' : 'midnight-lofi',
+            paletteTheme: isLoud && isBright ? 'editorial-cobalt' : isFast ? 'acid-house' : 'midnight-lofi',
             typographyScale: isLoud ? 'bold-condensed' : 'tight-minimal',
             motionSpeed: profile.bpm > 135 ? 'kinetic-hyper' : profile.bpm > 95 ? 'moderate-groove' : 'slow-ambient',
             recommendedAspectRatio: isFast ? '9:16' : '16:9',
         };
     };
 
-    if (!judgmentsAvailable()) {
-        return fallbackTokens();
-    }
+    const fallback = fallbackTokens();
+    if (!judgmentsAvailable()) return fallback;
 
     try {
+        const motionCriteria = {
+            'slow-ambient': 'BPM < 90, high dynamic range, acoustic or chill atmosphere.',
+            'moderate-groove': 'BPM 90-125, rhythmic bounce, moderate dance/hip-hop pace.',
+            'kinetic-hyper': 'BPM > 125, high loudness/LUFS, intense club/rock/electronic energy.',
+        };
+        const typographyCriteria = {
+            'tight-minimal': 'Refined, spacious, understated modern lines.',
+            'bold-condensed': 'Punchy, high-contrast, impactful commercial poster aesthetic.',
+            'expressive-display': 'Artistic, fluid, energetic display font direction.',
+        };
+        const paletteCriteria = {
+            'editorial-cobalt': 'Cool blue editorial color, clean contrast, energetic electronic rhythm.',
+            'amber-vinyl': 'Warm analog soul, acoustic warmth, low-to-mid tempo.',
+            'midnight-lofi': 'Mellow night atmosphere, intimate piano or lo-fi hip-hop.',
+            'acid-house': 'Energetic warehouse rave, driving rhythm.',
+            'detroit-industrial': 'Raw techno grit, heavy bass, punchy contrast.',
+        };
         const functions = getFunctions();
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
@@ -2518,31 +2536,17 @@ export async function judgeAudioToVisualTokens(
                 motion: {
                     type: 'choice' as const,
                     instructions: 'Select the optimal canvas motion velocity matching this track acoustic energy.',
-                    criteria: {
-                        'slow-ambient': 'BPM < 90, high dynamic range, acoustic or chill atmosphere.',
-                        'moderate-groove': 'BPM 90-125, rhythmic bounce, moderate dance/hip-hop pace.',
-                        'kinetic-hyper': 'BPM > 125, high loudness/LUFS, intense club/rock/electronic energy.',
-                    },
+                    criteria: motionCriteria,
                 },
                 typography: {
                     type: 'choice' as const,
                     instructions: 'Select the typography scale and layout style.',
-                    criteria: {
-                        'tight-minimal': 'Refined, spacious, understated modern lines.',
-                        'bold-condensed': 'Punchy, high-contrast, impactful commercial poster aesthetic.',
-                        'expressive-display': 'Artistic, fluid, energetic display font direction.',
-                    },
+                    criteria: typographyCriteria,
                 },
                 palette: {
                     type: 'choice' as const,
                     instructions: 'Select the primary visual color theme matching the track mood.',
-                    criteria: {
-                        'cyber-neon': 'Bright electric synth, high frequencies, modern electronic.',
-                        'amber-vinyl': 'Warm analog soul, acoustic warmth, low-to-mid tempo.',
-                        'midnight-lofi': 'Mellow night vibes, intimate piano or lo-fi hip-hop.',
-                        'acid-house': 'Energetic warehouse rave, driving rhythm.',
-                        'detroit-industrial': 'Raw techno grit, heavy bass, punchy contrast.',
-                    },
+                    criteria: paletteCriteria,
                 },
             },
         });
@@ -2552,19 +2556,25 @@ export async function judgeAudioToVisualTokens(
         const typoAns = ans?.typography as { choice?: unknown } | undefined;
         const palAns = ans?.palette as { choice?: unknown } | undefined;
 
-        const motionSpeed = (typeof motAns?.choice === 'string' ? motAns.choice : 'moderate-groove') as AudioToVisualTokensResult['motionSpeed'];
-        const typographyScale = (typeof typoAns?.choice === 'string' ? typoAns.choice : 'bold-condensed') as AudioToVisualTokensResult['typographyScale'];
-        const paletteTheme = typeof palAns?.choice === 'string' ? palAns.choice : 'cyber-neon';
+        const motionSpeed = typeof motAns?.choice === 'string' && Object.hasOwn(motionCriteria, motAns.choice)
+            ? motAns.choice as AudioToVisualTokensResult['motionSpeed']
+            : fallback.motionSpeed;
+        const typographyScale = typeof typoAns?.choice === 'string' && Object.hasOwn(typographyCriteria, typoAns.choice)
+            ? typoAns.choice as AudioToVisualTokensResult['typographyScale']
+            : fallback.typographyScale;
+        const paletteTheme = typeof palAns?.choice === 'string' && Object.hasOwn(paletteCriteria, palAns.choice)
+            ? palAns.choice
+            : fallback.paletteTheme;
 
         return {
             paletteTheme,
             typographyScale,
             motionSpeed,
-            recommendedAspectRatio: profile.bpm >= 120 ? '9:16' : '16:9',
+            recommendedAspectRatio: fallback.recommendedAspectRatio,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'audio to visual tokens judgment');
-        return fallbackTokens();
+        return fallback;
     }
 }
 
