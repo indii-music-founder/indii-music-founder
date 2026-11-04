@@ -7464,11 +7464,6 @@ export interface StreamingFraudVerdict {
     actionGuidance: string;
 }
 
-const STREAMING_FRAUD_CAUSES: ReadonlySet<string> = new Set([
-    'ORGANIC_VIRAL', 'EDITORIAL_PLAYLIST', 'ALGORITHMIC_RADIO',
-    'BOTTING_FARM_HAZARD', 'DISTRIBUTOR_REPORTING_BATCH',
-]);
-
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
 ): Promise<StreamingFraudVerdict> {
