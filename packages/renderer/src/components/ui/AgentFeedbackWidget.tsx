@@ -18,19 +18,36 @@ export const AgentFeedbackWidget = () => {
 
     const [comment, setComment] = useState('');
     const [isCommenting, setIsCommenting] = useState(false);
-    const [sharedGlobally, setSharedGlobally] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
 
     if (!isFeedbackWidgetOpen || !currentFeedbackContext) return null;
 
-    const handleRating = (rating: 'positive' | 'negative' | 'neutral') => {
+    const handleRating = async (rating: 'positive' | 'negative' | 'neutral') => {
         if (rating === 'negative' && !isCommenting) {
             // Force comment on negative feedback to extract a rule
             setIsCommenting(true);
             return;
         }
-        submitFeedback('current-user', rating, comment, sharedGlobally);
-        setComment('');
-        setIsCommenting(false);
+        if (rating === 'negative' && !comment.trim()) {
+            setSaveError('Describe what the agent should change before saving.');
+            return;
+        }
+        setIsSaving(true);
+        setSaveError('');
+        try {
+            const saved = await submitFeedback(rating, comment.trim());
+            if (!saved) {
+                setSaveError('Feedback was not saved. Check your sign-in or connection and try again.');
+                return;
+            }
+            setComment('');
+            setIsCommenting(false);
+        } catch {
+            setSaveError('Feedback was not saved. Try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -51,7 +68,7 @@ export const AgentFeedbackWidget = () => {
                             Help steer {currentFeedbackContext.agentId} decisions.
                         </p>
                     </div>
-                    <button onClick={closeFeedbackWidget} className="text-zinc-500 hover:text-white">
+                    <button type="button" aria-label="Close feedback" onClick={closeFeedbackWidget} className="text-zinc-500 hover:text-white">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
@@ -69,6 +86,7 @@ export const AgentFeedbackWidget = () => {
                             variant="outline"
                             size="sm"
                             className="flex-1 border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-400"
+                            disabled={isSaving}
                             onClick={() => handleRating('positive')}
                         >
                             <ThumbsUp className="w-4 h-4 mr-2" />
@@ -78,6 +96,7 @@ export const AgentFeedbackWidget = () => {
                             variant="outline"
                             size="sm"
                             className="flex-1 border-rose-500/20 hover:bg-rose-500/10 hover:text-rose-400"
+                            disabled={isSaving}
                             onClick={() => handleRating('negative')}
                         >
                             <ThumbsDown className="w-4 h-4 mr-2" />
@@ -89,32 +108,23 @@ export const AgentFeedbackWidget = () => {
                         <Textarea
                             className="w-full text-sm bg-zinc-950 border-zinc-800 text-white min-h-[80px]"
                             placeholder="What should the agent learn from this? (e.g. 'I don't do sponsored posts')"
+                            aria-label="What should the agent learn?"
                             value={comment}
-                            onChange={(e) => setComment(e.target.value)}
+                            onChange={(e) => { setComment(e.target.value); setSaveError(''); }}
                         />
 
-                        <div className="flex items-center gap-2 text-xs text-zinc-400">
-                            <input
-                                type="checkbox"
-                                id="wisdom-pool"
-                                checked={sharedGlobally}
-                                onChange={(e) => setSharedGlobally(e.target.checked)}
-                                className="rounded border-zinc-700 bg-zinc-900"
-                            />
-                            <label htmlFor="wisdom-pool">Share anonymized rule to Wisdom Pool</label>
-                        </div>
-
                         <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setIsCommenting(false)} className="flex-1">
+                            <Button variant="ghost" size="sm" disabled={isSaving} onClick={() => setIsCommenting(false)} className="flex-1">
                                 Cancel
                             </Button>
-                            <Button variant="default" size="sm" onClick={() => handleRating('negative')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button variant="default" size="sm" disabled={isSaving} onClick={() => handleRating('negative')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
                                 <Check className="w-4 h-4 mr-2" />
-                                Save Memory
+                                {isSaving ? 'Saving…' : 'Save Feedback'}
                             </Button>
                         </div>
                     </motion.div>
                 )}
+                {saveError && <p role="alert" className="mt-3 text-xs text-rose-300">{saveError}</p>}
             </motion.div>
         </AnimatePresence>
     );

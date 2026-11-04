@@ -212,12 +212,19 @@ export class AlwaysOnMemoryEngine {
      * @param rating - User rating (positive/negative)
      * @returns Success message
      */
-    public async saveFeedback(text: string, rating: 'positive' | 'negative' | 'neutral'): Promise<string> {
-        return this.ingest(
+    public async saveFeedback(userId: string, text: string, rating: 'positive' | 'negative' | 'neutral'): Promise<string> {
+        if (!userId || this.userId !== userId || !this.isRunning) {
+            throw new Error('Feedback memory engine is not active for the signed-in artist.');
+        }
+        const outcome = await this.ingest(
             text,
             `user_feedback_${rating}`,
             'feedback'
         );
+        if (!outcome.startsWith('📥 Stored:')) {
+            throw new Error('Feedback memory was not stored.');
+        }
+        return outcome;
     }
 
     /**
