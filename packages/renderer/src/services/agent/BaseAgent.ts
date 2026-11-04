@@ -1461,7 +1461,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 }
 
                 const functionCalls = response.functionCalls() || [];
-                logger.debug(`[BaseAgent] Extracted functionCalls for agent ${this.id}:`, JSON.stringify(functionCalls));
+                logger.debug(`[BaseAgent] Extracted ${functionCalls.length} function calls for agent ${this.id}`);
 
                 if (functionCalls.length > 0) {
                     const batchStart = toolCalls.length;
