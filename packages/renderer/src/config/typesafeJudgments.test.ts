@@ -4366,13 +4366,12 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
         mocks.enabled.mockReturnValue(true);
 
         const result = await judgeStreamingFraudRisk({
-            trackTitle: 'Velvet Voltage',
-            velocityRatio: 3.2,
-            skipRatePercent: 28,
-            primaryCountryCode: 'GB',
-            savesPerStreamRatio: 0.05,
+            trackTitle: 'Velvet Voltage', velocityRatio: 8.5, skipRatePercent: 88,
+            primaryCountryCode: 'GB', savesPerStreamRatio: 0.001,
         });
 
+        expect(result.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(result.observedSignals).toEqual(['VELOCITY_SPIKE', 'HIGH_SKIP_RATE', 'LOW_SAVE_RATE']);
         expect(result.trafficReview).toBe('NO_STRONG_PATTERN');
         expect(result.observedSignals).toEqual([]);
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
