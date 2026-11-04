@@ -1,43 +1,68 @@
-import { useState } from 'react';
+import { useState, type ImgHTMLAttributes, type SyntheticEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Skeleton } from './Skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 
-interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface OptimizedImageProps extends ImgHTMLAttributes<HTMLImageElement> {
     fallback?: string;
+}
+
+type ImageContentProps = Omit<OptimizedImageProps, 'className'>;
+
+function ImageContent({
+    src,
+    alt,
+    fallback,
+    onLoad,
+    onError,
+    loading = 'lazy',
+    decoding = 'async',
+    ...props
+}: ImageContentProps) {
+    const [showFallback, setShowFallback] = useState(!src && Boolean(fallback));
+    const [isLoading, setIsLoading] = useState(Boolean(src || fallback));
+
+    const handleLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+        setIsLoading(false);
+        onLoad?.(event);
+    };
+
+    const handleError = (event: SyntheticEvent<HTMLImageElement>) => {
+        if (!showFallback && fallback && fallback !== src) {
+            setShowFallback(true);
+            setIsLoading(true);
+        } else {
+            setIsLoading(false);
+        }
+        onError?.(event);
+    };
+
+    return (
+        <>
+            {isLoading && <Skeleton className="absolute inset-0 z-10 h-full w-full" />}
+            <img
+                {...props}
+                src={showFallback ? fallback : src}
+                alt={alt}
+                loading={loading}
+                decoding={decoding}
+                className={cn(
+                    'h-full w-full object-cover motion-safe:transition-opacity motion-safe:duration-500',
+                    isLoading ? 'opacity-0' : 'opacity-100'
+                )}
+                onLoad={handleLoad}
+                onError={handleError}
+            />
+        </>
+    );
 }
 
 export const OptimizedImage = ({
     src,
-    alt,
     className,
     fallback,
     ...props
-}: OptimizedImageProps) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(false);
-
-    return (
-        <div className={cn("relative overflow-hidden", className)}>
-            {isLoading && (
-                <Skeleton className="absolute inset-0 w-full h-full z-10" />
-            )}
-
-            <img
-                src={error && fallback ? fallback : src}
-                alt={alt}
-                className={cn(
-                    "w-full h-full object-cover transition-opacity duration-500",
-                    isLoading ? "opacity-0" : "opacity-100"
-                )}
-                onLoad={() => setIsLoading(false)}
-                onError={() => {
-                    setIsLoading(false);
-                    setError(true);
-                }}
-                loading="lazy"
-                decoding="async"
-                {...props}
-            />
-        </div>
-    );
-};
+}: OptimizedImageProps) => (
+    <div className={cn('relative overflow-hidden', className)}>
+        <ImageContent key={JSON.stringify([src, fallback])} src={src} fallback={fallback} {...props} />
+    </div>
+);
