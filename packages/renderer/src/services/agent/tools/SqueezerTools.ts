@@ -40,7 +40,7 @@ export const SqueezerTools = {
             }
 
             try {
-                const results = await historyManager.searchTranscripts(
+                const { results, complete, scannedSessions } = await historyManager.searchTranscripts(
                     userId,
                     args.query.trim(),
                     args.limit || 5
@@ -50,9 +50,13 @@ export const SqueezerTools = {
                     query: args.query.trim(),
                     results,
                     resultCount: results.length,
+                    scannedSessions,
+                    searchComplete: complete,
                     message: results.length > 0
-                        ? `Found ${results.length} matching transcripts for "${args.query}".`
-                        : `No matching transcripts found for "${args.query}".`,
+                        ? `Found ${results.length} matching sessions for "${args.query}"${complete ? '.' : ' in a partial scan.'}`
+                        : complete
+                            ? `No matching sessions found for "${args.query}".`
+                            : `No match in the scanned sessions for "${args.query}"; older sessions or messages were not searched.`,
                 };
             } catch (error: unknown) {
                 return toolError(`Transcript search failed: ${error}`, 'SEARCH_FAILED');

@@ -192,44 +192,52 @@ ${formattedRecent}
         userId: string,
         query: string,
         limit: number = 5
-    ): Promise<Array<{ sessionId: string; snippet: string; turnCount: number }>> {
-        if (!userId || !query) return [];
+    ): Promise<{ results: Array<{ sessionId: string; snippet: string; turnCount: number }>; complete: boolean; scannedSessions: number }> {
+        const empty = { results: [], complete: true, scannedSessions: 0 };
+        if (!userId || !query.trim()) return empty;
 
-        try {
-            const { collection, getDocs, orderBy, query: firestoreQuery, limit: firestoreLimit } = await importWithRetry(() => import('firebase/firestore'));
-            const { db } = await importWithRetry(() => import('@/services/firebase'));
+        const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
+        if (auth.currentUser?.uid !== userId) throw new Error('Session search requires the signed-in account.');
+        const { sessionService } = await importWithRetry(() => import('@/services/agent/SessionService'));
+        const { collection, getDocs, orderBy, query: firestoreQuery, limit: firestoreLimit } = await importWithRetry(() => import('firebase/firestore'));
+        const { sessions, nextCursor } = await sessionService.getSessionsForUserPaginated(undefined, 20);
+        const results: Array<{ sessionId: string; snippet: string; turnCount: number }> = [];
+        const needle = query.toLowerCase();
+        const resultLimit = Math.min(10, Math.max(1, Math.trunc(limit) || 5));
+        let complete = !nextCursor;
+        let scannedSessions = 0;
 
-            // Firestore doesn't support full-text search, so we fetch recent transcripts
-            // and filter client-side. For production, this would be backed by a search index.
-            const collRef = collection(db, `users/${userId}/session_transcripts`);
-            const q = firestoreQuery(collRef, orderBy('savedAt', 'desc'), firestoreLimit(20));
-            const snap = await getDocs(q);
-
-            const results: Array<{ sessionId: string; snippet: string; turnCount: number }> = [];
-            const queryLower = query.toLowerCase();
-
-            snap.docs.forEach(docSnap => {
-                const data = docSnap.data();
-                const transcript = (data.transcript || '') as string;
-                if (transcript.toLowerCase().includes(queryLower)) {
-                    // Extract a snippet around the match
-                    const idx = transcript.toLowerCase().indexOf(queryLower);
-                    const start = Math.max(0, idx - 100);
-                    const end = Math.min(transcript.length, idx + query.length + 100);
-                    const snippet = transcript.substring(start, end);
-
-                    results.push({
-                        sessionId: data.sessionId as string,
-                        snippet: `...${snippet}...`,
-                        turnCount: data.turnCount as number || 0,
-                    });
-                }
-            });
-
-            return results.slice(0, limit);
-        } catch (error: unknown) {
-            Logger.warn('HistoryManager', 'Failed to search transcripts:', error);
-            return [];
+        for (const session of sessions) {
+            scannedSessions++;
+            let messages: AgentMessage[];
+            if (session.messageStorage === 'subcollection') {
+                const q = firestoreQuery(
+                    collection(db, 'sessions', session.id, 'messages'),
+                    orderBy('timestamp', 'desc'), firestoreLimit(101),
+                );
+                const snapshot = await getDocs(q);
+                if (snapshot.docs.length > 100) complete = false;
+                messages = snapshot.docs.slice(0, 100).map(item => item.data() as AgentMessage);
+            } else {
+                const legacy = session.messages || [];
+                if (legacy.length > 100) complete = false;
+                messages = legacy.slice(-100);
+            }
+            const matching = messages.find(message =>
+                typeof message.text === 'string' && message.text.toLowerCase().includes(needle));
+            if (matching) {
+                const index = matching.text.toLowerCase().indexOf(needle);
+                results.push({
+                    sessionId: session.id,
+                    snippet: `...${matching.text.slice(Math.max(0, index - 100), index + query.length + 100)}...`,
+                    turnCount: messages.length,
+                });
+            }
+            if (results.length >= resultLimit) {
+                if (scannedSessions < sessions.length) complete = false;
+                break;
+            }
         }
+        return { results, complete, scannedSessions };
     }
 }
