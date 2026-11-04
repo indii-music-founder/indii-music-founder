@@ -89,14 +89,20 @@ export class AgentLoopService {
         return new FirestoreService<AgentLoopExecution>(`users/${userId}/agentLoopExecutions`);
     }
 
-    private async persistExecution(userId: string | undefined, execution: AgentLoopExecution, requiredBeforeDispatch = false): Promise<void> {
-        if (requiredBeforeDispatch) {
+    private async persistExecution(
+        userId: string | undefined,
+        execution: AgentLoopExecution,
+        requiredPhase?: 'before-dispatch' | 'after-action',
+    ): Promise<void> {
+        if (requiredPhase) {
             if (!userId) throw new Error('A signed-in user is required to save the loop checkpoint before execution.');
             try {
                 await this.getService(userId).set(execution.id, execution);
             } catch (error) {
-                logger.warn(`[AgentLoop] Initial checkpoint could not be saved for ${execution.id}:`, error);
-                throw new Error('Loop checkpoint could not be saved; no action was dispatched.');
+                logger.warn(`[AgentLoop] Required checkpoint could not be saved for ${execution.id}:`, error);
+                throw new Error(requiredPhase === 'before-dispatch'
+                    ? 'Loop checkpoint could not be saved; no action was dispatched.'
+                    : 'Action result checkpoint could not be saved; the action outcome requires reconciliation.');
             }
             this.executionStore.set(execution.id, execution);
             this.executionOwners.set(execution.id, userId);
@@ -129,6 +135,7 @@ export class AgentLoopService {
             id: executionId,
             loopId: definition.id,
             definitionSnapshot: snapshotDefinition(definition),
+            actionCheckpoint: { phase: 'READY', iteration: 1 },
             status: AgentLoopStatusEnum.enum.EXECUTING,
             currentIteration: 1,
             history: [],
@@ -138,7 +145,7 @@ export class AgentLoopService {
 
         this.activeRuns.add(executionId);
         try {
-            await this.persistExecution(context.userId, execution, true);
+            await this.persistExecution(context.userId, execution, 'before-dispatch');
         } catch (error) {
             this.activeRuns.delete(executionId);
             throw error;
@@ -215,10 +222,16 @@ export class AgentLoopService {
             if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
                 throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
+            const checkpoint = execution.actionCheckpoint;
+            if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
+                checkpoint.phase === 'DISPATCHING' ||
+                (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
+                throw new Error(`Execution ${executionId} may have dispatched an action without a recorded result; reconcile its outcome before resuming.`);
+            }
 
             logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
             const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
-            await this.persistExecution(userId, resumedExecution, true);
+            await this.persistExecution(userId, resumedExecution, 'before-dispatch');
 
             void this.runLoop(definition, resumedExecution, context).catch(err => {
                 logger.error(`[AgentLoop] Error in resumed loop execution ${executionId}:`, err);
@@ -275,41 +288,82 @@ export class AgentLoopService {
         const tokenBudget = executionTokenBudget(context, 1_500_000);
 
         while (execution.currentIteration <= definition.maxIterations && !isSatisfied) {
-            execution.status = AgentLoopStatusEnum.enum.EXECUTING;
-            execution.updatedAt = Date.now();
-            await this.persistExecution(context.userId, execution);
-
             logger.info(`[AgentLoop] Iteration ${execution.currentIteration}/${definition.maxIterations} starting.`);
-
-            // 1. Build prompt context including past feedback (with context trimming)
-            const prompt = this.buildIterationPrompt(definition, execution);
-
-            // 2. Execute Action with exponential backoff on transient errors
-            const { output: actionResult, failureKind } = await this.executeActionWithRetry(prompt, context);
-
-            if (failureKind) {
-                logger.warn(`[AgentLoop] Execution ${execution.id} halted after ${failureKind} action error: ${actionResult}`);
-                if (failureKind === 'non-transient') {
-                    execution.history.push({
-                        iteration: execution.currentIteration,
-                        prompt,
-                        output: actionResult,
-                        feedback: `Action did not report success: ${actionResult}`,
-                        passed: false,
-                        timestamp: Date.now()
-                    });
-                }
-                // Transient infrastructure failures do not burn an iteration.
+            const checkpoint = execution.actionCheckpoint;
+            if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
+                checkpoint.phase === 'DISPATCHING' ||
+                (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
                 execution.updatedAt = Date.now();
                 await this.persistExecution(context.userId, execution);
                 return;
             }
 
-            // 3. Evaluate Output (LLM as Judge)
+            let prompt: string;
+            let actionResult: string;
+            if (checkpoint.phase === 'RESULT_RECORDED') {
+                // A previous process already dispatched this action. Re-evaluate
+                // its saved output without submitting the external effect again.
+                prompt = checkpoint.prompt;
+                actionResult = checkpoint.output;
+            } else {
+                prompt = this.buildIterationPrompt(definition, execution);
+                execution.status = AgentLoopStatusEnum.enum.EXECUTING;
+                execution.actionCheckpoint = { phase: 'DISPATCHING', iteration: execution.currentIteration, prompt };
+                execution.updatedAt = Date.now();
+                try {
+                    await this.persistExecution(context.userId, execution, 'before-dispatch');
+                } catch (error) {
+                    execution.actionCheckpoint = { phase: 'READY', iteration: execution.currentIteration };
+                    execution.status = AgentLoopStatusEnum.enum.FAILED;
+                    execution.updatedAt = Date.now();
+                    await this.persistExecution(context.userId, execution);
+                    logger.warn(`[AgentLoop] Execution ${execution.id} stopped before dispatch:`, error);
+                    return;
+                }
+
+                const action = await this.executeActionOnce(prompt, context);
+                actionResult = action.output;
+                if (action.failureKind) {
+                    logger.warn(`[AgentLoop] Execution ${execution.id} halted after ${action.failureKind} action error: ${actionResult}`);
+                    if (action.failureKind === 'non-transient') {
+                        execution.history.push({
+                            iteration: execution.currentIteration,
+                            prompt,
+                            output: actionResult,
+                            feedback: `Action did not report success: ${actionResult}`,
+                            passed: false,
+                            timestamp: Date.now()
+                        });
+                    }
+                    // A failed or timed-out action may still have produced an
+                    // external effect. Keep DISPATCHING so resume cannot repeat it.
+                    execution.status = AgentLoopStatusEnum.enum.FAILED;
+                    execution.updatedAt = Date.now();
+                    await this.persistExecution(context.userId, execution);
+                    return;
+                }
+
+                execution.actionCheckpoint = {
+                    phase: 'RESULT_RECORDED', iteration: execution.currentIteration, prompt, output: actionResult,
+                };
+                execution.status = AgentLoopStatusEnum.enum.EVALUATING;
+                execution.updatedAt = Date.now();
+                try {
+                    await this.persistExecution(context.userId, execution, 'after-action');
+                } catch (error) {
+                    execution.actionCheckpoint = { phase: 'DISPATCHING', iteration: execution.currentIteration, prompt };
+                    execution.status = AgentLoopStatusEnum.enum.FAILED;
+                    execution.updatedAt = Date.now();
+                    await this.persistExecution(context.userId, execution);
+                    logger.warn(`[AgentLoop] Execution ${execution.id} needs action outcome reconciliation:`, error);
+                    return;
+                }
+            }
+
+            // Evaluate only an action output that has a durable checkpoint.
             execution.status = AgentLoopStatusEnum.enum.EVALUATING;
             execution.updatedAt = Date.now();
-            await this.persistExecution(context.userId, execution);
 
             let evaluation: { passed: boolean; feedback: string };
             try {
@@ -341,6 +395,7 @@ export class AgentLoopService {
             } else {
                 logger.info(`[AgentLoop] Iteration ${execution.currentIteration} failed evaluation: ${evaluation.feedback}`);
                 execution.currentIteration++;
+                execution.actionCheckpoint = { phase: 'READY', iteration: execution.currentIteration };
             }
             await this.persistExecution(context.userId, execution);
         }
@@ -387,68 +442,37 @@ export class AgentLoopService {
         return prompt;
     }
 
-    private async executeActionWithRetry(
+    private async executeActionOnce(
         prompt: string,
         context: AgentContext,
-        maxRetries: number = 3,
-        backoffBaseMs: number = 200
     ): Promise<{ output: string; failureKind: 'transient' | 'non-transient' | null }> {
-        let lastError: unknown = null;
-
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                const traceId = uuidv4();
-                const results = await maestroBatchingService.executeBatch([{
-                    agentId: 'generalist',
-                    description: prompt,
-                    params: { projectId: context.projectId, traceId },
-                    context,
-                    priority: 'HIGH',
-                    traceId
-                }]);
-
-                if (results && results.length > 0 && results[0]!.success) {
-                    const output = results[0]!.message;
-                    if (typeof output !== 'string' || !output.trim()) {
-                        return { output: 'Agent returned no evaluable output.', failureKind: 'non-transient' };
-                    }
-                    return { output, failureKind: null };
-                }
-
-                const errorMsg = results?.[0]?.error || 'Action failed.';
-                if (await this.resolveTransient(errorMsg, { retryAttempt: attempt, action: 'executeBatch' })) {
-                    lastError = new Error(errorMsg);
-                    if (attempt < maxRetries) {
-                        const jitter = Math.random() * 50;
-                        const backoffMs = Math.min(3000, Math.pow(2, attempt - 1) * backoffBaseMs) + jitter;
-                        logger.warn(`[AgentLoop] Transient error on attempt ${attempt}/${maxRetries} (${errorMsg}). Retrying in ${Math.round(backoffMs)}ms...`);
-                        await new Promise(res => setTimeout(res, backoffMs));
-                        continue;
-                    }
-                    break;
-                }
-
-                return { output: errorMsg, failureKind: 'non-transient' };
-            } catch (error) {
-                lastError = error;
-                if (await this.resolveTransient(error, { retryAttempt: attempt, action: 'executeBatch' }) && attempt < maxRetries) {
-                    const jitter = Math.random() * 50;
-                    const backoffMs = Math.min(3000, Math.pow(2, attempt - 1) * backoffBaseMs) + jitter;
-                    logger.warn(`[AgentLoop] Transient exception on attempt ${attempt}/${maxRetries}. Retrying in ${Math.round(backoffMs)}ms...`, error);
-                    await new Promise(res => setTimeout(res, backoffMs));
-                    continue;
-                }
-                break;
+        // A transport failure cannot prove whether an external effect happened.
+        // Do not submit a second action until adapters provide idempotent receipts.
+        try {
+            const traceId = uuidv4();
+            const results = await maestroBatchingService.executeBatch([{
+                agentId: 'generalist',
+                description: prompt,
+                params: { projectId: context.projectId, traceId },
+                context,
+                priority: 'HIGH',
+                traceId
+            }]);
+            if (results?.[0]?.success) {
+                const output = results[0].message;
+                return typeof output === 'string' && output.trim()
+                    ? { output, failureKind: null }
+                    : { output: 'Agent returned no evaluable output.', failureKind: 'non-transient' };
             }
+            const errorMsg = results?.[0]?.error || 'Action failed.';
+            return { output: errorMsg, failureKind: await this.resolveTransient(errorMsg, { retryAttempt: 1, action: 'executeBatch' })
+                ? 'transient' : 'non-transient' };
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            return await this.resolveTransient(error, { retryAttempt: 1, action: 'executeBatch' })
+                ? { output: `Infrastructure timeout/error: ${msg}`, failureKind: 'transient' }
+                : { output: `Execution error: ${msg}`, failureKind: 'non-transient' };
         }
-
-        if (lastError && (await this.resolveTransient(lastError, { action: 'executeBatchExhausted' }))) {
-            const msg = lastError instanceof Error ? lastError.message : String(lastError);
-            return { output: `Infrastructure timeout/error: ${msg}`, failureKind: 'transient' };
-        }
-
-        const msg = lastError instanceof Error ? lastError.message : String(lastError);
-        return { output: `Execution error: ${msg}`, failureKind: 'non-transient' };
     }
 
     private async evaluateOutcome(definition: AgentLoopDefinition, agentOutput: string, tokenBudget: ExecutionTokenBudget): Promise<{ passed: boolean, feedback: string }> {

@@ -54,6 +54,13 @@ export const AgentLoopIterationSchema = z.object({
 });
 export type AgentLoopIteration = z.infer<typeof AgentLoopIterationSchema>;
 
+export const AgentLoopActionCheckpointSchema = z.discriminatedUnion('phase', [
+    z.object({ phase: z.literal('READY'), iteration: z.number().int().positive() }),
+    z.object({ phase: z.literal('DISPATCHING'), iteration: z.number().int().positive(), prompt: z.string() }),
+    z.object({ phase: z.literal('RESULT_RECORDED'), iteration: z.number().int().positive(), prompt: z.string(), output: z.string() }),
+]);
+export type AgentLoopActionCheckpoint = z.infer<typeof AgentLoopActionCheckpointSchema>;
+
 export const AgentLoopExecutionSchema = z.object({
     id: z.string(),
     loopId: z.string(),
@@ -62,6 +69,7 @@ export const AgentLoopExecutionSchema = z.object({
     status: AgentLoopStatusEnum.default('IDLE'),
     currentIteration: z.number().int().nonnegative().default(0),
     history: z.array(AgentLoopIterationSchema).default([]),
+    actionCheckpoint: AgentLoopActionCheckpointSchema.optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
 });
