@@ -832,6 +832,20 @@ describe('judgeBrandMarkCandidate (Judgment 10)', () => {
         const result = await judgeBrandMarkCandidate(candidates);
         expect(result).toBeNull();
     });
+
+    it.each([undefined, NaN, -0.1, 0.49, 1.1])(
+        'abstains from a brand mark choice with confidence %s',
+        async confidence => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { logo_mark: { choice: 'obj_0', confidence } } }
+            }));
+
+            expect(await judgeBrandMarkCandidate([
+                { id: 'obj_0', label: 'logo', boxDescription: '[0, 0, 10, 10]' }
+            ])).toBeNull();
+        }
+    );
 });
 
 describe('judgeCommandIntent (Judgment 11)', () => {
@@ -2883,7 +2897,7 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    intent: { choice: 'GENUINE_FAN_PRAISE' },
+                    intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.92 },
                     approved: { noul: 0.99 },
                     vibe: { score: 4 },
                 },
@@ -2902,7 +2916,7 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
-                intent: { choice: 'GENUINE_FAN_PRAISE' },
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.92 },
                 approved: { noul: 0.99 },
                 vibe: { score: 4 },
             } },
@@ -2922,16 +2936,60 @@ describe('judgeFanCommentModeration (Judgment 45)', () => {
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: '0.99' } },
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: null } },
         { intent: 'GENUINE_FAN_PRAISE', approved: { noul: 1.5 } },
-    ])('holds a comment for review when Jev returns malformed moderation data: $intent $approved', async ({ intent, approved }) => {
+    ])('holds a comment when Jev returns malformed moderation data: $intent $approved', async ({ intent, approved }) => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: { intent: { choice: intent }, approved, vibe: { score: 4 } } },
+            data: { answers: { intent: { choice: intent, confidence: 0.92 }, approved, vibe: { score: 4 } } },
         }));
 
         const result = await judgeFanCommentModeration('Great track');
 
         expect(result.isApproved).toBe(false);
-        expect(result.moderationFlag).toContain('review');
+        expect(result.moderationFlag).toContain('could not be checked');
+    });
+
+    it.each([undefined, NaN, 0.49, 1.1])('holds a comment when intent confidence is %s', async confidence => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence },
+                approved: { noul: 0.99 },
+                vibe: { score: 4 },
+            } },
+        }));
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+    });
+
+    it('holds an uncertain approval and does not highlight an invalid vibe score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValueOnce(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.9 },
+                approved: { noul: 0.6 },
+                vibe: { score: 4 },
+            } },
+        })).mockReturnValueOnce(async () => ({
+            data: { answers: {
+                intent: { choice: 'GENUINE_FAN_PRAISE', confidence: 0.9 },
+                approved: { noul: 0.95 },
+                vibe: { score: 'unknown' },
+            } },
+        }));
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        const approved = await judgeFanCommentModeration('Great track');
+        expect(approved.isApproved).toBe(true);
+        expect(approved.vibeAlignmentScore).toBe(3);
+    });
+
+    it('holds comments during a Jev outage and its cooldown', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('service unavailable'); });
+
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        expect((await judgeFanCommentModeration('Great track')).isApproved).toBe(false);
+        expect(mocks.httpsCallable).toHaveBeenCalledOnce();
     });
 });
 

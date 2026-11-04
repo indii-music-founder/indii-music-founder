@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TraceService } from '../TraceService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { doc, setDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, serverTimestamp, collection } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     doc: vi.fn(() => ({ id: 'mock-id' })),
     setDoc: vi.fn(),
+    getDoc: vi.fn(),
     updateDoc: vi.fn(),
     arrayUnion: vi.fn(),
     increment: vi.fn(),
@@ -126,6 +127,40 @@ describe('TraceService', () => {
                 endTime: timestamp,
                 output: 'done'
             }));
+        });
+    });
+
+    describe('getTraceDepth', () => {
+        it('returns the verified parent depth', async () => {
+            vi.mocked(getDoc)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'root' } }) } as never)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: {} }) } as never);
+
+            expect(await TraceService.getTraceDepth('child')).toBe(1);
+            expect(getDoc).toHaveBeenCalledTimes(2);
+        });
+
+        it('blocks missing, unreadable and cyclic ancestry', async () => {
+            vi.mocked(getDoc).mockResolvedValueOnce({ exists: () => false } as never);
+            expect(await TraceService.getTraceDepth('missing')).toBe(TraceService.MAX_DELEGATION_DEPTH);
+
+            vi.mocked(getDoc).mockRejectedValueOnce(new Error('permission denied'));
+            expect(await TraceService.getTraceDepth('unreadable')).toBe(TraceService.MAX_DELEGATION_DEPTH);
+
+            vi.mocked(getDoc)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'cycle-b' } }) } as never)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'cycle-a' } }) } as never);
+            expect(await TraceService.getTraceDepth('cycle-a')).toBe(TraceService.MAX_DELEGATION_DEPTH);
+        });
+
+        it('stops reading once the delegation limit is reached', async () => {
+            vi.mocked(getDoc)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'parent-1' } }) } as never)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'parent-2' } }) } as never)
+                .mockResolvedValueOnce({ exists: () => true, data: () => ({ metadata: { parentTraceId: 'parent-3' } }) } as never);
+
+            expect(await TraceService.getTraceDepth('child')).toBe(TraceService.MAX_DELEGATION_DEPTH);
+            expect(getDoc).toHaveBeenCalledTimes(TraceService.MAX_DELEGATION_DEPTH);
         });
     });
 });
