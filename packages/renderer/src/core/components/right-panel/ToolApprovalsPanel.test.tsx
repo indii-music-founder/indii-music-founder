@@ -39,13 +39,16 @@ describe('ToolApprovalsPanel computer allowlist boundary', () => {
         expect(await screen.findByText(/Requires the indii desktop app/)).toBeInTheDocument();
     });
 
-    it.each(['approved', 'claimed'])('keeps a %s action visible without offering a second execution', async status => {
+    it.each([
+        ['approved', /dispatch was not confirmed/i],
+        ['claimed', /may have run/i],
+    ])('keeps a %s action visible with its distinct recovery message', async (status, message) => {
         approvalItems.current = [{
             id: 'approval-1', agentId: 'generalist', toolName: 'send_email', args: { subject: 'Release' },
             riskTier: 'write', description: 'Send an email', status, createdAt: new Date(),
         }];
         render(<ToolApprovalsPanel toggleRightPanel={vi.fn()} />);
-        expect(screen.getByRole('status')).toHaveTextContent(/may have run/);
+        expect(screen.getByRole('status')).toHaveTextContent(message);
         expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /deny/i })).not.toBeInTheDocument();
         expect(await screen.findByText(/No apps allowlisted yet/)).toBeInTheDocument();
