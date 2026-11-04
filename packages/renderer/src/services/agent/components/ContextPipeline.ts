@@ -16,6 +16,8 @@ import { artistDirectiveService } from '../skills/ArtistDirectiveService';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
+    /** Summary of turns older than the recent window, for direct provider chat. */
+    historicalSummary: string;
     relevantMemories: string[];
     userAlignmentRules?: string[];
     memoryContext: string;
@@ -42,7 +44,7 @@ export class ContextPipeline {
         const stateContext = await this.resolver.resolveContext();
 
         // 2. Fetch History (The "Session")
-        const chatHistoryString = await this.historyManager.getCompiledView();
+        const { view: chatHistoryString, historicalSummary } = await this.historyManager.getCompiledHistory();
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
         const { useStore } = await importWithRetry(() => import('@/core/store'));
@@ -194,6 +196,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         return {
             ...stateContext,
             chatHistoryString,
+            historicalSummary,
             relevantMemories,
             userAlignmentRules: [...(userAlignmentRules || []), ...ambitionDialNotes],
             memoryContext,

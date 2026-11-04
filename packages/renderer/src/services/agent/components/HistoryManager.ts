@@ -66,6 +66,10 @@ export class HistoryManager {
      * @returns A promise resolving to the compiled history string for LLM context.
      */
     async getCompiledView(): Promise<string> {
+        return (await this.getCompiledHistory()).view;
+    }
+
+    async getCompiledHistory(): Promise<{ view: string; historicalSummary: string }> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const userId = state.userProfile?.uid;
@@ -86,7 +90,7 @@ export class HistoryManager {
         }
 
         if (history.length <= this.MAX_RECENT_TURNS) {
-            return (this.formatHistory(history) + semanticRecall).trim();
+            return { view: (this.formatHistory(history) + semanticRecall).trim(), historicalSummary: '' };
         }
 
         Logger.info('HistoryManager', `Compressing history context (${history.length} turns)`);
@@ -103,13 +107,13 @@ export class HistoryManager {
         // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
 
-        return `
+        return { view: `
 ## Conversation Summary (History)
 ${summary}
 ${semanticRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
-`.trim();
+`.trim(), historicalSummary: summary };
     }
 
     private summarizeOlder(sessionId: string | null, olderTurns: AgentMessage[]): Promise<string> {
