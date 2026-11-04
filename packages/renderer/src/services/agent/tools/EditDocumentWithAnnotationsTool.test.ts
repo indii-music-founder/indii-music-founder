@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
 import { RateLimiter } from '@/services/intelligence/RateLimiter';
 import { EditDocumentWithAnnotationsTool } from './EditDocumentWithAnnotationsTool';
+import { logger } from '@/utils/logger';
 
 // The tool routes content through the backend streaming endpoint via fetch
 // and a singleton rate limiter with ONE initial token (~6s refill) — both
@@ -64,5 +65,19 @@ describe('EditDocumentWithAnnotationsTool', () => {
         expect(result.success).toBe(true);
         expect(result.spatialPromptContext).not.toContain('Global Instruction:');
         expect(result.spatialPromptContext).toContain('[PAGE 1 - HIGHLIGHT 1]: (x: 10, y: 20, w: 100, h: 50)');
+    });
+
+    it('does not log document edit instructions', async () => {
+        const instruction = 'private-document-instruction-do-not-log';
+        const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+        try {
+            const result = await EditDocumentWithAnnotationsTool.execute({
+                documentId: 'doc-private', annotations: [{ pageNumber: 1, type: 'sticky_note', x: 1, y: 2, content: instruction }],
+            });
+            expect(result.spatialPromptContext).toContain(instruction);
+            expect(JSON.stringify(debug.mock.calls)).not.toContain(instruction);
+        } finally {
+            debug.mockRestore();
+        }
     });
 });

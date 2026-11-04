@@ -301,9 +301,9 @@ export async function judgeTransientError(
         });
 
         const answer = result.data.answers?.transient;
-        const probability = typeof answer === 'number' ? answer : Number((answer as { noul?: unknown })?.noul);
-        if (!Number.isFinite(probability)) {
-            logger.warn('[typesafeJudgments] transient judgment returned a non-numeric answer — keeping heuristic.');
+        const probability = boundedJudgmentNumber(answer, 'noul', 1);
+        if (probability === null) {
+            logger.warn('[typesafeJudgments] transient judgment returned an invalid probability — keeping heuristic.');
             return null;
         }
 
@@ -1236,18 +1236,15 @@ export async function judgeStreamVelocityAnomaly(
         const hazardAns = result.data.answers?.dsp_penalty_hazard;
         const sevAns = result.data.answers?.severity;
 
-        if (!rootAns || typeof rootAns.choice !== 'string') return null;
+        if (!rootAns || typeof rootAns.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_ROOT_CAUSE_QUESTION.criteria, rootAns.choice)) return null;
 
         const rootCause = rootAns.choice as AnomalyRootCauseType;
-        const hazardProb = typeof hazardAns === 'number'
-            ? hazardAns
-            : Number((hazardAns as { noul?: unknown })?.noul);
+        const hazardProb = boundedJudgmentNumber(hazardAns, 'noul', 1);
+        const severityScore = boundedJudgmentNumber(sevAns, 'score', STREAM_ANOMALY_SEVERITY_QUESTION.criteria.length - 1);
+        if (hazardProb === null || severityScore === null) return null;
 
-        const severityScore = typeof sevAns === 'number'
-            ? sevAns
-            : Number((sevAns as { score?: unknown })?.score);
-
-        const dspPenaltyHazard = Number.isFinite(hazardProb) ? hazardProb >= 0.50 : false;
+        const dspPenaltyHazard = hazardProb >= 0.50;
 
         let recommendation = 'Track streaming shows healthy organic growth.';
         if (dspPenaltyHazard) {
@@ -1261,8 +1258,8 @@ export async function judgeStreamVelocityAnomaly(
         return {
             rootCause,
             dspPenaltyHazard,
-            hazardProbability: Number.isFinite(hazardProb) ? hazardProb : 0,
-            severityScore: Number.isFinite(severityScore) ? severityScore : 0,
+            hazardProbability: hazardProb,
+            severityScore,
             recommendation,
         };
     } catch (err: unknown) {
@@ -1349,7 +1346,7 @@ export type AestheticCultureTag =
     | 'midnight-lo-fi'
     | 'detroit-electro-soul'
     | 'analog-bedroom-pop'
-    | 'synthwave-cyberpunk'
+    | 'retro-synthwave'
     | 'dark-ambient-trap'
     | 'golden-era-boom-bap'
     | 'indie-folk-acoustic'
@@ -1366,7 +1363,7 @@ export const AESTHETIC_TAG_QUESTION = {
         'midnight-lo-fi': 'Chilled beats, vinyl crackle, mellow piano, late night study or relax aesthetic.',
         'detroit-electro-soul': 'Detroit techno/electro grooves, Motown soul harmony, punchy 808s, futuristic funk.',
         'analog-bedroom-pop': 'Warm tape saturation, dreamy guitar hooks, introspective DIY indie songwriting.',
-        'synthwave-cyberpunk': 'Retro 80s analog synthesizers, neon night drives, driving basslines, arpeggios.',
+        'retro-synthwave': 'Retro 80s analog synthesizers, night drives, driving basslines, arpeggios.',
         'dark-ambient-trap': 'Sub-bass 808s, atmospheric dark pads, moody modern trap cadences.',
         'golden-era-boom-bap': 'Dusty vinyl drum breaks, sample chops, classic East/Midwest hip-hop lyricism.',
         'indie-folk-acoustic': 'Fingerpicked acoustic guitars, intimate vocal harmonies, organic warmth.',
@@ -1397,7 +1394,8 @@ export async function judgeAestheticMoodTagging(
         });
 
         const answer = result.data.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
-        if (!answer || typeof answer.choice !== 'string') return null;
+        if (!answer || typeof answer.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(AESTHETIC_TAG_QUESTION.criteria, answer.choice)) return null;
 
         const choice = answer.choice as AestheticCultureTag;
         return choice;
@@ -6979,6 +6977,7 @@ export type AestheticStyleTag =
     | 'retro_synthwave'
     | 'minimalist_modernist'
     | 'cyberpunk_futuristic'
+    | 'editorial_futurist'
     | 'grungy_analog_lofi'
     | 'warm_organic_earthy'
     | 'high_gloss_glamour'
@@ -7028,9 +7027,12 @@ export async function judgeArtistDnaOnboarding(
     } else if (raw.includes('minimal') || raw.includes('clean') || raw.includes('modern')) {
         aesthetic = 'minimalist_modernist';
         palette = ['#09090b', '#27272a', '#71717a', '#d4d4d8', '#ffffff'];
-    } else if (raw.includes('cyber') || raw.includes('future') || raw.includes('matrix')) {
+    } else if (raw.includes('cyberpunk')) {
         aesthetic = 'cyberpunk_futuristic';
         palette = ['#020617', '#10b981', '#06b6d4', '#d946ef', '#f0abfc'];
+    } else if (raw.includes('future') || raw.includes('matrix')) {
+        aesthetic = 'editorial_futurist';
+        palette = ['#111827', '#374151', '#9ca3af', '#d1d5db', '#f9fafb'];
     } else if (raw.includes('lofi') || raw.includes('lo-fi') || raw.includes('analog') || raw.includes('tape')) {
         aesthetic = 'grungy_analog_lofi';
         palette = ['#292524', '#78716c', '#b45309', '#d97706', '#fef3c7'];
@@ -7052,6 +7054,17 @@ export async function judgeArtistDnaOnboarding(
     else if (maturity >= 4) focus = 'streaming_scale';
 
     const fallbackSummary = `Calibrated DNA for ${archetype.replace('_', ' ')} with ${aesthetic.replace(/_/g, ' ')} visual identity.`;
+    const aestheticCriteria = {
+        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
+        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
+        editorial_futurist: 'Architectural future, restrained materials, editorial framing and clean light.',
+        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
+        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
+        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
+        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
+        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
+        ...(raw.includes('cyberpunk') ? { cyberpunk_futuristic: 'The artist explicitly requested this style.' } : {}),
+    };
 
     if (!judgmentsAvailable()) {
         return {
@@ -7095,16 +7108,7 @@ export async function judgeArtistDnaOnboarding(
                 aesthetic_choice: {
                     type: 'choice' as const,
                     instructions: 'Select the optimal visual aesthetic style for this artist brand identity.',
-                    criteria: {
-                        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
-                        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
-                        cyberpunk_futuristic: 'Cyber tech, dystopian glow, chrome textures, futuristic digital.',
-                        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
-                        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
-                        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
-                        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
-                        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
-                    },
+                    criteria: aestheticCriteria,
                 },
                 maturity_score: {
                     type: 'score' as const,
@@ -7126,7 +7130,8 @@ export async function judgeArtistDnaOnboarding(
         const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
 
         const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
-        const resolvedAesthetic = (typeof aesAns?.choice === 'string' ? aesAns.choice : aesthetic) as AestheticStyleTag;
+        const resolvedAesthetic = (typeof aesAns?.choice === 'string' &&
+            Object.prototype.hasOwnProperty.call(aestheticCriteria, aesAns.choice) ? aesAns.choice : aesthetic) as AestheticStyleTag;
         const rawMat = oneIndexedScore(matAns, maturity);
 
         return {
@@ -7528,6 +7533,11 @@ export interface StreamingFraudVerdict {
     actionGuidance: string;
 }
 
+const STREAMING_FRAUD_CAUSES: ReadonlySet<string> = new Set([
+    'ORGANIC_VIRAL', 'EDITORIAL_PLAYLIST', 'ALGORITHMIC_RADIO',
+    'BOTTING_FARM_HAZARD', 'DISTRIBUTOR_REPORTING_BATCH',
+]);
+
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
 ): Promise<StreamingFraudVerdict> {
@@ -7556,14 +7566,15 @@ export async function judgeStreamingFraudRisk(
         guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
     }
 
-    if (!judgmentsAvailable()) {
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
-    }
+    const fallback = (): StreamingFraudVerdict => ({
+        rootCause,
+        dspPenaltyHazard: penaltyHazard,
+        fraudProbability: fraudProb,
+        actionGuidance: guidance,
+    });
+
+    // The concrete high-skip, low-save signal cannot be cleared by a semantic judgment.
+    if (!judgmentsAvailable() || isBottingIndicators) return fallback();
 
     try {
         const functions = getFunctions();
@@ -7605,25 +7616,22 @@ export async function judgeStreamingFraudRisk(
 
         const ans = result.data.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const riskAns = ans?.penalty_risk as { probability?: unknown } | undefined;
-
-        const resolvedCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : rootCause) as StreamingFraudVerdict['rootCause'];
-        const prob = typeof riskAns?.probability === 'number' ? riskAns.probability : fraudProb;
+        const prob = boundedJudgmentNumber(ans?.penalty_risk, 'noul', 1);
+        if (typeof causeAns?.choice !== 'string' || !STREAMING_FRAUD_CAUSES.has(causeAns.choice) || prob === null) {
+            return fallback();
+        }
+        const resolvedCause = causeAns.choice as StreamingFraudVerdict['rootCause'];
+        if (resolvedCause === 'BOTTING_FARM_HAZARD' && prob < 0.5) return fallback();
 
         return {
             rootCause: resolvedCause,
             dspPenaltyHazard: prob >= 0.5,
             fraudProbability: prob,
-            actionGuidance: prob >= 0.5 ? 'CRITICAL: Bot stream farm attack detected. Contact distributor to avoid DSP penalties.' : guidance,
+            actionGuidance: prob >= 0.5 ? 'Possible artificial streaming risk. Contact your distributor to review the traffic.' : guidance,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'streaming fraud risk judgment');
-        return {
-            rootCause,
-            dspPenaltyHazard: penaltyHazard,
-            fraudProbability: fraudProb,
-            actionGuidance: guidance,
-        };
+        return fallback();
     }
 }
 

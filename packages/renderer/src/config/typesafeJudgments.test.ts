@@ -232,6 +232,20 @@ describe('judgeTransientError decision bands', () => {
         expect(verdict).toBeNull();
     });
 
+    it.each([null, '0.9', { noul: null }, { noul: '0.9' }, -0.1, 1.1, { noul: 1.1 }])(
+        'abstains from an invalid transient probability %j', async answer => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { transient: answer } } }));
+            expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
+        },
+    );
+
+    it('accepts a bounded Noul response object', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { transient: { noul: 0.8 } } } }));
+        expect(await judgeTransientError(new Error('timeout'), false)).toBe(true);
+    });
+
     it('keeps the documented band constants honest', () => {
         expect(TRANSIENT_ADOPT_MIN).toBeGreaterThan(0.5);
         expect(TRANSIENT_REJECT_MAX).toBeLessThan(0.5);
@@ -1050,6 +1064,31 @@ describe('judgeStreamVelocityAnomaly (Judgment 14)', () => {
             recommendation: 'Warning: Pattern flagged for artificial streaming risk. Contact distributor to verify traffic source.',
         });
     });
+
+    it.each([
+        { root_cause: { choice: 'unknown' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: null }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 1.2 }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: '0.05' }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: null } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 3.2 } },
+    ])('withholds a verdict when an answer is invalid: %j', async answers => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+        expect(await judgeStreamVelocityAnomaly('Track', 300)).toBeNull();
+    });
+
+    it('preserves a fractional severity score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                root_cause: { choice: 'organic_viral_surge' },
+                dsp_penalty_hazard: { noul: 0.05 },
+                severity: { score: 1.5 },
+            } },
+        }));
+        expect((await judgeStreamVelocityAnomaly('Track', 300))?.severityScore).toBe(1.5);
+    });
 });
 
 describe('judgeFanToMerchSku (Judgment 15)', () => {
@@ -1143,6 +1182,14 @@ describe('judgeAestheticMoodTagging (Judgment 16)', () => {
 
         const result = await judgeAestheticMoodTagging('Rainy Window 3AM', 'Mellow Rhodes chords with vinyl crackle and muted boom bap drums');
         expect(result).toBe('midnight-lo-fi');
+    });
+
+    it('withholds an aesthetic tag outside the declared choices', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            aesthetic_tag: { choice: 'synthwave-cyberpunk', confidence: 0.99 },
+        } } }));
+        expect(await judgeAestheticMoodTagging('Night Drive')).toBeNull();
     });
 });
 
@@ -3957,6 +4004,32 @@ describe('judgeArtistDnaOnboarding (Judgment 61)', () => {
         expect(result.careerMaturityScore).toBe(4);
         expect(result.monetizationFocus).toBe('sync_licensing');
     });
+
+    it('does not offer or accept cyberpunk styling for a general future brief', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({ data: { answers: {
+            aesthetic_choice: { choice: 'cyberpunk_futuristic' },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeArtistDnaOnboarding({ bioSnippet: 'A future-facing electronic artist' });
+        const request = judge.mock.calls[0]?.[0] as { questions: { aesthetic_choice: { criteria: Record<string, string> } } };
+        expect(request.questions.aesthetic_choice.criteria).not.toHaveProperty('cyberpunk_futuristic');
+        expect(result.aestheticStyle).toBe('editorial_futurist');
+    });
+
+    it('allows the style when the artist explicitly requests it', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({ data: { answers: {
+            aesthetic_choice: { choice: 'cyberpunk_futuristic' },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeArtistDnaOnboarding({ bioSnippet: 'I want a cyberpunk look for my music' });
+        const request = judge.mock.calls[0]?.[0] as { questions: { aesthetic_choice: { criteria: Record<string, string> } } };
+        expect(request.questions.aesthetic_choice.criteria).toHaveProperty('cyberpunk_futuristic');
+        expect(result.aestheticStyle).toBe('cyberpunk_futuristic');
+    });
 });
 
 describe('judgeStemSeparationAcousticPurity (Judgment 62)', () => {
@@ -4186,7 +4259,7 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             data: {
                 answers: {
                     cause: { choice: 'EDITORIAL_PLAYLIST' },
-                    penalty_risk: { probability: 0.01 },
+                    penalty_risk: { noul: 0.01 },
                 },
             },
         }));
@@ -4201,6 +4274,41 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
 
         expect(result.rootCause).toBe('EDITORIAL_PLAYLIST');
         expect(result.dspPenaltyHazard).toBe(false);
+        expect(result.fraudProbability).toBe(0.01);
+    });
+
+    it.each([
+        { cause: { choice: 'UNKNOWN' }, penalty_risk: { noul: 0.9 } },
+        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: null } },
+        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: '0.9' } },
+        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: 1.2 } },
+        { cause: { choice: 'BOTTING_FARM_HAZARD' }, penalty_risk: { noul: 0.01 } },
+    ])('keeps the deterministic verdict for invalid or inconsistent answers: %j', async answers => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+        const result = await judgeStreamingFraudRisk({
+            trackTitle: 'Track', velocityRatio: 2, skipRatePercent: 20,
+            primaryCountryCode: 'US', savesPerStreamRatio: 0.02,
+        });
+        expect(result).toEqual({
+            rootCause: 'ORGANIC_VIRAL', dspPenaltyHazard: false, fraudProbability: 0.08,
+            actionGuidance: 'Organic listener growth detected. Maintain campaign velocity.',
+        });
+    });
+
+    it('does not let Jev clear concrete botting indicators', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async () => ({ data: { answers: {
+            cause: { choice: 'ORGANIC_VIRAL' }, penalty_risk: { noul: 0.01 },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+        const result = await judgeStreamingFraudRisk({
+            trackTitle: 'Track', velocityRatio: 8, skipRatePercent: 88,
+            primaryCountryCode: 'US', savesPerStreamRatio: 0.001,
+        });
+        expect(result.dspPenaltyHazard).toBe(true);
+        expect(result.rootCause).toBe('BOTTING_FARM_HAZARD');
+        expect(judge).not.toHaveBeenCalled();
     });
 });
 

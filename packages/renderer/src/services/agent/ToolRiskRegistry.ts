@@ -354,6 +354,7 @@ export function resolveToolRiskMetadata(toolName: string, declaration?: Function
     if (!metadata || !['read', 'write', 'destructive'].includes(metadata.riskTier)
         || !['builtin', 'core', 'plugin'].includes(metadata.permissionTier)
         || typeof metadata.requiresApproval !== 'boolean'
+        || (metadata.riskTier === 'destructive' && !metadata.requiresApproval)
         || typeof metadata.description !== 'string' || !metadata.description.trim()) return undefined;
     return metadata;
 }

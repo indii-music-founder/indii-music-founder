@@ -1461,7 +1461,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 }
 
                 const functionCalls = response.functionCalls() || [];
-                logger.debug(`[BaseAgent] Extracted functionCalls for agent ${this.id}:`, JSON.stringify(functionCalls));
+                logger.debug(`[BaseAgent] Extracted ${functionCalls.length} function calls for agent ${this.id}`);
 
                 if (functionCalls.length > 0) {
                     const batchStart = toolCalls.length;
@@ -1672,12 +1672,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 // Phase 3.5: Pass execution context to tools for isolated state access
                                 result = await this.functions[name](args, enrichedContext, toolContext);
 
-                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
-                                    agentId: this.id,
-                                    toolName: name,
-                                    timestamp: Date.now(),
-                                    durationMs: Date.now() - startTime
-                                });
+                                AgentEventBus.emitToolResult(this.id, name, startTime, result);
                             } catch (err: unknown) {
                                 const msg = err instanceof Error ? err.message : String(err);
                                 result = { success: false, error: msg };
@@ -1697,12 +1692,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                     // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
                                     result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
 
-                                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
-                                        agentId: this.id,
-                                        toolName: name,
-                                        timestamp: Date.now(),
-                                        durationMs: Date.now() - startTime
-                                    });
+                                    AgentEventBus.emitToolResult(this.id, name, startTime, result);
                                 } catch (err: unknown) {
                                     const msg = err instanceof Error ? err.message : String(err);
                                     result = { success: false, error: msg };

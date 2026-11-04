@@ -48,6 +48,23 @@ export interface AgentSessionEvent {
  * Essential for upstream visualization (e.g., Langfuse/LangWatch).
  */
 export class AgentEventBus {
+    static emitToolResult(
+        agentId: string,
+        toolName: string,
+        startedAt: number,
+        result: { success: boolean; error?: string },
+    ): void {
+        const succeeded = result.success === true;
+        const finishedAt = Date.now();
+        this.emitToolEvent(succeeded ? 'TOOL_EXECUTION_COMPLETE' : 'TOOL_EXECUTION_FAILED', {
+            agentId,
+            toolName,
+            timestamp: finishedAt,
+            durationMs: finishedAt - startedAt,
+            ...(!succeeded ? { errorMessage: result.error || 'Tool reported failure.' } : {}),
+        });
+    }
+
     /**
      * Announces a tool execution lifecycle event
      */

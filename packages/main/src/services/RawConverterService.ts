@@ -99,7 +99,7 @@ export class RawConverterService {
                 supportedReason: report.supported_reason,
             };
         } catch (err) {
-            log.error('[RawConverterService] Failed to parse inspect JSON:', err, output);
+            log.error('[RawConverterService] Failed to parse inspect JSON');
             throw new Error(`Failed to parse inspection result for ${filePath}: ${String(err)}`);
         }
     }
@@ -200,7 +200,7 @@ export class RawConverterService {
             };
         } catch (err) {
             await fs.unlink(tempOutputPath).catch(() => {});
-            log.error('[RawConverterService] Conversion failed:', err);
+            log.error('[RawConverterService] Conversion failed');
             throw new Error(`Conversion failed for ${options.inputPath}: ${String(err)}`);
         }
     }
@@ -356,7 +356,7 @@ export class RawConverterService {
                 metadataIssues: rep.issues ?? [],
             };
         } catch (err) {
-            log.error('[RawConverterService] Failed to parse verify JSON:', err, output);
+            log.error('[RawConverterService] Failed to parse verify JSON');
             throw new Error(`Verification failed for ${dngPath}: ${String(err)}`);
         }
     }
@@ -400,7 +400,7 @@ export class RawConverterService {
 
     private execBinary(binaryPath: string, args: string[]): Promise<string> {
         return new Promise((resolve, reject) => {
-            log.info(`[RawConverterService] Spawning ${binaryPath} with args:`, args);
+            log.info(`[RawConverterService] Spawning indii-raw (${args.length} arguments)`);
 
             const proc = spawn(binaryPath, args, {
                 stdio: ['ignore', 'pipe', 'pipe'],

@@ -156,12 +156,11 @@ These are gallery/upload references, not desktop files. Match the requested labe
             try {
                 parsedResponse = JSON.parse(textResponse);
             } catch (_parseError: unknown) {
-                logger.warn('[indii:Orchestrator] Failed to parse JSON response:', textResponse);
+                logger.warn('[indii:Orchestrator] Failed to parse JSON response');
                 await TraceService.addStep(traceId, 'routing', {
                     selectedAgent: 'generalist',
                     ragCorpus: 'general',
-                    reasoning: 'JSON Parse Error, fallback to generalist',
-                    rawResponse: textResponse
+                    reasoning: 'JSON Parse Error, fallback to generalist'
                 });
                 await TraceService.completeTrace(traceId, { selectedAgent: 'generalist' });
                 return 'generalist';
