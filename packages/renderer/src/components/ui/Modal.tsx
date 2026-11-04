@@ -19,7 +19,7 @@
  */
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { isTopFocusTrap, useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface ModalProps {
@@ -49,6 +49,7 @@ export function Modal({ isOpen, onClose, titleId, descriptionId, children, maxWi
         priority: 'modal',
         ignoreInput: true,
         handler: (event) => {
+            if (!isTopFocusTrap(trapRef.current)) return;
             event.preventDefault();
             event.stopPropagation();
             onClose();

@@ -33,6 +33,10 @@ const FOCUSABLE_SELECTORS = [
 
 const activeTrapContainers: HTMLElement[] = [];
 
+export function isTopFocusTrap(container: HTMLElement | null): boolean {
+    return container !== null && activeTrapContainers.at(-1) === container;
+}
+
 export function useFocusTrap(isActive: boolean = true) {
     const containerRef = useRef<HTMLDivElement>(null);
     // Capture the trigger during render. React's autoFocus runs before layout
