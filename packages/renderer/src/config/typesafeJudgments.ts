@@ -1236,18 +1236,15 @@ export async function judgeStreamVelocityAnomaly(
         const hazardAns = result.data.answers?.dsp_penalty_hazard;
         const sevAns = result.data.answers?.severity;
 
-        if (!rootAns || typeof rootAns.choice !== 'string') return null;
+        if (!rootAns || typeof rootAns.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_ROOT_CAUSE_QUESTION.criteria, rootAns.choice)) return null;
 
         const rootCause = rootAns.choice as AnomalyRootCauseType;
-        const hazardProb = typeof hazardAns === 'number'
-            ? hazardAns
-            : Number((hazardAns as { noul?: unknown })?.noul);
+        const hazardProb = boundedJudgmentNumber(hazardAns, 'noul', 1);
+        const severityScore = boundedJudgmentNumber(sevAns, 'score', STREAM_ANOMALY_SEVERITY_QUESTION.criteria.length - 1);
+        if (hazardProb === null || severityScore === null) return null;
 
-        const severityScore = typeof sevAns === 'number'
-            ? sevAns
-            : Number((sevAns as { score?: unknown })?.score);
-
-        const dspPenaltyHazard = Number.isFinite(hazardProb) ? hazardProb >= 0.50 : false;
+        const dspPenaltyHazard = hazardProb >= 0.50;
 
         let recommendation = 'Track streaming shows healthy organic growth.';
         if (dspPenaltyHazard) {
@@ -1261,8 +1258,8 @@ export async function judgeStreamVelocityAnomaly(
         return {
             rootCause,
             dspPenaltyHazard,
-            hazardProbability: Number.isFinite(hazardProb) ? hazardProb : 0,
-            severityScore: Number.isFinite(severityScore) ? severityScore : 0,
+            hazardProbability: hazardProb,
+            severityScore,
             recommendation,
         };
     } catch (err: unknown) {

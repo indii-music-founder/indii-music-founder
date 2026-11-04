@@ -1050,6 +1050,31 @@ describe('judgeStreamVelocityAnomaly (Judgment 14)', () => {
             recommendation: 'Warning: Pattern flagged for artificial streaming risk. Contact distributor to verify traffic source.',
         });
     });
+
+    it.each([
+        { root_cause: { choice: 'unknown' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: null }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 1.2 }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: '0.05' }, severity: { score: 1 } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: null } },
+        { root_cause: { choice: 'organic_viral_surge' }, dsp_penalty_hazard: { noul: 0.05 }, severity: { score: 3.2 } },
+    ])('withholds a verdict when an answer is invalid: %j', async answers => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+        expect(await judgeStreamVelocityAnomaly('Track', 300)).toBeNull();
+    });
+
+    it('preserves a fractional severity score', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                root_cause: { choice: 'organic_viral_surge' },
+                dsp_penalty_hazard: { noul: 0.05 },
+                severity: { score: 1.5 },
+            } },
+        }));
+        expect((await judgeStreamVelocityAnomaly('Track', 300))?.severityScore).toBe(1.5);
+    });
 });
 
 describe('judgeFanToMerchSku (Judgment 15)', () => {
