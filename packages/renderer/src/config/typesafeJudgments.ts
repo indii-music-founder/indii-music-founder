@@ -4549,6 +4549,9 @@ export interface FanCommentVerdict {
     moderationFlag?: string;
 }
 
+export const COMMENT_MODERATION_APPROVAL_MIN = 0.7;
+export const COMMENT_MODERATION_INTENT_CONFIDENCE_MIN = 0.5;
+
 /**
  * TypeSafe System One (Jev) listener comment moderator:
  * Sub-50ms instant safety filter for track timeline comments and fan wall messages.
@@ -4582,7 +4585,15 @@ export async function judgeFanCommentModeration(
         fallbackScore = 5;
     }
 
+    const reviewVerdict = (): FanCommentVerdict => ({
+        intent: fallbackIntent,
+        isApproved: false,
+        vibeAlignmentScore: Math.min(fallbackScore, 3),
+        moderationFlag: fallbackFlag || 'Comment could not be checked. Please try again.',
+    });
+
     if (!judgmentsAvailable()) {
+        if (typesafeJudgmentsEnabled()) return reviewVerdict();
         return {
             intent: fallbackIntent,
             isApproved: fallbackApproved,
@@ -4636,34 +4647,24 @@ export async function judgeFanCommentModeration(
         });
 
         const ans = result?.data?.answers;
-        if (!ans) {
-            return {
-                intent: fallbackIntent,
-                isApproved: fallbackApproved,
-                vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag,
-            };
-        }
+        if (!ans) return reviewVerdict();
 
-        const intAns = ans?.intent as { choice?: unknown } | undefined;
+        const intAns = ans?.intent as { choice?: unknown; confidence?: unknown } | undefined;
         const appAns = ans?.approved as { noul?: unknown } | number | undefined;
         const vibAns = ans?.vibe as { score?: unknown } | number | undefined;
 
         const selectedIntent = intAns?.choice;
         const appProb = boundedJudgmentNumber(appAns, 'noul', 1);
-        const resolvedVibe = oneIndexedScore(vibAns, fallbackScore);
+        const resolvedVibe = oneIndexedScore(vibAns, 3);
 
-        if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent) || appProb === null) {
-            return {
-                intent: fallbackIntent,
-                isApproved: false,
-                vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag || 'Comment requires moderation review.',
-            };
-        }
+        if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent)
+            || typeof intAns?.confidence !== 'number' || !Number.isFinite(intAns.confidence)
+            || intAns.confidence < COMMENT_MODERATION_INTENT_CONFIDENCE_MIN || intAns.confidence > 1
+            || appProb === null) return reviewVerdict();
         const resolvedIntent = selectedIntent as CommentClassification;
 
-        const isApproved = fallbackApproved && appProb >= 0.5 && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
+        const isApproved = fallbackApproved && appProb >= COMMENT_MODERATION_APPROVAL_MIN
+            && resolvedIntent !== 'SPAM_PROMOTION' && resolvedIntent !== 'HARASSMENT_TOXIC';
 
         return {
             intent: resolvedIntent,
@@ -4673,12 +4674,7 @@ export async function judgeFanCommentModeration(
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'fan comment moderation judgment');
-        return {
-            intent: fallbackIntent,
-            isApproved: fallbackApproved,
-            vibeAlignmentScore: fallbackScore,
-            moderationFlag: fallbackFlag,
-        };
+        return reviewVerdict();
     }
 }
 
