@@ -76,8 +76,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/knowledge/upload.ts:29` | `createKnowledgeUpload` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:120` | `finalizeKnowledgeUpload` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:250` | `deleteKnowledgeDocument` | `onCall` | Present | Present |
-| `functions/marketing/adCampaignCallables.ts:220` | `executeUnifiedCampaignDirective` | `onCall` | Present | Present |
-| `functions/marketing/adCampaignCallables.ts:280` | `ingestUnifiedAttributionEvent` | `onCall` | Present | Present |
+| `functions/marketing/adCampaignCallables.ts:258` | `executeUnifiedCampaignDirective` | `onCall` | Present | Present |
+| `functions/marketing/adCampaignCallables.ts:318` | `ingestUnifiedAttributionEvent` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:130` | `getCanonicalClaimsInbox` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:154` | `declareCanonicalRightsClaim` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:178` | `respondToCanonicalRightsClaim` | `onCall` | Present | Present |
