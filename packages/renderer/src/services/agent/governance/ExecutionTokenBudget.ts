@@ -14,6 +14,18 @@ export class ExecutionTokenBudget {
         return Math.max(0, this.limit - this.consumed);
     }
 
+    get spent(): number {
+        return this.consumed;
+    }
+
+    /** Restores the highest durable spend without granting a fresh allowance. */
+    ensureSpentAtLeast(tokens: number): void {
+        if (!Number.isSafeInteger(tokens) || tokens < 0) {
+            throw new Error('Saved execution token usage is invalid');
+        }
+        this.consumed = Math.max(this.consumed, tokens);
+    }
+
     reserve(tokens: number): number | null {
         if (!Number.isSafeInteger(tokens) || tokens < 0 || tokens > this.remaining) return null;
         const id = ++this.nextReservation;

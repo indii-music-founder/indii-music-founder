@@ -183,11 +183,12 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(globalTool).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
             expect(result.data).toBe('ran ok');
-            // First updateDoc call marks 'approved' (before execution), second marks 'executed'.
-            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
+            // Approval, durable pre-dispatch claim, then result are distinct writes.
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(3);
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(1, expect.anything(), expect.objectContaining({ status: 'approved' }));
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'executed' }));
-            expect(mocks.updateDoc.mock.calls[1]?.[1]).toEqual({ status: 'executed', result: { success: true } });
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'claimed', claimedAt: 'server-timestamp' }));
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({ status: 'executed' }));
+            expect(mocks.updateDoc.mock.calls[2]?.[1]).toEqual({ status: 'executed', result: { success: true } });
         });
 
         it('refuses a pending record without the original renderer binding', async () => {
@@ -203,22 +204,56 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
             expect(result.error).toMatch(/sandbox crashed/);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'failed' }));
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({ status: 'failed' }));
         });
 
         it('records a returned tool failure as failed rather than executed', async () => {
             await bindApproval('execute_code', {}, vi.fn().mockResolvedValue({ success: false, error: 'Provider rejected the action' }));
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({
                 status: 'failed', result: { success: false, error: 'Provider rejected the action' },
             }));
+        });
+
+        it('never dispatches when the durable claim cannot be saved', async () => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            await bindApproval('execute_code', {}, execute);
+            mocks.updateDoc.mockImplementationOnce(() => undefined).mockRejectedValueOnce(new Error('database unavailable'));
+
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/tool was not run/i);
+            expect(execute).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
+        });
+
+        it('waits for the claim write to complete before invoking the tool', async () => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            await bindApproval('execute_code', {}, execute);
+            let releaseClaim!: () => void;
+            const claimSaved = new Promise<void>(resolve => { releaseClaim = resolve; });
+            mocks.updateDoc.mockImplementationOnce(() => undefined)
+                .mockImplementationOnce(() => claimSaved);
+
+            const approval = toolApprovalService.approve('approval-1');
+            await vi.waitFor(() => expect(mocks.updateDoc).toHaveBeenCalledWith(
+                expect.anything(), expect.objectContaining({ status: 'claimed' }),
+            ));
+            expect(execute).not.toHaveBeenCalled();
+
+            releaseClaim();
+            expect((await approval).success).toBe(true);
+            expect(execute).toHaveBeenCalledOnce();
         });
 
         it('reports an ambiguous outcome when final result recording fails after dispatch', async () => {
             const execute = vi.fn().mockResolvedValue({ success: true });
             await bindApproval('execute_code', {}, execute);
-            mocks.updateDoc.mockImplementationOnce(() => undefined).mockRejectedValueOnce(new Error('database unavailable'));
+            mocks.updateDoc.mockImplementationOnce(() => undefined)
+                .mockImplementationOnce(() => undefined)
+                .mockRejectedValueOnce(new Error('database unavailable'));
             const result = await toolApprovalService.approve('approval-1');
             expect(execute).toHaveBeenCalledOnce();
             expect(result.success).toBe(false);

@@ -12,7 +12,7 @@
  *    and Google Ads Enhanced Conversions with Firestore-backed idempotency.
  */
 
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
@@ -23,6 +23,7 @@ import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { protectAuthenticatedApiRequest } from '../security/arcjet';
 import {
     type IAdPlatformAdapter,
+    type UnifiedCampaignDirective,
     UnifiedAttributionEventSchema,
     UnifiedCampaignDirectiveSchema,
 } from '../../types/ad-execution.types';
@@ -144,6 +145,8 @@ export async function handleExecuteUnifiedCampaignDirective(
         adapters?: ReadonlyArray<IAdPlatformAdapter>;
         ledger?: FirestoreFinanceRecoupmentLedger;
         allocationJudge?: typeof evaluateCampaignAllocationWithJev;
+        executionDb?: FirebaseFirestore.Firestore;
+        claimExecution?: (directive: UnifiedCampaignDirective) => Promise<OrchestratedCampaignExecutionResult | null>;
         onReceiptPersist?: (result: OrchestratedCampaignExecutionResult) => Promise<void>;
     },
 ): Promise<OrchestratedCampaignExecutionResult> {
@@ -158,8 +161,40 @@ export async function handleExecuteUnifiedCampaignDirective(
         );
     }
 
+    const executionDb = deps?.executionDb ?? admin.firestore();
+    const executionRef = executionDb
+        .collection('users').doc(authenticatedUid)
+        .collection('programmaticCampaignExecutions').doc(parsedDirective.directiveId);
+    const requestHash = createHash('sha256').update(JSON.stringify(parsedDirective)).digest('hex');
+    const claimExecution = deps?.claimExecution ?? (async () => executionDb.runTransaction(async transaction => {
+        const existing = await transaction.get(executionRef);
+        if (!existing.exists) {
+            transaction.create(executionRef, {
+                artistId: authenticatedUid,
+                directiveId: parsedDirective.directiveId,
+                requestHash,
+                status: 'claimed',
+                claimedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            return null;
+        }
+
+        const recorded = existing.data();
+        if (recorded?.requestHash !== requestHash) {
+            throw new HttpsError('already-exists', 'Campaign directive ID was already used for different inputs. Review the existing execution before creating another.');
+        }
+        if (recorded.status === 'completed' && recorded.result) {
+            return recorded.result as OrchestratedCampaignExecutionResult;
+        }
+        throw new HttpsError('failed-precondition', 'Campaign directive outcome is unresolved. Check the execution record and provider accounts before retrying.');
+    }));
+
     const adapters =
         deps?.adapters ?? (await resolveArtistAdPlatformAdapters(authenticatedUid));
+    const registeredPlatforms = new Set(adapters.map(adapter => adapter.platform));
+    if (parsedDirective.platforms.some(platform => !registeredPlatforms.has(platform))) {
+        throw new HttpsError('failed-precondition', 'A requested ad platform is not connected. No campaign execution was claimed.');
+    }
     const ledger =
         deps?.ledger ??
         new FirestoreFinanceRecoupmentLedger({
@@ -175,18 +210,21 @@ export async function handleExecuteUnifiedCampaignDirective(
             allocationJudge(directive, priorTelemetry),
     });
 
+    // Claim before any ledger reservation or provider call. A duplicate unresolved
+    // directive is held for reconciliation, including after a process crash.
+    const previousResult = await claimExecution(parsedDirective);
+    if (previousResult) return previousResult;
+
     const result = await orchestrator.executeDirective(parsedDirective);
 
     if (deps?.onReceiptPersist) {
         await deps.onReceiptPersist(result);
     } else {
-        await admin
-            .firestore()
-            .collection('users')
-            .doc(authenticatedUid)
-            .collection('programmaticCampaignExecutions')
-            .doc(result.directiveId)
-            .set(result as unknown as Record<string, unknown>, { merge: true });
+        await executionRef.update({
+            status: 'completed',
+            result,
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
     }
 
     return result;
