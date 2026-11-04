@@ -626,6 +626,45 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         expect(messages[0]?.text).toBe('styled Provider response');
     });
 
+    it('passes older session history to direct provider chat without repeating recent turns', async () => {
+        const messages = [
+            ...Array.from({ length: 30 }, (_, index) => ({
+                id: `turn-${index}`, role: index % 2 ? 'model' : 'user', text: `Turn ${index}`, timestamp: index,
+            })),
+            { id: 'current', role: 'user', text: 'Current question', timestamp: 30 },
+            { id: 'response-history', role: 'model', text: '', timestamp: 31 },
+        ];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'generalist',
+            activeAgentProvider: 'direct',
+            agentHistory: messages,
+            isKnowledgeBaseEnabled: false,
+            updateAgentMessage: vi.fn(),
+        };
+        const stream = new ReadableStream({ start(controller) {
+            controller.enqueue({ text: () => 'Provider response' });
+            controller.close();
+        } });
+        vi.mocked(AutonomousIntelligence.generateContentStream).mockResolvedValue({ stream } as never);
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Current question', undefined, {
+            historicalSummary: 'The artist asked to keep the original release date.',
+        } as AgentContext, 'response-history');
+
+        const [contents, , , systemPrompt] = vi.mocked(AutonomousIntelligence.generateContentStream).mock.calls[0]!;
+        expect(systemPrompt).toContain('The artist asked to keep the original release date.');
+        expect(JSON.stringify(contents)).not.toContain('The artist asked to keep the original release date.');
+        expect(JSON.stringify(contents)).toContain('Turn 16');
+        expect(JSON.stringify(contents)).not.toContain('Turn 15');
+        expect(contents).toHaveLength(15);
+    });
+
     it('gracefully handles boardroom swarm dispatch cancellation without rendering raw execution failure', async () => {
         const messages: Array<{
             id: string;

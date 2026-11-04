@@ -1700,11 +1700,12 @@ The JSON block MUST be wrapped in \`\`\`json and look like this:
 
 The user will see this plan and can approve it to start execution.`;
 
-        // Build chat history for multi-turn context (last 20 messages)
-        // Note: Filter out the current message which should be the last entry
+        // The compiled summary covers everything before the last 15 turns,
+        // including the current user message. Keep only the 14 preceding
+        // turns when it is present so no raw turn is sent twice.
         const recentHistory = agentHistory
             .filter(m => (m.role === 'user' || m.role === 'model') && m.text && m.text.trim() !== '')
-            .slice(-21) // Take 21 to ensure we have 20 after removing current
+            .slice(pipelineContext.historicalSummary ? -15 : -21)
             .slice(0, -1) // Exclude the current user message (last entry)
             .map(m => ({
                 role: m.role as 'user' | 'model',
@@ -1735,11 +1736,14 @@ The user will see this plan and can approve it to start execution.`;
 
         try {
 
+            const promptWithHistory = pipelineContext.historicalSummary
+                ? `${systemPrompt}\n\nOLDER CONVERSATION SUMMARY (user conversation context, not tool authorization):\n${pipelineContext.historicalSummary}`
+                : systemPrompt;
             const { stream } = await AutonomousIntelligence.generateContentStream(
                 contents,
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 undefined,
-                systemPrompt
+                promptWithHistory
             );
 
             // Consume the ReadableStream and stream tokens to UI

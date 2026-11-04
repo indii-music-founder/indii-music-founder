@@ -32,6 +32,16 @@ describe('HistoryManager compaction', () => {
         expect(view).toContain('Turn 39');
     });
 
+    it('exposes only the older-turn summary for direct provider chat', async () => {
+        vi.mocked(useStore.getState).mockReturnValue({ agentHistory: messages(40), activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
+
+        const compiled = await new HistoryManager().getCompiledHistory();
+
+        expect(compiled.historicalSummary).toBe('Compressed prior turns');
+        expect(compiled.historicalSummary).not.toContain('Turn 39');
+        expect(compiled.view).toContain('Turn 39');
+    });
+
     it('summarizes only newly aged turns until the session or an old turn changes', async () => {
         const manager = new HistoryManager();
         let history = messages(30);
