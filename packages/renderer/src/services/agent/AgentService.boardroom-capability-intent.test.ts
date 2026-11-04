@@ -727,4 +727,89 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         expect(messages[0]?.isStreaming).toBe(false);
         expect((messages[0] as { thoughts?: Array<{ text: string }> }).thoughts?.[0]?.text).toBe('Discussion stopped by user');
     });
+
+    it('preserves a returned action receipt when cancellation arrives during dispatch', async () => {
+        const messages: Array<Record<string, unknown>> = [{ id: 'response-action', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            activeSessionId: null,
+            activeAgents: ['generalist'],
+            uploadedImages: [],
+            referencedAssets: [],
+            generatedHistory: [],
+            agentHistory: messages,
+            addActiveAgent: vi.fn(),
+            addAgentMessage: vi.fn((message: Record<string, unknown>) => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(item => item.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService();
+        const controller = new AbortController();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        (service as unknown as { orchestrator: object }).orchestrator = {
+            determineBoardroomIntent: vi.fn().mockResolvedValue('action'),
+            determineOrchestrationPath: vi.fn().mockResolvedValue({ type: 'graph', graph: {
+                nodes: [
+                    { id: 'save', agentId: 'generalist', taskTemplate: 'Save the artwork', waitCondition: 'all' },
+                    { id: 'publish', agentId: 'merchandise', taskTemplate: 'Publish the saved artwork', waitCondition: 'all' },
+                ],
+                edges: [{ sourceId: 'save', targetId: 'publish' }],
+            } }),
+        };
+        (service as unknown as { executor: object }).executor = {
+            execute: vi.fn(async () => {
+                controller.abort('User requested stop');
+                return { text: 'Action completed', toolCalls: [{ name: 'save_artwork', args: {}, result: { success: true, message: 'Artwork saved.' } }] };
+            }),
+        };
+
+        await (service as unknown as {
+            handleBoardroomRequestFlow: (task: { rawUserUtterance: string }, attachments: undefined,
+                context: AgentContext, responseId: string, signal: AbortSignal) => Promise<void>;
+        }).handleBoardroomRequestFlow({ rawUserUtterance: 'Save the artwork.' }, undefined, {}, 'response-action', controller.signal);
+
+        expect(messages[0]?.metadata).toMatchObject({ boardroomSteps: [{ status: 'completed' }, { status: 'skipped' }] });
+        expect(messages[0]?.text).toContain('Artwork saved.');
+        expect(messages[0]?.text).not.toContain('Step failed');
+        expect((service as unknown as { executor: { execute: ReturnType<typeof vi.fn> } }).executor.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports an unknown outcome when a dispatched action rejects', async () => {
+        const messages: Array<Record<string, unknown>> = [{ id: 'response-action', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            activeSessionId: null,
+            activeAgents: ['generalist'],
+            uploadedImages: [],
+            referencedAssets: [],
+            generatedHistory: [],
+            agentHistory: messages,
+            addActiveAgent: vi.fn(),
+            addAgentMessage: vi.fn((message: Record<string, unknown>) => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(item => item.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        (service as unknown as { orchestrator: object }).orchestrator = {
+            determineBoardroomIntent: vi.fn().mockResolvedValue('action'),
+            determineOrchestrationPath: vi.fn().mockResolvedValue({ type: 'single', agentId: 'generalist' }),
+        };
+        (service as unknown as { executor: object }).executor = {
+            execute: vi.fn(async () => { throw new Error('Connection lost after dispatch'); }),
+        };
+
+        await (service as unknown as {
+            handleBoardroomRequestFlow: (task: { rawUserUtterance: string }, attachments: undefined,
+                context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomRequestFlow({ rawUserUtterance: 'Save the artwork.' }, undefined, {}, 'response-action');
+
+        expect(messages[0]?.metadata).toMatchObject({ boardroomSteps: [{ status: 'uncertain' }] });
+        expect(messages[0]?.text).toContain('Action outcome unknown; check its effect before retrying');
+        expect(messages[0]?.text).not.toContain('Step failed');
+    });
 });
