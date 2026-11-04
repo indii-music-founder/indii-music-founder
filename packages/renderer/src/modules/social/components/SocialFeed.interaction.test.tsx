@@ -170,4 +170,26 @@ describe('SocialFeed Interaction: Send Button', () => {
             expect(mockCreatePost).toHaveBeenCalledWith('Post with media', ['https://example.com/brand-asset.jpg'], undefined);
         });
     });
+
+    it('shows a release post without inventing a streaming track or purchase controls', () => {
+        (useSocial as unknown as import('vitest').Mock).mockReturnValue({
+            posts: [{
+                id: 'post-1', authorId: 'user-123', authorName: 'Artist',
+                content: 'New song tonight 🎵 #Release', likes: 0, commentsCount: 0,
+                timestamp: Date.now(),
+            }],
+            isFeedLoading: false,
+            filter: 'all',
+            setFilter: mockSetFilter,
+            actions: { createPost: mockCreatePost },
+        });
+
+        render(<SocialFeed userId="user-123" />);
+
+        expect(screen.getByText('New song tonight 🎵 #Release')).toBeInTheDocument();
+        expect(screen.queryByText('Featured Release')).not.toBeInTheDocument();
+        expect(screen.queryByText('Now Streaming')).not.toBeInTheDocument();
+        expect(screen.queryByText('Cop Merch')).not.toBeInTheDocument();
+        expect(screen.queryByText('Tip Artist')).not.toBeInTheDocument();
+    });
 });
