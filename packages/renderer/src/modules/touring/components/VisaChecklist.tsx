@@ -158,7 +158,7 @@ export function VisaChecklist() {
         if (visaSession?.id) {
             clearAgentHistory(visaSession.id);
         }
-        toast.info("Advisor chat log cleared.");
+        toast.info("Clearing advisor chat log...");
     };
 
     const totalDocs = entries.reduce((sum, e) => sum + e.docs.length, 0);

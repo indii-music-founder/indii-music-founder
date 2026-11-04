@@ -46,6 +46,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         mockAppendMessage.mockResolvedValue(undefined);
+        mockUpdateMessage.mockResolvedValue(undefined);
         messageSubscribers.length = 0;
         sessionSubscribers.length = 0;
         // Create a fresh store for each test
@@ -123,6 +124,37 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
             'msg-1',
             expect.objectContaining({ text: 'New text' })
         );
+    });
+
+    it('marks a failed update unsaved without replacing a newer message value', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        store.addAgentMessage({ id: 'update-failure', role: 'model', text: 'Initial', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalled());
+        mockUpdateMessage.mockRejectedValueOnce(new Error('offline'))
+            .mockRejectedValueOnce(new Error('offline'))
+            .mockRejectedValueOnce(new Error('offline'));
+
+        store.updateAgentMessage('update-failure', { text: 'First edit' });
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(1));
+        store.updateAgentMessage('update-failure', { text: 'Latest edit' });
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(4), { timeout: 5000 });
+        expect(useStore.getState().sessions[sessionId].messages[0]).toMatchObject({
+            text: 'Latest edit', saveStatus: undefined,
+        });
+    });
+
+    it('shows the failed save state when the latest update exhausts retries', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        store.addAgentMessage({ id: 'latest-failure', role: 'model', text: 'Initial', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalled());
+        mockUpdateMessage.mockRejectedValue(new Error('offline'));
+
+        store.updateAgentMessage('latest-failure', { text: 'Unsaved edit' });
+        await vi.waitFor(() => expect(useStore.getState().sessions[sessionId].messages[0].saveStatus)
+            .toBe('failed'), { timeout: 5000 });
+        expect(useStore.getState().agentHistory[0].text).toBe('Unsaved edit');
     });
 
     it('persists response metadata only after append and in measurement order', async () => {

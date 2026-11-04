@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
+import { toast } from '@/core/context/ToastContext';
 import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
@@ -28,10 +29,12 @@ async function persistMessageWrite(
     operation: () => Promise<void>,
     label: string,
     onFailure?: () => void,
+    onSuccess?: () => void,
 ): Promise<void> {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
         try {
             await operation();
+            onSuccess?.();
             return;
         } catch (error) {
             if (attempt === 3) {
@@ -57,6 +60,7 @@ function enqueueMessageWrite(
     operation: () => Promise<void>,
     label: string,
     onFailure?: () => void,
+    onSuccess?: () => void,
 ): void {
     const key = messageWriteKey(sessionId, messageId);
     const previous = messageWriteChains.get(key) ?? Promise.resolve();
@@ -65,7 +69,7 @@ function enqueueMessageWrite(
         previous.catch(() => undefined),
         clearBarrier.catch(() => undefined),
     ])
-        .then(() => persistMessageWrite(operation, label, onFailure))
+        .then(() => persistMessageWrite(operation, label, onFailure, onSuccess))
         .finally(() => {
             if (messageWriteChains.get(key) === next) {
                 messageWriteChains.delete(key);
@@ -240,6 +244,19 @@ export function buildAgentSessionState(
         const messages = session.messages.map(message =>
             message.id === messageId ? { ...message, saveStatus: 'failed' as const } : message
         );
+        return {
+            sessions: { ...state.sessions, [sessionId]: { ...session, messages } },
+            ...(state.activeSessionId === sessionId ? { agentHistory: messages } : {}),
+        };
+    });
+
+    const setUpdateSaveStatus = (sessionId: string, messageId: string, updates: Partial<AgentMessage>, failed: boolean) => set(state => {
+        const session = state.sessions[sessionId];
+        const message = session?.messages.find(item => item.id === messageId);
+        if (!session || !message || !Object.entries(updates).every(([key, value]) =>
+            Object.is(message[key as keyof AgentMessage], value))) return {};
+        const messages = session.messages.map(item => item.id === messageId
+            ? { ...item, saveStatus: failed ? 'failed' as const : undefined } : item);
         return {
             sessions: { ...state.sessions, [sessionId]: { ...session, messages } },
             ...(state.activeSessionId === sessionId ? { agentHistory: messages } : {}),
@@ -501,9 +518,13 @@ export function buildAgentSessionState(
             // Streaming text-only updates stay concurrent to avoid building a
             // token-by-token persistence backlog.
             if ('metadata' in updates) {
-                enqueueMessageWrite(sessionId, id, persistUpdate, 'Message metadata update');
+                enqueueMessageWrite(sessionId, id, persistUpdate, 'Message metadata update',
+                    () => setUpdateSaveStatus(sessionId, id, updates, true),
+                    () => setUpdateSaveStatus(sessionId, id, updates, false));
             } else {
-                void persistMessageWrite(persistUpdate, 'Message update');
+                void persistMessageWrite(persistUpdate, 'Message update',
+                    () => setUpdateSaveStatus(sessionId, id, updates, true),
+                    () => setUpdateSaveStatus(sessionId, id, updates, false));
             }
 
             return {
@@ -575,7 +596,9 @@ export function buildAgentSessionState(
                 .then(() => persistMessageWrite(async () => {
                     const { sessionService } = await import('@/services/agent/SessionService');
                     await sessionService.clearMessages(targetSessionId);
-                }, 'Clear history'))
+                }, 'Clear history', () => {
+                    toast.error('Chat history could not be cleared. Try Clear chat again.');
+                }))
                 .finally(() => {
                     if (sessionClearChains.get(targetSessionId) === clear) {
                         sessionClearChains.delete(targetSessionId);
