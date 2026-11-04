@@ -1924,9 +1924,10 @@ The user will see this plan and can approve it to start execution.`;
         // to prevent indefinite workflow orchestration hangs.
         const timeoutController = new AbortController();
         const timeoutMs = 300 * 1000;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
         
         const timeoutPromise = new Promise<{ text: string; thoughtSignature?: string }>((_, reject) => {
-            setTimeout(() => {
+            timeoutId = setTimeout(() => {
                 logger.error(`[AgentService] Timeout: Agent ${agentId} took longer than 5 minutes to complete.`);
                 timeoutController.abort(new Error(`Agent ${agentId} execution timed out.`));
                 reject(new Error(`Agent ${agentId} execution timed out after ${timeoutMs / 1000}s.`));
@@ -1949,7 +1950,11 @@ The user will see this plan and can approve it to start execution.`;
             throw err;
         });
 
-        return await Promise.race([executePromise, timeoutPromise]);
+        try {
+            return await Promise.race([executePromise, timeoutPromise]);
+        } finally {
+            if (timeoutId !== undefined) clearTimeout(timeoutId);
+        }
     }
 
     /**
