@@ -7266,145 +7266,83 @@ export async function judgeStemSeparationAcousticPurity(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 63: Advance Recoupment Pace & Risk Forecaster (Domain: Finance & Legal)
+// Judgment 63: Advance Recoupment Run Rate (Domain: Finance & Legal)
 // ---------------------------------------------------------------------------
 
 export interface ContractRecoupmentInput {
     advanceAmount: number;
     recoupedAmount: number;
     monthlyStreamingNetRevenue: number;
+    /** Retained for caller compatibility; a release date does not establish when a contract term began. */
     monthsSinceRelease: number;
+    /** Retained for caller compatibility; term length alone cannot determine recoupment risk. */
     contractTermMonths?: number;
 }
 
 export interface ContractRecoupmentVerdict {
-    recoupmentPace: 'FAST_TRACK' | 'HEALTHY_ON_SCHEDULE' | 'UNDERWATER_HAZARD';
-    estimatedMonthsToFullRecoup: number;
-    riskScore: number; // 1 to 5 (5 = severe underwater deal debt)
-    strategicRecommendation: string;
+    status: 'ADVANCE_COVERED' | 'RUN_RATE_AVAILABLE' | 'NO_CURRENT_STREAMING_RUN_RATE';
+    /** Straight-line streaming-only scenario; null means no finite projection. */
+    monthsToCoverRemainingAdvanceAtCurrentRate: number | null;
+    projectionNote: string;
 }
 
 export async function judgeContractRecoupmentPace(
     input: ContractRecoupmentInput
 ): Promise<ContractRecoupmentVerdict> {
-    const unrecouped = Math.max(0, input.advanceAmount - input.recoupedAmount);
-    const monthlyNet = Math.max(1, input.monthlyStreamingNetRevenue);
-    const termMonths = input.contractTermMonths || 36;
-
-    const runRateMonths = Math.ceil(unrecouped / monthlyNet);
-
-    let pace: ContractRecoupmentVerdict['recoupmentPace'] = 'HEALTHY_ON_SCHEDULE';
-    let risk = 2;
-    let recommendation = 'Streaming cash flow is pacing within healthy amortization parameters.';
-
-    if (unrecouped === 0) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = 'Fully recouped! All future net royalties flow directly to artist payout.';
-    } else if (runRateMonths <= termMonths * 0.5) {
-        pace = 'FAST_TRACK';
-        risk = 1;
-        recommendation = `Rapid velocity: estimated full recoupment in ${runRateMonths} months, well ahead of contract term.`;
-    } else if (runRateMonths > termMonths) {
-        pace = 'UNDERWATER_HAZARD';
-        risk = 5;
-        recommendation = `Deal is underwater. At current pace ($${monthlyNet.toFixed(0)}/mo), recoupment will require ${runRateMonths} months, exceeding contract term (${termMonths} mos). Consider releasing a remix pack or renegotiating distribution fees.`;
-    } else if (runRateMonths > termMonths * 0.8) {
-        pace = 'HEALTHY_ON_SCHEDULE';
-        risk = 3;
-        recommendation = `Tight margin: estimated recoupment in ${runRateMonths} months near the end of the ${termMonths}-month term.`;
+    const { advanceAmount, recoupedAmount, monthlyStreamingNetRevenue, monthsSinceRelease, contractTermMonths } = input;
+    if (
+        !Number.isFinite(advanceAmount) || advanceAmount < 0 ||
+        !Number.isFinite(recoupedAmount) || recoupedAmount < 0 ||
+        !Number.isFinite(monthlyStreamingNetRevenue) ||
+        !Number.isFinite(monthsSinceRelease) || monthsSinceRelease < 0 ||
+        (contractTermMonths !== undefined && (!Number.isFinite(contractTermMonths) || contractTermMonths <= 0))
+    ) {
+        throw new RangeError('Recoupment inputs must be finite, advances and elapsed months non-negative, and contract terms positive.');
     }
 
-    if (!judgmentsAvailable()) {
+    const remainingAdvance = Math.max(0, advanceAmount - recoupedAmount);
+    if (remainingAdvance === 0) {
         return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'ADVANCE_COVERED',
+            monthsToCoverRemainingAdvanceAtCurrentRate: 0,
+            projectionNote: 'The recorded recoupment covers the advance. Check the contract ledger for other recoupable costs before treating royalties as payable.',
         };
     }
 
-    try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: {
-                advance: input.advanceAmount,
-                recouped: input.recoupedAmount,
-                unrecouped,
-                monthlyNet,
-                monthsActive: input.monthsSinceRelease,
-                termMonths,
-                runRateMonths,
-            },
-            questions: {
-                pace_status: {
-                    type: 'choice' as const,
-                    instructions: 'Classify financial recoupment velocity against industry norms.',
-                    criteria: {
-                        FAST_TRACK: 'Recouping significantly faster than expected, releasing artist royalty payments early.',
-                        HEALTHY_ON_SCHEDULE: 'Pacing within expected amortization window.',
-                        UNDERWATER_HAZARD: 'Severe shortfall where advance will not recoup before contract renewal/term end.',
-                    },
-                },
-                underwater_risk_score: {
-                    type: 'score' as const,
-                    instructions: 'Rate financial underwater deal risk from 1 (safe/profitable) to 5 (extreme unrecouped debt trap).',
-                    criteria: [
-                        'Zero financial risk — deal already recouped or nearly clear.',
-                        'Low risk — strong streaming velocity ensures comfortable clearance.',
-                        'Moderate risk — reliant on sustained streaming catalog stability.',
-                        'Elevated risk — streaming decay threatens timely debt clearance.',
-                        'Critical risk — artist trapped in perpetual unrecouped ledger balance.',
-                    ],
-                },
-            },
-        });
-
-        const ans = result.data.answers;
-        const paceAns = ans?.pace_status as { choice?: unknown } | undefined;
-        const riskAns = ans?.underwater_risk_score as { score?: unknown } | number | undefined;
-
-        const resolvedPace = (typeof paceAns?.choice === 'string' ? paceAns.choice : pace) as ContractRecoupmentVerdict['recoupmentPace'];
-        const resolvedRisk = oneIndexedScore(riskAns, risk);
-
+    // A model cannot infer contract terms or industry norms from these four numbers.
+    // Only calculate the scenario where this entire monthly streaming net remains available for recoupment.
+    const monthsAtCurrentRate = monthlyStreamingNetRevenue > 0
+        ? Math.ceil(remainingAdvance / monthlyStreamingNetRevenue)
+        : null;
+    if (monthsAtCurrentRate === null || !Number.isFinite(monthsAtCurrentRate)) {
         return {
-            recoupmentPace: resolvedPace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: Math.min(5, Math.max(1, Math.round(resolvedRisk))),
-            strategicRecommendation: recommendation,
-        };
-    } catch (err: unknown) {
-        noteJudgmentFailure(err, 'contract recoupment pace judgment');
-        return {
-            recoupmentPace: pace,
-            estimatedMonthsToFullRecoup: runRateMonths,
-            riskScore: risk,
-            strategicRecommendation: recommendation,
+            status: 'NO_CURRENT_STREAMING_RUN_RATE',
+            monthsToCoverRemainingAdvanceAtCurrentRate: null,
+            projectionNote: 'No finite streaming-only projection is available at the current monthly net rate. Other revenue, costs, and contract terms are not assessed.',
         };
     }
+
+    return {
+        status: 'RUN_RATE_AVAILABLE',
+        monthsToCoverRemainingAdvanceAtCurrentRate: monthsAtCurrentRate,
+        projectionNote: `If the entire current monthly net streaming amount remains available for recoupment, the remaining advance would take ${monthsAtCurrentRate} months to cover. Other revenue, costs, and contract terms are not assessed.`,
+    };
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 64: Direct-to-Fan Email Subject Line Optimizer (Domain: Marketing)
+// Judgment 64: Direct-to-Fan Email Subject Line Copy Review (Domain: Marketing)
 // ---------------------------------------------------------------------------
 
 export interface EmailSubjectInput {
     subjectLine: string;
     campaignType: 'MERCH_DROP' | 'TOUR_ANNOUNCEMENT' | 'SINGLE_RELEASE' | 'EXCLUSIVE_CONTENT';
-    recipientCount?: number;
 }
 
 export interface EmailSubjectVerdict {
-    openRateScore: number; // 1 to 5
-    isSpamTriggerRisk: boolean;
+    copyQualityScore: number; // 1 to 5; qualitative copy review, not an open-rate estimate
+    hasSpamStyleSignal: boolean;
     urgencyLevel: 'HEALTHY_ANTICIPATION' | 'OVERHYPED_SPAMMY' | 'PASSIVE_BLAND';
     suggestedSubjectLine: string;
-    predictedOpenRatePercent: number;
 }
 
 export async function judgeDirectToFanEmailSubjectLine(
@@ -7413,7 +7351,7 @@ export async function judgeDirectToFanEmailSubjectLine(
     const text = input.subjectLine.trim();
 
     const isAllCaps = text.length > 5 && text === text.toUpperCase();
-    const spamWordMatch = /\b(free|\$\$\$|act now|limited time|guaranteed|winner|urgent|100%|buy now)\b/i.test(text);
+    const spamWordMatch = /\b(free|act now|limited time|guaranteed|winner|urgent|buy now)\b|\$\$\$|100%/i.test(text);
     const hasSpamRisk = isAllCaps || spamWordMatch;
 
     let urgency: EmailSubjectVerdict['urgencyLevel'] = 'HEALTHY_ANTICIPATION';
@@ -7421,34 +7359,28 @@ export async function judgeDirectToFanEmailSubjectLine(
     else if (text.length < 15 || !/new|drop|tonight|live|presave|ticket|vinyl/i.test(text)) urgency = 'PASSIVE_BLAND';
 
     let fallbackScore = 3;
-    let predictedRate = 34.0;
     if (hasSpamRisk) {
         fallbackScore = 1;
-        predictedRate = 14.5;
     } else if (urgency === 'HEALTHY_ANTICIPATION' && text.length >= 25 && text.length <= 60) {
         fallbackScore = 5;
-        predictedRate = 48.5;
     } else if (urgency === 'PASSIVE_BLAND') {
         fallbackScore = 2;
-        predictedRate = 22.0;
     }
 
-    let suggestion = text;
-    if (input.campaignType === 'MERCH_DROP' && hasSpamRisk) {
-        suggestion = 'Limited Edition Vinyl & Hoodies — Official Release Now Live';
-    } else if (input.campaignType === 'TOUR_ANNOUNCEMENT') {
-        suggestion = 'Detroit to NYC: Fall Tour Dates & Artist Presale Access';
-    } else if (input.campaignType === 'SINGLE_RELEASE') {
-        suggestion = 'My new single is out everywhere at midnight (listen first)';
-    }
+    const safeSuggestion = {
+        MERCH_DROP: 'New merch is here',
+        TOUR_ANNOUNCEMENT: 'New tour dates are here',
+        SINGLE_RELEASE: 'Listen to the new single',
+        EXCLUSIVE_CONTENT: 'An update for you',
+    }[input.campaignType];
+    const suggestion = hasSpamRisk ? safeSuggestion : text;
 
     if (!judgmentsAvailable()) {
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 
@@ -7463,54 +7395,53 @@ export async function judgeDirectToFanEmailSubjectLine(
             state: {
                 subject: text.slice(0, 150),
                 type: input.campaignType,
-                recipients: input.recipientCount || 1000,
             },
             questions: {
-                open_rate_potential: {
+                copy_quality: {
                     type: 'score' as const,
-                    instructions: 'Score the open-rate conversion strength of this email subject line from 1 to 5.',
+                    instructions: 'Rate the clarity and appeal of this subject line as copy. Do not predict open rates or email deliverability.',
                     criteria: [
-                        'High probability of spam filter quarantine or aggressive subscriber unsubscriptions.',
-                        'Bland or passive copy with below-average expected open rates.',
-                        'Standard competent notification subject line.',
-                        'Compelling artist-to-fan direct voice with high open anticipation.',
-                        'Exceptional subject line with curiosity gap and authentic high engagement.',
+                        'Confusing or pressuring copy.',
+                        'Generic copy with little useful detail.',
+                        'Clear, serviceable notification.',
+                        'Specific, engaging artist-to-fan voice.',
+                        'Especially clear and engaging copy.',
                     ],
                 },
-                spam_filter_risk: {
+                spam_style_signal: {
                     type: 'noul' as const,
-                    instructions: 'Does this subject line trigger ISP email spam filters (excessive punctuation, ALL CAPS, spam keywords)?',
+                    instructions: 'Does this subject line use obvious spam-style formatting or pressure language? Assess text only, not ISP filtering.',
                     criteria: {
-                        true: 'High risk of inbox spam tab placement.',
-                        false: 'Clean subject line that passes standard DMARC/spam filter evaluation.',
+                        true: 'Uses all caps, excessive punctuation, or pressure language.',
+                        false: 'Does not show those text patterns.',
                     },
                 },
             },
         });
 
         const ans = result.data.answers;
-        const scAns = ans?.open_rate_potential as { score?: unknown } | number | undefined;
-        const spAns = ans?.spam_filter_risk as { probability?: unknown } | undefined;
-
-        const resolvedScore = oneIndexedScore(scAns, fallbackScore);
-        const spamProb = typeof spAns?.probability === 'number' ? spAns.probability : (hasSpamRisk ? 0.8 : 0.1);
-        const finalSpam = spamProb >= 0.5;
+        const scAns = ans?.copy_quality as { score?: unknown } | undefined;
+        const spAns = ans?.spam_style_signal as { probability?: unknown } | undefined;
+        const rawScore = scAns?.score;
+        const rawSpamProb = spAns?.probability;
+        const validScore = typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4;
+        const validSpamProb = typeof rawSpamProb === 'number' && Number.isFinite(rawSpamProb) && rawSpamProb >= 0 && rawSpamProb <= 1;
+        const resolvedScore = validScore ? rawScore + 1 : fallbackScore;
+        const finalSpam = hasSpamRisk || (validSpamProb && rawSpamProb >= 0.5);
 
         return {
-            openRateScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
-            isSpamTriggerRisk: finalSpam,
+            copyQualityScore: finalSpam ? Math.min(2, Math.round(resolvedScore)) : Math.round(resolvedScore),
+            hasSpamStyleSignal: finalSpam,
             urgencyLevel: finalSpam ? 'OVERHYPED_SPAMMY' : (resolvedScore >= 4 ? 'HEALTHY_ANTICIPATION' : 'PASSIVE_BLAND'),
-            suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: Math.round(15 + resolvedScore * 7.5),
+            suggestedSubjectLine: finalSpam ? safeSuggestion : text,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'direct-to-fan email subject line judgment');
         return {
-            openRateScore: fallbackScore,
-            isSpamTriggerRisk: hasSpamRisk,
+            copyQualityScore: fallbackScore,
+            hasSpamStyleSignal: hasSpamRisk,
             urgencyLevel: urgency,
             suggestedSubjectLine: suggestion,
-            predictedOpenRatePercent: predictedRate,
         };
     }
 }
@@ -7536,6 +7467,98 @@ export interface StreamingFraudVerdict {
 export async function judgeStreamingFraudRisk(
     input: StreamingFraudInput
 ): Promise<StreamingFraudVerdict> {
+    const isBottingIndicators = input.skipRatePercent > 75 && input.savesPerStreamRatio < 0.005 && input.velocityRatio > 4.0;
+    const isOrganicSaves = input.savesPerStreamRatio >= 0.04;
+
+    let rootCause: StreamingFraudVerdict['rootCause'] = 'ORGANIC_VIRAL';
+    let fraudProb = 0.08;
+    let penaltyHazard = false;
+    let guidance = 'Organic listener growth detected. Maintain campaign velocity.';
+
+    if (isBottingIndicators) {
+        rootCause = 'BOTTING_FARM_HAZARD';
+        fraudProb = 0.92;
+        penaltyHazard = true;
+        guidance = 'CRITICAL: High probability of bot stream farm attack. High skip rate and near-zero save ratio risk DSP strikes ($10/track Spotify penalty) or catalog takedown. Immediately notify your distributor.';
+    } else if (input.velocityRatio > 8.0 && isOrganicSaves) {
+        rootCause = 'ORGANIC_VIRAL';
+        fraudProb = 0.05;
+        penaltyHazard = false;
+        guidance = 'Healthy viral surge: strong listener saves (>4%) validate legitimate fan discovery.';
+    } else if (input.skipRatePercent < 35 && input.velocityRatio > 2.0) {
+        rootCause = 'EDITORIAL_PLAYLIST';
+        fraudProb = 0.02;
+        penaltyHazard = false;
+        guidance = 'Streaming profile matches verified DSP editorial or algorithmic radio playlist addition.';
+    }
+
+    const fallback = (): StreamingFraudVerdict => ({
+        rootCause,
+        dspPenaltyHazard: penaltyHazard,
+        fraudProbability: fraudProb,
+        actionGuidance: guidance,
+    });
+
+    // The concrete high-skip, low-save signal cannot be cleared by a semantic judgment.
+    if (!judgmentsAvailable() || isBottingIndicators) return fallback();
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                title: input.trackTitle.slice(0, 150),
+                velocity: input.velocityRatio,
+                skipRate: input.skipRatePercent,
+                country: input.primaryCountryCode,
+                savesRatio: input.savesPerStreamRatio,
+            },
+            questions: {
+                cause: {
+                    type: 'choice' as const,
+                    instructions: 'Diagnose the root cause of this sudden streaming velocity spike.',
+                    criteria: {
+                        ORGANIC_VIRAL: 'Legitimate social discovery with high listener engagement and saves.',
+                        EDITORIAL_PLAYLIST: 'Official DSP editorial or radio playlist placement with sustained completion rate.',
+                        ALGORITHMIC_RADIO: 'Release Radar or Discover Weekly algorithmic recommendation.',
+                        BOTTING_FARM_HAZARD: 'Server-center bot farm traffic with extreme skip rates and abnormal repeat loops.',
+                        DISTRIBUTOR_REPORTING_BATCH: 'Multi-month backlogged distributor settlement posted as a single batch.',
+                    },
+                },
+                penalty_risk: {
+                    type: 'noul' as const,
+                    instructions: 'Does this streaming surge represent actionable risk of DSP artificial stream penalties or takedowns?',
+                    criteria: {
+                        true: 'High risk of artificial streaming fee or catalog takedown.',
+                        false: 'Legitimate listener traffic safe from DSP penalties.',
+                    },
+                },
+            },
+        });
+
+        const ans = result.data.answers;
+        const causeAns = ans?.cause as { choice?: unknown } | undefined;
+        const prob = boundedJudgmentNumber(ans?.penalty_risk, 'noul', 1);
+        if (typeof causeAns?.choice !== 'string' || !STREAMING_FRAUD_CAUSES.has(causeAns.choice) || prob === null) {
+            return fallback();
+        }
+        const resolvedCause = causeAns.choice as StreamingFraudVerdict['rootCause'];
+        if (resolvedCause === 'BOTTING_FARM_HAZARD' && prob < 0.5) return fallback();
+
+        return {
+            rootCause: resolvedCause,
+            dspPenaltyHazard: prob >= 0.5,
+            fraudProbability: prob,
+            actionGuidance: prob >= 0.5 ? 'Possible artificial streaming risk. Contact your distributor to review the traffic.' : guidance,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'streaming fraud risk judgment');
+        return fallback();
+    }
     const { velocityRatio, skipRatePercent, savesPerStreamRatio } = input;
     if (
         !Number.isFinite(velocityRatio) || velocityRatio < 0 ||
