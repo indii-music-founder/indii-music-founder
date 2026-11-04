@@ -4707,6 +4707,12 @@ describe('Judgment 68: Contextual Next-Best Module Navigation (judgeNextBestModu
 });
 
 describe('Judgment 69: Video Treatment Intent & Aspect Ratio Matcher (judgeVideoTreatmentIntent)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
     it('derives 9:16 vertical and viral performance treatment offline', async () => {
         mocks.enabled.mockReturnValue(false);
 
@@ -4751,6 +4757,36 @@ describe('Judgment 69: Video Treatment Intent & Aspect Ratio Matcher (judgeVideo
 
         expect(result.aspectRatio).toBe('9:16');
         expect(result.treatment).toBe('GLITCH_CYBERPUNK');
+    });
+
+    it('keeps neon and glitch direction without inventing a cyberpunk setting', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeVideoTreatmentIntent({ prompt: 'Glitch cuts under neon stage lights' });
+        expect(result.treatment).toBe('DIGITAL_GLITCH');
+        expect(result.fps).toBe(24);
+    });
+
+    it('offers cyberpunk only for an explicit brief and rejects undeclared Jev choices', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({
+            data: { answers: { ratio: { choice: 'constructor' }, style: { choice: 'GLITCH_CYBERPUNK' } } },
+        }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeVideoTreatmentIntent({ prompt: 'Neon stage lights for a live performance' });
+        const request = judge.mock.calls[0]?.[0] as { questions: { style: { criteria: Record<string, string> } } };
+        expect(request.questions.style.criteria).not.toHaveProperty('GLITCH_CYBERPUNK');
+        expect(result.aspectRatio).toBe('16:9');
+        expect(result.treatment).toBe('DIGITAL_GLITCH');
+
+        mocks.httpsCallable.mockReset();
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { ratio: { choice: '9:16' }, style: { choice: 'constructor' } } },
+        }));
+        const invalid = await judgeVideoTreatmentIntent({ prompt: 'A clean performance for reels' });
+        expect(invalid.treatment).toBe('VIRAL_PERFORMANCE');
+        expect(invalid.aspectRatio).toBe('9:16');
     });
 });
 

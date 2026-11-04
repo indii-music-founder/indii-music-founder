@@ -7825,7 +7825,7 @@ export interface VideoPromptIntentInput {
 
 export interface VideoPromptIntentVerdict {
     aspectRatio: '9:16' | '16:9' | '1:1';
-    treatment: 'CINEMATIC_NARRATIVE' | 'VIRAL_PERFORMANCE' | 'LOFI_AESTHETIC' | 'GLITCH_CYBERPUNK' | 'CLEAN_MINIMAL';
+    treatment: 'CINEMATIC_NARRATIVE' | 'VIRAL_PERFORMANCE' | 'LOFI_AESTHETIC' | 'DIGITAL_GLITCH' | 'GLITCH_CYBERPUNK' | 'CLEAN_MINIMAL';
     fps: 24 | 30 | 60;
     rationale: string;
 }
@@ -7833,7 +7833,9 @@ export interface VideoPromptIntentVerdict {
 export async function judgeVideoTreatmentIntent(
     input: VideoPromptIntentInput
 ): Promise<VideoPromptIntentVerdict> {
+    const prompt = input.prompt.toLowerCase();
     const text = (input.prompt + ' ' + (input.targetPlatform || '')).toLowerCase();
+    const cyberpunkRequested = prompt.includes('cyberpunk');
 
     let aspectRatio: VideoPromptIntentVerdict['aspectRatio'] = '16:9';
     let treatment: VideoPromptIntentVerdict['treatment'] = 'CLEAN_MINIMAL';
@@ -7845,8 +7847,11 @@ export async function judgeVideoTreatmentIntent(
         aspectRatio = '1:1';
     }
 
-    if (text.includes('cyberpunk') || text.includes('glitch') || text.includes('neon') || text.includes('synthwave')) {
+    if (cyberpunkRequested) {
         treatment = 'GLITCH_CYBERPUNK';
+        fps = 24;
+    } else if (text.includes('glitch') || text.includes('neon') || text.includes('synthwave')) {
+        treatment = 'DIGITAL_GLITCH';
         fps = 24;
     } else if (text.includes('lofi') || text.includes('vhs') || text.includes('analog') || text.includes('vintage') || text.includes('grain')) {
         treatment = 'LOFI_AESTHETIC';
@@ -7897,7 +7902,8 @@ export async function judgeVideoTreatmentIntent(
                         CINEMATIC_NARRATIVE: 'Film grain, anamorphic lens curves, 24fps movie camera framing.',
                         VIRAL_PERFORMANCE: 'Punchy high-contrast lighting, rapid jump cuts, high energy.',
                         LOFI_AESTHETIC: 'VHS tape tracking lines, warm color temperature, nostalgic blur.',
-                        GLITCH_CYBERPUNK: 'Chromatic aberration, fluorescent neon glow, digital artifacts.',
+                        DIGITAL_GLITCH: 'Digital artifacts, scan lines, and chromatic aberration without a prescribed setting.',
+                        ...(cyberpunkRequested ? { GLITCH_CYBERPUNK: 'The artist explicitly requested a cyberpunk setting with fluorescent neon and digital artifacts.' } : {}),
                         CLEAN_MINIMAL: 'Neutral balanced lighting, pristine typography, smooth modern transitions.',
                     },
                 },
@@ -7909,12 +7915,18 @@ export async function judgeVideoTreatmentIntent(
         const styleAns = ans?.style as { choice?: unknown } | undefined;
 
         const resolvedRatio = (ratioAns?.choice === '9:16' || ratioAns?.choice === '16:9' || ratioAns?.choice === '1:1' ? ratioAns.choice : aspectRatio) as VideoPromptIntentVerdict['aspectRatio'];
-        const resolvedStyle = (typeof styleAns?.choice === 'string' ? styleAns.choice : treatment) as VideoPromptIntentVerdict['treatment'];
+        const allowedStyles: VideoPromptIntentVerdict['treatment'][] = [
+            'CINEMATIC_NARRATIVE', 'VIRAL_PERFORMANCE', 'LOFI_AESTHETIC',
+            'DIGITAL_GLITCH', 'CLEAN_MINIMAL',
+            ...(cyberpunkRequested ? ['GLITCH_CYBERPUNK' as const] : []),
+        ];
+        const resolvedStyle = allowedStyles.find(style => style === styleAns?.choice) ?? treatment;
 
         return {
             aspectRatio: resolvedRatio,
             treatment: resolvedStyle,
-            fps: resolvedStyle === 'CINEMATIC_NARRATIVE' || resolvedStyle === 'LOFI_AESTHETIC' ? 24 : 30,
+            fps: resolvedStyle === 'CINEMATIC_NARRATIVE' || resolvedStyle === 'LOFI_AESTHETIC' ||
+                resolvedStyle === 'DIGITAL_GLITCH' || resolvedStyle === 'GLITCH_CYBERPUNK' ? 24 : 30,
             rationale: `Jev Video Intent: configured for ${resolvedStyle} style in ${resolvedRatio} aspect ratio.`,
         };
     } catch (err: unknown) {
