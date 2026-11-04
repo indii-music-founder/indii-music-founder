@@ -75,10 +75,10 @@ export function DropdownMenuCheckboxItem({
 }: ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
     return (
         <DropdownMenuPrimitive.CheckboxItem
-            className={`relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none transition-colors data-highlighted:bg-white/5 data-state-checked:text-white ${className}`}
+            className={`group relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none transition-colors data-highlighted:bg-white/5 data-[state=checked]:text-white ${className}`}
             {...props}
         >
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gray-600 data-state-checked:border-blue-500 data-state-checked:bg-blue-500/20">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gray-600 group-data-[state=checked]:border-blue-500 group-data-[state=checked]:bg-blue-500/20">
                 <DropdownMenuPrimitive.ItemIndicator>
                     <Check size={12} className="text-blue-400" />
                 </DropdownMenuPrimitive.ItemIndicator>
