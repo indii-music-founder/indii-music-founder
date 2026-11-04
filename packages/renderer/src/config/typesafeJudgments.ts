@@ -2693,11 +2693,22 @@ export interface AgentActionRiskResult {
 export async function judgeAgentActionRisk(
     payload: AgentActionPayload
 ): Promise<AgentActionRiskResult> {
+    const requireConfirmation = (): AgentActionRiskResult => ({
+        verdict: 'REQUIRE_CONFIRMATION',
+        riskScore: 2,
+        hazardDetected: false,
+    });
+
     // Deterministic fallback boundaries (Hard caps)
     const fallbackRisk = (): AgentActionRiskResult => {
-        const spendDelta = payload.proposedSpendDeltaCents || 0;
-        const currentDaily = payload.currentDailySpendCents || 0;
-        const recipients = payload.recipientCount || 0;
+        const spendDelta = payload.proposedSpendDeltaCents ?? 0;
+        const currentDaily = payload.currentDailySpendCents ?? 0;
+        const recipients = payload.recipientCount ?? 0;
+
+        if (!Number.isSafeInteger(spendDelta) || !Number.isSafeInteger(currentDaily) ||
+            !Number.isSafeInteger(recipients) || currentDaily < 0 || recipients < 0) {
+            return requireConfirmation();
+        }
 
         if (spendDelta > 100_000 || currentDaily + spendDelta > 250_000) {
             return {
@@ -2722,9 +2733,9 @@ export async function judgeAgentActionRisk(
         };
     };
 
-    if (!judgmentsAvailable()) {
-        return fallbackRisk();
-    }
+    const deterministic = fallbackRisk();
+    if (deterministic.verdict === 'CIRCUIT_BREAKER_TRIP' || !typesafeJudgmentsEnabled()) return deterministic;
+    if (!judgmentsAvailable()) return requireConfirmation();
 
     try {
         const functions = getFunctions();
@@ -2758,15 +2769,18 @@ export async function judgeAgentActionRisk(
 
         const ans = result.data.answers;
         const verdAns = ans?.verdict as { choice?: unknown } | undefined;
-        const hazAns = ans?.hazard as { probability?: unknown } | undefined;
-
-        const choice = (typeof verdAns?.choice === 'string' ? verdAns.choice : 'ALLOW') as ActionRiskVerdict;
-        const hazardProb = typeof hazAns?.probability === 'number' ? hazAns.probability : 0;
+        const hazAns = ans?.hazard;
+        const choice = verdAns?.choice;
+        const hazardProb = boundedJudgmentNumber(hazAns, 'noul', 1);
+        if ((choice !== 'ALLOW' && choice !== 'REQUIRE_CONFIRMATION' && choice !== 'CIRCUIT_BREAKER_TRIP') ||
+            hazardProb === null) {
+            return requireConfirmation();
+        }
         const hazardDetected = hazardProb >= 0.7 || choice === 'CIRCUIT_BREAKER_TRIP';
 
         const finalVerdict: ActionRiskVerdict = hazardDetected
             ? 'CIRCUIT_BREAKER_TRIP'
-            : choice === 'REQUIRE_CONFIRMATION'
+            : choice === 'REQUIRE_CONFIRMATION' || deterministic.verdict === 'REQUIRE_CONFIRMATION'
             ? 'REQUIRE_CONFIRMATION'
             : 'ALLOW';
 
@@ -2775,12 +2789,14 @@ export async function judgeAgentActionRisk(
             riskScore: finalVerdict === 'CIRCUIT_BREAKER_TRIP' ? 3 : finalVerdict === 'REQUIRE_CONFIRMATION' ? 2 : 0,
             hazardDetected,
             tripReason: hazardDetected
-                ? `Autonomous action halted: Jev risk evaluator flagged hazard (${(hazardProb * 100).toFixed(0)}% severity).`
+                ? hazardProb >= 0.7
+                    ? `Autonomous action halted: Jev risk evaluator flagged a possible hazard (${(hazardProb * 100).toFixed(0)}% probability).`
+                    : 'Autonomous action halted: Jev risk evaluator flagged a severe hazard.'
                 : undefined,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'agent action risk judgment');
-        return fallbackRisk();
+        return requireConfirmation();
     }
 }
 
