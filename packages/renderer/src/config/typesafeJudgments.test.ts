@@ -1993,8 +1993,8 @@ describe('judgeAgentActionRisk (Judgment 31)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    verdict: { choice: 'CIRCUIT_BREAKER_TRIP' },
-                    hazard: { probability: 0.95 },
+                    verdict: { choice: 'ALLOW' },
+                    hazard: { noul: 0.01 },
                 },
             },
         }));
@@ -2010,6 +2010,7 @@ describe('judgeAgentActionRisk (Judgment 31)', () => {
         expect(result.verdict).toBe('CIRCUIT_BREAKER_TRIP');
         expect(result.hazardDetected).toBe(true);
         expect(result.riskScore).toBe(3);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
     it('allows routine operational actions within safe limits', async () => {
@@ -2018,7 +2019,7 @@ describe('judgeAgentActionRisk (Judgment 31)', () => {
             data: {
                 answers: {
                     verdict: { choice: 'ALLOW' },
-                    hazard: { probability: 0.05 },
+                    hazard: { noul: 0.05 },
                 },
             },
         }));
@@ -2034,6 +2035,77 @@ describe('judgeAgentActionRisk (Judgment 31)', () => {
         expect(result.verdict).toBe('ALLOW');
         expect(result.hazardDetected).toBe(false);
         expect(result.riskScore).toBe(0);
+    });
+
+    it('trips on a valid Jev hazard Noul even when its Choice says allow', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { verdict: { choice: 'ALLOW' }, hazard: { noul: 0.91 } } },
+        }));
+
+        const result = await judgeAgentActionRisk({
+            agentId: 'marketing_bot', actionType: 'AD_SPEND_UPDATE',
+            proposedSpendDeltaCents: 1_500, currentDailySpendCents: 3_000,
+            rationale: 'Routine adjustment',
+        });
+
+        expect(result.verdict).toBe('CIRCUIT_BREAKER_TRIP');
+        expect(result.tripReason).toContain('91% probability');
+    });
+
+    it('keeps bulk-outreach confirmation when Jev says allow', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { verdict: { choice: 'ALLOW' }, hazard: { noul: 0.05 } } },
+        }));
+
+        const result = await judgeAgentActionRisk({
+            agentId: 'outreach_bot', actionType: 'BULK_EMAIL_DISPATCH',
+            recipientCount: 5_001, rationale: 'Campaign send',
+        });
+
+        expect(result.verdict).toBe('REQUIRE_CONFIRMATION');
+        expect(result.riskScore).toBe(2);
+    });
+
+    it.each([
+        { verdict: { choice: 'UNKNOWN' }, hazard: { noul: 0.1 } },
+        { verdict: { choice: 'ALLOW' }, hazard: { noul: null } },
+        { verdict: { choice: 'ALLOW' }, hazard: { noul: 1.2 } },
+        { verdict: { choice: 'ALLOW' }, hazard: { probability: 0.1 } },
+    ])('requires confirmation for an invalid Jev answer: %j', async answers => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+
+        const result = await judgeAgentActionRisk({
+            agentId: 'marketing_bot', actionType: 'AD_SPEND_UPDATE',
+            proposedSpendDeltaCents: 1_500, currentDailySpendCents: 3_000,
+            rationale: 'Routine adjustment',
+        });
+
+        expect(result.verdict).toBe('REQUIRE_CONFIRMATION');
+    });
+
+    it('requires confirmation when Jev is unavailable after the gate starts', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('offline'); });
+
+        const result = await judgeAgentActionRisk({
+            agentId: 'marketing_bot', actionType: 'AD_SPEND_UPDATE',
+            proposedSpendDeltaCents: 1_500, currentDailySpendCents: 3_000,
+            rationale: 'Routine adjustment',
+        });
+
+        expect(result.verdict).toBe('REQUIRE_CONFIRMATION');
+
+        mocks.httpsCallable.mockClear();
+        const duringCooldown = await judgeAgentActionRisk({
+            agentId: 'marketing_bot', actionType: 'AD_SPEND_UPDATE',
+            proposedSpendDeltaCents: 1_500, currentDailySpendCents: 3_000,
+            rationale: 'Routine adjustment',
+        });
+        expect(duringCooldown.verdict).toBe('REQUIRE_CONFIRMATION');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 });
 
