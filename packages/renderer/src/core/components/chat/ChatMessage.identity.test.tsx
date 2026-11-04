@@ -55,6 +55,15 @@ vi.mock('@/core/context/ToastContext', () => ({
 import { MessageItem } from './ChatMessage';
 
 describe('shared ChatMessage canonical identity', () => {
+    it('shows when a locally appended message could not be saved', () => {
+        render(
+            <MessageItem
+                msg={{ id: 'unsaved', role: 'user', text: 'Keep this text', saveStatus: 'failed' } as never}
+            />,
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent('could not be saved');
+    });
+
     it('renders the same Social identity used by Boardroom seats and discussion', () => {
         const identity = resolveAgentVisualIdentity('social');
         const { container } = render(

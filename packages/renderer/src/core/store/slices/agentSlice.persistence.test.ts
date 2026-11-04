@@ -45,6 +45,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        mockAppendMessage.mockResolvedValue(undefined);
         messageSubscribers.length = 0;
         sessionSubscribers.length = 0;
         // Create a fresh store for each test
@@ -82,6 +83,19 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
             sessionId,
             expect.objectContaining({ id: 'msg-1', text: 'Hello, Keeper!' })
         );
+    });
+
+    it('marks an optimistic message unsaved after append retries fail', async () => {
+        mockAppendMessage.mockRejectedValue(new Error('storage unavailable'));
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        store.addAgentMessage({ id: 'failed-append', role: 'user', text: 'Keep this text', timestamp: Date.now() });
+
+        await vi.waitFor(() => {
+            expect(mockAppendMessage).toHaveBeenCalledTimes(3);
+            expect(useStore.getState().sessions[sessionId].messages[0].saveStatus).toBe('failed');
+        }, { timeout: 5000 });
+        expect(useStore.getState().agentHistory[0].text).toBe('Keep this text');
     });
 
     it('should persist updated messages to SessionService', async () => {

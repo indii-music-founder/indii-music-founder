@@ -480,6 +480,12 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                     </div>
                 )}
 
+                {msg.saveStatus === 'failed' && (
+                    <p role="alert" className="mt-2 text-xs text-amber-300">
+                        This message could not be saved. Copy it before leaving this conversation.
+                    </p>
+                )}
+
                 {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}
                 {msg.role === 'model' && planIdFallback && !extractedTools.some(t => t.name === 'propose_plan' && ((t.json.planId || t.json.data?.planId) === planIdFallback)) && (
                     <div className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">

@@ -27,6 +27,7 @@ function messageWriteKey(sessionId: string, messageId: string): string {
 async function persistMessageWrite(
     operation: () => Promise<void>,
     label: string,
+    onFailure?: () => void,
 ): Promise<void> {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
         try {
@@ -35,6 +36,7 @@ async function persistMessageWrite(
         } catch (error) {
             if (attempt === 3) {
                 logger.error(`[AgentSlice] ${label} failed after 3 attempts:`, error);
+                onFailure?.();
                 return;
             }
 
@@ -54,6 +56,7 @@ function enqueueMessageWrite(
     messageId: string,
     operation: () => Promise<void>,
     label: string,
+    onFailure?: () => void,
 ): void {
     const key = messageWriteKey(sessionId, messageId);
     const previous = messageWriteChains.get(key) ?? Promise.resolve();
@@ -62,7 +65,7 @@ function enqueueMessageWrite(
         previous.catch(() => undefined),
         clearBarrier.catch(() => undefined),
     ])
-        .then(() => persistMessageWrite(operation, label))
+        .then(() => persistMessageWrite(operation, label, onFailure))
         .finally(() => {
             if (messageWriteChains.get(key) === next) {
                 messageWriteChains.delete(key);
@@ -157,6 +160,8 @@ export interface AgentMessage {
     planId?: string;
     /** User rating for the agent's response (1-5) */
     rating?: number;
+    /** Local-only warning when an optimistic append could not be saved. */
+    saveStatus?: 'failed';
 }
 
 export interface AgentThought {
@@ -228,6 +233,19 @@ export function buildAgentSessionState(
     set: Parameters<StateCreator<AgentSessionSlice>>[0],
     get: Parameters<StateCreator<AgentSessionSlice>>[1]
 ): AgentSessionSlice {
+    const markAppendFailed = (sessionId: string, messageId: string) => set(state => {
+        if (!pendingMessageIds.get(sessionId)?.has(messageId)) return {};
+        const session = state.sessions[sessionId];
+        if (!session?.messages.some(message => message.id === messageId)) return {};
+        const messages = session.messages.map(message =>
+            message.id === messageId ? { ...message, saveStatus: 'failed' as const } : message
+        );
+        return {
+            sessions: { ...state.sessions, [sessionId]: { ...session, messages } },
+            ...(state.activeSessionId === sessionId ? { agentHistory: messages } : {}),
+        };
+    });
+
     const subscribeToActiveMessages = (sessionId: string) => {
         if (agentMessagesUnsubscribe) agentMessagesUnsubscribe();
         agentMessagesUnsubscribe = null;
@@ -451,7 +469,7 @@ export function buildAgentSessionState(
                     subscribeToActiveMessages(currentSessionId);
                 }
                 await sessionService.appendMessage(currentSessionId, msg);
-            }, 'Session persistence');
+            }, 'Session persistence', () => markAppendFailed(currentSessionId, msg.id));
 
             return {
                 sessions: { ...sessions, [currentSessionId]: updatedSession },
@@ -521,7 +539,7 @@ export function buildAgentSessionState(
             enqueueMessageWrite(sessionId, msg.id, async () => {
                 const { sessionService } = await import('@/services/agent/SessionService');
                 await sessionService.appendMessage(sessionId, msg);
-            }, 'Add message');
+            }, 'Add message', () => markAppendFailed(sessionId, msg.id));
 
             const update: Partial<AgentSessionSlice> = {
                 sessions: { ...state.sessions, [sessionId]: updatedSession }
