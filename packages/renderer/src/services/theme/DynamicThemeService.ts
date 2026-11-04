@@ -28,8 +28,11 @@ export function deriveThemeDeterministic(metadata: ThemeDerivationMetadata): The
     if (combined.includes('vinyl') || combined.includes('soul') || combined.includes('acoustic') || combined.includes('jazz')) {
         return THEME_PALETTES['amber-vinyl'];
     }
-    if (combined.includes('cyber') || combined.includes('synth') || combined.includes('retro') || combined.includes('electro')) {
-        return THEME_PALETTES['cyber-neon'];
+    if (combined.includes('retro')) {
+        return THEME_PALETTES['amber-vinyl'];
+    }
+    if (combined.includes('synth') || combined.includes('electro')) {
+        return THEME_PALETTES['editorial-cobalt'];
     }
     if (combined.includes('lofi') || combined.includes('lo-fi') || combined.includes('chill') || combined.includes('ambient')) {
         return THEME_PALETTES['midnight-lofi'];

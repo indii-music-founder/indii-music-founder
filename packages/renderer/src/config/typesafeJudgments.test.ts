@@ -1380,28 +1380,39 @@ describe('judgeAestheticThemeDerivation (Judgment 20)', () => {
         vi.clearAllMocks();
     });
 
-    it('derives cyber-neon tokens for synthwave track', async () => {
+    it('derives editorial blue tokens for an electronic track', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    palette: { choice: 'cyber-neon' },
+                    palette: { choice: 'editorial-cobalt' },
                 },
             },
         }));
 
         const result = await judgeAestheticThemeDerivation({
-            title: 'Laser Highway',
-            genre: 'Synthwave',
-            moodDescriptors: ['cyberpunk', 'neon', 'night drive'],
+            title: 'Midnight Drive',
+            genre: 'Electronic',
+            moodDescriptors: ['driving', 'bright', 'night'],
         });
 
         expect(result).toEqual({
-            surfaceHex: '#090d16',
-            accentHex: '#06b6d4',
-            textHex: '#cffafe',
-            waveformGradient: ['#0891b2', '#a855f7'],
+            surfaceHex: '#101827',
+            accentHex: '#6d8ce8',
+            textHex: '#e8ecf8',
+            waveformGradient: ['#355d9b', '#8f9ac0'],
         });
+    });
+
+    it.each(['cyber-neon', 'toString'])('rejects an undeclared palette Choice %s', async choice => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { palette: { choice } } },
+        }));
+
+        await expect(judgeAestheticThemeDerivation({
+            title: 'Track', genre: 'Electronic', moodDescriptors: [],
+        })).resolves.toBeNull();
     });
 
     it('returns null on failure', async () => {
@@ -1908,6 +1919,41 @@ describe('judgeAudioToVisualTokens (Judgment 29)', () => {
         expect(result.typographyScale).toBe('bold-condensed');
         expect(result.paletteTheme).toBe('detroit-industrial');
         expect(result.recommendedAspectRatio).toBe('9:16');
+    });
+
+    it('uses an editorial palette and declared choices when Jev returns old or invalid options', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                motion: { choice: 'teleport' },
+                typography: { choice: 'electric' },
+                palette: { choice: 'cyber-neon' },
+            } },
+        }));
+
+        const result = await judgeAudioToVisualTokens({
+            bpm: 140, keySignature: 'F minor', dynamicRangeDb: 6,
+            spectralCentroidHz: 3500, integratedLufs: -8,
+        });
+
+        expect(result).toEqual({
+            motionSpeed: 'kinetic-hyper',
+            typographyScale: 'bold-condensed',
+            paletteTheme: 'editorial-cobalt',
+            recommendedAspectRatio: '9:16',
+        });
+    });
+
+    it('keeps the non-cyber palette when Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        const result = await judgeAudioToVisualTokens({
+            bpm: 140, keySignature: 'F minor', dynamicRangeDb: 6,
+            spectralCentroidHz: 3500, integratedLufs: -8,
+        });
+
+        expect(result.paletteTheme).toBe('editorial-cobalt');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 });
 
