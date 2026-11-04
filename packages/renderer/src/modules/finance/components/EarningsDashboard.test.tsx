@@ -43,7 +43,7 @@ describe('EarningsDashboard UI States', () => {
         const { container } = render(<EarningsDashboard />);
 
         // Check for skeleton loading UI (animate-pulse from Skeleton component)
-        expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+        expect(container.querySelector('[class*="animate-pulse"]')).toBeInTheDocument();
         // Ensure content is hidden
         expect(screen.queryByText('Total Revenue')).not.toBeInTheDocument();
     });

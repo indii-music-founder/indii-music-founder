@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as admin from 'firebase-admin';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
 
 
 // Hoisted mocks for direct access in vi.mock
@@ -302,7 +303,7 @@ describe('Image and Content Generation Functions', () => {
                 const req: any = {
                     method: 'POST',
                     headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
-                    body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'prompt' }] }] },
+                    body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'prompt' }] }] },
                 };
                 const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn(), end: vi.fn() };
                 vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
@@ -326,7 +327,7 @@ describe('Image and Content Generation Functions', () => {
                 },
                 body: {
                     costReservationId: 'agent-stream-op-1',
-                    model: 'gemini-3.1-pro-preview',
+                    model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
                     contents: [{ role: 'user', parts: [{ text: 'create an image of a dog' }] }],
                 },
             };
@@ -375,7 +376,7 @@ describe('Image and Content Generation Functions', () => {
                 },
                 body: {
                     costReservationId: 'agent-stream-op-1',
-                    model: 'gemini-3.1-pro-preview',
+                    model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
                     config: { maxOutputTokens: 100_000 },
                 }
@@ -449,7 +450,7 @@ describe('Image and Content Generation Functions', () => {
                 },
                 body: {
                     costReservationId: 'agent-stream-op-1',
-                    model: 'gemini-3.1-pro-preview',
+                    model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
                 },
             };
@@ -622,7 +623,7 @@ describe('Image and Content Generation Functions', () => {
             const req: any = {
                 method: 'POST',
                 headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
-                body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] },
+                body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] },
             };
             const res: any = {
                 setHeader: vi.fn(), write: vi.fn(), end: vi.fn(), status: vi.fn().mockReturnThis(), send: vi.fn(),
@@ -647,7 +648,7 @@ describe('Image and Content Generation Functions', () => {
             let closeHandler: (() => void) | undefined;
             let releaseAdmission!: () => void;
             mocks.enforceRateLimit.mockImplementationOnce(() => new Promise<void>(resolve => { releaseAdmission = resolve; }));
-            const req: any = { method: 'POST', headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' }, body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] } };
+            const req: any = { method: 'POST', headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' }, body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] } };
             const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn(), write: vi.fn(), end: vi.fn(), headersSent: false, writableEnded: false, once: vi.fn((_event: string, handler: () => void) => { closeHandler = handler; }) };
             vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
             generateContentStream(req, res);

@@ -159,7 +159,7 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
     });
 
     it('stops at a custom maxIterations and injects the final-step wrap-up nudge', async () => {
-        const agent = new BaseAgent({ ...baseConfig, maxIterations: 3 });
+        const agent = new BaseAgent({ ...baseConfig, maxIterations: 3, authorizedTools: ['noop_test_tool'] });
         // Register a trivial, deterministic tool directly so the loop doesn't fall through
         // to the real TOOL_REGISTRY (which would hit unmocked services) — same pattern as
         // the harness distinguishes registered vs. registry-fallback tools (BaseAgent.ts:1190).
@@ -199,7 +199,7 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
     });
 
     it('preserves a completed image tool result when only the typed capacity summary turn is rejected', async () => {
-        const agent = new BaseAgent(baseConfig);
+        const agent = new BaseAgent({ ...baseConfig, authorizedTools: ['generate_image'] });
         const agentWithFunctions = agent as unknown as {
             functions: Record<string, () => Promise<{ success: boolean; message: string; data: { urls: string[] } }>>
         };
@@ -235,7 +235,7 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
     });
 
     it('preserves a typed image-tool failure when the summary turn hits the legacy limiter response', async () => {
-        const agent = new BaseAgent(baseConfig);
+        const agent = new BaseAgent({ ...baseConfig, authorizedTools: ['generate_image'] });
         const agentWithFunctions = agent as unknown as {
             functions: Record<string, () => Promise<{ success: boolean; error: string; metadata: { errorCode: string } }>>
         };
@@ -272,7 +272,7 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
     });
 
     it('propagates a typed capacity error after a non-image tool without exposing its raw result', async () => {
-        const agent = new BaseAgent(baseConfig);
+        const agent = new BaseAgent({ ...baseConfig, authorizedTools: ['calendar_lookup'] });
         const agentWithFunctions = agent as unknown as {
             functions: Record<string, () => Promise<{ success: boolean; message: string; data: { accessToken: string } }>>
         };

@@ -27,6 +27,7 @@ vi.mock('motion/react', () => ({
             ),
     }),
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
+    useReducedMotion: () => false,
 }));
 
 // Filter out motion-specific props that aren't valid DOM attributes

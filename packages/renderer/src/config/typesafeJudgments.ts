@@ -4649,9 +4649,9 @@ export async function judgeFanCommentModeration(
         if (typeof selectedIntent !== 'string' || !COMMENT_CLASSIFICATIONS.has(selectedIntent) || appProb === null) {
             return {
                 intent: fallbackIntent,
-                isApproved: false,
+                isApproved: fallbackApproved,
                 vibeAlignmentScore: fallbackScore,
-                moderationFlag: fallbackFlag || 'Comment requires moderation review.',
+                moderationFlag: fallbackFlag,
             };
         }
         const resolvedIntent = selectedIntent as CommentClassification;

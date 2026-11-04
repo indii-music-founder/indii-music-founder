@@ -13,6 +13,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 vi.mock('firebase-admin/firestore', () => {
     class Timestamp {
         constructor(private readonly millis: number) {}
+        static fromMillis(millis: number) { return new Timestamp(millis); }
         toMillis() { return this.millis; }
     }
     return {
@@ -33,20 +34,22 @@ import { claimComputerApproval } from './claimComputerApproval';
 
 const invoke = claimComputerApproval as unknown as (request: unknown) => Promise<unknown>;
 const args = { x: 10, y: 20 };
+let currentCreatedMs = Date.now() - 1000;
 const request = () => ({
     auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
     data: { approvalId: 'approval-1', expected: {
-        agentId: 'generalist', toolName: 'computer_click', args, createdAtMs: Date.now() - 1000,
+        agentId: 'generalist', toolName: 'computer_click', args, createdAtMs: currentCreatedMs,
     } },
 });
 
 describe('claimComputerApproval expiry', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        currentCreatedMs = Date.now() - 1000;
         mocks.get.mockImplementation(async () => ({
             exists: true,
             data: () => ({ status: 'pending', agentId: 'generalist', toolName: 'computer_click',
-                args, createdAt: new Timestamp(Date.now() - 1000) }),
+                args, createdAt: Timestamp.fromMillis(currentCreatedMs) }),
         }));
     });
 
@@ -56,10 +59,12 @@ describe('claimComputerApproval expiry', () => {
     });
 
     it('rejects an expired approval before writing a claim', async () => {
+        const expiredMs = Date.now() - 6 * 60_000;
+        currentCreatedMs = expiredMs;
         mocks.get.mockImplementation(async () => ({
             exists: true,
             data: () => ({ status: 'pending', agentId: 'generalist', toolName: 'computer_click',
-                args, createdAt: new Timestamp(Date.now() - 6 * 60_000) }),
+                args, createdAt: Timestamp.fromMillis(expiredMs) }),
         }));
         await expect(invoke(request())).rejects.toMatchObject({ code: 'failed-precondition' });
         expect(mocks.update).not.toHaveBeenCalled();

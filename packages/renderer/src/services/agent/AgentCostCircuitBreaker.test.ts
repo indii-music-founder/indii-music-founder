@@ -64,7 +64,8 @@ describe('BaseAgent Cost Circuit Breaker', () => {
         category: 'manager',
         systemPrompt: 'You are a test agent.',
         modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
-        tools: []
+        tools: [],
+        authorizedTools: ['dummy_tool']
     } as unknown as AgentConfig;
 
     beforeEach(() => {
