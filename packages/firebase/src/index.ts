@@ -70,6 +70,7 @@ export { approveSessionEditPlan } from "./functions/video/approveSessionEditPlan
 import { analyzeAudioFn } from "./lib/audio";
 import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
 import { isApprovedFineTunedTextEndpoint, isApprovedTextStreamModel } from './config/textStreamModels';
+import { FUNCTION_INTELLIGENCE_MODELS } from './config/models';
 import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey, typesafeApiKey } from "./config/secrets";
 
 import { estimateTranscoderRenderCost, estimateVideoCost } from "./config/pricing";
@@ -1443,7 +1444,7 @@ export const generateContentStream = onRequest(
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
-                const modelId = model || "gemini-3.1-pro-preview";
+                const modelId = model || FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 
                 // SECURITY: strict server-owned allowlist. A resource-path
                 // regex is not authorization: an altered browser could point

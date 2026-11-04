@@ -27,7 +27,7 @@ vi.mock('@/services/agent/SessionService', () => ({
 // addAgentMessage's dynamic import to fail silently (error swallowed by .catch).
 vi.mock('@/services/firebase', () => ({
     db: {},
-    auth: { currentUser: null },
+    auth: { currentUser: { uid: 'test-user-keeper' } },
     functionsWest1: {},
     storage: {}
 }));

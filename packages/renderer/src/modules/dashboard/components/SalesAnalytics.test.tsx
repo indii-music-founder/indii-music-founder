@@ -39,7 +39,7 @@ describe('SalesAnalytics', () => {
         // Subscription never calls back — loading state persists
         (AnalyticsService.subscribeToSalesAnalytics as import("vitest").Mock).mockImplementation(() => vi.fn());
         const { container } = render(<SalesAnalytics />);
-        expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+        expect(container.querySelector('[class*="animate-pulse"]')).toBeInTheDocument();
     });
 
     it('renders data after fetch', async () => {
@@ -52,7 +52,7 @@ describe('SalesAnalytics', () => {
         const { container } = render(<SalesAnalytics />);
 
         await waitFor(() => {
-            expect(container.querySelector('.animate-pulse')).not.toBeInTheDocument();
+            expect(container.querySelector('[class*="animate-pulse"]')).not.toBeInTheDocument();
         });
 
         expect(screen.getByText('Sales Analytics')).toBeInTheDocument();

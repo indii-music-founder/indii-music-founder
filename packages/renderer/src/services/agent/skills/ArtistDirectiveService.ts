@@ -97,7 +97,7 @@ export class ArtistDirectiveService {
         try {
             const snap = await getDoc(getDirectiveDocRef(uid));
             const data = snap.data();
-            if (!snap.exists()) {
+            if (!snap.exists() || !data || Object.keys(data).length === 0) {
                 this.cachedDirective = DEFAULT_ARTIST_MASTER_DIRECTIVE;
                 this.cachedUid = uid;
                 return DEFAULT_ARTIST_MASTER_DIRECTIVE;
