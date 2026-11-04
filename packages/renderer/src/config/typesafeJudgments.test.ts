@@ -1144,6 +1144,14 @@ describe('judgeAestheticMoodTagging (Judgment 16)', () => {
         const result = await judgeAestheticMoodTagging('Rainy Window 3AM', 'Mellow Rhodes chords with vinyl crackle and muted boom bap drums');
         expect(result).toBe('midnight-lo-fi');
     });
+
+    it('withholds an aesthetic tag outside the declared choices', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            aesthetic_tag: { choice: 'synthwave-cyberpunk', confidence: 0.99 },
+        } } }));
+        expect(await judgeAestheticMoodTagging('Night Drive')).toBeNull();
+    });
 });
 
 describe('judgeUploadCopyrightRisk (Judgment 17)', () => {
@@ -3956,6 +3964,32 @@ describe('judgeArtistDnaOnboarding (Judgment 61)', () => {
         expect(result.aestheticStyle).toBe('dark_moody_cinematic');
         expect(result.careerMaturityScore).toBe(4);
         expect(result.monetizationFocus).toBe('sync_licensing');
+    });
+
+    it('does not offer or accept cyberpunk styling for a general future brief', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({ data: { answers: {
+            aesthetic_choice: { choice: 'cyberpunk_futuristic' },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeArtistDnaOnboarding({ bioSnippet: 'A future-facing electronic artist' });
+        const request = judge.mock.calls[0]?.[0] as { questions: { aesthetic_choice: { criteria: Record<string, string> } } };
+        expect(request.questions.aesthetic_choice.criteria).not.toHaveProperty('cyberpunk_futuristic');
+        expect(result.aestheticStyle).toBe('editorial_futurist');
+    });
+
+    it('allows the style when the artist explicitly requests it', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({ data: { answers: {
+            aesthetic_choice: { choice: 'cyberpunk_futuristic' },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeArtistDnaOnboarding({ bioSnippet: 'I want a cyberpunk look for my music' });
+        const request = judge.mock.calls[0]?.[0] as { questions: { aesthetic_choice: { criteria: Record<string, string> } } };
+        expect(request.questions.aesthetic_choice.criteria).toHaveProperty('cyberpunk_futuristic');
+        expect(result.aestheticStyle).toBe('cyberpunk_futuristic');
     });
 });
 

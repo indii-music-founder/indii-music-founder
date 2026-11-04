@@ -1349,7 +1349,7 @@ export type AestheticCultureTag =
     | 'midnight-lo-fi'
     | 'detroit-electro-soul'
     | 'analog-bedroom-pop'
-    | 'synthwave-cyberpunk'
+    | 'retro-synthwave'
     | 'dark-ambient-trap'
     | 'golden-era-boom-bap'
     | 'indie-folk-acoustic'
@@ -1366,7 +1366,7 @@ export const AESTHETIC_TAG_QUESTION = {
         'midnight-lo-fi': 'Chilled beats, vinyl crackle, mellow piano, late night study or relax aesthetic.',
         'detroit-electro-soul': 'Detroit techno/electro grooves, Motown soul harmony, punchy 808s, futuristic funk.',
         'analog-bedroom-pop': 'Warm tape saturation, dreamy guitar hooks, introspective DIY indie songwriting.',
-        'synthwave-cyberpunk': 'Retro 80s analog synthesizers, neon night drives, driving basslines, arpeggios.',
+        'retro-synthwave': 'Retro 80s analog synthesizers, night drives, driving basslines, arpeggios.',
         'dark-ambient-trap': 'Sub-bass 808s, atmospheric dark pads, moody modern trap cadences.',
         'golden-era-boom-bap': 'Dusty vinyl drum breaks, sample chops, classic East/Midwest hip-hop lyricism.',
         'indie-folk-acoustic': 'Fingerpicked acoustic guitars, intimate vocal harmonies, organic warmth.',
@@ -1397,7 +1397,8 @@ export async function judgeAestheticMoodTagging(
         });
 
         const answer = result.data.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
-        if (!answer || typeof answer.choice !== 'string') return null;
+        if (!answer || typeof answer.choice !== 'string' ||
+            !Object.prototype.hasOwnProperty.call(AESTHETIC_TAG_QUESTION.criteria, answer.choice)) return null;
 
         const choice = answer.choice as AestheticCultureTag;
         return choice;
@@ -6979,6 +6980,7 @@ export type AestheticStyleTag =
     | 'retro_synthwave'
     | 'minimalist_modernist'
     | 'cyberpunk_futuristic'
+    | 'editorial_futurist'
     | 'grungy_analog_lofi'
     | 'warm_organic_earthy'
     | 'high_gloss_glamour'
@@ -7028,9 +7030,12 @@ export async function judgeArtistDnaOnboarding(
     } else if (raw.includes('minimal') || raw.includes('clean') || raw.includes('modern')) {
         aesthetic = 'minimalist_modernist';
         palette = ['#09090b', '#27272a', '#71717a', '#d4d4d8', '#ffffff'];
-    } else if (raw.includes('cyber') || raw.includes('future') || raw.includes('matrix')) {
+    } else if (raw.includes('cyberpunk')) {
         aesthetic = 'cyberpunk_futuristic';
         palette = ['#020617', '#10b981', '#06b6d4', '#d946ef', '#f0abfc'];
+    } else if (raw.includes('future') || raw.includes('matrix')) {
+        aesthetic = 'editorial_futurist';
+        palette = ['#111827', '#374151', '#9ca3af', '#d1d5db', '#f9fafb'];
     } else if (raw.includes('lofi') || raw.includes('lo-fi') || raw.includes('analog') || raw.includes('tape')) {
         aesthetic = 'grungy_analog_lofi';
         palette = ['#292524', '#78716c', '#b45309', '#d97706', '#fef3c7'];
@@ -7052,6 +7057,17 @@ export async function judgeArtistDnaOnboarding(
     else if (maturity >= 4) focus = 'streaming_scale';
 
     const fallbackSummary = `Calibrated DNA for ${archetype.replace('_', ' ')} with ${aesthetic.replace(/_/g, ' ')} visual identity.`;
+    const aestheticCriteria = {
+        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
+        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
+        editorial_futurist: 'Architectural future, restrained materials, editorial framing and clean light.',
+        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
+        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
+        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
+        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
+        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
+        ...(raw.includes('cyberpunk') ? { cyberpunk_futuristic: 'The artist explicitly requested this style.' } : {}),
+    };
 
     if (!judgmentsAvailable()) {
         return {
@@ -7095,16 +7111,7 @@ export async function judgeArtistDnaOnboarding(
                 aesthetic_choice: {
                     type: 'choice' as const,
                     instructions: 'Select the optimal visual aesthetic style for this artist brand identity.',
-                    criteria: {
-                        retro_synthwave: '80s retro, neon grid, sunset magenta/cyan, analog synths.',
-                        minimalist_modernist: 'Clean lines, monochromatic palette, high whitespace, typography focus.',
-                        cyberpunk_futuristic: 'Cyber tech, dystopian glow, chrome textures, futuristic digital.',
-                        grungy_analog_lofi: 'Tape hiss texture, vintage sepia, thrift aesthetic, warm grit.',
-                        warm_organic_earthy: 'Natural woods, forest greens, folk warmth, acoustic authenticity.',
-                        high_gloss_glamour: 'Editorial luxury, crisp flash studio lighting, pop polish.',
-                        dark_moody_cinematic: 'Detroit streetlights, deep shadows, cinematic noir, atmospheric tension.',
-                        playful_y2k_pastel: 'Bubblegum pop, colorful playful pastel, nostalgic millennium aesthetic.',
-                    },
+                    criteria: aestheticCriteria,
                 },
                 maturity_score: {
                     type: 'score' as const,
@@ -7126,7 +7133,8 @@ export async function judgeArtistDnaOnboarding(
         const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
 
         const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
-        const resolvedAesthetic = (typeof aesAns?.choice === 'string' ? aesAns.choice : aesthetic) as AestheticStyleTag;
+        const resolvedAesthetic = (typeof aesAns?.choice === 'string' &&
+            Object.prototype.hasOwnProperty.call(aestheticCriteria, aesAns.choice) ? aesAns.choice : aesthetic) as AestheticStyleTag;
         const rawMat = oneIndexedScore(matAns, maturity);
 
         return {
