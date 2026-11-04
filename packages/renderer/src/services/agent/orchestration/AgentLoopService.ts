@@ -17,6 +17,30 @@ import { TokenEstimator } from '../governance/TokenEstimator';
 import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 
 class ExecutionTokenBudgetExceeded extends Error {}
+class InvalidEvaluationResponse extends Error {}
+
+function parseEvaluationResponse(result: {
+    response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+}): { passed: boolean; feedback: string } {
+    const response = result?.response;
+    const text = typeof response?.text === 'function'
+        ? response.text()
+        : response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    } catch {
+        throw new InvalidEvaluationResponse('Agent loop judge returned invalid JSON.');
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
+        typeof (parsed as Record<string, unknown>).passed !== 'boolean' ||
+        typeof (parsed as Record<string, unknown>).feedback !== 'string' ||
+        !(parsed as { feedback: string }).feedback.trim()) {
+        throw new InvalidEvaluationResponse('Agent loop judge returned an invalid verdict.');
+    }
+    return { passed: (parsed as { passed: boolean }).passed, feedback: (parsed as { feedback: string }).feedback.trim() };
+}
 
 /**
  * Service to orchestrate the Autonomous Agent Looping System.
@@ -383,57 +407,26 @@ Respond in JSON format only:
         try {
             const genResult = await generateJudge();
 
-            const rawResponse = genResult?.response as {
-                text?: () => string;
-                candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-            } | undefined;
-            let responseText = '';
-            if (rawResponse) {
-                if (typeof rawResponse.text === 'function') {
-                    responseText = rawResponse.text();
-                } else {
-                    responseText = rawResponse.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-                }
-            }
-
-            // Extract JSON
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            const jsonStr = jsonMatch ? jsonMatch[0] : responseText;
-            const parsed = JSON.parse(jsonStr);
-
-            return {
-                passed: !!parsed.passed,
-                feedback: parsed.feedback || 'No specific feedback.'
-            };
+            return parseEvaluationResponse(genResult);
         } catch (error) {
             if (error instanceof ExecutionTokenBudgetExceeded) throw error;
+            if (error instanceof InvalidEvaluationResponse) {
+                logger.warn('[AgentLoop] Judge returned an invalid verdict.');
+                return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+            }
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
             if (await this.resolveTransient(error, { action: 'evaluateOutcome' })) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
                     const retryResult = await generateJudge();
-                    const rawResponse = retryResult?.response as {
-                        text?: () => string;
-                        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-                    } | undefined;
-                    let responseText = '';
-                    if (rawResponse) {
-                        if (typeof rawResponse.text === 'function') {
-                            responseText = rawResponse.text();
-                        } else {
-                            responseText = rawResponse.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-                        }
-                    }
-                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-                    const jsonStr = jsonMatch ? jsonMatch[0] : responseText;
-                    const parsed = JSON.parse(jsonStr);
-                    return {
-                        passed: !!parsed.passed,
-                        feedback: parsed.feedback || 'No specific feedback.'
-                    };
+                    return parseEvaluationResponse(retryResult);
                 } catch (retryErr) {
                     if (retryErr instanceof ExecutionTokenBudgetExceeded) throw retryErr;
+                    if (retryErr instanceof InvalidEvaluationResponse) {
+                        logger.warn('[AgentLoop] Judge retry returned an invalid verdict.');
+                        return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+                    }
                     logger.error('[AgentLoop] Evaluation retry also failed:', retryErr);
                 }
             }
