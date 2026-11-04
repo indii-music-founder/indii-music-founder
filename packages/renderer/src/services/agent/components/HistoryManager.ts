@@ -129,11 +129,13 @@ ${formattedRecent}
             let summary = reusable ? cache.summary : '';
             const newHistory = this.formatHistory(olderTurns.slice(summarizedCount));
 
-            for (let offset = 0; offset < newHistory.length; offset += this.SUMMARY_INPUT_CHARS) {
-                const chunk = newHistory.slice(offset, offset + this.SUMMARY_INPUT_CHARS);
-                summary = await SummaryService.summarize(summary
-                    ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n${chunk}`
-                    : chunk);
+            for (let offset = 0; offset < newHistory.length;) {
+                const prefix = summary ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n` : '';
+                const available = this.SUMMARY_INPUT_CHARS - prefix.length;
+                if (available <= 0) throw new Error('Conversation summary exceeds the summarizer input budget.');
+                const chunk = newHistory.slice(offset, offset + available);
+                summary = await SummaryService.summarize(prefix + chunk);
+                offset += chunk.length;
             }
 
             this.summaryCache = {
