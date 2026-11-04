@@ -200,6 +200,23 @@ describe('StudioControlsPanel', () => {
         expect(screen.getByTestId('whisk-drop-style')).toBeInTheDocument();
     });
 
+    it('keeps a selected legacy typography style without offering it as a new preset', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ ...defaultState, viewMode: 'omni' });
+        const { unmount } = render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
+        fireEvent.click(screen.getByText('Omni Stage Controls').closest('button')!);
+        expect(screen.getByRole('option', { name: 'Cyberpunk Glitch' })).toBeInTheDocument();
+        unmount();
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            viewMode: 'omni',
+            studioControls: { ...defaultState.studioControls, typographyStyle: 'minimal-infographic' },
+        });
+        render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
+        fireEvent.click(screen.getByText('Omni Stage Controls').closest('button')!);
+        expect(screen.queryByRole('option', { name: 'Cyberpunk Glitch' })).not.toBeInTheDocument();
+    });
+
     it('toggles the right panel when close button is clicked', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
         

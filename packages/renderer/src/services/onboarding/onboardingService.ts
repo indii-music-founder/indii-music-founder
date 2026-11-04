@@ -166,7 +166,7 @@ NEVER jump phases. Complete each topic before moving on. If a topic is done, ski
 - genre → options: House, Techno, Hip-Hop, R&B, Pop, Indie, Electronic, Rock, Other
 - goals → options: Grow fanbase, Get playlisted, Touring, Sync licensing, Label deal
 - mood → options: Dark & moody, Euphoric, Introspective, High-energy, Chill
-- aesthetic_style → options: Retro 80s, Synthwave, Cyberpunk, Minimalist, Maximalist, Vintage, Futuristic, Organic/Natural, Abstract, Cinematic
+- aesthetic_style → options: Cinematic, Anime, 3D Render, Minimalist, Analog Film, Documentary, Watercolor, Editorial, Monochrome, Retro Print, Other
 - color_vibe → options: Vibrant & Neon, Muted & Earthy, Black & White, Pastels, High Contrast, Monochrome, Warm tones, Cool tones
 - font_style → options: Bold & Geometric, Elegant Serif, Clean Sans-Serif, Vintage/Retro, Handwritten, Tech/Mono, Display/Decorative
 - distributor → options: Symphonic, CD Baby, DistroKid, TuneCore
@@ -183,7 +183,7 @@ NEVER jump phases. Complete each topic before moving on. If a topic is done, ski
 **VISUAL BRANDING (IMPORTANT - Don't skip this!):**
 Artists need strong visual identity. Ask about these naturally during the conversation:
 
-1. **Aesthetic Style**: "What visual era or style fits your music? Retro 80s? Cyberpunk? Minimalist?"
+1. **Aesthetic Style**: "What visual era or style fits your music? Cinematic? Watercolor? Retro print?"
    - Use \`askMultipleChoice\` with question_type='aesthetic_style'
    - Store the answer in \`brand_description\` (append to existing)
 

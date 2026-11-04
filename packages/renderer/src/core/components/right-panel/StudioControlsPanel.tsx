@@ -415,7 +415,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         onChange={(e) => setStudioControls({ typographyStyle: e.target.value as 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic' })}
                                         className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
                                     >
-                                        <option value="cyberpunk">Cyberpunk Glitch</option>
+                                        {studioControls.typographyStyle === 'cyberpunk' && <option value="cyberpunk">Cyberpunk Glitch</option>}
                                         <option value="kinetic-neon">Kinetic Neon Grid</option>
                                         <option value="liquid-gold">Volumetric Liquid Gold</option>
                                         <option value="minimal-infographic">Minimalist Layout</option>
