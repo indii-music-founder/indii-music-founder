@@ -615,7 +615,15 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
 
         await (service as unknown as {
             executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
-        }).executeFlow('Help me prioritize.', undefined, {}, 'response-provider');
+        }).executeFlow('Help me prioritize.', undefined, {
+            userAlignmentRules: ['Keep the artist voice conversational'],
+            artistMasterDirectiveBlock: '<artist_master_directive>Use the artist name Sparrow</artist_master_directive>',
+        }, 'response-provider');
+
+        const systemPrompt = vi.mocked(AutonomousIntelligence.generateContentStream).mock.calls[0]?.[3] as string;
+        expect(systemPrompt).toContain('<user_specific_alignment>');
+        expect(systemPrompt).toContain('Keep the artist voice conversational');
+        expect(systemPrompt).toContain('<artist_master_directive>Use the artist name Sparrow</artist_master_directive>');
 
         expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
             agentId: 'generalist',
