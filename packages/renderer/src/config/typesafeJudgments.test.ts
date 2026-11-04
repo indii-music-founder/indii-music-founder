@@ -4156,7 +4156,7 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('detects underwater contract hazard offline when recoupment exceeds term', async () => {
+    it('reports a streaming-only run rate without declaring a contract underwater', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const underwater = await judgeContractRecoupmentPace({
@@ -4167,10 +4167,9 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 36,
         });
 
-        expect(underwater.recoupmentPace).toBe('UNDERWATER_HAZARD');
-        expect(underwater.riskScore).toBe(5);
-        expect(underwater.estimatedMonthsToFullRecoup).toBe(90);
-        expect(underwater.strategicRecommendation).toContain('underwater');
+        expect(underwater.status).toBe('RUN_RATE_AVAILABLE');
+        expect(underwater.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(90);
+        expect(underwater.projectionNote).toContain('Other revenue, costs, and contract terms are not assessed');
     });
 
     it('recognizes fully recouped deal offline', async () => {
@@ -4183,21 +4182,13 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             monthsSinceRelease: 18,
         });
 
-        expect(clear.recoupmentPace).toBe('FAST_TRACK');
-        expect(clear.riskScore).toBe(1);
-        expect(clear.estimatedMonthsToFullRecoup).toBe(0);
+        expect(clear.status).toBe('ADVANCE_COVERED');
+        expect(clear.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(0);
+        expect(clear.projectionNote).toContain('Check the contract ledger');
     });
 
-    it('evaluates recoupment pace through Jev online callable', async () => {
+    it('uses arithmetic rather than a Jev opinion when judgments are enabled', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    pace_status: { choice: 'FAST_TRACK' },
-                    underwater_risk_score: { score: 0 },
-                },
-            },
-        }));
 
         const result = await judgeContractRecoupmentPace({
             advanceAmount: 10_000,
@@ -4207,9 +4198,46 @@ describe('judgeContractRecoupmentPace (Judgment 63)', () => {
             contractTermMonths: 24,
         });
 
-        expect(result.recoupmentPace).toBe('FAST_TRACK');
-        expect(result.riskScore).toBe(1);
-        expect(result.estimatedMonthsToFullRecoup).toBe(2);
+        expect(result.status).toBe('RUN_RATE_AVAILABLE');
+        expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBe(2);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('does not invent a finite horizon from zero or negative streaming net', async () => {
+        mocks.enabled.mockReturnValue(false);
+
+        for (const monthlyStreamingNetRevenue of [0, -100]) {
+            const result = await judgeContractRecoupmentPace({
+                advanceAmount: 10_000,
+                recoupedAmount: 5_000,
+                monthlyStreamingNetRevenue,
+                monthsSinceRelease: 3,
+            });
+
+            expect(result.status).toBe('NO_CURRENT_STREAMING_RUN_RATE');
+            expect(result.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
+        }
+    });
+
+    it('rejects invalid financial inputs and unbounded results', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const valid = {
+            advanceAmount: 10_000,
+            recoupedAmount: 5_000,
+            monthlyStreamingNetRevenue: 500,
+            monthsSinceRelease: 3,
+        };
+
+        await expect(judgeContractRecoupmentPace({ ...valid, advanceAmount: Number.NaN })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, recoupedAmount: -1 })).rejects.toThrow(RangeError);
+        await expect(judgeContractRecoupmentPace({ ...valid, contractTermMonths: -36 })).rejects.toThrow(RangeError);
+        const overflow = await judgeContractRecoupmentPace({
+            ...valid,
+            advanceAmount: Number.MAX_VALUE,
+            recoupedAmount: 0,
+            monthlyStreamingNetRevenue: Number.MIN_VALUE,
+        });
+        expect(overflow.monthsToCoverRemainingAdvanceAtCurrentRate).toBeNull();
     });
 });
 
@@ -4228,10 +4256,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'TOUR_ANNOUNCEMENT',
         });
 
-        expect(spam.isSpamTriggerRisk).toBe(true);
-        expect(spam.openRateScore).toBe(1);
+        expect(spam.hasSpamStyleSignal).toBe(true);
+        expect(spam.copyQualityScore).toBe(1);
         expect(spam.urgencyLevel).toBe('OVERHYPED_SPAMMY');
-        expect(spam.suggestedSubjectLine).toContain('Tour Dates');
+        expect(spam.suggestedSubjectLine).toBe('New tour dates are here');
     });
 
     it('rates authentic compelling subject line highly offline', async () => {
@@ -4242,10 +4270,10 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'MERCH_DROP',
         });
 
-        expect(clean.isSpamTriggerRisk).toBe(false);
-        expect(clean.openRateScore).toBe(5);
+        expect(clean.hasSpamStyleSignal).toBe(false);
+        expect(clean.copyQualityScore).toBe(5);
         expect(clean.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
-        expect(clean.predictedOpenRatePercent).toBeGreaterThan(40);
+        expect(clean.suggestedSubjectLine).toBe('Limited Edition Vinyl & Hoodies — Official Release Now Live');
     });
 
     it('scores subject line through Jev online callable', async () => {
@@ -4253,8 +4281,8 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    open_rate_potential: { score: 3 },
-                    spam_filter_risk: { probability: 0.05 },
+                    copy_quality: { score: 3 },
+                    spam_style_signal: { probability: 0.05 },
                 },
             },
         }));
@@ -4264,9 +4292,48 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             campaignType: 'SINGLE_RELEASE',
         });
 
-        expect(result.openRateScore).toBe(4);
-        expect(result.isSpamTriggerRisk).toBe(false);
+        expect(result.copyQualityScore).toBe(4);
+        expect(result.hasSpamStyleSignal).toBe(false);
         expect(result.urgencyLevel).toBe('HEALTHY_ANTICIPATION');
+        expect(result.suggestedSubjectLine).toBe('Secret listening room link for our upcoming single');
+    });
+
+    it('keeps an obvious pressure signal even when Jev rates the copy safe', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 4 },
+                spam_style_signal: { probability: 0 },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'BUY NOW FREE TICKETS',
+            campaignType: 'TOUR_ANNOUNCEMENT',
+        });
+
+        expect(result.hasSpamStyleSignal).toBe(true);
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.suggestedSubjectLine).toBe('New tour dates are here');
+    });
+
+    it('ignores malformed Jev Score and Noul answers', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                copy_quality: { score: 9 },
+                spam_style_signal: { probability: Number.NaN },
+            } },
+        }));
+
+        const result = await judgeDirectToFanEmailSubjectLine({
+            subjectLine: 'Hello from us',
+            campaignType: 'SINGLE_RELEASE',
+        });
+
+        expect(result.copyQualityScore).toBe(2);
+        expect(result.hasSpamStyleSignal).toBe(false);
+        expect(result.suggestedSubjectLine).toBe('Hello from us');
     });
 });
 
@@ -4277,7 +4344,7 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
         __resetJudgmentCooldownForTests();
     });
 
-    it('flags bot stream farm attack offline based on high skip and low saves', async () => {
+    it('flags an unusual pattern for review without diagnosing bot traffic', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const botFarm = await judgeStreamingFraudRisk({
@@ -4288,13 +4355,12 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             savesPerStreamRatio: 0.001,
         });
 
-        expect(botFarm.rootCause).toBe('BOTTING_FARM_HAZARD');
-        expect(botFarm.dspPenaltyHazard).toBe(true);
-        expect(botFarm.fraudProbability).toBeGreaterThan(0.9);
-        expect(botFarm.actionGuidance).toContain('CRITICAL');
+        expect(botFarm.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(botFarm.observedSignals).toEqual(['VELOCITY_SPIKE', 'HIGH_SKIP_RATE', 'LOW_SAVE_RATE']);
+        expect(botFarm.actionGuidance).toContain('distributor or label');
     });
 
-    it('validates organic viral surge offline with high listener saves', async () => {
+    it('does not certify a high-save surge as organic', async () => {
         mocks.enabled.mockReturnValue(false);
 
         const organic = await judgeStreamingFraudRisk({
@@ -4305,22 +4371,13 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             savesPerStreamRatio: 0.08,
         });
 
-        expect(organic.rootCause).toBe('ORGANIC_VIRAL');
-        expect(organic.dspPenaltyHazard).toBe(false);
-        expect(organic.fraudProbability).toBeLessThan(0.1);
-        expect(organic.actionGuidance).toContain('viral surge');
+        expect(organic.trafficReview).toBe('REVIEW_UNUSUAL_PATTERN');
+        expect(organic.observedSignals).toEqual(['VELOCITY_SPIKE']);
+        expect(organic.actionGuidance).toContain('traffic sources');
     });
 
-    it('processes streaming spike diagnosis via Jev online callable', async () => {
+    it('does not ask Jev to infer a source or penalty from aggregate numbers', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    cause: { choice: 'EDITORIAL_PLAYLIST' },
-                    penalty_risk: { noul: 0.01 },
-                },
-            },
-        }));
 
         const result = await judgeStreamingFraudRisk({
             trackTitle: 'Velvet Voltage',
@@ -4330,43 +4387,19 @@ describe('judgeStreamingFraudRisk (Judgment 65)', () => {
             savesPerStreamRatio: 0.05,
         });
 
-        expect(result.rootCause).toBe('EDITORIAL_PLAYLIST');
-        expect(result.dspPenaltyHazard).toBe(false);
-        expect(result.fraudProbability).toBe(0.01);
+        expect(result.trafficReview).toBe('NO_STRONG_PATTERN');
+        expect(result.observedSignals).toEqual([]);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
-    it.each([
-        { cause: { choice: 'UNKNOWN' }, penalty_risk: { noul: 0.9 } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: null } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: '0.9' } },
-        { cause: { choice: 'EDITORIAL_PLAYLIST' }, penalty_risk: { noul: 1.2 } },
-        { cause: { choice: 'BOTTING_FARM_HAZARD' }, penalty_risk: { noul: 0.01 } },
-    ])('keeps the deterministic verdict for invalid or inconsistent answers: %j', async answers => {
-        mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
-        const result = await judgeStreamingFraudRisk({
+    it('rejects invalid metric ranges', async () => {
+        const valid = {
             trackTitle: 'Track', velocityRatio: 2, skipRatePercent: 20,
             primaryCountryCode: 'US', savesPerStreamRatio: 0.02,
-        });
-        expect(result).toEqual({
-            rootCause: 'ORGANIC_VIRAL', dspPenaltyHazard: false, fraudProbability: 0.08,
-            actionGuidance: 'Organic listener growth detected. Maintain campaign velocity.',
-        });
-    });
-
-    it('does not let Jev clear concrete botting indicators', async () => {
-        mocks.enabled.mockReturnValue(true);
-        const judge = vi.fn(async () => ({ data: { answers: {
-            cause: { choice: 'ORGANIC_VIRAL' }, penalty_risk: { noul: 0.01 },
-        } } }));
-        mocks.httpsCallable.mockReturnValue(judge);
-        const result = await judgeStreamingFraudRisk({
-            trackTitle: 'Track', velocityRatio: 8, skipRatePercent: 88,
-            primaryCountryCode: 'US', savesPerStreamRatio: 0.001,
-        });
-        expect(result.dspPenaltyHazard).toBe(true);
-        expect(result.rootCause).toBe('BOTTING_FARM_HAZARD');
-        expect(judge).not.toHaveBeenCalled();
+        };
+        await expect(judgeStreamingFraudRisk({ ...valid, velocityRatio: Number.NaN })).rejects.toThrow(RangeError);
+        await expect(judgeStreamingFraudRisk({ ...valid, skipRatePercent: 101 })).rejects.toThrow(RangeError);
+        await expect(judgeStreamingFraudRisk({ ...valid, savesPerStreamRatio: -0.1 })).rejects.toThrow(RangeError);
     });
 });
 
