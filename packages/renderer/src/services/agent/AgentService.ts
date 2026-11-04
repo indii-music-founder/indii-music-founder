@@ -1675,7 +1675,14 @@ export class AgentService {
             }
         }
 
-        const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}${knowledgeContext}
+        const alignmentContext = pipelineContext.userAlignmentRules?.length
+            ? `\n\n<user_specific_alignment>\n${pipelineContext.userAlignmentRules.map(rule => `- ${rule}`).join('\n')}\n</user_specific_alignment>`
+            : '';
+        const artistDirectiveContext = pipelineContext.artistMasterDirectiveBlock?.trim()
+            ? `\n\n${pipelineContext.artistMasterDirectiveBlock}`
+            : '';
+
+        const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}${knowledgeContext}${alignmentContext}${artistDirectiveContext}
 
 Be direct, creative, and helpful. You are in direct chat mode — respond conversationally.
 
