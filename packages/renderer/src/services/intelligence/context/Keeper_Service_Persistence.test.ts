@@ -5,6 +5,44 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mocks - MUST BE HOISTED
 // ----------------------------------------------------------------------------
 
+// Mock @/services/FirestoreService Base Class
+vi.mock('@/services/FirestoreService', () => ({
+    FirestoreService: class {
+        set = vi.fn().mockResolvedValue(undefined);
+        update = vi.fn().mockResolvedValue(undefined);
+        delete = vi.fn().mockResolvedValue(undefined);
+        list = vi.fn().mockResolvedValue([]);
+        constructor(_collectionPath: string) {}
+    }
+}));
+vi.mock('../../FirestoreService', () => ({
+    FirestoreService: class {
+        set = vi.fn().mockResolvedValue(undefined);
+        update = vi.fn().mockResolvedValue(undefined);
+        delete = vi.fn().mockResolvedValue(undefined);
+        list = vi.fn().mockResolvedValue([]);
+        constructor(_collectionPath: string) {}
+    }
+}));
+
+// Mock @/services/firebase to prevent real Firebase initialization
+vi.mock('@/services/firebase', () => ({
+    serverTimestamp: vi.fn(),
+    auth: {
+        currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
+        onAuthStateChanged: vi.fn(() => () => { })
+    },
+    db: {},
+    storage: {},
+    remoteConfig: { defaultConfig: {} },
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
+}));
+
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({
     serverTimestamp: vi.fn(),
@@ -37,15 +75,16 @@ vi.mock('firebase/auth', async (importOriginal) => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 vi.mock('firebase/firestore', async (importOriginal) => {
+    class Timestamp {
+        constructor(public seconds: number, public nanoseconds: number) {}
+        static now() { return new Timestamp(Math.floor(Date.now() / 1000), 0); }
+        static fromDate(date: Date) { return new Timestamp(Math.floor(date.getTime() / 1000), 0); }
+        static fromMillis(ms: number) { return new Timestamp(Math.floor(ms / 1000), 0); }
+        toMillis() { return this.seconds * 1000; }
+    }
     return {
         serverTimestamp: vi.fn(),
-        Timestamp: {
-            now: () => ({
-                serverTimestamp: vi.fn(), toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0
-            }),
-            fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
-            fromMillis: (ms: number) => ({ toMillis: () => ms, seconds: Math.floor(ms / 1000), nanoseconds: 0 })
-        },
+        Timestamp,
         getFirestore: vi.fn(() => ({
             serverTimestamp: vi.fn(),
         })),
@@ -54,22 +93,24 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         })),
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
-        doc: vi.fn(),
-        setDoc: vi.fn(),
+        doc: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'doc-id', path: args.join('/') })),
+        setDoc: vi.fn().mockResolvedValue(undefined),
         getDoc: vi.fn(),
-        collection: vi.fn(),
+        collection: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'col-id', path: args.join('/') })),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({
-            serverTimestamp: vi.fn(), commit: vi.fn()
+            delete: vi.fn(),
+            commit: vi.fn().mockResolvedValue(undefined),
+            serverTimestamp: vi.fn(),
         })),
         addDoc: vi.fn(),
-        updateDoc: vi.fn(),
-        deleteDoc: vi.fn(),
-        query: vi.fn(),
+        updateDoc: vi.fn().mockResolvedValue(undefined),
+        deleteDoc: vi.fn().mockResolvedValue(undefined),
+        query: vi.fn((ref: unknown) => ref),
         where: vi.fn(),
         limit: vi.fn(),
         orderBy: vi.fn(),
-        getDocs: vi.fn().mockResolvedValue({ docs: [] })
+        getDocs: vi.fn().mockResolvedValue({ empty: true, docs: [] })
     }
 });
 
