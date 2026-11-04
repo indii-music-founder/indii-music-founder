@@ -275,6 +275,7 @@ export const MarketingAgent: AgentConfig = {
                 parameters: {
                     type: "OBJECT",
                     properties: {
+                        directiveId: { type: "STRING", description: "Stable campaign execution ID (8-120 letters, digits, underscores, or hyphens). Reuse only to check the same request; an unresolved ID requires reconciliation." },
                         ledgerAccountId: { type: "STRING", description: "Finance recoupment ledger account ID." },
                         objective: {
                             type: "STRING",

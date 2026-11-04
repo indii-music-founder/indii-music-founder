@@ -76,21 +76,18 @@ export class HistoryManager {
 
         const history = this.cleanHistory(state.agentHistory || []);
 
-        // 1. Semantic Recall (Tier 2 Integration)
-        let semanticRecall = '';
-        if (userId && history.length > 0) {
-            const lastMessage = history[history.length - 1]!.text;
-            
-            // Use the unified engine for episodic recall
-            const relevant = await alwaysOnMemoryEngine.retrieve({ query: lastMessage, limit: 3 });
-            
-            if (relevant.length > 0) {
-                semanticRecall = `\n## Relevant Past Context (Semantic Recall)\n${relevant.map(r => `- ${r.summary || r.content}`).join('\n')}\n`;
+        // Recent saved memories are optional context. The engine's retrieve()
+        // currently ignores its query, so do not present these as semantic matches.
+        let memoryRecall = '';
+        if (userId && state.isKnowledgeBaseEnabled && history.length > 0) {
+            const recent = await alwaysOnMemoryEngine.retrieve({ limit: 3 });
+            if (recent.length > 0) {
+                memoryRecall = `\n## Recent Saved Memories\n${recent.map(r => `- ${r.summary || r.content}`).join('\n')}\n`;
             }
         }
 
         if (history.length <= this.MAX_RECENT_TURNS) {
-            return { view: (this.formatHistory(history) + semanticRecall).trim(), historicalSummary: '' };
+            return { view: (this.formatHistory(history) + memoryRecall).trim(), historicalSummary: '' };
         }
 
         Logger.info('HistoryManager', `Compressing history context (${history.length} turns)`);
@@ -110,7 +107,7 @@ export class HistoryManager {
         return { view: `
 ## Conversation Summary (History)
 ${summary}
-${semanticRecall}
+${memoryRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
 `.trim(), historicalSummary: summary };

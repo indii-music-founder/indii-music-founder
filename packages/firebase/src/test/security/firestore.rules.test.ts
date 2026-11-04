@@ -1244,8 +1244,12 @@ describe('Firestore Security Rules', () => {
             await assertSucceeds(updateDoc(ref, { status: 'approved', resolvedAt: serverTimestamp() }));
             await assertFails(updateDoc(ref, { status: 'pending' }));
             await assertFails(updateDoc(ref, { status: 'executed', result: { success: false } }));
-            await assertSucceeds(updateDoc(ref, { status: 'executed', result: { success: true } }));
+            await assertFails(updateDoc(ref, { status: 'executed', result: { success: true } }));
+            await assertFails(updateDoc(ref, { status: 'claimed', claimedAt: Timestamp.now() }));
+            await assertSucceeds(updateDoc(ref, { status: 'claimed', claimedAt: serverTimestamp() }));
             await assertFails(updateDoc(ref, { status: 'approved' }));
+            await assertSucceeds(updateDoc(ref, { status: 'executed', result: { success: true } }));
+            await assertFails(updateDoc(ref, { status: 'claimed' }));
         });
 
         it('allows denial from pending but no later execution', async () => {

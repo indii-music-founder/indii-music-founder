@@ -69,6 +69,8 @@ export const AgentLoopExecutionSchema = z.object({
     status: AgentLoopStatusEnum.default('IDLE'),
     currentIteration: z.number().int().nonnegative().default(0),
     history: z.array(AgentLoopIterationSchema).default([]),
+    // Durable high-water mark; checkpoints without it cannot prove remaining allowance.
+    tokenBudgetSpent: z.number().int().nonnegative().safe().optional(),
     actionCheckpoint: AgentLoopActionCheckpointSchema.optional(),
     createdAt: z.number(),
     updatedAt: z.number(),

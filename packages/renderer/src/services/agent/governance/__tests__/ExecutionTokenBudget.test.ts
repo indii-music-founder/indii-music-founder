@@ -32,6 +32,17 @@ describe('ExecutionTokenBudget', () => {
         expect(executionTokenBudget(child, 100).reserve(30)).toBeNull();
     });
 
+    it('restores a durable high-water mark without replenishing an active context', () => {
+        const budget = new ExecutionTokenBudget(100);
+        budget.reserve(30);
+        budget.ensureSpentAtLeast(80);
+        expect(budget.spent).toBe(80);
+        expect(budget.remaining).toBe(20);
+        budget.ensureSpentAtLeast(50);
+        expect(budget.spent).toBe(80);
+        expect(() => budget.ensureSpentAtLeast(NaN)).toThrow(/invalid/);
+    });
+
     it.each([NaN, Infinity, -1, 1.5])('rejects an invalid reservation (%s)', amount => {
         const budget = new ExecutionTokenBudget(100);
         expect(budget.reserve(amount)).toBeNull();
