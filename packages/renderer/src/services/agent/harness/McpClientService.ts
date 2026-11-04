@@ -107,16 +107,16 @@ class McpClientService {
             throw new Error('MCP Client not connected');
         }
 
-        logger.debug(`[McpClientService] Calling remote tool: ${name}`, args);
+        logger.debug(`[McpClientService] Calling remote tool: ${name}`);
         try {
             const result = await this.client.callTool({
                 name,
                 arguments: args
             });
-            logger.debug(`[McpClientService] Tool ${name} returned:`, result);
+            logger.debug(`[McpClientService] Tool ${name} completed`);
             return result;
         } catch (err) {
-            logger.error(`[McpClientService] Tool ${name} failed:`, err);
+            logger.error(`[McpClientService] Tool ${name} failed (${err instanceof Error ? err.name : typeof err})`);
             throw err;
         }
     }

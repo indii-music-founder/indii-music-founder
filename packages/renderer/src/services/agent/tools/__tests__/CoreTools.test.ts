@@ -25,6 +25,7 @@ import { agentRegistry } from '../../registry';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { logger } from '@/utils/logger';
 
 const { mockAI } = vi.hoisted(() => ({
     mockAI: {
@@ -62,6 +63,20 @@ describe('CoreTools', () => {
     });
 
     describe('request_approval', () => {
+        it('keeps approval text out of diagnostics', async () => {
+            const content = 'private-approval-content-do-not-log';
+            mockStoreState.requestApproval.mockResolvedValue(true);
+            const info = vi.spyOn(logger, 'info').mockImplementation(() => {});
+
+            const result = await CoreTools.request_approval({ content, type: 'private-type-do-not-log' });
+
+            expect(mockStoreState.requestApproval).toHaveBeenCalledWith(content, 'private-type-do-not-log');
+            expect(result.data.message).toContain(content);
+            expect(JSON.stringify(info.mock.calls)).not.toContain(content);
+            expect(JSON.stringify(info.mock.calls)).not.toContain('private-type-do-not-log');
+            info.mockRestore();
+        });
+
         it('should handle approved request', async () => {
             mockStoreState.requestApproval.mockResolvedValue(true);
 

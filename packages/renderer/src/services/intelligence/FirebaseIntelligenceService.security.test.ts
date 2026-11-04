@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
-import { InputSanitizer } from './utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 
 // Mock Dependencies
@@ -83,29 +82,12 @@ describe('FirebaseIntelligenceService Security', () => {
         loggerDebugSpy.mockRestore();
     });
 
-    it('should NOT leak raw PII in debug logs', async () => {
-        // Use a password pattern that triggers InputSanitizer (key-value pair)
-        const sensitivePrompt = "password: super_secret_123";
+    it('does not log prompt text that a pattern sanitizer would miss', async () => {
+        const sensitivePrompt = 'unreleased lyric: blue glass under the water';
 
-        // Ensure InputSanitizer would redact it
-        const sanitized = InputSanitizer.sanitize(sensitivePrompt);
-        expect(sanitized).toContain('[REDACTED_SECRET]');
-        expect(sanitized).not.toContain('super_secret_123');
-
-        // Call generateContent
         await service.generateContent(sensitivePrompt);
 
-        // Check calls to logger.debug
-        const calls = loggerDebugSpy.mock.calls;
-        const promptLog = calls.find((args: any[]) => args[0] === '[DEBUG-PAYLOAD] prompt:');
-
-        expect(promptLog).toBeDefined();
-
-        // VULNERABILITY CHECK: The current implementation logs the RAW prompt
-        const loggedContent = promptLog[1];
-
-        // This assertion confirms the vulnerability exists (it fails because the secret IS present)
-        // I'll make it explicit: expect NOT to find the secret.
-        expect(loggedContent).not.toContain('super_secret_123');
+        expect(JSON.stringify(loggerDebugSpy.mock.calls)).not.toContain(sensitivePrompt);
+        expect(loggerDebugSpy).toHaveBeenCalledWith('[FirebaseIntelligenceService] generateContent request');
     });
 });
