@@ -1,5 +1,6 @@
 import { delegatedAgentText } from './executionFailure';
 import { inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
+import { runWithAgentDeadline } from './governance/AgentRunDeadline';
 import { logger } from '@/utils/logger';
 import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy';
 import { v4 as uuidv4 } from 'uuid';
@@ -1853,6 +1854,7 @@ The user will see this plan and can approve it to start execution.`;
      * @param attachments Optional file attachments.
      */
     async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
+        parentContext?.signal?.throwIfAborted();
         // CRITICAL: Deep clone context to prevent mutation affecting parent agent
         let context: AgentContext;
 
@@ -1920,41 +1922,17 @@ The user will see this plan and can approve it to start execution.`;
         // Hub and Spoke: Inject runner for intra-agent delegation
         context.runAgent = this.runAgent.bind(this);
 
-        // Fail-safe: Enforce a master timeout of 5 minutes per agent run
-        // to prevent indefinite workflow orchestration hangs.
-        const timeoutController = new AbortController();
+        // Bound the run and carry parent cancellation into delegated execution.
         const timeoutMs = 300 * 1000;
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-        
-        const timeoutPromise = new Promise<{ text: string; thoughtSignature?: string }>((_, reject) => {
-            timeoutId = setTimeout(() => {
-                logger.error(`[AgentService] Timeout: Agent ${agentId} took longer than 5 minutes to complete.`);
-                timeoutController.abort(new Error(`Agent ${agentId} execution timed out.`));
-                reject(new Error(`Agent ${agentId} execution timed out after ${timeoutMs / 1000}s.`));
-            }, timeoutMs);
-        });
-
-        const executePromise = this.executor.execute(
-            agentId,
-            task,
-            context as PipelineContext,
-            undefined,
-            timeoutController.signal,
-            parentTraceId,
-            attachments || context.attachments
-        ).catch(err => {
-            if (timeoutController.signal.aborted) {
-                // We already rejected via the timeout promise, swallow to avoid unhandled rejection
-                return { text: `Agent ${agentId} execution timed out.` };
-            }
-            throw err;
-        });
-
-        try {
-            return await Promise.race([executePromise, timeoutPromise]);
-        } finally {
-            if (timeoutId !== undefined) clearTimeout(timeoutId);
-        }
+        return runWithAgentDeadline(
+            signal => this.executor.execute(
+                agentId, task, context as PipelineContext, undefined, signal,
+                parentTraceId, attachments || context.attachments
+            ),
+            parentContext?.signal,
+            timeoutMs,
+            () => logger.error(`[AgentService] Timeout: Agent ${agentId} took longer than 5 minutes to complete.`),
+        );
     }
 
     /**
