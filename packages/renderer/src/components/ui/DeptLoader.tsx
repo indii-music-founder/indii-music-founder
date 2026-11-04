@@ -73,7 +73,7 @@ export function DeptLoader({
         >
             <Loader2
                 aria-hidden="true"
-                className={`${sizeClasses[size]} ${colors.text} animate-spin drop-shadow-[0_0_8px_var(--dept-color)]`}
+                className={`${sizeClasses[size]} ${colors.text} motion-safe:animate-spin drop-shadow-[0_0_8px_var(--dept-color)]`}
             />
             {message && (
                 <p className={`${textSizes[size]} text-gray-400 font-main`}>
@@ -132,10 +132,9 @@ export function DeptSkeleton({
             `}
         >
             <div
-                className="absolute inset-0 animate-pulse"
+                className="absolute inset-0 motion-safe:animate-[shimmer_1.5s_infinite]"
                 style={{
                     background: `linear-gradient(90deg, transparent, var(--dept-color, #ffffff10), transparent)`,
-                    animation: 'shimmer 1.5s infinite'
                 }}
             />
         </div>

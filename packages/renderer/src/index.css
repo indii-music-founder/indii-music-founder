@@ -409,6 +409,12 @@
   border: 1px solid transparent;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .indii-auto-update {
+    animation: none;
+  }
+}
+
 @keyframes bolt-pulse {
   0% {
     border-color: transparent;
