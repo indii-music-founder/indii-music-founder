@@ -2370,7 +2370,7 @@ export async function judgeAdCreativeBatchCompliance(
 }
 
 // ---------------------------------------------------------------------------
-// Judgment 28: pre-flight DDEX validation & DSP anomaly detection (Domain 2)
+// Pre-flight metadata presence checks (Domain 2)
 // ---------------------------------------------------------------------------
 
 export type DSPDeliveryTarget = 'SPOTIFY' | 'APPLE_MUSIC' | 'TIDAL';
@@ -2387,8 +2387,10 @@ export interface DDEXPreFlightPayload {
 }
 
 export interface DDEXPreFlightResult {
+    /** Only the listed metadata checks passed; this is not a DSP acceptance verdict. */
     passed: boolean;
     dspTarget: DSPDeliveryTarget;
+    dspPolicyVerified: false;
     blockingOmissions: string[];
     advisoryWarnings: string[];
 }
@@ -2399,70 +2401,26 @@ export async function judgeDDEXPreFlight(
     const blockingOmissions: string[] = [];
     const advisoryWarnings: string[] = [];
 
-    // Base deterministic pre-flight checks
+    // These fields support a deterministic checklist. No DSP policy document or
+    // complete delivery package is available here for Jev to verify.
     if (!payload.cLinePresent) blockingOmissions.push('Missing copyright notice (C-Line).');
     if (!payload.pLinePresent) blockingOmissions.push('Missing sound recording performance notice (P-Line).');
-    if (!payload.territoriesDeclared || payload.territoriesDeclared.length === 0) {
-        blockingOmissions.push('No release territories declared.');
+    if (!payload.territoriesDeclared?.length ||
+        payload.territoriesDeclared.some(territory => territory !== 'Worldwide' && !/^[A-Z]{2}$/.test(territory))) {
+        blockingOmissions.push('No valid release territories declared.');
     }
     if (!payload.isrcsMapped) blockingOmissions.push('One or more sound recordings lack valid ISRC identifiers.');
     if (!payload.iswcMapped) advisoryWarnings.push('Missing ISWC publishing identifier. May delay mechanical royalty distribution.');
+    if (!payload.parentalAdvisoryDeclared) blockingOmissions.push('Explicit-content status has not been declared.');
+    advisoryWarnings.push(`${payload.dspTarget} ingestion policy has not been verified against an authoritative DSP profile.`);
 
-    if (!judgmentsAvailable()) {
-        return {
-            passed: blockingOmissions.length === 0,
-            dspTarget: payload.dspTarget,
-            blockingOmissions,
-            advisoryWarnings,
-        };
-    }
-
-    try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: { payload, currentBlockers: blockingOmissions },
-            questions: {
-                dspSuitability: {
-                    type: 'choice' as const,
-                    instructions:
-                        `Validate this DDEX metadata payload against specific delivery requirements for ${payload.dspTarget}. ` +
-                        `Select COMPLIANT, CRITICAL_BLOCKER, or MINOR_WARNING.`,
-                    criteria: {
-                        COMPLIANT: `Meets all ${payload.dspTarget} delivery spec requirements without rejection risk.`,
-                        CRITICAL_BLOCKER: `Missing vital rights, metadata, or identifier requirements that will trigger immediate ingestion rejection.`,
-                        MINOR_WARNING: `Payload can ingest but contains non-fatal catalog gaps.`,
-                    },
-                },
-            },
-        });
-
-        const ans = result.data.answers?.dspSuitability as { choice?: unknown } | undefined;
-        const choice = typeof ans?.choice === 'string' ? ans.choice : 'COMPLIANT';
-
-        if (choice === 'CRITICAL_BLOCKER' && blockingOmissions.length === 0) {
-            blockingOmissions.push(`${payload.dspTarget} specific ingest policy requirements not satisfied.`);
-        }
-
-        return {
-            passed: blockingOmissions.length === 0 && choice !== 'CRITICAL_BLOCKER',
-            dspTarget: payload.dspTarget,
-            blockingOmissions,
-            advisoryWarnings,
-        };
-    } catch (err: unknown) {
-        noteJudgmentFailure(err, 'ddex pre-flight judgment');
-        return {
-            passed: blockingOmissions.length === 0,
-            dspTarget: payload.dspTarget,
-            blockingOmissions,
-            advisoryWarnings,
-        };
-    }
+    return {
+        passed: blockingOmissions.length === 0,
+        dspTarget: payload.dspTarget,
+        dspPolicyVerified: false,
+        blockingOmissions,
+        advisoryWarnings,
+    };
 }
 
 // ---------------------------------------------------------------------------
