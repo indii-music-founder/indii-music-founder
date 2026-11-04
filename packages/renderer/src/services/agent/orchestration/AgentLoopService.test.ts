@@ -117,6 +117,63 @@ describe('AgentLoopService', () => {
         expect(execution?.history[1]?.feedback).toBe('PASS');
     });
 
+    it.each([
+        { passed: 'false', feedback: 'No' },
+        { passed: 1, feedback: 'Yes' },
+        { feedback: 'Missing verdict' },
+        { passed: true, feedback: 42 },
+    ])('does not complete from a malformed judge verdict: %j', async verdict => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-invalid-verdict',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review action',
+            verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
+            maxIterations: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Action result', data: { taskId: 'task-1' } },
+        ]);
+        mockGenerateContent.mockResolvedValueOnce({ response: { text: () => JSON.stringify(verdict) } });
+
+        const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const execution = agentLoopService.getExecution(executionId);
+        expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a malformed verdict after a transient judge retry', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-invalid-retry-verdict',
+            trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review action',
+            verifiabilityCriteria: 'Must be complete',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
+            maxIterations: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Action result', data: { taskId: 'task-1' } },
+        ]);
+        mockGenerateContent
+            .mockRejectedValueOnce(new Error('503 Service Unavailable'))
+            .mockResolvedValueOnce({ response: { text: () => JSON.stringify({ passed: 'true', feedback: 'PASS' }) } });
+
+        const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const execution = agentLoopService.getExecution(executionId);
+        expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
+        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    });
+
     it('halts before a judge call when the shared execution allowance is exhausted', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-budget-exhausted',
