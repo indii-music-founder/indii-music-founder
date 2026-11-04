@@ -173,7 +173,7 @@ export const AudienceTargetingSpecSchema = z.object({
 });
 
 export const UnifiedCampaignDirectiveSchema = z.object({
-    directiveId: z.string().min(1),
+    directiveId: z.string().regex(/^[A-Za-z0-9_-]{8,120}$/, 'directiveId must be an 8-120 character safe identifier'),
     triggeredBy: z.enum(['GROWTH_INTELLIGENCE_ENGINE', 'MARKETING_AGENT', 'MANUAL_OVERRIDE']),
     artistId: z.string().min(1),
     ledgerAccountId: z.string().min(1),
