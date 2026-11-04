@@ -78,6 +78,7 @@ vi.mock('@/modules/creative/components/BrandCompliancePanel', () => ({
 
 // Mock framer motion / motion/react
 vi.mock('motion/react', () => ({
+    useReducedMotion: () => false,
     motion: new Proxy({}, {
         get: (_target, property: string) => {
             return ({ children, ...props }: any) => {
