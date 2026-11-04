@@ -1876,6 +1876,30 @@ describe('judgeDDEXPreFlight (Judgment 28)', () => {
         expect(result.passed).toBe(false);
         expect(result.blockingOmissions.length).toBeGreaterThan(0);
     });
+
+    it('blocks undeclared advisory status and invalid territory values even when Jev says compliant', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { dspSuitability: { choice: 'COMPLIANT' } } },
+        }));
+
+        const result = await judgeDDEXPreFlight({
+            releaseId: 'rel-3',
+            dspTarget: 'TIDAL',
+            cLinePresent: true,
+            pLinePresent: true,
+            territoriesDeclared: ['US', 'not-a-territory'],
+            isrcsMapped: true,
+            iswcMapped: true,
+            parentalAdvisoryDeclared: false,
+        });
+
+        expect(result.passed).toBe(false);
+        expect(result.blockingOmissions).toEqual(expect.arrayContaining([
+            'No valid release territories declared.',
+            'Explicit-content status has not been declared.',
+        ]));
+    });
 });
 
 describe('judgeAudioToVisualTokens (Judgment 29)', () => {

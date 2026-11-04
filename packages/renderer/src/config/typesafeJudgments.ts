@@ -2402,11 +2402,13 @@ export async function judgeDDEXPreFlight(
     // Base deterministic pre-flight checks
     if (!payload.cLinePresent) blockingOmissions.push('Missing copyright notice (C-Line).');
     if (!payload.pLinePresent) blockingOmissions.push('Missing sound recording performance notice (P-Line).');
-    if (!payload.territoriesDeclared || payload.territoriesDeclared.length === 0) {
-        blockingOmissions.push('No release territories declared.');
+    if (!payload.territoriesDeclared?.length ||
+        payload.territoriesDeclared.some(territory => territory !== 'Worldwide' && !/^[A-Z]{2}$/.test(territory))) {
+        blockingOmissions.push('No valid release territories declared.');
     }
     if (!payload.isrcsMapped) blockingOmissions.push('One or more sound recordings lack valid ISRC identifiers.');
     if (!payload.iswcMapped) advisoryWarnings.push('Missing ISWC publishing identifier. May delay mechanical royalty distribution.');
+    if (!payload.parentalAdvisoryDeclared) blockingOmissions.push('Explicit-content status has not been declared.');
 
     if (!judgmentsAvailable()) {
         return {
