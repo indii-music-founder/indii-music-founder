@@ -168,6 +168,45 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         expect(sessionService.clearMessages).toHaveBeenCalledWith(sessionId);
     });
 
+    it('waits for earlier appends before clearing history', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        let finishAppend!: () => void;
+        mockAppendMessage.mockImplementationOnce(() => new Promise<void>(resolve => {
+            finishAppend = resolve;
+        }));
+
+        store.addAgentMessage({ id: 'before-clear', role: 'user', text: 'Old', timestamp: Date.now() });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledTimes(1));
+        store.clearAgentHistory();
+        expect(mockClearMessages).not.toHaveBeenCalled();
+
+        finishAppend();
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId));
+    });
+
+    it('waits for an in-flight clear before appending a new message', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        let finishClear!: () => void;
+        mockClearMessages.mockImplementationOnce(() => new Promise<void>(resolve => {
+            finishClear = resolve;
+        }));
+
+        store.clearAgentHistory();
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId));
+        store.addAgentMessage({ id: 'after-clear', role: 'user', text: 'New', timestamp: Date.now() });
+        expect(useStore.getState().sessions[sessionId].messages.map((message: AgentMessage) => message.id))
+            .toEqual(['after-clear']);
+        expect(mockAppendMessage).not.toHaveBeenCalled();
+
+        finishClear();
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledWith(
+            sessionId,
+            expect.objectContaining({ id: 'after-clear' }),
+        ));
+    });
+
     it('keeps messages from concurrent surfaces when the append-only stream updates', async () => {
         const sessionId = useStore.getState().activeSessionId!;
         useStore.getState().setActiveSession(sessionId);

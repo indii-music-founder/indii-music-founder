@@ -7,6 +7,7 @@ let agentMessagesUnsubscribe: (() => void) | null = null;
 const agentSessionRuntimeStartedAt = Date.now();
 const pendingMessageIds = new Map<string, Set<string>>();
 const messageWriteChains = new Map<string, Promise<void>>();
+const sessionClearChains = new Map<string, Promise<void>>();
 const recoveredInterruptedMessageIds = new Set<string>();
 /**
  * Pins every locally-appended message to the session it was appended to.
@@ -56,8 +57,11 @@ function enqueueMessageWrite(
 ): void {
     const key = messageWriteKey(sessionId, messageId);
     const previous = messageWriteChains.get(key) ?? Promise.resolve();
-    const next = previous
-        .catch(() => undefined)
+    const clearBarrier = sessionClearChains.get(sessionId) ?? Promise.resolve();
+    const next = Promise.all([
+        previous.catch(() => undefined),
+        clearBarrier.catch(() => undefined),
+    ])
         .then(() => persistMessageWrite(operation, label))
         .finally(() => {
             if (messageWriteChains.get(key) === next) {
@@ -543,21 +547,23 @@ export function buildAgentSessionState(
                 }
             }
 
-            // Persist the cleared history with retry logic
-            const persistClear = async (attempt = 1) => {
-                try {
+            // Finish writes already queued for this session, then clear. New
+            // appends wait for this barrier so they cannot enter the delete snapshot.
+            const previousClear = sessionClearChains.get(targetSessionId) ?? Promise.resolve();
+            const outstandingWrites = [...messageWriteChains]
+                .filter(([key]) => key.startsWith(`${targetSessionId}:`))
+                .map(([, write]) => write.catch(() => undefined));
+            const clear = Promise.all([previousClear.catch(() => undefined), ...outstandingWrites])
+                .then(() => persistMessageWrite(async () => {
                     const { sessionService } = await import('@/services/agent/SessionService');
                     await sessionService.clearMessages(targetSessionId);
-                } catch (e) {
-                    if (attempt < 3) {
-                        logger.warn(`[AgentSlice] Clear history attempt ${attempt} failed, retrying...`, e);
-                        setTimeout(() => persistClear(attempt + 1), 1000 * attempt);
-                    } else {
-                        logger.error('[AgentSlice] Clear history failed after 3 attempts:', e);
+                }, 'Clear history'))
+                .finally(() => {
+                    if (sessionClearChains.get(targetSessionId) === clear) {
+                        sessionClearChains.delete(targetSessionId);
                     }
-                }
-            };
-            persistClear();
+                });
+            sessionClearChains.set(targetSessionId, clear);
 
             const update: Partial<AgentSessionSlice> = {
                 sessions: {
