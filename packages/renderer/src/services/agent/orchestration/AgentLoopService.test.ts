@@ -163,6 +163,7 @@ describe('AgentLoopService', () => {
         const saved = {
             id: 'saved-active-resume', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
             definitionSnapshot: snapshotOf(def),
+            tokenBudgetSpent: 0,
             actionCheckpoint: { phase: 'READY' as const, iteration: 1 },
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
@@ -252,6 +253,7 @@ describe('AgentLoopService', () => {
         };
         const saved = {
             id: 'recorded-result-execution', loopId: def.id, definitionSnapshot: snapshotOf(def),
+            tokenBudgetSpent: 0,
             actionCheckpoint: { phase: 'RESULT_RECORDED' as const, iteration: 1, prompt: 'Saved prompt', output: 'Saved output' },
             status: AgentLoopStatusEnum.enum.EVALUATING, currentIteration: 1,
             history: [], createdAt: 1000, updatedAt: 1000,
@@ -276,6 +278,7 @@ describe('AgentLoopService', () => {
         };
         const saved = {
             id: 'empty-result-execution', loopId: def.id, definitionSnapshot: snapshotOf(def),
+            tokenBudgetSpent: 0,
             actionCheckpoint: { phase: 'RESULT_RECORDED' as const, iteration: 1, prompt: 'Saved prompt', output: '  ' },
             status: AgentLoopStatusEnum.enum.EVALUATING, currentIteration: 1,
             history: [], createdAt: 1000, updatedAt: 1000,
@@ -300,6 +303,7 @@ describe('AgentLoopService', () => {
         const saved = {
             id: 'saved-checkpoint-failure', loopId: def.id, status: AgentLoopStatusEnum.enum.FAILED,
             definitionSnapshot: snapshotOf(def),
+            tokenBudgetSpent: 0,
             actionCheckpoint: { phase: 'READY' as const, iteration: 1 },
             currentIteration: 1, history: [], createdAt: 1000, updatedAt: 1000,
         };
@@ -462,6 +466,80 @@ describe('AgentLoopService', () => {
         expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
+    it('restores the saved allowance before judging a recorded result on a fresh context', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-resume-budget', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be valid',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 2,
+            createdAt: 1000, updatedAt: 1000,
+        };
+        const saved = {
+            id: 'resume-budget-execution', loopId: def.id, definitionSnapshot: snapshotOf(def),
+            actionCheckpoint: { phase: 'RESULT_RECORDED' as const, iteration: 1, prompt: 'Saved prompt', output: 'Saved output' },
+            status: AgentLoopStatusEnum.enum.EVALUATING, currentIteration: 1,
+            tokenBudgetSpent: 1_500_000, history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+        const freshContext = { userId: 'user1' };
+
+        await agentLoopService.resumeLoop(def, saved.id, freshContext);
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', saved.id)?.status)
+            .toBe(AgentLoopStatusEnum.enum.FAILED));
+        expect(executionTokenBudget(freshContext, 1_500_000).remaining).toBe(0);
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('refuses to resume an older checkpoint with unknown cumulative spend', async () => {
+        const def: AgentLoopDefinition = {
+            id: 'loop-legacy-budget', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be valid',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 2,
+            createdAt: 1000, updatedAt: 1000,
+        };
+        const saved = {
+            id: 'legacy-budget-execution', loopId: def.id, definitionSnapshot: snapshotOf(def),
+            actionCheckpoint: { phase: 'READY' as const, iteration: 2 },
+            status: AgentLoopStatusEnum.enum.FAILED, currentIteration: 2,
+            history: [], createdAt: 1000, updatedAt: 1000,
+        };
+        (agentLoopService as any).executionStore.set(saved.id, saved);
+        (agentLoopService as any).executionOwners.set(saved.id, 'user1');
+
+        await expect(agentLoopService.resumeLoop(def, saved.id, { userId: 'user1' }))
+            .rejects.toThrow(/valid saved token allowance/);
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
+    it('does not dispatch a judge when its budget checkpoint cannot be saved', async () => {
+        let attemptedBudgetSpend = 0;
+        vi.spyOn(FirestoreService.prototype, 'set')
+            .mockResolvedValueOnce(undefined)
+            .mockResolvedValueOnce(undefined)
+            .mockResolvedValueOnce(undefined)
+            .mockImplementationOnce(async (_id, record) => {
+                attemptedBudgetSpend = (record as { tokenBudgetSpent?: number }).tokenBudgetSpent ?? 0;
+                throw new Error('offline');
+            })
+            .mockResolvedValue(undefined);
+        const def: AgentLoopDefinition = {
+            id: 'loop-judge-checkpoint', trigger: AgentLoopTriggerEnum.enum.MANUAL,
+            goal: 'Review result', verifiabilityCriteria: 'Must be valid',
+            judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION, maxIterations: 1,
+            createdAt: 1000, updatedAt: 1000,
+        };
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Action result', data: { taskId: 'task-1' } },
+        ]);
+        const executionId = await agentLoopService.startLoop(def, { userId: 'user1' });
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status)
+            .toBe(AgentLoopStatusEnum.enum.FAILED));
+        expect(agentLoopService.getExecution('user1', executionId)?.actionCheckpoint?.phase).toBe('RESULT_RECORDED');
+        expect(attemptedBudgetSpend).toBeGreaterThan(0);
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
     it('does not judge a successful batch with empty output', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-empty-output', trigger: AgentLoopTriggerEnum.enum.MANUAL,
@@ -598,6 +676,7 @@ describe('AgentLoopService', () => {
             loopId: def.id,
             definitionSnapshot: snapshotOf(def),
             actionCheckpoint: { phase: 'READY', iteration: 2 },
+            tokenBudgetSpent: 0,
             status: AgentLoopStatusEnum.enum.FAILED,
             currentIteration: 2,
             history: [
