@@ -3709,12 +3709,6 @@ export async function judgeVideoBeatCutPacing(
         const styleAns = ans?.transition_style as { choice?: unknown } | undefined;
         const snapAns = ans?.snap_transients as { noul?: unknown } | number | undefined;
 
-        const resolvedFreq = (typeof freqAns?.choice === 'string' ? freqAns.choice : fallbackFrequency) as CutFrequency;
-        const resolvedStyle = (typeof styleAns?.choice === 'string' ? styleAns.choice : fallbackStyle) as CutTransitionStyle;
-        const snapProb = typeof snapAns === 'number'
-            ? snapAns
-            : Number((snapAns as { noul?: unknown })?.noul ?? (fallbackSnap ? 0.8 : 0.2));
-
         const beatsMap: Record<CutFrequency, number> = {
             CUT_ON_EVERY_BEAT: 1,
             CUT_ON_HALF_BAR: 2,
@@ -3722,10 +3716,19 @@ export async function judgeVideoBeatCutPacing(
             HOLD_MULTI_BAR: 8,
         };
 
+        const frequency = freqAns?.choice;
+        const resolvedFreq = typeof frequency === 'string' && Object.hasOwn(beatsMap, frequency)
+            ? frequency as CutFrequency
+            : fallbackFrequency;
+        const style = styleAns?.choice;
+        const resolvedStyle = style === 'HARD_CUT' || style === 'SMOOTH_CROSSFADE' ||
+            style === 'WHIP_PAN' || style === 'FLASH_CUT' ? style : fallbackStyle;
+        const snapProb = boundedJudgmentNumber(snapAns, 'noul', 1);
+
         return {
             cutFrequency: resolvedFreq,
             transitionStyle: resolvedStyle,
-            snapToTransients: snapProb >= 0.5,
+            snapToTransients: snapProb === null || snapProb === 0.5 ? fallbackSnap : snapProb > 0.5,
             recommendedBeatsPerCut: beatsMap[resolvedFreq] || fallbackBeats,
         };
     } catch (err: unknown) {
