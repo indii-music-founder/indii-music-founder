@@ -2111,11 +2111,11 @@ export async function judgeSplitSheetVerification(
 
         const ans = result.data.answers;
         const scopeAns = ans?.scope as { choice?: unknown } | undefined;
-        const prodAns = ans?.producerReq as { probability?: unknown } | undefined;
+        const prodAns = ans?.producerReq as { noul?: unknown } | undefined;
         const riskAns = ans?.risk as { score?: unknown } | undefined;
 
         const scope = scopeAns?.choice;
-        const producerProbability = prodAns?.probability;
+        const producerProbability = prodAns?.noul;
         const riskScore = riskAns?.score;
         if (
             scope !== 'MASTER_AND_PUBLISHING' && scope !== 'MASTER_ONLY' &&
