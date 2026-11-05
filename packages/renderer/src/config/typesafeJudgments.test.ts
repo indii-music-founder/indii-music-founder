@@ -1997,12 +1997,28 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         vi.clearAllMocks();
     });
 
+    it.each([undefined, { noul: null }, { noul: '0.99' }, { noul: 1.1 }, { noul: 0.819 }])(
+        'withholds dispatch for invalid or below-threshold fit %j', async fit => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { fitProbability: fit } },
+            }));
+            const result = await judgeCuratorPlaylistAlignment({
+                trackProfile: { genre: 'Rock', subgenres: [], tempoBpm: 120, moodTags: [],
+                    instrumentation: [], vocalPresence: 'prominent' },
+                curatorPreferences: { curatorId: 'curator', recentAdditionsGenres: ['Rock'],
+                    targetMoods: [], maxBpmSkew: 20 },
+            });
+            expect(result.dispatchPitch).toBe(false);
+        },
+    );
+
     it('approves pitch dispatch when match score >= 0.82', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.89 },
+                    fitProbability: { noul: 0.89 },
                 },
             },
         }));
@@ -2034,7 +2050,7 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.45 },
+                    fitProbability: { noul: 0.45 },
                 },
             },
         }));
