@@ -813,3 +813,32 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         expect(messages[0]?.text).not.toContain('Step failed');
     });
 });
+
+describe('AgentService request-bound approval guidance', () => {
+    it.each(['direct', 'department', 'boardroom'])('opens approvals without another model dispatch in %s', async conversationMode => {
+        const before = capturedExecutions.length;
+        const updateAgentMessage = vi.fn();
+        const setRightPanelTab = vi.fn();
+        const state = {
+            conversationMode,
+            agentHistory: [
+                { id: 'paused', role: 'model', agentId: 'generalist', text: "Execution paused: 'report_bug' requires your explicit approval (File a bug report). Check the Approvals panel to approve or deny." },
+                { id: 'consent', role: 'user', text: "I'm giving you my approval" },
+                { id: 'response', role: 'model', text: 'Generating response...' },
+            ],
+            updateAgentMessage, setRightPanelTab,
+        };
+        const service = new AgentService();
+        const internals = service as unknown as {
+            getStore: () => Promise<{ getState: () => typeof state }>;
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, id: string) => Promise<void>;
+        };
+        internals.getStore = vi.fn(async () => ({ getState: () => state }));
+        await internals.executeFlow("I'm giving you my approval", undefined, {}, 'response');
+        expect(setRightPanelTab).toHaveBeenCalledWith('approvals');
+        expect(updateAgentMessage).toHaveBeenCalledWith('response', expect.objectContaining({
+            text: expect.stringContaining('has not executed'), isStreaming: false,
+        }));
+        expect(capturedExecutions).toHaveLength(before);
+    });
+});

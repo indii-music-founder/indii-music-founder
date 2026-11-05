@@ -33,6 +33,7 @@ import {
     getPersonaResponseMetadata,
 } from '@/services/persona/PersonaResponseMetadata';
 import { isTrivialInput } from '@/services/agent/utils/trivialInput';
+import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from './utils/approvalConsent';
 import { isCapabilityQuestion } from './capabilityTruth';
 import { PRINT_TOOL_DECLARATIONS } from './definitions/PrintToolDeclarations';
 import { isFounderUserProfile } from './builders/AgentPromptBuilder';
@@ -685,6 +686,23 @@ export class AgentService {
         // permission. Concrete execution paths assign their existing T1 mode.
         context.conversationMode = conversationMode === 'orchestrated' ? undefined : conversationMode;
         context.runAgent = this.runAgent.bind(this);
+
+        // Chat consent cannot safely choose a pending request or re-run the tool proposal.
+        // Keep remote/API sends on their existing path; this opens a local UI only.
+        const previousModelMessage = state.agentHistory
+            .filter(message => message.id !== responseId && message.role === 'model')
+            .at(-1);
+        if ((!options?.source || options.source === 'desktop') && !attachments?.length &&
+            isApprovalConsentReply(text, previousModelMessage?.text)) {
+            state.setRightPanelTab('approvals');
+            updateAgentMessage(responseId, {
+                agentId: previousModelMessage?.agentId || 'generalist',
+                text: APPROVAL_PANEL_GUIDANCE,
+                isStreaming: false,
+            });
+            this.flushSyncMessage(responseId, () => useStore.getState().agentHistory.find(message => message.id === responseId));
+            return;
+        }
 
         // 0. Dispatch by Mode — MUST be checked FIRST.
         if (conversationMode === 'boardroom') {
