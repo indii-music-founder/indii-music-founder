@@ -4157,15 +4157,13 @@ export async function judgeMusicVideoContinuity(
         const flowAns = ans?.flow_score as { score?: unknown } | number | undefined;
 
         const resolvedStatus = (typeof statAns?.choice === 'string' ? statAns.choice : fallbackStatus) as ContinuityStatus;
-        const resolvedCov = typeof covAns === 'number'
-            ? covAns
-            : Number((covAns as { noul?: unknown })?.noul ?? (fallbackCoverage ? 0.8 : 0.2));
+        const resolvedCov = boundedJudgmentNumber(covAns, 'noul', 1);
         const resolvedScore = oneIndexedScore(flowAns, fallbackScore);
 
         return {
             status: resolvedStatus,
             flowScore: Math.max(1, Math.min(5, Math.round(resolvedScore) || fallbackScore)),
-            hasAdequateCoverage: resolvedCov >= 0.5,
+            hasAdequateCoverage: resolvedCov === null || resolvedCov === 0.5 ? fallbackCoverage : resolvedCov > 0.5,
             directorNote: `System One assessed editing flow as ${resolvedStatus} (score: ${resolvedScore}).`,
         };
     } catch (err: unknown) {
@@ -4298,9 +4296,7 @@ export async function judgeSocialAudioSnippetSelection(
         const sTime = matchedSection.startTimeSeconds;
         const eTime = Math.min(matchedSection.endTimeSeconds, sTime + targetDurationSeconds);
 
-        const vocProb = typeof vocAns === 'number'
-            ? vocAns
-            : Number((vocAns as { noul?: unknown })?.noul ?? (fallbackImmediateVocal ? 0.8 : 0.2));
+        const vocProb = boundedJudgmentNumber(vocAns, 'noul', 1);
         const resolvedScore = oneIndexedScore(virAns, fallbackPotential);
 
         return {
@@ -4308,7 +4304,7 @@ export async function judgeSocialAudioSnippetSelection(
             suggestedStartTimeSeconds: sTime,
             suggestedEndTimeSeconds: eTime,
             viralHookPotential: Math.max(1, Math.min(5, Math.round(resolvedScore) || fallbackPotential)),
-            isImmediateVocalOnset: vocProb >= 0.5,
+            isImmediateVocalOnset: vocProb === null || vocProb === 0.5 ? fallbackImmediateVocal : vocProb > 0.5,
             hookStrategy: `System One selected ${resolvedSec} at ${sTime}s with viral potential ${resolvedScore}/5.`,
         };
     } catch (err: unknown) {
@@ -4909,14 +4905,12 @@ export async function judgeCameraAngleContinuity(
         const divAns = ans?.diversity_score as { score?: unknown } | number | undefined;
 
         const resolvedAngle = (typeof angAns?.choice === 'string' ? angAns.choice : fallbackNextAngle) as ShotAngle;
-        const jumpProb = typeof jumpAns === 'number'
-            ? jumpAns
-            : Number((jumpAns as { noul?: unknown })?.noul ?? (hasJumpAngleViolation ? 0.85 : 0.15));
+        const jumpProb = boundedJudgmentNumber(jumpAns, 'noul', 1);
         const resolvedDiversity = oneIndexedScore(divAns, fallbackDiversityScore);
 
         return {
             recommendedNextAngle: resolvedAngle,
-            hasJumpAngleViolation: jumpProb >= 0.5,
+            hasJumpAngleViolation: jumpProb === null || jumpProb === 0.5 ? hasJumpAngleViolation : jumpProb > 0.5,
             compositionDiversityScore: Math.max(1, Math.min(5, Math.round(resolvedDiversity) || fallbackDiversityScore)),
             cinematicNotes: `System One camera direction: next shot ${resolvedAngle} (diversity: ${resolvedDiversity}/5).`,
         };
