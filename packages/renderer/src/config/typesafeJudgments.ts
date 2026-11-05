@@ -2827,16 +2827,21 @@ export async function judgeVisualQualityInspection(
         });
 
         const ans = result.data.answers;
-        const defectAns = ans?.defect_detected as { probability?: unknown } | undefined;
+        const defectAns = ans?.defect_detected as { noul?: unknown } | undefined;
         const qualityAns = ans?.aesthetic_quality as { score?: unknown } | undefined;
         const recAns = ans?.recommendation as { choice?: unknown } | undefined;
 
-        const defectProb = typeof defectAns?.probability === 'number' ? defectAns.probability : 0;
-        const qualityScore = typeof qualityAns?.score === 'number' ? qualityAns.score : 2;
-        const choice = (typeof recAns?.choice === 'string' ? recAns.choice : 'APPROVE') as 'APPROVE' | 'REGENERATE' | 'MANUAL_REVIEW';
+        const defectProb = boundedJudgmentNumber(defectAns, 'noul', 1);
+        const qualityScore = boundedJudgmentNumber(qualityAns, 'score', 3);
+        const choice = recAns?.choice;
+        if (defectProb === null || qualityScore === null ||
+            (choice !== 'APPROVE' && choice !== 'REGENERATE' && choice !== 'MANUAL_REVIEW')) {
+            return { passed: false, qualityScore: 0, defectDetected: false,
+                recommendation: 'MANUAL_REVIEW', reason: 'Visual quality assessment is unavailable. Review the asset.' };
+        }
 
         const defectDetected = defectProb >= 0.65;
-        const passed = !defectDetected && qualityScore >= 1 && choice !== 'REGENERATE';
+        const passed = !defectDetected && qualityScore >= 1 && choice === 'APPROVE';
 
         return {
             passed,
