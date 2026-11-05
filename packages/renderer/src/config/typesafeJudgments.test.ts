@@ -4183,7 +4183,7 @@ describe('judgePromptActionability (Judgment 60)', () => {
             data: {
                 answers: {
                     specificity: { score: 4 },
-                    has_deliverable: { probability: 0.98 },
+                    has_deliverable: { noul: 0.98 },
                 },
             },
         }));
