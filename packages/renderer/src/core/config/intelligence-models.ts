@@ -141,6 +141,9 @@ export const INTELLIGENCE_CONFIG = {
  * gemini-2.5-flash: $0.15 input /  $0.60 output per 1M tokens
  */
 export const MODEL_PRICING = {
+    // Argon: non-global Standard list price, excluding promotional credits.
+    // Conservative admission estimate; https://cloud.google.com/model-garden/pricing (2026-11-05).
+    'gemini-4-argon': { input: 4.40, output: 22.00 },
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },

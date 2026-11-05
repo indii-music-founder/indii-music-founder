@@ -4,6 +4,17 @@ import { estimateAgentStreamCost } from './estimateAgentStreamCost';
 import { minimumTextStreamReservationCost } from '../../../../../firebase/src/functions/creative/textStreamAdmission';
 
 describe('estimateAgentStreamCost', () => {
+    it('covers the Argon server floor at its explicit list-price estimate', () => {
+        const contents = [{ role: 'user', parts: [{ text: 'x'.repeat(400_000) }] }];
+        const config = { maxOutputTokens: 8_192 };
+        const client = estimateAgentStreamCost(contents, undefined, undefined, 'gemini-4-argon', config.maxOutputTokens);
+        const server = minimumTextStreamReservationCost(contents, config, 'gemini-4-argon');
+        expect(client).toBe(server);
+        expect(server).toBeGreaterThan(minimumTextStreamReservationCost(contents, config, 'gemini-3.1-pro-preview'));
+        const expected = (Math.ceil(JSON.stringify({ contents }).length / 4) * 4.4 + 8_192 * 22) / 1_000_000;
+        expect(server).toBeGreaterThanOrEqual(expected);
+        expect(server - expected).toBeLessThan(0.000011);
+    });
     it('reserves more for long prompts and larger output limits', () => {
         const short = estimateAgentStreamCost('hello', undefined, [], 'gemini-3.1-pro-preview', 1_024);
         const long = estimateAgentStreamCost('x'.repeat(400_000), undefined, [], 'gemini-3.1-pro-preview', 8_192);
