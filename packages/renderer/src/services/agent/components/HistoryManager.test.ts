@@ -121,7 +121,7 @@ describe('HistoryManager compaction', () => {
         vi.mocked(useStore.getState).mockReturnValue({ agentHistory: history, activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
         vi.mocked(SummaryService.summarize).mockResolvedValue('s'.repeat(8_000));
 
-        await expect(new HistoryManager().getCompiledView()).rejects.toThrow('Conversation summary exceeds the summarizer input budget.');
+        expect(await new HistoryManager().getCompiledView()).not.toContain('Conversation Summary (History)');
         expect(SummaryService.summarize).toHaveBeenCalledTimes(1);
     });
 
@@ -130,7 +130,9 @@ describe('HistoryManager compaction', () => {
         vi.mocked(useStore.getState).mockReturnValue({ agentHistory: messages(30), activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
         vi.mocked(SummaryService.summarize).mockRejectedValueOnce(new Error('summary unavailable'));
 
-        await expect(manager.getCompiledView()).rejects.toThrow('summary unavailable');
+        const fallback = await manager.getCompiledView();
+        expect(fallback).toContain('Recent Exchange');
+        expect(fallback).not.toContain('Conversation Summary (History)');
         await expect(manager.getCompiledView()).resolves.toContain('Compressed prior turns');
         expect(SummaryService.summarize).toHaveBeenCalledTimes(2);
     });
