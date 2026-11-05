@@ -7363,9 +7363,9 @@ export async function judgeDirectToFanEmailSubjectLine(
 
         const ans = result.data.answers;
         const scAns = ans?.copy_quality as { score?: unknown } | undefined;
-        const spAns = ans?.spam_style_signal as { probability?: unknown } | undefined;
+        const spAns = ans?.spam_style_signal as { noul?: unknown } | undefined;
         const rawScore = scAns?.score;
-        const rawSpamProb = spAns?.probability;
+        const rawSpamProb = spAns?.noul;
         const validScore = typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4;
         const validSpamProb = typeof rawSpamProb === 'number' && Number.isFinite(rawSpamProb) && rawSpamProb >= 0 && rawSpamProb <= 1;
         const resolvedScore = validScore ? rawScore + 1 : fallbackScore;
