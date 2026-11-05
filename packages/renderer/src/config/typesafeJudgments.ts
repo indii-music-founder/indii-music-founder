@@ -3037,20 +3037,26 @@ export async function judgeReceiptDataVerification(
         });
 
         const ans = result.data.answers;
-        const catAns = ans?.category as { choice?: unknown } | undefined;
-        const capAns = ans?.is_capital as { probability?: unknown } | undefined;
-
-        const choice = (typeof catAns?.choice === 'string' ? catAns.choice : 'OTHER') as MusicExpenseCategory;
-        const capProb = typeof capAns?.probability === 'number' ? capAns.probability : 0;
+        const catAns = ans?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const choice = catAns?.choice;
+        const capProb = boundedJudgmentNumber(ans?.is_capital, 'noul', 1);
+        const confidence = catAns?.confidence;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1 ||
+            capProb === null || (choice !== 'STUDIO_RENTAL' && choice !== 'TOURING_TRAVEL' &&
+            choice !== 'EQUIPMENT_GEAR' && choice !== 'MARKETING_PROMO' && choice !== 'LEGAL_PROFESSIONAL' &&
+            choice !== 'MERCHANDISE_INVENTORY' && choice !== 'OTHER')) {
+            return { category: 'OTHER', isCapitalAsset: false, confidence: 0,
+                taxNotes: 'Receipt classification is unavailable. Review its category and tax treatment.' };
+        }
         const isCapital = capProb >= 0.60;
 
         return {
             category: choice,
             isCapitalAsset: isCapital,
-            confidence: 0.9,
+            confidence,
             taxNotes: isCapital
-                ? 'Section 179 capital property: qualified durable equipment eligible for accelerated depreciation.'
-                : 'Standard ordinary & necessary business expense under IRS Schedule C.',
+                ? 'Potential capital asset. Review applicable tax treatment with supporting records.'
+                : 'Proposed operating expense classification. Review business purpose and applicable tax treatment.',
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'receipt data verification judgment');
