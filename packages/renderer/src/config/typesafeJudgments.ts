@@ -2017,19 +2017,24 @@ export async function judgeCrashTriage(
 
         const ans = result.data.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const retryAns = ans?.retryable as { probability?: unknown } | undefined;
+        const retryAns = ans?.retryable as { noul?: unknown } | undefined;
         const actionAns = ans?.action as { choice?: unknown } | undefined;
 
         const rootCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : 'UNKNOWN') as CrashRootCause;
-        const isRetryable = typeof retryAns?.probability === 'number' ? retryAns.probability >= 0.5 : true;
-        const recommendedAction = (typeof actionAns?.choice === 'string' ? actionAns.choice : 'RELOAD_MODULE') as CrashRecommendedAction;
+        const retryProbability = boundedJudgmentNumber(retryAns, 'noul', 1);
+        const action = actionAns?.choice;
+        if (retryProbability === null || retryProbability === 0.5) return null;
+        if (action !== 'RELOAD_MODULE' && action !== 'REFRESH_PAGE' && action !== 'REAUTHENTICATE' &&
+            action !== 'RESET_LOCAL_CACHE' && action !== 'CONTACT_SUPPORT') return null;
+        const isRetryable = retryProbability > 0.5;
+        const recommendedAction = action;
 
         const GUIDANCE_MAP: Record<CrashRootCause, string> = {
             NETWORK_OFFLINE: 'A network connection drop interrupted this action. Check your internet connection and try again.',
             CHUNK_STALE: 'indii was updated with new features in the background. A quick page refresh will reload the newest code.',
             STATE_CORRUPTION: 'Temporary workspace data caused an unexpected state. Reopening this section should restore default settings.',
             AUTH_EXPIRED: 'Your session has expired. Please sign in again to continue working safely.',
-            UNKNOWN: 'An unexpected issue occurred. You can retry safely without losing your project files.',
+            UNKNOWN: 'An unexpected issue occurred. Check the previous action’s outcome before trying again.',
         };
 
         return {

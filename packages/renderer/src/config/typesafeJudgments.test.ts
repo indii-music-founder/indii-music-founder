@@ -1599,13 +1599,25 @@ describe('judgeCrashTriage (Judgment 24)', () => {
         vi.clearAllMocks();
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }, { noul: 0.5 }])(
+        'abstains from invalid or undecided crash retry %j', async retryable => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    cause: { choice: 'UNKNOWN' }, retryable, action: { choice: 'REFRESH_PAGE' },
+                } },
+            }));
+            expect(await judgeCrashTriage({ moduleName: 'Studio', errorMessage: 'Interrupted' })).toBeNull();
+        },
+    );
+
     it('triages chunk stale failure to REFRESH_PAGE', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
                     cause: { choice: 'CHUNK_STALE' },
-                    retryable: { probability: 0.9 },
+                    retryable: { noul: 0.9 },
                     action: { choice: 'REFRESH_PAGE' },
                 },
             },
@@ -1628,7 +1640,7 @@ describe('judgeCrashTriage (Judgment 24)', () => {
             data: {
                 answers: {
                     cause: { choice: 'NETWORK_OFFLINE' },
-                    retryable: { probability: 0.8 },
+                    retryable: { noul: 0.8 },
                     action: { choice: 'RELOAD_MODULE' },
                 },
             },
