@@ -33,11 +33,12 @@ export const ThreeDButton = ({ children, className, variant = 'primary', isLoadi
             )}
             disabled={disabled || isLoading}
             aria-disabled={disabled || isLoading}
+            aria-busy={isLoading || undefined}
             {...props}
         >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" />
                     {children}
                 </span>
             ) : (
