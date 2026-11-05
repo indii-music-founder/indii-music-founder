@@ -99,14 +99,14 @@ export class HistoryManager {
         // 3. Fold every older turn into a bounded rolling summary. The active
         // store retains the full session; getRecentHistory() is only a display
         // window and must not decide what the summarizer can see.
-        const summary = await this.summarizeOlder(state.activeSessionId || null, olderTurns);
+        const summary = await this.summarizeOlder(state.activeSessionId || null, olderTurns)
+            .catch(() => '');
 
         // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
 
         return { view: `
-## Conversation Summary (History)
-${summary}
+${summary ? '## Conversation Summary (History)\n' + summary : ''}
 ${memoryRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
