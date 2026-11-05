@@ -3850,15 +3850,16 @@ export async function judgeLyricVisualPromptSynthesis(
         const clicheAns = ans?.avoid_cliche as { noul?: unknown } | number | undefined;
         const densAns = ans?.density as { score?: unknown } | number | undefined;
 
-        const resolvedCat = (typeof catAns?.choice === 'string' ? catAns.choice : fallbackCategory) as MetaphorCategory;
-        const clicheProb = typeof clicheAns === 'number'
-            ? clicheAns
-            : Number((clicheAns as { noul?: unknown })?.noul ?? (fallbackAvoidCliche ? 0.75 : 0.25));
+        const category = catAns?.choice;
+        const resolvedCat = category === 'LITERAL_SCENE' || category === 'POETIC_METAPHOR' ||
+            category === 'ABSTRACT_TEXTURE' || category === 'EMOTIONAL_PORTRAIT' ||
+            category === 'ENVIRONMENT_LANDSCAPE' ? category : fallbackCategory;
+        const clicheProb = boundedJudgmentNumber(clicheAns, 'noul', 1);
         const resolvedDensity = oneIndexedScore(densAns, fallbackDensity);
 
         return {
             category: resolvedCat,
-            avoidLiteralCliche: clicheProb >= 0.5,
+            avoidLiteralCliche: clicheProb === null || clicheProb === 0.5 ? fallbackAvoidCliche : clicheProb > 0.5,
             cinematicDensityScore: Math.max(1, Math.min(5, Math.round(resolvedDensity) || fallbackDensity)),
             suggestedVisualKeywords: [input.artistAestheticVibe, resolvedCat.toLowerCase().replace('_', ' ')],
         };
