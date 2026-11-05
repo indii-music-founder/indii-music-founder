@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Item 290: Contextual First-Run Tooltips
@@ -31,7 +31,9 @@ interface TipState {
 function loadTipState(): TipState {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
+        const parsed: unknown = raw ? JSON.parse(raw) : {};
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+        return Object.fromEntries(Object.entries(parsed).filter(([, value]) => value === true));
     } catch {
         return {};
     }
@@ -50,25 +52,28 @@ function saveTipState(state: TipState): void {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useFirstRunTip(tipId: string) {
-    const [shouldShow, setShouldShow] = useState(false);
+    const [visibleTipId, setVisibleTipId] = useState<string | null>(null);
+
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const state = loadTipState();
         if (!state[tipId]) {
             // Small delay so it doesn't flash on mount
-            const timer = setTimeout(() => setShouldShow(true), 1000);
-            return () => clearTimeout(timer);
+            timerRef.current = setTimeout(() => setVisibleTipId(tipId), 1000);
+            return () => { if (timerRef.current) clearTimeout(timerRef.current); };
         }
     }, [tipId]);
 
     const dismiss = useCallback(() => {
-        setShouldShow(false);
+        if (timerRef.current) clearTimeout(timerRef.current);
+        setVisibleTipId(null);
         const state = loadTipState();
         state[tipId] = true;
         saveTipState(state);
     }, [tipId]);
 
-    return { shouldShow, dismiss };
+    return { shouldShow: visibleTipId === tipId, dismiss };
 }
 
 /**
@@ -117,9 +122,10 @@ export function FirstRunTooltip({
             className={`absolute z-50 ${positionClasses[position]} ${className}`}
             role="tooltip"
         >
-            <div className="bg-linear-to-r from-green-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-green-900/30 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-linear-to-r from-green-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-green-900/30 max-w-xs motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
                 <p className="leading-relaxed">{message}</p>
                 <button
+                    type="button"
                     onClick={onDismiss}
                     className="mt-1.5 text-[10px] font-bold text-white/70 hover:text-white uppercase tracking-wider transition-colors"
                     aria-label="Dismiss tip"

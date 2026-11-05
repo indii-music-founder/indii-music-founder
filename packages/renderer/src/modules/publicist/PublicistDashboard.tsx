@@ -382,6 +382,7 @@ export default function PublicistDashboard() {
                 onClose={() => setIsReleaseKitOpen(false)}
             />
             <PitchDraftingModal
+                key={pitchContact?.id ?? pitchContact?.name ?? 'closed'}
                 isOpen={!!pitchContact}
                 onClose={() => setPitchContact(null)}
                 contact={pitchContact}
