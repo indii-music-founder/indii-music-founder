@@ -1839,8 +1839,8 @@ describe('judgeAdCreativeBatchCompliance (Judgment 27)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    approved_ad_1: { probability: 0.95 },
-                    approved_ad_2: { probability: 0.2 },
+                    approved_ad_1: { noul: 0.95 },
+                    approved_ad_2: { noul: 0.2 },
                 },
             },
         }));
