@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import ToolApprovalsPanel from './ToolApprovalsPanel';
+import { toolApprovalService } from '@/services/agent/governance/ToolApprovalService';
 
 const approvalItems = vi.hoisted(() => ({ current: [] as unknown[] }));
 vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
@@ -17,6 +18,30 @@ describe('ToolApprovalsPanel computer allowlist boundary', () => {
         approvalItems.current = [];
         allowlistGet.mockResolvedValue({ success: true, data: { apps: [] } });
         (window as any).electronAPI = { computer: { allowlistGet } };
+    });
+
+    it('serializes actions across cards and recovers after an approval rejection', async () => {
+        approvalItems.current = ['first', 'second'].map(id => ({
+            id, agentId: 'generalist', toolName: 'send_email', args: {},
+            riskTier: 'write', description: id, status: 'pending', createdAt: new Date(),
+        }));
+        let rejectDispatch!: (reason: Error) => void;
+        vi.mocked(toolApprovalService.approve).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectDispatch = reject; }));
+        render(<ToolApprovalsPanel toggleRightPanel={vi.fn()} />);
+        await screen.findByText(/No apps allowlisted yet/);
+        const approves = () => screen.getAllByRole('button', { name: /^approve$/i });
+        const denies = () => screen.getAllByRole('button', { name: /^deny$/i });
+        fireEvent.click(approves()[0]!);
+        expect(approves()[1]).toBeDisabled();
+        expect(denies()[1]).toBeDisabled();
+        fireEvent.click(approves()[1]!);
+        fireEvent.click(denies()[1]!);
+        expect(toolApprovalService.approve).toHaveBeenCalledTimes(1);
+        expect(toolApprovalService.deny).not.toHaveBeenCalled();
+        rejectDispatch(new Error('Dispatch unavailable'));
+        await waitFor(() => expect(denies()[1]).toBeEnabled());
+        fireEvent.click(denies()[1]!);
+        await waitFor(() => expect(toolApprovalService.deny).toHaveBeenCalledWith('second', 'Denied by user'));
     });
 
     it('shows the fail-closed empty policy as read-only', async () => {

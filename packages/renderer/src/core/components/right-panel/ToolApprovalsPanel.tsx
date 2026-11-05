@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight, ShieldAlert, Check, X, Monitor } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
@@ -78,6 +78,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
     const toast = useToast();
     const [approvals, setApprovals] = useState<(PendingToolApproval & { id: string })[]>([]);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const dispatchBusy = useRef(false);
 
     useEffect(() => {
         const unsubscribe = toolApprovalService.onUnresolvedApprovals(setApprovals);
@@ -85,6 +86,8 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
     }, []);
 
     const handleApprove = async (id: string) => {
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setBusyId(id);
         try {
             const result = await toolApprovalService.approve(id);
@@ -97,11 +100,14 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
             Logger.error('ToolApprovalsPanel', 'Approve failed', error);
             toast.error('Failed to approve action');
         } finally {
+            dispatchBusy.current = false;
             setBusyId(null);
         }
     };
 
     const handleDeny = async (id: string) => {
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setBusyId(id);
         try {
             await toolApprovalService.deny(id, 'Denied by user');
@@ -110,6 +116,7 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
             Logger.error('ToolApprovalsPanel', 'Deny failed', error);
             toast.error('Failed to deny action');
         } finally {
+            dispatchBusy.current = false;
             setBusyId(null);
         }
     };
@@ -167,14 +174,14 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
                             {approval.status === 'pending' && <div className="flex items-center gap-2 pt-1">
                                 <button
                                     onClick={() => handleApprove(approval.id)}
-                                    disabled={busyId === approval.id || !toolApprovalService.canApproveInThisSession(approval)}
+                                    disabled={busyId !== null || !toolApprovalService.canApproveInThisSession(approval)}
                                     className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors disabled:opacity-50"
                                 >
                                     <Check size={12} /> Approve
                                 </button>
                                 <button
                                     onClick={() => handleDeny(approval.id)}
-                                    disabled={busyId === approval.id}
+                                    disabled={busyId !== null}
                                     className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                                 >
                                     <X size={12} /> Deny
