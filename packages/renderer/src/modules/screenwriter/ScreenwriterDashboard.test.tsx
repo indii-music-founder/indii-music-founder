@@ -103,7 +103,7 @@ describe('ScreenwriterDashboard', () => {
             cameraAngle: 'Extreme Wide Shot - Slow tracking lateral pan',
             durationSeconds: 5,
             startSeconds: 0,
-            prompt: expect.stringContaining('rainy neon alley'),
+            prompt: expect.stringContaining('rainy city alley'),
         });
         expect(editorState.storyboardProject?.slots[1]).toMatchObject({
             sourceSceneNumber: 2,
@@ -121,7 +121,7 @@ describe('ScreenwriterDashboard', () => {
         fireEvent.click(screen.getByRole('button', { name: /visual storyboarder/i }));
 
         const sceneDescription = screen.getByDisplayValue(
-            'Neon glowing signs flicker. Slick puddles on concrete reflect vibrant magenta and cyan lights. Rain droplets splash slowly on the pavement.'
+            'Storefront lights glow through the rain. Puddles on the sidewalk reflect passing traffic as the artist walks toward the venue.'
         );
         fireEvent.change(sceneDescription, { target: { value: 'Reloaded scene description' } });
 
