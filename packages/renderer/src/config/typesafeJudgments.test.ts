@@ -2002,7 +2002,7 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.89 },
+                    fitProbability: { noul: 0.89 },
                 },
             },
         }));
@@ -2034,7 +2034,7 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.45 },
+                    fitProbability: { noul: 0.45 },
                 },
             },
         }));
