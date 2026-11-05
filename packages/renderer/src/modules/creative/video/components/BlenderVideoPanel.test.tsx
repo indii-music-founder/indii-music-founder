@@ -2,7 +2,7 @@ import React, { act } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BlenderVideoPanel } from './BlenderVideoPanel';
-import { blenderService } from '@/services/blender/BlenderService';
+import { blenderService, FALLBACK_TEMPLATES } from '@/services/blender/BlenderService';
 
 vi.mock('@/services/blender/BlenderService', () => ({
     blenderService: {
@@ -74,6 +74,20 @@ describe('BlenderVideoPanel structural guards', () => {
             expect(screen.getByText(/Open desktop studio/i)).toBeInTheDocument();
             expect(screen.queryByText(/Blender 4.3 \(Metal GPU\)/i)).not.toBeInTheDocument();
         });
+    });
+
+    it('selects the vinyl showcase when templates are available', async () => {
+        vi.mocked(blenderService.listTemplates).mockResolvedValueOnce(FALLBACK_TEMPLATES);
+
+        await act(async () => {
+            render(<BlenderVideoPanel />);
+        });
+
+        expect(screen.getByRole('button', { name: /3D Vinyl Record Turntable Showcase/i }).className)
+            .toContain('border-cyan-500');
+        expect(screen.getByRole('button', { name: /Audio-Reactive Cyber Tunnel/i }).className)
+            .not.toContain('border-cyan-500');
+        expect(screen.getByRole('button', { name: /Choose cover art/i })).toBeInTheDocument();
     });
 
     it('asks for desktop studio when the browser cannot inspect local Blender', async () => {

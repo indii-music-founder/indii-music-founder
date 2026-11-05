@@ -94,6 +94,22 @@ describe('BlenderTools Agent Toolset', () => {
         );
     });
 
+    it('defaults an unspecified render template to the vinyl showcase', async () => {
+        vi.mocked(blenderService.renderMusicVideo).mockResolvedValueOnce({
+            success: true,
+            outputPath: '/renders/music_video.mp4'
+        });
+
+        await BlenderTools.blender_render_music_video!({
+            audioFilePath: '/music/master.wav',
+            outputVideoPath: '/renders/music_video.mp4'
+        });
+
+        expect(blenderService.renderMusicVideo).toHaveBeenCalledWith(
+            expect.objectContaining({ templateId: 'vinyl_turntable' })
+        );
+    });
+
     it('blender_live_command executes ping or scene info', async () => {
         vi.mocked(blenderService.sendLiveCommand).mockResolvedValueOnce({
             status: 'ok',
