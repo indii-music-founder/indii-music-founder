@@ -4526,7 +4526,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             data: {
                 answers: {
                     copy_quality: { score: 3 },
-                    spam_style_signal: { probability: 0.05 },
+                    spam_style_signal: { noul: 0.05 },
                 },
             },
         }));
@@ -4547,7 +4547,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 copy_quality: { score: 4 },
-                spam_style_signal: { probability: 0 },
+                spam_style_signal: { noul: 0 },
             } },
         }));
 
@@ -4566,7 +4566,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 copy_quality: { score: 9 },
-                spam_style_signal: { probability: Number.NaN },
+                spam_style_signal: { noul: Number.NaN },
             } },
         }));
 
