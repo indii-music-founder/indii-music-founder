@@ -5208,15 +5208,13 @@ export async function judgeStatementCatalogDisambiguation(
 
         const resolvedChoice = typeof matAns?.choice === 'string' ? matAns.choice : (fallbackMatch ? fallbackMatch.trackId : 'UNMATCHED');
         const isMatched = resolvedChoice !== 'UNMATCHED' && candidates.some(c => c.trackId === resolvedChoice);
-        const cerProb = typeof cerAns === 'number'
-            ? cerAns
-            : Number((cerAns as { noul?: unknown })?.noul ?? (fallbackCertainty ? 0.9 : 0.1));
+        const cerProb = boundedJudgmentNumber(cerAns, 'noul', 1);
         const resolvedConf = oneIndexedScore(conAns, fallbackScore);
 
         return {
             matchedTrackId: isMatched ? resolvedChoice : null,
             isUnmatched: !isMatched,
-            isMasterRecordingCertain: cerProb >= 0.5,
+            isMasterRecordingCertain: isMatched && cerProb !== null && cerProb > 0.5,
             matchConfidenceScore: Math.max(1, Math.min(5, Math.round(resolvedConf) || fallbackScore)),
             resolutionNotes: isMatched
                 ? `System One resolved "${line.rawTitle}" to track ID ${resolvedChoice} (confidence: ${resolvedConf}/5).`
