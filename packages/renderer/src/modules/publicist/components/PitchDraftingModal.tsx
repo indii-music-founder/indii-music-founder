@@ -69,10 +69,15 @@ Do not include a subject line — just the email body.
 
     const handleCopy = async () => {
         if (!draft) return;
-        await navigator.clipboard.writeText(draft);
-        setCopied(true);
-        showToast('Pitch copied to clipboard!', 'success');
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(draft);
+            setCopied(true);
+            showToast('Pitch copied to clipboard!', 'success');
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            setCopied(false);
+            showToast('Could not copy the pitch. Select the draft and copy it manually.', 'error');
+        }
     };
 
     return (
