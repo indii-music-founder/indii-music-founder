@@ -2604,9 +2604,11 @@ export async function judgeCuratorPlaylistAlignment(
             },
         });
 
-        const ans = result.data.answers?.fitProbability as { probability?: unknown } | undefined;
-        const prob = typeof ans?.probability === 'number' ? ans.probability : 0.5;
-        const matchScore = parseFloat(prob.toFixed(2));
+        const matchScore = boundedJudgmentNumber(result.data.answers?.fitProbability, 'noul', 1);
+        if (matchScore === null) {
+            return { curatorId, matchScore: 0, dispatchPitch: false,
+                rationale: 'Curator alignment assessment is unavailable. Review the pitch before dispatch.' };
+        }
         const dispatchPitch = matchScore >= CURATOR_DISPATCH_THRESHOLD;
 
         return {
