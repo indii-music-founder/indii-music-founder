@@ -1605,7 +1605,7 @@ describe('judgeCrashTriage (Judgment 24)', () => {
             data: {
                 answers: {
                     cause: { choice: 'CHUNK_STALE' },
-                    retryable: { probability: 0.9 },
+                    retryable: { noul: 0.9 },
                     action: { choice: 'REFRESH_PAGE' },
                 },
             },
@@ -1628,7 +1628,7 @@ describe('judgeCrashTriage (Judgment 24)', () => {
             data: {
                 answers: {
                     cause: { choice: 'NETWORK_OFFLINE' },
-                    retryable: { probability: 0.8 },
+                    retryable: { noul: 0.8 },
                     action: { choice: 'RELOAD_MODULE' },
                 },
             },
