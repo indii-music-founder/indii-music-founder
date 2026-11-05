@@ -2894,7 +2894,7 @@ export async function judgeSoftBrandAestheticAlignment(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (fallbackVerdict().violationDetected || !judgmentsAvailable()) {
         return fallbackVerdict();
     }
 
@@ -2925,11 +2925,15 @@ export async function judgeSoftBrandAestheticAlignment(
         });
 
         const ans = result.data.answers;
-        const violAns = ans?.violation_detected as { probability?: unknown } | undefined;
+        const violAns = ans?.violation_detected as { noul?: unknown } | undefined;
         const vibeAns = ans?.vibe_score as { score?: unknown } | undefined;
 
-        const violProb = typeof violAns?.probability === 'number' ? violAns.probability : 0;
-        const vibeScore = typeof vibeAns?.score === 'number' ? vibeAns.score : 2;
+        const violProb = boundedJudgmentNumber(violAns, 'noul', 1);
+        const vibeScore = boundedJudgmentNumber(vibeAns, 'score', 3);
+        if (violProb === null || vibeScore === null) {
+            return { approved: false, vibeScore: 0, violationDetected: false,
+                reason: 'Brand assessment is unavailable. Review the creative against the artist brief.' };
+        }
 
         const violationDetected = violProb >= 0.70;
         const approved = !violationDetected && vibeScore >= 1;

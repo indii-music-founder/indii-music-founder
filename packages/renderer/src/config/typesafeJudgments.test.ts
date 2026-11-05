@@ -2287,12 +2287,39 @@ describe('judgeSoftBrandAestheticAlignment (Judgment 33)', () => {
         expect(forbidden.violationDetected).toBe(true);
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.1' }, { noul: -0.1 }])(
+        'withholds brand approval for malformed violation evidence %j', async violation => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { violation_detected: violation, vibe_score: { score: 3 } } },
+            }));
+            expect((await judgeSoftBrandAestheticAlignment({
+                assetTitle: 'Cover', descriptionOrLabels: 'Watercolor portrait', brandVibe: 'Watercolor',
+                primaryColors: [], forbiddenElements: [],
+            })).approved).toBe(false);
+        },
+    );
+
+    it('keeps explicit artist exclusions even when Jev would approve', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { violation_detected: { noul: 0 }, vibe_score: { score: 3 } } },
+        }));
+        const result = await judgeSoftBrandAestheticAlignment({
+            assetTitle: 'Cover', descriptionOrLabels: 'Neon portrait', brandVibe: 'Watercolor',
+            primaryColors: [], forbiddenElements: ['neon'],
+        });
+        expect(result.approved).toBe(false);
+        expect(result.violationDetected).toBe(true);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
     it('evaluates brand alignment and violation via Jev answers', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    violation_detected: { probability: 0.02 },
+                    violation_detected: { noul: 0.02 },
                     vibe_score: { score: 3 },
                 },
             },
