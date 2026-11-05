@@ -1,84 +1,48 @@
 ---
-description: The secure architecture of the automated bug reporting pipeline, emphasizing the shift of GitHub credentials to the backend and the new search-before-create idempotency logic.
+description: Request-bound report_bug approval, server persistence, and best-effort GitHub issue synchronization.
 ---
 
-# Bug Reporter Pipeline
+# Bug Reporting and Approval
 
-This flowchart outlines the newly secured `BugReportTools` pipeline. Following the resolution of ISSUE-031, this architecture completely abstracts the GitHub API token away from the client bundle, shifts execution to a Firebase Cloud Function, and enforces idempotency via content hashing to prevent duplicate issue spam during rapid agent iterations.
+Reviewed 2026-11-05. Agent-requested reporting has an approval gate before the reporting tool runs. A chat reply expressing consent currently does not establish that the pending approval was executed.
 
 ```mermaid
-graph TD
-    %% ╔══════════════════════════════════════════╗
-    %% ║        CLIENT / AGENT TIER               ║
-    %% ╚══════════════════════════════════════════╝
-    subgraph CLIENT ["🖥️ Client (Renderer)"]
-        AGENT["Specialist Agent<br/>(e.g., QA / DevOps)"]
-        TOOL["BugReportTools.report_bug()"]
-        HASH["Generate Idempotency Hash<br/>(Title + Module)"]
-        CALLABLE["httpsCallable('reportBug')"]
-    end
-
-    %% ╔══════════════════════════════════════════╗
-    %% ║        BACKEND CLOUD FUNCTION            ║
-    %% ╚══════════════════════════════════════════╝
-    subgraph CLOUD ["☁️ Firebase Cloud Functions"]
-        CF_REPORT["reportBugFn"]
-        AUTH_CHK{"Is User Auth'd?"}
-        SECRET["Access Secret Manager<br/>(GITHUB_TOKEN)"]
-        GH_SEARCH["GitHub API: GET /issues<br/>(Search exact title/module)"]
-        DUP_CHK{"Match Found?"}
-        
-        GH_CREATE["GitHub API: POST /issues<br/>(Create new)"]
-        GH_COMMENT["GitHub API: POST /issues/{id}/comments<br/>(Append metadata)"]
-    end
-
-    %% ╔══════════════════════════════════════════╗
-    %% ║        PERSISTENCE & OUTCOME             ║
-    %% ╚══════════════════════════════════════════╝
-    subgraph DATA ["💾 Persistence & Response"]
-        FIRESTORE["Firestore: bug_reports/{hash}"]
-        RESULT["Detailed Result Object<br/>{firestore, github, issueUrl}"]
-    end
-
-    %% Connections
-    AGENT -->|Calls Tool| TOOL
-    TOOL --> HASH
-    HASH --> CALLABLE
-    CALLABLE -->|Secure HTTPS| CF_REPORT
-
-    CF_REPORT --> AUTH_CHK
-    AUTH_CHK -->|Fail| RESULT
-    AUTH_CHK -->|Pass| SECRET
-    
-    SECRET --> GH_SEARCH
-    GH_SEARCH --> DUP_CHK
-    
-    DUP_CHK -->|No| GH_CREATE
-    DUP_CHK -->|Yes| GH_COMMENT
-    
-    GH_CREATE --> FIRESTORE
-    GH_COMMENT --> FIRESTORE
-    
-    FIRESTORE --> RESULT
-    RESULT -.->|Returns to Agent| AGENT
-
-    classDef client fill:#00D4FF,stroke:#0077AA,stroke-width:2px,color:#001018
-    classDef cloud fill:#FF8C00,stroke:#AA5500,stroke-width:2px,color:#001018
-    classDef data fill:#39FF14,stroke:#1A8800,stroke-width:2px,color:#001018
-
-    class AGENT,TOOL,HASH,CALLABLE client
-    class CF_REPORT,AUTH_CHK,SECRET,GH_SEARCH,DUP_CHK,GH_CREATE,GH_COMMENT cloud
-    class FIRESTORE,RESULT data
+flowchart TD
+    Agent["Agent requests report_bug"] --> Policy["BaseAgent tool policy"]
+    Policy --> Pending["Persist pending approval with bound tool, arguments, user, and session"]
+    Pending --> Pause["Return AWAITING_TOOL_APPROVAL and show Approvals panel"]
+    Pause --> Choice{"User chooses exact pending request"}
+    Choice -->|Deny| Denied["Record denied; do not execute"]
+    Choice -->|Approve| Claim["ToolApprovalService: validate binding and claim execution"]
+    Claim --> Tool["BugReportTools.report_bug validates required fields"]
+    Tool --> Callable["Firebase callable reportBugFn"]
+    Callable --> Auth["Require verified non-anonymous user and abuse protection"]
+    Auth --> Hash["Server hashes title, module, severity, and description"]
+    Hash --> Persist["Attempt Firestore bug_reports write"]
+    Persist --> Token{"Server GitHub token available?"}
+    Token -->|No| Skipped["GitHub skipped"]
+    Token -->|Yes| Search["Search open issues by sanitized title phrase and module label"]
+    Search --> Match{"Search returns a match?"}
+    Match -->|Yes| Comment["Append duplicate-report comment to first match"]
+    Match -->|No or search fails| Create["Attempt issue creation"]
+    Comment --> Result["Return separate Firestore and GitHub statuses and issue URL if available"]
+    Create --> Result
+    Skipped --> Result
+    Result --> Outcome["Record approval execution outcome and surface actual tool result"]
+    Claim -->|Ambiguous dispatch failure| Reconcile["Keep claimed outcome unresolved for reconciliation"]
+    Pause -.-> Consent["Conversational consent currently enters another model turn"]
+    Consent -.-> Gap["Missing request-bound chat continuation: repair required"]
 ```
 
 ## Transition Breakdown
 
-1. **Agent Tool Invocation**: An agent detects a bug or decides to file an issue and calls `report_bug()`.
-2. **Idempotency Hashing**: The client generates a SHA256 content hash using the issue title, module, and error type. This hash becomes the primary key for idempotency.
-3. **Secure Function Call**: The client invokes the `reportBug` Cloud Function via `httpsCallable`. The client bundle *never* contains the GitHub API token.
-4. **Backend Authorization & Secrets**: The Cloud Function verifies the user's Firebase Auth token. Upon success, it pulls the sensitive `GITHUB_TOKEN` from Google Cloud Secret Manager.
-5. **Search-Before-Create**: The function queries the GitHub Issues API (`GET /issues`) searching for an open issue with the exact same title and module label authored by the app.
-6. **Deduplication Logic**: 
-    - If a duplicate is found, the system *appends* a new comment with the latest error metadata rather than opening a redundant issue.
-    - If no duplicate exists, it creates a pristine new issue.
-7. **Firestore Persistence & Response**: The action is recorded in Firestore under `bug_reports/{hash}`. A detailed JSON object is returned to the agent explicitly defining the success/failure state of both the GitHub POST and the Firestore write, eliminating silent failure blind spots.
+1. `BaseAgent.ts` binds the implementation, original arguments, schema, and execution context to a persisted approval request. It pauses without executing the tool.
+2. `governance/ToolApprovalService.ts` approves a specific ID, validates the binding, and records a durable claim before dispatch. Denial does not execute the call. Ambiguous dispatch failures must not invite an automatic duplicate execution.
+3. The current chat path lacks a request-bound natural-language approval continuation. Repeated “I approve” messages can produce another tool proposal and pause. A repair must identify the exact request and preserve its arguments and identity checks.
+4. `BugReportTools.ts` calls **reportBugFn**, not a callable named reportBug. The server computes a truncated SHA256 key from title, module, severity, and description; the earlier chart incorrectly placed hashing in the client.
+5. `reportBugFn.ts` attempts Firestore persistence before GitHub synchronization and reports channel statuses separately. GitHub credentials remain server-side. Authentication or abuse-protection rejection stops the callable before these writes.
+6. GitHub deduplication is best effort: phrase search plus a module label, followed by the first match. Search errors fall back to creation. This is not an exact-title check, author restriction, or atomic guarantee against duplicate issues.
+
+## Acceptance evidence still required
+
+Verify approving and denying the same pending request in the real UI; ensure consent cannot authorize a different request; test interruption and duplicate clicks; confirm the original result returns to the conversation. Confirm a returned issue URL and persistence status before claiming a report was filed. An existing issue proves one report reached GitHub, not that every approval path works.
