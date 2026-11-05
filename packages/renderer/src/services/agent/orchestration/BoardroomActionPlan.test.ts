@@ -43,6 +43,25 @@ describe('Boardroom action ownership and evidence (structural only)', () => {
             expect(readyBoardroomSteps([first, next], [receipt])).toEqual([]);
         }
     });
+    it('keeps an interrupted dispatched action uncertain and blocks dependent work', () => {
+        const receipt = receiptForBoardroomStep(first, { text: '', error: 'The operation was aborted' }, true);
+        expect(receipt.status).toBe('uncertain');
+        expect(readyBoardroomSteps([first, next], [receipt])).toEqual([]);
+        expect(formatBoardroomReceipt(receipt)).toContain('Action outcome unknown; check its effect before retrying');
+        expect(formatBoardroomReceipt(receipt)).not.toContain('Step failed');
+    });
+    it('does not erase completed actions when a later action awaits approval', () => {
+        const receipt = receiptForBoardroomStep(first, {
+            text: '',
+            error: 'AWAITING_HUMAN_APPROVAL',
+            toolCalls: [{ name: 'save_artwork', args: {}, result: { success: true, message: 'Artwork saved.' } }],
+        });
+        expect(receipt.status).toBe('pending');
+        expect(formatBoardroomReceipt(receipt)).toContain('Artwork saved.');
+        expect(formatBoardroomReceipt(receipt)).toContain('Review the pending request');
+        expect(formatBoardroomReceipt(receipt)).not.toContain('The action has not run');
+        expect(readyBoardroomSteps([first, next], [receipt])).toEqual([]);
+    });
     it('does not treat a prose success claim or an opaque tool result as verified execution', () => {
         expect(receiptForBoardroomStep(first, { text: 'All files saved' }).status).toBe('response');
         expect(receiptForBoardroomStep(first, { text: 'Done', toolCalls: [{ name: 'receipt', args: {}, result: 'unstructured success' }] }).status).toBe('failed');
