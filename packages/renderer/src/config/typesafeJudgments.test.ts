@@ -2427,8 +2427,8 @@ describe('judgeReceiptDataVerification (Judgment 34)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    category: { choice: 'EQUIPMENT_GEAR' },
-                    is_capital: { probability: 0.92 },
+                    category: { choice: 'EQUIPMENT_GEAR', confidence: 0.9 },
+                    is_capital: { noul: 0.92 },
                 },
             },
         }));
