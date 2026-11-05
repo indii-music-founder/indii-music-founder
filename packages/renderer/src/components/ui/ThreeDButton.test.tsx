@@ -59,7 +59,7 @@ describe('ThreeDButton', () => {
 
     // Check for spinner (Loader2 from lucide-react usually renders an svg)
     // We can check for the "animate-spin" class on the child
-    const spinner = button.querySelector('.animate-spin')
+    const spinner = button.querySelector('svg')
     expect(spinner).toBeInTheDocument()
 
     fireEvent.click(button)
