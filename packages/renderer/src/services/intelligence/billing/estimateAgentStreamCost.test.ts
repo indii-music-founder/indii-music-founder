@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { estimateAgentStreamCost } from './estimateAgentStreamCost';
 
+import { minimumTextStreamReservationCost } from '../../../../../firebase/src/functions/creative/textStreamAdmission';
+
 describe('estimateAgentStreamCost', () => {
     it('reserves more for long prompts and larger output limits', () => {
         const short = estimateAgentStreamCost('hello', undefined, [], 'gemini-3.1-pro-preview', 1_024);
@@ -24,11 +26,20 @@ describe('estimateAgentStreamCost', () => {
     it('prices the backend contents envelope at rounding boundaries', () => {
         const prompt = 'x'.repeat(3_117);
         const client = estimateAgentStreamCost(prompt, undefined, [], 'gemini-3.1-pro-preview', 1);
-        const serverEnvelope = JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            tools: [],
-        });
-        const serverFloor = Math.max(0.001, Math.ceil(((Math.ceil(serverEnvelope.length / 4) * 1.25 + 10) / 1_000_000) * 100_000) / 100_000);
+        const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+        const serverFloor = minimumTextStreamReservationCost(
+            contents, { tools: [], maxOutputTokens: 1 }, 'gemini-3.1-pro-preview',
+        );
         expect(client).toBeGreaterThanOrEqual(serverFloor);
     });
+
+    it.each(['gemini-3.1-pro-preview', 'gemini-3.8-flash', 'gemini-3.1-flash-lite'])(
+        'covers the server floor for prepared %s requests with thought signatures',
+        model => {
+            const contents = [{ role: 'user', parts: [{ text: 'hello', thoughtSignature: 'x'.repeat(16_384) }] }];
+            const config = { systemInstruction: 'Reply briefly', tools: [], maxOutputTokens: 1_024 };
+            expect(estimateAgentStreamCost(contents, config.systemInstruction, config.tools, model, config.maxOutputTokens))
+                .toBeGreaterThanOrEqual(minimumTextStreamReservationCost(contents, config, model));
+        },
+    );
 });
