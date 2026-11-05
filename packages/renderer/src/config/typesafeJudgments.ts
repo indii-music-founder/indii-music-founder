@@ -6880,11 +6880,11 @@ export async function judgePromptActionability(
 
         const ans = result.data.answers;
         const specAns = ans?.specificity as { score?: unknown } | number | undefined;
-        const delAns = ans?.has_deliverable as { probability?: unknown } | undefined;
+        const delAns = ans?.has_deliverable as { noul?: unknown } | undefined;
 
         const specScore = oneIndexedScore(specAns, fallbackScore);
-        const delProb = typeof delAns?.probability === 'number' ? delAns.probability : (hasActionVerb ? 0.9 : 0.2);
-        const resolvedHasDeliverable = delProb >= 0.5;
+        const delProb = boundedJudgmentNumber(delAns, 'noul', 1);
+        const resolvedHasDeliverable = delProb !== null && delProb > 0.5;
 
         return {
             specificityScore: Math.min(5, Math.max(1, Math.round(specScore))),
