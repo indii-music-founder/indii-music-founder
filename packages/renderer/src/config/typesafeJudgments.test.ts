@@ -1854,21 +1854,14 @@ describe('judgeAdCreativeBatchCompliance (Judgment 27)', () => {
     });
 });
 
-describe('judgeDDEXPreFlight (Judgment 28)', () => {
+describe('judgeDDEXPreFlight metadata checks', () => {
     beforeEach(() => {
         __resetJudgmentCooldownForTests();
         vi.clearAllMocks();
     });
 
-    it('passes clean metadata for Spotify delivery', async () => {
+    it('passes the listed metadata checks without claiming Spotify policy verification', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({
-            data: {
-                answers: {
-                    dspSuitability: { choice: 'COMPLIANT' },
-                },
-            },
-        }));
 
         const result = await judgeDDEXPreFlight({
             releaseId: 'rel_1',
@@ -1882,7 +1875,10 @@ describe('judgeDDEXPreFlight (Judgment 28)', () => {
         });
 
         expect(result.passed).toBe(true);
+        expect(result.dspPolicyVerified).toBe(false);
         expect(result.blockingOmissions).toEqual([]);
+        expect(result.advisoryWarnings).toContain('SPOTIFY ingestion policy has not been verified against an authoritative DSP profile.');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
     it('detects missing C-Line/P-Line as blocking omission', async () => {
@@ -1901,6 +1897,28 @@ describe('judgeDDEXPreFlight (Judgment 28)', () => {
 
         expect(result.passed).toBe(false);
         expect(result.blockingOmissions.length).toBeGreaterThan(0);
+    });
+
+    it('blocks undeclared explicit status and invalid territory values independently of Jev', async () => {
+        mocks.enabled.mockReturnValue(true);
+
+        const result = await judgeDDEXPreFlight({
+            releaseId: 'rel-3',
+            dspTarget: 'TIDAL',
+            cLinePresent: true,
+            pLinePresent: true,
+            territoriesDeclared: ['US', 'not-a-territory'],
+            isrcsMapped: true,
+            iswcMapped: true,
+            parentalAdvisoryDeclared: false,
+        });
+
+        expect(result.passed).toBe(false);
+        expect(result.blockingOmissions).toEqual(expect.arrayContaining([
+            'No valid release territories declared.',
+            'Explicit-content status has not been declared.',
+        ]));
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 });
 
