@@ -5076,7 +5076,7 @@ describe('judgeDawTitleSanitization (Judgment 74)', () => {
             data: {
                 answers: {
                     version: { choice: 'Acoustic' },
-                    explicit: { probability: 0.9 },
+                    explicit: { noul: 0.9 },
                 },
             },
         }));

@@ -8557,16 +8557,11 @@ export async function judgeDawTitleSanitization(
                 ? (versionRaw as { choice: string }).choice
                 : undefined);
 
-        const explicitProb = typeof explicitRaw === 'number'
-            ? explicitRaw
-            : (typeof (explicitRaw as { probability?: unknown })?.probability === 'number'
-                ? (explicitRaw as { probability: number }).probability
-                : (typeof (explicitRaw as { noul?: unknown })?.noul === 'number'
-                    ? (explicitRaw as { noul: number }).noul
-                    : undefined));
-
-        const resolvedVersion = (versionChoice ?? versionTag) as TrackVersionTag;
-        const resolvedExplicit = typeof explicitProb === 'number' ? explicitProb >= 0.5 : isExplicit;
+        const explicitProb = boundedJudgmentNumber(explicitRaw, 'noul', 1);
+        const resolvedVersion = versionChoice === 'Original' || versionChoice === 'Radio Edit' ||
+            versionChoice === 'Remix' || versionChoice === 'Instrumental' || versionChoice === 'Acoustic' ||
+            versionChoice === 'Extended' || versionChoice === 'Live' ? versionChoice : versionTag;
+        const resolvedExplicit = isExplicit || (explicitProb !== null && explicitProb > 0.5);
 
         return {
             cleanTitle,
