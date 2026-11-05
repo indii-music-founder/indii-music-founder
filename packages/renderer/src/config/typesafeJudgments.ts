@@ -5521,10 +5521,7 @@ export async function judgeUniversalErrorRemediation(
         const traAns = ans?.transient as { noul?: unknown } | number | undefined;
         const sevAns = ans?.severity_score as { score?: unknown } | number | undefined;
 
-        const resolvedAction = (typeof remAns?.choice === 'string' ? remAns.choice : fallbackAction) as SelfHealingAction;
-        const traProb = typeof traAns === 'number'
-            ? traAns
-            : Number((traAns as { noul?: unknown })?.noul ?? (fallbackTransient ? 0.9 : 0.2));
+        const traProb = boundedJudgmentNumber(traAns, 'noul', 1);
         const resolvedSev = oneIndexedScore(sevAns, fallbackSeverity);
 
         const actionButtons: Record<SelfHealingAction, string> = {
@@ -5536,9 +5533,14 @@ export async function judgeUniversalErrorRemediation(
             CONTACT_SUPPORT: 'Contact Support',
         };
 
+        const choice = remAns?.choice;
+        const resolvedAction = typeof choice === 'string' && Object.hasOwn(actionButtons, choice)
+            ? choice as SelfHealingAction
+            : fallbackAction;
+
         return {
             remedyAction: resolvedAction,
-            isTransient: traProb >= 0.5,
+            isTransient: traProb === null || traProb === 0.5 ? fallbackTransient : traProb > 0.5,
             severityScore: Math.max(1, Math.min(5, Math.round(resolvedSev) || fallbackSeverity)),
             artistFriendlyExplanation: `System One diagnosed ${input.moduleName}: ${resolvedAction} recommended (severity: ${resolvedSev}/5).`,
             actionButtonText: actionButtons[resolvedAction] || fallbackBtn,
