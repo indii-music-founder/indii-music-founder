@@ -4309,7 +4309,7 @@ describe('judgeStemSeparationAcousticPurity (Judgment 62)', () => {
             data: {
                 answers: {
                     purity_rating: { score: 3 },
-                    severe_phase_hazard: { probability: 0.1 },
+                    severe_phase_hazard: { noul: 0.1 },
                 },
             },
         }));
