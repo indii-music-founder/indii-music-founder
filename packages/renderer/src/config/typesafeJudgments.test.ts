@@ -1834,13 +1834,33 @@ describe('judgeAdCreativeBatchCompliance (Judgment 27)', () => {
         vi.clearAllMocks();
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }])(
+        'withholds approval for malformed screening %j', async answer => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { approved_ad_1: answer } },
+            }));
+            expect(await judgeAdCreativeBatchCompliance([
+                { id: 'ad_1', headline: 'New single', copy: 'Listen today' },
+            ])).toEqual([]);
+        },
+    );
+
+    it('withholds approval when screening fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('unavailable'); });
+        expect(await judgeAdCreativeBatchCompliance([
+            { id: 'ad_1', headline: 'New single', copy: 'Listen today' },
+        ])).toEqual([]);
+    });
+
     it('approves compliant creatives and rejects policy violations', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    approved_ad_1: { probability: 0.95 },
-                    approved_ad_2: { probability: 0.2 },
+                    approved_ad_1: { noul: 0.95 },
+                    approved_ad_2: { noul: 0.2 },
                 },
             },
         }));

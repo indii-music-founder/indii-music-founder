@@ -2350,17 +2350,14 @@ export async function judgeAdCreativeBatchCompliance(
         const answers = result.data.answers || {};
 
         batch.forEach((c) => {
-            const ans = answers[`approved_${c.id}`] as { probability?: unknown } | undefined;
-            const prob = typeof ans?.probability === 'number' ? ans.probability : 0.8;
-            if (prob >= 0.7) {
-                approved.push(c.id);
-            }
+            const probability = boundedJudgmentNumber(answers[`approved_${c.id}`], 'noul', 1);
+            if (probability !== null && probability >= 0.7) approved.push(c.id);
         });
 
         return approved;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'ad creative batch compliance judgment');
-        return creatives.map((c) => c.id);
+        return [];
     }
 }
 
