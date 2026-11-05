@@ -6611,11 +6611,11 @@ export async function judgeAudioMasterNormalization(
 
         const ans = result.data.answers;
         const stAns = ans?.compliance_status as { choice?: unknown } | undefined;
-        const noAns = ans?.is_safe_for_transcoding as { probability?: unknown } | undefined;
+        const noAns = ans?.is_safe_for_transcoding as { noul?: unknown } | undefined;
 
         const resolvedStatus = (typeof stAns?.choice === 'string' ? stAns.choice : fallbackStatus) as NormalizationStatus;
-        const safeProb = typeof noAns?.probability === 'number' ? noAns.probability : 1.0;
-        const clippingHazard = safeProb < 0.5 || isClipping;
+        const safeProb = boundedJudgmentNumber(noAns, 'noul', 1);
+        const clippingHazard = safeProb === null || safeProb <= 0.5 || isClipping;
 
         return {
             status: resolvedStatus,

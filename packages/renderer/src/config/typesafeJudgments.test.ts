@@ -4063,13 +4063,29 @@ describe('judgeAudioMasterNormalization (Judgment 58)', () => {
         expect(compliant.isClippingHazard).toBe(false);
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }, { noul: 0.5 }])(
+        'flags uncertain transcoding safety for review %j', async safety => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    compliance_status: { choice: 'PASSED_COMPLIANT' },
+                    is_safe_for_transcoding: safety,
+                } },
+            }));
+            const result = await judgeAudioMasterNormalization({
+                trackTitle: 'Master', integratedLufs: -14, truePeakDb: -1, targetPlatform: 'SPOTIFY',
+            });
+            expect(result.isClippingHazard).toBe(true);
+        },
+    );
+
     it('processes online compliance evaluation', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
                     compliance_status: { choice: 'PASSED_COMPLIANT' },
-                    is_safe_for_transcoding: { probability: 0.99 },
+                    is_safe_for_transcoding: { noul: 0.99 },
                 },
             },
         }));
