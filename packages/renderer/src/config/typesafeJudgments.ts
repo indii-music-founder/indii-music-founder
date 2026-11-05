@@ -7137,7 +7137,7 @@ export async function judgeStemSeparationAcousticPurity(
     if (!judgmentsAvailable()) {
         return {
             purityScore: fallbackScore,
-            isRemixReady: fallbackScore >= 3,
+            isRemixReady: fallbackScore >= 3 && !isSeverePhase,
             hasSeverePhaseCancellation: isSeverePhase,
             recommendedRemedy: remedy,
         };
@@ -7182,11 +7182,11 @@ export async function judgeStemSeparationAcousticPurity(
 
         const ans = result.data.answers;
         const purAns = ans?.purity_rating as { score?: unknown } | number | undefined;
-        const phsAns = ans?.severe_phase_hazard as { probability?: unknown } | undefined;
+        const phsAns = ans?.severe_phase_hazard as { noul?: unknown } | undefined;
 
         const resolvedScore = oneIndexedScore(purAns, fallbackScore);
-        const phaseProb = typeof phsAns?.probability === 'number' ? phsAns.probability : (isSeverePhase ? 0.85 : 0.15);
-        const finalSeverePhase = phaseProb >= 0.5;
+        const phaseProb = boundedJudgmentNumber(phsAns, 'noul', 1);
+        const finalSeverePhase = isSeverePhase || phaseProb === null || phaseProb >= 0.5;
 
         return {
             purityScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
@@ -7198,7 +7198,7 @@ export async function judgeStemSeparationAcousticPurity(
         noteJudgmentFailure(err, 'stem separation acoustic purity judgment');
         return {
             purityScore: fallbackScore,
-            isRemixReady: fallbackScore >= 3,
+            isRemixReady: fallbackScore >= 3 && !isSeverePhase,
             hasSeverePhaseCancellation: isSeverePhase,
             recommendedRemedy: remedy,
         };
