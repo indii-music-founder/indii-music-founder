@@ -84,7 +84,7 @@ vi.mock('@/core/components/ui/ThemeToggle', () => ({ ThemeToggle: () => <div dat
 vi.mock('@/core/components/ui/BiometricToggle', () => ({ BiometricToggle: () => <div data-testid="biometric-toggle" /> }));
 vi.mock('@/core/hooks/usePowerState', () => ({ usePowerState: vi.fn(() => ({ isThrottled: false })) }));
 
-describe('Sidebar Navigation Integration', () => {
+describe('Sidebar Navigation Integration (structural only)', () => {
     const mockedUseStore = useStore as unknown as import('vitest').Mock & {
         setState: import('vitest').Mock;
         getState: import('vitest').Mock;
@@ -96,6 +96,8 @@ describe('Sidebar Navigation Integration', () => {
     const mockToggleSidebar = vi.fn();
 
     const buildStoreState = (overrides: Record<string, unknown> = {}) => ({
+        startMemoryEngine: vi.fn(),
+        stopMemoryEngine: vi.fn(),
         currentModule: 'dashboard',
         setModule: mockSetModule,
         isSidebarOpen: true,
