@@ -1,10 +1,21 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PromptInput, PromptInputActions, PromptInputAction, PromptInputTextarea } from './prompt-input'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 
 describe('PromptInput Interaction', () => {
+  it('waits for IME composition to finish before submitting Enter', () => {
+    const onSubmit = vi.fn()
+    render(<PromptInput onSubmit={onSubmit}><PromptInputTextarea /></PromptInput>)
+    const input = screen.getByTestId('prompt-input')
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true })
+    fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 })
+    expect(onSubmit).not.toHaveBeenCalled()
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onSubmit).toHaveBeenCalledOnce()
+  })
+
   it('PromptInputAction handles click interaction and disables state', async () => {
     const user = userEvent.setup()
     const onActionClick = vi.fn()

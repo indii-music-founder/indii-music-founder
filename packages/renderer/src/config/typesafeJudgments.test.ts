@@ -1599,13 +1599,25 @@ describe('judgeCrashTriage (Judgment 24)', () => {
         vi.clearAllMocks();
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }, { noul: 0.5 }])(
+        'abstains from invalid or undecided crash retry %j', async retryable => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    cause: { choice: 'UNKNOWN' }, retryable, action: { choice: 'REFRESH_PAGE' },
+                } },
+            }));
+            expect(await judgeCrashTriage({ moduleName: 'Studio', errorMessage: 'Interrupted' })).toBeNull();
+        },
+    );
+
     it('triages chunk stale failure to REFRESH_PAGE', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
                     cause: { choice: 'CHUNK_STALE' },
-                    retryable: { probability: 0.9 },
+                    retryable: { noul: 0.9 },
                     action: { choice: 'REFRESH_PAGE' },
                 },
             },
@@ -1628,7 +1640,7 @@ describe('judgeCrashTriage (Judgment 24)', () => {
             data: {
                 answers: {
                     cause: { choice: 'NETWORK_OFFLINE' },
-                    retryable: { probability: 0.8 },
+                    retryable: { noul: 0.8 },
                     action: { choice: 'RELOAD_MODULE' },
                 },
             },
@@ -1670,7 +1682,7 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         expect(result?.rightsScope).toBe('MASTER_AND_PUBLISHING');
         expect(result?.needsProducerAgreement).toBe(true);
         expect(result?.advisories).toContain(
-            'Producer agreement recommended: major producer split requires signed transfer of master rights.'
+            'Review a producer agreement with the collaborators and confirm the intended rights and revenue shares.'
         );
     });
 
@@ -1834,13 +1846,41 @@ describe('judgeAdCreativeBatchCompliance (Judgment 27)', () => {
         vi.clearAllMocks();
     });
 
+    it('withholds approval while screening is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        expect(await judgeAdCreativeBatchCompliance([
+            { id: 'ad_1', headline: 'New single', copy: 'Listen today' },
+        ])).toEqual([]);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }])(
+        'withholds approval for malformed screening %j', async answer => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { approved_ad_1: answer } },
+            }));
+            expect(await judgeAdCreativeBatchCompliance([
+                { id: 'ad_1', headline: 'New single', copy: 'Listen today' },
+            ])).toEqual([]);
+        },
+    );
+
+    it('withholds approval when screening fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('unavailable'); });
+        expect(await judgeAdCreativeBatchCompliance([
+            { id: 'ad_1', headline: 'New single', copy: 'Listen today' },
+        ])).toEqual([]);
+    });
+
     it('approves compliant creatives and rejects policy violations', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    approved_ad_1: { probability: 0.95 },
-                    approved_ad_2: { probability: 0.2 },
+                    approved_ad_1: { noul: 0.95 },
+                    approved_ad_2: { noul: 0.2 },
                 },
             },
         }));
@@ -1997,12 +2037,28 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         vi.clearAllMocks();
     });
 
+    it.each([undefined, { noul: null }, { noul: '0.99' }, { noul: 1.1 }, { noul: 0.819 }])(
+        'withholds dispatch for invalid or below-threshold fit %j', async fit => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { fitProbability: fit } },
+            }));
+            const result = await judgeCuratorPlaylistAlignment({
+                trackProfile: { genre: 'Rock', subgenres: [], tempoBpm: 120, moodTags: [],
+                    instrumentation: [], vocalPresence: 'prominent' },
+                curatorPreferences: { curatorId: 'curator', recentAdditionsGenres: ['Rock'],
+                    targetMoods: [], maxBpmSkew: 20 },
+            });
+            expect(result.dispatchPitch).toBe(false);
+        },
+    );
+
     it('approves pitch dispatch when match score >= 0.82', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.89 },
+                    fitProbability: { noul: 0.89 },
                 },
             },
         }));
@@ -2034,7 +2090,7 @@ describe('judgeCuratorPlaylistAlignment (Judgment 30)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    fitProbability: { probability: 0.45 },
+                    fitProbability: { noul: 0.45 },
                 },
             },
         }));
@@ -2215,7 +2271,7 @@ describe('judgeVisualQualityInspection (Judgment 32)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    defect_detected: { probability: 0.05 },
+                    defect_detected: { noul: 0.05 },
                     aesthetic_quality: { score: 3 },
                     recommendation: { choice: 'APPROVE' },
                 },
@@ -2238,7 +2294,7 @@ describe('judgeVisualQualityInspection (Judgment 32)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    defect_detected: { probability: 0.88 },
+                    defect_detected: { noul: 0.88 },
                     aesthetic_quality: { score: 0 },
                     recommendation: { choice: 'REGENERATE' },
                 },
@@ -2287,12 +2343,39 @@ describe('judgeSoftBrandAestheticAlignment (Judgment 33)', () => {
         expect(forbidden.violationDetected).toBe(true);
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.1' }, { noul: -0.1 }])(
+        'withholds brand approval for malformed violation evidence %j', async violation => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: { violation_detected: violation, vibe_score: { score: 3 } } },
+            }));
+            expect((await judgeSoftBrandAestheticAlignment({
+                assetTitle: 'Cover', descriptionOrLabels: 'Watercolor portrait', brandVibe: 'Watercolor',
+                primaryColors: [], forbiddenElements: [],
+            })).approved).toBe(false);
+        },
+    );
+
+    it('keeps explicit artist exclusions even when Jev would approve', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { violation_detected: { noul: 0 }, vibe_score: { score: 3 } } },
+        }));
+        const result = await judgeSoftBrandAestheticAlignment({
+            assetTitle: 'Cover', descriptionOrLabels: 'Neon portrait', brandVibe: 'Watercolor',
+            primaryColors: [], forbiddenElements: ['neon'],
+        });
+        expect(result.approved).toBe(false);
+        expect(result.violationDetected).toBe(true);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
     it('evaluates brand alignment and violation via Jev answers', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    violation_detected: { probability: 0.02 },
+                    violation_detected: { noul: 0.02 },
                     vibe_score: { score: 3 },
                 },
             },
@@ -2344,8 +2427,8 @@ describe('judgeReceiptDataVerification (Judgment 34)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    category: { choice: 'EQUIPMENT_GEAR' },
-                    is_capital: { probability: 0.92 },
+                    category: { choice: 'EQUIPMENT_GEAR', confidence: 0.9 },
+                    is_capital: { noul: 0.92 },
                 },
             },
         }));
@@ -4063,13 +4146,29 @@ describe('judgeAudioMasterNormalization (Judgment 58)', () => {
         expect(compliant.isClippingHazard).toBe(false);
     });
 
+    it.each([undefined, { noul: null }, { noul: true }, { noul: '0.9' }, { noul: 1.1 }, { noul: 0.5 }])(
+        'flags uncertain transcoding safety for review %j', async safety => {
+            mocks.enabled.mockReturnValue(true);
+            mocks.httpsCallable.mockReturnValue(async () => ({
+                data: { answers: {
+                    compliance_status: { choice: 'PASSED_COMPLIANT' },
+                    is_safe_for_transcoding: safety,
+                } },
+            }));
+            const result = await judgeAudioMasterNormalization({
+                trackTitle: 'Master', integratedLufs: -14, truePeakDb: -1, targetPlatform: 'SPOTIFY',
+            });
+            expect(result.isClippingHazard).toBe(true);
+        },
+    );
+
     it('processes online compliance evaluation', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
                     compliance_status: { choice: 'PASSED_COMPLIANT' },
-                    is_safe_for_transcoding: { probability: 0.99 },
+                    is_safe_for_transcoding: { noul: 0.99 },
                 },
             },
         }));
@@ -4183,7 +4282,7 @@ describe('judgePromptActionability (Judgment 60)', () => {
             data: {
                 answers: {
                     specificity: { score: 4 },
-                    has_deliverable: { probability: 0.98 },
+                    has_deliverable: { noul: 0.98 },
                 },
             },
         }));
@@ -4309,7 +4408,7 @@ describe('judgeStemSeparationAcousticPurity (Judgment 62)', () => {
             data: {
                 answers: {
                     purity_rating: { score: 3 },
-                    severe_phase_hazard: { probability: 0.1 },
+                    severe_phase_hazard: { noul: 0.1 },
                 },
             },
         }));
@@ -4459,7 +4558,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
             data: {
                 answers: {
                     copy_quality: { score: 3 },
-                    spam_style_signal: { probability: 0.05 },
+                    spam_style_signal: { noul: 0.05 },
                 },
             },
         }));
@@ -4480,7 +4579,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 copy_quality: { score: 4 },
-                spam_style_signal: { probability: 0 },
+                spam_style_signal: { noul: 0 },
             } },
         }));
 
@@ -4499,7 +4598,7 @@ describe('judgeDirectToFanEmailSubjectLine (Judgment 64)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 copy_quality: { score: 9 },
-                spam_style_signal: { probability: Number.NaN },
+                spam_style_signal: { noul: Number.NaN },
             } },
         }));
 
@@ -5076,7 +5175,7 @@ describe('judgeDawTitleSanitization (Judgment 74)', () => {
             data: {
                 answers: {
                     version: { choice: 'Acoustic' },
-                    explicit: { probability: 0.9 },
+                    explicit: { noul: 0.9 },
                 },
             },
         }));

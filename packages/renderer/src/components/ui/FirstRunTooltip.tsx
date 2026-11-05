@@ -52,7 +52,9 @@ function saveTipState(state: TipState): void {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function useFirstRunTip(tipId: string) {
-    const [shouldShow, setShouldShow] = useState(false);
+    const [visibleTipId, setVisibleTipId] = useState<string | null>(null);
+
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -61,6 +63,7 @@ export function useFirstRunTip(tipId: string) {
         if (!state[tipId]) {
             // Small delay so it doesn't flash on mount
             timerRef.current = setTimeout(() => setShouldShow(true), 1000);
+            timerRef.current = setTimeout(() => setVisibleTipId(tipId), 1000);
             return () => { if (timerRef.current) clearTimeout(timerRef.current); };
         }
     }, [tipId]);
@@ -68,12 +71,13 @@ export function useFirstRunTip(tipId: string) {
     const dismiss = useCallback(() => {
         if (timerRef.current) clearTimeout(timerRef.current);
         setShouldShow(false);
+        setVisibleTipId(null);
         const state = loadTipState();
         state[tipId] = true;
         saveTipState(state);
     }, [tipId]);
 
-    return { shouldShow, dismiss };
+    return { shouldShow: visibleTipId === tipId, dismiss };
 }
 
 /**
@@ -122,7 +126,7 @@ export function FirstRunTooltip({
             className={`absolute z-50 ${positionClasses[position]} ${className}`}
             role="tooltip"
         >
-            <div className="bg-linear-to-r from-green-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-green-900/30 max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-linear-to-r from-green-600 to-blue-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-green-900/30 max-w-xs motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
                 <p className="leading-relaxed">{message}</p>
                 <button
                     type="button"
