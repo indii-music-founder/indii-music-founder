@@ -1598,12 +1598,8 @@ export async function judgeSemanticCatalogFilter(
 
         const matchedIds: string[] = [];
         for (const item of batch) {
-            const val = answers[`match_${item.id}`];
-            const prob = typeof val === 'number'
-                ? val
-                : Number((val as { noul?: unknown })?.noul);
-
-            if (Number.isFinite(prob) && prob >= 0.50) {
+            const probability = boundedJudgmentNumber(answers[`match_${item.id}`], 'noul', 1);
+            if (probability !== null && probability > 0.5) {
                 matchedIds.push(item.id);
             }
         }
