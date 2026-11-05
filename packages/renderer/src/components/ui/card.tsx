@@ -3,7 +3,7 @@ import * as React from "react"
 const Card = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => (
     <div
         ref={ref}
         className={`rounded-xl border text-card-foreground shadow-xl ${className || ''}`}
@@ -11,7 +11,8 @@ const Card = React.forwardRef<
             borderColor: 'var(--color-border, rgba(255, 255, 255, 0.1))',
             backgroundColor: 'var(--color-surface, rgba(36, 31, 25, 0.3))',
             backdropFilter: 'blur(var(--blur-xl))',
-            boxShadow: 'var(--shadow-card)'
+            boxShadow: 'var(--shadow-card)',
+            ...style
         }}
         {...props}
     />
@@ -31,7 +32,7 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
-    HTMLParagraphElement,
+    HTMLHeadingElement,
     React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
     <h3

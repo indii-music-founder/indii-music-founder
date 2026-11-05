@@ -2017,19 +2017,24 @@ export async function judgeCrashTriage(
 
         const ans = result.data.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
-        const retryAns = ans?.retryable as { probability?: unknown } | undefined;
+        const retryAns = ans?.retryable as { noul?: unknown } | undefined;
         const actionAns = ans?.action as { choice?: unknown } | undefined;
 
         const rootCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : 'UNKNOWN') as CrashRootCause;
-        const isRetryable = typeof retryAns?.probability === 'number' ? retryAns.probability >= 0.5 : true;
-        const recommendedAction = (typeof actionAns?.choice === 'string' ? actionAns.choice : 'RELOAD_MODULE') as CrashRecommendedAction;
+        const retryProbability = boundedJudgmentNumber(retryAns, 'noul', 1);
+        const action = actionAns?.choice;
+        if (retryProbability === null || retryProbability === 0.5) return null;
+        if (action !== 'RELOAD_MODULE' && action !== 'REFRESH_PAGE' && action !== 'REAUTHENTICATE' &&
+            action !== 'RESET_LOCAL_CACHE' && action !== 'CONTACT_SUPPORT') return null;
+        const isRetryable = retryProbability > 0.5;
+        const recommendedAction = action;
 
         const GUIDANCE_MAP: Record<CrashRootCause, string> = {
             NETWORK_OFFLINE: 'A network connection drop interrupted this action. Check your internet connection and try again.',
             CHUNK_STALE: 'indii was updated with new features in the background. A quick page refresh will reload the newest code.',
             STATE_CORRUPTION: 'Temporary workspace data caused an unexpected state. Reopening this section should restore default settings.',
             AUTH_EXPIRED: 'Your session has expired. Please sign in again to continue working safely.',
-            UNKNOWN: 'An unexpected issue occurred. You can retry safely without losing your project files.',
+            UNKNOWN: 'An unexpected issue occurred. Check the previous action’s outcome before trying again.',
         };
 
         return {
@@ -2075,8 +2080,8 @@ export const SPLIT_RIGHTS_SCOPE_QUESTION = {
 export const SPLIT_PRODUCER_AGREEMENT_QUESTION = {
     type: 'noul' as const,
     instructions:
-        'Does this split distribution contain a Producer with >= 15% split that legally warrants a formal Producer Agreement/Declaration? ' +
-        'Answer 1.0 (True) if a producer or beatmaker has substantial revenue share; answer 0.0 (False) otherwise.',
+        'Does this split distribution include a producer or beatmaker with a share of at least 15% that should be flagged for producer agreement review? ' +
+        'Use the supplied roles and shares. This review flag does not establish legal obligations or transfer rights.',
 };
 
 export const SPLIT_RISK_SCORE_QUESTION = {
@@ -2131,12 +2136,13 @@ export async function judgeSplitSheetVerification(
         ) return null;
 
         const rightsScope = scope;
-        const needsProducerAgreement = producerProbability >= 0.5;
+        if (producerProbability === 0.5) return null;
+        const needsProducerAgreement = producerProbability > 0.5;
         const splitRiskLevel = riskScore;
 
         const advisories: string[] = [];
         if (needsProducerAgreement) {
-            advisories.push('Producer agreement recommended: major producer split requires signed transfer of master rights.');
+            advisories.push('Review a producer agreement with the collaborators and confirm the intended rights and revenue shares.');
         }
         if (rightsScope === 'AMBIGUOUS') {
             advisories.push('Collaborator roles are unassigned. Clarify Master vs Publishing splits before releasing funds.');
@@ -2309,16 +2315,7 @@ export async function judgeAdCreativeBatchCompliance(
     artistBrandVibe = 'Authentic Independent Music'
 ): Promise<string[]> {
     if (!creatives || creatives.length === 0) return [];
-    if (!judgmentsAvailable()) {
-        // Deterministic fallback: reject if empty or contains obvious spam/prohibited terms
-        return creatives
-            .filter((c) => {
-                const text = `${c.headline} ${c.copy}`.toLowerCase();
-                const forbidden = ['free money', 'guaranteed streams', 'bot streams', 'buy followers'];
-                return !forbidden.some((term) => text.includes(term));
-            })
-            .map((c) => c.id);
-    }
+    if (!judgmentsAvailable()) return [];
 
     try {
         const functions = getFunctions();
@@ -2350,17 +2347,14 @@ export async function judgeAdCreativeBatchCompliance(
         const answers = result.data.answers || {};
 
         batch.forEach((c) => {
-            const ans = answers[`approved_${c.id}`] as { probability?: unknown } | undefined;
-            const prob = typeof ans?.probability === 'number' ? ans.probability : 0.8;
-            if (prob >= 0.7) {
-                approved.push(c.id);
-            }
+            const probability = boundedJudgmentNumber(answers[`approved_${c.id}`], 'noul', 1);
+            if (probability !== null && probability >= 0.7) approved.push(c.id);
         });
 
         return approved;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'ad creative batch compliance judgment');
-        return creatives.map((c) => c.id);
+        return [];
     }
 }
 
@@ -2610,9 +2604,11 @@ export async function judgeCuratorPlaylistAlignment(
             },
         });
 
-        const ans = result.data.answers?.fitProbability as { probability?: unknown } | undefined;
-        const prob = typeof ans?.probability === 'number' ? ans.probability : 0.5;
-        const matchScore = parseFloat(prob.toFixed(2));
+        const matchScore = boundedJudgmentNumber(result.data.answers?.fitProbability, 'noul', 1);
+        if (matchScore === null) {
+            return { curatorId, matchScore: 0, dispatchPitch: false,
+                rationale: 'Curator alignment assessment is unavailable. Review the pitch before dispatch.' };
+        }
         const dispatchPitch = matchScore >= CURATOR_DISPATCH_THRESHOLD;
 
         return {
@@ -2833,16 +2829,21 @@ export async function judgeVisualQualityInspection(
         });
 
         const ans = result.data.answers;
-        const defectAns = ans?.defect_detected as { probability?: unknown } | undefined;
+        const defectAns = ans?.defect_detected as { noul?: unknown } | undefined;
         const qualityAns = ans?.aesthetic_quality as { score?: unknown } | undefined;
         const recAns = ans?.recommendation as { choice?: unknown } | undefined;
 
-        const defectProb = typeof defectAns?.probability === 'number' ? defectAns.probability : 0;
-        const qualityScore = typeof qualityAns?.score === 'number' ? qualityAns.score : 2;
-        const choice = (typeof recAns?.choice === 'string' ? recAns.choice : 'APPROVE') as 'APPROVE' | 'REGENERATE' | 'MANUAL_REVIEW';
+        const defectProb = boundedJudgmentNumber(defectAns, 'noul', 1);
+        const qualityScore = boundedJudgmentNumber(qualityAns, 'score', 3);
+        const choice = recAns?.choice;
+        if (defectProb === null || qualityScore === null ||
+            (choice !== 'APPROVE' && choice !== 'REGENERATE' && choice !== 'MANUAL_REVIEW')) {
+            return { passed: false, qualityScore: 0, defectDetected: false,
+                recommendation: 'MANUAL_REVIEW', reason: 'Visual quality assessment is unavailable. Review the asset.' };
+        }
 
         const defectDetected = defectProb >= 0.65;
-        const passed = !defectDetected && qualityScore >= 1 && choice !== 'REGENERATE';
+        const passed = !defectDetected && qualityScore >= 1 && choice === 'APPROVE';
 
         return {
             passed,
@@ -2894,7 +2895,7 @@ export async function judgeSoftBrandAestheticAlignment(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (fallbackVerdict().violationDetected || !judgmentsAvailable()) {
         return fallbackVerdict();
     }
 
@@ -2925,11 +2926,15 @@ export async function judgeSoftBrandAestheticAlignment(
         });
 
         const ans = result.data.answers;
-        const violAns = ans?.violation_detected as { probability?: unknown } | undefined;
+        const violAns = ans?.violation_detected as { noul?: unknown } | undefined;
         const vibeAns = ans?.vibe_score as { score?: unknown } | undefined;
 
-        const violProb = typeof violAns?.probability === 'number' ? violAns.probability : 0;
-        const vibeScore = typeof vibeAns?.score === 'number' ? vibeAns.score : 2;
+        const violProb = boundedJudgmentNumber(violAns, 'noul', 1);
+        const vibeScore = boundedJudgmentNumber(vibeAns, 'score', 3);
+        if (violProb === null || vibeScore === null) {
+            return { approved: false, vibeScore: 0, violationDetected: false,
+                reason: 'Brand assessment is unavailable. Review the creative against the artist brief.' };
+        }
 
         const violationDetected = violProb >= 0.70;
         const approved = !violationDetected && vibeScore >= 1;
@@ -3037,20 +3042,26 @@ export async function judgeReceiptDataVerification(
         });
 
         const ans = result.data.answers;
-        const catAns = ans?.category as { choice?: unknown } | undefined;
-        const capAns = ans?.is_capital as { probability?: unknown } | undefined;
-
-        const choice = (typeof catAns?.choice === 'string' ? catAns.choice : 'OTHER') as MusicExpenseCategory;
-        const capProb = typeof capAns?.probability === 'number' ? capAns.probability : 0;
+        const catAns = ans?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const choice = catAns?.choice;
+        const capProb = boundedJudgmentNumber(ans?.is_capital, 'noul', 1);
+        const confidence = catAns?.confidence;
+        if (typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1 ||
+            capProb === null || (choice !== 'STUDIO_RENTAL' && choice !== 'TOURING_TRAVEL' &&
+            choice !== 'EQUIPMENT_GEAR' && choice !== 'MARKETING_PROMO' && choice !== 'LEGAL_PROFESSIONAL' &&
+            choice !== 'MERCHANDISE_INVENTORY' && choice !== 'OTHER')) {
+            return { category: 'OTHER', isCapitalAsset: false, confidence: 0,
+                taxNotes: 'Receipt classification is unavailable. Review its category and tax treatment.' };
+        }
         const isCapital = capProb >= 0.60;
 
         return {
             category: choice,
             isCapitalAsset: isCapital,
-            confidence: 0.9,
+            confidence,
             taxNotes: isCapital
-                ? 'Section 179 capital property: qualified durable equipment eligible for accelerated depreciation.'
-                : 'Standard ordinary & necessary business expense under IRS Schedule C.',
+                ? 'Potential capital asset. Review applicable tax treatment with supporting records.'
+                : 'Proposed operating expense classification. Review business purpose and applicable tax treatment.',
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'receipt data verification judgment');
@@ -6611,11 +6622,11 @@ export async function judgeAudioMasterNormalization(
 
         const ans = result.data.answers;
         const stAns = ans?.compliance_status as { choice?: unknown } | undefined;
-        const noAns = ans?.is_safe_for_transcoding as { probability?: unknown } | undefined;
+        const noAns = ans?.is_safe_for_transcoding as { noul?: unknown } | undefined;
 
         const resolvedStatus = (typeof stAns?.choice === 'string' ? stAns.choice : fallbackStatus) as NormalizationStatus;
-        const safeProb = typeof noAns?.probability === 'number' ? noAns.probability : 1.0;
-        const clippingHazard = safeProb < 0.5 || isClipping;
+        const safeProb = boundedJudgmentNumber(noAns, 'noul', 1);
+        const clippingHazard = safeProb === null || safeProb <= 0.5 || isClipping;
 
         return {
             status: resolvedStatus,
@@ -6877,11 +6888,11 @@ export async function judgePromptActionability(
 
         const ans = result.data.answers;
         const specAns = ans?.specificity as { score?: unknown } | number | undefined;
-        const delAns = ans?.has_deliverable as { probability?: unknown } | undefined;
+        const delAns = ans?.has_deliverable as { noul?: unknown } | undefined;
 
         const specScore = oneIndexedScore(specAns, fallbackScore);
-        const delProb = typeof delAns?.probability === 'number' ? delAns.probability : (hasActionVerb ? 0.9 : 0.2);
-        const resolvedHasDeliverable = delProb >= 0.5;
+        const delProb = boundedJudgmentNumber(delAns, 'noul', 1);
+        const resolvedHasDeliverable = delProb !== null && delProb > 0.5;
 
         return {
             specificityScore: Math.min(5, Math.max(1, Math.round(specScore))),
@@ -7139,7 +7150,7 @@ export async function judgeStemSeparationAcousticPurity(
     if (!judgmentsAvailable()) {
         return {
             purityScore: fallbackScore,
-            isRemixReady: fallbackScore >= 3,
+            isRemixReady: fallbackScore >= 3 && !isSeverePhase,
             hasSeverePhaseCancellation: isSeverePhase,
             recommendedRemedy: remedy,
         };
@@ -7184,11 +7195,11 @@ export async function judgeStemSeparationAcousticPurity(
 
         const ans = result.data.answers;
         const purAns = ans?.purity_rating as { score?: unknown } | number | undefined;
-        const phsAns = ans?.severe_phase_hazard as { probability?: unknown } | undefined;
+        const phsAns = ans?.severe_phase_hazard as { noul?: unknown } | undefined;
 
         const resolvedScore = oneIndexedScore(purAns, fallbackScore);
-        const phaseProb = typeof phsAns?.probability === 'number' ? phsAns.probability : (isSeverePhase ? 0.85 : 0.15);
-        const finalSeverePhase = phaseProb >= 0.5;
+        const phaseProb = boundedJudgmentNumber(phsAns, 'noul', 1);
+        const finalSeverePhase = isSeverePhase || phaseProb === null || phaseProb >= 0.5;
 
         return {
             purityScore: Math.min(5, Math.max(1, Math.round(resolvedScore))),
@@ -7200,7 +7211,7 @@ export async function judgeStemSeparationAcousticPurity(
         noteJudgmentFailure(err, 'stem separation acoustic purity judgment');
         return {
             purityScore: fallbackScore,
-            isRemixReady: fallbackScore >= 3,
+            isRemixReady: fallbackScore >= 3 && !isSeverePhase,
             hasSeverePhaseCancellation: isSeverePhase,
             recommendedRemedy: remedy,
         };
@@ -7363,9 +7374,9 @@ export async function judgeDirectToFanEmailSubjectLine(
 
         const ans = result.data.answers;
         const scAns = ans?.copy_quality as { score?: unknown } | undefined;
-        const spAns = ans?.spam_style_signal as { probability?: unknown } | undefined;
+        const spAns = ans?.spam_style_signal as { noul?: unknown } | undefined;
         const rawScore = scAns?.score;
-        const rawSpamProb = spAns?.probability;
+        const rawSpamProb = spAns?.noul;
         const validScore = typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4;
         const validSpamProb = typeof rawSpamProb === 'number' && Number.isFinite(rawSpamProb) && rawSpamProb >= 0 && rawSpamProb <= 1;
         const resolvedScore = validScore ? rawScore + 1 : fallbackScore;
@@ -8557,16 +8568,11 @@ export async function judgeDawTitleSanitization(
                 ? (versionRaw as { choice: string }).choice
                 : undefined);
 
-        const explicitProb = typeof explicitRaw === 'number'
-            ? explicitRaw
-            : (typeof (explicitRaw as { probability?: unknown })?.probability === 'number'
-                ? (explicitRaw as { probability: number }).probability
-                : (typeof (explicitRaw as { noul?: unknown })?.noul === 'number'
-                    ? (explicitRaw as { noul: number }).noul
-                    : undefined));
-
-        const resolvedVersion = (versionChoice ?? versionTag) as TrackVersionTag;
-        const resolvedExplicit = typeof explicitProb === 'number' ? explicitProb >= 0.5 : isExplicit;
+        const explicitProb = boundedJudgmentNumber(explicitRaw, 'noul', 1);
+        const resolvedVersion = versionChoice === 'Original' || versionChoice === 'Radio Edit' ||
+            versionChoice === 'Remix' || versionChoice === 'Instrumental' || versionChoice === 'Acoustic' ||
+            versionChoice === 'Extended' || versionChoice === 'Live' ? versionChoice : versionTag;
+        const resolvedExplicit = isExplicit || (explicitProb !== null && explicitProb > 0.5);
 
         return {
             cleanTitle,
