@@ -724,27 +724,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const userId = auth.currentUser?.uid;
                         if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
                         {
-                            // ISSUE-1361 (Boardroom latency): quota and rate-limit
-                            // checks are independent Firestore reads — run them in
-                            // parallel instead of serially. The cost reservation
-                            // (server round trip) and the backend request headers
-                            // (ID-token + App-Check mints) are also independent of
-                            // each other, so they run concurrently too. This cuts
-                            // the pre-stream critical path from four serial awaits
-                            // to two, which is the dominant Boardroom
-                            // message→first-token delay for every seated agent.
+                            // Quota and rate limit checks are independent.
                             const [_quotaResult, _rateLimitResult] = await Promise.all([
                                 TokenUsageService.checkQuota(userId),
                                 TokenUsageService.checkRateLimit(userId),
                             ]);
-
-                            const [reservationId, preparedHeaders] = await Promise.all([
-                                this.reserveAgentStream(userId, modelName, false,
-                                    estimateAgentStreamCost(prompt, systemInstruction, tools, modelName, mergedConfig.maxOutputTokens)),
-                                this.prepareBackendRequestHeaders(),
-                            ]);
-                            costReservationId = reservationId;
-                            headers = preparedHeaders;
                         }
 
                         // 4. Sanitize & Prepare Prompt
@@ -792,6 +776,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             toolConfig: options?.toolConfig,
                             safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                         };
+                        headers = await this.prepareBackendRequestHeaders();
+                        costReservationId = await this.reserveAgentStream(userId, modelName, false,
+                            estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens));
                         const streamResult = await this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                         const reader = streamResult.stream.getReader();
                         while (!(await reader.read()).done) {
@@ -952,22 +939,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     const userId = auth.currentUser?.uid;
                     if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
                     {
-                        // ISSUE-1361: same parallel pre-flight as the stream
-                        // path — quota/rate-limit reads and the reservation +
-                        // header mints are independent, so run them
-                        // concurrently to cut the pre-token critical path.
+                        // Quota and rate limit checks are independent.
                         const [_quotaResult, _rateLimitResult] = await Promise.all([
                             TokenUsageService.checkQuota(userId),
                             TokenUsageService.checkRateLimit(userId),
                         ]);
-
-                        const [reservationId, preparedHeaders] = await Promise.all([
-                            this.reserveAgentStream(userId, modelName, true,
-                                estimateAgentStreamCost(prompt, systemInstruction, tools, modelName, mergedConfig.maxOutputTokens)),
-                            this.prepareBackendRequestHeaders(),
-                        ]);
-                        costReservationId = reservationId;
-                        headers = preparedHeaders;
                     }
 
                     // 2. Sanitize & Prepare Prompt
@@ -992,6 +968,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         toolConfig: options?.toolConfig,
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
+                    headers = await this.prepareBackendRequestHeaders();
+                    costReservationId = await this.reserveAgentStream(userId, modelName, true,
+                        estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens));
                     return this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                 }, 0, 1000, internalSignal);
             });
