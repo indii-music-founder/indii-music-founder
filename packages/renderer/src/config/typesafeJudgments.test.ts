@@ -1655,7 +1655,7 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
             data: {
                 answers: {
                     scope: { choice: 'MASTER_AND_PUBLISHING' },
-                    producerReq: { probability: 0.85 },
+                    producerReq: { noul: 0.85 },
                     risk: { score: 1 },
                 },
             },
@@ -1674,14 +1674,14 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
     });
 
     it.each([
-        { scope: { choice: 'UNKNOWN' }, producerReq: { probability: 0.85 }, risk: { score: 1 } },
+        { scope: { choice: 'UNKNOWN' }, producerReq: { noul: 0.85 }, risk: { score: 1 } },
         { scope: { choice: 'MASTER_ONLY' }, producerReq: {}, risk: { score: 1 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: '0.85' }, risk: { score: 1 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 1.2 }, risk: { score: 1 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: Number.NaN }, risk: { score: 1 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: 3.5 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: 4 } },
-        { scope: { choice: 'MASTER_ONLY' }, producerReq: { probability: 0.85 }, risk: { score: Number.POSITIVE_INFINITY } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: '0.85' }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: 1.2 }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: Number.NaN }, risk: { score: 1 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: 0.85 }, risk: { score: 3.5 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: 0.85 }, risk: { score: 4 } },
+        { scope: { choice: 'MASTER_ONLY' }, producerReq: { noul: 0.85 }, risk: { score: Number.POSITIVE_INFINITY } },
     ])('withholds the split audit for an invalid Jev answer %#', async (answers) => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
@@ -1698,7 +1698,7 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: { answers: {
                 scope: { choice: 'MASTER_ONLY' },
-                producerReq: { probability: 0 },
+                producerReq: { noul: 0 },
                 risk: { score },
             } },
         }));
