@@ -5613,7 +5613,7 @@ export async function judgeLikenessEnrolmentSuitability(
         fallbackClarity = 3;
     }
 
-    if (!judgmentsAvailable()) {
+    if (fallbackStatus !== 'READY_FOR_TRAINING' || !judgmentsAvailable()) {
         return {
             status: fallbackStatus,
             faceClarityScore: fallbackClarity,
@@ -5675,16 +5675,17 @@ export async function judgeLikenessEnrolmentSuitability(
         const obsAns = ans?.obstructed as { noul?: unknown } | number | undefined;
         const claAns = ans?.clarity_score as { score?: unknown } | number | undefined;
 
-        const resolvedStatus = (typeof staAns?.choice === 'string' ? staAns.choice : fallbackStatus) as LikenessEnrolmentStatus;
-        const obsProb = typeof obsAns === 'number'
-            ? obsAns
-            : Number((obsAns as { noul?: unknown })?.noul ?? (fallbackObstructed ? 0.85 : 0.15));
+        const status = staAns?.choice;
+        const obsProb = boundedJudgmentNumber(obsAns, 'noul', 1);
+        const obstructed = status === 'OBSTRUCTED_FACE' || (obsProb !== null && obsProb > 0.5);
+        const resolvedStatus = obstructed ? 'OBSTRUCTED_FACE'
+            : status === 'NEEDS_BETTER_LIGHTING' || status === 'RESOLUTION_TOO_LOW' ? status : fallbackStatus;
         const resolvedClarity = oneIndexedScore(claAns, fallbackClarity);
 
         return {
             status: resolvedStatus,
             faceClarityScore: Math.max(1, Math.min(5, Math.round(resolvedClarity) || fallbackClarity)),
-            isObstructed: obsProb >= 0.5,
+            isObstructed: obstructed,
             advisoryNotes: `System One likeness audit: ${resolvedStatus} (clarity score: ${resolvedClarity}/5).`,
         };
     } catch (err: unknown) {
