@@ -5367,18 +5367,18 @@ export async function judgeSplitSheetRightsClearance(
         const disAns = ans?.dispute_score as { score?: unknown } | number | undefined;
 
         const resolvedStream = (typeof rigAns?.choice === 'string' ? rigAns.choice : fallbackStream) as RightsStreamType;
-        const needsContractProb = typeof conAns === 'number'
-            ? conAns
-            : Number((conAns as { noul?: unknown })?.noul ?? (fallbackRequiresProducerAgreement ? 0.9 : 0.1));
+        const needsContractProb = boundedJudgmentNumber(conAns, 'noul', 1);
+        const requiresAgreement = fallbackRequiresProducerAgreement ||
+            (needsContractProb !== null && needsContractProb > 0.5);
         const resolvedDispute = oneIndexedScore(disAns, fallbackScore);
 
         return {
             rightsStream: resolvedStream,
-            requiresProducerAgreementBeforeRelease: needsContractProb >= 0.5,
+            requiresProducerAgreementBeforeRelease: requiresAgreement,
             disputeResistanceScore: Math.max(1, Math.min(5, Math.round(resolvedDispute) || fallbackScore)),
-            legalAdvisoryBlurb: needsContractProb >= 0.5
+            legalAdvisoryBlurb: requiresAgreement
                 ? `Legal advisory: Producer agreement required for ${input.collaboratorName} prior to DSP delivery (dispute score: ${resolvedDispute}/5).`
-                : `System One cleared ${input.collaboratorName} for ${resolvedStream} at ${input.claimedPercentage}%.`,
+                : `Review the proposed ${resolvedStream} split of ${input.claimedPercentage}% for ${input.collaboratorName}.`,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'split sheet rights clearance judgment');
