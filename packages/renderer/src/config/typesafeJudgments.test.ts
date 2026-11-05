@@ -4069,7 +4069,7 @@ describe('judgeAudioMasterNormalization (Judgment 58)', () => {
             data: {
                 answers: {
                     compliance_status: { choice: 'PASSED_COMPLIANT' },
-                    is_safe_for_transcoding: { probability: 0.99 },
+                    is_safe_for_transcoding: { noul: 0.99 },
                 },
             },
         }));
