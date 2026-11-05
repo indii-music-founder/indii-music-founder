@@ -2215,7 +2215,7 @@ describe('judgeVisualQualityInspection (Judgment 32)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    defect_detected: { probability: 0.05 },
+                    defect_detected: { noul: 0.05 },
                     aesthetic_quality: { score: 3 },
                     recommendation: { choice: 'APPROVE' },
                 },
@@ -2238,7 +2238,7 @@ describe('judgeVisualQualityInspection (Judgment 32)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    defect_detected: { probability: 0.88 },
+                    defect_detected: { noul: 0.88 },
                     aesthetic_quality: { score: 0 },
                     recommendation: { choice: 'REGENERATE' },
                 },
