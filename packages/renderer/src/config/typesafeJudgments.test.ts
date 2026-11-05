@@ -374,10 +374,11 @@ describe('refineInjectionRisk (hazard Nouls)', () => {
         expect(await refineInjectionRisk('unclear input')).toBe('flag');
     });
 
-    it('returns null on non-numeric hazard answers', async () => {
+    it.each(['yes', { noul: null }, { noul: false }, { noul: -0.1 }, { noul: 1.1 }])(
+        'keeps the flag for invalid hazard %j', async hazard => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: { instruction_override: 'yes', credential_exfiltration: 0.1 } },
+            data: { answers: { instruction_override: hazard, credential_exfiltration: 0.1 } },
         }));
 
         expect(await refineInjectionRisk('anything')).toBe('flag');

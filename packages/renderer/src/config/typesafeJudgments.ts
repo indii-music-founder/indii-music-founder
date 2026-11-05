@@ -135,14 +135,10 @@ export async function refineInjectionRisk(input: string): Promise<InjectionVerdi
             questions: INJECTION_HAZARD_QUESTIONS,
         });
 
-        const prob = (q: string): number => {
-            const a = result.data.answers?.[q];
-            return typeof a === 'number' ? a : Number((a as { noul?: unknown })?.noul);
-        };
-        const override = prob('instruction_override');
-        const exfil = prob('credential_exfiltration');
-        if (!Number.isFinite(override) || !Number.isFinite(exfil)) {
-            logger.warn('[typesafeJudgments] injection refinement returned non-numeric hazards — keeping flag.');
+        const override = boundedJudgmentNumber(result.data.answers?.instruction_override, 'noul', 1);
+        const exfil = boundedJudgmentNumber(result.data.answers?.credential_exfiltration, 'noul', 1);
+        if (override === null || exfil === null) {
+            logger.warn('[typesafeJudgments] injection refinement returned invalid hazards — keeping flag.');
             return 'flag';
         }
 
