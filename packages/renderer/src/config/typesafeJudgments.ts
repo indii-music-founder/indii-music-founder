@@ -2080,8 +2080,8 @@ export const SPLIT_RIGHTS_SCOPE_QUESTION = {
 export const SPLIT_PRODUCER_AGREEMENT_QUESTION = {
     type: 'noul' as const,
     instructions:
-        'Does this split distribution contain a Producer with >= 15% split that legally warrants a formal Producer Agreement/Declaration? ' +
-        'Answer 1.0 (True) if a producer or beatmaker has substantial revenue share; answer 0.0 (False) otherwise.',
+        'Does this split distribution include a producer or beatmaker with a share of at least 15% that should be flagged for producer agreement review? ' +
+        'Use the supplied roles and shares. This review flag does not establish legal obligations or transfer rights.',
 };
 
 export const SPLIT_RISK_SCORE_QUESTION = {
@@ -2136,12 +2136,13 @@ export async function judgeSplitSheetVerification(
         ) return null;
 
         const rightsScope = scope;
-        const needsProducerAgreement = producerProbability >= 0.5;
+        if (producerProbability === 0.5) return null;
+        const needsProducerAgreement = producerProbability > 0.5;
         const splitRiskLevel = riskScore;
 
         const advisories: string[] = [];
         if (needsProducerAgreement) {
-            advisories.push('Producer agreement recommended: major producer split requires signed transfer of master rights.');
+            advisories.push('Review a producer agreement with the collaborators and confirm the intended rights and revenue shares.');
         }
         if (rightsScope === 'AMBIGUOUS') {
             advisories.push('Collaborator roles are unassigned. Clarify Master vs Publishing splits before releasing funds.');

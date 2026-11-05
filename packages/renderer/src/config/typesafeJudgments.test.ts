@@ -1682,7 +1682,7 @@ describe('judgeSplitSheetVerification (Judgment 25)', () => {
         expect(result?.rightsScope).toBe('MASTER_AND_PUBLISHING');
         expect(result?.needsProducerAgreement).toBe(true);
         expect(result?.advisories).toContain(
-            'Producer agreement recommended: major producer split requires signed transfer of master rights.'
+            'Review a producer agreement with the collaborators and confirm the intended rights and revenue shares.'
         );
     });
 
