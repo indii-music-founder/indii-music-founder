@@ -276,6 +276,16 @@ class ToolApprovalService {
                 result = await binding!.execute(JSON.parse(binding!.argsJson) as ToolFunctionArgs);
             }
         } catch (err: unknown) {
+            if (!isComputerApproval) {
+                // The claim is durable, but the tool may have completed an external
+                // effect before its response was lost. Leave it unresolved.
+                this.boundCalls.delete(approvalId);
+                logger.warn(`[ToolApprovalService] Approval ${approvalId} dispatched without a verifiable result`);
+                return {
+                    success: false,
+                    error: 'Action outcome needs reconciliation: the dispatched tool did not return a result. Check its effect before requesting it again.',
+                };
+            }
             result = { success: false, error: err instanceof Error ? err.message : String(err) };
         }
 
@@ -289,8 +299,8 @@ class ToolApprovalService {
                         ...(typeof result.error === 'string' ? { error: result.error } : {}),
                     },
                 });
-            } catch (error: unknown) {
-                logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`, error);
+            } catch {
+                logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`);
                 return {
                     success: false,
                     error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,

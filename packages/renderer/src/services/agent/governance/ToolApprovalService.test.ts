@@ -199,12 +199,16 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.toolRegistry.deleted_tool).toBeUndefined();
         });
 
-        it('marks the approval failed (not thrown) when the bound tool itself throws', async () => {
-            await bindApproval('execute_code', {}, vi.fn().mockRejectedValue(new Error('sandbox crashed')));
+        it('keeps a claimed approval unresolved when the dispatched tool throws', async () => {
+            const record = await bindApproval('execute_code', {}, vi.fn().mockRejectedValue(new Error('private provider detail')));
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
-            expect(result.error).toMatch(/sandbox crashed/);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({ status: 'failed' }));
+            expect(result.error).toMatch(/reconciliation/);
+            expect(result.error).toMatch(/check its effect/i);
+            expect(result.error).not.toContain('private provider detail');
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'claimed' }));
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' })).toBe(false);
         });
 
         it('records a returned tool failure as failed rather than executed', async () => {
