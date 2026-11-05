@@ -296,7 +296,7 @@ export const CreativeAgent: AgentConfig = {
                     type: 'OBJECT',
                     properties: {
                         theme: { type: 'STRING', description: 'The core theme, concept, or genre for the moodboard.' },
-                        style: { type: 'STRING', description: 'Optional specific visual style (e.g., "cyberpunk", "minimalist").' }
+                        style: { type: 'STRING', description: 'Optional specific visual style (e.g., "analog film", "minimalist", "watercolor").' }
                     },
                     required: ['theme']
                 }
