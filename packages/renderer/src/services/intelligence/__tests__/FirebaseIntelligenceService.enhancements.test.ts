@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
-import { AppErrorCode } from '@/shared/types/errors';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { CostPredictor } from '../utils/CostPredictor';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
@@ -84,6 +84,72 @@ describe('FirebaseIntelligenceService Enhancements', () => {
     });
 
     describe('withRetry', () => {
+        it('cancels retry backoff immediately without resubmitting or retaining the timer', async () => {
+            vi.useFakeTimers();
+            try {
+                const controller = new AbortController();
+                const operation = vi.fn().mockRejectedValue(new Error('503 Service Unavailable'));
+                const pending = service.withRetry(operation, 3, 10000, controller.signal);
+                const rejected = expect(pending).rejects.toMatchObject({ code: AppErrorCode.CANCELLED, details: { retryable: false } });
+                await vi.advanceTimersByTimeAsync(0);
+                controller.abort();
+                await rejected;
+                expect(operation).toHaveBeenCalledTimes(1);
+                expect(vi.getTimerCount()).toBe(0);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('handles an abort just before the backoff listener is registered', async () => {
+            const controller = new AbortController();
+            const register = controller.signal.addEventListener.bind(controller.signal);
+            vi.spyOn(controller.signal, 'addEventListener').mockImplementation((...args) => {
+                controller.abort();
+                register(...args);
+            });
+            const operation = vi.fn().mockRejectedValue(new Error('503 Service Unavailable'));
+            await expect(service.withRetry(operation, 3, 10000, controller.signal))
+                .rejects.toMatchObject({ code: AppErrorCode.CANCELLED });
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
+
+        it.each([
+            [undefined, AppErrorCode.CANCELLED],
+            ['TIMEOUT', AppErrorCode.TIMEOUT],
+            [new Error('private abort reason'), AppErrorCode.CANCELLED],
+        ])('does not submit an already-aborted request', async (reason, code) => {
+            const controller = new AbortController();
+            controller.abort(reason);
+            const operation = vi.fn();
+            await expect(service.withRetry(operation, 3, 1, controller.signal))
+                .rejects.toMatchObject({ code });
+            expect(operation).not.toHaveBeenCalled();
+        });
+
+        it('normalizes an in-flight abort instead of leaking the provider rejection', async () => {
+            const controller = new AbortController();
+            const operation = vi.fn(async () => {
+                controller.abort();
+                throw new Error('private provider failure');
+            });
+            await expect(service.withRetry(operation, 3, 1, controller.signal))
+                .rejects.toMatchObject({ code: AppErrorCode.CANCELLED, message: 'AI Request was cancelled.' });
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            new DOMException('The operation was aborted', 'AbortError'),
+            new DOMException('', 'AbortError'),
+            new Error('signal is aborted'),
+            new AppException(AppErrorCode.CANCELLED, 'Cancelled', { retryable: true }),
+        ])('never resubmits cancelled work without an external signal', async error => {
+            const operation = vi.fn().mockRejectedValue(error);
+            await expect(service.withRetry(operation, 3, 1)).rejects.toMatchObject({ code: AppErrorCode.CANCELLED });
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
         it('should succeed on first attempt', async () => {
             const op = vi.fn().mockResolvedValue('ok');
             const result = await service.withRetry(op);

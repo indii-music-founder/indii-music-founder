@@ -1215,12 +1215,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (error instanceof AppException) return error;
         const msg = error instanceof Error ? error.message : String(error);
 
-        // Handle abort signals explicitly (these are retryable)
-        if (msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
+        // Cancellation ends this attempt; never resubmit work after an abort.
+        if ((error instanceof Error && error.name === 'AbortError') || msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
             return new AppException(
                 AppErrorCode.CANCELLED,
-                'AI Request was cancelled or timed out. Please try again.',
-                { retryable: true }
+                'AI Request was cancelled.',
+                { retryable: false }
             );
         }
 
@@ -1296,15 +1296,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
                 if (signal?.aborted) {
-                    const reason = signal.reason === 'TIMEOUT' ? 'AI Request timed out' : (signal.reason || 'Operation cancelled by user');
-                    throw typeof reason === 'string' ? new Error(reason) : reason;
+                    throw normalizeStreamInterruption(new Error('Request aborted before submission'), signal);
                 }
                 return await operation();
             } catch (error: unknown) {
                 lastError = error;
 
                 if (signal?.aborted) {
-                    throw error;
+                    throw normalizeStreamInterruption(new Error('Request aborted'), signal);
                 }
 
                 const appException = this.handleError(error);
@@ -1313,6 +1312,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 // and failed before the first chunk. Preserve the user's request
                 // for an explicit retry instead of risking duplicate spend/work.
                 const isRetryable = appException.details?.retryable
+                    && appException.code !== AppErrorCode.CANCELLED
                     && appException.code !== AppErrorCode.SPECIALIST_UNAVAILABLE
                     && appException.code !== AppErrorCode.GENERATION_CAPACITY_LIMITED;
 
@@ -1326,7 +1326,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     await new Promise((resolve, reject) => {
                         const handleAbort = () => {
                             clearTimeout(timer);
-                            reject(new Error('Operation cancelled by user during retry backoff'));
+                            signal?.removeEventListener('abort', handleAbort);
+                            reject(normalizeStreamInterruption(new Error('Request aborted during backoff'), signal));
                         };
                         const timer = setTimeout(() => {
                             signal?.removeEventListener('abort', handleAbort);
@@ -1334,6 +1335,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }, waitTime);
                         if (signal) {
                             signal.addEventListener('abort', handleAbort, { once: true });
+                            // The signal may have aborted between the catch check and registration.
+                            if (signal.aborted) handleAbort();
                         }
                     });
 
