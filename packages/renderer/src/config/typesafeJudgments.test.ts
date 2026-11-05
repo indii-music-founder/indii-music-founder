@@ -2292,7 +2292,7 @@ describe('judgeSoftBrandAestheticAlignment (Judgment 33)', () => {
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    violation_detected: { probability: 0.02 },
+                    violation_detected: { noul: 0.02 },
                     vibe_score: { score: 3 },
                 },
             },
