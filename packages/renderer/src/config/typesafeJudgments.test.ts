@@ -3313,6 +3313,15 @@ describe('judgeVideoColorGradeMood (Judgment 48)', () => {
         });
         expect(jazzVerdict.recommendedPreset).toBe('VINTAGE_SEPIA_VINYL');
         expect(jazzVerdict.clashingGradeHazard).toBe(false);
+
+        const electronicVerdict = await judgeVideoColorGradeMood({
+            trackTitle: 'Night Drive',
+            genre: 'Electronic',
+            energyLevel: 'HIGH',
+            moodTags: ['electric', 'driving'],
+            intendedVibe: 'Blue hour city drive',
+        });
+        expect(electronicVerdict.recommendedPreset).toBe('EDITORIAL_BLUE_HOUR');
     });
 
     it('evaluates color aesthetic synergy and clash hazard online', async () => {
@@ -3338,6 +3347,36 @@ describe('judgeVideoColorGradeMood (Judgment 48)', () => {
         expect(verdict.recommendedPreset).toBe('TEAL_AND_ORANGE_BLOCKBUSTER');
         expect(verdict.clashingGradeHazard).toBe(false);
         expect(verdict.aestheticSynergyScore).toBe(5);
+    });
+
+    it('rejects unsolicited and invalid color grades and malformed clash probabilities', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const judge = vi.fn(async (_request: unknown) => ({ data: { answers: {
+            preset: { choice: 'NEON_CYBER_NOCTURNE' },
+            clash_hazard: { noul: '0.95' },
+            synergy_score: { score: 4 },
+        } } }));
+        mocks.httpsCallable.mockReturnValue(judge);
+
+        const result = await judgeVideoColorGradeMood({
+            trackTitle: 'Evening Set', genre: 'Electronic', energyLevel: 'HIGH',
+            moodTags: ['electric'], intendedVibe: 'Blue hour club performance',
+        });
+        const request = judge.mock.calls[0]?.[0] as { questions: { preset: { criteria: Record<string, string> } } };
+        expect(request.questions.preset.criteria).not.toHaveProperty('NEON_CYBER_NOCTURNE');
+        expect(result.recommendedPreset).toBe('EDITORIAL_BLUE_HOUR');
+        expect(result.clashingGradeHazard).toBe(false);
+        expect(result.aestheticSynergyScore).toBe(5);
+
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            preset: { choice: 'constructor' }, clash_hazard: { noul: 1.2 },
+        } } }));
+        const invalid = await judgeVideoColorGradeMood({
+            trackTitle: 'Evening Set', genre: 'Electronic', energyLevel: 'HIGH',
+            moodTags: ['electric'], intendedVibe: 'Blue hour club performance',
+        });
+        expect(invalid.recommendedPreset).toBe('EDITORIAL_BLUE_HOUR');
+        expect(invalid.clashingGradeHazard).toBe(false);
     });
 });
 
