@@ -38,7 +38,7 @@ vi.mock('../../governance/AgentEventBus', () => ({
     },
 }));
 
-describe('AgentGraphService Hardening & Concurrency Protection', () => {
+describe('AgentGraphService Hardening & Concurrency Protection (structural only)', () => {
     const mockUserId = 'user-123';
     const mockContext: AgentContext = { userId: mockUserId };
 
@@ -96,7 +96,10 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
 
     it('successfully acquires lease if existing lease is expired', async () => {
         const executionId = 'exec-expired-lease';
-        const mockUpdate = vi.fn();
+        let lease = { holderId: 'stale-runner-id', expiresAt: Date.now() - 5000, acquiredAt: Date.now() - 25000 };
+        const mockUpdate = vi.fn((_ref: unknown, fields: Record<string, typeof lease>) => {
+            lease = fields['metadata.lease'] ?? lease;
+        });
 
         const singleNodeGraph: AgentGraph = {
             id: 'graph-single',
@@ -114,12 +117,7 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
                     exists: true,
                     data: () => ({
                         executionId,
-                        // Expired lease (> 20s old)
-                        lease: {
-                            holderId: 'stale-runner-id',
-                            expiresAt: Date.now() - 5000,
-                            acquiredAt: Date.now() - 25000,
-                        },
+                        metadata: { lease },
                         nodeStates: {
                             'node-1': { status: 'PLANNED' },
                         },
@@ -183,6 +181,7 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
 
     it('caps memory bank search to top 5 memories', async () => {
         const executionId = 'exec-mem-cap';
+        let lease: unknown;
 
         const singleNodeGraph: AgentGraph = {
             id: 'graph-single-mem',
@@ -199,10 +198,13 @@ describe('AgentGraphService Hardening & Concurrency Protection', () => {
                 exists: true,
                 data: () => ({
                     executionId,
+                    metadata: { lease },
                     nodeStates: { 'node-1': { status: 'PLANNED' } },
                 }),
             })),
-            update: vi.fn(),
+            update: vi.fn((_ref: unknown, fields: Record<string, unknown>) => {
+                lease = fields['metadata.lease'] ?? lease;
+            }),
         } as any));
 
         (agentGraphStateService.getExecution as any).mockResolvedValueOnce({
