@@ -37,6 +37,7 @@ vi.mock('../../governance/AgentEventBus', () => ({
 }));
 
 describe('AgentGraphService', () => {
+    let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null;
     const mockUserId = 'user-123';
     const mockContext: AgentContext = { userId: mockUserId };
 
@@ -57,6 +58,7 @@ describe('AgentGraphService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        lease = null;
         // Nodes are now claimed through a Firestore transaction before
         // execution. The global setup's transaction mock reads an empty doc,
         // which would fail every claim; grant claims so the readiness
@@ -65,6 +67,7 @@ describe('AgentGraphService', () => {
             get: vi.fn(async () => ({
                 exists: true,
                 data: () => ({
+                    metadata: { lease },
                     nodeStates: {
                         'node-1': { status: 'PLANNED' },
                         'node-2': { status: 'PLANNED' },
@@ -73,7 +76,11 @@ describe('AgentGraphService', () => {
                 }),
             })),
             set: vi.fn(),
-            update: vi.fn(),
+            update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
+                if (Object.prototype.hasOwnProperty.call(patch, 'metadata.lease')) {
+                    lease = patch['metadata.lease'] as typeof lease;
+                }
+            }),
             delete: vi.fn(),
         } as never));
     });

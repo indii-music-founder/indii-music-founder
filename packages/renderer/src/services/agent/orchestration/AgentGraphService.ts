@@ -13,6 +13,12 @@ import { memoryBankService } from '../memory/MemoryBankService';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
+function currentGraphLease(data: Pick<GraphExecutionState, 'metadata' | 'lease'>): GraphExecutionState['lease'] {
+    return data.metadata && Object.prototype.hasOwnProperty.call(data.metadata, 'lease')
+        ? data.metadata.lease as GraphExecutionState['lease']
+        : data.lease;
+}
+
 /**
  * AgentGraphService — Directed Acyclic Graph (DAG) Runner
  *
@@ -186,7 +192,7 @@ export class AgentGraphService {
         }, 5000);
 
         try {
-            return await this.runGraphLoopInternal(userId, graph, executionId, context, traceId, initialInput);
+            return await this.runGraphLoopInternal(userId, graph, executionId, runnerId, context, traceId, initialInput);
         } finally {
             clearInterval(heartbeatTimer);
             await this.releaseGraphLease(userId, executionId, runnerId);
@@ -211,7 +217,7 @@ export class AgentGraphService {
                 if (!snap.exists) return false;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 const now = Date.now();
-                const existingLease = data?.metadata?.lease ?? data?.lease;
+                const existingLease = currentGraphLease(data);
 
                 if (existingLease && existingLease.expiresAt > now && existingLease.holderId !== runnerId) {
                     logger.warn(`[AgentGraph] Execution ${executionId} is actively leased by ${existingLease.holderId} until ${new Date(existingLease.expiresAt).toISOString()}`);
@@ -245,7 +251,7 @@ export class AgentGraphService {
                 const snap = await tx.get(ref);
                 if (!snap.exists) return;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
-                if ((data?.metadata?.lease ?? data?.lease)?.holderId === runnerId) {
+                if (currentGraphLease(data)?.holderId === runnerId) {
                     tx.update(ref, {
                         'metadata.lease': null,
                         updatedAt: serverTimestamp(),
@@ -269,27 +275,34 @@ export class AgentGraphService {
         userId: string,
         executionId: string,
         nodeId: string,
-    ): Promise<boolean> {
+        runnerId: string,
+    ): Promise<'CLAIMED' | 'NOT_READY' | 'LEASE_LOST'> {
         const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
         try {
             return await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return false;
+                if (!snap.exists) return 'LEASE_LOST';
                 const data = snap.data() as {
                     nodeStates?: Record<string, { status?: string }>;
+                    metadata?: { lease?: GraphExecutionState['lease'] };
+                    lease?: GraphExecutionState['lease'];
                 };
+                const lease = currentGraphLease(data);
+                if (lease?.holderId !== runnerId || !Number.isFinite(lease.expiresAt) || lease.expiresAt <= Date.now()) {
+                    return 'LEASE_LOST';
+                }
                 const nodeState = data.nodeStates?.[nodeId];
-                if (!nodeState || nodeState.status !== 'PLANNED') return false;
+                if (!nodeState || nodeState.status !== 'PLANNED') return 'NOT_READY';
                 tx.update(ref, {
                     [`nodeStates.${nodeId}.status`]: 'EXECUTING_GENERATION',
                     [`nodeStates.${nodeId}.startedAt`]: Date.now(),
                     status: 'EXECUTING',
                 });
-                return true;
+                return 'CLAIMED';
             });
         } catch (error) {
             logger.warn(`[AgentGraph] Atomic claim failed for node ${nodeId} in ${executionId}:`, error);
-            return false;
+            throw new Error(`Graph node ${nodeId} claim could not be verified; no action was dispatched.`, { cause: error });
         }
     }
 
@@ -297,6 +310,7 @@ export class AgentGraphService {
         userId: string,
         graph: AgentGraph,
         executionId: string,
+        runnerId: string,
         context: AgentContext,
         traceId: string,
         initialInput?: string
@@ -493,12 +507,15 @@ export class AgentGraphService {
             const claimResults = await Promise.all(
                 readyNodes.map(async (node) => ({
                     nodeId: node.id,
-                    claimed: await this.claimNodeAtomically(userId, executionId, node.id),
+                    claimed: await this.claimNodeAtomically(userId, executionId, node.id, runnerId),
                 }))
             );
+            if (claimResults.some(result => result.claimed === 'LEASE_LOST')) {
+                throw new Error(`Graph execution ${executionId} lost its lease before node dispatch; reconcile the execution before retrying.`);
+            }
             const claimedNodeIds: string[] = [];
             for (const r of claimResults) {
-                if (r.claimed) {
+                if (r.claimed === 'CLAIMED') {
                     claimedNodeIds.push(r.nodeId);
                     AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, r.nodeId, executionId);
                 }

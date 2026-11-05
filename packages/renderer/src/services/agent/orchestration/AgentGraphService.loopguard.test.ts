@@ -65,13 +65,19 @@ const makeGraph = (): AgentGraph => ({
 
 const makeContext = (): AgentContext => ({ userId: 'u1', traceId: 't1' });
 
+let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null = null;
+let legacyLease: typeof lease = null;
 const claimTx = (nodeStatus: () => string) => ({
     get: vi.fn(async () => ({
         exists: true,
-        data: () => ({ status: 'PLANNED', nodeStates: { n1: { status: nodeStatus() } } }),
+        data: () => ({ status: 'PLANNED', metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
     })),
     set: vi.fn(),
-    update: vi.fn(),
+    update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
+        if (Object.prototype.hasOwnProperty.call(patch, 'metadata.lease')) {
+            lease = patch['metadata.lease'] as typeof lease;
+        }
+    }),
     delete: vi.fn(),
 });
 
@@ -106,6 +112,8 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         vi.spyOn(console, 'info').mockImplementation(() => { });
         execState.status = 'PLANNED';
         execState.nodeStates.n1.status = 'PLANNED';
+        lease = null;
+        legacyLease = null;
 
         mocks.searchMemories.mockResolvedValue({ results: [] });
         mocks.addMemory.mockResolvedValue(undefined);
@@ -156,6 +164,29 @@ describe('AgentGraphService loop guard and atomic claims', () => {
             agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1')
         ).rejects.toThrow(/Maximum graph iterations exceeded/);
 
+        expect(mocks.delegateTask).not.toHaveBeenCalled();
+    });
+
+    it.each(['another holder', 'expired lease', 'cleared lease with a stale legacy field'])('refuses node dispatch after %s', async failure => {
+        wireHappyPath();
+        let transactions = 0;
+        vi.mocked(runTransaction).mockImplementation(async (_db, cb) => {
+            transactions += 1;
+            if (transactions === 2 && lease) {
+                if (failure === 'cleared lease with a stale legacy field') {
+                    legacyLease = lease;
+                    lease = null;
+                } else {
+                    lease = failure === 'another holder'
+                        ? { ...lease, holderId: 'other-runner' }
+                        : { ...lease, expiresAt: Date.now() - 1 };
+                }
+            }
+            return cb(claimTx(() => execState.nodeStates.n1.status) as never);
+        });
+
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/lost its lease before node dispatch/);
         expect(mocks.delegateTask).not.toHaveBeenCalled();
     });
 
