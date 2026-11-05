@@ -3568,15 +3568,17 @@ export async function judgeSessionChunkTriage(
         const usableAns = ans?.is_usable as { noul?: unknown } | number | undefined;
         const hookAns = ans?.hook_energy as { score?: unknown } | number | undefined;
 
-        const resolvedAction = (typeof actAns?.choice === 'string' ? actAns.choice : fallbackAction) as ChunkTriageAction;
-        const resolvedUsableNoul = typeof usableAns === 'number'
-            ? usableAns
-            : Number((usableAns as { noul?: unknown })?.noul ?? (fallbackUsable ? 0.8 : 0.2));
+        const choice = actAns?.choice;
+        const resolvedAction = choice === 'KEEP_PERFORMANCE' || choice === 'KEEP_B_ROLL' ||
+            choice === 'DISCARD_DEAD_TIME' || choice === 'DISCARD_FALSE_START' || choice === 'DISCARD_CAMERA_DROP'
+            ? choice
+            : fallbackAction;
+        const usability = boundedJudgmentNumber(usableAns, 'noul', 1);
         const resolvedHook = oneIndexedScore(hookAns, fallbackHook);
 
         return {
             action: resolvedAction,
-            isUsable: resolvedUsableNoul >= 0.5,
+            isUsable: usability === null || usability === 0.5 ? fallbackUsable : usability > 0.5,
             visualHookEnergy: Math.max(1, Math.min(5, Math.round(resolvedHook) || fallbackHook)),
             rationale: `System One classified ${resolvedAction} with hook energy ${resolvedHook}.`,
         };
