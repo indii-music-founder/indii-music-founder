@@ -56,13 +56,10 @@ export function useFirstRunTip(tipId: string) {
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     useEffect(() => {
         const state = loadTipState();
         if (!state[tipId]) {
             // Small delay so it doesn't flash on mount
-            timerRef.current = setTimeout(() => setShouldShow(true), 1000);
             timerRef.current = setTimeout(() => setVisibleTipId(tipId), 1000);
             return () => { if (timerRef.current) clearTimeout(timerRef.current); };
         }
@@ -70,7 +67,6 @@ export function useFirstRunTip(tipId: string) {
 
     const dismiss = useCallback(() => {
         if (timerRef.current) clearTimeout(timerRef.current);
-        setShouldShow(false);
         setVisibleTipId(null);
         const state = loadTipState();
         state[tipId] = true;
