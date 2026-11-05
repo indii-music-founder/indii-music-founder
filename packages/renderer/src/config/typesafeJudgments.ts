@@ -3979,15 +3979,15 @@ export async function judgeAudioStemSeparationPriority(
         const salvAns = ans?.is_salvageable as { noul?: unknown } | number | undefined;
         const phaseAns = ans?.phase_risk as { score?: unknown } | number | undefined;
 
-        const resolvedRecipe = (typeof recAns?.choice === 'string' ? recAns.choice : fallbackRecipe) as AudioIsolationRecipe;
-        const salvProb = typeof salvAns === 'number'
-            ? salvAns
-            : Number((salvAns as { noul?: unknown })?.noul ?? (fallbackSalvageable ? 0.8 : 0.2));
+        const recipe = recAns?.choice;
+        const resolvedRecipe = recipe === 'FULL_VOCAL_EXTRACTION' || recipe === 'MILD_DENOISE_AMBIENCE_BLEND' ||
+            recipe === 'PASS_THROUGH_MUTE_RAW' || recipe === 'AGGRESSIVE_SPECTRAL_GATING' ? recipe : fallbackRecipe;
+        const salvProb = boundedJudgmentNumber(salvAns, 'noul', 1);
         const resolvedPhase = oneIndexedScore(phaseAns, fallbackPhaseRisk);
 
         return {
             recipe: resolvedRecipe,
-            isSalvageable: salvProb >= 0.5,
+            isSalvageable: salvProb === null || salvProb === 0.5 ? fallbackSalvageable : salvProb > 0.5,
             phaseRiskScore: Math.max(1, Math.min(5, Math.round(resolvedPhase) || fallbackPhaseRisk)),
             treatmentRecommendation: `System One determined ${resolvedRecipe} with phase risk ${resolvedPhase}.`,
         };
