@@ -1,3 +1,4 @@
+import { resolveModelThinkingConfig } from './generators/thinkingConfig';
 import { getToken as getAppCheckToken } from 'firebase/app-check';
 import { httpsCallable } from 'firebase/functions';
 import { appCheck, getAppCheck, auth, functions, remoteConfig } from '@/services/firebase';
@@ -633,12 +634,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         delete configRecord.toolConfig;
         delete configRecord.safetySettings;
 
-        // Remove thinkingConfig for models that don't support it (e.g., gemini-2.5-pro)
-        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
-        const supportsThinking = modelName.includes('gemini-3');
-        if (!supportsThinking) {
-            delete configRecord.thinkingConfig;
-        }
+        const resolvedThinking = resolveModelThinkingConfig(modelName, configRecord.thinkingConfig);
+        if (resolvedThinking === undefined) delete configRecord.thinkingConfig;
+        else configRecord.thinkingConfig = resolvedThinking;
 
         // 1. Request Coalescing & Cache Key
         // Create a lean key that avoids stringifying large binary data
@@ -872,12 +870,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         delete streamConfigRecord.toolConfig;
         delete streamConfigRecord.safetySettings;
 
-        // Remove thinkingConfig for models that don't support it
-        // Only Gemini 3 family supports thinking — gemini-2.0-pro-exp was removed per MODEL_POLICY.md
-        const supportsThinking = modelName.includes('gemini-3');
-        if (!supportsThinking) {
-            delete streamConfigRecord.thinkingConfig;
-        }
+        const resolvedThinking = resolveModelThinkingConfig(modelName, streamConfigRecord.thinkingConfig);
+        if (resolvedThinking === undefined) delete streamConfigRecord.thinkingConfig;
+        else streamConfigRecord.thinkingConfig = resolvedThinking;
 
         // Create an internal AbortController for timeout if specified
         const timeoutController = new AbortController();
