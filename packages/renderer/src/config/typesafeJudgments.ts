@@ -9502,6 +9502,122 @@ export async function judgePlpVariantAdFormat(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 81: Creative Journey intent assistant
+// ---------------------------------------------------------------------------
+
+export type CreativeJourneyIntent =
+    | 'album_artwork'
+    | 'music_video'
+    | 'social_clips'
+    | 'phone_recording'
+    | 'band_references'
+    | 'guided_campaign';
+
+export interface CreativeJourneyContext {
+    prompt: string;
+    generationMode: 'image' | 'video';
+    viewMode: string;
+    ingredients: { audio: boolean; image: boolean; video: boolean };
+}
+
+export interface CreativeJourneyIntentVerdict {
+    intent: CreativeJourneyIntent;
+    confidence: number;
+    headline: string;
+    actionLabel: string;
+}
+
+const CREATIVE_JOURNEY_ACTIONS: Record<CreativeJourneyIntent, { headline: string; actionLabel: string }> = {
+    album_artwork: { headline: 'Shape your release artwork', actionLabel: 'Open Image Studio' },
+    music_video: { headline: 'Build a visual story around your track', actionLabel: 'Open Music Video' },
+    social_clips: { headline: 'Turn this into a short social cut', actionLabel: 'Open Social Clips' },
+    phone_recording: { headline: 'Bring your recording into the editor', actionLabel: 'Open Phone Recording' },
+    band_references: { headline: 'Keep artist and band references together', actionLabel: 'Open Band References' },
+    guided_campaign: { headline: 'Plan a release campaign at your pace', actionLabel: 'Open Guided Campaign' },
+};
+
+export function deterministicCreativeJourneyFallback(
+    context: CreativeJourneyContext,
+): CreativeJourneyIntentVerdict {
+    const text = context.prompt.toLowerCase();
+    let intent: CreativeJourneyIntent = context.generationMode === 'video' ? 'music_video' : 'album_artwork';
+    if (/\b(phone|recording|concert footage|live footage|long recording|interview)\b/.test(text) || (context.ingredients.video && !context.ingredients.audio)) {
+        intent = 'phone_recording';
+    } else if (/\b(social|reel|shorts|tiktok|vertical clip|clip)\b/.test(text)) {
+        intent = 'social_clips';
+    } else if (/\b(band|lineup|artist reference|member reference|consistent face|roster)\b/.test(text)) {
+        intent = 'band_references';
+    } else if (/\b(campaign|release plan|promote|launch|rollout)\b/.test(text)) {
+        intent = 'guided_campaign';
+    } else if (/\b(music video|video|storyboard|visual story|motion|scene)\b/.test(text) || (context.ingredients.audio && context.generationMode === 'video')) {
+        intent = 'music_video';
+    } else if (/\b(artwork|album cover|cover art|headshot|portrait|poster)\b/.test(text) || context.ingredients.image) {
+        intent = 'album_artwork';
+    } else if (context.ingredients.audio) {
+        intent = 'social_clips';
+    }
+
+    return {
+        intent,
+        confidence: /\b(phone|recording|concert footage|live footage|long recording|interview|social|reel|shorts|tiktok|vertical clip|clip|band|lineup|artist reference|member reference|consistent face|roster|campaign|release plan|promote|launch|rollout|music video|video|storyboard|visual story|motion|scene|artwork|album cover|cover art|headshot|portrait|poster)\b/.test(text)
+            || context.ingredients.audio || context.ingredients.image || context.ingredients.video
+            ? 0.72
+            : 0.35,
+        ...CREATIVE_JOURNEY_ACTIONS[intent],
+    };
+}
+
+export async function judgeCreativeJourneyIntent(
+    context: CreativeJourneyContext,
+): Promise<CreativeJourneyIntentVerdict> {
+    const fallback = deterministicCreativeJourneyFallback(context);
+    if (!judgmentsAvailable() || (!context.prompt.trim() && !context.ingredients.audio && !context.ingredients.image && !context.ingredients.video)) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+        const result = await judgeFn({
+            state: {
+                prompt: context.prompt.slice(0, 500),
+                ingredients: context.ingredients,
+                currentMode: context.generationMode,
+                currentView: context.viewMode,
+            },
+            questions: {
+                intent: {
+                    type: 'choice' as const,
+                    instructions: 'Choose the one creative journey that best matches the artist’s current request and available media. Recommend a useful next step; do not infer that an action has already been requested or approved.',
+                    criteria: {
+                        album_artwork: 'Create or refine release artwork, cover art, portraits, or promotional still images.',
+                        music_video: 'Build a music video, storyboard, or visual sequence around a finished track.',
+                        social_clips: 'Make short social clips, reels, shorts, or vertical cutdowns from existing music or footage.',
+                        phone_recording: 'Import, review, and edit long phone recordings, live takes, interviews, or concert footage.',
+                        band_references: 'Organize permitted artist and band-member visual references for consistent creative work.',
+                        guided_campaign: 'Plan a guided release campaign with a track and a visual, with the artist reviewing each step.',
+                    },
+                },
+            },
+        });
+        const answer = result.data.answers?.intent;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        const rawConfidence = typeof answer === 'object' && answer !== null ? (answer as { confidence?: unknown }).confidence : undefined;
+        const validIntents = Object.keys(CREATIVE_JOURNEY_ACTIONS) as CreativeJourneyIntent[];
+        if (typeof choice !== 'string' || !validIntents.includes(choice as CreativeJourneyIntent)) return fallback;
+        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+            ? rawConfidence
+            : fallback.confidence;
+        return { intent: choice as CreativeJourneyIntent, confidence, ...CREATIVE_JOURNEY_ACTIONS[choice as CreativeJourneyIntent] };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'creative journey intent judgment');
+        return fallback;
+    }
+}
+
 
 
 

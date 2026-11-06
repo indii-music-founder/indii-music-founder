@@ -109,6 +109,8 @@ import {
     deterministicGalleryBrandFitFallback,
     judgePlpVariantAdFormat,
     deterministicPlpVariantAdFallback,
+    judgeCreativeJourneyIntent,
+    deterministicCreativeJourneyFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5642,6 +5644,60 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
             kind: 'video',
         });
         expect(verdict.formatTag).toBe('STORY_REEL');
+    });
+});
+
+describe('judgeCreativeJourneyIntent (Judgment 81)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    const context = {
+        prompt: 'Use my finished track to make a 9:16 vertical reel',
+        generationMode: 'video' as const,
+        viewMode: 'video_production',
+        ingredients: { audio: true, image: false, video: false },
+    };
+
+    it('routes media and prompt intent deterministically while Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result.intent).toBe('social_clips');
+        expect(result.actionLabel).toBe('Open Social Clips');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('returns a low confidence no-signal fallback when no prompt or ingredients exist', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const result = await judgeCreativeJourneyIntent({
+            ...context,
+            prompt: '',
+            ingredients: { audio: false, image: false, video: false },
+        });
+        expect(result.intent).toBe('music_video');
+        expect(result.confidence).toBeLessThan(0.5);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('uses Jev Choice and returns a recommendation tied to the selected journey', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { intent: { choice: 'guided_campaign', confidence: 0.91 } } },
+        }));
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result.intent).toBe('guided_campaign');
+        expect(result.confidence).toBe(0.91);
+        expect(result.actionLabel).toBe('Open Guided Campaign');
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when the Jev callable fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Jev unavailable'); });
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result).toEqual(deterministicCreativeJourneyFallback(context));
+        expect(result.intent).toBe('social_clips');
     });
 });
 

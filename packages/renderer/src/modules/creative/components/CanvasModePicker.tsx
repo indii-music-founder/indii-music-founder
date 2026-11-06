@@ -5,7 +5,7 @@ import { ImageIcon, Video, Sparkles } from 'lucide-react';
 const MODES = [
     { id: 'canvas', label: 'Image Studio', icon: ImageIcon, gen: 'image' as const },
     { id: 'video_production', label: 'Video Studio', icon: Video, gen: 'video' as const },
-    { id: 'omni', label: 'Omni Flash', icon: Sparkles, gen: 'video' as const },
+    { id: 'omni', label: 'Omni Remix', icon: Sparkles, gen: 'video' as const },
 ] as const;
 
 export default function CanvasModePicker() {
@@ -22,6 +22,8 @@ export default function CanvasModePicker() {
         <div
             className="flex shrink-0 items-center rounded-full border border-white/10 bg-black/60 p-1 shadow-lg backdrop-blur-md"
             data-testid="canvas-mode-picker"
+            role="group"
+            aria-label="Creative studio mode"
         >
             {MODES.map((mode) => {
                 const isActive = viewMode === mode.id;
