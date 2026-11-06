@@ -8986,3 +8986,61 @@ export async function judgeEventRetentionTier(
         return null;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment: Workflow Branch Condition (consumer: WorkflowEngine)
+// ---------------------------------------------------------------------------
+
+export const WORKFLOW_ROUTER_MIN_CONFIDENCE = 0.65;
+
+export function workflowBranchConditionQuestion(condition: string) {
+    return {
+        type: 'noul' as const,
+        instructions:
+            `Evaluate whether the provided payload or data satisfies the workflow condition: "${condition}". ` +
+            'Answer true if the data clearly satisfies the condition, false if it does not or contradicts it.',
+        criteria: {
+            true: `The data satisfies "${condition}".`,
+            false: `The data does not satisfy "${condition}".`,
+        },
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment for natural language workflow conditions.
+ * Fast, deterministic boolean decision without expensive LLM prompt-and-parse loops.
+ */
+export async function judgeWorkflowCondition(
+    dataPayload: string,
+    condition: string,
+): Promise<boolean | null> {
+    if (!judgmentsAvailable() || !condition.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                data: dataPayload.slice(0, 1000),
+                condition,
+            },
+            questions: {
+                matches_condition: workflowBranchConditionQuestion(condition),
+            },
+        });
+
+        const ans = result.data.answers?.matches_condition;
+        const prob = boundedJudgmentNumber(ans, 'noul', 1);
+        if (prob === null) return null;
+
+        return prob >= WORKFLOW_ROUTER_MIN_CONFIDENCE;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'workflow condition judgment');
+        return null;
+    }
+}
+

@@ -1,8 +1,25 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from 'react';
-import { Paintbrush, Video, Megaphone, Users, Box, Search, Cog, Database, type LucideIcon } from 'lucide-react';
+import {
+    Paintbrush,
+    Video,
+    Megaphone,
+    Users,
+    Box,
+    Search,
+    Cog,
+    Database,
+    FileText,
+    Music,
+    Scale,
+    Send,
+    ShieldCheck,
+    Layers,
+    type LucideIcon
+} from 'lucide-react';
+import type { DataType } from '../types';
 
-export type DataType = 'TRIGGER' | 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'CONTEXT' | 'ANY';
+export type { DataType };
 
 export const DATA_TYPE_COLORS: Record<DataType, string> = {
     TRIGGER: '#e5e7eb', // gray-200
@@ -11,6 +28,12 @@ export const DATA_TYPE_COLORS: Record<DataType, string> = {
     VIDEO: '#c084fc',   // purple-400
     AUDIO: '#fbbf24',   // amber-400
     CONTEXT: '#38bdf8', // sky-400
+    NOTE: '#34d399',    // emerald-400
+    METADATA: '#60a5fa',// blue-400
+    SPLITS: '#a78bfa',  // violet-400
+    RELEASE_PACKAGE: '#f43f5e', // rose-500
+    AUDIO_QC: '#f59e0b',// amber-500
+    SUBGRAPH: '#ec4899',// pink-500
     ANY: '#6b7280',     // gray-500
 };
 
@@ -85,12 +108,265 @@ const mapTemplatesToJobs = (deptName: string, defaultOutputType: DataType = 'TEX
 };
 
 export const NODE_REGISTRY: Record<string, NodeDefinition> = {
+    // ── Micro-Workflows / Subgraphs (Modular Sub-flows) ──
+    'Micro-Workflows': {
+        departmentName: 'Micro-Workflows',
+        label: 'Micro-Flows (Subgraphs)',
+        icon: Layers,
+        jobs: [
+            {
+                id: 'micro-art-suite',
+                label: 'Visuals & Canvas Micro-Flow',
+                description: 'Encapsulated sub-workflow: generates 3000x3000px cover art, 4K upscale, and 9:16 vertical canvas loop.',
+                defaultPrompt: 'Visual identity and looping canvas for single',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'concept_input', label: 'Concept / Lyrics', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'image_output', label: 'Cover Art', type: 'IMAGE' },
+                    { id: 'video_output', label: 'Canvas Video', type: 'VIDEO' }
+                ]
+            },
+            {
+                id: 'micro-audio-qc',
+                label: 'Mastering & Audio QC Micro-Flow',
+                description: 'Encapsulated sub-workflow: audits loudness (-14 LUFS), true-peak limiting, and sonic fingerprint.',
+                defaultPrompt: 'Audio master streaming audit',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'audio_input', label: 'Master Audio', type: 'AUDIO', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'qc_report', label: 'QC Report', type: 'AUDIO_QC' }
+                ]
+            },
+            {
+                id: 'micro-rights-metadata',
+                label: 'Rights & Metadata Micro-Flow',
+                description: 'Encapsulated sub-workflow: generates DDEX metadata, assigns ISRC/UPC barcodes, and compiles split sheet.',
+                defaultPrompt: 'Release rights and metadata package',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'track_info', label: 'Track Info / Splits', type: 'TEXT', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'metadata_output', label: 'Metadata with ISRC/UPC', type: 'METADATA' },
+                    { id: 'splits_output', label: '100% Split Sheet', type: 'SPLITS' }
+                ]
+            },
+            {
+                id: 'micro-social-hype',
+                label: 'Social Hype & Pitch Micro-Flow',
+                description: 'Encapsulated sub-workflow: drafts curator editorial pitch, TikTok/Reels captions, and launch countdown.',
+                defaultPrompt: 'Social release rollout playbook',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'concept_input', label: 'Story & Hooks', type: 'TEXT', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'pitch_copy', label: 'DSP Pitch', type: 'TEXT' },
+                    { id: 'social_copy', label: 'Social Copy', type: 'TEXT' }
+                ]
+            }
+        ]
+    },
+
+    // ── Notes Department (Music Inception, Lyrics, Release Journal) ──
+    'Notes Department': {
+        departmentName: 'Notes Department',
+        label: 'Notes & Songwriting',
+        icon: FileText,
+        jobs: [
+            {
+                id: 'note-input',
+                label: 'Ingest Note / Lyrics',
+                description: 'Pull lyrics, voice-memo transcription, or creative concept from the Notes system.',
+                defaultPrompt: 'My latest songwriting note',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'query_input', label: 'Search / Note ID', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'note_output', label: 'Note Data', type: 'NOTE' },
+                    { id: 'lyrics_output', label: 'Lyrics / Text', type: 'TEXT' }
+                ]
+            },
+            {
+                id: 'lyrics-extract',
+                label: 'Extract Song Structure & Hooks',
+                description: 'Parse lyrics from a note into structured verses, chorus, bridge, and key promo hooks.',
+                defaultPrompt: 'Extract verse, chorus, bridge, and marketing punchlines from these lyrics.',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'lyrics_input', label: 'Raw Lyrics', type: 'TEXT', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'structured_lyrics', label: 'Structured Song', type: 'TEXT' },
+                    { id: 'promo_hook', label: 'Primary Hook', type: 'TEXT' }
+                ]
+            },
+            {
+                id: 'note-save',
+                label: 'Save Release Recipe to Notes',
+                description: 'Save generated creative assets, metadata, splits, and rollout copy into a persistent user Note.',
+                defaultPrompt: 'Complete Single Release Recipe',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'content_input', label: 'Recipe / Asset Data', type: 'ANY', required: true },
+                    { id: 'title_input', label: 'Note Title', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'saved_note', label: 'Saved Note', type: 'NOTE' }
+                ]
+            }
+        ]
+    },
+
+    // ── Music & Mastering Department ──
+    'Music Department': {
+        departmentName: 'Music Department',
+        label: 'Mastering & Metadata',
+        icon: Music,
+        jobs: [
+            {
+                id: 'music-audio-qc',
+                label: 'Audio Mastering QC',
+                description: 'Verify audio meets DSP delivery specs: -14 LUFS integrated loudness, -1.0 dBFS true peak, and zero clipping.',
+                defaultPrompt: 'Audit audio master for streaming compliance',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'audio_input', label: 'Master Audio', type: 'AUDIO', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'qc_report', label: 'QC Report', type: 'AUDIO_QC' },
+                    { id: 'qc_passed', label: 'QC Passed', type: 'TRIGGER' }
+                ]
+            },
+            {
+                id: 'music-metadata',
+                label: 'Generate Release Metadata',
+                description: 'Format canonical release metadata (Title, Artist, Genre, Explicit flag, P-Line, C-Line).',
+                defaultPrompt: 'Generate streaming release metadata package',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'track_info', label: 'Track Info / Notes', type: 'TEXT', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'metadata_output', label: 'Release Metadata', type: 'METADATA' }
+                ]
+            },
+            {
+                id: 'music-isrc-assign',
+                label: 'Assign / Validate ISRC',
+                description: 'Generate or validate the International Standard Recording Code for track masters.',
+                defaultPrompt: 'Assign ISRC code',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'metadata_input', label: 'Metadata', type: 'METADATA', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'metadata_with_isrc', label: 'Metadata with ISRC', type: 'METADATA' }
+                ]
+            },
+            {
+                id: 'music-upc-assign',
+                label: 'Assign / Validate UPC Barcode',
+                description: 'Generate or validate the UPC/EAN release barcode for distribution.',
+                defaultPrompt: 'Assign UPC barcode',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'metadata_input', label: 'Metadata', type: 'METADATA', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'metadata_with_upc', label: 'Metadata with UPC', type: 'METADATA' }
+                ]
+            }
+        ]
+    },
+
+    // ── Splits & Rights Department ──
+    'Splits & Rights Department': {
+        departmentName: 'Splits & Rights Department',
+        label: 'Splits & Publishing',
+        icon: Scale,
+        jobs: [
+            {
+                id: 'splits-compiler',
+                label: 'Compile Split Sheet',
+                description: 'Calculate and enforce 100% total verification for Master & Publishing rights with PRO registration.',
+                defaultPrompt: 'Compile balanced split sheet for collaborators',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'collaborators_input', label: 'Collaborator Splits', type: 'ANY', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'splits_output', label: 'Verified Split Sheet', type: 'SPLITS' }
+                ]
+            }
+        ]
+    },
+
+    // ── Distribution & Release Department ──
+    'Distribution & Release Department': {
+        departmentName: 'Distribution & Release Department',
+        label: 'Distribution Pre-Flight',
+        icon: ShieldCheck,
+        jobs: [
+            {
+                id: 'ddex-preflight',
+                label: 'DSP Pre-Flight Validator',
+                description: 'Validate complete delivery bundle: audio QC, cover art dimensions, metadata, ISRC, and 100% splits.',
+                defaultPrompt: 'Perform full DDEX release pre-flight inspection',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'metadata_input', label: 'Metadata', type: 'METADATA', required: true },
+                    { id: 'cover_art_input', label: 'Cover Art', type: 'IMAGE', required: true },
+                    { id: 'qc_input', label: 'Audio QC', type: 'AUDIO_QC' },
+                    { id: 'splits_input', label: 'Split Sheet', type: 'SPLITS' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'package_output', label: 'Release Package', type: 'RELEASE_PACKAGE' },
+                    { id: 'ready_trigger', label: 'Ready for DSP', type: 'TRIGGER' }
+                ]
+            }
+        ]
+    },
+
+    // ── Art Department ──
     'Art Department': {
         departmentName: 'Art Department',
         label: 'Art Department',
         icon: Paintbrush,
         jobs: [
             ...mapTemplatesToJobs('Art Department', 'IMAGE'),
+            {
+                id: 'art-cover-art',
+                label: 'Single / Album Cover Art',
+                description: 'Generate 3000x3000px square cover art tailored to the song mood and title.',
+                defaultPrompt: 'High quality music album cover art, 3000x3000px square, cinematic lighting, vivid colors.',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'concept_input', label: 'Visual Concept / Mood', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'image_output', label: 'Cover Art', type: 'IMAGE' }
+                ]
+            },
             {
                 id: 'art-upscale',
                 label: 'Upscale/Refine Image',
@@ -107,6 +383,8 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
             }
         ]
     },
+
+    // ── Video Department ──
     'Video Department': {
         departmentName: 'Video Department',
         label: 'Video Department',
@@ -158,6 +436,21 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
                 ]
             },
             {
+                id: 'video-canvas',
+                label: 'Spotify Canvas / TikTok (9:16)',
+                description: 'Generate vertical 9:16 looping video visualizer synced with the song mood.',
+                defaultPrompt: 'Seamless vertical 9:16 looping visualizer, hypnotic motion, aesthetic lighting.',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'image_input', label: 'Cover / Artist Art', type: 'IMAGE' },
+                    { id: 'text_input', label: 'Visual Style', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'video_output', label: 'Canvas Video', type: 'VIDEO' }
+                ]
+            },
+            {
                 id: 'video-performance-clip',
                 label: 'Performance Clip (Img2Vid)',
                 description: 'Generate a performance video clip from an artist image. Optimized for beat-synced assembly.',
@@ -191,24 +484,49 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
             }
         ]
     },
+
+    // ── Marketing Department ──
     'Marketing Department': {
         departmentName: 'Marketing Department',
         label: 'Marketing Dept',
         icon: Megaphone,
-        jobs: mapTemplatesToJobs('Marketing Department', 'TEXT')
+        jobs: [
+            ...mapTemplatesToJobs('Marketing Department', 'TEXT'),
+            {
+                id: 'marketing-dsp-pitch',
+                label: 'DSP Playlist Pitch',
+                description: 'Write an editorial pitch note for Spotify for Artists, Apple Music, and Amazon Music curators.',
+                defaultPrompt: 'Write a compelling editorial pitch describing the sound, mood, instrumentation, and marketing plan for DSP curators.',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'metadata_input', label: 'Track Metadata', type: 'METADATA' },
+                    { id: 'concept_input', label: 'Story & Lyrics', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'pitch_copy', label: 'Editorial Pitch', type: 'TEXT' }
+                ]
+            }
+        ]
     },
+
+    // ── Social Media Department ──
     'Social Media Department': {
         departmentName: 'Social Media Department',
         label: 'Social Media Dept',
         icon: Users,
         jobs: mapTemplatesToJobs('Social Media Department', 'TEXT')
     },
+
+    // ── Campaign Manager ──
     'Campaign Manager': {
         departmentName: 'Campaign Manager',
         label: 'Campaign Manager',
         icon: Box,
-        jobs: mapTemplatesToJobs('Campaign Manager', 'TEXT') // Returns JSON strictly, but treated as text/doc
+        jobs: mapTemplatesToJobs('Campaign Manager', 'TEXT')
     },
+
+    // ── Knowledge Base ──
     'Knowledge Base': {
         departmentName: 'Knowledge Base',
         label: 'Knowledge Base',

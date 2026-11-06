@@ -1,22 +1,31 @@
-# Workflow Lab Module (RC1)
+# Flow-Be Engine (Workflow Lab)
 
-The Workflow Lab is the automation brain of indii. It allows creators to chain complex AI tasks across different modules using a visual, node-based editor, creating repeatable "Creative Recipes."
+> *"Flow be makin me happy"* 🎶
 
-## ⛓️ Key Features
-- **Visual Node Editor:** Drag-and-drop interface for connecting AI agents, creative tools, and business operations.
-- **Recipe Library:** Save and share common workflows (e.g., "Complete Single Release Chain").
-- **Real-time Execution:** Monitor the progress of automated chains as they move from task to task.
-- **Cross-Module Triggers:** Start a workflow from a file upload, a calendar date, or a manual button click.
-- **Conditional Logic:** Branching paths based on AI evaluations (e.g., "If sentiment is positive, post to social").
+The **Flow-Be Engine** is the full-lifecycle, node-graph automation brain of indiiOS. Inspired by ComfyUI's strongly typed schema and content-addressable memoization, Flow-Be extends beyond image and video generation into an end-to-end music business flow system—from initial songwriting notes, audio mastering QC, and metadata assignment to split sheets, cover art, vertical canvas video, and DSP pre-flight.
+
+---
+
+## ⛓️ Key Capabilities
+
+- **ComfyUI-Style Strongly Typed Sockets:** Explicit typed ports (`NOTE`, `AUDIO`, `AUDIO_QC`, `METADATA`, `SPLITS`, `RELEASE_PACKAGE`, `IMAGE`, `VIDEO`, `TEXT`, `TRIGGER`) ensure invalid wires are caught at the boundary.
+- **Content-Addressable Memoization (`ExecutionCache`):** Node results are cached by a deterministic hash of inputs and config. Tweaking downstream rollout copy skips re-running upstream mastering QC and image/video models.
+- **Full Music Industry Lifecycle:**
+  - **Notes & Songwriting:** Pull lyrics and voice notes from the Notes system (`NotesService` / `notesSlice`), parse song sections, and save generated release recipes directly into the artist's notebook.
+  - **Mastering & Audio QC:** Verifies -14.0 LUFS integrated loudness, -1.0 dBFS true peak, and zero clipping for streaming compliance.
+  - **Rights & Metadata:** Formats DDEX metadata, assigns ISRC/UPC codes, and validates 100% balanced split sheets.
+  - **Creative & Video:** Generates 3000x3000px streaming cover art and 9:16 vertical canvas loops for Spotify and TikTok.
+  - **Distribution Pre-Flight:** Comprehensive checklist verification prior to DSP submission.
+- **TypeSafe AI (JEV System One) Routing:** Router nodes delegate natural language conditions to TypeSafe's fast `noul` primitive (`judgeWorkflowCondition`) for sub-second semantic branching.
+- **Human-in-the-Loop Checkpoints:** Gatekeeper nodes pause execution for review and approval before final release and distribution.
+
+---
 
 ## 🏗️ Technical Architecture
-- **`WorkflowLab`**: Primary UI powered by **React Flow**.
-- **`UniversalNode`**: A standardized component for representing any action in the system as a node.
-- **`workflowSlice`**: Persistent state management for node positions and connections.
-- **Inngest Integration:** Complex, long-running workflows are executed reliably on the backend via serverless jobs.
 
-## 🤖 The Architect
-The module is powered by the **Architect Agent**, which can:
-- Translate a natural language request (e.g., "Build me a promo flow for my new song") into a visual node graph.
-- Suggest missing steps in a user-created recipe.
-- Debug broken connections in complex automation chains.
+- **`WorkflowLab.tsx`**: Three-panel UI workspace with the Flow-Be canvas.
+- **`WorkflowEngine.ts`**: Core execution engine featuring topological dependency scheduling, cycle protection, execution caching, and lifecycle event callbacks.
+- **`UniversalNode.tsx`**: Standardized node renderer with rich previews for Notes, Audio QC, Metadata, Splits, and Release Packages.
+- **`nodeRegistry.ts`**: Central registry of department jobs, port contracts, and color schemes.
+- **`typesafeJudgments.ts`**: Server-delegated TypeSafe AI System One decision contracts.
+- **`workflowTemplates.ts`**: Turn-key playbooks, including the 14-node **Complete Music Release & Notes Suite**.

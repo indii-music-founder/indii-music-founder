@@ -504,7 +504,12 @@ vi.mock('firebase/firestore', () => {
             return { type: 'document', id: id || p?.split('/').pop() || crypto.randomUUID(), path: p, firestore: mockDb };
         }),
         addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
-        getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
+        getDoc: vi.fn((docRef?: any) => {
+            if (docRef?.path && typeof docRef.path === 'string' && docRef.path.includes('skills/artist_master_directive')) {
+                return Promise.resolve({ exists: () => false, data: () => undefined, id: 'artist_master_directive' });
+            }
+            return Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' });
+        }),
         getUsageStats: vi.fn(() => Promise.resolve({
             data: {
                 tier: 'free',

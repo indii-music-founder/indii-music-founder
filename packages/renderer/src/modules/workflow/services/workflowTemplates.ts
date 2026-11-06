@@ -4,6 +4,200 @@ import { SavedWorkflow, Status } from '../types';
 
 export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
     {
+        id: 'template-full-music-release',
+        name: 'Complete Music Release & Notes Suite',
+        description: 'End-to-end music release engine: pulls song concept and lyrics from Notes, verifies audio QC, assigns ISRC/UPC, compiles splits, creates 3000x3000px cover art and 9:16 vertical canvas video, drafts DSP playlist pitch, verifies DDEX preflight, and saves the complete release recipe back into Notes.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 0.75 },
+        nodes: [
+            {
+                id: 'start',
+                type: 'inputNode',
+                position: { x: 0, y: 300 },
+                data: {
+                    nodeType: 'input',
+                    prompt: 'New indie electronic single "Neon Drift"',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'notes-in',
+                type: 'departmentNode',
+                position: { x: 280, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Notes Department',
+                    selectedJobId: 'note-input',
+                    prompt: 'Neon Drift lyrics and songwriting notes',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'lyrics-ext',
+                type: 'departmentNode',
+                position: { x: 560, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Notes Department',
+                    selectedJobId: 'lyrics-extract',
+                    prompt: 'Extract hook and structured sections',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'music-qc',
+                type: 'departmentNode',
+                position: { x: 280, y: 450 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Music Department',
+                    selectedJobId: 'music-audio-qc',
+                    prompt: 'Mastering audio QC check',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'metadata-gen',
+                type: 'departmentNode',
+                position: { x: 560, y: 450 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Music Department',
+                    selectedJobId: 'music-metadata',
+                    prompt: 'Neon Drift release metadata',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'isrc-assign',
+                type: 'departmentNode',
+                position: { x: 840, y: 450 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Music Department',
+                    selectedJobId: 'music-isrc-assign',
+                    prompt: 'Assign ISRC',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'splits-gen',
+                type: 'departmentNode',
+                position: { x: 840, y: 250 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Splits & Rights Department',
+                    selectedJobId: 'splits-compiler',
+                    prompt: 'Compile 100% balanced split sheet',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'art-gen',
+                type: 'departmentNode',
+                position: { x: 1120, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Art Department',
+                    selectedJobId: 'art-cover-art',
+                    prompt: '3000x3000px square cover art for Neon Drift, moody night highway, aesthetic reflections',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'video-canvas',
+                type: 'departmentNode',
+                position: { x: 1400, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Video Department',
+                    selectedJobId: 'video-canvas',
+                    prompt: '9:16 vertical looping canvas visualizer for Spotify and TikTok',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'dsp-pitch',
+                type: 'departmentNode',
+                position: { x: 1120, y: 380 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Marketing Department',
+                    selectedJobId: 'marketing-dsp-pitch',
+                    prompt: 'DSP playlist curator editorial pitch for Neon Drift',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'preflight-check',
+                type: 'departmentNode',
+                position: { x: 1400, y: 380 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Distribution & Release Department',
+                    selectedJobId: 'ddex-preflight',
+                    prompt: 'Verify DDEX delivery package',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'gatekeeper',
+                type: 'logicNode',
+                position: { x: 1680, y: 280 },
+                data: {
+                    nodeType: 'logic',
+                    jobId: 'gatekeeper',
+                    label: 'Human Approval Checkpoint',
+                    status: Status.PENDING,
+                    config: {
+                        message: 'Approve complete release package before saving recipe to Notes and distribution queue.'
+                    }
+                }
+            },
+            {
+                id: 'notes-save',
+                type: 'departmentNode',
+                position: { x: 1960, y: 280 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Notes Department',
+                    selectedJobId: 'note-save',
+                    prompt: 'Save completed release package recipe',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'end',
+                type: 'outputNode',
+                position: { x: 2240, y: 280 },
+                data: {
+                    nodeType: 'output',
+                    status: Status.PENDING
+                }
+            }
+        ],
+        edges: [
+            { id: 'e1', source: 'start', target: 'notes-in', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e2', source: 'start', target: 'music-qc', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e3', source: 'notes-in', target: 'lyrics-ext', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e4', source: 'lyrics-ext', target: 'metadata-gen', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e5', source: 'music-qc', target: 'metadata-gen', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e6', source: 'metadata-gen', target: 'isrc-assign', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e7', source: 'metadata-gen', target: 'splits-gen', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e8', source: 'lyrics-ext', target: 'art-gen', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e9', source: 'art-gen', target: 'video-canvas', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e10', source: 'isrc-assign', target: 'dsp-pitch', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e11', source: 'isrc-assign', target: 'preflight-check', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e12', source: 'splits-gen', target: 'preflight-check', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e13', source: 'art-gen', target: 'preflight-check', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e14', source: 'preflight-check', target: 'gatekeeper', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e15', source: 'video-canvas', target: 'gatekeeper', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e16', source: 'gatekeeper', target: 'notes-save', sourceHandle: 'approve', targetHandle: 'trigger' },
+            { id: 'e17', source: 'notes-save', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
+        ]
+    },
+    {
         id: 'template-simple-image',
         name: 'Simple Concept Art',
         description: 'Generate a concept art image from a text prompt.',
@@ -28,7 +222,7 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
                 data: {
                     nodeType: 'department',
                     departmentName: 'Art Department',
-                    selectedJobId: 'art-department-job-0', // Concept Art
+                    selectedJobId: 'art-department-job-0',
                     status: Status.PENDING
                 }
             },

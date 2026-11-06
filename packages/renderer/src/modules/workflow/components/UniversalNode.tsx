@@ -1,16 +1,40 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { DepartmentNodeData, LogicNodeData, Status, AnyAsset } from '../types';
+import {
+    DepartmentNodeData,
+    LogicNodeData,
+    SubgraphNodeData,
+    Status,
+    AnyAsset,
+    NoteAsset,
+    AudioQCAsset,
+    MusicMetadataAsset,
+    SplitSheetAsset,
+    ReleasePackageAsset
+} from '../types';
 import { getNodeDefinition, getJobDefinition, DATA_TYPE_COLORS, DataType } from '../services/nodeRegistry';
-import { CheckCircle, Hourglass, LoaderCircle, AlertTriangle, Settings, Pencil, LucideIcon } from 'lucide-react';
+import {
+    CheckCircle,
+    Hourglass,
+    LoaderCircle,
+    AlertTriangle,
+    Settings,
+    Pencil,
+    FileText,
+    Volume2,
+    Music,
+    Scale,
+    ShieldCheck,
+    Layers,
+    LucideIcon
+} from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Extended asset shape for workflow node results.
- * Covers Intelligence-generated images, concept sets, videos, and generic outputs.
- * AnyAsset already has `[key: string]: unknown` but these helpers
- * make the property access explicit and TypeScript-checked.
+ * Covers Intelligence-generated images, concept sets, videos, generic outputs,
+ * and music-industry typed assets (Notes, Audio QC, Metadata, Splits, Release Packages).
  */
 interface WorkflowResultAsset extends AnyAsset {
     imageUrl?: string;
@@ -39,8 +63,7 @@ const statusConfig: Record<Status, StatusStyle> = {
 };
 
 // Combine types for props
-type UniversalNodeData = DepartmentNodeData | LogicNodeData;
-
+type UniversalNodeData = DepartmentNodeData | LogicNodeData | SubgraphNodeData;
 
 const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => {
     
@@ -49,25 +72,56 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     })));
 
     // 1. Resolve Definition
-    // For logic nodes, departmentName is 'Logic'.
     const isLogic = data.nodeType === 'logic';
-    const deptName = data.nodeType === 'department' ? data.departmentName : 'Logic';
-    const jobId = data.nodeType === 'department' ? data.selectedJobId : (data.nodeType === 'logic' ? data.jobId : undefined);
+    const isSubgraph = data.nodeType === 'subgraph';
+    const deptName = data.nodeType === 'department'
+        ? data.departmentName
+        : (isSubgraph ? 'Micro-Workflows' : 'Logic');
+    const jobId = data.nodeType === 'department'
+        ? data.selectedJobId
+        : (data.nodeType === 'logic' ? data.jobId : undefined);
 
     const nodeDefinition = getNodeDefinition(deptName);
     const jobDefinition = getJobDefinition(deptName, jobId);
 
-    // logger.debug("Node Result Data:", data.result);
-
     const status = statusConfig[data.status] || statusConfig[Status.PENDING];
     const StatusIcon = status.icon;
-    const Icon = nodeDefinition?.icon || Settings;
+    const Icon = isSubgraph ? Layers : (nodeDefinition?.icon || Settings);
 
     const renderResultPreview = () => {
-        // logger.debug("Rendering Node ID:", id, "Data:", data);
-
         if (data.status === Status.ERROR) {
             return <p className="text-red-400 text-[10px] p-2 break-all leading-tight">{String(data.result).substring(0, 50)}...</p>;
+        }
+
+        if (data.nodeType === 'subgraph') {
+            const subgraphData = data as SubgraphNodeData;
+            const subNodes = subgraphData.subgraph?.nodes || [];
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-pink-950/20 border border-pink-500/20 text-left">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-pink-400 text-[11px] font-semibold truncate">
+                            <Layers className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{subgraphData.label || 'Micro-Workflow'}</span>
+                        </div>
+                        <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-pink-900/50 text-pink-300 border border-pink-500/30">
+                            {subNodes.length} STEPS
+                        </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                        {subNodes.slice(0, 4).map((sn, idx) => (
+                            <span key={idx} className="text-[8px] px-1 py-0.5 rounded bg-black/40 text-gray-300 border border-white/5 truncate max-w-[70px]">
+                                {'label' in sn.data ? sn.data.label : ('departmentName' in sn.data ? sn.data.departmentName : sn.type)}
+                            </span>
+                        ))}
+                        {subNodes.length > 4 && (
+                            <span className="text-[8px] text-gray-500">+{subNodes.length - 4} more</span>
+                        )}
+                    </div>
+                    <p className="text-[8px] text-pink-400/80 mt-1 truncate">
+                        {subgraphData.description || 'Nested composite flow'}
+                    </p>
+                </div>
+            );
         }
 
         if (data.nodeType === 'logic') {
@@ -80,8 +134,6 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             }
         }
 
-        // --- THE FIX: We were checking !data.result too strictly ---
-        // If status is DONE, we should try to render whatever is in result.
         if (data.status !== Status.DONE) {
             return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-600 text-[10px] italic">Awaiting Output</div>;
         }
@@ -91,22 +143,25 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         }
 
         // Deep check for result structure
-        let asset: WorkflowResultAsset | null = null;
+        let asset: (WorkflowResultAsset | NoteAsset | AudioQCAsset | MusicMetadataAsset | SplitSheetAsset | ReleasePackageAsset) | null = null;
         try {
-            const rawResult = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+            const rawResult = typeof data.result === 'string' && data.result.startsWith('{')
+                ? JSON.parse(data.result)
+                : data.result;
 
-            // --- FIX: Map the new Image Generation Object to an Image Asset ---
-            if (rawResult && rawResult.images && Array.isArray(rawResult.images)) {
-                const firstImage = rawResult.images[0];
-                asset = {
-                    assetType: 'image',
-                    imageUrl: firstImage.imageUrl || `data:${firstImage.mimeType || 'image/png'};base64,${firstImage.bytesBase64Encoded || firstImage.base64}`,
-                    aiMetadata: rawResult.aiMetadata,
-                    aiGenerationInfo: rawResult.aiGenerationInfo,
-                    title: 'Autonomous Generated Artwork'
-                };
-            } else {
-                asset = rawResult as WorkflowResultAsset;
+            if (rawResult && typeof rawResult === 'object') {
+                if ('images' in rawResult && Array.isArray((rawResult as { images: Array<{ imageUrl?: string; mimeType?: string; bytesBase64Encoded?: string; base64?: string }> }).images)) {
+                    const firstImage = (rawResult as { images: Array<{ imageUrl?: string; mimeType?: string; bytesBase64Encoded?: string; base64?: string }> }).images[0];
+                    asset = {
+                        assetType: 'image',
+                        imageUrl: firstImage?.imageUrl || `data:${firstImage?.mimeType || 'image/png'};base64,${firstImage?.bytesBase64Encoded || firstImage?.base64}`,
+                        aiMetadata: (rawResult as Record<string, unknown>).aiMetadata as Record<string, unknown> | undefined,
+                        aiGenerationInfo: (rawResult as Record<string, unknown>).aiGenerationInfo as Record<string, unknown> | undefined,
+                        title: 'Autonomous Generated Artwork'
+                    };
+                } else {
+                    asset = rawResult as WorkflowResultAsset;
+                }
             }
         } catch (_e: unknown) {
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
@@ -114,10 +169,117 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
         if (!asset) return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-600 text-[10px] italic">No Data</div>;
 
+        // ── Notes Asset Rendering ──────────────────────────────────────────
+        if (asset.assetType === 'note') {
+            const noteAsset = asset as NoteAsset;
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-emerald-950/30 border border-emerald-500/20 text-left">
+                    <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold">
+                        <FileText className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{noteAsset.title}</span>
+                    </div>
+                    <p className="text-[9px] text-gray-400 line-clamp-3 leading-relaxed mt-1">
+                        {noteAsset.content}
+                    </p>
+                    <div className="flex items-center gap-1 mt-1 text-[8px] text-emerald-500">
+                        <span className="px-1 py-0.5 rounded bg-emerald-900/50 border border-emerald-500/30">Notes Module Synced</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // ── Audio QC Asset Rendering ───────────────────────────────────────
+        if (asset.assetType === 'audio_qc') {
+            const qc = asset as AudioQCAsset;
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-amber-950/30 border border-amber-500/20 text-left">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-amber-400 text-[11px] font-semibold">
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>Audio QC Report</span>
+                        </div>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${qc.pass ? 'bg-green-500/20 text-green-300 border border-green-500/40' : 'bg-red-500/20 text-red-300 border border-red-500/40'}`}>
+                            {qc.pass ? 'PASSED' : 'FLAGGED'}
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-[9px] text-gray-300 mt-1">
+                        <div>LUFS: <span className="font-mono text-amber-300">{qc.integratedLufs} dB</span></div>
+                        <div>True Peak: <span className="font-mono text-amber-300">{qc.truePeakDbfs} dBFS</span></div>
+                    </div>
+                    <p className="text-[8px] text-gray-400 truncate mt-1">DSP Target: -14 LUFS / -1.0 dBFS</p>
+                </div>
+            );
+        }
+
+        // ── Music Metadata Asset Rendering ────────────────────────────────
+        if (asset.assetType === 'metadata') {
+            const meta = asset as MusicMetadataAsset;
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-sky-950/30 border border-sky-500/20 text-left">
+                    <div className="flex items-center gap-1.5 text-sky-400 text-[11px] font-semibold truncate">
+                        <Music className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{meta.title}</span>
+                    </div>
+                    <div className="text-[9px] text-gray-300 mt-1 space-y-0.5">
+                        <p className="truncate">Artist: <span className="text-gray-100">{meta.primaryArtist}</span></p>
+                        {meta.isrc && <p className="font-mono text-[8px] text-sky-300">ISRC: {meta.isrc}</p>}
+                        {meta.upc && <p className="font-mono text-[8px] text-sky-300">UPC: {meta.upc}</p>}
+                    </div>
+                    <div className="text-[8px] text-sky-500 font-mono truncate">{meta.genre} • {meta.releaseDate}</div>
+                </div>
+            );
+        }
+
+        // ── Splits Asset Rendering ────────────────────────────────────────
+        if (asset.assetType === 'splits') {
+            const splits = asset as SplitSheetAsset;
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-purple-950/30 border border-purple-500/20 text-left">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-purple-300 text-[11px] font-semibold">
+                            <Scale className="w-3.5 h-3.5" />
+                            <span>Split Sheet</span>
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/40">
+                            100% BALANCED
+                        </span>
+                    </div>
+                    <p className="text-[9px] text-gray-300 mt-1 truncate">{splits.trackTitle}</p>
+                    <p className="text-[8px] text-purple-400">
+                        {splits.contributors?.length || 0} Registered Collaborators (Master & Publishing)
+                    </p>
+                </div>
+            );
+        }
+
+        // ── Release Package Asset Rendering ────────────────────────────────
+        if (asset.assetType === 'release_package') {
+            const pkg = asset as ReleasePackageAsset;
+            return (
+                <div className="w-full h-full p-2.5 flex flex-col justify-between bg-rose-950/30 border border-rose-500/20 text-left">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-rose-300 text-[11px] font-semibold">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>DDEX Pre-Flight</span>
+                        </div>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${pkg.readyForDelivery ? 'bg-green-500/20 text-green-300 border border-green-500/40' : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'}`}>
+                            {pkg.readyForDelivery ? 'READY FOR DSP' : 'INCOMPLETE'}
+                        </span>
+                    </div>
+                    <p className="text-[9px] text-gray-300 truncate mt-1">{pkg.trackTitle} — {pkg.primaryArtist}</p>
+                    <div className="text-[8px] text-gray-400 flex items-center gap-2">
+                        <span>QC: {pkg.qcPassed ? '✓' : '✗'}</span>
+                        <span>ISRC: {pkg.isrc ? '✓' : '✗'}</span>
+                        <span>Splits: {pkg.splitsVerified ? '✓' : '✗'}</span>
+                    </div>
+                </div>
+            );
+        }
+
         if (asset.assetType === 'image') return (
             <div className="relative w-full h-full">
-                <img src={asset.imageUrl ?? ''} alt="Result" className="w-full h-full object-cover" />
-                {asset.aiMetadata && (
+                <img src={(asset as WorkflowResultAsset).imageUrl ?? ''} alt="Result" className="w-full h-full object-cover" />
+                {(asset as WorkflowResultAsset).aiMetadata && (
                     <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
                         Autonomous Provenance Locked
                     </div>
@@ -125,7 +287,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             </div>
         );
         if (asset.assetType === 'imageConceptSet') {
-            const firstConcept = asset.concepts?.[0];
+            const firstConcept = (asset as WorkflowResultAsset).concepts?.[0];
             return (
                 <div className="relative w-full h-full">
                     <img src={firstConcept?.imageUrl} alt="Result" className="w-full h-full object-cover" />
@@ -137,16 +299,15 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 </div>
             );
         }
-        if (asset.assetType === 'video') return <video src={asset.videoUrl ?? ''} className="w-full h-full object-cover" />;
+        if (asset.assetType === 'video') return <video src={(asset as WorkflowResultAsset).videoUrl ?? ''} className="w-full h-full object-cover" />;
 
-        // --- ENHANCEMENT: Detect raw base64 data and render as image ---
         const resultString = String(data.result);
-        if (resultString.startsWith('data:image/') || asset.base64) {
-            const src = asset.base64 ? `data:${asset.mimeType || 'image/png'};base64,${asset.base64}` : resultString;
+        if (resultString.startsWith('data:image/') || (asset as WorkflowResultAsset).base64) {
+            const src = (asset as WorkflowResultAsset).base64 ? `data:${(asset as WorkflowResultAsset).mimeType || 'image/png'};base64,${(asset as WorkflowResultAsset).base64}` : resultString;
             return (
                 <div className="relative w-full h-full">
                     <img src={src} alt="AI Result" className="w-full h-full object-cover" />
-                    {asset.aiMetadata && (
+                    {(asset as WorkflowResultAsset).aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
                             Autonomous Provenance Locked
@@ -156,7 +317,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             );
         }
 
-        const displayLabel = asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received');
+        const displayLabel = String(asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received'));
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 
@@ -170,12 +331,23 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     };
 
     // 3. Dynamic Handle Calculation
-    // We distribute handles evenly along the sides
-    const inputs = jobDefinition?.inputs || [{ id: 'default_in', label: 'Input', type: 'ANY' }];
-    const outputs = jobDefinition?.outputs || [{ id: 'default_out', label: 'Output', type: 'ANY' }];
+    const inputs = isSubgraph
+        ? [{ id: 'default_in', label: 'Input Flow', type: 'ANY' as DataType }]
+        : (jobDefinition?.inputs || [{ id: 'default_in', label: 'Input', type: 'ANY' as DataType }]);
+    const outputs = isSubgraph
+        ? [{ id: 'default_out', label: 'Output Flow', type: 'ANY' as DataType }]
+        : (jobDefinition?.outputs || [{ id: 'default_out', label: 'Output', type: 'ANY' as DataType }]);
 
-    const headerColor = isLogic ? 'bg-indigo-900/40 border-indigo-500/30' : 'bg-white/5 border-white/10';
-    const borderColor = selected ? (isLogic ? 'border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.3)] shadow-indigo-500/20' : 'border-teal-400 shadow-[0_0_30px_rgba(45,212,191,0.3)] shadow-teal-500/20') : 'border-white/10 hover:border-white/20';
+    const headerColor = isSubgraph
+        ? 'bg-pink-900/40 border-pink-500/30'
+        : (isLogic ? 'bg-indigo-900/40 border-indigo-500/30' : 'bg-white/5 border-white/10');
+    const borderColor = selected
+        ? (isSubgraph
+            ? 'border-pink-400 shadow-[0_0_30px_rgba(236,72,153,0.3)] shadow-pink-500/20'
+            : (isLogic
+                ? 'border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.3)] shadow-indigo-500/20'
+                : 'border-teal-400 shadow-[0_0_30px_rgba(45,212,191,0.3)] shadow-teal-500/20'))
+        : (isSubgraph ? 'border-pink-500/30 hover:border-pink-500/50' : 'border-white/10 hover:border-white/20');
 
     return (
         <div className={`
@@ -185,12 +357,16 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             {/* Header */}
             <div className={`px-4 py-3 border-b ${headerColor} flex items-center justify-between backdrop-blur-sm z-10 relative`}>
                 <div className="flex items-center gap-3 overflow-hidden">
-                    <div className={`p-1.5 rounded-lg ${selected ? (isLogic ? 'bg-indigo-500/20 text-indigo-300' : 'bg-teal-500/20 text-teal-300') : 'bg-white/10 text-gray-400 group-hover/node:bg-white/20 transition-colors'}`}>
+                    <div className={`p-1.5 rounded-lg ${selected ? (isSubgraph ? 'bg-pink-500/20 text-pink-300' : (isLogic ? 'bg-indigo-500/20 text-indigo-300' : 'bg-teal-500/20 text-teal-300')) : 'bg-white/10 text-gray-400 group-hover/node:bg-white/20 transition-colors'}`}>
                         <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="overflow-hidden">
-                        <p className="text-xs font-bold text-gray-200 truncate">{jobDefinition?.label || ('label' in data ? data.label : 'Node')}</p>
-                        <p className="text-[10px] text-gray-500 truncate">{isLogic ? 'Control Flow' : ('departmentName' in data ? data.departmentName : 'Department')}</p>
+                        <p className="text-xs font-bold text-gray-200 truncate">
+                            {isSubgraph ? ('label' in data ? data.label : 'Micro-Workflow') : (jobDefinition?.label || ('label' in data ? data.label : 'Node'))}
+                        </p>
+                        <p className="text-[10px] text-gray-500 truncate">
+                            {isSubgraph ? 'Composite Subgraph' : (isLogic ? 'Control Flow' : ('departmentName' in data ? data.departmentName : 'Department'))}
+                        </p>
                     </div>
                 </div>
                 <StatusIcon className={`w-3.5 h-3.5 ${status.color} ${status.animate ? 'animate-spin' : ''}`} />
@@ -210,7 +386,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                     left: -6,
                                     width: 8,
                                     height: 8,
-                                    background: DATA_TYPE_COLORS[input.type as DataType],
+                                    background: DATA_TYPE_COLORS[input.type as DataType] || DATA_TYPE_COLORS.ANY,
                                     border: '2px solid #1e293b'
                                 }}
                                 className="z-20 transition-transform hover:scale-150"
@@ -228,7 +404,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     {/* Prompt/Config Preview Overlay */}
                     <div className="absolute top-0 left-0 right-0 p-2 bg-linear-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <p className="text-[10px] text-gray-300 line-clamp-2">
-                            {isLogic ? 'Configure Node' : ('prompt' in data ? data.prompt : 'No prompt')}
+                            {isSubgraph ? 'Composite Micro-Flow' : (isLogic ? 'Configure Node' : ('prompt' in data ? data.prompt : 'No prompt'))}
                         </p>
                         <button
                             onClick={handleEdit}
@@ -246,7 +422,6 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
                 {/* Output Handles Column */}
                 <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative">
-                    
                     {outputs.map((output, _i) => (
                         <div key={output.id} className="relative group flex items-center justify-center h-4">
                             <Handle
@@ -257,7 +432,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                     right: -6,
                                     width: 8,
                                     height: 8,
-                                    background: DATA_TYPE_COLORS[output.type as DataType],
+                                    background: DATA_TYPE_COLORS[output.type as DataType] || DATA_TYPE_COLORS.ANY,
                                     border: '2px solid #1e293b'
                                 }}
                                 className="z-20 transition-transform hover:scale-150"

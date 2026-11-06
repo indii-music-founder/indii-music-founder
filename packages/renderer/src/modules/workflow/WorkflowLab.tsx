@@ -371,9 +371,12 @@ export default function WorkflowLab() {
                 {/* ── LEFT PANEL — Controls & Actions ────── */}
                 <div id="tour-workflow-controls" className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
                     <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <GitBranch className="text-green-500" /> Workflow Lab
-                        </h2>
+                        <div>
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <GitBranch className="text-green-500" /> Flow-Be Engine
+                            </h2>
+                            <p className="text-[10px] text-gray-400 italic ml-6">flow be makin me happy</p>
+                        </div>
                         <button onClick={startTour} className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-white transition-colors" title="Take a Tour">
                             <HelpCircle size={16} />
                         </button>
