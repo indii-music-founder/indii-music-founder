@@ -1327,7 +1327,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     await new Promise((resolve, reject) => {
                         const handleAbort = () => {
                             clearTimeout(timer);
-                            reject(new Error('Operation cancelled by user during retry backoff'));
+                            signal?.removeEventListener('abort', handleAbort);
+                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false }));
                         };
                         const timer = setTimeout(() => {
                             signal?.removeEventListener('abort', handleAbort);
@@ -1335,6 +1336,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }, waitTime);
                         if (signal) {
                             signal.addEventListener('abort', handleAbort, { once: true });
+                            // The signal may have aborted between the catch check and registration.
+                            if (signal.aborted) handleAbort();
                         }
                     });
 
