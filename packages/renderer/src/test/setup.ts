@@ -321,6 +321,7 @@ vi.mock('@/core/store', () => {
         clearCompletedUploads: vi.fn(),
         toggleUploadQueue: vi.fn(),
         loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
+        agentHistory: [],
         addAgentMessage: vi.fn(),
         addMessageToSession: vi.fn(),
         clearAgentHistory: vi.fn(),

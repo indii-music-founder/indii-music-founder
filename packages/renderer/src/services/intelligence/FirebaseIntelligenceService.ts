@@ -1328,6 +1328,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             clearTimeout(timer);
                             signal?.removeEventListener('abort', handleAbort);
                             reject(normalizeStreamInterruption(new Error('Request aborted during backoff'), signal));
+                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false }));
                         };
                         const timer = setTimeout(() => {
                             signal?.removeEventListener('abort', handleAbort);

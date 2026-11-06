@@ -3,7 +3,9 @@ import { VertexRoutingError } from './vertexRouting';
 export type SpecialistFailureCategory =
   | 'routing_misconfiguration'
   | 'specialist_unavailable'
-  | 'provider_outage';
+  | 'provider_outage'
+  | 'provider_rejected'
+  | 'provider_unknown';
 
 export interface SpecialistUnavailablePayload {
   error: {
@@ -34,10 +36,24 @@ export class SpecialistUnavailableError extends Error {
         message: this.message,
         retryable: this.retryable,
         category: this.category,
-        nextActions: ['retry_later', 'select_qualified_specialist'],
+        nextActions: this.retryable ? ['retry_later', 'select_qualified_specialist'] : ['select_qualified_specialist'],
       },
     };
   }
+}
+
+/** Allowlisted fields only: provider errors may contain prompts, credentials, or URLs. */
+export function specialistFailureDiagnostics(error: unknown): { providerStatus?: number; providerCode?: string } {
+  if (!error || typeof error !== 'object') return {};
+  const record = error as Record<string, unknown>;
+  const status = [record.status, record.statusCode, record.code].find(value =>
+    typeof value === 'number' && Number.isInteger(value) && value >= 100 && value <= 599);
+  const codes = ['INVALID_ARGUMENT', 'UNAUTHENTICATED', 'PERMISSION_DENIED', 'NOT_FOUND', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL'];
+  const code = typeof record.code === 'string' && codes.includes(record.code) ? record.code : undefined;
+  return {
+    ...(typeof status === 'number' ? { providerStatus: status } : {}),
+    ...(code ? { providerCode: code } : {}),
+  };
 }
 
 export function classifySpecialistFailure(error: unknown): SpecialistUnavailableError {
@@ -46,10 +62,19 @@ export function classifySpecialistFailure(error: unknown): SpecialistUnavailable
     return new SpecialistUnavailableError('routing_misconfiguration', false, error);
   }
 
-  const message = error instanceof Error ? error.message : String(error);
-  if (/NOT_FOUND|404|not found|does not exist|was not found/i.test(message)) {
+  const { providerStatus: status, providerCode: code } = specialistFailureDiagnostics(error);
+  const message = error instanceof Error ? error.message : '';
+  if ([400, 401, 403].includes(status ?? 0) ||
+      ['INVALID_ARGUMENT', 'UNAUTHENTICATED', 'PERMISSION_DENIED'].includes(code ?? '')) {
+    return new SpecialistUnavailableError('provider_rejected', false, error);
+  }
+  if (status === 404 || code === 'NOT_FOUND' || /NOT_FOUND|\b404\b|not found|does not exist|was not found/i.test(message)) {
     return new SpecialistUnavailableError('specialist_unavailable', true, error);
   }
-
-  return new SpecialistUnavailableError('provider_outage', true, error);
+  if (status === 429 || (status !== undefined && status >= 500) ||
+      ['RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL'].includes(code ?? '') ||
+      /\b(?:429|5\d\d)\b|timed out|timeout|UNAVAILABLE|DEADLINE_EXCEEDED/i.test(message)) {
+    return new SpecialistUnavailableError('provider_outage', true, error);
+  }
+  return new SpecialistUnavailableError('provider_unknown', false, error);
 }
