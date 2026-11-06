@@ -10,14 +10,21 @@
 ## TL;DR - The Golden Rule
 
 ```text
-USE ONLY GEMINI 3.x MODELS. NEVER USE GEMINI 1.5 OR 2.0.
+USE THE APPROVED ARGON / FLASH / TRAINED-SPECIALIST HIERARCHY. NEVER USE GEMINI 1.5 OR 2.0.
 ```
 
 ---
 
 ## Core Directive
 
-This application **EXCLUSIVELY** uses the **Gemini 3** series models.
+The founder-approved text architecture is **Argon Conductor → Flash 3.8 agent intelligence → specialty-scoped trained models**.
+
+- Conductor uses `gemini-4-argon` for direction and reasoning.
+- Other agents use `gemini-3.8-flash` for reasoning and coordination.
+- Preserve trained Vertex endpoints as specialist workers. Delegate only bounded tasks matching their trained domains; return their results and execution evidence to the coordinating intelligence layer.
+- Preserve the separate fast Nano Banana and Pro image paths, video, speech, and other authorized agent capabilities.
+
+These are target routing requirements. A model appearing in configuration does not prove it is selected at runtime, accessible to the project, correctly priced, or live-verified. Do not replace every trained endpoint with a base model or describe a configured model as deployed without evidence.
 
 Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including:
 
@@ -37,9 +44,11 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 | Purpose                      | Model ID                        | Notes                                  |
 | ---------------------------- | ------------------------------- | -------------------------------------- |
 | **Text/Reasoning (Workhorse / Fast)** | `gemini-3.8-flash`     | Agents, reasoning, coding, high-throughput (GA Sept 2026) |
-| **Text/Reasoning (Complex)** | `gemini-3.1-pro-preview`          | Agents, analysis, complex tasks        |
+| **Conductor direction and reasoning** | `gemini-4-argon` | Founder-approved intelligence apex |
+| **Existing complex-model compatibility** | `gemini-3.1-pro-preview` | Existing call sites pending migration; not the Conductor target |
 | **Text/Reasoning (Legacy Fast)** | `gemini-3-flash-preview`    | Legacy preview tasks                   |
-| **Image Generation**         | `gemini-3-pro-image`    | All image synthesis (Nano Banana Pro)  |
+| **Image Generation (Pro)** | `gemini-3-pro-image` | Nano Banana Pro |
+| **Image Generation (Fast)** | `gemini-3.1-flash-image` | Nano Banana fast path |
 | **Audio Generation (TTS)**   | `gemini-3.1-flash-tts-preview`  | Controllable low-latency speech synthesis |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis           |
 | **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation              |
@@ -75,7 +84,7 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 
 ## Why This Policy Exists
 
-1. **Gemini 3 is the current generation** - 1.5 and 2.0 are legacy
+1. **Use the approved hierarchy** - Argon directs, Flash coordinates, and trained models execute their specialties
 2. **API compatibility** - Gemini 3 has different API features (thinking levels, thought signatures)
 3. **Quality requirements** - This is a premium creative application
 4. **Future-proofing** - Legacy models will be deprecated
@@ -91,7 +100,7 @@ The following patterns are **BANNED**. Using them will **BREAK THE APPLICATION**
 import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 
 const response = await AI.generateContent({
-    model: INTELLIGENCE_MODELS.TEXT.AGENT,  // gemini-3.1-pro-preview
+    model: INTELLIGENCE_MODELS.TEXT.AGENT,  // central complex-reasoning selection; see migration status below
     contents: [...],
     config: INTELLIGENCE_CONFIG.THINKING.HIGH
 });
@@ -113,7 +122,8 @@ const response = await AI.generateContent({
 
 | Task Type                 | Use This                       | Model ID                       |
 | ------------------------- | ------------------------------ | ------------------------------ |
-| Agent reasoning           | `INTELLIGENCE_MODELS.TEXT.AGENT`| `gemini-3.1-pro-preview`         |
+| Conductor reasoning target | `INTELLIGENCE_MODELS.TEXT.AGENT` after migration | `gemini-4-argon` |
+| Trained specialty execution | Explicit matching trained endpoint registry | Preserve trained Vertex resources |
 | Fast routing/agent workhorse | `INTELLIGENCE_MODELS.TEXT.FAST` | `gemini-3.8-flash`           |
 | Image generation          | `INTELLIGENCE_MODELS.IMAGE.GENERATION`| `gemini-3-pro-image`   |
 | Audio/TTS generation      | `INTELLIGENCE_MODELS.AUDIO.TTS` | `gemini-3.1-flash-tts-preview` |
@@ -144,7 +154,7 @@ This means:
 2. **DO NOT** change the `intelligence-models.ts` config to use legacy models
 3. **DO NOT** hardcode legacy model IDs anywhere in the codebase
 4. **DO NOT** use legacy models "temporarily" for debugging
-5. **ALWAYS** use `INTELLIGENCE_MODELS.TEXT.AGENT`, `INTELLIGENCE_MODELS.TEXT.FAST`, etc.
+5. **ALWAYS** use central model constants for base-model intelligence and the explicit trained endpoint registry for delegated specialty execution.
 6. **ALWAYS** import from `@/core/config/intelligence-models`
 
 ### Common Mistakes to AVOID
@@ -160,7 +170,7 @@ model: 'gemini-1.5-pro'    // BANNED
 model: 'gemini-pro'        // BANNED
 
 // CORRECT: Always use the approved models
-model: AI_MODELS.TEXT.FAST  // gemini-3-flash-preview
+model: AI_MODELS.TEXT.FAST  // gemini-3.8-flash
 ```
 
 ---
@@ -175,7 +185,7 @@ Before submitting any code that uses AI models, verify:
 - [x] No `gemini-2.0` patterns exist in the code
 - [x] The code imports from `@/core/config/ai-models`
 
-> ✅ **Last verified:** 2026-01-31 (Automated scan confirmed compliance)
+> Historical automated scan: 2026-01-31. This is not verification of the current migration.
 
 ---
 
@@ -193,4 +203,18 @@ Before submitting any code that uses AI models, verify:
 
 If you believe this policy should be changed, contact the project owner. Do not make exceptions unilaterally.
 
-### This policy was last updated: 2025-12-24
+## Migration evidence — 2026-11-05
+
+The founder explicitly authorizes Argon, superseding the previous Gemini-3-only restriction. Provider identifiers are documented in [Google’s model lifecycle catalog](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions).
+
+| Boundary | Inspected source state | Remaining requirement |
+| --- | --- | --- |
+| Backend selection | `packages/firebase/src/config/models.ts` sets TEXT.PRO to Argon; `config/textStreamModels.ts` allows Argon | Verify actual project access and submitted model |
+| Renderer selection | `packages/renderer/src/core/config/intelligence-models.ts` still sets TEXT_AGENT to 3.1 Pro | Coordinate migration with pricing and supported request configuration |
+| Agent execution | `BaseAgent.ts` defaults to getFineTunedModel; `IndiiNucleus.ts` explicitly selects the generalist tuned endpoint | Add the intelligence layer and explicit specialty delegation without deleting trained workers |
+| Cost admission | Renderer ModelPricing has no Argon entry; backend textStreamAdmission uses generic non-Flash rates | Verify current provider rates and align estimation, reservation, and settlement before switching traffic |
+| Acceptance | Charts define the intended hierarchy | Verify genuine direct and Boardroom turns, specialty boundaries, approval continuation, artifacts, and retained media capabilities |
+
+See [routing and hierarchy chart](docs/flowcharts/chat-model-routing-and-approval.md). These gaps are open work, not evidence of a completed migration.
+
+### This policy was last updated: 2026-11-05
