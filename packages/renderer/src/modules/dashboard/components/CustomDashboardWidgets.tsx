@@ -321,7 +321,7 @@ function StreamsTodayWidget() {
     );
 }
 
- 
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
@@ -1535,7 +1535,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     cost_estimator: () => <CostEstimatorWidget />,
 };
 
- 
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 function CostEstimatorWidget() {
