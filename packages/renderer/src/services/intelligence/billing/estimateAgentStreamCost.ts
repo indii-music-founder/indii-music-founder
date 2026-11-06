@@ -16,8 +16,9 @@ export function estimateAgentStreamCost(
         : prompt;
     const serialized = JSON.stringify({ contents, systemInstruction, tools });
     if (typeof serialized !== 'string') throw new Error('Cannot estimate an unserializable AI request');
-    // Fine-tuned endpoint IDs use their base model's rate. Unknown text models
-    // use the highest declared text rate instead of a zero-cost fallback.
+    // Registered models use explicit admission rates, including Argon. Endpoint
+    // and unknown IDs retain the existing backend-compatible baseline; this is
+    // not a universal upper bound for new models, which need explicit entries.
     const known = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
     const inputRate = known && 'input' in known ? known.input : 1.25;
     const outputRate = known && 'output' in known ? known.output : 10;

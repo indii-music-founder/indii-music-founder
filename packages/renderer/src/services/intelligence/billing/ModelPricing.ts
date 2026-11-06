@@ -73,6 +73,9 @@ export type ModelPricing = TokenPricing | ImagePricing | VideoPricing | SpeechPr
  * should have an entry, otherwise cost falls back to a conservative default.
  */
 export const MODEL_PRICING: Record<string, ModelPricing> = {
+    // Argon: conservative non-global Standard list price before promotional credits.
+    // https://cloud.google.com/model-garden/pricing — verified 2026-11-05.
+    'gemini-4-argon': { kind: 'token', inputPerMillion: 4.40, outputPerMillion: 22.00 },
     // ── Text ────────────────────────────────────────────────────────────────
     'gemini-3.1-pro-preview': { kind: 'token', inputPerMillion: 1.25, outputPerMillion: 10.0 },
     'gemini-3.8-flash': { kind: 'token', inputPerMillion: 0.30, outputPerMillion: 2.50 },
