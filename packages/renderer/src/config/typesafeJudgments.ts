@@ -9172,4 +9172,336 @@ export async function judgeCreativePromptModeIntent(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 79: Gallery Asset Brand & Aesthetic Fit Badge (judgeGalleryAssetBrandFit)
+// ---------------------------------------------------------------------------
+// Evaluates gallery asset prompt and aesthetic vibe alignment against the project's
+// brand guidelines using Jev Score (1-5 range mapped from 0-4). Provides
+// ambient brand fit badge on CreativeGallery cards.
+// ---------------------------------------------------------------------------
+
+export type GalleryBrandFitLabel = 'perfect_match' | 'strong_fit' | 'neutral' | 'drift' | 'mismatch';
+
+export interface GalleryBrandFitVerdict {
+    score: number; // 1 to 5 integer
+    label: GalleryBrandFitLabel;
+    confidence: number;
+    reason: string;
+}
+
+export interface GalleryAssetBrandContext {
+    promptUsed: string;
+    brandVibe?: string;
+    aestheticTags?: string[];
+}
+
+export function deterministicGalleryBrandFitFallback(
+    context: GalleryAssetBrandContext,
+): GalleryBrandFitVerdict {
+    const prompt = (context.promptUsed || '').toLowerCase();
+    const vibe = (context.brandVibe || '').toLowerCase();
+    const tags = (context.aestheticTags || []).map(t => t.toLowerCase());
+
+    if (!prompt.trim()) {
+        return {
+            score: 3,
+            label: 'neutral',
+            confidence: 0.5,
+            reason: 'Empty prompt defaults to neutral brand alignment.',
+        };
+    }
+
+    // Direct overlap check between prompt and brand vibe/tags
+    const vibeWords = vibe.split(/\s+/).filter(w => w.length > 3);
+    const tagMatches = tags.filter(tag => prompt.includes(tag)).length;
+    const vibeMatches = vibeWords.filter(word => prompt.includes(word)).length;
+    const matchCount = tagMatches + vibeMatches;
+
+    if (matchCount >= 2) {
+        return {
+            score: 5,
+            label: 'perfect_match',
+            confidence: 0.85,
+            reason: 'Prompt strongly incorporates project brand vibe and aesthetic tags.',
+        };
+    }
+
+    if (matchCount === 1) {
+        return {
+            score: 4,
+            label: 'strong_fit',
+            confidence: 0.75,
+            reason: 'Prompt aligns with project brand direction.',
+        };
+    }
+
+    // Check for negative / conflicting aesthetics
+    const conflictPatterns = [/generic stock/i, /watermark/i, /amateur/i, /blurry mess/i];
+    if (conflictPatterns.some(p => p.test(prompt))) {
+        return {
+            score: 1,
+            label: 'mismatch',
+            confidence: 0.80,
+            reason: 'Prompt contains quality defects or anti-brand keywords.',
+        };
+    }
+
+    return {
+        score: 3,
+        label: 'neutral',
+        confidence: 0.60,
+        reason: 'Asset exhibits standard stylistic coherence.',
+    };
+}
+
+export function galleryBrandFitQuestion() {
+    return {
+        type: 'score' as const,
+        instructions:
+            'Evaluate how well this creative generation prompt matches the artist project brand vibe and aesthetic guidelines. ' +
+            'Score 4 for exceptional brand cohesion / flagship visual, 3 for solid thematic alignment, ' +
+            '2 for acceptable but generic, 1 for slight stylistic drift, and 0 for blatant mismatch or quality defects.',
+        criteria: [
+            'Blatant mismatch or severe visual / aesthetic defects',
+            'Slight stylistic drift, off-brand color or style elements',
+            'Acceptable, standard generic aesthetic fit',
+            'Solid thematic and aesthetic alignment with brand direction',
+            'Exceptional brand cohesion, flagship visual representation',
+        ],
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment to assess brand fit for Creative Gallery assets.
+ * Renders an ambient badge (emerald for 4-5, neutral for 3, amber for 1-2).
+ */
+export async function judgeGalleryAssetBrandFit(
+    context: GalleryAssetBrandContext,
+): Promise<GalleryBrandFitVerdict> {
+    const fallback = deterministicGalleryBrandFitFallback(context);
+    if (!judgmentsAvailable() || !context.promptUsed?.trim()) {
+        return fallback;
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: context.promptUsed.slice(0, 500),
+                brandVibe: context.brandVibe?.slice(0, 200) ?? '',
+                aestheticTags: context.aestheticTags?.slice(0, 10) ?? [],
+            },
+            questions: {
+                brand_fit: galleryBrandFitQuestion(),
+            },
+        });
+
+        const ans = result.data.answers?.brand_fit;
+        let rawScore: number | undefined;
+        let rawConfidence: number | undefined;
+
+        if (typeof ans === 'number') {
+            rawScore = ans;
+        } else if (typeof ans === 'object' && ans !== null) {
+            if ('score' in ans && typeof (ans as { score?: unknown }).score === 'number') {
+                rawScore = (ans as { score: number }).score;
+            }
+            if ('confidence' in ans && typeof (ans as { confidence?: unknown }).confidence === 'number') {
+                rawConfidence = (ans as { confidence: number }).confidence;
+            }
+        }
+
+        if (typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
+            // Map 0-4 scale to 1-5
+            const score = Math.round(rawScore) + 1;
+            const labels: GalleryBrandFitLabel[] = ['mismatch', 'drift', 'neutral', 'strong_fit', 'perfect_match'];
+            const label = labels[score - 1] ?? 'neutral';
+            const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                ? rawConfidence
+                : fallback.confidence;
+
+            return {
+                score,
+                label,
+                confidence,
+                reason: `Jev scored brand aesthetic fit at ${score}/5.`,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'gallery asset brand fit judgment');
+        return fallback;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 80: PLP Campaign Variant Assistant (judgePlpVariantAdFormat)
+// ---------------------------------------------------------------------------
+// Evaluates a product landing page (PLP) ad variant to determine optimal format
+// placement ('HIGH_CONVERTING_HERO' | 'STORY_REEL' | 'THUMBNAIL_SAFE' | 'STANDARD')
+// and whether a retry/re-prompt is recommended.
+// ---------------------------------------------------------------------------
+
+export type PlpVariantFormatTag =
+    | 'HIGH_CONVERTING_HERO'
+    | 'STORY_REEL'
+    | 'THUMBNAIL_SAFE'
+    | 'STANDARD';
+
+export interface PlpVariantAdContext {
+    prompt: string;
+    aspectRatio?: string;
+    slotIndex: number;
+    kind?: 'image' | 'video';
+}
+
+export interface PlpVariantAdVerdict {
+    formatTag: PlpVariantFormatTag;
+    retryRecommended: boolean;
+    confidence: number;
+    reason: string;
+}
+
+export function deterministicPlpVariantAdFallback(
+    context: PlpVariantAdContext,
+): PlpVariantAdVerdict {
+    const prompt = (context.prompt || '').toLowerCase();
+    const ratio = (context.aspectRatio || '').trim();
+    const isVideo = context.kind === 'video' || context.slotIndex >= 10;
+
+    // Check for obvious defects or anti-patterns
+    if (/glitch|broken|distorted|unusable/i.test(prompt)) {
+        return {
+            formatTag: 'STANDARD',
+            retryRecommended: true,
+            confidence: 0.85,
+            reason: 'Defect detected in prompt semantics; recommend retry.',
+        };
+    }
+
+    // Video vertical slots
+    if (ratio === '9:16' || isVideo) {
+        return {
+            formatTag: 'STORY_REEL',
+            retryRecommended: false,
+            confidence: 0.90,
+            reason: 'Vertical / video motion format suited for Story and Reels placements.',
+        };
+    }
+
+    // Landscape wide hero slots
+    if (ratio === '16:9' || /cinematic|hero|widescreen|banner/i.test(prompt)) {
+        return {
+            formatTag: 'HIGH_CONVERTING_HERO',
+            retryRecommended: false,
+            confidence: 0.85,
+            reason: 'Widescreen cinematic composition suited for top hero placements.',
+        };
+    }
+
+    // Square 1:1 or feed thumbnail safe
+    if (ratio === '1:1' || /square|icon|thumbnail|grid/i.test(prompt)) {
+        return {
+            formatTag: 'THUMBNAIL_SAFE',
+            retryRecommended: false,
+            confidence: 0.80,
+            reason: 'Square or focused subject framing suited for grid and thumbnail cards.',
+        };
+    }
+
+    return {
+        formatTag: 'STANDARD',
+        retryRecommended: false,
+        confidence: 0.70,
+        reason: 'Standard ad variant placement.',
+    };
+}
+
+export function plpVariantAdQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'A digital music marketing team is curating a 15-variant PLP (product landing page) ad campaign. ' +
+            'Classify the single best ad placement for this variant: ' +
+            '"HIGH_CONVERTING_HERO" (cinematic wide hero placement, prominent flagship visuals), ' +
+            '"STORY_REEL" (vertical motion video, high engagement fast hook for TikTok/Instagram Stories), ' +
+            '"THUMBNAIL_SAFE" (clean square or centered focal point suitable for small icons and grids), or ' +
+            '"STANDARD" (general feed banner ad, standard display unit).',
+        criteria: {
+            HIGH_CONVERTING_HERO: 'Wide, cinematic, high impact headline banner visual.',
+            STORY_REEL: 'Vertical video format, dynamic action, TikTok / Reel story placement.',
+            THUMBNAIL_SAFE: 'Centered subject, clean background, readable at small icon size.',
+            STANDARD: 'General feed or standard banner variant.',
+        },
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment to classify ad format suitability for PLP batch variants.
+ */
+export async function judgePlpVariantAdFormat(
+    context: PlpVariantAdContext,
+): Promise<PlpVariantAdVerdict> {
+    const fallback = deterministicPlpVariantAdFallback(context);
+    if (!judgmentsAvailable() || !context.prompt?.trim()) {
+        return fallback;
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: context.prompt.slice(0, 500),
+                aspectRatio: context.aspectRatio ?? '',
+                slotIndex: context.slotIndex,
+                kind: context.kind ?? (context.slotIndex >= 10 ? 'video' : 'image'),
+            },
+            questions: {
+                ad_format: plpVariantAdQuestion(),
+            },
+        });
+
+        const ans = result.data.answers?.ad_format;
+        const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
+        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
+            ? (ans as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+            ? rawConfidence
+            : fallback.confidence;
+
+        if (
+            choice === 'HIGH_CONVERTING_HERO' ||
+            choice === 'STORY_REEL' ||
+            choice === 'THUMBNAIL_SAFE' ||
+            choice === 'STANDARD'
+        ) {
+            return {
+                formatTag: choice as PlpVariantFormatTag,
+                retryRecommended: false,
+                confidence,
+                reason: `Jev classified variant format as ${choice}.`,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'plp variant ad format judgment');
+        return fallback;
+    }
+}
+
+
+
 
