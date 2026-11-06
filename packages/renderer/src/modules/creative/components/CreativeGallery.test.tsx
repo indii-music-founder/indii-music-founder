@@ -97,4 +97,30 @@ describe('CreativeGallery', () => {
         // Check for role="button" on the item container
         expect(screen.getByRole('button', { name: 'Select test prompt' })).toBeInTheDocument();
     });
+
+    it('displays Jev System One brand fit badge on gallery assets', async () => {
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
+            ...mockStore,
+            generatedHistory: [
+                {
+                    id: 'asset_1',
+                    url: 'test_brand.jpg',
+                    type: 'image',
+                    prompt: 'cinematic indie album cover moody lighting',
+                    timestamp: 1000,
+                    projectId: 'p1',
+                    origin: 'generated',
+                },
+            ],
+            uploadedImages: [],
+            uploadedAudio: [],
+        });
+
+        render(<CreativeGallery />);
+
+        // The brand badge should render ambiently with score
+        const badge = await screen.findByTestId('jev-brand-fit-badge-asset_1');
+        expect(badge).toBeInTheDocument();
+        expect(badge).toHaveTextContent(/\/5/);
+    });
 });

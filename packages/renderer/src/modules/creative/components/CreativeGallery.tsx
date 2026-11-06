@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, Download, Share2, RotateCw, Pin, Send, Layers } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, Download, Share2, RotateCw, Pin, Send, Layers, Sparkles } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -10,6 +10,7 @@ import { SendToTarget, SendToPayload, CreativeStage, StageHandoffPayload } from 
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { projectBucketMatches } from '@/core/constants';
+import { judgeGalleryAssetBrandFit, type GalleryBrandFitVerdict } from '@/config/typesafeJudgments';
 
 import { HistoryItem } from '@/core/store';
 
@@ -190,8 +191,27 @@ interface GalleryItemProps {
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage, openInLayerEditor, onDismissPanel }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
     const [imageLoadFailed, setImageLoadFailed] = useState(false);
+    const [brandFit, setBrandFit] = useState<GalleryBrandFitVerdict | null>(null);
     // ISSUE-323: local engine progress streams to the card while a run is active.
     const [upscaleProgress, setUpscaleProgress] = useState<number | null>(null);
+
+    // JEV System One: Ambiently evaluate brand and aesthetic fit for each asset
+    useEffect(() => {
+        let isCurrent = true;
+        if (!item.prompt?.trim()) return;
+
+        void judgeGalleryAssetBrandFit({
+            promptUsed: item.prompt,
+        }).then((verdict) => {
+            if (isCurrent) {
+                setBrandFit(verdict);
+            }
+        });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, [item.prompt]);
     const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
     // ISSUE-920: prefer the small grid thumbnail when present; the resolver
     // passes plain HTTPS/data URLs through and converts gs:// URIs.
@@ -280,6 +300,23 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         className="w-full h-full object-contain bg-black"
                     />
                 )
+            )}
+
+            {brandFit && (
+                <div
+                    data-testid={`jev-brand-fit-badge-${item.id}`}
+                    className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border backdrop-blur-md shadow-sm transition-opacity ${
+                        brandFit.score >= 4
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                            : brandFit.score === 3
+                            ? 'bg-gray-900/80 text-gray-300 border-gray-600/40'
+                            : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                    }`}
+                    title={`Brand aesthetic fit: ${brandFit.score}/5 (${brandFit.label.replace('_', ' ')}) - ${brandFit.reason}`}
+                >
+                    <Sparkles size={9} className={brandFit.score >= 4 ? 'text-emerald-400' : brandFit.score === 3 ? 'text-gray-400' : 'text-amber-400'} />
+                    <span>{brandFit.score}/5</span>
+                </div>
             )}
 
             <div className={`absolute inset-0 bg-black/60 ${showSendMenu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'} transition-opacity flex flex-col justify-end p-3`}>

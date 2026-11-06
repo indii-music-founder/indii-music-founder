@@ -105,6 +105,8 @@ import {
     judgeEventRetentionTier,
     judgeCreativePromptModeIntent,
     deterministicCreativePromptModeFallback,
+    judgeGalleryAssetBrandFit,
+    deterministicGalleryBrandFitFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5474,6 +5476,87 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
         expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
     });
 });
+
+describe('judgeGalleryAssetBrandFit (Judgment 79)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('uses deterministic fallback when judgments are disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const verdict = await judgeGalleryAssetBrandFit({
+            promptUsed: 'neon synthwave album cover with retro cassette',
+            brandVibe: 'neon synthwave futuristic',
+            aestheticTags: ['retro', 'cassette', 'analog'],
+        });
+        expect(verdict.score).toBe(5);
+        expect(verdict.label).toBe('perfect_match');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('falls back to mismatch for prompts containing quality defect words offline', () => {
+        const verdict = deterministicGalleryBrandFitFallback({
+            promptUsed: 'generic stock photo watermark amateur blurry mess',
+            brandVibe: 'cinematic pro',
+        });
+        expect(verdict.score).toBe(1);
+        expect(verdict.label).toBe('mismatch');
+    });
+
+    it('returns neutral score 3 for empty or generic prompts offline', () => {
+        const verdict = deterministicGalleryBrandFitFallback({
+            promptUsed: 'a landscape',
+            brandVibe: 'cyberpunk neon',
+        });
+        expect(verdict.score).toBe(3);
+        expect(verdict.label).toBe('neutral');
+    });
+
+    it('calls Jev online and returns the mapped 1-5 score and label', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const call = vi.fn(async () => ({
+            data: {
+                answers: {
+                    brand_fit: {
+                        score: 3, // mapped to 4 (strong_fit)
+                        confidence: 0.92,
+                    },
+                },
+            },
+        }));
+        mocks.httpsCallable.mockImplementation((name: unknown) => {
+            expect(name).toBe('typesafeJudge');
+            return call;
+        });
+
+        const verdict = await judgeGalleryAssetBrandFit({
+            promptUsed: 'dark cinematic portrait of an indie artist in moody studio lighting',
+            brandVibe: 'dark moody intimate acoustic indie',
+            aestheticTags: ['indie', 'film grain'],
+        });
+        expect(verdict.score).toBe(4);
+        expect(verdict.label).toBe('strong_fit');
+        expect(verdict.confidence).toBe(0.92);
+        expect(call).toHaveBeenCalled();
+    });
+
+    it('falls back cleanly when Jev fails online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev unreachable');
+        });
+
+        const verdict = await judgeGalleryAssetBrandFit({
+            promptUsed: 'retro disco glitter roller skates neon',
+            brandVibe: 'retro disco neon',
+            aestheticTags: ['glitter'],
+        });
+        expect(verdict.score).toBe(5);
+        expect(verdict.label).toBe('perfect_match');
+    });
+});
+
 
 
 
