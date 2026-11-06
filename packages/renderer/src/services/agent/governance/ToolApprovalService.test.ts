@@ -141,6 +141,32 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'other-session' })).toBe(false);
             expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1', args: { code: 'altered' } })).toBe(false);
         });
+
+        it('allows a validated report_bug approval to be resumed from another renderer session', () => {
+            const record = {
+                id: 'approval-1', agentId: 'generalist', toolName: 'report_bug',
+                args: { title: 'Approval gate is stuck', description: 'The approve button is disabled after reload.' },
+                riskTier: 'write' as const,
+                description: 'File a bug report and sync it to GitHub Issues',
+                status: 'pending' as const,
+                createdAt: 'server-timestamp' as never,
+                bindingSessionId: 'previous-renderer-session',
+            };
+            expect(toolApprovalService.canApproveInThisSession(record)).toBe(true);
+        });
+
+        it('keeps malformed or differently classified report approvals bound to their original session', () => {
+            const record = {
+                id: 'approval-1', agentId: 'generalist', toolName: 'report_bug',
+                args: { title: 'Approval gate is stuck', description: 'The approve button is disabled after reload.', executable: true },
+                riskTier: 'write' as const,
+                description: 'File a bug report and sync it to GitHub Issues',
+                status: 'pending' as const,
+                createdAt: 'server-timestamp' as never,
+                bindingSessionId: 'previous-renderer-session',
+            };
+            expect(toolApprovalService.canApproveInThisSession(record)).toBe(false);
+        });
     });
 
     describe('approve', () => {
@@ -189,6 +215,48 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'claimed', claimedAt: 'server-timestamp' }));
             expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({ status: 'executed' }));
             expect(mocks.updateDoc.mock.calls[2]?.[1]).toEqual({ status: 'executed', result: { success: true } });
+        });
+
+        it('executes a validated persisted report_bug through its stable registry handler after the originating session is gone', async () => {
+            const args = {
+                title: 'Approval gate is stuck',
+                description: 'The approve button is disabled after reload.',
+                severity: 'major',
+            };
+            const record = {
+                agentId: 'generalist', toolName: 'report_bug', args,
+                riskTier: 'write', description: 'File a bug report and sync it to GitHub Issues',
+                status: 'pending', createdAt: 'server-timestamp',
+                bindingSessionId: 'previous-renderer-session',
+            };
+            const reportBug = vi.fn().mockResolvedValue({ success: true, data: { issueUrl: 'https://github.com/example/repo/issues/1' } });
+            mocks.toolRegistry = { report_bug: reportBug };
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => record });
+
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(true);
+            expect(reportBug).toHaveBeenCalledWith(args);
+            expect(mocks.updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'approved' }));
+            expect(mocks.updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'claimed' }));
+            expect(mocks.updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'executed' }));
+        });
+
+        it('does not replay malformed persisted report_bug arguments', async () => {
+            const reportBug = vi.fn();
+            mocks.toolRegistry = { report_bug: reportBug };
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({
+                agentId: 'generalist', toolName: 'report_bug',
+                args: { title: 'Bad payload', description: 'Not a report', extraAction: 'delete everything' },
+                riskTier: 'write', description: 'File a bug report and sync it to GitHub Issues',
+                status: 'pending', createdAt: 'server-timestamp', bindingSessionId: 'previous-renderer-session',
+            }) });
+
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(false);
+            expect(reportBug).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).not.toHaveBeenCalled();
         });
 
         it('refuses a pending record without the original renderer binding', async () => {

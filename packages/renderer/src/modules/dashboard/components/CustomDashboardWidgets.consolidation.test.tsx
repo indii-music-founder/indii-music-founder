@@ -361,6 +361,23 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
             expect(screen.getByText('3 Gates Pending')).toBeInTheDocument();
             expect(screen.getByText('+1 more gate in Quick-Action Banner')).toBeInTheDocument();
         });
+
+        it('shows the report subject beside its approval action', () => {
+            mocks.onPendingApprovals.mockImplementation(callback => {
+                callback([{
+                    id: 'report-gate', toolName: 'report_bug', riskTier: 'write',
+                    description: 'File a bug report and sync it to GitHub Issues',
+                    args: { title: 'Approval gate stays disabled after reload' },
+                    status: 'pending', createdAt: Date.now(),
+                }]);
+                return vi.fn();
+            });
+
+            render(WIDGET_RENDERERS.approval_gates());
+
+            expect(screen.getByText('Report: Approval gate stays disabled after reload')).toBeInTheDocument();
+            expect(screen.getByTestId('gate-approve-report-gate')).toBeEnabled();
+        });
     });
 
     describe('Widget Migration & Deprecation Filtering', () => {

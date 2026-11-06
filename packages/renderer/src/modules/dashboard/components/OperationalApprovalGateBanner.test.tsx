@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
     onPendingApprovals: vi.fn(),
     approve: vi.fn(),
     deny: vi.fn(),
-    canApproveInThisSession: vi.fn(() => true),
+    canApproveInThisSession: vi.fn((_approval?: { toolName: string }) => true),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
 }));
@@ -115,6 +115,27 @@ describe('OperationalApprovalGateBanner', () => {
         expect(screen.getByTestId('banner-approve-btn')).toHaveAttribute('title', expect.stringMatching(/bound to another session/i));
         expect(screen.getByTestId('banner-deny-btn')).toBeEnabled();
         expect(screen.getByTestId('banner-deny-btn')).toHaveTextContent('Dismiss');
+    });
+
+    it('keeps a stable report_bug approval actionable after a renderer session changes', async () => {
+        mocks.canApproveInThisSession.mockImplementation((approval: { toolName: string }) => approval.toolName === 'report_bug');
+        mocks.onPendingApprovals.mockImplementation(callback => {
+            callback([{
+                id: 'old-report', toolName: 'report_bug', riskTier: 'write',
+                description: 'File a bug report and sync it to GitHub Issues', status: 'pending',
+                args: { title: 'Approval gate stays disabled after reload' },
+            }]);
+            return vi.fn();
+        });
+
+        render(<OperationalApprovalGateBanner />);
+
+        expect(screen.queryByText(/belongs to another session/i)).not.toBeInTheDocument();
+        expect(screen.getByText('Report: Approval gate stays disabled after reload')).toBeInTheDocument();
+        expect(screen.getByTestId('banner-approve-btn')).toBeEnabled();
+        fireEvent.click(screen.getByTestId('banner-approve-btn'));
+        await waitFor(() => expect(mocks.approve).toHaveBeenCalledWith('old-report'));
+        expect(mocks.toastSuccess).toHaveBeenCalledWith('Gate approved & executed');
     });
 
     it('dismisses an unavailable cross-session request with resubmission guidance', async () => {
