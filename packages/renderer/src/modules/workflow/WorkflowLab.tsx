@@ -10,7 +10,7 @@ import type { ModuleId } from '@/core/constants';
 import {
     Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen,
     Cpu, Zap, Clock, Music, Image, Mail, Filter, Webhook,
-    HelpCircle, BookOpen, MessageSquare, Settings
+    HelpCircle, BookOpen, MessageSquare, Settings, Layers, MessageSquareDiff
 } from 'lucide-react';
 import { WorkflowEngine } from './services/WorkflowEngine';
 import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
@@ -67,6 +67,12 @@ export default function WorkflowLab() {
     const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+    // AI Co-Pilot state
+    const [showAiEdit, setShowAiEdit] = useState(false);
+    const [aiEditInstruction, setAiEditInstruction] = useState('');
+    const [isAiEditing, setIsAiEditing] = useState(false);
+    const [isEncapsulating, setIsEncapsulating] = useState(false);
 
     // Stable reference to ReactFlowInstance — populated via WorkflowEditor's onInit callback.
     // Used to capture real viewport (pan/zoom) at save time instead of a hardcoded {0,0,1}.
@@ -161,6 +167,69 @@ export default function WorkflowLab() {
             ]
         });
         driverObj.drive();
+    };
+
+    // AI Co-Pilot: modify existing workflow from natural language instruction
+    const handleAiEditWorkflow = async () => {
+        const instruction = aiEditInstruction.trim();
+        if (!instruction || nodes.length === 0) return;
+        setIsAiEditing(true);
+        try {
+            const { modifyWorkflowWithAI } = await import('./services/workflowGenerator');
+            const current: SavedWorkflow = {
+                id: currentWorkflowId || 'canvas',
+                name: workflowName,
+                description: '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                viewport: rfInstanceRef.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 },
+                nodes,
+                edges
+            };
+            const updated = await modifyWorkflowWithAI(current, instruction);
+            setNodes(updated.nodes);
+            setEdges(updated.edges);
+            setAiEditInstruction('');
+            setShowAiEdit(false);
+            toastSuccess('Workflow updated by AI Co-Pilot 🎵');
+        } catch (e: unknown) {
+            logger.error('[WorkflowLab] AI edit failed', e);
+            toastError(`AI edit failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        } finally {
+            setIsAiEditing(false);
+        }
+    };
+
+    // Encapsulate selected nodes into a Micro-Workflow subgraph
+    const handleEncapsulateSelected = async () => {
+        const selectedIds = nodes.filter(n => n.selected).map(n => n.id);
+        if (selectedIds.length < 2) {
+            toastError('Select 2 or more nodes to encapsulate into a Micro-Workflow.');
+            return;
+        }
+        setIsEncapsulating(true);
+        try {
+            const { encapsulateSubgraph } = await import('./services/workflowGenerator');
+            const current: SavedWorkflow = {
+                id: currentWorkflowId || 'canvas',
+                name: workflowName,
+                description: '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                viewport: rfInstanceRef.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 },
+                nodes,
+                edges
+            };
+            const updated = encapsulateSubgraph(current, selectedIds, `Micro-Workflow (${selectedIds.length} steps)`);
+            setNodes(updated.nodes);
+            setEdges(updated.edges);
+            toastSuccess(`Encapsulated ${selectedIds.length} nodes into a Micro-Workflow 🧩`);
+        } catch (e: unknown) {
+            logger.error('[WorkflowLab] Encapsulate failed', e);
+            toastError(`Encapsulate failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        } finally {
+            setIsEncapsulating(false);
+        }
     };
 
     const handleRunWorkflow = async () => {
@@ -439,6 +508,48 @@ export default function WorkflowLab() {
                         >
                             <Sparkles size={16} />
                             Generate with AI
+                        </button>
+
+                        {/* AI Co-Pilot: Edit existing workflow */}
+                        <div className="rounded-lg border border-purple-500/20 bg-purple-900/5 overflow-hidden">
+                            <button
+                                onClick={() => setShowAiEdit(v => !v)}
+                                className="w-full py-2 px-4 text-purple-300 hover:text-white hover:bg-purple-900/20 font-bold flex items-center justify-center gap-2 transition-all text-sm"
+                            >
+                                <MessageSquareDiff size={15} />
+                                AI Edit Workflow
+                            </button>
+                            {showAiEdit && (
+                                <div className="px-3 pb-3 space-y-2">
+                                    <textarea
+                                        value={aiEditInstruction}
+                                        onChange={(e) => setAiEditInstruction(e.target.value)}
+                                        rows={2}
+                                        placeholder='e.g. "Add a Gatekeeper before distribution" or "Insert TikTok canvas video step"'
+                                        className="w-full bg-black/40 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none resize-none"
+                                        onKeyDown={(e) => { if (e.key === 'Enter' && e.metaKey) handleAiEditWorkflow(); }}
+                                    />
+                                    <button
+                                        onClick={handleAiEditWorkflow}
+                                        disabled={isAiEditing || !aiEditInstruction.trim() || nodes.length === 0}
+                                        className="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                                    >
+                                        {isAiEditing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                        {isAiEditing ? 'Editing...' : 'Apply Edit (⌘↵)'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Encapsulate selected nodes → Micro-Workflow */}
+                        <button
+                            onClick={handleEncapsulateSelected}
+                            disabled={isEncapsulating || nodes.filter(n => n.selected).length < 2}
+                            title="Select 2+ nodes then click to group them into a Micro-Workflow"
+                            className="w-full py-2 px-4 bg-pink-900/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-300 hover:text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-40"
+                        >
+                            {isEncapsulating ? <Loader2 size={15} className="animate-spin" /> : <Layers size={15} />}
+                            {isEncapsulating ? 'Grouping...' : `Encapsulate${nodes.filter(n => n.selected).length >= 2 ? ` (${nodes.filter(n => n.selected).length})` : ''}`}
                         </button>
 
                         <button
