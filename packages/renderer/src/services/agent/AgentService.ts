@@ -96,7 +96,6 @@ export class AgentService {
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
-    private responseCache = new Map<string, { text: string; thoughts: AgentThought[]; agentId: string }>();
     private syncDebounceTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
     private useStoreCache?: typeof import('@/core/store').useStore;
 
@@ -242,7 +241,6 @@ export class AgentService {
     }
 
     clearAccountBoundary(): void {
-        this.responseCache.clear();
         this.syncDebounceTimeouts.forEach(timeout => clearTimeout(timeout));
         this.syncDebounceTimeouts.clear();
         this.isProcessing = false;
@@ -293,17 +291,6 @@ export class AgentService {
             `Hey! Let's keep moving — what are we tackling?`,
         ];
         return activeReplies[agentId.length % activeReplies.length]!;
-    }
-
-    private shouldCacheCompletedResponse(
-        isGenerationRequest: boolean,
-        message: AgentMessage | undefined,
-    ): boolean {
-        return Boolean(
-            !isGenerationRequest &&
-            message?.text &&
-            !getPersonaResponseMetadata(message.metadata),
-        );
     }
 
     /**
@@ -424,34 +411,8 @@ export class AgentService {
                 ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
             }
 
-            // Cache Check (Item 36): Only cache small conversational/lookup queries, not generation requests
-            const cacheKey = `${state.activeSessionId}:${redactedText.toLowerCase().trim()}`;
-            if (!isBoardroomMode && this.responseCache.has(cacheKey) && !isGenerationRequest) {
-                const cached = this.responseCache.get(cacheKey)!;
-                logger.debug(`[AgentService] [CACHE] Cache Hit: ${cacheKey}`);
-
-                const responseId = uuidv4();
-                const msgPayload: AgentMessage = {
-                    id: responseId,
-                    role: 'model',
-                    text: cached.text,
-                    thoughts: cached.thoughts,
-                    timestamp: Date.now(),
-                    isStreaming: false,
-                    agentId: cached.agentId
-                };
-
-                if (isBoardroomMode) {
-                    this.appendRunMessage(store, msgPayload, runSessionId);
-                } else {
-                    this.appendRunMessage(store, msgPayload, runSessionId);
-                }
-                const cacheHitState = store.getState();
-                if (typeof cacheHitState.setAgentProcessing === 'function') {
-                    cacheHitState.setAgentProcessing(false);
-                }
-                return;
-            }
+            // Every turn resolves current context and executes its selected route.
+            // Repeated text can refer to changed assets, approvals, or external state.
 
             // 1. Resolve Context
             const context = await this.contextPipeline.buildContext();
@@ -496,15 +457,6 @@ export class AgentService {
                 const resultMsg = isBoardroomMode 
                     ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
                     : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
-
-                // After success, populate cache if not a generation request
-                if (!isBoardroomMode && this.shouldCacheCompletedResponse(isGenerationRequest, resultMsg)) {
-                    this.responseCache.set(cacheKey, {
-                        text: resultMsg!.text,
-                        thoughts: resultMsg!.thoughts || [],
-                        agentId: resultMsg!.agentId || 'generalist'
-                    });
-                }
 
                 // Trigger Autorater for feedback and fine-tuning registration
                 if (resultMsg && auth.currentUser) {

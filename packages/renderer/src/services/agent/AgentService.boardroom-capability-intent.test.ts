@@ -525,39 +525,34 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         });
     });
 
-    it('refuses to cache a personalized response whose assignment is bound to one response ID', () => {
-        const service = new AgentService(async ({ response }) => ({ text: response.text }));
-        const shouldCache = (service as unknown as {
-            shouldCacheCompletedResponse: (isGeneration: boolean, message: Record<string, unknown>) => boolean;
-        }).shouldCacheCompletedResponse.bind(service);
-
-        expect(shouldCache(false, {
-            id: 'response-cache',
-            role: 'model',
-            text: 'Personalized response',
-            timestamp: Date.now(),
-            metadata: {
-                personaResponse: {
-                    personaId: 'manager',
-                    responseId: 'response-cache',
-                    isControlGroup: false,
-                    effectiveFaderValues: {
-                        riskTolerance: 50,
-                        brevity: 50,
-                        directness: 50,
-                        formality: 50,
-                        reasoningTransparency: 50,
-                    },
-                    measurementStatus: 'recorded',
-                },
-            },
-        })).toBe(false);
-        expect(shouldCache(false, {
-            id: 'ordinary-cache',
-            role: 'model',
-            text: 'Ordinary response',
-            timestamp: Date.now(),
-        })).toBe(true);
+    it('executes repeated requests against fresh context instead of replaying an old response', async () => {
+        const messages: Array<{ id: string; role: string; text: string }> = [];
+        const state = {
+            conversationMode: 'direct', activeSessionId: 'repeat-session',
+            currentProjectId: null, agentHistory: messages, generatedHistory: [],
+            addMessageToSession: vi.fn((_session: string, message: typeof messages[number]) => messages.push(message)),
+            setAgentProcessing: vi.fn(),
+            updateAgentMessage: vi.fn(),
+        };
+        const service = new AgentService();
+        const addSystemMessage = vi.fn();
+        const buildContext = vi.fn().mockResolvedValueOnce({ revision: 1 }).mockResolvedValueOnce({ revision: 2 });
+        const executeFlow = vi.fn(async (_text: string, _attachments: unknown, context: { revision: number }, id: string) => {
+            messages.find(message => message.id === id)!.text = `Current outcome ${context.revision}`;
+        });
+        Object.assign(service, {
+            isWarmedUp: true,
+            getStore: vi.fn(async () => ({ getState: () => state, setState: vi.fn() })),
+            contextPipeline: { buildContext }, executeFlow, addSystemMessage,
+            triggerAutorater: vi.fn().mockResolvedValue(undefined),
+        });
+        await service.sendMessage('Check this action');
+        await service.sendMessage('Check this action');
+        expect(addSystemMessage).not.toHaveBeenCalled();
+        expect(buildContext).toHaveBeenCalledTimes(2);
+        expect(executeFlow).toHaveBeenCalledTimes(2);
+        expect(messages.filter(message => message.role === 'model').map(message => message.text))
+            .toEqual(['Current outcome 1', 'Current outcome 2']);
     });
 
     it('sends a tool-backed specialist result through the production finalizer without altering artifacts', async () => {
