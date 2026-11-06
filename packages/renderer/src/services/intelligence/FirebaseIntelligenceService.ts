@@ -1215,12 +1215,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (error instanceof AppException) return error;
         const msg = error instanceof Error ? error.message : String(error);
 
-        // Handle abort signals explicitly (these are retryable)
-        if (msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
+        // Cancellation ends this attempt; never resubmit work after an abort.
+        if ((error instanceof Error && error.name === 'AbortError') || msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
             return new AppException(
                 AppErrorCode.CANCELLED,
-                'AI Request was cancelled or timed out. Please try again.',
-                { retryable: true }
+                'AI Request was cancelled.',
+                { retryable: false }
             );
         }
 
@@ -1313,6 +1313,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 // and failed before the first chunk. Preserve the user's request
                 // for an explicit retry instead of risking duplicate spend/work.
                 const isRetryable = appException.details?.retryable
+                    && appException.code !== AppErrorCode.CANCELLED
                     && appException.code !== AppErrorCode.SPECIALIST_UNAVAILABLE
                     && appException.code !== AppErrorCode.GENERATION_CAPACITY_LIMITED;
 

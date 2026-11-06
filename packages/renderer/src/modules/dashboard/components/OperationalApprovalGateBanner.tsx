@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldAlert, Check, X, CheckCheck } from 'lucide-react';
 import { toolApprovalService, type PendingToolApproval } from '@/services/agent/governance/ToolApprovalService';
@@ -12,6 +12,7 @@ export interface OperationalApprovalGateBannerProps {
 export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }: OperationalApprovalGateBannerProps) {
     const [pendingApprovals, setPendingApprovals] = useState<(PendingToolApproval & { id: string })[]>([]);
     const [approvalBusyId, setApprovalBusyId] = useState<string | null>(null);
+    const dispatchBusy = useRef(false);
     const toast = useToast();
 
     useEffect(() => {
@@ -26,6 +27,8 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
     }
 
     const handleApprove = async (id: string) => {
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setApprovalBusyId(id);
         try {
             const res = await toolApprovalService.approve(id);
@@ -46,11 +49,14 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                 toast.error('Failed to execute gate approval');
             }
         } finally {
+            dispatchBusy.current = false;
             setApprovalBusyId(null);
         }
     };
 
     const handleDeny = async (id: string) => {
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setApprovalBusyId(id);
         try {
             await toolApprovalService.deny(id, 'User denied from dashboard quick-action gate');
@@ -63,11 +69,14 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                 toast.error('Failed to deny gate');
             }
         } finally {
+            dispatchBusy.current = false;
             setApprovalBusyId(null);
         }
     };
 
     const handleApproveAll = async () => {
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setApprovalBusyId('all');
         let successCount = 0;
         let failCount = 0;
@@ -92,6 +101,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         if (failCount > 0 && toast?.error) {
             toast.error(`${failCount} gate approval${failCount > 1 ? 's' : ''} encountered issues`);
         }
+        dispatchBusy.current = false;
         setApprovalBusyId(null);
     };
 
@@ -146,7 +156,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                     {/* Pending Approvals List */}
                     <div className={`grid gap-2.5 ${isMultiple ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
                         {pendingApprovals.map((item, index) => {
-                            const isBusy = approvalBusyId === item.id || approvalBusyId === 'all';
+                            const isBusy = approvalBusyId !== null;
                             const canApprove = toolApprovalService.canApproveInThisSession(item);
                             const riskColor = item.riskTier === 'destructive'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'

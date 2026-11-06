@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
-import { AppErrorCode } from '@/shared/types/errors';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { CostPredictor } from '../utils/CostPredictor';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 
@@ -111,6 +111,14 @@ describe('FirebaseIntelligenceService Enhancements', () => {
             const operation = vi.fn().mockRejectedValue(new Error('503 Service Unavailable'));
             await expect(service.withRetry(operation, 3, 10000, controller.signal))
                 .rejects.toMatchObject({ code: AppErrorCode.CANCELLED });
+        it.each([
+            new DOMException('The operation was aborted', 'AbortError'),
+            new DOMException('', 'AbortError'),
+            new Error('signal is aborted'),
+            new AppException(AppErrorCode.CANCELLED, 'Cancelled', { retryable: true }),
+        ])('never resubmits cancelled work without an external signal', async error => {
+            const operation = vi.fn().mockRejectedValue(error);
+            await expect(service.withRetry(operation, 3, 1)).rejects.toMatchObject({ code: AppErrorCode.CANCELLED });
             expect(operation).toHaveBeenCalledTimes(1);
         });
 

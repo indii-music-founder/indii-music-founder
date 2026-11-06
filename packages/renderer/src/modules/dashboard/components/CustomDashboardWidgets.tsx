@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Logger } from '@/core/logger/Logger';
 import {
     Music,
@@ -1342,6 +1342,7 @@ function ProjectTimelineWidget() {
 function ApprovalGatesWidget() {
     const [approvals, setApprovals] = useState<(PendingToolApproval & { id: string })[]>([]);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const dispatchBusy = useRef(false);
     const toast = useToast();
 
     useEffect(() => {
@@ -1353,6 +1354,8 @@ function ApprovalGatesWidget() {
 
     const handleApprove = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setBusyId(id);
         try {
             const result = await toolApprovalService.approve(id);
@@ -1373,12 +1376,15 @@ function ApprovalGatesWidget() {
             Logger.error('ApprovalGatesWidget', 'Approve error', err);
             toast?.error?.('Failed to approve');
         } finally {
+            dispatchBusy.current = false;
             setBusyId(null);
         }
     };
 
     const handleDeny = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
+        if (dispatchBusy.current) return;
+        dispatchBusy.current = true;
         setBusyId(id);
         try {
             await toolApprovalService.deny(id, 'Denied from Quick-Action Approval Gate');
@@ -1391,6 +1397,7 @@ function ApprovalGatesWidget() {
             Logger.error('ApprovalGatesWidget', 'Deny error', err);
             toast?.error?.('Failed to deny');
         } finally {
+            dispatchBusy.current = false;
             setBusyId(null);
         }
     };
@@ -1429,7 +1436,8 @@ function ApprovalGatesWidget() {
                 {hasPending ? (
                     <div className="space-y-2 max-h-[130px] overflow-y-auto custom-scrollbar pr-1">
                         {approvals.slice(0, 2).map((item) => {
-                            const isBusy = busyId === item.id;
+                            const isBusy = busyId !== null;
+                            const canApprove = toolApprovalService.canApproveInThisSession(item);
                             const riskColor = item.riskTier === 'destructive'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                 : item.riskTier === 'write'
@@ -1453,11 +1461,12 @@ function ApprovalGatesWidget() {
                                         </div>
                                     </div>
 
+                                    {!canApprove && <p className="text-[10px] text-amber-300">Requested in another session. Approve it there, or deny it here and request it again.</p>}
                                     {/* Quick Actions: Approve / Deny */}
                                     <div className="flex items-center gap-1.5 pt-1">
                                         <button
                                             type="button"
-                                            disabled={isBusy}
+                                            disabled={isBusy || !canApprove}
                                             onClick={(e) => handleApprove(item.id, e)}
                                             data-testid={`gate-approve-${item.id}`}
                                             className="flex-1 py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-black font-bold text-[9px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all disabled:opacity-50"

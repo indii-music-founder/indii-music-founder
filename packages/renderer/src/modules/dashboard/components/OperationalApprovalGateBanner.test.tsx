@@ -114,6 +114,31 @@ describe('OperationalApprovalGateBanner', () => {
         expect(screen.getByTestId('banner-deny-btn')).toBeEnabled();
     });
 
+    it('blocks other approval actions until the active dispatch settles', async () => {
+        let finish!: (result: { success: boolean }) => void;
+        mocks.approve.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+        mocks.onPendingApprovals.mockImplementation(callback => {
+            callback([
+                { id: 'first', toolName: 'send_email', riskTier: 'write', description: 'Send email', status: 'pending' },
+                { id: 'second', toolName: 'publish_release', riskTier: 'write', description: 'Publish release', status: 'pending' },
+            ]);
+            return vi.fn();
+        });
+        render(<OperationalApprovalGateBanner />);
+        fireEvent.click(screen.getByTestId('banner-approve-btn'));
+        expect(screen.getByTestId('banner-approve-btn-second')).toBeDisabled();
+        expect(screen.getByTestId('banner-deny-btn-second')).toBeDisabled();
+        expect(screen.getByTestId('banner-approve-all-btn')).toBeDisabled();
+        fireEvent.click(screen.getByTestId('banner-approve-btn-second'));
+        fireEvent.click(screen.getByTestId('banner-deny-btn-second'));
+        expect(mocks.approve).toHaveBeenCalledTimes(1);
+        expect(mocks.deny).not.toHaveBeenCalled();
+        finish({ success: false });
+        await waitFor(() => expect(screen.getByTestId('banner-deny-btn-second')).toBeEnabled());
+        fireEvent.click(screen.getByTestId('banner-deny-btn-second'));
+        await waitFor(() => expect(mocks.deny).toHaveBeenCalledWith('second', expect.any(String)));
+    });
+
     it('approves a single gate and displays success toast', async () => {
         mocks.onPendingApprovals.mockImplementation((callback) => {
             callback([

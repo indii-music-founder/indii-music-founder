@@ -84,6 +84,7 @@ import { clampTextStreamOutputTokens, minimumTextStreamReservationCost, reservat
 import { resolveVertexEndpointResource } from './lib/vertexRouting';
 import {
     classifySpecialistFailure,
+    specialistFailureDiagnostics,
     SpecialistUnavailableError,
 } from './lib/specialistAvailability';
 
@@ -1546,6 +1547,7 @@ export const generateContentStream = onRequest(
                     if (isFineTunedEndpoint) {
                         const unavailable = classifySpecialistFailure(streamErr);
                         logger.error('[generateContentStream] Specialist provider request failed closed.', {
+                            ...specialistFailureDiagnostics(streamErr),
                             category: unavailable.category,
                             code: unavailable.code,
                             retryable: unavailable.retryable,
