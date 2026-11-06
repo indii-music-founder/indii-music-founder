@@ -722,7 +722,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                                         </div>
                                     </div>
                                 ) : (
-                                    <img src={att.base64} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
+                                    <img src={att.base64.startsWith('data:') ? att.base64 : `data:${att.mimeType || 'image/png'};base64,${att.base64}`} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
                                 )}
                             </motion.div>
                         ))}
