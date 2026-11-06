@@ -109,6 +109,8 @@ import {
     deterministicGalleryBrandFitFallback,
     judgePlpVariantAdFormat,
     deterministicPlpVariantAdFallback,
+    judgeCreativeJourneyIntent,
+    deterministicCreativeJourneyFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5644,6 +5646,91 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
         expect(verdict.formatTag).toBe('STORY_REEL');
     });
 });
+
+describe('judgeCreativeJourneyIntent (Judgment 81)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('uses deterministic fallback when judgments are disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const verdict = await judgeCreativeJourneyIntent({
+            hasAudio: true,
+            prompt: 'master track finished',
+        });
+        expect(verdict.recommendedJourney).toBe('music_video');
+        expect(verdict.actionLabel).toBe('Open Storyboard');
+        expect(verdict.targetViewMode).toBe('video_production');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('falls back to album artwork when in image mode offline', () => {
+        const verdict = deterministicCreativeJourneyFallback({
+            currentMode: 'image',
+            prompt: 'vintage vinyl jacket cover for debut album',
+        });
+        expect(verdict.recommendedJourney).toBe('album_artwork');
+        expect(verdict.targetGenMode).toBe('image');
+        expect(verdict.actionLabel).toBe('Design Cover Art');
+    });
+
+    it('identifies social cutdown intent from prompt offline', () => {
+        const verdict = deterministicCreativeJourneyFallback({
+            prompt: 'tiktok vertical teaser clip for upcoming single',
+        });
+        expect(verdict.recommendedJourney).toBe('social_clips');
+        expect(verdict.actionLabel).toBe('Create Social Clips');
+    });
+
+    it('identifies raw phone footage intent offline', () => {
+        const verdict = deterministicCreativeJourneyFallback({
+            prompt: 'raw rehearsal phone footage take 2',
+        });
+        expect(verdict.recommendedJourney).toBe('phone_recording');
+        expect(verdict.actionLabel).toBe('Import Footage');
+    });
+
+    it('calls Jev online and maps the resolved journey', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const call = vi.fn(async () => ({
+            data: {
+                answers: {
+                    journey_intent: {
+                        choice: 'band_references',
+                        confidence: 0.93,
+                    },
+                },
+            },
+        }));
+        mocks.httpsCallable.mockImplementation((name: unknown) => {
+            expect(name).toBe('typesafeJudge');
+            return call;
+        });
+
+        const verdict = await judgeCreativeJourneyIntent({
+            prompt: 'consistent face portraits of lead singer on stage',
+        });
+        expect(verdict.recommendedJourney).toBe('band_references');
+        expect(verdict.actionLabel).toBe('Open Roster');
+        expect(verdict.confidence).toBe(0.93);
+        expect(call).toHaveBeenCalled();
+    });
+
+    it('falls back cleanly when Jev fails online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev timeout');
+        });
+
+        const verdict = await judgeCreativeJourneyIntent({
+            hasAudio: true,
+        });
+        expect(verdict.recommendedJourney).toBe('music_video');
+        expect(verdict.actionLabel).toBe('Open Storyboard');
+    });
+});
+
 
 
 

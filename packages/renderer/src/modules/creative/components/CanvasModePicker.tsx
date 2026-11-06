@@ -20,7 +20,7 @@ export default function CanvasModePicker() {
 
     return (
         <div
-            className="flex shrink-0 items-center rounded-full border border-white/10 bg-black/60 p-1 shadow-lg backdrop-blur-md"
+            className="flex shrink-0 items-center rounded-xl border border-white/8 bg-black/60 p-0.5 shadow-lg backdrop-blur-md"
             data-testid="canvas-mode-picker"
         >
             {MODES.map((mode) => {
@@ -34,13 +34,13 @@ export default function CanvasModePicker() {
                         aria-label={mode.label}
                         aria-pressed={isActive}
                         data-testid={`canvas-mode-${mode.id}`}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                             isActive 
-                                ? 'bg-white/20 text-white shadow-sm' 
-                                : 'text-gray-400 hover:text-white hover:bg-white/10'
+                                ? 'bg-dept-creative/20 text-white border border-dept-creative/40 shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.15)]' 
+                                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                         }`}
                     >
-                        <Icon size={14} className={isActive ? 'text-green-400' : 'opacity-70'} />
+                        <Icon size={13} className={isActive ? 'text-dept-creative' : 'opacity-70'} />
                         <span className={isActive ? 'block' : 'hidden sm:block'}>{mode.label}</span>
                     </button>
                 );
