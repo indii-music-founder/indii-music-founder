@@ -1208,7 +1208,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 // Compress oversized raster attachments BEFORE serialization.
                 // Raw base64 images (attachments and the auto-injected
-                // generated artifact above) blew the backend 200K-char guard
+                // generated artifact above) can exceed the backend contents guard
                 // and surfaced as an opaque INTERNAL_ERROR (ERROR_LEDGER
                 // 2026-08-27). Fail-open: compression errors keep the original.
                 const streamAttachments = await compressStreamImageAttachments(finalAttachments);
@@ -1224,7 +1224,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 }];
 
                 // Server-guard mirror: fail-safe auto-compaction before network call.
-                // If the initial payload exceeds the 10MB budget, auto-heal by:
+                // If the initial payload exceeds the 800K-character budget, auto-heal by:
                 // 1. Eliding raw base64 data URLs in prompt text.
                 // 2. Aggressively compressing attachments (overridePerImageTarget = 250_000).
                 // Only halt if even after compaction the payload cannot fit within budget.

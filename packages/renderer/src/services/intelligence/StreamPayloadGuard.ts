@@ -1,6 +1,6 @@
 /**
  * Client-side mirror of the server's `generateContentStream` payload guard
- * (packages/firebase/src/index.ts — `JSON.stringify(contents).length > 200_000`
+ * (packages/firebase/src/index.ts — `JSON.stringify(contents).length > 800_000`
  * → HTTP 413 "Content payload is too large.").
  *
  * Why this exists (ERROR_LEDGER 2026-08-27, agent chat 413 → bogus verdict):
@@ -131,8 +131,8 @@ async function compressImageAttachment(
 /**
  * Compress oversized raster image attachments for the AI stream boundary.
  * Dynamically computes a per-image target when multiple images are attached
- * so the total attachment payload remains safely below 6MB (leaving plenty of
- * headroom for prompt text, history, and tools within the 10MB ceiling).
+ * so image bytes share at most 600K characters of the 800K contents limit.
+ * The remaining space is reserved for prompt text and serialization overhead.
  * Non-image attachments (audio, video, pdf) pass through untouched.
  */
 export async function compressStreamImageAttachments<
@@ -143,10 +143,10 @@ export async function compressStreamImageAttachments<
     const imageCount = attachments.filter(
         att => att && typeof att.base64 === 'string' && att.mimeType?.startsWith('image/')
     ).length;
-    // Shared attachment budget: max 6M chars across all images combined
-    const perImageTarget = overridePerImageTarget ?? Math.min(
-        IMAGE_ATTACHMENT_TARGET_BASE64_CHARS,
-        Math.floor(6_000_000 / Math.max(1, imageCount))
+    // Overrides tighten each image's target; they never bypass the aggregate limit.
+    const perImageTarget = Math.min(
+        overridePerImageTarget ?? IMAGE_ATTACHMENT_TARGET_BASE64_CHARS,
+        Math.floor((AGENT_STREAM_CHAR_BUDGET * 0.75) / Math.max(1, imageCount))
     );
 
     return Promise.all(attachments.map(async (att): Promise<T> => {

@@ -55,6 +55,16 @@ describe('assertContentsWithinStreamBudget', () => {
 });
 
 describe('compressStreamImageAttachments', () => {
+    it.each([undefined, 250_000])('shares the backend contents budget across images with target %s', async target => {
+        const images = Array.from({ length: 4 }, () => ({ mimeType: 'image/png', base64: 'A'.repeat(200_000) }));
+        compressImage.mockResolvedValue({ blob: new Blob(['x']), dataUri: `data:image/jpeg;base64,${'B'.repeat(140_000)}` });
+        const result = await compressStreamImageAttachments(images, target);
+        expect(compressImage).toHaveBeenCalledTimes(4);
+        expect(result.reduce((sum, image) => sum + image.base64.length, 0)).toBeLessThanOrEqual(600_000);
+        expect(images[0]!.base64.length).toBe(200_000);
+        compressImage.mockReset();
+    });
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
