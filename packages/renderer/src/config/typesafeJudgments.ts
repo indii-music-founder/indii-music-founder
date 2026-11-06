@@ -4250,7 +4250,8 @@ export async function judgeSocialAudioSnippetSelection(
         const result = await judgeFn({
             state: {
                 targetDuration: targetDurationSeconds,
-                sections: sections.map((s) => ({
+                candidates: sections.map((s, index) => ({
+                    candidate: index + 1,
                     sec: s.section,
                     start: s.startTimeSeconds,
                     end: s.endTimeSeconds,
@@ -4259,6 +4260,12 @@ export async function judgeSocialAudioSnippetSelection(
                 })),
             },
             questions: {
+                candidate: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Choose the single candidate number whose timestamped moment is the strongest self-contained teaser. Compare the supplied lyric, energy, section, and start/end times. Return the candidate number exactly as shown.',
+                    criteria: sections.map((s, index) => `${index + 1}: ${s.section}, ${s.startTimeSeconds}-${s.endTimeSeconds}s, ${s.energyLevel} energy`).join('; '),
+                },
                 section: {
                     type: 'choice' as const,
                     instructions:
@@ -4294,11 +4301,15 @@ export async function judgeSocialAudioSnippetSelection(
 
         const ans = result.data.answers;
         const secAns = ans?.section as { choice?: unknown } | undefined;
+        const candidateAns = ans?.candidate as { choice?: unknown } | undefined;
         const vocAns = ans?.immediate_vocal as { noul?: unknown } | number | undefined;
         const virAns = ans?.viral_potential as { score?: unknown } | number | undefined;
 
-        const resolvedSec = (typeof secAns?.choice === 'string' ? secAns.choice : fallbackSection) as SongSectionMetadata['section'];
-        const matchedSection = sections.find((s) => s.section === resolvedSec) || peakSection;
+        const selectedCandidate = Number.parseInt(String(candidateAns?.choice ?? ''), 10) - 1;
+        const matchedSection = Number.isInteger(selectedCandidate) && selectedCandidate >= 0 && selectedCandidate < sections.length
+            ? sections[selectedCandidate]
+            : sections.find((s) => s.section === secAns?.choice) || peakSection;
+        const resolvedSec = matchedSection.section;
         const sTime = matchedSection.startTimeSeconds;
         const eTime = Math.min(matchedSection.endTimeSeconds, sTime + targetDurationSeconds);
 

@@ -10,6 +10,11 @@ describe('readModuleDeepLink', () => {
         expect(readModuleDeepLink('?source=founder&module=distribution')).toBe('distribution');
     });
 
+    it('routes campaign funnel links into Flow-Be even when they include a creative module parameter', () => {
+        expect(readModuleDeepLink('?module=creative&mode=free_demo')).toBe('workflow');
+        expect(readModuleDeepLink('?demo=true')).toBe('workflow');
+    });
+
     it('returns null for unknown modules rather than crashing navigation', () => {
         expect(readModuleDeepLink('?module=not-a-real-module')).toBeNull();
     });

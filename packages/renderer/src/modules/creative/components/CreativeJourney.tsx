@@ -10,7 +10,7 @@ import {
     type CreativeJourneyIntentVerdict,
 } from '@/config/typesafeJudgments';
 import { useVideoEditorStore } from '../video/store/videoEditorStore';
-import { FreeMiniCampaignModal } from './FreeMiniCampaignModal';
+import { instantiateQuickWorkflow } from '@/modules/workflow/services/quickWorkflowTemplates';
 
 const CharacterLibrary = lazy(() => import('./CharacterLibrary').then(module => ({ default: module.CharacterLibrary })));
 
@@ -27,15 +27,10 @@ export default function CreativeJourney() {
     const [isFolded, setIsFolded] = useState(false);
     const [isJourneysOpen, setIsJourneysOpen] = useState(false);
     const [faces, setFaces] = useState(false);
-    const [isMiniCampaignOpen, setIsMiniCampaignOpen] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        const params = new URLSearchParams(window.location.search);
-        return params.get('mode') === 'free_demo' || params.get('demo') === 'true';
-    });
     const [journeyHint, setJourneyHint] = useState('');
     const journeysToggleRef = useRef<HTMLButtonElement>(null);
 
-    const { creativePrompt, generationMode, viewMode, activeReferenceImage, videoInputs, setViewMode, setGenerationMode } = useStore(useShallow(state => ({
+    const { creativePrompt, generationMode, viewMode, activeReferenceImage, videoInputs, setViewMode, setGenerationMode, setModule, setNodes, setEdges } = useStore(useShallow(state => ({
         creativePrompt: state.creativePrompt,
         generationMode: state.generationMode,
         viewMode: state.viewMode,
@@ -43,6 +38,9 @@ export default function CreativeJourney() {
         videoInputs: state.videoInputs,
         setViewMode: state.setViewMode,
         setGenerationMode: state.setGenerationMode,
+        setModule: state.setModule,
+        setNodes: state.setNodes,
+        setEdges: state.setEdges,
     })));
     const hasAudio = useVideoEditorStore(state => Boolean(state.inputAudio) || Boolean(state.project?.clips?.some(clip => clip.type === 'audio')));
     const hasVideo = useVideoEditorStore(state => Boolean(state.project?.clips?.some(clip => clip.type === 'video')));
@@ -83,9 +81,11 @@ export default function CreativeJourney() {
         setJourneyHint('');
         setFaces(false);
         if (intent === 'album_artwork') {
-            setViewMode('canvas');
-            setGenerationMode('image');
-            setJourneyHint('Create release artwork or promo portraits. Add artist or band references when they help.');
+            const workflow = instantiateQuickWorkflow('template-simple-image');
+            if (!workflow) return;
+            setNodes(workflow.nodes);
+            setEdges(workflow.edges);
+            setModule('workflow');
             return;
         }
         if (intent === 'band_references') {
@@ -94,8 +94,24 @@ export default function CreativeJourney() {
             return;
         }
         if (intent === 'guided_campaign') {
-            setIsMiniCampaignOpen(true);
+            const params = new URLSearchParams(window.location.search);
+            params.set('mode', 'free_demo');
+            window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}${window.location.hash}`);
+            const workflow = instantiateQuickWorkflow('template-video-teaser');
+            if (workflow) {
+                setNodes(workflow.nodes);
+                setEdges(workflow.edges);
+                setModule('workflow');
+            }
             setJourneyHint('Guided campaign: prepare a track and visual, review the pack, then choose whether to save it.');
+            return;
+        }
+        if (intent === 'music_video') {
+            const workflow = instantiateQuickWorkflow('template-video-teaser');
+            if (!workflow) return;
+            setNodes(workflow.nodes);
+            setEdges(workflow.edges);
+            setModule('workflow');
             return;
         }
         const videoMode = intent === 'phone_recording' ? 'director' : intent === 'social_clips' ? 'editor' : 'storyboard';
@@ -199,7 +215,6 @@ export default function CreativeJourney() {
                     <Suspense fallback={<p className="text-xs text-gray-400">Loading references…</p>}><CharacterLibrary /></Suspense>
                 </div>
             )}
-            <FreeMiniCampaignModal isOpen={isMiniCampaignOpen} onClose={() => setIsMiniCampaignOpen(false)} />
         </section>
     );
 }

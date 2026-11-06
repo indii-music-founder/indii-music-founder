@@ -178,10 +178,14 @@ describe('EmptyState homepage discovery', () => {
         expect(musicVideoBtn).toBeInTheDocument();
 
         fireEvent.click(coverArtBtn);
-        expect(onCommandSubmit).toHaveBeenCalledWith('/design-cover');
+        expect(mocks.setNodes).toHaveBeenCalledWith(expect.arrayContaining([
+            expect.objectContaining({ data: expect.objectContaining({ nodeType: 'input' }) }),
+        ]));
+        expect(mocks.setModule).toHaveBeenCalledWith('workflow');
 
         fireEvent.click(musicVideoBtn);
-        expect(onCommandSubmit).toHaveBeenCalledWith('/create-video');
+        expect(mocks.setNodes).toHaveBeenCalledTimes(2);
+        expect(mocks.setModule).toHaveBeenCalledWith('workflow');
 
         // Project Timeline is promoted in suggestions
         const projectTimeline = screen.getByRole('button', { name: 'Project Timeline' });

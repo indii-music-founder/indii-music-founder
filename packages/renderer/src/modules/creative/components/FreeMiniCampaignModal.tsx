@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     X,
     Upload,
@@ -19,6 +19,7 @@ import {
     type SaveOrDeleteResult,
 } from '@/services/creative/FreeMiniCampaignService';
 import { useToast } from '@/core/context/ToastContext';
+import { judgeSocialAudioSnippetSelection } from '@/config/typesafeJudgments';
 
 interface FreeMiniCampaignModalProps {
     isOpen: boolean;
@@ -30,6 +31,8 @@ interface FreeMiniCampaignModalProps {
 export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
     isOpen,
     onClose,
+    userId,
+    projectId,
 }) => {
     const toast = useToast();
     const [step, setStep] = useState<'intake' | 'preview' | 'decision'>('intake');
@@ -41,12 +44,40 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
     const [artistName, setArtistName] = useState<string>('');
     const [durationSeconds, setDurationSeconds] = useState<number>(180);
     const [loading, setLoading] = useState<boolean>(false);
+    const [loadingLabel, setLoadingLabel] = useState('Preparing your campaign assets...');
     const [error, setError] = useState<string | null>(null);
     const [pack, setPack] = useState<MiniCampaignPack | null>(null);
     const [decisionResult, setDecisionResult] = useState<SaveOrDeleteResult | null>(null);
     const [isPlayingTeaser, setIsPlayingTeaser] = useState<boolean>(false);
 
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+    const previewUrlsRef = useRef<Set<string>>(new Set());
+
+    const releasePreviewUrls = () => {
+        for (const url of previewUrlsRef.current) {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        }
+        previewUrlsRef.current.clear();
+    };
+
+    useEffect(() => () => {
+        for (const url of previewUrlsRef.current) {
+            if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+        }
+        previewUrlsRef.current.clear();
+    }, []);
+
+    const handleClose = () => {
+        releasePreviewUrls();
+        setAudioUrl('');
+        setVisualUrl('');
+        setAudioFile(null);
+        setVisualFile(null);
+        setPack(null);
+        setDecisionResult(null);
+        setStep('intake');
+        onClose();
+    };
 
     if (!isOpen) return null;
 
@@ -59,6 +90,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
             FreeMiniCampaignService.validateAudioFile(file);
             setAudioFile(file);
             const objectUrl = URL.createObjectURL(file);
+            previewUrlsRef.current.add(objectUrl);
             setAudioUrl(objectUrl);
 
             // Auto-fill title from filename
@@ -82,6 +114,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
             FreeMiniCampaignService.validateVisualFile(file);
             setVisualFile(file);
             const objectUrl = URL.createObjectURL(file);
+            previewUrlsRef.current.add(objectUrl);
             setVisualUrl(objectUrl);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Invalid visual file');
@@ -100,12 +133,18 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
         }
 
         setLoading(true);
+        setLoadingLabel('Gemini is listening for strong teaser moments...');
         setError(null);
 
         try {
-            const [squareVisualUrl, storyVisualUrl] = await Promise.all([
+            const sections = await FreeMiniCampaignService.analyzeSongForHook(audioFile, userId || '', durationSeconds);
+            setLoadingLabel('Jev is choosing the strongest teaser moment...');
+            const hook = await judgeSocialAudioSnippetSelection(sections, 15);
+            setLoadingLabel('Preparing your campaign assets...');
+            const [squareVisualUrl, storyVisualUrl, audioClip] = await Promise.all([
                 FreeMiniCampaignService.cropVisualToAspectRatio(visualUrl, '1:1'),
                 FreeMiniCampaignService.cropVisualToAspectRatio(visualUrl, '9:16'),
+                FreeMiniCampaignService.createAudioClip(audioFile, hook.suggestedStartTimeSeconds, 15),
             ]);
 
             const newPack = FreeMiniCampaignService.createMiniCampaignPack({
@@ -114,11 +153,19 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                 visualUrl,
                 squareVisualUrl,
                 storyVisualUrl,
-                audioUrl,
+                audioUrl: audioClip.url,
                 durationSeconds,
-                clipStartSeconds: 0,
+                clipStartSeconds: hook.suggestedStartTimeSeconds,
+                audioHook: {
+                    section: hook.recommendedSection,
+                    potential: hook.viralHookPotential,
+                    strategy: hook.hookStrategy,
+                },
             });
 
+            for (const asset of newPack.assets) {
+                if (asset.url.startsWith('blob:')) previewUrlsRef.current.add(asset.url);
+            }
             setPack(newPack);
             setStep('preview');
         } catch (err: unknown) {
@@ -141,8 +188,9 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
         if (!pack) return;
         setLoading(true);
         try {
-            const result = await FreeMiniCampaignService.enforceSaveOrDelete(choice, pack);
+            const result = await FreeMiniCampaignService.enforceSaveOrDelete(choice, pack, projectId);
             setDecisionResult(result);
+            releasePreviewUrls();
             if (choice === 'save') {
                 toast.success(result.message);
             } else {
@@ -161,7 +209,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
             audioPlayerRef.current.pause();
             setIsPlayingTeaser(false);
         } else {
-            audioPlayerRef.current.currentTime = pack?.trackMeta.clipStartSeconds ?? 0;
+            audioPlayerRef.current.currentTime = 0;
             void audioPlayerRef.current.play();
             setIsPlayingTeaser(true);
         }
@@ -174,7 +222,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
             aria-labelledby="mini-campaign-title"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
         >
-            <div className="relative w-full max-w-3xl rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl md:p-8">
+            <div className="relative w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl md:p-8">
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-white/10 pb-5">
                     <div>
@@ -186,12 +234,12 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             Guided Free Mini-Campaign
                         </h2>
                         <p className="mt-1 text-sm text-neutral-400">
-                            Coordinated unwatermarked release pack with full privacy: save or permanently delete.
+                            Gemini listens for teaser moments, Jev helps choose one, and your browser exports the clip.
                         </p>
                     </div>
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         aria-label="Close modal"
                         className="rounded-lg p-2 text-neutral-400 hover:bg-neutral-800 hover:text-white"
                     >
@@ -302,7 +350,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                 disabled={!audioFile || !visualUrl || loading}
                                 className="w-full rounded-xl bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#CCA000] py-3.5 text-sm font-black text-black shadow-lg transition-all hover:scale-[1.01] disabled:opacity-50"
                             >
-                                {loading ? 'Building Mini-Campaign Pack...' : 'Generate Unwatermarked Campaign Pack'}
+                                {loading ? loadingLabel : 'Generate Unwatermarked Campaign Pack'}
                             </button>
                         </div>
                     )}
@@ -319,8 +367,8 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                             className="h-full w-full object-cover"
                                         />
                                     </div>
-                                    <div className="mt-3 font-semibold text-white">Square Cover</div>
-                                    <p className="text-xs text-neutral-400">1:1 DSP & Release Artwork</p>
+                                    <div className="mt-3 font-semibold text-white">Square Artwork</div>
+                                    <p className="text-xs text-neutral-400">1:1 digital cover draft</p>
                                 </div>
 
                                 {/* Story Promo */}
@@ -336,7 +384,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                     <p className="text-xs text-neutral-400">9:16 Portrait Social Asset</p>
                                 </div>
 
-                                {/* 8-Second Teaser */}
+                                        {/* 15-Second Teaser */}
                                 <div className="flex flex-col justify-between rounded-xl border border-white/10 bg-neutral-900 p-4">
                                     <div>
                                         <div className="flex aspect-square items-center justify-center rounded-lg bg-black/60">
@@ -348,11 +396,15 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                                 {isPlayingTeaser ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
                                             </button>
                                         </div>
-                                        <div className="mt-3 font-semibold text-white">8s Teaser Clip</div>
-                                        <p className="text-xs text-neutral-400">Synchronized audio preview</p>
+                                        <div className="mt-3 font-semibold text-white">15s Song Teaser</div>
+                                        <p className="text-xs text-neutral-400">
+                                            {pack.audioHook
+                                                ? `${pack.audioHook.strategy.startsWith('System One selected') ? 'Jev picked' : 'Automatic selection'}: ${pack.audioHook.section.toLowerCase().replace('_', ' ')} · ${pack.audioHook.potential}/5 hook potential`
+                                                : '15-second excerpt from your track'}
+                                        </p>
                                         <audio
                                             ref={audioPlayerRef}
-                                            src={audioUrl}
+                                            src={pack.assets.find(asset => asset.type === 'audio_clip')?.url || audioUrl}
                                             onEnded={() => setIsPlayingTeaser(false)}
                                             className="hidden"
                                         />
@@ -361,7 +413,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             </div>
 
                             <div className="rounded-lg bg-neutral-900/80 p-3.5 text-center text-xs text-amber-300">
-                                ✨ 100% Unwatermarked. Zero forced branding. Keep your exports.
+                                No watermark. Image size follows your upload; these digital crops are not print-ready masters.
                             </div>
 
                             <button
@@ -416,10 +468,10 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                             <div>
                                                 <div className="flex items-center gap-2 text-base font-bold text-red-300">
                                                     <Trash2 className="text-red-400" size={20} />
-                                                    Permanently Delete
+                                                    Remove In-Session Copies
                                                 </div>
                                                 <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-                                                    Purge the uploaded audio and all generated derivatives from cloud storage. Enforces complete privacy.
+                                                    After analysis, the app attempts to delete the temporary track upload. Remove the in-session previews now; files already downloaded remain on your device.
                                                 </p>
                                             </div>
                                             <button
@@ -428,7 +480,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                                 onClick={() => handleSaveChoice('delete')}
                                                 className="mt-5 rounded-lg bg-red-600/90 py-2.5 text-xs font-bold text-white hover:bg-red-500 disabled:opacity-50"
                                             >
-                                                Permanently Delete All
+                                                Remove In-Session Copies
                                             </button>
                                         </div>
                                     </div>
@@ -443,7 +495,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                     </p>
                                     <button
                                         type="button"
-                                        onClick={onClose}
+                                        onClick={handleClose}
                                         className="mt-6 rounded-lg bg-neutral-800 px-6 py-2.5 text-xs font-bold text-white hover:bg-neutral-700"
                                     >
                                         Close Experience

@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     setViewMode: vi.fn(),
     setGenerationMode: vi.fn(),
+    setModule: vi.fn(),
+    setNodes: vi.fn(),
+    setEdges: vi.fn(),
     videoSetViewMode: vi.fn(),
     judgeCreativeJourneyIntent: vi.fn(),
     store: {
@@ -15,6 +18,9 @@ const mocks = vi.hoisted(() => ({
         videoInputs: { firstFrame: null, lastFrame: null, ingredients: [] as unknown[] },
         setViewMode: vi.fn(),
         setGenerationMode: vi.fn(),
+        setModule: vi.fn(),
+        setNodes: vi.fn(),
+        setEdges: vi.fn(),
     },
     videoStore: {
         project: { tracks: [] as { clips: { type: string }[] }[] },
@@ -36,10 +42,6 @@ vi.mock('../video/store/videoEditorStore', () => {
 vi.mock('@/config/typesafeJudgments', () => ({
     deterministicCreativeJourneyFallback: () => ({ intent: 'social_clips', confidence: 0.8, headline: 'Turn this into a short social cut', actionLabel: 'Open Social Clips' }),
     judgeCreativeJourneyIntent: mocks.judgeCreativeJourneyIntent,
-}));
-
-vi.mock('./FreeMiniCampaignModal', () => ({
-    FreeMiniCampaignModal: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div data-testid="campaign-modal" /> : null,
 }));
 
 vi.mock('./CharacterLibrary', () => ({ CharacterLibrary: () => <div data-testid="character-library" /> }));
@@ -68,6 +70,24 @@ describe('CreativeJourney', () => {
         expect(screen.getByTestId('creative-journey-album_artwork')).toBeInTheDocument();
         expect(screen.getByTestId('creative-journey-band_references')).toBeInTheDocument();
         expect(screen.getByTestId('creative-journey-guided_campaign')).toBeInTheDocument();
+    });
+
+    it('opens the Flow-Be artwork template from the artwork journey', () => {
+        render(<CreativeJourney />);
+        fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
+        fireEvent.click(screen.getByTestId('creative-journey-album_artwork'));
+        expect(mocks.store.setNodes).toHaveBeenCalledWith(expect.arrayContaining([
+            expect.objectContaining({ data: expect.objectContaining({ nodeType: 'input' }) }),
+        ]));
+        expect(mocks.store.setModule).toHaveBeenCalledWith('workflow');
+    });
+
+    it('opens the Flow-Be video template from the music-video journey', () => {
+        render(<CreativeJourney />);
+        fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
+        fireEvent.click(screen.getByTestId('creative-journey-music_video'));
+        expect(mocks.store.setModule).toHaveBeenCalledWith('workflow');
+        expect(mocks.store.setViewMode).not.toHaveBeenCalled();
     });
 
     it('shows a one-click audio recommendation and synchronizes the video editor mode', () => {
@@ -103,9 +123,12 @@ describe('CreativeJourney', () => {
     });
 
     it('opens the guided campaign from the popover', () => {
+        const originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         render(<CreativeJourney />);
         fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
         fireEvent.click(screen.getByTestId('creative-journey-guided_campaign'));
-        expect(screen.getByTestId('campaign-modal')).toBeInTheDocument();
+        expect(mocks.store.setModule).toHaveBeenCalledWith('workflow');
+        expect(new URLSearchParams(window.location.search).get('mode')).toBe('free_demo');
+        window.history.replaceState({}, '', originalUrl);
     });
 });

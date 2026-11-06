@@ -2960,6 +2960,26 @@ describe('judgeSocialAudioSnippetSelection (Judgment 43)', () => {
         expect(result.viralHookPotential).toBe(5);
         expect(result.isImmediateVocalOnset).toBe(true);
     });
+
+    it('uses Jev to choose between multiple Gemini timestamps in the same section', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                candidate: { choice: '2' },
+                section: { choice: 'CHORUS' },
+                immediate_vocal: { noul: 0.8 },
+                viral_potential: { score: 4 },
+            } },
+        }));
+
+        const result = await judgeSocialAudioSnippetSelection([
+            { section: 'CHORUS', startTimeSeconds: 42, endTimeSeconds: 56, energyLevel: 'high', lyricSnippet: 'First chorus' },
+            { section: 'CHORUS', startTimeSeconds: 96, endTimeSeconds: 110, energyLevel: 'peak', lyricSnippet: 'Final chorus' },
+        ], 15);
+
+        expect(result.suggestedStartTimeSeconds).toBe(96);
+        expect(result.suggestedEndTimeSeconds).toBe(110);
+    });
 });
 
 describe('judgeMerchPrintViability (Judgment 44)', () => {
