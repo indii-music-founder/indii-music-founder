@@ -6,10 +6,18 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
-const { mockUploadReferenceMedia, mockGenerateImages, mockWorkspaceLayout } = vi.hoisted(() => ({
+const { mockUploadReferenceMedia, mockGenerateImages, mockWorkspaceLayout, mockJudgeCreativePromptModeIntent } = vi.hoisted(() => ({
     mockUploadReferenceMedia: vi.fn(),
     mockGenerateImages: vi.fn(),
     mockWorkspaceLayout: { mode: 'wide' as 'wide' | 'standard' | 'focused', width: 1440 },
+    mockJudgeCreativePromptModeIntent: vi.fn().mockResolvedValue({
+        suggestedMode: 'video',
+        confidence: 0.95,
+        reason: 'Jev resolved target mode as video.',
+    }),
+}));
+vi.mock('@/config/typesafeJudgments', () => ({
+    judgeCreativePromptModeIntent: (...args: any[]) => mockJudgeCreativePromptModeIntent(...args),
 }));
 vi.mock('@/components/layout/AdaptiveWorkspaceContext', () => ({
     useOptionalAdaptiveWorkspace: () => mockWorkspaceLayout,
@@ -32,7 +40,19 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => mockToastObject)
 }));
 
-const mockHttpsCallable = vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } });
+const mockHttpsCallable = vi.fn((_payload: unknown) => {
+    return Promise.resolve({
+        data: {
+            jobId: 'mock-job-id',
+            answers: {
+                target_mode: {
+                    choice: 'video',
+                    confidence: 0.95,
+                },
+            },
+        },
+    });
+});
 vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn(),
     httpsCallable: () => mockHttpsCallable
@@ -465,6 +485,7 @@ describe('DirectGenerationTab structural regressions', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Preview latest asset' }));
         const video = document.querySelector('video');
         expect(video).toBeTruthy();
+        vi.useRealTimers();
     });
 
     it('displays error message when generation fails', async () => {
@@ -588,4 +609,31 @@ describe('DirectGenerationTab structural regressions', () => {
         render(<DirectGenerationTab />);
         expect(screen.getByTestId('direct-generation-workspace')).toContainElement(screen.getByText('Saved artwork'));
     });
+
+    it('displays Jev System One prompt mode suggestion and allows 1-click switch', async () => {
+        render(<DirectGenerationTab />);
+        const input = screen.getByTestId('direct-prompt-input');
+
+        // Type a video-focused prompt while in image mode
+        act(() => {
+            fireEvent.change(input, { target: { value: 'cinematic drone camera orbiting neon city skyline at night' } });
+        });
+
+        // The mock resolves asynchronously
+        const suggestion = await screen.findByTestId('jev-prompt-mode-suggestion', {}, { timeout: 4000 });
+        expect(suggestion).toBeInTheDocument();
+        expect(screen.getByText(/Prompt matches/)).toBeInTheDocument();
+        expect(screen.getByText(/Video Studio/)).toBeInTheDocument();
+
+        // Click switch
+        act(() => {
+            fireEvent.click(screen.getByTestId('jev-switch-mode-btn'));
+        });
+
+        // Mode switch triggers video mode
+        await waitFor(() => {
+            expect(screen.queryByTestId('jev-prompt-mode-suggestion')).not.toBeInTheDocument();
+        });
+    });
 });
+
