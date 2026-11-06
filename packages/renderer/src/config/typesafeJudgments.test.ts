@@ -107,6 +107,8 @@ import {
     deterministicCreativePromptModeFallback,
     judgeGalleryAssetBrandFit,
     deterministicGalleryBrandFitFallback,
+    judgePlpVariantAdFormat,
+    deterministicPlpVariantAdFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5556,6 +5558,93 @@ describe('judgeGalleryAssetBrandFit (Judgment 79)', () => {
         expect(verdict.label).toBe('perfect_match');
     });
 });
+
+describe('judgePlpVariantAdFormat (Judgment 80)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        vi.clearAllMocks();
+    });
+
+    it('uses deterministic fallback when judgments are disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const verdict = await judgePlpVariantAdFormat({
+            prompt: 'cinematic widescreen album banner',
+            aspectRatio: '16:9',
+            slotIndex: 0,
+        });
+        expect(verdict.formatTag).toBe('HIGH_CONVERTING_HERO');
+        expect(verdict.retryRecommended).toBe(false);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('classifies vertical video slot as STORY_REEL offline', () => {
+        const verdict = deterministicPlpVariantAdFallback({
+            prompt: 'dynamic live tour performance clip',
+            aspectRatio: '9:16',
+            slotIndex: 12,
+        });
+        expect(verdict.formatTag).toBe('STORY_REEL');
+        expect(verdict.retryRecommended).toBe(false);
+    });
+
+    it('classifies 1:1 square image as THUMBNAIL_SAFE offline', () => {
+        const verdict = deterministicPlpVariantAdFallback({
+            prompt: 'centered vinyl record spinning on turntable',
+            aspectRatio: '1:1',
+            slotIndex: 2,
+        });
+        expect(verdict.formatTag).toBe('THUMBNAIL_SAFE');
+    });
+
+    it('detects defect semantics in prompt and recommends retry offline', () => {
+        const verdict = deterministicPlpVariantAdFallback({
+            prompt: 'glitch broken render with distorted artifacts',
+            slotIndex: 4,
+        });
+        expect(verdict.retryRecommended).toBe(true);
+    });
+
+    it('calls Jev online and returns the resolved format classification', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const call = vi.fn(async () => ({
+            data: {
+                answers: {
+                    ad_format: {
+                        choice: 'HIGH_CONVERTING_HERO',
+                        confidence: 0.94,
+                    },
+                },
+            },
+        }));
+        mocks.httpsCallable.mockImplementation((name: unknown) => {
+            expect(name).toBe('typesafeJudge');
+            return call;
+        });
+
+        const verdict = await judgePlpVariantAdFormat({
+            prompt: 'epic stadium crowd fireworks headline banner',
+            slotIndex: 0,
+        });
+        expect(verdict.formatTag).toBe('HIGH_CONVERTING_HERO');
+        expect(verdict.confidence).toBe(0.94);
+        expect(call).toHaveBeenCalled();
+    });
+
+    it('falls back cleanly when Jev fails online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev unreachable');
+        });
+
+        const verdict = await judgePlpVariantAdFormat({
+            prompt: 'energetic vertical reel of singer backstage',
+            slotIndex: 11,
+            kind: 'video',
+        });
+        expect(verdict.formatTag).toBe('STORY_REEL');
+    });
+});
+
 
 
 
