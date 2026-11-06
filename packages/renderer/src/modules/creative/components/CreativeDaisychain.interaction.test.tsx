@@ -109,6 +109,8 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
                     setViewMode: mockSetViewMode,
                     viewMode: 'gallery',
                     generationMode: 'image',
+                    activeReferenceImage: null,
+                    videoInputs: { firstFrame: null, lastFrame: null, ingredients: [] },
                     setGenerationMode: vi.fn(),
                     addWhiskItem: vi.fn(),
                     initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
