@@ -9044,3 +9044,132 @@ export async function judgeWorkflowCondition(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 78: Creative Prompt Target Studio Mode (consumer: CreativeStudio / DirectGenerationTab)
+// ---------------------------------------------------------------------------
+
+export type CreativeStudioTargetMode = 'image' | 'video' | 'omni';
+
+export interface CreativePromptModeVerdict {
+    suggestedMode: CreativeStudioTargetMode;
+    confidence: number;
+    reason: string;
+}
+
+export const CREATIVE_PROMPT_MODE_MIN_CONFIDENCE = 0.70;
+
+const VIDEO_KEYWORD_PATTERNS = [
+    /\b(video|clip|footage|motion|cinematic|camera|orbit|pan\s+(?:left|right|up|down)|tilt|zoom\s+(?:in|out)|tracking\s+shot|drone\s+shot|fps|slow\s+motion|timelapse|hyperlapse|b-roll|transition|animate[d]?|looping|veo)\b/i,
+];
+
+const OMNI_KEYWORD_PATTERNS = [
+    /\b(remix|mashup|fusion|style\s+transfer|interpolate|transform\s+style|multimodal|blend\s+video)\b/i,
+];
+
+export function deterministicCreativePromptModeFallback(
+    prompt: string,
+    currentMode: CreativeStudioTargetMode,
+): CreativePromptModeVerdict {
+    const text = prompt.trim();
+    if (!text) {
+        return {
+            suggestedMode: currentMode,
+            confidence: 1.0,
+            reason: 'Empty prompt defaults to current mode.',
+        };
+    }
+
+    if (OMNI_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
+        return {
+            suggestedMode: 'omni',
+            confidence: 0.85,
+            reason: 'Prompt mentions remixing, style transfer, or multimodal blending.',
+        };
+    }
+
+    if (VIDEO_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
+        return {
+            suggestedMode: 'video',
+            confidence: 0.85,
+            reason: 'Prompt contains motion, camera direction, or video keywords.',
+        };
+    }
+
+    return {
+        suggestedMode: 'image',
+        confidence: 0.80,
+        reason: 'Prompt is focused on static illustration, album art, or photograph.',
+    };
+}
+
+export function creativePromptModeQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'A creator typed a prompt in the music creative studio. Pick the SINGLE best creative studio mode ' +
+            'to fulfill this prompt: "image" (static artwork, album covers, character design, photos), ' +
+            '"video" (Veo clips, motion, animations, camera pans, kinetic visuals), or ' +
+            '"omni" (remixing existing footage, multi-modal transformations, style fusion).',
+        criteria: {
+            image: 'Static image art, album cover, poster, photography, still graphic.',
+            video: 'Motion video, camera movement, cinematic scene, animation, Veo clip.',
+            omni: 'Multimodal remix, video style transfer, frame transformation, blend.',
+        },
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment to recommend the optimal Creative Department
+ * studio mode based on prompt semantics. Enables ambient, friction-free mode switches.
+ */
+export async function judgeCreativePromptModeIntent(
+    prompt: string,
+    currentMode: CreativeStudioTargetMode = 'image',
+): Promise<CreativePromptModeVerdict> {
+    const fallback = deterministicCreativePromptModeFallback(prompt, currentMode);
+    if (!judgmentsAvailable() || !prompt.trim()) {
+        return fallback;
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: prompt.slice(0, 500),
+                currentMode,
+            },
+            questions: {
+                target_mode: creativePromptModeQuestion(),
+            },
+        });
+
+        const ans = result.data.answers?.target_mode;
+        const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
+        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
+            ? (ans as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+            ? rawConfidence
+            : fallback.confidence;
+
+        if (choice === 'image' || choice === 'video' || choice === 'omni') {
+            return {
+                suggestedMode: choice as CreativeStudioTargetMode,
+                confidence: confidence ?? fallback.confidence,
+                reason: `Jev resolved target mode as ${choice}.`,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'creative prompt mode intent judgment');
+        return fallback;
+    }
+}
+
+

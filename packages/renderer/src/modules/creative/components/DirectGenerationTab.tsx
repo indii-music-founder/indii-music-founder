@@ -17,6 +17,7 @@ import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 import { SavedArtworkPanel } from './CanvasEditor/SavedArtworkPanel';
+import { judgeCreativePromptModeIntent, type CreativePromptModeVerdict } from '@/config/typesafeJudgments';
 
 // ISSUE-788: the backend only special-cases '9:16' for a Veo video request
 // and silently coerces every other aspect ratio to '16:9'
@@ -135,6 +136,35 @@ export default function DirectGenerationTab() {
 
     const directorFps = studioControls.fps || 24;
     const directorFrames = Math.round((resolvedDuration || 0) * directorFps);
+
+    const [promptModeVerdict, setPromptModeVerdict] = useState<CreativePromptModeVerdict | null>(null);
+
+    // JEV System One: Ambiently evaluate prompt intent and offer smart mode switch
+    useEffect(() => {
+        const text = localPrompt.trim();
+        if (text.length < 5) {
+            setPromptModeVerdict(null);
+            return;
+        }
+
+        let isCurrent = true;
+        const timer = setTimeout(() => {
+            void judgeCreativePromptModeIntent(text, mode as 'image' | 'video' | 'omni').then((verdict) => {
+                if (!isCurrent) return;
+                // Only suggest if different from current mode and high confidence
+                if (verdict.suggestedMode !== mode && verdict.confidence >= 0.70) {
+                    setPromptModeVerdict(verdict);
+                } else {
+                    setPromptModeVerdict(null);
+                }
+            });
+        }, 300);
+
+        return () => {
+            isCurrent = false;
+            clearTimeout(timer);
+        };
+    }, [localPrompt, mode]);
 
     // Snap to a real video aspect ratio when entering video mode with an
     // image-only selection still active, so the UI never shows nothing
@@ -724,6 +754,36 @@ export default function DirectGenerationTab() {
                             <div className="mx-2 mb-2 px-2.5 py-1.5 bg-white/2 border border-white/5 rounded-lg text-left">
                                 <p className="text-[9px] uppercase font-bold text-gray-500 mb-0.5">Synthesized Output Prompt</p>
                                 <p className="text-[10px] text-gray-400 italic line-clamp-2">{synthesizedPrompt}</p>
+                            </div>
+                        )}
+
+                        {/* Jev System One Smart Mode Suggestion */}
+                        {promptModeVerdict && (
+                            <div 
+                                data-testid="jev-prompt-mode-suggestion"
+                                className="mx-2 mb-2 px-3 py-1.5 bg-dept-creative/10 border border-dept-creative/30 rounded-xl flex items-center justify-between gap-2 text-left animate-in fade-in slide-in-from-top-1 duration-200"
+                            >
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Wand2 size={12} className="text-dept-creative shrink-0 animate-pulse" />
+                                    <span className="text-[11px] text-gray-200 truncate">
+                                        Prompt matches <strong className="text-white">{promptModeVerdict.suggestedMode.charAt(0).toUpperCase() + promptModeVerdict.suggestedMode.slice(1)} Studio</strong> ({Math.round(promptModeVerdict.confidence * 100)}% match)
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (promptModeVerdict.suggestedMode === 'omni') {
+                                            setViewMode('omni');
+                                        } else {
+                                            handleModeSwitch(promptModeVerdict.suggestedMode as 'image' | 'video');
+                                        }
+                                        setPromptModeVerdict(null);
+                                    }}
+                                    data-testid="jev-switch-mode-btn"
+                                    className="px-2.5 py-1 bg-dept-creative/20 hover:bg-dept-creative/40 text-dept-creative hover:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 flex items-center gap-1"
+                                >
+                                    <span>Switch</span>
+                                </button>
                             </div>
                         )}
 

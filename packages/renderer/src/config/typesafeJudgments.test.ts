@@ -103,6 +103,8 @@ import {
     judgeCatalogCollisionRisk,
     judgeStatementColumnLoss,
     judgeEventRetentionTier,
+    judgeCreativePromptModeIntent,
+    deterministicCreativePromptModeFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5422,5 +5424,56 @@ describe('judgeEventRetentionTier (Judgment 77)', () => {
         expect(await judgeEventRetentionTier('contract signed', 'message')).toBeNull();
     });
 });
+
+describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
+    it('uses deterministic fallback when judgments are disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const verdict = await judgeCreativePromptModeIntent('drone shot orbiting a mountain sunset', 'image');
+        expect(verdict.suggestedMode).toBe('video');
+        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('falls back to image for static artwork prompt offline', () => {
+        const verdict = deterministicCreativePromptModeFallback('oil painting album cover portrait of a singer', 'video');
+        expect(verdict.suggestedMode).toBe('image');
+    });
+
+    it('identifies omni remix prompts offline', () => {
+        const verdict = deterministicCreativePromptModeFallback('style transfer remix and multimodal blend', 'image');
+        expect(verdict.suggestedMode).toBe('omni');
+    });
+
+    it('calls Jev online and returns the resolved studio mode', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    target_mode: {
+                        choice: 'video',
+                        confidence: 0.95,
+                    },
+                },
+            },
+        }));
+
+        const verdict = await judgeCreativePromptModeIntent('cinematic slow motion tracking shot of guitarist', 'image');
+        expect(verdict.suggestedMode).toBe('video');
+        expect(verdict.confidence).toBe(0.95);
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back cleanly when Jev fails online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev timeout');
+        });
+
+        const verdict = await judgeCreativePromptModeIntent('cinematic tracking camera pan', 'image');
+        expect(verdict.suggestedMode).toBe('video');
+        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+});
+
 
 
