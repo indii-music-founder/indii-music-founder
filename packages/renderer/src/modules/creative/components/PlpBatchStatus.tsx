@@ -1,5 +1,7 @@
-import { AlertCircle, CheckCircle2, LoaderCircle, RefreshCw, Rocket } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, CheckCircle2, LoaderCircle, RefreshCw, Rocket, Sparkles, Award } from 'lucide-react';
 import { getEligiblePlpSlots, getPlpBatchCounts, type PlpBatch } from '../plpBatch';
+import { judgePlpVariantAdFormat, type PlpVariantAdVerdict } from '@/config/typesafeJudgments';
 
 interface PlpBatchStatusProps {
     batch: PlpBatch;
@@ -16,6 +18,34 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
         && counts.queued === 0
         && allVariantsEligible
         && batch.launchStatus === 'idle';
+
+    const [verdicts, setVerdicts] = useState<Record<number, PlpVariantAdVerdict>>({});
+
+    // JEV System One: Ambiently evaluate ad format suitability across variants
+    useEffect(() => {
+        let isCurrent = true;
+
+        batch.slots.forEach(slot => {
+            const promptText = slot.result?.prompt || batch.prompt;
+            const isVideo = slot.kind === 'video' || slot.index >= 10;
+            const ratio = isVideo ? '9:16' : (slot.index % 2 === 0 ? '16:9' : '1:1');
+
+            void judgePlpVariantAdFormat({
+                prompt: promptText,
+                aspectRatio: ratio,
+                slotIndex: slot.index,
+                kind: slot.kind,
+            }).then(verdict => {
+                if (isCurrent) {
+                    setVerdicts(prev => ({ ...prev, [slot.index]: verdict }));
+                }
+            });
+        });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, [batch.slots, batch.prompt]);
 
     return (
         <section
@@ -43,31 +73,67 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
                 <ul className="space-y-1" aria-label="PLP variant slots">
                     {batch.slots.map(slot => {
                         const label = `${slot.kind === 'image' ? 'Image' : 'Video'} ${slot.kind === 'image' ? slot.index + 1 : slot.index - 9}`;
+                        const verdict = verdicts[slot.index];
+                        const isTopPick = slot.index < 3;
+
                         return (
-                            <li key={slot.index} className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-2 text-xs">
-                                {slot.status === 'completed' && <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-400" />}
-                                {slot.status === 'queued' && <LoaderCircle aria-hidden="true" className="h-4 w-4 shrink-0 animate-spin text-sky-400" />}
-                                {slot.status === 'failed' && <AlertCircle aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-400" />}
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="font-semibold">{label}</span>
-                                        <span className="capitalize text-white/55">{slot.status}</span>
+                            <li
+                                key={slot.index}
+                                className={`flex flex-col gap-1.5 rounded-lg border px-2.5 py-2 text-xs transition-colors ${
+                                    isTopPick
+                                        ? 'border-emerald-500/40 bg-emerald-950/20 shadow-sm'
+                                        : 'border-white/5 bg-white/[0.03]'
+                                }`}
+                                data-testid={isTopPick ? `jev-plp-top-pick-${slot.index}` : undefined}
+                            >
+                                <div className="flex items-center gap-2">
+                                    {slot.status === 'completed' && <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-400" />}
+                                    {slot.status === 'queued' && <LoaderCircle aria-hidden="true" className="h-4 w-4 shrink-0 animate-spin text-sky-400" />}
+                                    {slot.status === 'failed' && <AlertCircle aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-400" />}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className="font-semibold">{label}</span>
+                                                {isTopPick && (
+                                                    <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.2 text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                        <Award className="h-2.5 w-2.5" /> Top Pick
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="capitalize text-white/55">{slot.status}</span>
+                                        </div>
+                                        {slot.status === 'failed' && slot.error && (
+                                            <p className="mt-0.5 truncate text-[11px] text-rose-200" title={slot.error}>{slot.error}</p>
+                                        )}
                                     </div>
-                                    {slot.status === 'failed' && slot.error && (
-                                        <p className="mt-0.5 truncate text-[11px] text-rose-200" title={slot.error}>{slot.error}</p>
+                                    {slot.status === 'failed' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onRetry(slot.index)}
+                                            disabled={!isProjectActive}
+                                            className="inline-flex items-center gap-1 rounded-md border border-rose-300/30 px-2 py-1 font-semibold text-rose-100 hover:bg-rose-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-40"
+                                            aria-label={`Retry ${label}`}
+                                        >
+                                            <RefreshCw aria-hidden="true" className="h-3 w-3" />
+                                            Retry
+                                        </button>
                                     )}
                                 </div>
-                                {slot.status === 'failed' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onRetry(slot.index)}
-                                        disabled={!isProjectActive}
-                                        className="inline-flex items-center gap-1 rounded-md border border-rose-300/30 px-2 py-1 font-semibold text-rose-100 hover:bg-rose-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-40"
-                                        aria-label={`Retry ${label}`}
-                                    >
-                                        <RefreshCw aria-hidden="true" className="h-3 w-3" />
-                                        Retry
-                                    </button>
+
+                                {/* Jev System One format suitability tag */}
+                                {verdict && (
+                                    <div className="flex items-center justify-between text-[10px] pl-6 text-white/50 border-t border-white/5 pt-1">
+                                        <span
+                                            data-testid={`jev-plp-format-tag-${slot.index}`}
+                                            className="inline-flex items-center gap-1 font-mono text-[9px] font-medium text-indigo-300"
+                                        >
+                                            <Sparkles className="h-2.5 w-2.5 text-indigo-400" />
+                                            {verdict.formatTag.replace(/_/g, ' ')}
+                                        </span>
+                                        <span className="text-[9px] text-white/40">
+                                            {Math.round(verdict.confidence * 100)}% fit
+                                        </span>
+                                    </div>
                                 )}
                             </li>
                         );

@@ -73,4 +73,24 @@ describe('PlpBatchStatus', () => {
         expect(screen.getByRole('button', { name: 'Retry Video 5' })).toBeDisabled();
         expect(screen.getByRole('button', { name: 'Retry failed variants before launch' })).toBeDisabled();
     });
+
+    it('displays Jev System One format tag and highlights top picks', async () => {
+        let batch = createPlpBatch('batch-1', 'project-1', 'cinematic wide album launch banner');
+        batch = completePlpSlot(batch, 0, {
+            id: 'asset-0',
+            url: 'https://cdn.example/asset-0',
+            prompt: 'cinematic wide album launch banner',
+        });
+
+        render(<PlpBatchStatus batch={batch} isProjectActive onRetry={vi.fn()} onLaunch={vi.fn()} />);
+
+        // Top pick should be tagged for slot 0
+        expect(screen.getByTestId('jev-plp-top-pick-0')).toBeInTheDocument();
+        expect(screen.getAllByText('Top Pick').length).toBe(3);
+
+        // Format tag rendered ambiently
+        const formatTag = await screen.findByTestId('jev-plp-format-tag-0');
+        expect(formatTag).toBeInTheDocument();
+        expect(formatTag).toHaveTextContent(/HIGH CONVERTING HERO/i);
+    });
 });

@@ -9340,5 +9340,168 @@ export async function judgeGalleryAssetBrandFit(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 80: PLP Campaign Variant Assistant (judgePlpVariantAdFormat)
+// ---------------------------------------------------------------------------
+// Evaluates a product landing page (PLP) ad variant to determine optimal format
+// placement ('HIGH_CONVERTING_HERO' | 'STORY_REEL' | 'THUMBNAIL_SAFE' | 'STANDARD')
+// and whether a retry/re-prompt is recommended.
+// ---------------------------------------------------------------------------
+
+export type PlpVariantFormatTag =
+    | 'HIGH_CONVERTING_HERO'
+    | 'STORY_REEL'
+    | 'THUMBNAIL_SAFE'
+    | 'STANDARD';
+
+export interface PlpVariantAdContext {
+    prompt: string;
+    aspectRatio?: string;
+    slotIndex: number;
+    kind?: 'image' | 'video';
+}
+
+export interface PlpVariantAdVerdict {
+    formatTag: PlpVariantFormatTag;
+    retryRecommended: boolean;
+    confidence: number;
+    reason: string;
+}
+
+export function deterministicPlpVariantAdFallback(
+    context: PlpVariantAdContext,
+): PlpVariantAdVerdict {
+    const prompt = (context.prompt || '').toLowerCase();
+    const ratio = (context.aspectRatio || '').trim();
+    const isVideo = context.kind === 'video' || context.slotIndex >= 10;
+
+    // Check for obvious defects or anti-patterns
+    if (/glitch|broken|distorted|unusable/i.test(prompt)) {
+        return {
+            formatTag: 'STANDARD',
+            retryRecommended: true,
+            confidence: 0.85,
+            reason: 'Defect detected in prompt semantics; recommend retry.',
+        };
+    }
+
+    // Video vertical slots
+    if (ratio === '9:16' || isVideo) {
+        return {
+            formatTag: 'STORY_REEL',
+            retryRecommended: false,
+            confidence: 0.90,
+            reason: 'Vertical / video motion format suited for Story and Reels placements.',
+        };
+    }
+
+    // Landscape wide hero slots
+    if (ratio === '16:9' || /cinematic|hero|widescreen|banner/i.test(prompt)) {
+        return {
+            formatTag: 'HIGH_CONVERTING_HERO',
+            retryRecommended: false,
+            confidence: 0.85,
+            reason: 'Widescreen cinematic composition suited for top hero placements.',
+        };
+    }
+
+    // Square 1:1 or feed thumbnail safe
+    if (ratio === '1:1' || /square|icon|thumbnail|grid/i.test(prompt)) {
+        return {
+            formatTag: 'THUMBNAIL_SAFE',
+            retryRecommended: false,
+            confidence: 0.80,
+            reason: 'Square or focused subject framing suited for grid and thumbnail cards.',
+        };
+    }
+
+    return {
+        formatTag: 'STANDARD',
+        retryRecommended: false,
+        confidence: 0.70,
+        reason: 'Standard ad variant placement.',
+    };
+}
+
+export function plpVariantAdQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'A digital music marketing team is curating a 15-variant PLP (product landing page) ad campaign. ' +
+            'Classify the single best ad placement for this variant: ' +
+            '"HIGH_CONVERTING_HERO" (cinematic wide hero placement, prominent flagship visuals), ' +
+            '"STORY_REEL" (vertical motion video, high engagement fast hook for TikTok/Instagram Stories), ' +
+            '"THUMBNAIL_SAFE" (clean square or centered focal point suitable for small icons and grids), or ' +
+            '"STANDARD" (general feed banner ad, standard display unit).',
+        criteria: {
+            HIGH_CONVERTING_HERO: 'Wide, cinematic, high impact headline banner visual.',
+            STORY_REEL: 'Vertical video format, dynamic action, TikTok / Reel story placement.',
+            THUMBNAIL_SAFE: 'Centered subject, clean background, readable at small icon size.',
+            STANDARD: 'General feed or standard banner variant.',
+        },
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment to classify ad format suitability for PLP batch variants.
+ */
+export async function judgePlpVariantAdFormat(
+    context: PlpVariantAdContext,
+): Promise<PlpVariantAdVerdict> {
+    const fallback = deterministicPlpVariantAdFallback(context);
+    if (!judgmentsAvailable() || !context.prompt?.trim()) {
+        return fallback;
+    }
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: context.prompt.slice(0, 500),
+                aspectRatio: context.aspectRatio ?? '',
+                slotIndex: context.slotIndex,
+                kind: context.kind ?? (context.slotIndex >= 10 ? 'video' : 'image'),
+            },
+            questions: {
+                ad_format: plpVariantAdQuestion(),
+            },
+        });
+
+        const ans = result.data.answers?.ad_format;
+        const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
+        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
+            ? (ans as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+            ? rawConfidence
+            : fallback.confidence;
+
+        if (
+            choice === 'HIGH_CONVERTING_HERO' ||
+            choice === 'STORY_REEL' ||
+            choice === 'THUMBNAIL_SAFE' ||
+            choice === 'STANDARD'
+        ) {
+            return {
+                formatTag: choice as PlpVariantFormatTag,
+                retryRecommended: false,
+                confidence,
+                reason: `Jev classified variant format as ${choice}.`,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'plp variant ad format judgment');
+        return fallback;
+    }
+}
+
+
 
 
