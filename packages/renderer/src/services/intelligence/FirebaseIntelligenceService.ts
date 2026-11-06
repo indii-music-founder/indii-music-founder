@@ -1296,15 +1296,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
                 if (signal?.aborted) {
-                    const reason = signal.reason === 'TIMEOUT' ? 'AI Request timed out' : (signal.reason || 'Operation cancelled by user');
-                    throw typeof reason === 'string' ? new Error(reason) : reason;
+                    throw normalizeStreamInterruption(new Error('Request aborted before submission'), signal);
                 }
                 return await operation();
             } catch (error: unknown) {
                 lastError = error;
 
                 if (signal?.aborted) {
-                    throw error;
+                    throw normalizeStreamInterruption(new Error('Request aborted'), signal);
                 }
 
                 const appException = this.handleError(error);
@@ -1328,6 +1327,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const handleAbort = () => {
                             clearTimeout(timer);
                             signal?.removeEventListener('abort', handleAbort);
+                            reject(normalizeStreamInterruption(new Error('Request aborted during backoff'), signal));
                             reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false }));
                         };
                         const timer = setTimeout(() => {

@@ -111,6 +111,34 @@ describe('FirebaseIntelligenceService Enhancements', () => {
             const operation = vi.fn().mockRejectedValue(new Error('503 Service Unavailable'));
             await expect(service.withRetry(operation, 3, 10000, controller.signal))
                 .rejects.toMatchObject({ code: AppErrorCode.CANCELLED });
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
+
+        it.each([
+            [undefined, AppErrorCode.CANCELLED],
+            ['TIMEOUT', AppErrorCode.TIMEOUT],
+            [new Error('private abort reason'), AppErrorCode.CANCELLED],
+        ])('does not submit an already-aborted request', async (reason, code) => {
+            const controller = new AbortController();
+            controller.abort(reason);
+            const operation = vi.fn();
+            await expect(service.withRetry(operation, 3, 1, controller.signal))
+                .rejects.toMatchObject({ code });
+            expect(operation).not.toHaveBeenCalled();
+        });
+
+        it('normalizes an in-flight abort instead of leaking the provider rejection', async () => {
+            const controller = new AbortController();
+            const operation = vi.fn(async () => {
+                controller.abort();
+                throw new Error('private provider failure');
+            });
+            await expect(service.withRetry(operation, 3, 1, controller.signal))
+                .rejects.toMatchObject({ code: AppErrorCode.CANCELLED, message: 'AI Request was cancelled.' });
+            expect(operation).toHaveBeenCalledTimes(1);
+        });
+
         it.each([
             new DOMException('The operation was aborted', 'AbortError'),
             new DOMException('', 'AbortError'),
