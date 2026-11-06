@@ -40,7 +40,8 @@ The repository contains working implementations across:
 - CRM, marketing, social, and campaign systems;
 - merchandise and business-operations tooling;
 - phone-to-cloud-to-Studio remote execution;
-- specialist-agent orchestration and deterministic execution tooling.
+- specialist-agent orchestration and deterministic execution tooling;
+- **Flow-Be Engine (Workflow Lab):** ComfyUI-inspired node-graph DAG orchestration with strongly typed sockets, content-addressable memoization, nested micro-workflows (subgraphs), and an AI Co-Pilot for end-to-end music release automation (Notes → Audio QC → Metadata → Splits → Visuals → DDEX Preflight).
 
 ### Important external-verification boundaries
 
