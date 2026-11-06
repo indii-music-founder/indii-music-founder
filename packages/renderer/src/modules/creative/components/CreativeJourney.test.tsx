@@ -78,6 +78,13 @@ describe('CreativeJourney', () => {
         expect(mocks.store.setGenerationMode).toHaveBeenCalledWith('video');
     });
 
+    it('renders when older store fixtures omit video inputs', () => {
+        mocks.store.videoInputs = undefined as unknown as typeof mocks.store.videoInputs;
+
+        expect(() => render(<CreativeJourney />)).not.toThrow();
+        expect(screen.getByTestId('creative-journey-recommendation')).toBeInTheDocument();
+    });
+
     it('opens artist references from the Journeys list', async () => {
         render(<CreativeJourney />);
         fireEvent.click(screen.getByTestId('creative-journeys-toggle'));

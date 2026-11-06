@@ -53,7 +53,7 @@ export default function CreativeJourney() {
         viewMode,
         ingredients: {
             audio: hasAudio,
-            image: Boolean(activeReferenceImage || videoInputs.firstFrame || videoInputs.lastFrame || videoInputs.ingredients?.length),
+            image: Boolean(activeReferenceImage || videoInputs?.firstFrame || videoInputs?.lastFrame || videoInputs?.ingredients?.length),
             video: hasVideo,
         },
     }), [creativePrompt, generationMode, viewMode, hasAudio, hasVideo, activeReferenceImage, videoInputs]);
