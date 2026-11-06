@@ -55,6 +55,14 @@ vi.mock('@/core/context/ToastContext', () => ({
 import { MessageItem } from './ChatMessage';
 
 describe('shared ChatMessage canonical identity', () => {
+    it.each([
+        ['aGVsbG8=', 'data:image/png;base64,aGVsbG8='],
+        ['data:image/png;base64,aGVsbG8=', 'data:image/png;base64,aGVsbG8='],
+    ])('renders an image attachment from its stored source format', (base64, source) => {
+        render(<MessageItem msg={{ id: 'attachment', role: 'user', text: 'Reference', attachments: [{ mimeType: 'image/png', base64 }] } as never} />);
+        expect(screen.getByAltText('attachment')).toHaveAttribute('src', source);
+    });
+
     it('shows when a locally appended message could not be saved', () => {
         render(
             <MessageItem
