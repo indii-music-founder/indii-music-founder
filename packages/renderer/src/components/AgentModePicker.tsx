@@ -282,6 +282,11 @@ export function AgentModePicker({
                         onChange={(e) => store.setAgentVoiceOverride(effectiveAgentId, e.target.value)}
                         className="bg-white/10 hover:bg-white/15 border border-white/15 rounded-md px-2 py-1 text-[11px] font-medium text-white outline-none cursor-pointer focus:ring-1 focus:ring-blue-400"
                     >
+                        {!CURATED_VOICE_OPTIONS.some(opt => opt.voice === currentVoice) && (
+                            <option key={currentVoice} value={currentVoice} className="bg-[#12161f] text-white">
+                                {currentVoice} (Default)
+                            </option>
+                        )}
                         {CURATED_VOICE_OPTIONS.map((opt) => (
                             <option key={opt.voice} value={opt.voice} className="bg-[#12161f] text-white">
                                 {opt.voice} ({opt.tone})

@@ -247,7 +247,29 @@ export class LiveConversationService {
                 await this.options.onCommitTurn(cleanTurn);
                 return;
             }
-            await this.dispatchDesktopTurn(cleanTurn);
+
+            // Run Jev System One semantic intent evaluation with speculative routing
+            let judgedTargetSpecialist: string | undefined = undefined;
+            try {
+                const currentAgentId = this.options.targetAgentId || state?.directTargetAgentId || state?.activeDepartmentId || 'generalist';
+                const verdict = await judgeSpokenConversationIntent(cleanTurn, currentAgentId);
+                if (verdict.action === 'barge_in_stop') {
+                    this.speechQueue = [];
+                    voiceService.stopSpeaking();
+                    this.updateLiveInput('');
+                    state?.setActiveSpeakingAgentId?.(null);
+                    state?.setLiveConversationPhase?.('listening');
+                    this.openListeningTurn();
+                    return;
+                }
+                if (verdict.targetAgentId) {
+                    judgedTargetSpecialist = verdict.targetAgentId;
+                }
+            } catch (judgeErr) {
+                logger.debug?.('[LiveConversationService] Intent judgment bypassed:', judgeErr);
+            }
+
+            await this.dispatchDesktopTurn(cleanTurn, judgedTargetSpecialist);
         } catch (err) {
             logger.error('[LiveConversationService] Failed to dispatch turn:', err);
             if (this.active) {
@@ -257,7 +279,7 @@ export class LiveConversationService {
         }
     }
 
-    private async dispatchDesktopTurn(text: string): Promise<void> {
+    private async dispatchDesktopTurn(text: string, targetSpecialistOverride?: string): Promise<void> {
         const state = await this.getStoreState();
         const { agentService } = await import('@/services/agent/AgentService');
         const { agentRegistry } = await import('@/services/agent/registry');
@@ -300,7 +322,8 @@ export class LiveConversationService {
         const isIndiiMode = state?.chatChannel === 'indii';
         const currentModule = state?.currentModule || 'dashboard';
         const knownIds = agentRegistry.getAll().map(a => a.id);
-        const targetAgentId = isIndiiMode ? undefined : (knownIds.includes(currentModule) ? currentModule : undefined);
+        const fallbackTarget = isIndiiMode ? undefined : (knownIds.includes(currentModule) ? currentModule : undefined);
+        const targetAgentId = targetSpecialistOverride || this.options.targetAgentId || fallbackTarget;
 
         await agentService.sendMessage(text, outgoingAttachments, targetAgentId, { source: 'desktop' });
     }

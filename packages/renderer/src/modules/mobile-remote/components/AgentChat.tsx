@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useVoice } from '@/core/context/VoiceContext';
 import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { liveConversationService, type LiveConversationStartOptions } from '@/services/intelligence/LiveConversationService';
 import VoiceTextViewingStage from './VoiceTextViewingStage';
 
 interface ChatMessage {
@@ -204,6 +205,14 @@ export default function AgentChat({
 
             teardownResponseWatch();
             setIsWaiting(false);
+
+            if (response.text) {
+                void liveConversationService.notifyAgentResponse(
+                    response.agentId || selectedAgent || 'generalist',
+                    response.text,
+                    response.id || response.commandId
+                );
+            }
         });
 
         // Explicit, user-visible timeout instead of a silent spinner death.
@@ -464,6 +473,49 @@ export default function AgentChat({
         }
     };
 
+    const liveStartOptions = useMemo<LiveConversationStartOptions>(() => ({
+        source: 'mobile-remote',
+        targetAgentId: selectedAgent || selectedDept || undefined,
+        onLiveTranscript: (text: string) => {
+            setInput(text);
+        },
+        onCommitTurn: async (text: string) => {
+            const clean = text.trim();
+            if (!clean || !isAuthenticated || !isPaired) return;
+            setInput('');
+            setIsWaiting(true);
+
+            let targetAgentId: string | undefined = undefined;
+            if (selectedMode === 'department' && selectedDept) {
+                targetAgentId = selectedDept;
+            } else if (selectedMode === 'direct' && selectedAgent) {
+                targetAgentId = selectedAgent;
+            }
+
+            const commandMetadata = {
+                conversationMode: selectedMode,
+                source: 'mobile-remote',
+            };
+
+            try {
+                const commandId = await remoteRelayService.sendCommand(
+                    clean,
+                    targetAgentId,
+                    commandMetadata,
+                    'studio'
+                );
+                if (commandId) {
+                    watchCommandResponse(commandId);
+                } else {
+                    setIsWaiting(false);
+                }
+            } catch (err) {
+                logger.error('[AgentChat] Live turn relay failed:', err);
+                setIsWaiting(false);
+            }
+        },
+    }), [isAuthenticated, isPaired, selectedAgent, selectedDept, selectedMode, watchCommandResponse]);
+
     if (!isAuthenticated) {
         return (
             <div className="flex flex-col h-[60vh] items-center justify-center text-center p-8">
@@ -679,6 +731,7 @@ export default function AgentChat({
                     attachments={stagedAttachments}
                     onRemoveAttachment={(idx) => setStagedAttachments(prev => prev.filter((_, i) => i !== idx))}
                     onAddAttachmentFile={handleAddAttachmentFile}
+                    startOptions={liveStartOptions}
                 />
             </div>
         </div>

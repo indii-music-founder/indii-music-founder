@@ -9,7 +9,70 @@ export interface SpokenConversationIntentVerdict {
     explanation?: string;
 }
 
-const BARGE_IN_WORDS = ['stop', 'hold on', 'wait', 'quiet', 'pause', 'shut up', 'cancel'];
+const BARGE_IN_WORDS = [
+    'stop', 'hold on', 'wait', 'quiet', 'pause', 'shut up', 'cancel',
+    'shh', 'silence', 'enough', 'be quiet', 'stop talking', 'halt'
+];
+
+const SPECIALIST_KEYWORDS: Readonly<Record<string, string>> = Object.freeze({
+    legal: 'legal',
+    lawyer: 'legal',
+    contract: 'legal.contracts',
+    contracts: 'legal.contracts',
+    compliance: 'legal.compliance',
+    finance: 'finance',
+    accounting: 'finance.accounting',
+    accountant: 'finance.accounting',
+    tax: 'finance.tax',
+    royalty: 'finance.royalty',
+    royalties: 'finance.royalty',
+    creative: 'creative',
+    art: 'creative',
+    artwork: 'creative',
+    cover: 'creative',
+    music: 'music',
+    audio: 'music',
+    stem: 'music',
+    stems: 'music',
+    video: 'video',
+    visualizer: 'video',
+    director: 'director',
+    producer: 'producer',
+    screenwriter: 'screenwriter',
+    script: 'screenwriter',
+    marketing: 'marketing',
+    campaign: 'marketing',
+    social: 'social',
+    instagram: 'social',
+    tiktok: 'social',
+    twitter: 'social',
+    publicist: 'publicist',
+    press: 'publicist',
+    pr: 'publicist',
+    brand: 'brand',
+    distribution: 'distribution',
+    distro: 'distribution',
+    dsp: 'distribution',
+    spotify: 'distribution',
+    publishing: 'publishing',
+    licensing: 'licensing',
+    sync: 'licensing',
+    rights: 'rights',
+    road: 'road',
+    tour: 'road',
+    booking: 'road',
+    hospitality: 'hospitality',
+    rider: 'hospitality',
+    merchandise: 'merchandise',
+    merch: 'merchandise',
+    analytics: 'analytics',
+    stats: 'analytics',
+    streams: 'analytics',
+    devops: 'devops',
+    security: 'security',
+    conductor: 'generalist',
+    generalist: 'generalist',
+});
 
 export function deterministicSpokenIntentFallback(
     spokenText: string,
@@ -21,7 +84,7 @@ export function deterministicSpokenIntentFallback(
 
     // Direct barge-in stop check
     for (const word of BARGE_IN_WORDS) {
-        if (clean === word || clean.startsWith(`${word} `) || clean.endsWith(` ${word}`)) {
+        if (clean === word || clean.startsWith(`${word} `) || clean.endsWith(` ${word}`) || clean.includes(` ${word} `)) {
             return {
                 action: 'barge_in_stop',
                 confidence: 0.95,
@@ -30,15 +93,30 @@ export function deterministicSpokenIntentFallback(
         }
     }
 
-    // Direct agent address check
-    const addressMatch = clean.match(/^(?:hey|ask|tell|message)\s+([a-z.-]+)/i);
+    // Direct address check (e.g., "hey legal", "ask finance", "tell marketing", "message distribution")
+    const addressMatch = clean.match(/^(?:hey|ask|tell|message|switch to|bring in|have|let)\s+([a-z.-]+)/i);
     if (addressMatch && addressMatch[1]) {
+        const candidate = addressMatch[1].toLowerCase();
+        const mappedId = SPECIALIST_KEYWORDS[candidate] || candidate;
         return {
             action: 'agent_reassignment',
-            confidence: 0.8,
-            targetAgentId: addressMatch[1].toLowerCase(),
-            explanation: `Addressed agent: ${addressMatch[1]}`,
+            confidence: 0.85,
+            targetAgentId: mappedId,
+            explanation: `Addressed agent: ${mappedId}`,
         };
+    }
+
+    // Keyword specialist match across common natural inquiries
+    for (const [kw, agentId] of Object.entries(SPECIALIST_KEYWORDS)) {
+        const regex = new RegExp(`\\b(?:ask|tell|consult|check with|have)\\s+${kw}\\b`, 'i');
+        if (regex.test(clean)) {
+            return {
+                action: 'agent_reassignment',
+                confidence: 0.8,
+                targetAgentId: agentId,
+                explanation: `Matched specialist keyword: ${kw} -> ${agentId}`,
+            };
+        }
     }
 
     return {
@@ -49,6 +127,10 @@ export function deterministicSpokenIntentFallback(
 
 /**
  * Evaluates spoken turns with Jev System One via typesafeJudge callable.
+ * Uses parallel speculative questions:
+ *   - bargeInStop (Noul): fast probability of interrupt/silence intent
+ *   - intent (Choice): 4-way conversation action classification
+ *   - targetSpecialist (Choice): speculative routing to one of the studio specialists
  */
 export async function judgeSpokenConversationIntent(
     spokenText: string,
@@ -71,43 +153,109 @@ export async function judgeSpokenConversationIntent(
                 currentAgentId: currentAgentId || 'generalist',
             },
             questions: {
+                bargeInStop: {
+                    type: 'noul' as const,
+                    instructions: "Is the user commanding the studio agent to stop talking, pause, hush, silence, cancel, or wait right now?",
+                },
                 intent: {
                     type: 'choice' as const,
-                    instructions: "Analyze the user's spoken utterance in an artist studio session. Is the user telling the agent to stop/pause, directing the question to a specific domain specialist, invoking a product skill, or holding general conversation?",
+                    instructions: "Analyze the user's spoken utterance in an artist studio session. Is the user commanding a stop, directing the inquiry to a specific department specialist, invoking a product skill, or engaging in general conversation?",
                     criteria: {
                         barge_in_stop: "User explicitly wants to halt, silence, or stop the current speech or process.",
-                        agent_reassignment: "User explicitly addresses or asks for a specific department specialist (e.g., legal, finance, distribution, creative).",
-                        product_skill: "User is asking to run a specific music studio playbook or workflow (e.g. audit brand, create cover art, prepare distribution, calculate royalties).",
+                        agent_reassignment: "User addresses or asks for a specific department specialist (e.g., legal, finance, distribution, creative, marketing, road, publishing, licensing).",
+                        product_skill: "User asks to run a specific music studio playbook or automated task (e.g. audit brand, generate cover art, calculate royalties, submit release).",
                         general_conversation: "Natural conversational dialogue, brainstorming, feedback, or follow-up question.",
+                    },
+                },
+                targetSpecialist: {
+                    type: 'choice' as const,
+                    instructions: "Assuming this inquiry is handled by a studio department specialist, which one is most qualified? If it is a general or conductor question, select 'none'.",
+                    criteria: {
+                        legal: "Contracts, copyright, trademarks, sync clearance, split sheets, dispute review.",
+                        finance: "Royalties, recoupment, budgets, revenue, accounting, taxes, payout ledgers.",
+                        creative: "Cover art, logos, prompt engineering, visual branding, photo styling.",
+                        video: "Music videos, visualizers, teasers, aspect ratios, motion clips.",
+                        music: "Stems, audio mixing, mastering, track production, composition.",
+                        marketing: "Campaigns, launch strategy, advertising, audience demographics, growth.",
+                        social: "TikTok, Instagram, Twitter/X, hooks, captions, social schedule.",
+                        distribution: "DSP ingestion, Spotify, Apple Music, ISRC/UPC, metadata, delivery.",
+                        publishing: "PRO registration (ASCAP/BMI), publishing royalties, catalog indexing.",
+                        licensing: "Sync licensing, pitching to film/TV/games, clearance agreements.",
+                        publicist: "Press releases, media pitching, journalist outreach, interviews.",
+                        road: "Tour routing, venue scouting, gig travel, live performance logistics.",
+                        brand: "Brand identity, tone of voice, visual cohesion, brand narrative.",
+                        none: "General studio conversation, Conductor coordination, or uncategorized.",
                     },
                 },
             },
         });
 
-        const answer = result.data.answers?.intent;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
+        const answers = result.data.answers || {};
 
-        if (
-            choice === 'barge_in_stop' ||
-            choice === 'agent_reassignment' ||
-            choice === 'product_skill' ||
-            choice === 'general_conversation'
-        ) {
-            const confidence =
-                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                    ? rawConfidence
-                    : 0.85;
+        // Parse Noul barge-in probability
+        const bargeInRaw = answers.bargeInStop;
+        const bargeInProb = typeof bargeInRaw === 'number'
+            ? bargeInRaw
+            : (typeof bargeInRaw === 'object' && bargeInRaw !== null && 'probability' in bargeInRaw)
+                ? Number((bargeInRaw as { probability?: unknown }).probability)
+                : 0;
 
+        if (Number.isFinite(bargeInProb) && bargeInProb >= 0.75) {
             return {
-                action: choice,
-                confidence,
-                targetAgentId: fallback.targetAgentId,
+                action: 'barge_in_stop',
+                confidence: bargeInProb,
+                explanation: 'Jev System One Noul detected stop command with high probability',
             };
         }
+
+        // Parse Choice intent
+        const intentAnswer = answers.intent;
+        const choice = typeof intentAnswer === 'string'
+            ? intentAnswer
+            : (intentAnswer as { choice?: unknown } | null)?.choice;
+
+        const rawConfidence =
+            typeof intentAnswer === 'object' && intentAnswer !== null
+                ? (intentAnswer as { confidence?: unknown }).confidence
+                : undefined;
+
+        const confidence =
+            typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                ? rawConfidence
+                : 0.85;
+
+        // Parse Speculative Specialist Choice
+        const specAnswer = answers.targetSpecialist;
+        const specChoice = typeof specAnswer === 'string'
+            ? specAnswer
+            : (specAnswer as { choice?: unknown } | null)?.choice;
+
+        const targetSpecialist = typeof specChoice === 'string' && specChoice !== 'none'
+            ? specChoice
+            : fallback.targetAgentId;
+
+        if (choice === 'barge_in_stop') {
+            return { action: 'barge_in_stop', confidence };
+        }
+
+        if (choice === 'agent_reassignment' || (targetSpecialist && targetSpecialist !== currentAgentId && targetSpecialist !== 'generalist')) {
+            return {
+                action: 'agent_reassignment',
+                confidence,
+                targetAgentId: targetSpecialist || fallback.targetAgentId,
+                explanation: `Jev routed to specialist: ${targetSpecialist}`,
+            };
+        }
+
+        if (choice === 'product_skill') {
+            return { action: 'product_skill', confidence, targetAgentId: targetSpecialist };
+        }
+
+        return {
+            action: 'general_conversation',
+            confidence,
+            targetAgentId: targetSpecialist,
+        };
     } catch {
         // Safe fallback on network or service error
     }
