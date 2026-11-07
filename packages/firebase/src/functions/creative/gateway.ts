@@ -1282,6 +1282,7 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
   
   const parsed = GenerateImageSchema.safeParse(request.data);
   if (!parsed.success) {
+    logger.warn('[generateImageV3] Payload validation failed:', parsed.error.format());
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
