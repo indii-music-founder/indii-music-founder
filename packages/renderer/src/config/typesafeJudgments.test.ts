@@ -113,6 +113,10 @@ import {
     deterministicCreativeJourneyFallback,
     judgeBoardroomExecutiveIntent,
     deterministicBoardroomExecutiveFallback,
+    judgeDepartmentJourneyIntent,
+    deterministicDepartmentJourneyFallback,
+    judgeCreativeStudioConfigPreset,
+    deterministicCreativeStudioConfigFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5796,8 +5800,97 @@ describe('judgeBoardroomExecutiveIntent (Judgment 82)', () => {
     });
 });
 
+describe('judgeDepartmentJourneyIntent (Judgment 83)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
 
+    it('recommends the next logical workflow across department modules when Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeDepartmentJourneyIntent({
+            department: 'marketing',
+            activeTab: 'departments',
+            itemCount: 3,
+        });
+        expect(result.department).toBe('marketing');
+        expect(result.journeyId).toBe('brand_identity');
+        expect(result.targetTab).toBe('brand');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
 
+    it('uses Jev Choice to resolve a department journey online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { journey: { choice: 'preflight_qc', confidence: 0.93 } } },
+        }));
 
+        const result = await judgeDepartmentJourneyIntent({
+            department: 'distribution',
+            activeTab: 'releases',
+            itemCount: 2,
+        });
+        expect(result.journeyId).toBe('preflight_qc');
+        expect(result.targetTab).toBe('brain');
+        expect(result.confidence).toBe(0.93);
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when Jev fails on department journey', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev network error');
+        });
+        const ctx = { department: 'legal' as const, activeTab: 'analyzer', prompt: 'split sheet' };
+        const result = await judgeDepartmentJourneyIntent(ctx);
+        expect(result).toEqual(deterministicDepartmentJourneyFallback(ctx));
+        expect(result.journeyId).toBe('split_agreements');
+    });
+});
+
+describe('judgeCreativeStudioConfigPreset (Judgment 84)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('selects vertical story preset offline when prompt mentions reels or tiktok', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeCreativeStudioConfigPreset({
+            mode: 'image',
+            prompt: 'Neon vertical reel cover for TikTok launch',
+        });
+        expect(result.presetId).toBe('social_vertical_story');
+        expect(result.controlsPatch.aspectRatio).toBe('9:16');
+    });
+
+    it('uses Jev Choice to resolve a unified Creative Hub config preset online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { preset: { choice: 'grounded_editorial', confidence: 0.92 } } },
+        }));
+
+        const result = await judgeCreativeStudioConfigPreset({
+            mode: 'image',
+            prompt: 'Press photo at Red Rocks Amphitheatre',
+        });
+        expect(result.presetId).toBe('grounded_editorial');
+        expect(result.controlsPatch.useGrounding).toBe(true);
+        expect(result.confidence).toBe(0.92);
+    });
+
+    it('falls back deterministically when Jev callable throws', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('callable error');
+        });
+        const ctx = { mode: 'video' as const, prompt: 'wide cinema trailer' };
+        const result = await judgeCreativeStudioConfigPreset(ctx);
+        expect(result).toEqual(deterministicCreativeStudioConfigFallback(ctx));
+        expect(result.presetId).toBe('cinematic_widescreen');
+    });
+});
 
 

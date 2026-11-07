@@ -15,6 +15,7 @@ import { creatorProtectionHarnessService } from '@/services/creator-protection';
 import { logger } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -211,6 +212,16 @@ Only return valid JSON.
             bgBlobClass="bg-blue-500/8"
             iconBgClass="bg-linear-to-br from-blue-500 to-blue-400"
             iconShadowClass="shadow-blue-500/20"
+            actions={
+                <DepartmentJourneyBar
+                    department="legal"
+                    activeTab={activeTab}
+                    onSelectTab={setActiveTab}
+                    itemCount={analysisHistory.length}
+                    hasAlert={Boolean(analysisResult && analysisResult.score < 70)}
+                    accentColorClass="text-blue-300 border-blue-400/25 bg-blue-400/10 hover:bg-blue-400/20"
+                />
+            }
             leftPanel={
                 <>
                     <LegalTemplatesPanel
