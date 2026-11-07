@@ -189,6 +189,20 @@ describe('CreativeNavbar', () => {
         expect(screen.getByTestId('canvas-mode-picker')).not.toHaveClass('absolute');
     });
 
+    it('keeps creative journeys inside the single header row instead of a stacked second bar', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+        const journey = screen.getByTestId('creative-journey');
+        const headerRow = screen.getByTestId('creative-nav-back-module').closest('.h-12');
+        expect(headerRow).not.toBeNull();
+        expect(headerRow).toContainElement(journey);
+        expect(headerRow).toContainElement(screen.getByTestId('creative-journeys-toggle'));
+        expect(screen.queryByTestId('creative-journey-fold-toggle')).not.toBeInTheDocument();
+    });
+
     it('renders Back/Forward navigation controls and calls the store actions (ISSUE-1375)', () => {
         render(
             <ToastProvider>
