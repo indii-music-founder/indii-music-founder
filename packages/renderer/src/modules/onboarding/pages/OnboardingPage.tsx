@@ -294,7 +294,7 @@ export default function OnboardingPage() {
                                     >
                                         {files.some(file => file.contentProvenance) && (
                                             <p role="note" className="basis-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-100/80">
-                                                PDF text is extracted on this device. If you send this conversation, the extracted text is shared with the connected AI; its source remains detected and unverified.
+                                                PDF text is extracted on this device. If you send this conversation, the extracted text is shared with your connected team; its source remains detected and unverified.
                                             </p>
                                         )}
                                         {files.map(file => (

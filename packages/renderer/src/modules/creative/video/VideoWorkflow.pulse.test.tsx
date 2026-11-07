@@ -224,7 +224,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         cleanup();
         render(<VideoWorkflow />);
 
-        expect(screen.getByText(/AI Director is framing the scene/i)).toBeInTheDocument();
+        expect(screen.getByText(/Director is framing the scene/i)).toBeInTheDocument();
         expect(VideoGeneration.subscribeToJob).toHaveBeenCalledWith(mockJobId, expect.any(Function));
 
         // 5. PROGRESS UPDATES
@@ -239,7 +239,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         cleanup();
         render(<VideoWorkflow />);
 
-        expect(screen.getByText(/AI Director is framing the scene/i)).toBeInTheDocument();
+        expect(screen.getByText(/Director is framing the scene/i)).toBeInTheDocument();
         expect(screen.getByText(/\(45%\)/i)).toBeInTheDocument();
         expect(mockVideoEditorState.setProgress).toHaveBeenCalledWith(45);
 

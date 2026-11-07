@@ -213,10 +213,10 @@ export default function WorkflowLab() {
             setEdges(updated.edges);
             setAiEditInstruction('');
             setShowAiEdit(false);
-            toastSuccess('Workflow updated by AI Co-Pilot 🎵');
+            toastSuccess('Workflow updated successfully 🎵');
         } catch (e: unknown) {
-            logger.error('[WorkflowLab] AI edit failed', e);
-            toastError(`AI edit failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            logger.error('[WorkflowLab] Workflow edit failed', e);
+            toastError(`Workflow edit failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
         } finally {
             setIsAiEditing(false);
         }
@@ -529,17 +529,17 @@ export default function WorkflowLab() {
                             className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-900/20"
                         >
                             <Sparkles size={16} />
-                            Generate with AI
+                            Generate Workflow
                         </button>
 
-                        {/* AI Co-Pilot: Edit existing workflow */}
+                        {/* Co-Pilot: Edit existing workflow */}
                         <div className="rounded-lg border border-purple-500/20 bg-purple-900/5 overflow-hidden">
                             <button
                                 onClick={() => setShowAiEdit(v => !v)}
                                 className="w-full py-2 px-4 text-purple-300 hover:text-white hover:bg-purple-900/20 font-bold flex items-center justify-center gap-2 transition-all text-sm"
                             >
                                 <MessageSquareDiff size={15} />
-                                AI Edit Workflow
+                                Smart Edit Workflow
                             </button>
                             {showAiEdit && (
                                 <div className="px-3 pb-3 space-y-2">

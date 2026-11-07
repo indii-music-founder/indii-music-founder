@@ -165,7 +165,7 @@ describe('EmptyState homepage discovery', () => {
         // Check Create Media exists
         const createMedia = screen.getByRole('button', { name: 'Create Media' });
         expect(createMedia).toBeInTheDocument();
-        expect(screen.getByText('AI cover art, social visuals & music videos')).toBeInTheDocument();
+        expect(screen.getByText('Cover art, social visuals & music videos')).toBeInTheDocument();
 
         // Clicking Create Media card directly launches /create-media
         fireEvent.click(createMedia);

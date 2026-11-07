@@ -42,7 +42,7 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
             const downloadUrl = await StorageService.uploadFile(file, path);
             await EncounterService.createEncounter({ assets: [{ type: 'document', storagePath: path, downloadUrl,
                 mimeType: file.type, filename: file.name }] }, uid);
-            toast.success('Card saved for AI extraction. Review the contact fields before saving.');
+            toast.success('Card saved for extraction. Review the contact fields before saving.');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to scan card.');
         } finally {

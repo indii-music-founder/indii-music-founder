@@ -284,7 +284,7 @@ export default function LicensingDashboard() {
                         <footer className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
                             <div className="flex items-center gap-3 text-xs text-emerald-300/60 font-medium">
                                 <AlertCircle size={14} />
-                                <span>AI licensing tools active. All drafts MUST be reviewed by legal counsel.</span>
+                                <span>Automated licensing tools active. All drafts MUST be reviewed by legal counsel.</span>
                             </div>
                             <div className="text-[10px] font-bold text-emerald-400 tracking-widest uppercase">
                                 Security: High

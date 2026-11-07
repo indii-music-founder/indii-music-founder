@@ -316,7 +316,7 @@ export function BoardroomJourney() {
                                             </span>
                                             {isRecommended && (
                                                 <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300 border border-indigo-400/30">
-                                                    Jev Pick
+                                                    Recommended
                                                 </span>
                                             )}
                                         </div>

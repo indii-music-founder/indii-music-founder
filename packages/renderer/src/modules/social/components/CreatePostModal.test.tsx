@@ -74,13 +74,13 @@ describe('CreatePostModal Accessibility', () => {
         expect(getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('uses the artist post idea for AI copy and offers reviewed Instagram hashtags', async () => {
+    it('uses the artist post idea for copy and offers reviewed Instagram hashtags', async () => {
         vi.mocked(SOCIAL_TOOLS.write_social_copy).mockResolvedValue('A new song is on the way.');
         vi.mocked(SOCIAL_TOOLS.suggest_instagram_hashtags).mockResolvedValue(['detroitindie', 'synthpopartist', 'newsingle']);
         render(<CreatePostModal onClose={mockOnClose} onSave={mockOnSave} />);
         fireEvent.click(screen.getByRole('button', { name: 'Instagram' }));
         fireEvent.change(screen.getByLabelText('What is this post about?'), { target: { value: 'My new single' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Generate with AI' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Generate Draft' }));
         await waitFor(() => expect(screen.getByLabelText('Post Copy')).toHaveValue('A new song is on the way.'));
         expect(SOCIAL_TOOLS.write_social_copy).toHaveBeenCalledWith(expect.objectContaining({
             platform: 'Instagram', brief: 'My new single',

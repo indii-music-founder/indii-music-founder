@@ -330,12 +330,12 @@ export const PersonaFadersSection: React.FC = () => {
             setFaderValues({ ...verdict.calibratedFaders });
             setHasUnsavedChanges(true);
             toast.showToast(
-                `Jev AI Calibrated: ${verdict.recommendedPreset.replace(/_/g, ' ')} (Score: ${verdict.alignmentScore}/5)`,
+                `Calibrated: ${verdict.recommendedPreset.replace(/_/g, ' ')} (Score: ${verdict.alignmentScore}/5)`,
                 'success'
             );
         } catch (err) {
-            logger.error('[PersonaFadersSection] Jev posture calibration error:', err);
-            toast.showToast('Jev calibration encountered an error.', 'error');
+            logger.error('[PersonaFadersSection] Posture calibration error:', err);
+            toast.showToast('Posture calibration encountered an error.', 'error');
         } finally {
             setIsJevCalibrating(false);
         }
@@ -384,7 +384,7 @@ export const PersonaFadersSection: React.FC = () => {
     return (
         <div className="space-y-6" data-testid="persona-faders-section">
             <SectionHeader
-                title="AI Persona & Personality Sliders"
+                title="Specialist Posture & Personality Sliders"
                 description="Customize how each specialist agent thinks, communicates, and delivers advice. Calibrated along 5 professional posture axes."
             />
 
@@ -402,7 +402,7 @@ export const PersonaFadersSection: React.FC = () => {
                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
                     >
                         <Sparkles size={12} />
-                        {showJevCalibrator ? 'Close Jev Calibrator' : 'Auto-Tune with Jev AI'}
+                        {showJevCalibrator ? 'Close Calibrator' : 'Auto-Tune Posture'}
                     </button>
                 </div>
 
@@ -422,13 +422,13 @@ export const PersonaFadersSection: React.FC = () => {
                     ))}
                 </div>
 
-                {/* Inline Jev AI Posture Calibrator */}
+                {/* Inline Posture Calibrator */}
                 {showJevCalibrator && (
                     <div className="mt-3 p-3.5 rounded-lg bg-slate-950/80 border border-emerald-500/30 space-y-3 animate-in fade-in">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
                                 <Sparkles size={13} />
-                                TypeSafe System One (Jev) Posture Auto-Calibrator
+                                Built-in Posture Auto-Calibrator
                             </span>
                             <span className="text-[10px] text-slate-400">Sub-100ms decision engine</span>
                         </div>
@@ -484,7 +484,7 @@ export const PersonaFadersSection: React.FC = () => {
                                 ) : (
                                     <Sparkles size={13} />
                                 )}
-                                {isJevCalibrating ? 'Calibrating...' : 'Run Jev Auto-Tune'}
+                                {isJevCalibrating ? 'Calibrating...' : 'Run Auto-Tune'}
                             </button>
                         </div>
                     </div>
@@ -637,7 +637,7 @@ export const PersonaFadersSection: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-white">Autonomous Agent Personality Evolution</span>
                             <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/40">
-                                Adaptive AI
+                                Adaptive
                             </span>
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5">

@@ -170,7 +170,7 @@ export function DepartmentJourneyBar({
                 >
                     <div className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-widest text-gray-500 border-b border-white/5 mb-1 flex items-center justify-between">
                         <span>Guided Pathways</span>
-                        <span className="text-indigo-400">Jev System One</span>
+                        <span className="text-indigo-400">Recommended</span>
                     </div>
                     {options.map(option => {
                         const isRecommended = option.id === verdict.journeyId;
@@ -190,7 +190,7 @@ export function DepartmentJourneyBar({
                                     <span className="text-xs font-semibold text-gray-100">{option.label}</span>
                                     {isRecommended && (
                                         <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/30 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
-                                            <Sparkles size={8} /> Jev Pick
+                                            <Sparkles size={8} /> Recommended
                                         </span>
                                     )}
                                 </div>

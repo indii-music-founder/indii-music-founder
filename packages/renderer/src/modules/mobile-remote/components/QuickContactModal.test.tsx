@@ -110,14 +110,14 @@ describe('QuickContactModal Component', () => {
 
         // Verify the generate avatar button renders
         await waitFor(() => {
-            expect(screen.getByText('Generate AI Avatar from Photo')).toBeDefined();
+            expect(screen.getByText('Generate Avatar from Photo')).toBeDefined();
         });
 
-        fireEvent.click(screen.getByText('Generate AI Avatar from Photo'));
+        fireEvent.click(screen.getByText('Generate Avatar from Photo'));
 
         await waitFor(() => {
             expect(ImageGeneration.generateImages).toHaveBeenCalled();
-            expect(screen.getByText('AI Avatar Ready')).toBeDefined();
+            expect(screen.getByText('Avatar Ready')).toBeDefined();
         });
     });
 });

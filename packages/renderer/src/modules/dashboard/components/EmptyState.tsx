@@ -107,7 +107,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
             icon: Sparkles,
             title: 'Create Media',
             prompt: '/create-media',
-            summary: 'AI cover art, social visuals & music videos',
+            summary: 'Cover art, social visuals & music videos',
             action: () => onCommandSubmit('/create-media'),
             mediaActions: [
                 { label: 'Cover Art', templateId: 'template-simple-image' },
