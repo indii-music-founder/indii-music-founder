@@ -9514,6 +9514,14 @@ export async function judgePlpVariantAdFormat(
 }
 
 // ---------------------------------------------------------------------------
+// Judgment 81: Creative Journey & Studio Flow Intent (judgeCreativeJourneyIntent)
+// ---------------------------------------------------------------------------
+// Evaluates artist context (active prompt, uploaded audio/stems, video takes,
+// reference images, and active studio view) to recommend a respectful, seamless
+// studio journey preset without intrusive marketing or clunky horizontal button rows.
+// ---------------------------------------------------------------------------
+
+export type CreativeJourneyOption =
 // Judgment 81: Creative Journey intent assistant
 // ---------------------------------------------------------------------------
 
@@ -9526,6 +9534,145 @@ export type CreativeJourneyIntent =
     | 'guided_campaign';
 
 export interface CreativeJourneyContext {
+    prompt?: string;
+    hasAudio?: boolean;
+    hasVideo?: boolean;
+    hasImage?: boolean;
+    currentMode?: 'image' | 'video' | 'omni';
+    currentView?: string;
+}
+
+export interface CreativeJourneyVerdict {
+    recommendedJourney: CreativeJourneyOption;
+    headline: string;
+    actionLabel: string;
+    targetViewMode: 'canvas' | 'video_production' | 'direct' | 'omni';
+    targetGenMode: 'image' | 'video';
+    targetVideoSubView?: 'director' | 'editor' | 'storyboard';
+    confidence: number;
+    reason: string;
+}
+
+export function deterministicCreativeJourneyFallback(
+    context: CreativeJourneyContext,
+): CreativeJourneyVerdict {
+    const prompt = (context.prompt || '').toLowerCase();
+    const hasAudio = Boolean(context.hasAudio);
+    const hasVideo = Boolean(context.hasVideo);
+
+    // 1. Audio stem uploaded or song release context
+    if (hasAudio || /finished song|master track|audio stem|lyrics|vocals/i.test(prompt)) {
+        return {
+            recommendedJourney: 'music_video',
+            headline: 'Audio loaded. Build your song’s visual storyboard and timeline.',
+            actionLabel: 'Open Storyboard',
+            targetViewMode: 'video_production',
+            targetGenMode: 'video',
+            targetVideoSubView: 'storyboard',
+            confidence: 0.90,
+            reason: 'Audio stems or music song brief detected; recommending music video storyboard.',
+        };
+    }
+
+    // 2. Raw phone footage or multi-take trimming
+    if (/phone footage|raw take|rehearsal|b-roll|voice memo|live clip/i.test(prompt) || (hasVideo && /raw|trim|import/i.test(prompt))) {
+        return {
+            recommendedJourney: 'phone_recording',
+            headline: 'Working with raw phone footage? Trim unwanted takes with an edit proxy.',
+            actionLabel: 'Import Footage',
+            targetViewMode: 'video_production',
+            targetGenMode: 'video',
+            targetVideoSubView: 'director',
+            confidence: 0.85,
+            reason: 'Raw mobile capture or rehearsal footage detected.',
+        };
+    }
+
+    // 3. Social cutdowns / teaser reels
+    if (/tiktok|reel|shorts|teaser|promo clip|vertical video|social cut/i.test(prompt) || (hasVideo && !hasAudio)) {
+        return {
+            recommendedJourney: 'social_clips',
+            headline: 'Format video takes into high-impact 9:16 vertical clips for social release.',
+            actionLabel: 'Create Social Clips',
+            targetViewMode: 'video_production',
+            targetGenMode: 'video',
+            targetVideoSubView: 'editor',
+            confidence: 0.85,
+            reason: 'Social cutdown or vertical teaser intent detected.',
+        };
+    }
+
+    // 4. Character / Face consistency references
+    if (/face|band member|musician reference|singer|portrait consistency/i.test(prompt)) {
+        return {
+            recommendedJourney: 'band_references',
+            headline: 'Maintain consistent facial features across album art and video frames.',
+            actionLabel: 'Open Roster',
+            targetViewMode: 'canvas',
+            targetGenMode: 'image',
+            confidence: 0.80,
+            reason: 'Character and artist facial reference keywords detected.',
+        };
+    }
+
+    // 5. Album artwork / cover design (default for image studio)
+    if (context.currentMode === 'image' || /cover art|album art|vinyl|poster|spotify cover/i.test(prompt)) {
+        return {
+            recommendedJourney: 'album_artwork',
+            headline: 'Design release artwork tuned for DSPs and 3000×3000 physical print specs.',
+            actionLabel: 'Design Cover Art',
+            targetViewMode: 'canvas',
+            targetGenMode: 'image',
+            confidence: 0.80,
+            reason: 'Release artwork design intent detected.',
+        };
+    }
+
+    // Default neutral flow
+    return {
+        recommendedJourney: 'album_artwork',
+        headline: 'Start with your finished song, photos, or brief. Refine and export when ready.',
+        actionLabel: 'Creative Canvas',
+        targetViewMode: 'canvas',
+        targetGenMode: 'image',
+        confidence: 0.70,
+        reason: 'General creative studio workflow default.',
+    };
+}
+
+export function creativeJourneyQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'A musician or creative director is working in the Indii Creative Studio. ' +
+            'Based on the artist context (prompt, uploaded audio, video footage, and current mode), ' +
+            'determine the SINGLE most helpful next creative journey: ' +
+            '"album_artwork" (creating single/album covers, DSP art, press photos), ' +
+            '"music_video" (assembling scene storyboard for a finished song), ' +
+            '"social_clips" (cutting 9:16 vertical teasers and social reels), ' +
+            '"phone_recording" (importing phone takes/b-roll footage for proxy trimming), ' +
+            '"band_references" (setting up artist/band member faces for visual consistency), or ' +
+            '"guided_campaign" (full multi-asset campaign generation).',
+        criteria: {
+            album_artwork: 'Single/album cover, vinyl jacket, poster, photography, headshots.',
+            music_video: 'Visual storyboard synced to audio tracks, multi-scene video timeline.',
+            social_clips: '9:16 vertical teasers, TikTok/Reel cutdowns, short motion snippets.',
+            phone_recording: 'Importing raw mobile clips, rehearsal takes, or b-roll.',
+            band_references: 'Managing artist or band member faces for persistent character consistency.',
+            guided_campaign: 'Bundled campaign creation across multiple formats.',
+        },
+    };
+}
+
+/**
+ * TypeSafe System One (JEV) judgment to recommend the most respectful, contextual
+ * creative journey for artists in the Studio top bar.
+ */
+export async function judgeCreativeJourneyIntent(
+    context: CreativeJourneyContext,
+): Promise<CreativeJourneyVerdict> {
+    const fallback = deterministicCreativeJourneyFallback(context);
+    if (!judgmentsAvailable()) {
     prompt: string;
     generationMode: 'image' | 'video';
     viewMode: string;
@@ -9588,6 +9735,100 @@ export async function judgeCreativeJourneyIntent(
     }
 
     try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: context.prompt?.slice(0, 500) || '',
+                hasAudio: Boolean(context.hasAudio),
+                hasVideo: Boolean(context.hasVideo),
+                hasImage: Boolean(context.hasImage),
+                currentMode: context.currentMode || 'image',
+                currentView: context.currentView || 'canvas',
+            },
+            questions: {
+                journey_intent: creativeJourneyQuestion(),
+            },
+        });
+
+        const ans = result.data.answers?.journey_intent;
+        const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
+        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
+            ? (ans as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+            ? rawConfidence
+            : fallback.confidence;
+
+        if (
+            choice === 'album_artwork' ||
+            choice === 'music_video' ||
+            choice === 'social_clips' ||
+            choice === 'phone_recording' ||
+            choice === 'band_references' ||
+            choice === 'guided_campaign'
+        ) {
+            // Apply corresponding headlines and targets for resolved choice
+            const map: Record<CreativeJourneyOption, { headline: string; actionLabel: string; targetViewMode: 'canvas' | 'video_production' | 'direct' | 'omni'; targetGenMode: 'image' | 'video'; targetVideoSubView?: 'director' | 'editor' | 'storyboard' }> = {
+                album_artwork: {
+                    headline: 'Design release artwork tuned for DSPs and 3000×3000 physical print specs.',
+                    actionLabel: 'Design Cover Art',
+                    targetViewMode: 'canvas',
+                    targetGenMode: 'image',
+                },
+                music_video: {
+                    headline: 'Audio loaded. Build your song’s visual storyboard and timeline.',
+                    actionLabel: 'Open Storyboard',
+                    targetViewMode: 'video_production',
+                    targetGenMode: 'video',
+                    targetVideoSubView: 'storyboard',
+                },
+                social_clips: {
+                    headline: 'Format video takes into high-impact 9:16 vertical clips for social release.',
+                    actionLabel: 'Create Social Clips',
+                    targetViewMode: 'video_production',
+                    targetGenMode: 'video',
+                    targetVideoSubView: 'editor',
+                },
+                phone_recording: {
+                    headline: 'Working with raw phone footage? Trim unwanted takes with an edit proxy.',
+                    actionLabel: 'Import Footage',
+                    targetViewMode: 'video_production',
+                    targetGenMode: 'video',
+                    targetVideoSubView: 'director',
+                },
+                band_references: {
+                    headline: 'Maintain consistent facial features across album art and video frames.',
+                    actionLabel: 'Open Roster',
+                    targetViewMode: 'canvas',
+                    targetGenMode: 'image',
+                },
+                guided_campaign: {
+                    headline: 'Guided campaign creation: 1 track + visual concept → unwatermarked pack.',
+                    actionLabel: 'Launch Campaign',
+                    targetViewMode: 'direct',
+                    targetGenMode: 'image',
+                },
+            };
+
+            const details = map[choice as CreativeJourneyOption];
+            return {
+                recommendedJourney: choice as CreativeJourneyOption,
+                headline: details.headline,
+                actionLabel: details.actionLabel,
+                targetViewMode: details.targetViewMode,
+                targetGenMode: details.targetGenMode,
+                targetVideoSubView: details.targetVideoSubView,
+                confidence,
+                reason: `Jev resolved creative journey as ${choice}.`,
+            };
+        }
+
+        return fallback;
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
             { answers: Record<string, unknown> }
@@ -9628,6 +9869,7 @@ export async function judgeCreativeJourneyIntent(
         return fallback;
     }
 }
+
 
 
 

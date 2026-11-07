@@ -189,11 +189,16 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                             disabled={isBusy || !canApprove}
                                             onClick={() => handleApprove(item.id)}
                                             data-testid={index === 0 ? 'banner-approve-btn' : `banner-approve-btn-${item.id}`}
+                                            className={`flex-1 px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all ${
+                                                canApprove
+                                                    ? 'bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer'
+                                                    : 'bg-white/10 text-white/30 cursor-not-allowed border border-white/5'
+                                            } disabled:opacity-50`}
                                             title={canApprove ? 'Approve this action in the current session' : 'This approval is bound to another session and cannot be executed here'}
                                             className="flex-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60"
                                         >
                                             <Check size={12} />
-                                            Approve
+                                            {canApprove ? 'Approve' : 'Expired Session'}
                                         </button>
                                         <button
                                             type="button"

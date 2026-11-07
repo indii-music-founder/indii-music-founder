@@ -121,17 +121,23 @@ class ToolApprovalService {
         if (approval.status !== 'pending') return false;
         if (approval.toolName.startsWith('computer_')) return !approval.bindingSessionId;
         const binding = this.boundCalls.get(approval.id);
-        try {
-            return Boolean(binding && binding.userId === getUserId()
-                && approval.bindingSessionId === this.rendererSessionId
-                && binding.agentId === approval.agentId
-                && binding.toolName === approval.toolName
-                && binding.riskTier === approval.riskTier
-                && binding.description === approval.description
-                && binding.argsJson === canonicalArgs(approval.args));
-        } catch {
-            return false;
+        if (binding) {
+            try {
+                return Boolean(binding.userId === getUserId()
+                    && approval.bindingSessionId === this.rendererSessionId
+                    && binding.agentId === approval.agentId
+                    && binding.toolName === approval.toolName
+                    && binding.riskTier === approval.riskTier
+                    && binding.description === approval.description
+                    && binding.argsJson === canonicalArgs(approval.args));
+            } catch {
+                return false;
+            }
         }
+        // ISSUE-APPROVAL-SESSION: When the in-memory session binding was lost (e.g. reload or restart),
+        // safe registered write tools like report_bug / request_feature can still be approved
+        // and dispatched via the tool registry instead of dead-ending the user.
+        return approval.toolName === 'report_bug' || approval.toolName === 'request_feature';
     }
     /**
      * Called by BaseAgent.ts BEFORE executing a requiresApproval:true tool.
@@ -230,7 +236,10 @@ class ToolApprovalService {
                 if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                 const current = snap.data() as PendingToolApproval;
                 if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
-                if (!matchesBinding(current)) throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                const isCrossSessionRegistryTool = current.toolName === 'report_bug' || current.toolName === 'request_feature';
+                if (!matchesBinding(current) && !isCrossSessionRegistryTool) {
+                    throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                }
                 transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
                 return current;
             });
@@ -270,10 +279,17 @@ class ToolApprovalService {
                     __computerAgentId: approval.agentId,
                 };
                 result = await toolFn(executionArgs);
-            } else {
+            } else if (binding) {
                 // Use the selected implementation and original arguments from the requesting turn.
-                // A reload loses this binding and fails closed instead of replaying a bare tool name.
-                result = await binding!.execute(JSON.parse(binding!.argsJson) as ToolFunctionArgs);
+                result = await binding.execute(JSON.parse(binding.argsJson) as ToolFunctionArgs);
+            } else if (approval.toolName === 'report_bug' || approval.toolName === 'request_feature') {
+                // Cross-session recovery: safely dispatch registered utility tools
+                const { TOOL_REGISTRY } = await import('../tools');
+                const toolFn = TOOL_REGISTRY[approval.toolName];
+                if (!toolFn) throw new Error(`Tool '${approval.toolName}' not found in registry`);
+                result = await toolFn(approval.args);
+            } else {
+                throw new Error(`Approval ${approvalId} binding expired. Deny and request again.`);
             }
         } catch (err: unknown) {
             if (!isComputerApproval) {
