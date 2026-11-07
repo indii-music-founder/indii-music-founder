@@ -254,7 +254,7 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                 </div>
             )}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 {/* Brand Category */}
                 <CategoryDropdown
                     category="Brand"
@@ -282,19 +282,21 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                     <button
                         onClick={handleImprove}
                         disabled={isImproving || !currentPrompt.trim()}
-                        className="ml-auto px-3.5 py-1.5 text-xs rounded-xl bg-dept-creative/15 hover:bg-dept-creative/25 text-dept-creative border border-dept-creative/30 font-bold flex items-center gap-2 hover:border-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+                        title="Improve prompt with Intelligence"
+                        aria-label="Improve with Intelligence"
+                        className="ml-auto w-[230px] sm:w-[240px] px-3.5 py-1.5 text-xs rounded-full bg-dept-creative/15 hover:bg-dept-creative/25 text-dept-creative border border-dept-creative/30 font-semibold flex items-center justify-center gap-2 hover:border-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
                     >
                         {isImproving ? (
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                             >
-                                <Sparkles size={14} />
+                                <Sparkles size={13} className="shrink-0" />
                             </motion.div>
                         ) : (
-                            <Sparkles size={14} />
+                            <Sparkles size={13} className="shrink-0" />
                         )}
-                        <span>Improve with Intelligence</span>
+                        <span className="truncate">Improve with Intelligence</span>
                     </button>
                 )}
             </div>
