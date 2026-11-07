@@ -7,6 +7,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { useToast } from '@/core/context/ToastContext';
+import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -55,7 +56,7 @@ interface CategoryDropdownProps {
     values: string[] | Record<string, string[]>;
     isOpen: boolean;
     onToggle: () => void;
-    onTagClick: (tag: string) => void;
+    onTagClick: (tag: string, category: string) => void;
     variant?: 'creative' | 'royalties';
 }
 
@@ -105,7 +106,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                         {Array.isArray(values) ? (
                             <div className="flex flex-wrap gap-1">
                                 {values.length > 0 ? values.map((tag) => (
-                                    <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag)} variant={variant} />
+                                    <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag, category)} variant={variant} />
                                 )) : (
                                     <p className="text-[10px] text-gray-500 italic p-2">No tags available.</p>
                                 )}
@@ -117,7 +118,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                                         <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">{subCat}</p>
                                         <div className="flex flex-wrap gap-1">
                                             {tags.map((tag) => (
-                                                <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag)} variant={variant} />
+                                                <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag, category)} variant={variant} />
                                             ))}
                                         </div>
                                     </div>
@@ -150,10 +151,11 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
         brandKit?.fonts ? `Font: ${brandKit.fonts}` : null
     ].filter(Boolean) as string[], [brandKit]);
 
-    // Tag click: add to both prompt AND local builder-tags tracker
-    const handleTagClick = useCallback((tag: string) => {
+    // Tag click: add to prompt, local builder-tags tracker, and persist to PromptAdditiveTracker
+    const handleTagClick = useCallback((tag: string, category: string) => {
         onAddTag(tag);
         setBuilderTags(prev => [...prev, tag]);
+        PromptAdditiveTracker.recordUsage(tag, category);
     }, [onAddTag]);
 
     const handleRemoveBuilderTag = useCallback((index: number) => {

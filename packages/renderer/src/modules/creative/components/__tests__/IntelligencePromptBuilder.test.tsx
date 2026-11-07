@@ -5,6 +5,14 @@ import userEvent from '@testing-library/user-event';
 import IntelligencePromptBuilder from '../IntelligencePromptBuilder';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
+import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
+
+vi.mock('@/services/creative/PromptAdditiveTracker', () => ({
+    PromptAdditiveTracker: {
+        recordUsage: vi.fn(),
+        getFrequentAdditives: vi.fn(() => []),
+    },
+}));
 
 vi.mock('@/services/creative/IntelligencePromptService', () => ({
     IntelligencePromptService: {
@@ -66,5 +74,21 @@ describe('IntelligencePromptBuilder', () => {
         render(<IntelligencePromptBuilder onAddTag={vi.fn()} currentPrompt="" onSetPrompt={vi.fn()} />);
         const improveBtn = screen.getByRole('button', { name: /improve with intelligence/i });
         expect(improveBtn).toBeDisabled();
+    });
+
+    it('records tag selection to PromptAdditiveTracker when a tag is clicked', () => {
+        const handleAddTag = vi.fn();
+        render(<IntelligencePromptBuilder onAddTag={handleAddTag} currentPrompt="test" onSetPrompt={vi.fn()} />);
+
+        // Open Camera category
+        const cameraTrigger = screen.getByTestId('category-Camera-trigger');
+        fireEvent.click(cameraTrigger);
+
+        // Find a camera tag
+        const tagBtn = screen.getByText('Leica M6');
+        fireEvent.click(tagBtn);
+
+        expect(handleAddTag).toHaveBeenCalledWith('Leica M6');
+        expect(PromptAdditiveTracker.recordUsage).toHaveBeenCalledWith('Leica M6', 'Camera');
     });
 });

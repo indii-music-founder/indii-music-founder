@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Sparkles, Star, ChevronRight, Bookmark } from 'lucide-react';
 import {
     DropdownMenu,
@@ -14,18 +14,22 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { STUDIO_TAGS } from '../constants';
-import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
+import { PromptAdditiveTracker, PromptAdditiveUsage } from '@/services/creative/PromptAdditiveTracker';
+import { judgeCreativePromptAdditiveSuggestions } from '@/config/typesafeJudgments';
 
 interface BrandPromptAdditivesMenuProps {
     onSelectAdditive: (tag: string, category?: string) => void;
+    currentPrompt?: string;
     className?: string;
 }
 
 export const BrandPromptAdditivesMenu: React.FC<BrandPromptAdditivesMenuProps> = ({
     onSelectAdditive,
+    currentPrompt = '',
     className = '',
 }) => {
     const brandKit = useStore(useShallow((state) => state.userProfile?.brandKit));
+    const [rankedAdditives, setRankedAdditives] = useState<PromptAdditiveUsage[]>([]);
 
     // Brand Kit tags extracted directly from user branding preferences
     const brandAdditives = useMemo(() => {
@@ -80,9 +84,30 @@ export const BrandPromptAdditivesMenu: React.FC<BrandPromptAdditivesMenuProps> =
     }, [brandKit]);
 
     // Most frequently used prompt additives recorded by the tracker
-    const frequentAdditives = useMemo(() => {
+    const rawFrequentAdditives = useMemo(() => {
         return PromptAdditiveTracker.getFrequentAdditives(8);
     }, []);
+
+    // Jev System One contextual additive ranking
+    useEffect(() => {
+        if (rawFrequentAdditives.length === 0) {
+            setRankedAdditives([]);
+            return;
+        }
+
+        let isMounted = true;
+        void judgeCreativePromptAdditiveSuggestions(currentPrompt, rawFrequentAdditives).then((results) => {
+            if (isMounted) {
+                setRankedAdditives(results as PromptAdditiveUsage[]);
+            }
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [currentPrompt, rawFrequentAdditives]);
+
+    const frequentAdditives = rankedAdditives.length > 0 ? rankedAdditives : rawFrequentAdditives;
 
     const handleSelect = (tag: string, category?: string) => {
         PromptAdditiveTracker.recordUsage(tag, category);
