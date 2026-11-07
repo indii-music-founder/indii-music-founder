@@ -10321,4 +10321,203 @@ export async function judgeCreativeStudioConfigPreset(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 85: Creative Prompt Additive Suggestions & Intent Conditioning
+// (judgeCreativePromptAdditiveSuggestions & judgePromptImprovementIntent)
+// ---------------------------------------------------------------------------
+// Jev System One primitives that evaluate active prompt semantics, brand context,
+// and candidate descriptors to return structured rank scores and archetype steering.
+// ---------------------------------------------------------------------------
+
+export type PromptVisualArchetype =
+    | 'photorealistic'
+    | 'cinematic_film'
+    | 'digital_3d_surreal'
+    | 'graphic_cover_typography'
+    | 'moody_editorial';
+
+export interface PromptImprovementIntentVerdict {
+    archetype: PromptVisualArchetype;
+    confidence: number;
+    brandColorWeight: 'foreground' | 'subtle' | 'neutral';
+    focusTechnical: string[];
+}
+
+export function promptImprovementQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'Classify the user visual prompt into its primary creative archetype to steer autonomous prompt engineering.',
+        criteria: {
+            photorealistic: 'Natural photography, realistic lighting, portraits, lifelike textures.',
+            cinematic_film: 'Movie stills, cinematic lighting, anamorphic, color graded film stock.',
+            digital_3d_surreal: '3D renders, CGI, surrealism, octane render, dreamlike fantasy elements.',
+            graphic_cover_typography: 'Album cover design, graphic poster, typography, bold graphic layout.',
+            moody_editorial: 'High fashion editorial, dramatic contrast, high concept mood and styling.',
+        },
+    };
+}
+
+export function deterministicPromptImprovementFallback(
+    rawPrompt: string,
+): PromptImprovementIntentVerdict {
+    const p = rawPrompt.toLowerCase();
+    let archetype: PromptVisualArchetype = 'photorealistic';
+
+    if (p.includes('cinema') || p.includes('film') || p.includes('movie') || p.includes('anamorphic') || p.includes('35mm')) {
+        archetype = 'cinematic_film';
+    } else if (p.includes('3d') || p.includes('render') || p.includes('octane') || p.includes('surreal') || p.includes('cgi') || p.includes('cyber')) {
+        archetype = 'digital_3d_surreal';
+    } else if (p.includes('cover') || p.includes('album') || p.includes('poster') || p.includes('type') || p.includes('graphic')) {
+        archetype = 'graphic_cover_typography';
+    } else if (p.includes('editorial') || p.includes('fashion') || p.includes('dramatic') || p.includes('moody') || p.includes('noir')) {
+        archetype = 'moody_editorial';
+    }
+
+    return {
+        archetype,
+        confidence: 0.85,
+        brandColorWeight: p.includes('brand') || p.includes('color') ? 'foreground' : 'subtle',
+        focusTechnical: archetype === 'cinematic_film'
+            ? ['anamorphic lens', 'cinematic lighting', 'film stock grain']
+            : ['depth of field', 'studio lighting', 'fine texture'],
+    };
+}
+
+export async function judgePromptImprovementIntent(
+    rawPrompt: string,
+    brandSummary?: string,
+): Promise<PromptImprovementIntentVerdict> {
+    const fallback = deterministicPromptImprovementFallback(rawPrompt);
+    if (!judgmentsAvailable()) return fallback;
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                rawPrompt: rawPrompt.slice(0, 300),
+                brandSummary: (brandSummary || '').slice(0, 150),
+            },
+            questions: {
+                archetype: promptImprovementQuestion(),
+            },
+        });
+
+        const answer = result.data.answers?.archetype;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        const rawConfidence =
+            typeof answer === 'object' && answer !== null
+                ? (answer as { confidence?: unknown }).confidence
+                : undefined;
+
+        const validArchetypes: PromptVisualArchetype[] = [
+            'photorealistic',
+            'cinematic_film',
+            'digital_3d_surreal',
+            'graphic_cover_typography',
+            'moody_editorial',
+        ];
+
+        if (typeof choice === 'string' && validArchetypes.includes(choice as PromptVisualArchetype)) {
+            const confidence =
+                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                    ? rawConfidence
+                    : 0.88;
+            return {
+                archetype: choice as PromptVisualArchetype,
+                confidence,
+                brandColorWeight: fallback.brandColorWeight,
+                focusTechnical: fallback.focusTechnical,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'prompt improvement intent judgment');
+        return fallback;
+    }
+}
+
+export interface CandidateAdditiveItem {
+    tag: string;
+    category?: string;
+    count?: number;
+}
+
+export function rankAdditivesDeterministically(
+    prompt: string,
+    candidates: CandidateAdditiveItem[],
+): CandidateAdditiveItem[] {
+    const p = prompt.toLowerCase();
+    return [...candidates].sort((a, b) => {
+        // Boost if already partially matches prompt theme
+        const aCatMatch = a.category && p.includes(a.category.toLowerCase()) ? 2 : 0;
+        const bCatMatch = b.category && p.includes(b.category.toLowerCase()) ? 2 : 0;
+        const aCount = (a.count || 0) + aCatMatch;
+        const bCount = (b.count || 0) + bCatMatch;
+        return bCount - aCount;
+    });
+}
+
+export async function judgeCreativePromptAdditiveSuggestions(
+    prompt: string,
+    candidates: CandidateAdditiveItem[],
+): Promise<CandidateAdditiveItem[]> {
+    if (candidates.length === 0) return [];
+    if (!prompt.trim() || !judgmentsAvailable() || candidates.length < 2) {
+        return rankAdditivesDeterministically(prompt, candidates);
+    }
+
+    try {
+        const topCandidates = candidates.slice(0, 8);
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const criteria: Record<string, string> = {};
+        topCandidates.forEach((c, idx) => {
+            criteria[`cand_${idx}`] = `${c.tag} (${c.category || 'Modifier'})`;
+        });
+        criteria['none'] = 'None fit the active prompt well';
+
+        const result = await judgeFn({
+            state: {
+                prompt: prompt.slice(0, 200),
+                candidates: topCandidates.map(c => c.tag),
+            },
+            questions: {
+                bestFit: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Which of these creative prompt additives best complements or enhances the mood, visual style, or lighting of the user prompt?',
+                    criteria,
+                },
+            },
+        });
+
+        const answer = result.data.answers?.bestFit;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+
+        if (typeof choice === 'string' && choice.startsWith('cand_')) {
+            const chosenIndex = parseInt(choice.replace('cand_', ''), 10);
+            if (!isNaN(chosenIndex) && topCandidates[chosenIndex]) {
+                const picked = topCandidates[chosenIndex];
+                const rest = topCandidates.filter((_, i) => i !== chosenIndex);
+                return [picked, ...rest];
+            }
+        }
+
+        return rankAdditivesDeterministically(prompt, candidates);
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'prompt additive suggestion judgment');
+        return rankAdditivesDeterministically(prompt, candidates);
+    }
+}
+
+
 

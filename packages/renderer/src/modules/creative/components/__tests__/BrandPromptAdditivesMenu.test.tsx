@@ -1,10 +1,14 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrandPromptAdditivesMenu } from '../BrandPromptAdditivesMenu';
 import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
 import { useStore } from '@/core/store';
+
+vi.mock('@/config/typesafeJudgments', () => ({
+    judgeCreativePromptAdditiveSuggestions: vi.fn(async (_prompt: string, items: any[]) => items),
+}));
 
 describe('BrandPromptAdditivesMenu', () => {
     beforeEach(() => {
@@ -80,5 +84,30 @@ describe('BrandPromptAdditivesMenu', () => {
         expect(await screen.findByText('Octane Render')).toBeInTheDocument();
         expect(screen.getByText('2×')).toBeInTheDocument();
         expect(screen.getByText('Tokyo Neon')).toBeInTheDocument();
+    });
+
+    it('passes currentPrompt to judgeCreativePromptAdditiveSuggestions for contextual ranking', async () => {
+        PromptAdditiveTracker.recordUsage('Octane Render', 'Engine');
+        PromptAdditiveTracker.recordUsage('Tokyo Neon', 'Environment');
+
+        const { judgeCreativePromptAdditiveSuggestions } = await import('@/config/typesafeJudgments');
+        const handleSelect = vi.fn();
+
+        render(
+            <BrandPromptAdditivesMenu
+                onSelectAdditive={handleSelect}
+                currentPrompt="night street with glowing cyber signs"
+            />
+        );
+
+        await waitFor(() => {
+            expect(judgeCreativePromptAdditiveSuggestions).toHaveBeenCalledWith(
+                'night street with glowing cyber signs',
+                expect.arrayContaining([
+                    expect.objectContaining({ tag: 'Octane Render' }),
+                    expect.objectContaining({ tag: 'Tokyo Neon' }),
+                ])
+            );
+        });
     });
 });

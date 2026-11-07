@@ -1,5 +1,6 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
+import { judgePromptImprovementIntent } from '@/config/typesafeJudgments';
 
 /**
  * IntelligencePromptService
@@ -42,6 +43,9 @@ export class IntelligencePromptService {
 
         const brandContext = await this.getBrandContext();
 
+        // Jev System One pre-flight judgment: classifies visual archetype & steers technical focus
+        const intentVerdict = await judgePromptImprovementIntent(rawPrompt, brandContext);
+
         const systemInstruction = mode === 'video'
             ? `You are an expert cinematic video prompt engineer specializing in Intelligence video generation (Veo 3.1).
 You understand temporal pacing, camera movement, scene transitions, and how to describe motion for Autonomous models.
@@ -52,6 +56,11 @@ Your output prompts produce stunning, gallery-quality images.`;
 
         const prompt = `
 ${systemInstruction}
+
+CREATIVE ARCHETYPE & DIRECTION:
+Primary Archetype: ${intentVerdict.archetype} (confidence: ${Math.round(intentVerdict.confidence * 100)}%)
+Brand Color Weighting: ${intentVerdict.brandColorWeight}
+Recommended Technical Descriptors: ${intentVerdict.focusTechnical.join(', ')}
 
 BRAND CONTEXT:
 ${brandContext}

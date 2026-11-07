@@ -772,6 +772,7 @@ export default function DirectGenerationTab() {
                     
                     {/* Brand & Prompt Additives Menu — Drawn directly from brand kit preferences + tracked frequent descriptors */}
                     <BrandPromptAdditivesMenu
+                        currentPrompt={localPrompt}
                         onSelectAdditive={(tag) => {
                             setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
                         }}

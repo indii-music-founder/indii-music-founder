@@ -117,6 +117,10 @@ import {
     deterministicDepartmentJourneyFallback,
     judgeCreativeStudioConfigPreset,
     deterministicCreativeStudioConfigFallback,
+    judgePromptImprovementIntent,
+    deterministicPromptImprovementFallback,
+    judgeCreativePromptAdditiveSuggestions,
+    rankAdditivesDeterministically,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5890,6 +5894,64 @@ describe('judgeCreativeStudioConfigPreset (Judgment 84)', () => {
         const result = await judgeCreativeStudioConfigPreset(ctx);
         expect(result).toEqual(deterministicCreativeStudioConfigFallback(ctx));
         expect(result.presetId).toBe('cinematic_widescreen');
+    });
+});
+
+describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions (Judgment 85)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+    });
+
+    it('classifies visual archetypes deterministically offline', () => {
+        const film = deterministicPromptImprovementFallback('cinematic 35mm film still of musician');
+        expect(film.archetype).toBe('cinematic_film');
+        expect(film.focusTechnical).toContain('anamorphic lens');
+
+        const surreal = deterministicPromptImprovementFallback('surreal 3d octane render of chrome sphere');
+        expect(surreal.archetype).toBe('digital_3d_surreal');
+
+        const cover = deterministicPromptImprovementFallback('vinyl album cover typography art');
+        expect(cover.archetype).toBe('graphic_cover_typography');
+
+        const editorial = deterministicPromptImprovementFallback('high fashion editorial portrait dramatic lighting');
+        expect(editorial.archetype).toBe('moody_editorial');
+    });
+
+    it('uses Jev Choice to resolve prompt archetype online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    archetype: { choice: 'cinematic_film', confidence: 0.94 },
+                },
+            },
+        }));
+
+        const result = await judgePromptImprovementIntent('close up of singer on stage', 'Neo-noir aesthetic');
+        expect(result.archetype).toBe('cinematic_film');
+        expect(result.confidence).toBe(0.94);
+    });
+
+    it('ranks additives contextually with Jev Choice', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    bestFit: { choice: 'cand_1' },
+                },
+            },
+        }));
+
+        const candidates = [
+            { tag: 'Sunny Day', category: 'Weather', count: 5 },
+            { tag: 'Tokyo Neon', category: 'Environment', count: 2 },
+            { tag: 'Leica M6', category: 'Camera', count: 1 },
+        ];
+
+        const ranked = await judgeCreativePromptAdditiveSuggestions('cyberpunk night rain', candidates);
+        expect(ranked[0].tag).toBe('Tokyo Neon');
     });
 });
 
