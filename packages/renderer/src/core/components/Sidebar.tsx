@@ -12,7 +12,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 import { ProjectList } from './sidebar/ProjectList';
-import { NextBestActionCard } from './sidebar/NextBestActionCard';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 import { AgentCanvasToggle } from './AgentCanvasToggle';
 
@@ -297,12 +296,12 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Next Best Action Suggestion (TypeSafe System One / Jev) */}
-            <NextBestActionCard
-                onNavigate={throttledSetModule}
-                currentModule={currentModule}
-                isSidebarOpen={isSidebarOpen}
-            />
+            {/*
+              The "Suggested Next" NextBestActionCard used to sit here, wedged above
+              Boardroom. Its only real interaction was the close button, so it was
+              removed on founder instruction. Contextual next steps now live in the
+              module where the work happens (e.g. the Creative Studio header journey chip).
+            */}
 
             {/*
               ISSUE-1269: the god_mode "Command Center" pill lived here and routed to

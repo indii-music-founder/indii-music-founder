@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -112,14 +112,62 @@ describe('CreativeJourney', () => {
         expect(await screen.findByTestId('character-library')).toBeInTheDocument();
     });
 
-    it('folds the flow strip with an accessible control', () => {
+    it('renders inline for the header row with no fold control or stacked strip', () => {
         render(<CreativeJourney />);
-        const fold = screen.getByTestId('creative-journey-fold-toggle');
-        fireEvent.click(fold);
-        expect(screen.getByText('Creative journeys hidden')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Show creative journeys' })).toHaveAttribute('aria-expanded', 'false');
-        fireEvent.click(screen.getByRole('button', { name: 'Show creative journeys' }));
-        expect(screen.getByTestId('creative-journeys-toggle')).toBeInTheDocument();
+        const journey = screen.getByTestId('creative-journey');
+        expect(journey.tagName).toBe('DIV');
+        expect(journey).toHaveAttribute('role', 'group');
+        expect(journey).not.toHaveClass('border-t');
+        expect(screen.queryByTestId('creative-journey-fold-toggle')).not.toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent('Turn this into a short social cut');
+    });
+
+    it('closes the journeys popover with Escape and returns focus to the toggle', () => {
+        render(<CreativeJourney />);
+        const toggle = screen.getByTestId('creative-journeys-toggle');
+        fireEvent.click(toggle);
+        expect(document.getElementById('creative-journey-options')).toBeInTheDocument();
+        fireEvent.keyDown(toggle, { key: 'Escape' });
+        expect(document.getElementById('creative-journey-options')).not.toBeInTheDocument();
+        expect(toggle).toHaveFocus();
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('closes the journeys popover on an outside click', () => {
+        render(
+            <div>
+                <button type="button" data-testid="outside">Canvas</button>
+                <CreativeJourney />
+            </div>
+        );
+        fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
+        expect(document.getElementById('creative-journey-options')).toBeInTheDocument();
+        fireEvent.mouseDown(screen.getByTestId('outside'));
+        expect(document.getElementById('creative-journey-options')).not.toBeInTheDocument();
+    });
+
+    it('shows a step hint as a dismissible popover that clears itself', () => {
+        vi.useFakeTimers();
+        try {
+            render(<CreativeJourney />);
+            fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
+            fireEvent.click(screen.getByTestId('creative-journey-phone_recording'));
+            expect(screen.getByTestId('creative-journey-guidance')).toHaveTextContent('Import the recording');
+            act(() => { vi.advanceTimersByTime(8000); });
+            expect(screen.queryByTestId('creative-journey-guidance')).not.toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('closes the reference library panel with its close button', async () => {
+        render(<CreativeJourney />);
+        fireEvent.click(screen.getByTestId('creative-journeys-toggle'));
+        fireEvent.click(screen.getByTestId('creative-journey-band_references'));
+        expect(await screen.findByTestId('character-library')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('creative-journey-guidance-close'));
+        expect(screen.queryByTestId('character-library')).not.toBeInTheDocument();
+        expect(screen.getByTestId('creative-journeys-toggle')).toHaveFocus();
     });
 
     it('opens the guided campaign from the popover', () => {

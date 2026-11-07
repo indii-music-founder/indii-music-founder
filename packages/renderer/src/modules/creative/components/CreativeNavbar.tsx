@@ -126,7 +126,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         {viewMode}
                     </div>
 
-                    <div className="h-3.5 w-px bg-white/8 mx-0.5" />
+                    <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
+
+                    {/* Journeys menu + Jev recommendation live in this row — no second bar. */}
+                    <CreativeJourney />
                 </div>
 
                 <CanvasModePicker />
@@ -229,7 +232,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 </div>
             </div>
 
-            <CreativeJourney />
             {/* Prompt Builder — Full-width horizontal overlay below navbar */}
             <AnimatePresence>
                 {showPromptBuilder && (
