@@ -19,6 +19,7 @@ import { MicroLicensingPortal } from './components/MicroLicensingPortal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { logger } from '@/utils/logger';
 /* ================================================================== */
 /*  Licensing Dashboard — Three-Panel Layout                            */
@@ -32,6 +33,7 @@ import { logger } from '@/utils/logger';
 /* ================================================================== */
 
 export default function LicensingDashboard() {
+    const [activeTab, setActiveTab] = React.useState<string>('overview');
     const { licenses, requests, projectedValue, loading: isLoading, initiateDrafting } = useLicensing();
     const { userProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
@@ -113,6 +115,16 @@ export default function LicensingDashboard() {
             bgBlobClass="bg-emerald-500/8"
             iconBgClass="bg-linear-to-br from-emerald-500 to-emerald-400"
             iconShadowClass="shadow-emerald-500/20"
+            actions={
+                <DepartmentJourneyBar
+                    department="licensing"
+                    activeTab={activeTab}
+                    onSelectTab={setActiveTab}
+                    itemCount={licenses.length}
+                    pendingCount={requests.length}
+                    accentColorClass="text-emerald-300 border-emerald-400/25 bg-emerald-400/10 hover:bg-emerald-400/20"
+                />
+            }
             leftPanel={
                 <>
                     <DealHealthPanel
@@ -133,7 +145,7 @@ export default function LicensingDashboard() {
         >
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
-                <Tabs defaultValue="overview" className="h-full flex flex-col pt-4 md:pt-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col pt-4 md:pt-6">
                     <div className="px-4 md:px-6 mb-4">
                         <TabsList className="bg-white/5 border border-white/10">
                             <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">

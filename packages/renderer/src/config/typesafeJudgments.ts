@@ -9826,7 +9826,499 @@ export async function judgeBoardroomExecutiveIntent(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 83: Department & Manager Workspace Journey Intent
+// ---------------------------------------------------------------------------
+// Evaluates active department state (current module, active tab, record count,
+// pending items, and staged user prompt) to recommend the highest-leverage
+// next action inside the department's unified header without adding extra rows.
+// ---------------------------------------------------------------------------
 
+export type DepartmentWorkspaceId =
+    | 'road'
+    | 'agent'
+    | 'marketing'
+    | 'legal'
+    | 'publishing'
+    | 'finance'
+    | 'distribution'
+    | 'licensing'
+    | 'merch'
+    | 'registration'
+    | 'security';
 
+export interface DepartmentJourneyOption {
+    id: string;
+    label: string;
+    description: string;
+    actionLabel: string;
+    targetTab: string;
+}
+
+export interface DepartmentJourneyContext {
+    department: DepartmentWorkspaceId;
+    activeTab: string;
+    prompt?: string;
+    itemCount?: number;
+    pendingCount?: number;
+    hasAlert?: boolean;
+}
+
+export interface DepartmentJourneyVerdict {
+    department: DepartmentWorkspaceId;
+    journeyId: string;
+    headline: string;
+    actionLabel: string;
+    targetTab: string;
+    confidence: number;
+}
+
+export const DEPARTMENT_JOURNEYS: Record<DepartmentWorkspaceId, readonly DepartmentJourneyOption[]> = {
+    road: [
+        { id: 'route_plan', label: 'Route & Stop Planner', description: 'Build dates, cities, and routing optimization.', actionLabel: 'Open Route Planner', targetTab: 'plan' },
+        { id: 'day_sheets', label: 'Tour Book & Day Sheets', description: 'Manage load-in times, hospitality, and tech riders.', actionLabel: 'Open Tour Book', targetTab: 'tour-book' },
+        { id: 'road_radar', label: 'On-The-Road Services', description: 'Find nearby gas, lodging, and emergency contacts.', actionLabel: 'Open Road Radar', targetTab: 'on-the-road' },
+        { id: 'setlist_analytics', label: 'Setlist & Energy Insights', description: 'Analyze live performance flow and pacing.', actionLabel: 'Open Setlist Insights', targetTab: 'insights' },
+    ],
+    agent: [
+        { id: 'venue_scout', label: 'Autonomous Venue Scout', description: 'Scan target cities and genres for high-fit venues.', actionLabel: 'Scout Venues', targetTab: 'scout' },
+        { id: 'agent_chat', label: 'Booking Specialist Chat', description: 'Draft hold requests, guarantees, and booking pitches.', actionLabel: 'Open Booking Chat', targetTab: 'chat' },
+        { id: 'outreach_campaigns', label: 'Tour Outreach Campaigns', description: 'Track promoter outreach and active hold status.', actionLabel: 'View Campaigns', targetTab: 'campaigns' },
+        { id: 'booking_tasks', label: 'Booking Task Pipeline', description: 'Manage advancing, deposits, and contract milestones.', actionLabel: 'Open Tasks', targetTab: 'tasks' },
+    ],
+    marketing: [
+        { id: 'campaign_hub', label: 'Release Campaign Hub', description: 'Coordinate multi-week rollout schedules and assets.', actionLabel: 'Open Campaigns', targetTab: 'departments' },
+        { id: 'brand_identity', label: 'Brand Kit & Visual DNA', description: 'Audit artist sonic/visual identity and press positioning.', actionLabel: 'Open Brand Kit', targetTab: 'brand' },
+        { id: 'publicist_pr', label: 'Publicist & EPK Outreach', description: 'Generate press releases, one-sheets, and media pitches.', actionLabel: 'Open Publicist', targetTab: 'publicist' },
+        { id: 'social_rollout', label: 'Social Grid & Teasers', description: 'Schedule vertical reels, stories, and drop announcements.', actionLabel: 'Open Social Hub', targetTab: 'social' },
+        { id: 'fan_crm', label: 'Superfan CRM & Segments', description: 'Segment VIP listeners, presaves, and direct lists.', actionLabel: 'Open Fan CRM', targetTab: 'crm' },
+        { id: 'growth_analytics', label: 'Growth & Funnel Telemetry', description: 'Track conversion velocity across streaming and socials.', actionLabel: 'Open Analytics', targetTab: 'analytics' },
+    ],
+    legal: [
+        { id: 'contract_analyzer', label: 'AI Contract Risk Scanner', description: 'Scan PDF/DOCX agreements for predatory clauses.', actionLabel: 'Scan Contract', targetTab: 'analyzer' },
+        { id: 'split_agreements', label: 'My Contracts & Split Sheets', description: 'Generate 50/50 co-writer splits, NDAs, and IP assignments.', actionLabel: 'Open Contracts', targetTab: 'contracts' },
+        { id: 'dmca_takedown', label: 'DMCA Takedown Generator', description: 'Draft formal copyright infringement notices.', actionLabel: 'Draft DMCA', targetTab: 'dmca' },
+        { id: 'claims_inbox', label: 'Rights & Claims Inbox', description: 'Resolve active territory disputes and ownership conflicts.', actionLabel: 'Review Claims', targetTab: 'claims' },
+        { id: 'creator_protection', label: 'Creator Protection Shield', description: 'Audit voice/likeness cloning guards and AI clauses.', actionLabel: 'Open Protection', targetTab: 'protection' },
+    ],
+    publishing: [
+        { id: 'publishing_catalog', label: 'Composition & Catalog Registry', description: 'Manage ISWCs, writers, and publisher shares.', actionLabel: 'Open Catalog', targetTab: 'catalog' },
+        { id: 'royalty_payouts', label: 'Publishing Royalty Ledger', description: 'Track performance and sync distributions.', actionLabel: 'View Royalties', targetTab: 'finance' },
+        { id: 'mechanical_licensing', label: 'Mechanical & MLC Administration', description: 'Audit streaming mechanicals and Harry Fox/MLC filings.', actionLabel: 'Open Mechanicals', targetTab: 'mechanical' },
+        { id: 'publishing_insights', label: 'Territory & PRO Insights', description: 'Inspect global collection society performance.', actionLabel: 'View Insights', targetTab: 'analytics' },
+    ],
+    finance: [
+        { id: 'revenue_overview', label: 'Cross-Platform Revenue Pulse', description: 'Consolidated net earnings across DSPs and merch.', actionLabel: 'Open Overview', targetTab: 'overview' },
+        { id: 'royalty_forensics', label: 'Statement Forensics & Foundry', description: 'Ingest raw CSV/DSR statements and detect missing columns.', actionLabel: 'Run Forensics', targetTab: 'forensics' },
+        { id: 'split_escrow', label: 'Collaborator Split Escrow', description: 'Automate recoupment waterfalls and co-writer payouts.', actionLabel: 'Open Split Escrow', targetTab: 'splits' },
+        { id: 'expense_audit', label: 'Tour & Studio Expense Tracker', description: 'Scan receipts via OCR and audit hidden costs.', actionLabel: 'Audit Expenses', targetTab: 'expenses' },
+    ],
+    distribution: [
+        { id: 'stage_release', label: 'Fast-Path Release Ingestion', description: 'Stage master audio, cover art, and DDEX ERN 4.3 packages.', actionLabel: 'Stage Release', targetTab: 'releases' },
+        { id: 'preflight_qc', label: 'Pre-Flight Audio & Metadata QC', description: 'Validate LUFS loudness, true peak, and ISRC/UPC formatting.', actionLabel: 'Run Pre-Flight QC', targetTab: 'brain' },
+        { id: 'dsp_connections', label: 'DSP & Aggregator Connections', description: 'Configure Merlin, Symphonic, DistroKid, or direct SFTP feeds.', actionLabel: 'Open Connections', targetTab: 'connections' },
+        { id: 'transmission_log', label: 'DDEX Transmission Monitor', description: 'Verify live delivery acknowledgments and store ingestion.', actionLabel: 'View Transmissions', targetTab: 'transmission' },
+    ],
+    licensing: [
+        { id: 'clearance_pipeline', label: 'Sync Deal & Clearance Pipeline', description: 'Manage active TV, film, and game placement requests.', actionLabel: 'Open Deal Pipeline', targetTab: 'overview' },
+        { id: 'sync_brief_matcher', label: 'AI Sync Brief Matcher', description: 'Match catalog tracks against supervisor mood and tempo briefs.', actionLabel: 'Match Sync Briefs', targetTab: 'briefs' },
+        { id: 'sync_catalog', label: 'One-Stop Sync Catalog Search', description: 'Filter instrumentals, stems, and 100% pre-cleared masters.', actionLabel: 'Search Sync Catalog', targetTab: 'catalog' },
+        { id: 'micro_licensing', label: 'Creator Micro-Licensing Portal', description: 'Configure instant social and podcast sync tiers.', actionLabel: 'Open Micro-Sync', targetTab: 'micro' },
+    ],
+    merch: [
+        { id: 'merch_overview', label: 'Merch Storefront & Drop Pulse', description: 'Monitor revenue velocity, units sold, and conversion rates.', actionLabel: 'Open Storefront', targetTab: 'dashboard' },
+        { id: 'catalog_inventory', label: 'SKU Inventory & Variants', description: 'Track apparel stock levels, sizing runs, and vinyl pressings.', actionLabel: 'Manage Inventory', targetTab: 'inventory' },
+        { id: 'pricing_margin', label: 'Margin & Pricing Engine', description: 'Optimize retail pricing against blank and fulfillment costs.', actionLabel: 'Optimize Pricing', targetTab: 'pricing' },
+        { id: 'pod_fulfillment', label: 'Print-On-Demand Partners', description: 'Sync Printful/Printify fulfillment and shipping routes.', actionLabel: 'Configure POD', targetTab: 'pod' },
+    ],
+    registration: [
+        { id: 'track_registrations', label: 'Track-by-Track Society Matrix', description: 'Audit ASCAP/BMI, MLC, SoundExchange, and Luminate status.', actionLabel: 'Audit Tracks', targetTab: 'tracks' },
+        { id: 'founder_readiness', label: 'Founder Entity & Prefix Readiness', description: 'Verify EIN, DUNS, ISRC Registrant Code, and GS1 UPC prefix.', actionLabel: 'Check Readiness', targetTab: 'founder' },
+        { id: 'cwr_society_export', label: 'PRO & MLC Batch Exports', description: 'Generate validated CWR and BWARM registration files.', actionLabel: 'Export CWR/BWARM', targetTab: 'society' },
+        { id: 'copyright_filing', label: 'US Copyright Office Filing', description: 'Prepare SR and PA group registration workbooks.', actionLabel: 'Open Copyright Filing', targetTab: 'filing' },
+    ],
+    security: [
+        { id: 'access_control', label: 'Organization Role & Tier Guard', description: 'Review member permissions and module access boundaries.', actionLabel: 'Audit Access', targetTab: 'access' },
+        { id: 'api_credentials', label: 'API Key & Secret Vault', description: 'Rotate third-party distributor and social tokens safely.', actionLabel: 'Manage Keys', targetTab: 'credentials' },
+        { id: 'audit_trail', label: 'Cryptographic Audit Trail', description: 'Inspect login events, permission changes, and visual verifications.', actionLabel: 'View Audit Trail', targetTab: 'audit' },
+        { id: 'agent_encryption', label: 'Swarm A2A Signature Enforcement', description: 'Verify end-to-end agent encryption and signing keys.', actionLabel: 'Verify Encryption', targetTab: 'encryption' },
+    ],
+};
+
+export function deterministicDepartmentJourneyFallback(
+    context: DepartmentJourneyContext,
+): DepartmentJourneyVerdict {
+    const options = DEPARTMENT_JOURNEYS[context.department] ?? DEPARTMENT_JOURNEYS.marketing;
+    const text = typeof context.prompt === 'string' ? context.prompt.toLowerCase() : '';
+
+    // 1. Keyword-based matching across the department's options
+    for (const opt of options) {
+        const words = `${opt.id} ${opt.label} ${opt.description} ${opt.targetTab}`
+            .toLowerCase()
+            .split(/[^a-z0-9]+/)
+            .filter(w => w.length > 3);
+        if (words.some(w => text.includes(w))) {
+            return {
+                department: context.department,
+                journeyId: opt.id,
+                headline: opt.description,
+                actionLabel: opt.actionLabel,
+                targetTab: opt.targetTab,
+                confidence: 0.85,
+            };
+        }
+    }
+
+    // 2. State-driven heuristics (alerts, pending items, or empty catalog)
+    if (context.hasAlert && options.length > 1) {
+        const alertOption = options[1]!;
+        return {
+            department: context.department,
+            journeyId: alertOption.id,
+            headline: alertOption.description,
+            actionLabel: alertOption.actionLabel,
+            targetTab: alertOption.targetTab,
+            confidence: 0.8,
+        };
+    }
+
+    if ((context.pendingCount ?? 0) > 0 && options.length > 1) {
+        const nextOption = options.find(o => o.targetTab !== context.activeTab) ?? options[0]!;
+        return {
+            department: context.department,
+            journeyId: nextOption.id,
+            headline: nextOption.description,
+            actionLabel: nextOption.actionLabel,
+            targetTab: nextOption.targetTab,
+            confidence: 0.78,
+        };
+    }
+
+    // 3. Pick complementary pathway relative to current activeTab
+    const complementary = options.find(o => o.targetTab !== context.activeTab) ?? options[0]!;
+    const hasSignal = Boolean(text.trim() || (context.itemCount ?? 0) > 0 || (context.pendingCount ?? 0) > 0 || context.hasAlert);
+
+    return {
+        department: context.department,
+        journeyId: complementary.id,
+        headline: complementary.description,
+        actionLabel: complementary.actionLabel,
+        targetTab: complementary.targetTab,
+        confidence: hasSignal ? 0.72 : 0.55,
+    };
+}
+
+export async function judgeDepartmentJourneyIntent(
+    context: DepartmentJourneyContext,
+): Promise<DepartmentJourneyVerdict> {
+    const fallback = deterministicDepartmentJourneyFallback(context);
+    if (!judgmentsAvailable()) {
+        return fallback;
+    }
+
+    const options = DEPARTMENT_JOURNEYS[context.department] ?? [];
+    if (options.length === 0) {
+        return fallback;
+    }
+
+    const criteria = Object.fromEntries(options.map(o => [o.id, o.description]));
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                department: context.department,
+                activeTab: context.activeTab,
+                prompt: (typeof context.prompt === 'string' ? context.prompt : '').slice(0, 300),
+                itemCount: context.itemCount ?? 0,
+                pendingCount: context.pendingCount ?? 0,
+                hasAlert: Boolean(context.hasAlert),
+            },
+            questions: {
+                journey: {
+                    type: 'choice' as const,
+                    instructions: `Select the single most helpful next workflow in the ${context.department} department based on the artist's active tab, pending items, and prompt.`,
+                    criteria,
+                },
+            },
+        });
+
+        const answer = result.data.answers?.journey;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        const rawConfidence =
+            typeof answer === 'object' && answer !== null
+                ? (answer as { confidence?: unknown }).confidence
+                : undefined;
+
+        const matched = options.find(o => o.id === choice);
+        if (!matched) {
+            return fallback;
+        }
+
+        const confidence =
+            typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                ? rawConfidence
+                : 0.85;
+
+        return {
+            department: context.department,
+            journeyId: matched.id,
+            headline: matched.description,
+            actionLabel: matched.actionLabel,
+            targetTab: matched.targetTab,
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'department journey intent judgment');
+        return fallback;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Judgment 84: Creative Hub Unified Studio Configuration Preset
+// (judgeCreativeStudioConfigPreset)
+// ---------------------------------------------------------------------------
+// Uses Jev System One to evaluate the active Creative Hub mode ('image' | 'video'),
+// prompt semantics, and current controls to recommend a 1-click unified studio
+// configuration preset (combining Basics + Advanced settings on one screen).
+// ---------------------------------------------------------------------------
+
+export type CreativeConfigPresetId =
+    | 'cover_art_master'
+    | 'social_vertical_story'
+    | 'cinematic_widescreen'
+    | 'rapid_concept_grid'
+    | 'grounded_editorial';
+
+export interface CreativeStudioConfigPresetPatch {
+    aspectRatio: string;
+    model: 'fast' | 'pro';
+    imageSize?: '0.5K' | '1K' | '2K' | '4K';
+    resolution?: '720p' | '1080p' | '4k';
+    duration?: number;
+    thinkingLevel?: 'none' | 'minimal' | 'high';
+    batchCount?: number;
+    useGrounding?: boolean;
+}
+
+export interface CreativeStudioConfigPresetVerdict {
+    presetId: CreativeConfigPresetId;
+    label: string;
+    summary: string;
+    confidence: number;
+    controlsPatch: CreativeStudioConfigPresetPatch;
+}
+
+export interface CreativeStudioConfigContext {
+    mode: 'image' | 'video';
+    prompt?: string;
+    aspectRatio?: string;
+    model?: string;
+}
+
+export const CREATIVE_CONFIG_PRESETS: Record<
+    CreativeConfigPresetId,
+    {
+        label: string;
+        summary: string;
+        imagePatch: CreativeStudioConfigPresetPatch;
+        videoPatch: CreativeStudioConfigPresetPatch;
+    }
+> = {
+    cover_art_master: {
+        label: 'Cover Art Master (1:1 · Pro 2K)',
+        summary: 'High-detail square master tuned for album artwork & DSP thumbnails',
+        imagePatch: {
+            aspectRatio: '1:1',
+            model: 'pro',
+            imageSize: '2K',
+            thinkingLevel: 'high',
+            batchCount: 1,
+            useGrounding: false,
+        },
+        videoPatch: {
+            aspectRatio: '16:9',
+            model: 'pro',
+            resolution: '1080p',
+            duration: 6,
+        },
+    },
+    social_vertical_story: {
+        label: 'Vertical Canvas (9:16 · Fast)',
+        summary: 'Optimized 9:16 vertical format for Reels, Shorts & Spotify Canvas',
+        imagePatch: {
+            aspectRatio: '9:16',
+            model: 'fast',
+            imageSize: '2K',
+            thinkingLevel: 'minimal',
+            batchCount: 2,
+            useGrounding: false,
+        },
+        videoPatch: {
+            aspectRatio: '9:16',
+            model: 'fast',
+            resolution: '720p',
+            duration: 6,
+        },
+    },
+    cinematic_widescreen: {
+        label: 'Cinematic Widescreen (16:9 · Pro)',
+        summary: '16:9 director framing with deep reasoning for hero visuals & trailers',
+        imagePatch: {
+            aspectRatio: '16:9',
+            model: 'pro',
+            imageSize: '2K',
+            thinkingLevel: 'high',
+            batchCount: 1,
+            useGrounding: false,
+        },
+        videoPatch: {
+            aspectRatio: '16:9',
+            model: 'pro',
+            resolution: '1080p',
+            duration: 8,
+        },
+    },
+    rapid_concept_grid: {
+        label: 'Rapid Concept Batch (4× Fast 1K)',
+        summary: 'Fast 4-up exploration batch for quick visual ideation',
+        imagePatch: {
+            aspectRatio: '1:1',
+            model: 'fast',
+            imageSize: '1K',
+            thinkingLevel: 'none',
+            batchCount: 4,
+            useGrounding: false,
+        },
+        videoPatch: {
+            aspectRatio: '16:9',
+            model: 'fast',
+            resolution: '720p',
+            duration: 4,
+        },
+    },
+    grounded_editorial: {
+        label: 'Grounded Editorial (4:5 · Search + High)',
+        summary: '4:5 press/feed portrait with Google Search grounding & high reasoning',
+        imagePatch: {
+            aspectRatio: '4:5',
+            model: 'fast',
+            imageSize: '2K',
+            thinkingLevel: 'high',
+            batchCount: 2,
+            useGrounding: true,
+        },
+        videoPatch: {
+            aspectRatio: '9:16',
+            model: 'pro',
+            resolution: '1080p',
+            duration: 8,
+        },
+    },
+};
+
+export function deterministicCreativeStudioConfigFallback(
+    context: CreativeStudioConfigContext,
+): CreativeStudioConfigPresetVerdict {
+    const q = typeof context.prompt === 'string' ? context.prompt.toLowerCase() : '';
+    let presetId: CreativeConfigPresetId =
+        context.mode === 'video' ? 'cinematic_widescreen' : 'cover_art_master';
+
+    if (q.includes('reel') || q.includes('tiktok') || q.includes('vertical') || q.includes('canvas') || q.includes('story')) {
+        presetId = 'social_vertical_story';
+    } else if (q.includes('editorial') || q.includes('press') || q.includes('portrait') || q.includes('real') || q.includes('venue')) {
+        presetId = 'grounded_editorial';
+    } else if (q.includes('concept') || q.includes('sketch') || q.includes('draft') || q.includes('options') || q.includes('variations')) {
+        presetId = 'rapid_concept_grid';
+    } else if (q.includes('cinema') || q.includes('wide') || q.includes('youtube') || q.includes('drone') || q.includes('landscape')) {
+        presetId = 'cinematic_widescreen';
+    } else if (q.includes('cover') || q.includes('album') || q.includes('vinyl') || q.includes('sleeve') || q.includes('logo')) {
+        presetId = 'cover_art_master';
+    }
+
+    const preset = CREATIVE_CONFIG_PRESETS[presetId];
+    return {
+        presetId,
+        label: preset.label,
+        summary: preset.summary,
+        confidence: 0.88,
+        controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
+    };
+}
+
+export function creativeStudioConfigPresetQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'Select the single best unified Creative Hub configuration preset based on the creator prompt and active studio mode.',
+        criteria: {
+            cover_art_master: 'High-detail 1:1 square master tuned for album artwork & DSP thumbnails.',
+            social_vertical_story: 'Optimized 9:16 vertical format for Reels, Shorts & Spotify Canvas.',
+            cinematic_widescreen: '16:9 director framing with deep reasoning for hero visuals & trailers.',
+            rapid_concept_grid: 'Fast 4-up exploration batch for quick visual ideation.',
+            grounded_editorial: '4:5 press/feed portrait with Google Search grounding & high reasoning.',
+        },
+    };
+}
+
+export async function judgeCreativeStudioConfigPreset(
+    context: CreativeStudioConfigContext,
+): Promise<CreativeStudioConfigPresetVerdict> {
+    const fallback = deterministicCreativeStudioConfigFallback(context);
+    if (!judgmentsAvailable()) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                mode: context.mode,
+                prompt: (typeof context.prompt === 'string' ? context.prompt : '').slice(0, 300),
+                aspectRatio: context.aspectRatio ?? '16:9',
+                model: context.model ?? 'fast',
+            },
+            questions: {
+                preset: creativeStudioConfigPresetQuestion(),
+            },
+        });
+
+        const answer = result.data.answers?.preset;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        const rawConfidence =
+            typeof answer === 'object' && answer !== null
+                ? (answer as { confidence?: unknown }).confidence
+                : undefined;
+
+        if (typeof choice === 'string' && choice in CREATIVE_CONFIG_PRESETS) {
+            const presetId = choice as CreativeConfigPresetId;
+            const preset = CREATIVE_CONFIG_PRESETS[presetId];
+            const confidence =
+                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                    ? rawConfidence
+                    : 0.89;
+            return {
+                presetId,
+                label: preset.label,
+                summary: preset.summary,
+                confidence,
+                controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
+            };
+        }
+
+        return fallback;
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'creative studio config preset judgment');
+        return fallback;
+    }
+}
 
 
