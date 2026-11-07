@@ -138,10 +138,12 @@ const runtimeEnv = parsed.success ? parsed.data : (processEnv as z.infer<typeof 
 
 // Item 326: Log env in dev mode
 if (import.meta.env.DEV) {
-    logger.debug('[indii.music][Env] Initialized:', {
-        hasMapsKey: !!runtimeEnv.googleMapsApiKey,
-        mapsEnabled: runtimeEnv.enableGoogleMaps,
-    });
+    if (typeof logger?.debug === 'function') {
+        logger.debug('[indii.music][Env] Initialized:', {
+            hasMapsKey: !!runtimeEnv.googleMapsApiKey,
+            mapsEnabled: runtimeEnv.enableGoogleMaps,
+        });
+    }
 }
 
 export const env = {

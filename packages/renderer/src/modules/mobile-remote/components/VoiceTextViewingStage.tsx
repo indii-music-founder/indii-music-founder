@@ -6,6 +6,7 @@ import { triggerHaptic } from '../haptics';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';
+import type { LiveConversationStartOptions } from '@/services/intelligence/LiveConversationService';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 export interface StageAttachment {
@@ -51,6 +52,8 @@ export interface VoiceTextViewingStageProps {
     onRemoveAttachment?: (index: number) => void;
     /** Add attachment file callback */
     onAddAttachmentFile?: (file: File) => void;
+    /** Optional live two-way conversation session options */
+    startOptions?: LiveConversationStartOptions;
 }
 
 export default function VoiceTextViewingStage({
@@ -71,6 +74,7 @@ export default function VoiceTextViewingStage({
     attachments,
     onRemoveAttachment,
     onAddAttachmentFile,
+    startOptions,
 }: VoiceTextViewingStageProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const viewingTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -422,6 +426,7 @@ export default function VoiceTextViewingStage({
                         <LiveConversationButton
                             sizeVariant="mobile"
                             disabled={isWaiting || !isPaired}
+                            startOptions={startOptions}
                         />
 
                         <motion.button
