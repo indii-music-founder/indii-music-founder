@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Sparkles, Star, ChevronRight, Bookmark } from 'lucide-react';
+import { Sparkles, Star, Bookmark } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuTriggerButton,
@@ -90,14 +90,11 @@ export const BrandPromptAdditivesMenu: React.FC<BrandPromptAdditivesMenuProps> =
 
     // Jev System One contextual additive ranking
     useEffect(() => {
-        if (rawFrequentAdditives.length === 0) {
-            setRankedAdditives([]);
-            return;
-        }
+        if (rawFrequentAdditives.length === 0) return;
 
         let isMounted = true;
         void judgeCreativePromptAdditiveSuggestions(currentPrompt, rawFrequentAdditives).then((results) => {
-            if (isMounted) {
+            if (isMounted && Array.isArray(results) && results.length > 0) {
                 setRankedAdditives(results as PromptAdditiveUsage[]);
             }
         });
@@ -107,7 +104,9 @@ export const BrandPromptAdditivesMenu: React.FC<BrandPromptAdditivesMenuProps> =
         };
     }, [currentPrompt, rawFrequentAdditives]);
 
-    const frequentAdditives = rankedAdditives.length > 0 ? rankedAdditives : rawFrequentAdditives;
+    const frequentAdditives = (rawFrequentAdditives.length > 0 && rankedAdditives.length > 0)
+        ? rankedAdditives
+        : rawFrequentAdditives;
 
     const handleSelect = (tag: string, category?: string) => {
         PromptAdditiveTracker.recordUsage(tag, category);
