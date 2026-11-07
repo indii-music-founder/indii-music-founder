@@ -213,7 +213,7 @@ export const MasterPlaybookSection: React.FC = () => {
         <div className="space-y-6">
             <SectionHeader
                 title="Artist Master Directive"
-                description="Living supreme rules, sonic specs, legal red lines, and custom playbooks that override all agent defaults. Co-authored by you and your AI Conductor."
+                description="Living supreme rules, sonic specs, legal red lines, and custom playbooks that override all agent defaults. Co-authored by you and Conductor."
             />
 
             {/* Last Modified Status Banner */}
@@ -227,7 +227,7 @@ export const MasterPlaybookSection: React.FC = () => {
                                 : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         }`}
                     >
-                        {directive.lastModifiedBy === 'agent' ? 'AI Conductor Refined' : 'Artist Co-Authored'}
+                        {directive.lastModifiedBy === 'agent' ? 'Conductor Refined' : 'Artist Co-Authored'}
                     </span>
                     {directive.lastModifiedReason && (
                         <span className="text-slate-400 truncate max-w-xs md:max-w-md">

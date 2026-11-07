@@ -141,7 +141,7 @@
   },
   "legal": {
     "title": "Legal",
-    "subtitle": "AI-POWERED CONTRACT ANALYSIS",
+    "subtitle": "AUTOMATED CONTRACT ANALYSIS",
     "tabs": {
       "analyzer": "Contract Analysis",
       "dmca": "DMCA Notices",
@@ -149,16 +149,16 @@
     }
   },
   "agent": {
-    "title": "AI Assistant",
+    "title": "Assistant",
     "placeholder": "Ask me anything…",
     "thinking": "Thinking…",
-    "sidecarOnline": "AI Service Online",
-    "sidecarOffline": "AI Service Offline",
-    "sidecarChecking": "Checking AI Service…",
-    "restart": "Restart AI Service",
+    "sidecarOnline": "Service Online",
+    "sidecarOffline": "Service Offline",
+    "sidecarChecking": "Checking Service…",
+    "restart": "Restart Service",
     "scout": {
       "title": "The Scout",
-      "description": "AI-powered venue scouting and booking intelligence.",
+      "description": "Venue scouting and booking intelligence.",
       "ready": "Ready to scan",
       "initializing": "Initializing scan...",
       "scanCompleteNoNew": "Scan complete. No new venues found.",
@@ -239,7 +239,7 @@
     "identityDescription": "Legal name, artist moniker, primary genres, and brand guidelines.",
     "releaseDescription": "Audio DNA, cover art, publisher keys, and delivery pipelines.",
     "brandKit": "Brand Kit",
-    "brandKitDescription": "Preview your public visual and textual presence compiled by the AI.",
+    "brandKitDescription": "Preview your public visual and textual presence compiled by your team.",
     "noIdentityData": "No identity data registered yet.",
     "noReleaseData": "No release data registered yet.",
     "notCompiled": "Visual brand identity has not been compiled yet.",
@@ -292,7 +292,7 @@
       "connections": {
         "label": "Connected Services",
         "title": "Connected Services",
-        "description": "Allows your AI agents to read and draft emails on your behalf."
+        "description": "Allows your specialists to read and draft emails on your behalf."
       },
       "notifications": {
         "label": "Notifications",

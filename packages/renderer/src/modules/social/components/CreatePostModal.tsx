@@ -283,7 +283,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
                         <input id="post-idea" value={postIdea} onChange={event => setPostIdea(event.target.value)}
                             placeholder="New single, show announcement, studio moment…"
                             className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500" />
-                        <p className="text-xs text-gray-500">Give AI a real topic, or use saved release details. Your draft can also guide it.</p>
+                        <p className="text-xs text-gray-500">Give your team a real topic, or use saved release details. Your draft can also guide it.</p>
                         <div className="flex justify-between items-center">
                             <label htmlFor={copyInputId} className="block text-sm font-medium text-gray-400">Post Copy</label>
                             <button
@@ -292,7 +292,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
                                 className="text-xs flex items-center gap-1.5 text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
                             >
                                 {isGenerating ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Wand2 size={12} aria-hidden="true" />}
-                                {isGenerating ? 'Generating...' : 'Generate with AI'}
+                                {isGenerating ? 'Generating...' : 'Generate Draft'}
                             </button>
                         </div>
                         <textarea

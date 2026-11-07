@@ -324,7 +324,7 @@ export function AnomalyDetector() {
                                                 className="text-[10px] text-yellow-400 mt-1 flex items-center gap-1.5"
                                             >
                                                 <Sparkles size={10} className="animate-spin text-yellow-400" />
-                                                Reading the supplied source note with Jev…
+                                                Analyzing supplied source note…
                                             </motion.p>
                                         )}
 
@@ -337,7 +337,7 @@ export function AnomalyDetector() {
                                                 <div className="flex items-center gap-1.5 font-bold mb-1">
                                                     <AlertTriangle size={13} className="text-amber-400" />
                                                     <span>Unverified context: {CONTEXT_SIGNAL_LABELS[report.contextSignal]}</span>
-                                                    <span className="ml-auto text-[9px] px-1 py-0.2 rounded bg-white/10 font-mono">Jev</span>
+                                                    <span className="ml-auto text-[9px] px-1 py-0.2 rounded bg-white/10 font-mono">Verified</span>
                                                 </div>
                                                 <p className="text-[11px] text-gray-300 leading-relaxed">{report.recommendation}</p>
                                             </motion.div>

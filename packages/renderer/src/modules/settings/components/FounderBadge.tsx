@@ -108,7 +108,7 @@ export default function FounderBadge() {
                 <div className="grid grid-cols-2 gap-2">
                     {[
                         { label: 'Access', value: 'Lifetime' },
-                        { label: 'AI Costs', value: 'Pass-through' },
+                        { label: 'Compute Costs', value: 'Pass-through' },
                         { label: 'Projects', value: 'Unlimited' },
                         { label: 'Storage', value: '10 TB' },
                     ].map((item) => (

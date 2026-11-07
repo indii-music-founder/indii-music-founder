@@ -138,7 +138,7 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
                                             className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-400/30"
                                         >
                                             <Sparkles size={9} />
-                                            Jev Pick
+                                            Top Pick
                                         </span>
                                     )}
                                     <span className="text-[10px] font-mono text-white/60 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">

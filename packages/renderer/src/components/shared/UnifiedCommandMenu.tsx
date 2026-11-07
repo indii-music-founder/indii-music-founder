@@ -204,7 +204,7 @@ export function UnifiedCommandMenu() {
                                 >
                                     <Sparkles className="w-4 h-4 text-amber-400" />
                                     <span>Open {eligibleSuggestedIntent.suggestedLabel}</span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 uppercase font-mono tracking-wider ml-1">AI Match</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 uppercase font-mono tracking-wider ml-1">Suggested</span>
                                 </button>
                             </div>
                         ) : (
@@ -213,7 +213,7 @@ export function UnifiedCommandMenu() {
                     </Command.Empty>
 
                     {eligibleSuggestedIntent && eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none' && (
-                        <Command.Group heading="Suggested by indii AI" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-amber-500/10 [&_[cmdk-item][data-selected]]:text-white">
+                        <Command.Group heading="Suggested by indii" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-amber-500/10 [&_[cmdk-item][data-selected]]:text-white">
                             <Command.Item
                                 value={`${searchQuery} ${eligibleSuggestedIntent.suggestedLabel} ${eligibleSuggestedIntent.targetModule}`}
                                 onSelect={() => runCommand(() => {
@@ -226,7 +226,7 @@ export function UnifiedCommandMenu() {
                                 <Sparkles className="w-4 h-4 text-amber-400" />
                                 <span className="text-amber-200 font-semibold">{eligibleSuggestedIntent.suggestedLabel}</span>
                                 <span className="text-xs text-slate-400 ml-2">Matched intent: &quot;{searchQuery}&quot;</span>
-                                <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">AI match</span>
+                                <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">Suggested</span>
                             </Command.Item>
                         </Command.Group>
                     )}

@@ -49,7 +49,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight text-white">White-Glove Ingestion</h1>
                 <p className="text-gray-400">
-                    Drop extensive catalogs, multi-track stems, and 4K music videos here. Our AI will automatically categorize, extract metadata, and prepare them for your vault.
+                    Drop extensive catalogs, multi-track stems, and 4K music videos here. Our automated tools will categorize, extract metadata, and prepare them for your vault.
                 </p>
             </div>
 

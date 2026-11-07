@@ -129,7 +129,7 @@ describe('UnifiedCommandMenu', () => {
         expect(screen.getByText('Publishing Department')).toBeInTheDocument();
     });
 
-    it('does not show a Jev suggestion for a gated or inaccessible module', async () => {
+    it('does not show a suggestion for a gated or inaccessible module', async () => {
         const judge = vi.mocked(judgeCommandIntent);
         judge.mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
         mockGatedModules.mockReturnValue(new Set(['finance']));
@@ -138,22 +138,22 @@ describe('UnifiedCommandMenu', () => {
 
         await waitFor(() => expect(judge).toHaveBeenCalledWith('show my royalties'));
         await act(async () => { await judge.mock.results[0]?.value; });
-        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
+        expect(screen.queryByText('Suggested by indii')).not.toBeInTheDocument();
     });
 
-    it('shows an eligible Jev suggestion', async () => {
+    it('shows an eligible suggestion', async () => {
         vi.mocked(judgeCommandIntent).mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
         const setModule = vi.fn();
         mockFlatStore({ setModule });
         render(<UnifiedCommandMenu />);
         fireEvent.change(screen.getByPlaceholderText(/Search commands/i), { target: { value: 'show my royalties' } });
 
-        expect(await screen.findByText('Suggested by indii AI')).toBeInTheDocument();
+        expect(await screen.findByText('Suggested by indii')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Finance & Royalties').closest('[cmdk-item]')!);
         expect(setModule).toHaveBeenCalledWith('finance');
     });
 
-    it('does not let a Jev suggestion bypass organization access', async () => {
+    it('does not let a suggestion bypass organization access', async () => {
         const judge = vi.mocked(judgeCommandIntent);
         judge.mockResolvedValue({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
         mockCanAccessModule.mockImplementation((id) => id !== 'finance');
@@ -162,10 +162,10 @@ describe('UnifiedCommandMenu', () => {
 
         await waitFor(() => expect(judge).toHaveBeenCalledWith('show my royalties'));
         await act(async () => { await judge.mock.results[0]?.value; });
-        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
+        expect(screen.queryByText('Suggested by indii')).not.toBeInTheDocument();
     });
 
-    it('ignores an older Jev answer after the search changes', async () => {
+    it('ignores an older suggestion answer after the search changes', async () => {
         let resolveFirst!: (value: Awaited<ReturnType<typeof judgeCommandIntent>>) => void;
         const judge = vi.mocked(judgeCommandIntent);
         judge.mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }));
@@ -179,7 +179,7 @@ describe('UnifiedCommandMenu', () => {
             resolveFirst({ targetModule: 'finance', action: null, suggestedLabel: 'Finance & Royalties', confidence: 0.9 });
         });
 
-        expect(screen.queryByText('Suggested by indii AI')).not.toBeInTheDocument();
+        expect(screen.queryByText('Suggested by indii')).not.toBeInTheDocument();
     });
 
     it('shows a Recent section from navigation history', () => {

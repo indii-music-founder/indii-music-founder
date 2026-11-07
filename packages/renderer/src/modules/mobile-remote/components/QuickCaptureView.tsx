@@ -511,7 +511,7 @@ export default function QuickCaptureView({
                     throw new Error(outcome.error?.message || 'Failed to save to Notes');
                 }
             } else if (capturedAudioBlob || capturedImageBlob?.type === 'receipt') {
-                toast.success('Capture saved to Encounters. AI analysis is pending; review the result there.');
+                toast.success('Capture saved to Encounters. Analysis is pending; review the result there.');
             } else {
                 useStore.getState().addNote({
                     title: `Mobile capture — ${new Date().toLocaleString()}`,
@@ -635,12 +635,12 @@ export default function QuickCaptureView({
                     mimeType: (sourceFile as File).type || (isVideo ? 'video/mp4' : 'image/jpeg'),
                     filename: filename,
                 }],
-                clientContext: momentText.trim() || 'Mobile media attached to Boardroom AI',
+                clientContext: momentText.trim() || 'Mobile media attached to Boardroom',
             }).catch((err) => {
                 logger.warn('[QuickCapture] Non-blocking encounter doc creation notice:', err);
             });
 
-            toast.success('Attached to Boardroom AI!');
+            toast.success('Attached to Boardroom!');
             clearCapture();
 
             if (onNavigateToChat) {
@@ -877,7 +877,7 @@ export default function QuickCaptureView({
                                     <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#00ff66] font-mono">Review before saving</p>
                                     <p className="mt-1.5 text-sm font-semibold text-stone-100 font-display">
                                         {capturedAudioBlob || capturedImageBlob?.type === 'receipt'
-                                            ? 'Uploads to your vault for AI analysis. Review the result in Encounters.'
+                                            ? 'Uploads to your vault for analysis. Review the result in Encounters.'
                                             : 'Uploads to your vault, then writes it into Notes for the team.'}
                                     </p>
                                     <p className="mt-1 text-[11px] text-stone-400">
@@ -918,7 +918,7 @@ export default function QuickCaptureView({
                                     className="mt-3 w-full py-2.5 px-3 rounded-xl bg-linear-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 border border-emerald-500/40 text-emerald-200 hover:text-white hover:bg-emerald-500/30 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                                 >
                                     <Sparkles className="w-4 h-4 text-[#00ff66]" />
-                                    <span>Attach to Boardroom AI</span>
+                                    <span>Attach to Boardroom</span>
                                 </button>
                             )}
 

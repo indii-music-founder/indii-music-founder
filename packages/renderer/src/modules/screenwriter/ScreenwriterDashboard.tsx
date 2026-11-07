@@ -606,13 +606,13 @@ export default function ScreenwriterDashboard() {
                                     className="w-full min-h-[70px] bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-green-500 mb-3"
                                 />
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] text-gray-500 font-mono">Manual scene editing is available; AI expansion is not connected.</span>
+                                    <span className="text-[10px] text-gray-500 font-mono">Manual scene editing is available; automated expansion is not connected.</span>
                                     <button
                                         disabled
-                                        title="AI scene expansion is not connected"
+                                        title="Scene expansion is not connected"
                                         className="px-4 py-1.5 bg-gray-700 text-gray-400 font-black text-xs rounded flex items-center gap-1 cursor-not-allowed"
                                     >
-                                        <Sparkles size={12} /> AI Expansion Unavailable
+                                        <Sparkles size={12} /> Expansion Unavailable
                                     </button>
                                 </div>
                             </div>

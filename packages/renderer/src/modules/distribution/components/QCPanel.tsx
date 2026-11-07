@@ -216,7 +216,7 @@ export const QCPanel: React.FC = () => {
                 setProfile(null);
                 setTags([]);
                 toast.dismiss(extractToastId);
-                toast.success('Local-only technical scan complete. No upload, AI, or saved profile was used.');
+                toast.success('Local-only technical scan complete. No upload, remote processing, or saved profile was used.');
                 return;
             }
 
@@ -574,7 +574,7 @@ export const QCPanel: React.FC = () => {
                     </Button>
                     {analysisMode === 'local-only' && (
                         <span className="text-xs text-muted-foreground">
-                            Runs on this device; does not upload, call AI, cache, or save results.
+                            Runs on this device; does not upload, make network calls, cache, or save results.
                         </span>
                     )}
                 </div>

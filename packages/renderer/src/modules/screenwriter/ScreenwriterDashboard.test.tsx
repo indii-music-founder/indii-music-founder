@@ -139,11 +139,11 @@ describe('ScreenwriterDashboard', () => {
         expect(screen.getByDisplayValue('Reloaded scene description')).toBeInTheDocument();
     });
 
-    it('adds an editable blank scene without pretending AI generated it', async () => {
+    it('adds an editable blank scene without pretending automated tools generated it', async () => {
         render(<ScreenwriterDashboard />);
 
-        expect(screen.getByRole('button', { name: /ai expansion unavailable/i })).toBeDisabled();
-        expect(screen.getByText(/ai expansion is not connected/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /expansion unavailable/i })).toBeDisabled();
+        expect(screen.getByText(/automated expansion is not connected/i)).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: /add blank scene/i }));
 

@@ -639,9 +639,9 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                                 disabled={isUpscalingAsset}
                                                 data-testid={`merch-upscale-${s}x`}
                                                 className="px-2 py-1 rounded-md bg-black/70 border border-cyan-500/40 text-[10px] font-bold text-cyan-300 hover:bg-cyan-600/30 transition-colors disabled:opacity-50"
-                                                title={`AI upscale the design ${s}× before generating mockups`}
+                                                title={`High-res upscale the design ${s}× before generating mockups`}
                                             >
-                                                {isUpscalingAsset ? '…' : `AI Upscale ${s}×`}
+                                                {isUpscalingAsset ? '…' : `Upscale ${s}×`}
                                             </button>
                                         ))}
                                     </div>

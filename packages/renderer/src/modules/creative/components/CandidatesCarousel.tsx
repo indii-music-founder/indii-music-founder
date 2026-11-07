@@ -61,7 +61,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
                                 data-testid="jev-recommended-badge"
                                 className="absolute top-1.5 left-1.5 bg-gradient-to-r from-amber-400 to-yellow-300 text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 pointer-events-none"
                             >
-                                ⭐ Jev Pick
+                                ⭐ Top Pick
                             </div>
                         )}
                         <img
@@ -76,7 +76,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
                             onClick={() => onSelect(cand, idx)}
                             data-testid={`candidate-select-btn-${idx}`}
                             className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 flex items-center justify-center transition-opacity focus-visible:ring-2 focus-visible:ring-white outline-none"
-                            aria-label={`Select candidate ${idx + 1}: ${cand.prompt}${isRecommended ? ' (Jev Recommended Pick)' : ''}`}
+                            aria-label={`Select candidate ${idx + 1}: ${cand.prompt}${isRecommended ? ' (Recommended Pick)' : ''}`}
                         >
                             <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg group-focus-within:ring-2 group-focus-within:ring-white text-white ${
                                 isRecommended ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-green-600 hover:bg-green-500'

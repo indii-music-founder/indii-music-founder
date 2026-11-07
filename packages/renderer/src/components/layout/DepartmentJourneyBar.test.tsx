@@ -49,7 +49,7 @@ describe('DepartmentJourneyBar', () => {
         });
     });
 
-    it('opens the Journeys menu, highlights Jev Pick, and routes to the chosen pathway', () => {
+    it('opens the Journeys menu, highlights Recommended pick, and routes to the chosen pathway', () => {
         const onSelectTab = vi.fn();
         render(
             <DepartmentJourneyBar
@@ -63,7 +63,7 @@ describe('DepartmentJourneyBar', () => {
         fireEvent.click(toggleBtn);
 
         expect(screen.getByTestId('dept-journeys-menu-distribution')).toBeInTheDocument();
-        expect(screen.getByText('Jev Pick')).toBeInTheDocument();
+        expect(screen.getAllByText('Recommended').length).toBeGreaterThanOrEqual(1);
 
         fireEvent.click(screen.getByTestId('dept-journey-option-preflight_qc'));
         expect(onSelectTab).toHaveBeenCalledWith('brain');

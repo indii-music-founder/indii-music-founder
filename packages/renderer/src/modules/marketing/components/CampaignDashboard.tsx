@@ -348,7 +348,7 @@ function IntelligenceSuggestionsPanel({ campaigns }: { campaigns: CampaignAsset[
                 <span className="flex items-center gap-1.5">
                     <Sparkles size={12} className="text-[#FFB800]" /> Autonomous Suggestions
                 </span>
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">Jev System One</span>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">Recommended</span>
             </h3>
             {executingCampaign ? (
                 <div className="space-y-3">

@@ -226,7 +226,7 @@ export default function DirectGenerationTab() {
         const patch = configPresetVerdict.controlsPatch;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setStudioControls(patch as any);
-        toast.info(`Jev applied ${configPresetVerdict.label}`);
+        toast.info(`Applied ${configPresetVerdict.label}`);
     };
 
     return (
@@ -358,14 +358,14 @@ export default function DirectGenerationTab() {
                         </div>
                     </div>
 
-                    {/* Jev System One Unified Configuration Bar */}
+                    {/* Unified Configuration Bar */}
                     <div
                         data-testid="jev-creative-config-preset"
                         className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dept-creative/25 bg-dept-creative/[0.06] px-3.5 py-2"
                     >
                         <div className="flex items-center gap-2 min-w-0">
                             <span className="inline-flex items-center gap-1 rounded-md bg-dept-creative/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-dept-creative">
-                                <Wand2 size={10} /> Jev Pick
+                                <Wand2 size={10} /> Recommended
                             </span>
                             <span className="text-[11px] font-bold text-white truncate">
                                 {configPresetVerdict.label}

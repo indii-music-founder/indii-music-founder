@@ -25,7 +25,7 @@ const BriefingStep: React.FC<BriefingStepProps> = ({
             <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl flex items-start gap-3">
                 <BotMessageSquare className="text-green-400 flex-shrink-0 mt-1" size={20} />
                 <div>
-                    <h4 className="text-green-300 font-medium mb-1">AI Director</h4>
+                    <h4 className="text-green-300 font-medium mb-1">Director Briefing</h4>
                     <p className="text-sm text-green-200/80">
                         I've analyzed your idea: <span className="italic text-white">"{initialPrompt}"</span>.
                         To make this video perfect, I have a few questions.
