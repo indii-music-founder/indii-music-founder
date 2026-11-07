@@ -335,6 +335,17 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     /\b100%\s+(?:operational|implemented|verified|complete[d]?)\b/i,
     /\b(?:all|every)\s+capabilities?\s+(?:are\s+)?(?:verified|production[- ]ready)\b/i,
     /\bno\s+(?:further|pending|remaining)\s+engineering\s+(?:work|items?)\b/i,
+    // Issue #746: Catch unverified readiness declarations and blanket self-certifications
+    // e.g. "I can confirm that my core capabilities — including image generation... — are fully operational"
+    /\b(?:confirm|certify)\b[^.?!]{0,30}\b(?:my|our|the|all)?\s*(?:core\s+)?capabilities\b[^.?!]{0,120}\b(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
+    // e.g. "my core capabilities are fully operational"
+    /\b(?:my|our|the|all)\s+(?:core\s+)?capabilities\b[^.?!]{0,120}\b(?:are|is)\s+(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
+    // e.g. "functioning normally and ready to work" or "operational and ready to work"
+    /\b(?:functioning normally|operational)\s+and\s+ready\s+to\s+work\b/i,
+    // e.g. "confirm that all/my/our systems are operational/ready"
+    /\b(?:confirm|certify)(?:\s+that)?\s+(?:all|my|our)\s+systems?\s+(?:are|to be)\s+(?:operational|ready|functional)\b/i,
+    // e.g. "my current internal model is the latest deployed version" / "backend optimizations and tool enhancements we've pushed recently"
+    /\bmy\s+current\s+internal\s+model\s+is\s+(?:the\s+)?latest\b/i,
 ];
 
 export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResult {
