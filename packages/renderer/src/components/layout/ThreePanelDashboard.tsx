@@ -70,18 +70,18 @@ export function ThreePanelDashboard({
             >
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Header */}
-                    <div data-testid={`${moduleName.toLowerCase()}-header`} className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                    <div data-testid={`${moduleName.toLowerCase()}-header`} className="px-4 md:px-6 h-12 border-b border-white/5 flex items-center flex-shrink-0 relative bg-[#0c0c12]/80 backdrop-blur-xl z-20">
                         <div className={`absolute top-[-80px] left-[-80px] w-[300px] h-[300px] blur-[100px] pointer-events-none rounded-full ${bgBlobClass}`} />
-                        <div className="relative z-10 flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shadow-lg ${iconBgClass} ${iconShadowClass}`}>
+                        <div className="relative z-10 flex items-center gap-3 w-full min-w-0">
+                            <div className={`w-6 h-6 rounded-md flex items-center justify-center shadow-md shrink-0 ${iconBgClass} ${iconShadowClass}`}>
                                 {headerIcon}
                             </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">{title}</h1>
-                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">{subtitle}</p>
+                            <div className="flex items-baseline gap-2.5 min-w-0">
+                                <h1 className="text-sm font-black text-white tracking-tight uppercase whitespace-nowrap">{title}</h1>
+                                <p className="text-muted-foreground font-medium tracking-wide text-[10px] truncate hidden sm:block">{subtitle}</p>
                             </div>
                             {actions && (
-                                <div className="ml-auto flex items-center gap-2">{actions}</div>
+                                <div className="ml-auto flex items-center gap-2 shrink-0">{actions}</div>
                             )}
                         </div>
                     </div>

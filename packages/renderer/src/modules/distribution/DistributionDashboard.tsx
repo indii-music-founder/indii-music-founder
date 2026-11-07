@@ -28,6 +28,7 @@ import { useDistributionDashboard } from './hooks/useDistributionDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { useStore } from '@/core/store';
 
 /* ================================================================== */
@@ -81,23 +82,25 @@ export default function DistributionDashboard() {
             >
                 {/* ── CENTER — Tabbed Content ─────────────────────────── */}
                 <div className="flex-1 flex flex-col min-w-0">
-                    {/* Header */}
-                    <div className="px-4 md:px-6 py-5 border-b border-white/5 flex-shrink-0 bg-black/10 backdrop-blur-sm">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-dept-publishing to-green-600 flex items-center justify-center shadow-xl shadow-dept-publishing/20 border border-white/10">
-                                <Radio size={22} className="text-white" />
+                    {/* Header — Unified 48px Top Bar */}
+                    <div className="h-12 px-4 md:px-6 border-b border-white/[0.06] flex-shrink-0 bg-[#0c0c12]/80 backdrop-blur-xl flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-linear-to-br from-dept-publishing to-green-600 flex items-center justify-center shadow-sm border border-white/10 shrink-0">
+                                <Radio size={14} className="text-white" />
                             </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2.5">
-                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">{t('distribution.title')}</h1>
-                                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
-                                        <span data-testid="live-system-badge" className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">{t('distribution.liveSystem')}</span>
-                                    </div>
-                                </div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.15em] mt-1">{t('distribution.subtitle')}</p>
+                            <h1 className="text-xs font-extrabold text-white tracking-wider uppercase truncate">{t('distribution.title')}</h1>
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full shrink-0">
+                                <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
+                                <span data-testid="live-system-badge" className="text-[9.5px] font-bold text-dept-publishing tracking-widest uppercase">{t('distribution.liveSystem')}</span>
                             </div>
+                            <span className="hidden lg:inline text-[11px] text-gray-500 truncate">{t('distribution.subtitle')}</span>
                         </div>
+                        <DepartmentJourneyBar
+                            department="distribution"
+                            activeTab={currentTab}
+                            onSelectTab={handleTabChange}
+                            itemCount={releases.length}
+                        />
                     </div>
 
                     {/* Tabs */}

@@ -3,6 +3,7 @@ import { Megaphone, Briefcase, Mic, Share2, Users, BarChart } from 'lucide-react
 import CampaignDashboard from './components/CampaignDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 // ISSUE-1442 Stage 2: the marketing domain folds into one destination.
 // Brand, Publicist, Social, CRM, and Analytics keep their module ids (deep
@@ -60,24 +61,32 @@ export default function MarketingDashboard() {
 
     return (
         <div className="h-full flex flex-col">
-            {/* Specialist tab strip — one department, no separate destinations */}
-            <div className="flex items-center gap-2 px-4 pt-3 flex-shrink-0 bg-background/60 backdrop-blur-sm border-b border-white/5 relative z-20" role="tablist" aria-label="Marketing department sections">
-                {TABS.map(tab => (
-                    <button
-                        key={tab.id}
-                        role="tab"
-                        aria-selected={activeTab === tab.id}
-                        data-testid={`marketing-tab-${tab.id}`}
-                        onClick={() => selectTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab.id
-                            ? 'bg-dept-marketing/15 border border-dept-marketing/40 text-dept-marketing'
-                            : 'bg-white/[0.02] border border-white/5 text-gray-400 hover:text-white hover:border-white/15'
-                            }`}
-                    >
-                        <tab.icon size={12} />
-                        {tab.label}
-                    </button>
-                ))}
+            {/* Specialist tab strip — one 48px department header, no separate destinations */}
+            <div className="flex items-center justify-between gap-2 px-4 h-12 flex-shrink-0 bg-[#0c0c12]/80 backdrop-blur-xl border-b border-white/5 relative z-20" role="tablist" aria-label="Marketing department sections">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            role="tab"
+                            aria-selected={activeTab === tab.id}
+                            data-testid={`marketing-tab-${tab.id}`}
+                            onClick={() => selectTab(tab.id)}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all shrink-0 ${activeTab === tab.id
+                                ? 'bg-dept-marketing/15 border border-dept-marketing/40 text-dept-marketing'
+                                : 'bg-white/[0.02] border border-white/5 text-gray-400 hover:text-white hover:border-white/15'
+                                }`}
+                        >
+                            <tab.icon size={12} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+                <DepartmentJourneyBar
+                    department="marketing"
+                    activeTab={activeTab}
+                    onSelectTab={(tab) => selectTab(tab as MarketingTab)}
+                    accentColorClass="text-dept-marketing border-dept-marketing/30 bg-dept-marketing/10 hover:bg-dept-marketing/20"
+                />
             </div>
 
             <div className="flex-1 min-h-0 relative" data-testid={`marketing-pane-${activeTab}`}>

@@ -18,6 +18,7 @@ import { formatCurrency } from '@/lib/utils';
 import { PODIntegrationPanel } from './components/PODIntegrationPanel';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 import { useAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 import { InventoryTracker } from './components/InventoryTracker';
 import { PricingEngine } from './components/PricingEngine';
@@ -222,7 +223,7 @@ function MerchWorkspaceCenter({
             <div className="pointer-events-none absolute left-[-10%] top-[-20%] h-[500px] w-[500px] rounded-full bg-[#FFE135]/5 blur-[120px]" />
             <div className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-lime-400/5 blur-[120px]" />
 
-            <div className="relative z-10 flex min-w-0 items-center gap-1 overflow-x-auto border-b border-white/5 px-4 pb-0 pt-4 scrollbar-hide">
+            <div className="relative z-10 flex h-12 min-w-0 items-center gap-1 overflow-x-auto border-b border-white/[0.06] bg-[#0c0c12]/80 backdrop-blur-xl px-4 scrollbar-hide">
                 {([
                     { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
                     { id: 'inventory', label: 'Catalog', icon: Package },
@@ -234,7 +235,7 @@ function MerchWorkspaceCenter({
                     <button
                         key={tab.id}
                         onClick={() => setCenterTab(tab.id)}
-                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-bold transition-all ${centerTab === tab.id
+                        className={`flex h-full shrink-0 items-center gap-2 border-b-2 px-3 text-xs font-bold transition-all ${centerTab === tab.id
                             ? 'border-[#FFE135] text-[#FFE135]'
                             : 'border-transparent text-neutral-500 hover:border-white/20 hover:text-neutral-300'
                             }`}
@@ -242,9 +243,17 @@ function MerchWorkspaceCenter({
                         <tab.icon size={13} /> {tab.label}
                     </button>
                 ))}
-                <button onClick={onCreateDrop} className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg border border-[#FFE135]/20 bg-[#FFE135]/10 px-3 py-1.5 text-[11px] font-bold text-[#FFE135] transition-all hover:bg-[#FFE135]/20">
-                    <Flame size={11} /> Create Drop
-                </button>
+                <div className="ml-auto flex shrink-0 items-center gap-2 pl-2">
+                    <DepartmentJourneyBar
+                        department="merch"
+                        activeTab={centerTab}
+                        onSelectTab={(t) => setCenterTab(t as CenterTab)}
+                        itemCount={products.length}
+                    />
+                    <button onClick={onCreateDrop} className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#FFE135]/20 bg-[#FFE135]/10 px-3 py-1.5 text-[11px] font-bold text-[#FFE135] transition-all hover:bg-[#FFE135]/20">
+                        <Flame size={11} /> Create Drop
+                    </button>
+                </div>
             </div>
 
             <div className="relative z-10 flex-1 overflow-y-auto" data-testid="merch-dashboard-content">

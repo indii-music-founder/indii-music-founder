@@ -6,7 +6,13 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
-const { mockUploadReferenceMedia, mockGenerateImages, mockWorkspaceLayout, mockJudgeCreativePromptModeIntent } = vi.hoisted(() => ({
+const {
+    mockUploadReferenceMedia,
+    mockGenerateImages,
+    mockWorkspaceLayout,
+    mockJudgeCreativePromptModeIntent,
+    mockJudgeCreativeStudioConfigPreset,
+} = vi.hoisted(() => ({
     mockUploadReferenceMedia: vi.fn(),
     mockGenerateImages: vi.fn(),
     mockWorkspaceLayout: { mode: 'wide' as 'wide' | 'standard' | 'focused', width: 1440 },
@@ -15,9 +21,33 @@ const { mockUploadReferenceMedia, mockGenerateImages, mockWorkspaceLayout, mockJ
         confidence: 0.95,
         reason: 'Jev resolved target mode as video.',
     }),
+    mockJudgeCreativeStudioConfigPreset: vi.fn().mockResolvedValue({
+        presetId: 'cover_art_master',
+        label: 'Cover Art Master (1:1 · Pro 2K)',
+        summary: 'High-detail square master tuned for album artwork & DSP thumbnails',
+        confidence: 0.91,
+        controlsPatch: {
+            aspectRatio: '1:1',
+            model: 'pro',
+            imageSize: '2K',
+            thinkingLevel: 'high',
+            batchCount: 1,
+            useGrounding: false,
+        },
+    }),
 }));
 vi.mock('@/config/typesafeJudgments', () => ({
     judgeCreativePromptModeIntent: (...args: any[]) => mockJudgeCreativePromptModeIntent(...args),
+    judgeCreativeStudioConfigPreset: (...args: any[]) => mockJudgeCreativeStudioConfigPreset(...args),
+    deterministicCreativeStudioConfigFallback: (ctx: { mode: 'image' | 'video' }) => ({
+        presetId: ctx.mode === 'video' ? 'cinematic_widescreen' : 'cover_art_master',
+        label: ctx.mode === 'video' ? 'Cinematic Widescreen (16:9 · Pro)' : 'Cover Art Master (1:1 · Pro 2K)',
+        summary: 'High-detail square master tuned for album artwork & DSP thumbnails',
+        confidence: 0.88,
+        controlsPatch: ctx.mode === 'video'
+            ? { aspectRatio: '16:9', model: 'pro', resolution: '1080p', duration: 8 }
+            : { aspectRatio: '1:1', model: 'pro', imageSize: '2K', thinkingLevel: 'high', batchCount: 1, useGrounding: false },
+    }),
 }));
 vi.mock('@/components/layout/AdaptiveWorkspaceContext', () => ({
     useOptionalAdaptiveWorkspace: () => mockWorkspaceLayout,
@@ -634,6 +664,22 @@ describe('DirectGenerationTab structural regressions', () => {
         await waitFor(() => {
             expect(screen.queryByTestId('jev-prompt-mode-suggestion')).not.toBeInTheDocument();
         });
+    });
+
+    it('renders Basics and Advanced Config simultaneously on a single unified page with Jev preset control', () => {
+        render(<DirectGenerationTab />);
+
+        // Both Basics and Advanced Config controls are visible immediately without switching pages
+        expect(screen.getByText('Choose Aspect Ratio')).toBeInTheDocument();
+        expect(screen.getByText('Image Output Size')).toBeInTheDocument();
+        expect(screen.getByText('API Engine Grade')).toBeInTheDocument();
+        expect(screen.getByText('Thinking Level')).toBeInTheDocument();
+
+        // Jev unified configuration preset bar is rendered and applies preset on 1-click
+        expect(screen.getByTestId('jev-creative-config-preset')).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('jev-apply-config-preset-btn'));
+        expect(useMockStore.getState().studioControls.aspectRatio).toBe('1:1');
+        expect(useMockStore.getState().studioControls.model).toBe('pro');
     });
 });
 

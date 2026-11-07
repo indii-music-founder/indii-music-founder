@@ -19,6 +19,7 @@ import { useAnalytics, usePayouts } from './hooks/useAnalytics';
 import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
 // ISSUE-1441: use the canonical panels (publishing carried drifted forks).
@@ -64,6 +65,7 @@ export default function PublishingDashboard() {
     const toast = useToast();
 
     // Core State
+    const [activeTab, setActiveTab] = useState<string>('catalog');
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [selectedReleaseId, setSelectedReleaseId] = useState<string | null>(null);
     const [isDSRModalOpen, setIsDSRModalOpen] = useState(false);
@@ -139,13 +141,28 @@ export default function PublishingDashboard() {
                         <EarningsDashboard />
                     </PublishingErrorBoundary>
                 </aside></>}
-                actions={<button
-                                    onClick={() => setIsWizardOpen(true)}
-                                    className="group flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-all font-bold text-xs active:scale-[0.98]"
-                                >
-                                    <Plus size={14} className="transition-transform group-hover:rotate-90" />
-                                    New Release
-                                </button>}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <DepartmentJourneyBar
+                            department="publishing"
+                            activeTab={activeTab}
+                            onSelectTab={(tab) => {
+                                setSelectedReleaseId(null);
+                                setActiveTab(tab);
+                            }}
+                            itemCount={releases.length}
+                            pendingCount={stats.pending + stats.draft}
+                            accentColorClass="text-blue-300 border-blue-400/25 bg-blue-400/10 hover:bg-blue-400/20"
+                        />
+                        <button
+                            onClick={() => setIsWizardOpen(true)}
+                            className="group flex items-center gap-1.5 px-3 py-1 bg-white text-black rounded-md hover:bg-gray-200 transition-all font-bold text-[11px] active:scale-[0.98]"
+                        >
+                            <Plus size={12} className="transition-transform group-hover:rotate-90" />
+                            New Release
+                        </button>
+                    </div>
+                }
             >
                 <AnimatePresence mode="wait">
                             {selectedReleaseId && selectedRelease ? (
@@ -196,7 +213,7 @@ export default function PublishingDashboard() {
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                 >
-                                    <Tabs defaultValue="catalog" className="flex-1 flex flex-col">
+                                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                                         <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
                                             <TabsList className="bg-transparent gap-6 p-0 h-12">
                                                 <TabsTrigger

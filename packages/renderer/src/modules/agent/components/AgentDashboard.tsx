@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { AgentLoopMonitor } from './AgentLoopMonitor';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
@@ -256,8 +257,17 @@ const AgentDashboard: React.FC = () => {
                                 </div>
                             }
                             right={
-                                <div className="text-xs text-slate-500 font-mono">
-                                    v2.4.0-alpha
+                                <div className="flex items-center gap-3">
+                                    <DepartmentJourneyBar
+                                        department="agent"
+                                        activeTab={activeTab}
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        onSelectTab={(t) => setActiveTab(t as any)}
+                                        itemCount={venues.length}
+                                    />
+                                    <span className="hidden xl:inline text-[11px] text-slate-500 font-mono">
+                                        v2.4.0-alpha
+                                    </span>
                                 </div>
                             }
                         />
