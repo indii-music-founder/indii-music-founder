@@ -16,7 +16,7 @@ const HINT_TIMEOUT_MS = 7000;
 export interface DepartmentJourneyBarProps {
     department: DepartmentWorkspaceId;
     activeTab: string;
-    onSelectTab: (tab: string) => void;
+    onSelectTab?: (tab: string) => void;
     itemCount?: number;
     pendingCount?: number;
     hasAlert?: boolean;
@@ -97,13 +97,13 @@ export function DepartmentJourneyBar({
     const handleTriggerOption = (opt: DepartmentJourneyOption) => {
         setIsOpen(false);
         toggleRef.current?.focus();
-        onSelectTab(opt.targetTab);
+        onSelectTab?.(opt.targetTab);
         setHint(opt.description);
     };
 
     const handleTriggerVerdict = () => {
         const matched = options.find(o => o.id === verdict.journeyId);
-        onSelectTab(verdict.targetTab);
+        onSelectTab?.(verdict.targetTab);
         setHint(matched?.description || verdict.headline);
     };
 
