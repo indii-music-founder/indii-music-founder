@@ -230,57 +230,57 @@ export default function DirectGenerationTab() {
         >
             {/* Unified Fixed-Proportion Creative Hub Console */}
             <div
-                className="w-full flex-1 flex flex-col justify-between overflow-y-auto shrink-0 select-none relative p-5 max-w-4xl mx-auto"
+                className="w-full flex-1 flex flex-col justify-between shrink-0 select-none relative p-3 sm:p-4 max-w-4xl mx-auto"
                 data-testid="direct-generation-controls"
             >
                 
                 {/* Glowing subtle top gradient mesh for a premium look */}
                 <div className="absolute top-0 left-0 right-0 h-32 bg-radial-gradient from-dept-creative/10 to-transparent pointer-events-none" />
 
-                <div className="flex flex-col gap-4 z-10 w-full">
+                <div className="flex flex-col gap-2.5 z-10 w-full">
                     {/* Compact Console Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-1.5 rounded-xl bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
-                                <Wand2 size={16} />
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-lg bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
+                                <Wand2 size={14} />
                             </div>
                             <div>
                                 <h2 className="text-xs uppercase font-extrabold tracking-widest text-white/95">Creative Hub</h2>
-                                <p className="text-[10px] text-gray-400 font-medium">Direct Creative Generation Studio</p>
+                                <p className="text-[9.5px] text-gray-400 font-medium">Direct Creative Generation Studio</p>
                             </div>
                         </div>
 
                         {/* Mode Toggle Tabs (Inline Fixed Width) */}
-                        <div className="inline-flex bg-white/4 rounded-xl p-1 border border-white/8 shadow-inner">
+                        <div className="inline-flex bg-white/4 rounded-xl p-0.5 border border-white/8 shadow-inner">
                             <button
                                 onClick={() => handleModeSwitch('image')}
                                 data-testid="direct-image-mode-btn"
-                                className={`px-3.5 py-1.5 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'image'
+                                className={`px-3 py-1 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'image'
                                     ? 'bg-gradient-to-r from-dept-creative/25 to-dept-creative/10 text-white border border-dept-creative/30 font-bold shadow-sm'
                                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                                     }`}
                             >
-                                <ImageIcon size={13} className={mode === 'image' ? 'text-dept-creative' : ''} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Image Creator</span>
+                                <ImageIcon size={12} className={mode === 'image' ? 'text-dept-creative' : ''} />
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider">Image Creator</span>
                             </button>
                             <button
                                 onClick={() => handleModeSwitch('video')}
                                 data-testid="direct-video-mode-btn"
-                                className={`px-3.5 py-1.5 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'video'
+                                className={`px-3 py-1 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'video'
                                     ? 'bg-gradient-to-r from-green-500/25 to-pink-500/10 text-white border border-green-500/30 font-bold shadow-sm'
                                     : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                                     }`}
                             >
-                                <Video size={13} className={mode === 'video' ? 'text-green-400' : ''} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Video Creator</span>
+                                <Video size={12} className={mode === 'video' ? 'text-green-400' : ''} />
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider">Video Creator</span>
                             </button>
                         </div>
 
                         {/* Quick Header Actions */}
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                                <span className="text-[9.5px] font-mono text-gray-300 font-bold uppercase tracking-wider">
+                                <span className="text-[9px] font-mono text-gray-300 font-bold uppercase tracking-wider">
                                     {mode === 'image' 
                                         ? (studioControls.model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana 2') 
                                         : 'Veo 3.1'}
@@ -330,9 +330,9 @@ export default function DirectGenerationTab() {
                                     };
                                     input.click();
                                 }}
-                                className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-white transition-all flex items-center gap-1.5"
+                                className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[9.5px] font-bold text-white transition-all flex items-center gap-1.5"
                             >
-                                <ImageIcon size={12} />
+                                <ImageIcon size={11} />
                                 Upload Photo
                             </button>
                             
@@ -341,9 +341,9 @@ export default function DirectGenerationTab() {
                                     const { useStore } = await import('@/core/store');
                                     useStore.getState().setRightPanelTab('assets');
                                 }}
-                                className="px-2.5 py-1.5 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-lg text-[10px] font-bold text-dept-creative transition-all flex items-center gap-1.5"
+                                className="px-2 py-1 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-lg text-[9.5px] font-bold text-dept-creative transition-all flex items-center gap-1.5"
                             >
-                                <Layers size={12} />
+                                <Layers size={11} />
                                 Project Assets
                             </button>
                         </div>
@@ -352,7 +352,7 @@ export default function DirectGenerationTab() {
                     {/* Unified Configuration Bar */}
                     <div
                         data-testid="jev-creative-config-preset"
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dept-creative/25 bg-dept-creative/[0.06] px-3.5 py-2"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dept-creative/25 bg-dept-creative/[0.06] px-3 py-1.5"
                     >
                         <div className="flex items-center gap-2 min-w-0">
                             <span className="inline-flex items-center gap-1 rounded-md bg-dept-creative/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-dept-creative">
@@ -382,45 +382,45 @@ export default function DirectGenerationTab() {
                     )}
 
                     {/* Unified Single-Page Studio Configuration Grid (Basics + Advanced Side-by-Side) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
                         {/* LEFT COLUMN: Basics (Format, Aspect Ratio & Sequence Timing) */}
-                        <div className="lg:col-span-6 flex flex-col gap-3.5 rounded-2xl border border-white/8 bg-white/[0.02] p-4">
-                            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div className="lg:col-span-6 flex flex-col gap-2.5 rounded-2xl border border-white/8 bg-white/[0.02] p-3">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                                 <button
                                     type="button"
                                     onClick={() => setActiveSection('basics')}
-                                    className="text-[10px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
+                                    className="text-[9.5px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
                                 >
-                                    <Layers size={11} className="text-dept-creative" />
+                                    <Layers size={10} className="text-dept-creative" />
                                     Basics
                                 </button>
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-gray-500">
+                                <span className="text-[8.5px] font-mono uppercase tracking-wider text-gray-500">
                                     Canvas & Framing
                                 </span>
                             </div>
 
                             {/* Aspect Ratio Cards — Compact 3-Column Fixed Tiles */}
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                                     Choose Aspect Ratio
                                 </label>
-                                <div className={`grid gap-2 ${mode === 'video' ? 'grid-cols-2 max-w-[280px]' : 'grid-cols-3'}`}>
+                                <div className={`grid gap-1.5 ${mode === 'video' ? 'grid-cols-2 max-w-[280px]' : 'grid-cols-3'}`}>
                                     {visibleAspectRatios.map((ratio) => {
                                         const isSelected = studioControls.aspectRatio === ratio.id;
                                         return (
                                             <button
                                                 key={ratio.id}
                                                 onClick={() => setStudioControls({ aspectRatio: ratio.id })}
-                                                className={`p-2 rounded-xl border flex flex-col items-start gap-1.5 transition-all group ${isSelected 
+                                                className={`p-1.5 rounded-xl border flex flex-col items-start gap-1 transition-all group ${isSelected 
                                                     ? 'bg-white/6 border-dept-creative/40 shadow-sm' 
                                                     : 'bg-white/2 border-white/5 hover:border-white/15 hover:bg-white/4'}`}
                                             >
                                                 <div className="flex items-center justify-between w-full gap-1">
-                                                    <span className="text-[10px] font-bold text-white/95 truncate">{ratio.label}</span>
-                                                    <span className="text-[8.5px] font-mono text-gray-500 group-hover:text-gray-400 font-bold shrink-0">{ratio.id}</span>
+                                                    <span className="text-[9.5px] font-bold text-white/95 truncate">{ratio.label}</span>
+                                                    <span className="text-[8px] font-mono text-gray-500 group-hover:text-gray-400 font-bold shrink-0">{ratio.id}</span>
                                                 </div>
-                                                <div className="h-8 w-full flex items-center justify-center bg-black/40 rounded-lg border border-white/5">
-                                                    <div className={`${ratio.w} ${ratio.h} scale-75 border-2 ${isSelected ? 'border-dept-creative bg-dept-creative/15' : 'border-gray-600'} rounded-sm transition-all`} />
+                                                <div className="h-6 w-full flex items-center justify-center bg-black/40 rounded-lg border border-white/5">
+                                                    <div className={`${ratio.w} ${ratio.h} scale-60 border-2 ${isSelected ? 'border-dept-creative bg-dept-creative/15' : 'border-gray-600'} rounded-sm transition-all`} />
                                                 </div>
                                             </button>
                                         );
@@ -430,30 +430,30 @@ export default function DirectGenerationTab() {
 
                             {/* Dynamic Video Parameters */}
                             {mode === 'video' && (
-                                <div className="flex flex-col gap-3 border-t border-white/5 pt-3">
-                                    <div className="flex items-center justify-between rounded-xl border border-white/5 bg-black/30 px-3 py-2">
+                                <div className="flex flex-col gap-2 border-t border-white/5 pt-2">
+                                    <div className="flex items-center justify-between rounded-xl border border-white/5 bg-black/30 px-2.5 py-1.5">
                                         <div>
-                                            <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
-                                            <p className="text-[11px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
+                                            <p className="text-[8.5px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
+                                            <p className="text-[10px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
                                         </div>
-                                        <span className="text-[9px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-0.5">
+                                        <span className="text-[8.5px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-1.5 py-0.5">
                                             24 FPS locked
                                         </span>
                                     </div>
 
                                     {/* Duration Preset pills — Fixed Inline Segmented Group */}
-                                    <div className="flex items-center justify-between gap-3">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                             Sequence Duration
                                         </label>
-                                        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8">
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8">
                                             {durationOptions.map((dur) => {
                                                 const isSelected = studioControls.duration === dur;
                                                 return (
                                                     <button
                                                         key={dur}
                                                         onClick={() => setStudioControls({ duration: dur })}
-                                                        className={`min-w-[48px] px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase border transition-all ${isSelected
+                                                        className={`min-w-[44px] px-2 py-0.5 rounded-lg text-[9.5px] font-mono font-bold uppercase border transition-all ${isSelected
                                                             ? 'bg-green-500/15 border-green-500/40 text-green-300'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-white'}`}
                                                     >
@@ -465,8 +465,8 @@ export default function DirectGenerationTab() {
                                     </div>
 
                                     {/* Camera Motion Pills */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1">
                                             <Compass size={10} /> Camera Movement
                                         </label>
                                         <div className="flex flex-wrap gap-1">
@@ -476,7 +476,7 @@ export default function DirectGenerationTab() {
                                                     <button
                                                         key={move}
                                                         onClick={() => setStudioControls({ cameraMovement: move })}
-                                                        className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
+                                                        className={`px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${isSelected
                                                             ? 'bg-green-500/15 border-green-500/40 text-green-300'
                                                             : 'bg-white/3 border-white/8 text-gray-400 hover:text-gray-200'}`}
                                                     >
@@ -489,15 +489,15 @@ export default function DirectGenerationTab() {
 
                                     {/* Motion Strength — Fixed Inline Segmented Group */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                        <div className="flex items-center gap-1.5">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                                 Motion Strength
                                             </label>
-                                            <span className="text-[10px] font-mono font-extrabold text-green-400">
+                                            <span className="text-[9.5px] font-mono font-extrabold text-green-400">
                                                 {Math.round(studioControls.motionStrength * 100)}%
                                             </span>
                                         </div>
-                                        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8">
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8">
                                             {[
                                                 { label: 'Subtle', val: 0.3 },
                                                 { label: 'Cinematic', val: 0.7 },
@@ -508,7 +508,7 @@ export default function DirectGenerationTab() {
                                                     <button
                                                         key={preset.label}
                                                         onClick={() => setStudioControls({ motionStrength: preset.val })}
-                                                        className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
+                                                        className={`px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${isSelected
                                                             ? 'bg-green-500/15 border-green-500/40 text-green-300'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-white'}`}
                                                     >
@@ -523,29 +523,29 @@ export default function DirectGenerationTab() {
                         </div>
 
                         {/* RIGHT COLUMN: Advanced Config (Always Visible, Fixed-Size Controls) */}
-                        <div className="lg:col-span-6 flex flex-col gap-3.5 rounded-2xl border border-white/8 bg-white/[0.02] p-4 text-xs">
-                            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                        <div className="lg:col-span-6 flex flex-col gap-2.5 rounded-2xl border border-white/8 bg-white/[0.02] p-3 text-xs">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                                 <button
                                     type="button"
                                     onClick={() => setActiveSection('advanced')}
-                                    className="text-[10px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
+                                    className="text-[9.5px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
                                 >
-                                    <Settings2 size={11} className="text-dept-creative" />
+                                    <Settings2 size={10} className="text-dept-creative" />
                                     Advanced Config
                                 </button>
-                                <span className="text-[9px] font-mono uppercase tracking-wider text-gray-500">
+                                <span className="text-[8.5px] font-mono uppercase tracking-wider text-gray-500">
                                     Engine & Output
                                 </span>
                             </div>
 
                             {/* Row 1: Output Size / Resolution + API Engine Grade (Compact Fixed Pills) */}
-                            <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 {mode === 'video' ? (
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                             Engine Resolution Preset
                                         </label>
-                                        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                             {['720p', '1080p', '4k'].map((res) => {
                                                 const isSelected = studioControls.resolution === res;
                                                 return (
@@ -553,7 +553,7 @@ export default function DirectGenerationTab() {
                                                         key={res}
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         onClick={() => setStudioControls({ resolution: res as any })}
-                                                        className={`min-w-[54px] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
                                                             ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
@@ -564,11 +564,11 @@ export default function DirectGenerationTab() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                             Image Output Size
                                         </label>
-                                        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                             {(studioControls.model === 'fast' ? ['0.5K', '1K', '2K'] : ['1K', '2K', '4K']).map((size) => {
                                                 const isSelected = (studioControls.imageSize || '2K') === size;
                                                 return (
@@ -576,7 +576,7 @@ export default function DirectGenerationTab() {
                                                         key={size}
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         onClick={() => setStudioControls({ imageSize: size as any })}
-                                                        className={`min-w-[52px] px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
+                                                        className={`min-w-[46px] px-2 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
                                                             ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
@@ -588,11 +588,11 @@ export default function DirectGenerationTab() {
                                     </div>
                                 )}
 
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                         API Engine Grade
                                     </label>
-                                    <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                    <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                         {['fast', 'pro'].map((tier) => {
                                             const isSelected = studioControls.model === tier
                                                 || (tier === 'fast' && studioControls.model === 'lite');
@@ -601,7 +601,7 @@ export default function DirectGenerationTab() {
                                                     key={tier}
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     onClick={() => setStudioControls({ model: tier as any })}
-                                                    className={`min-w-[60px] px-3 py-1 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
+                                                    className={`min-w-[52px] px-2.5 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
                                                         ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
                                                         : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                 >
@@ -616,38 +616,38 @@ export default function DirectGenerationTab() {
                             {mode === 'image' && (
                                 <>
                                     {/* Row 2: Thinking Level + Batch Count + Response Format */}
-                                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                                 Thinking Level
                                             </label>
-                                            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                                 {(studioControls.model === 'fast' ? ['none', 'minimal', 'high'] : ['high']).map((level) => (
                                                     <button
                                                         key={level}
                                                         data-testid={`direct-thinking-${level}`}
                                                         onClick={() => setStudioControls({ thinkingLevel: level as 'none' | 'minimal' | 'high' })}
-                                                        className={`min-w-[56px] px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.thinkingLevel === level || (studioControls.model === 'pro' && level === 'high')
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${studioControls.thinkingLevel === level || (studioControls.model === 'pro' && level === 'high')
                                                             ? 'bg-green-500/15 border-green-500/40 text-green-300'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
-                                                        {studioControls.model === 'pro' ? 'Always High' : level}
+                                                        {studioControls.model === 'pro' ? 'High' : level}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                                 Image Count
                                             </label>
-                                            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                                 {[1, 2, 3, 4].map(count => (
                                                     <button
                                                         key={count}
                                                         data-testid={`direct-batch-${count}`}
                                                         onClick={() => setStudioControls({ batchCount: count })}
-                                                        className={`min-w-[36px] px-2 py-1 rounded-lg text-[9px] font-bold border transition-all ${studioControls.batchCount === count
+                                                        className={`min-w-[32px] px-1.5 py-0.5 rounded-lg text-[8.5px] font-bold border transition-all ${studioControls.batchCount === count
                                                             ? 'bg-white/10 border-white/25 text-white'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
@@ -657,11 +657,11 @@ export default function DirectGenerationTab() {
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
                                                 Response
                                             </label>
-                                            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                                 {([
                                                     ['image_only', 'Image'],
                                                     ['image_and_text', '+ Text'],
@@ -670,7 +670,7 @@ export default function DirectGenerationTab() {
                                                         key={format}
                                                         data-testid={`direct-response-${format}`}
                                                         onClick={() => setStudioControls({ responseFormat: format })}
-                                                        className={`min-w-[54px] px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.responseFormat === format
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${studioControls.responseFormat === format
                                                             ? 'bg-white/10 border-white/25 text-white'
                                                             : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
@@ -682,14 +682,14 @@ export default function DirectGenerationTab() {
                                     </div>
 
                                     {/* Row 3: Compact Toggles (Grounding & Thought Summary) */}
-                                    <div className="flex flex-col gap-2 border-t border-white/5 pt-3">
-                                        <div className="flex flex-col gap-2 bg-black/30 px-3 py-2 rounded-xl border border-white/5">
+                                    <div className="flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                                        <div className="flex flex-col gap-1.5 bg-black/30 px-2.5 py-1.5 rounded-xl border border-white/5">
                                             <div className="flex justify-between items-center gap-2">
                                                 <div className="flex items-center gap-2">
-                                                    <Globe size={13} className="text-gray-400 shrink-0" />
+                                                    <Globe size={12} className="text-gray-400 shrink-0" />
                                                     <div>
-                                                        <h4 className="text-[10px] font-bold text-white">Google Search Grounding</h4>
-                                                        <p className="text-[9px] text-gray-500">Injects current web knowledge</p>
+                                                        <h4 className="text-[9.5px] font-bold text-white">Google Search Grounding</h4>
+                                                        <p className="text-[8.5px] text-gray-500">Injects current web knowledge</p>
                                                     </div>
                                                 </div>
                                                 <button
@@ -699,24 +699,24 @@ export default function DirectGenerationTab() {
                                                         useGrounding: !studioControls.useGrounding,
                                                         useImageSearch: studioControls.useGrounding ? false : studioControls.useImageSearch,
                                                     })}
-                                                    className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
+                                                    className={`w-8 h-4 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
                                                 >
-                                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                    <div className={`w-3 h-3 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
                                                 </button>
                                             </div>
                                             {studioControls.useGrounding && studioControls.model === 'fast' && (
-                                                <div className="flex justify-between items-center border-t border-white/5 pt-2">
+                                                <div className="flex justify-between items-center border-t border-white/5 pt-1.5">
                                                     <div>
-                                                        <h4 className="text-[10px] font-bold text-white">Include Image Search</h4>
-                                                        <p className="text-[9px] text-gray-500">Use visual search results as grounding</p>
+                                                        <h4 className="text-[9.5px] font-bold text-white">Include Image Search</h4>
+                                                        <p className="text-[8.5px] text-gray-500">Use visual search results as grounding</p>
                                                     </div>
                                                     <button
                                                         aria-label="Toggle Image Search grounding"
                                                         data-testid="direct-image-search-toggle"
                                                         onClick={() => setStudioControls({ useImageSearch: !studioControls.useImageSearch })}
-                                                        className={`w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
+                                                        className={`w-8 h-4 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
                                                     >
-                                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
                                                     </button>
                                                 </div>
                                             )}
@@ -725,15 +725,15 @@ export default function DirectGenerationTab() {
                                         <button
                                             data-testid="direct-include-thoughts-toggle"
                                             onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
-                                            className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left transition-all ${studioControls.includeThoughts
+                                            className={`flex items-center justify-between rounded-xl border px-2.5 py-1.5 text-left transition-all ${studioControls.includeThoughts
                                                 ? 'border-green-500/30 bg-green-500/10 text-green-200'
                                                 : 'border-white/5 bg-black/30 text-gray-400'}`}
                                         >
                                             <span>
-                                                <span className="block text-[10px] font-bold uppercase">Return thought summary</span>
-                                                <span className="block text-[9px] text-gray-500">Stores the provider summary with the generated asset</span>
+                                                <span className="block text-[9.5px] font-bold uppercase">Return thought summary</span>
+                                                <span className="block text-[8.5px] text-gray-500">Stores the provider summary with the generated asset</span>
                                             </span>
-                                            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-white/5">{studioControls.includeThoughts ? 'On' : 'Off'}</span>
+                                            <span className="text-[8.5px] font-bold uppercase px-1.5 py-0.5 rounded bg-white/5">{studioControls.includeThoughts ? 'On' : 'Off'}</span>
                                         </button>
                                     </div>
                                 </>
@@ -741,20 +741,20 @@ export default function DirectGenerationTab() {
 
                             {/* Video-only Safety Policy Grade */}
                             {mode === 'video' && (
-                                <div className="flex flex-col gap-2 bg-black/30 px-3 py-2.5 rounded-xl border border-white/5 mt-1">
+                                <div className="flex flex-col gap-1.5 bg-black/30 px-2.5 py-1.5 rounded-xl border border-white/5 mt-0.5">
                                     <div className="flex justify-between items-center">
                                         <div className="flex items-center gap-2">
-                                            <Shield size={13} className="text-gray-400" />
+                                            <Shield size={12} className="text-gray-400" />
                                             <div>
-                                                <h4 className="text-[10px] font-bold text-white">Safety Policy Grade</h4>
-                                                <p className="text-[9px] text-gray-500">Filters adult or unsafe contents</p>
+                                                <h4 className="text-[9.5px] font-bold text-white">Safety Policy Grade</h4>
+                                                <p className="text-[8.5px] text-gray-500">Filters adult or unsafe contents</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => setStudioControls({
                                                 personGeneration: studioControls.personGeneration === 'allow_adult' ? 'dont_allow' : 'allow_adult'
                                             })}
-                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
+                                            className={`px-2 py-0.5 rounded-lg text-[8.5px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
                                                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                                                 : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
                                         >
@@ -768,7 +768,7 @@ export default function DirectGenerationTab() {
                 </div>
 
                 {/* Bottom docked capsule for input & prompt builder */}
-                <div className="flex flex-col gap-3 mt-6 z-10 pt-4 border-t border-white/5 bg-[#0a090c]/40">
+                <div className="flex flex-col gap-2 mt-3 z-10 pt-2 border-t border-white/5 bg-[#0a090c]/40">
                     
                     {/* Brand & Prompt Additives Menu — Drawn directly from brand kit preferences + tracked frequent descriptors */}
                     <BrandPromptAdditivesMenu
@@ -809,9 +809,9 @@ export default function DirectGenerationTab() {
                             }}
                             placeholder={`Describe your ${mode}...`}
                             disabled={isGenerating}
-                            rows={3}
+                            rows={2}
                             data-testid="direct-prompt-input"
-                            className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 focus:outline-none resize-none px-2 py-1.5 no-scrollbar"
+                            className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 focus:outline-none resize-none px-2 py-1 no-scrollbar"
                         />
 
                         {/* Expandable synthesized prompt */}
