@@ -9525,6 +9525,8 @@ export type CreativeJourneyIntent =
     | 'band_references'
     | 'guided_campaign';
 
+export type CreativeJourneyOption = CreativeJourneyIntent;
+
 export interface CreativeJourneyContext {
     prompt: string;
     generationMode: 'image' | 'video';
@@ -9539,6 +9541,8 @@ export interface CreativeJourneyIntentVerdict {
     actionLabel: string;
 }
 
+export type CreativeJourneyVerdict = CreativeJourneyIntentVerdict;
+
 const CREATIVE_JOURNEY_ACTIONS: Record<CreativeJourneyIntent, { headline: string; actionLabel: string }> = {
     album_artwork: { headline: 'Shape your release artwork', actionLabel: 'Open Image Studio' },
     music_video: { headline: 'Build a visual story around your track', actionLabel: 'Open Music Video' },
@@ -9551,9 +9555,10 @@ const CREATIVE_JOURNEY_ACTIONS: Record<CreativeJourneyIntent, { headline: string
 export function deterministicCreativeJourneyFallback(
     context: CreativeJourneyContext,
 ): CreativeJourneyIntentVerdict {
-    const text = context.prompt.toLowerCase();
+    const text = (context.prompt || '').toLowerCase();
+    const ingredients = context.ingredients || { audio: false, image: false, video: false };
     let intent: CreativeJourneyIntent = context.generationMode === 'video' ? 'music_video' : 'album_artwork';
-    if (/\b(phone|recording|concert footage|live footage|long recording|interview)\b/.test(text) || (context.ingredients.video && !context.ingredients.audio)) {
+    if (/\b(phone|recording|concert footage|live footage|long recording|interview)\b/.test(text) || (ingredients.video && !ingredients.audio)) {
         intent = 'phone_recording';
     } else if (/\b(social|reel|shorts|tiktok|vertical clip|clip)\b/.test(text)) {
         intent = 'social_clips';
@@ -9561,18 +9566,18 @@ export function deterministicCreativeJourneyFallback(
         intent = 'band_references';
     } else if (/\b(campaign|release plan|promote|launch|rollout)\b/.test(text)) {
         intent = 'guided_campaign';
-    } else if (/\b(music video|video|storyboard|visual story|motion|scene)\b/.test(text) || (context.ingredients.audio && context.generationMode === 'video')) {
+    } else if (/\b(music video|video|storyboard|visual story|motion|scene)\b/.test(text) || (ingredients.audio && context.generationMode === 'video')) {
         intent = 'music_video';
-    } else if (/\b(artwork|album cover|cover art|headshot|portrait|poster)\b/.test(text) || context.ingredients.image) {
+    } else if (/\b(artwork|album cover|cover art|headshot|portrait|poster)\b/.test(text) || ingredients.image) {
         intent = 'album_artwork';
-    } else if (context.ingredients.audio) {
+    } else if (ingredients.audio) {
         intent = 'social_clips';
     }
 
     return {
         intent,
         confidence: /\b(phone|recording|concert footage|live footage|long recording|interview|social|reel|shorts|tiktok|vertical clip|clip|band|lineup|artist reference|member reference|consistent face|roster|campaign|release plan|promote|launch|rollout|music video|video|storyboard|visual story|motion|scene|artwork|album cover|cover art|headshot|portrait|poster)\b/.test(text)
-            || context.ingredients.audio || context.ingredients.image || context.ingredients.video
+            || ingredients.audio || ingredients.image || ingredients.video
             ? 0.72
             : 0.35,
         ...CREATIVE_JOURNEY_ACTIONS[intent],
@@ -9583,7 +9588,8 @@ export async function judgeCreativeJourneyIntent(
     context: CreativeJourneyContext,
 ): Promise<CreativeJourneyIntentVerdict> {
     const fallback = deterministicCreativeJourneyFallback(context);
-    if (!judgmentsAvailable() || (!context.prompt.trim() && !context.ingredients.audio && !context.ingredients.image && !context.ingredients.video)) {
+    const ingredients = context.ingredients || { audio: false, image: false, video: false };
+    if (!judgmentsAvailable() || (!context.prompt?.trim() && !ingredients.audio && !ingredients.image && !ingredients.video)) {
         return fallback;
     }
 
@@ -9594,8 +9600,8 @@ export async function judgeCreativeJourneyIntent(
         >(getFunctions(), 'typesafeJudge');
         const result = await judgeFn({
             state: {
-                prompt: context.prompt.slice(0, 500),
-                ingredients: context.ingredients,
+                prompt: (context.prompt || '').slice(0, 500),
+                ingredients,
                 currentMode: context.generationMode,
                 currentView: context.viewMode,
             },
@@ -9628,6 +9634,198 @@ export async function judgeCreativeJourneyIntent(
         return fallback;
     }
 }
+
+// ---------------------------------------------------------------------------
+// Judgment 82: Boardroom Executive Mission & Swarm Seating Intent
+// ---------------------------------------------------------------------------
+
+export type BoardroomExecutiveMission =
+    | 'master_audit'
+    | 'split_rights'
+    | 'royalty_waterfall'
+    | 'ddex_catalog'
+    | 'campaign_swarm'
+    | 'creative_sync';
+
+export interface BoardroomExecutiveContext {
+    prompt: string;
+    activeAgents: string[];
+    hasReferencedAssets: boolean;
+    messageCount: number;
+}
+
+export interface BoardroomExecutiveVerdict {
+    mission: BoardroomExecutiveMission;
+    confidence: number;
+    headline: string;
+    actionLabel: string;
+    recommendedAgents: string[];
+    suggestedPrompt: string;
+}
+
+const BOARDROOM_MISSION_DETAILS: Record<
+    BoardroomExecutiveMission,
+    {
+        headline: string;
+        actionLabel: string;
+        recommendedAgents: string[];
+        suggestedPrompt: string;
+    }
+> = {
+    master_audit: {
+        headline: 'Audit master audio & verify ISRC/DDEX readiness',
+        actionLabel: 'Seat Music + Distribution',
+        recommendedAgents: ['music', 'distribution'],
+        suggestedPrompt: 'Audit my latest master recording: extract Audio DNA, verify ISRC, and check DDEX readiness.',
+    },
+    split_rights: {
+        headline: 'Draft split sheets & clear collaborator rights',
+        actionLabel: 'Seat Legal + Finance',
+        recommendedAgents: ['legal', 'finance'],
+        suggestedPrompt: 'Draft a standard 50/50 co-writer split sheet for my current track and check for sample clearance hurdles.',
+    },
+    royalty_waterfall: {
+        headline: 'Model streaming recoupment & royalty waterfall',
+        actionLabel: 'Seat Finance Chief',
+        recommendedAgents: ['finance'],
+        suggestedPrompt: 'Model our distribution and publishing royalty waterfall to calculate recoupment and net earnings.',
+    },
+    ddex_catalog: {
+        headline: 'Inspect catalog metadata gaps & stage DDEX delivery',
+        actionLabel: 'Seat Distribution + Publishing',
+        recommendedAgents: ['distribution', 'publishing'],
+        suggestedPrompt: 'Inspect my catalog for missing metadata gaps and prepare staged DDEX release payloads.',
+    },
+    campaign_swarm: {
+        headline: 'Convene release marketing, social & brand rollout',
+        actionLabel: 'Seat Marketing Swarm',
+        recommendedAgents: ['marketing', 'social', 'brand'],
+        suggestedPrompt: 'Build a synchronized 4-week release rollout across Marketing, Social, and Brand strategy.',
+    },
+    creative_sync: {
+        headline: 'Align visual assets with creative & video directors',
+        actionLabel: 'Seat Creative + Video',
+        recommendedAgents: ['creative', 'video', 'brand'],
+        suggestedPrompt: 'Review our pinned visual assets and align cover art, canvas visuals, and video teasers.',
+    },
+};
+
+export function deterministicBoardroomExecutiveFallback(
+    context: BoardroomExecutiveContext,
+): BoardroomExecutiveVerdict {
+    const text = (context.prompt || '').toLowerCase();
+    const agents = context.activeAgents || [];
+    let mission: BoardroomExecutiveMission = 'master_audit';
+
+    if (/\b(split|contract|clearance|sample|legal|agreement|co-writer|rights|license)\b/.test(text)) {
+        mission = 'split_rights';
+    } else if (/\b(royalty|waterfall|recoup|payout|revenue|finance|split pay|dividends|earnings|budget)\b/.test(text)) {
+        mission = 'royalty_waterfall';
+    } else if (/\b(ddex|catalog|bwarm|dsp|deliver|release payload|metadata gap|publishing)\b/.test(text)) {
+        mission = 'ddex_catalog';
+    } else if (/\b(campaign|marketing|rollout|social|tiktok|promo|launch|press|brand)\b/.test(text)) {
+        mission = 'campaign_swarm';
+    } else if (/\b(artwork|cover|visual|video|canvas|creative|teaser|storyboard)\b/.test(text) || context.hasReferencedAssets) {
+        mission = 'creative_sync';
+    } else if (/\b(master|isrc|audio|dna|stem|track|mix|loudness)\b/.test(text)) {
+        mission = 'master_audit';
+    } else if (agents.includes('legal')) {
+        mission = 'split_rights';
+    } else if (agents.includes('finance')) {
+        mission = 'royalty_waterfall';
+    } else if (agents.includes('marketing') || agents.includes('social')) {
+        mission = 'campaign_swarm';
+    } else if (agents.includes('creative') || agents.includes('video')) {
+        mission = 'creative_sync';
+    }
+
+    const hasSignal =
+        Boolean(text.trim()) ||
+        context.hasReferencedAssets ||
+        agents.some(id => id !== 'generalist');
+
+    return {
+        mission,
+        confidence: hasSignal ? 0.78 : 0.45,
+        ...BOARDROOM_MISSION_DETAILS[mission],
+    };
+}
+
+export function boardroomExecutiveMissionQuestion() {
+    return {
+        type: 'choice' as const,
+        instructions:
+            'Select the single most relevant executive boardroom mission for the artist based on their current brief, seated department heads, and pinned assets. Recommend a helpful coordination step; do not assume actions are already approved.',
+        criteria: {
+            master_audit: 'Audit master audio, verify ISRC codes, and check streaming readiness.',
+            split_rights: 'Draft collaborator split sheets, verify publishing shares, or clear samples and legal rights.',
+            royalty_waterfall: 'Model streaming recoupment, royalty waterfalls, advances, or financial projections.',
+            ddex_catalog: 'Inspect catalog metadata gaps, BWARM reports, or stage DDEX distribution deliveries.',
+            campaign_swarm: 'Coordinate release marketing, social media rollouts, and brand positioning.',
+            creative_sync: 'Review pinned visual assets, cover art, video teasers, and creative direction.',
+        },
+    };
+}
+
+export async function judgeBoardroomExecutiveIntent(
+    context: BoardroomExecutiveContext,
+): Promise<BoardroomExecutiveVerdict> {
+    const fallback = deterministicBoardroomExecutiveFallback(context);
+    const hasSignal =
+        Boolean(context.prompt?.trim()) ||
+        context.hasReferencedAssets ||
+        (context.activeAgents || []).some(id => id !== 'generalist');
+
+    if (!judgmentsAvailable() || !hasSignal) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                prompt: (context.prompt || '').slice(0, 500),
+                activeAgents: (context.activeAgents || []).slice(0, 12),
+                hasReferencedAssets: Boolean(context.hasReferencedAssets),
+                messageCount: context.messageCount,
+            },
+            questions: {
+                mission: boardroomExecutiveMissionQuestion(),
+            },
+        });
+
+        const answer = result.data.answers?.mission;
+        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        const rawConfidence =
+            typeof answer === 'object' && answer !== null
+                ? (answer as { confidence?: unknown }).confidence
+                : undefined;
+
+        const validMissions = Object.keys(BOARDROOM_MISSION_DETAILS) as BoardroomExecutiveMission[];
+        if (typeof choice !== 'string' || !validMissions.includes(choice as BoardroomExecutiveMission)) {
+            return fallback;
+        }
+
+        const confidence =
+            typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
+                ? rawConfidence
+                : fallback.confidence;
+
+        return {
+            mission: choice as BoardroomExecutiveMission,
+            confidence,
+            ...BOARDROOM_MISSION_DETAILS[choice as BoardroomExecutiveMission],
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'boardroom executive intent judgment');
+        return fallback;
+    }
+}
+
 
 
 

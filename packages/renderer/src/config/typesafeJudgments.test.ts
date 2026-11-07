@@ -111,6 +111,8 @@ import {
     deterministicPlpVariantAdFallback,
     judgeCreativeJourneyIntent,
     deterministicCreativeJourneyFallback,
+    judgeBoardroomExecutiveIntent,
+    deterministicBoardroomExecutiveFallback,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5720,6 +5722,80 @@ describe('judgeCreativeJourneyIntent (Judgment 81)', () => {
         expect(result.intent).toBe('social_clips');
     });
 });
+
+describe('judgeBoardroomExecutiveIntent (Judgment 82)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    const baseContext = {
+        prompt: 'Draft a 50/50 split sheet and clear sample rights',
+        activeAgents: ['generalist'],
+        hasReferencedAssets: false,
+        messageCount: 0,
+    };
+
+    it('routes executive prompt and seated agent intent deterministically while Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result.mission).toBe('split_rights');
+        expect(result.actionLabel).toBe('Seat Legal + Finance');
+        expect(result.recommendedAgents).toEqual(['legal', 'finance']);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('routes pinned creative assets to creative_sync when no prompt is entered', () => {
+        const verdict = deterministicBoardroomExecutiveFallback({
+            prompt: '',
+            activeAgents: ['generalist'],
+            hasReferencedAssets: true,
+            messageCount: 0,
+        });
+        expect(verdict.mission).toBe('creative_sync');
+        expect(verdict.recommendedAgents).toContain('creative');
+        expect(verdict.confidence).toBeGreaterThanOrEqual(0.5);
+    });
+
+    it('returns a low-confidence fallback when no prompt, specialist, or asset signal is present', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const result = await judgeBoardroomExecutiveIntent({
+            prompt: '',
+            activeAgents: ['generalist'],
+            hasReferencedAssets: false,
+            messageCount: 0,
+        });
+        expect(result.mission).toBe('master_audit');
+        expect(result.confidence).toBeLessThan(0.5);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('uses Jev Choice and returns a mission verdict with recommended agents', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { mission: { choice: 'royalty_waterfall', confidence: 0.94 } } },
+        }));
+
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result.mission).toBe('royalty_waterfall');
+        expect(result.confidence).toBe(0.94);
+        expect(result.actionLabel).toBe('Seat Finance Chief');
+        expect(result.recommendedAgents).toEqual(['finance']);
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when the Jev callable fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev unavailable');
+        });
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result).toEqual(deterministicBoardroomExecutiveFallback(baseContext));
+        expect(result.mission).toBe('split_rights');
+    });
+});
+
 
 
 
