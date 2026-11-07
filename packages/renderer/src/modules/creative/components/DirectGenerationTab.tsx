@@ -32,6 +32,7 @@ import {
 const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu';
+import { BrandPromptAdditivesMenu } from './BrandPromptAdditivesMenu';
 
 export default function DirectGenerationTab() {
     const toast = useToast();
@@ -92,16 +93,6 @@ export default function DirectGenerationTab() {
         ...(characterReferences.length ? [`Characters: ${characterReferences.length} reference${characterReferences.length === 1 ? '' : 's'}`] : []),
     ] : [];
 
-    const quickModifiers = [
-        'Cinematic Lighting',
-        '8k Photorealistic',
-        'Watercolor Vibe',
-        'Editorial Portrait',
-        'Leica SL2 50mm',
-        'Analog Film Grain',
-        '3D Octane Render',
-        'Surrealist Dream'
-    ];
 
     const aspectRatios = [
         { id: '1:1', label: 'Square', desc: 'Cover Art / Social', w: 'w-6', h: 'h-6' },
@@ -779,30 +770,12 @@ export default function DirectGenerationTab() {
                 {/* Bottom docked capsule for input & prompt builder */}
                 <div className="flex flex-col gap-3 mt-6 z-10 pt-4 border-t border-white/5 bg-[#0a090c]/40">
                     
-                    {/* ISSUE-1440 residue: 8 quick-modifier pills collapsed into one
-                        "+ Modifiers" popover — appending to the prompt is a ratchet
-                        action, not something that needs a permanent rail. */}
-                    <DropdownMenu>
-                        <DropdownMenuTriggerButton
-                            data-testid="modifiers-trigger"
-                            className="self-start text-[9px] font-bold uppercase tracking-widest"
-                        >
-                            + Modifiers
-                        </DropdownMenuTriggerButton>
-                        <DropdownMenuContent>
-                            {quickModifiers.map((tag) => (
-                                <DropdownMenuItem
-                                    key={tag}
-                                    onSelect={(event) => {
-                                        event.preventDefault();
-                                        setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
-                                    }}
-                                >
-                                    + {tag}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Brand & Prompt Additives Menu — Drawn directly from brand kit preferences + tracked frequent descriptors */}
+                    <BrandPromptAdditivesMenu
+                        onSelectAdditive={(tag) => {
+                            setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
+                        }}
+                    />
 
                     {/* Integrated Reference Dropzone inline */}
                     {mode === 'video' && (
