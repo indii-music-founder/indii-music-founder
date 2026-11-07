@@ -55,10 +55,10 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/catalog/semanticProjection.ts:220` | `catalogSemanticApi` | `onRequest` | Present | Present |
 | `functions/creative/analyzeCampaignAudio.ts:125` | `analyzeCampaignAudio` | `onCall` | Present | Present |
 | `functions/creative/gateway.ts:1280` | `generateImageV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:1593` | `generateVideoV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:1834` | `cancelVideoJob` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:2060` | `generateOmniRemixV3` | `onCall` | Present | Present |
-| `functions/creative/gateway.ts:2419` | `generateAudioV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1594` | `generateVideoV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:1835` | `cancelVideoJob` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2061` | `generateOmniRemixV3` | `onCall` | Present | Present |
+| `functions/creative/gateway.ts:2420` | `generateAudioV3` | `onCall` | Present | Present |
 | `functions/creative/getMediaDuration.ts:51` | `getMediaDuration` | `onCall` | Present | Present |
 | `functions/distribution/distributionRecords.ts:253` | `assignDistributionIdentifier` | `onCall` | Present | Present |
 | `functions/distribution/distributionRecords.ts:284` | `recordDistributionIdentifier` | `onCall` | Present | Present |

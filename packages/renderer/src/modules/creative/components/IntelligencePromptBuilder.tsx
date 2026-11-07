@@ -282,7 +282,7 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                     <button
                         onClick={handleImprove}
                         disabled={isImproving || !currentPrompt.trim()}
-                        className="ml-auto px-4 py-1.5 text-xs rounded-full bg-linear-to-r from-dept-creative to-dept-marketing text-white font-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-dept-creative/20"
+                        className="ml-auto px-3.5 py-1.5 text-xs rounded-xl bg-dept-creative/15 hover:bg-dept-creative/25 text-dept-creative border border-dept-creative/30 font-bold flex items-center gap-2 hover:border-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                     >
                         {isImproving ? (
                             <motion.div
