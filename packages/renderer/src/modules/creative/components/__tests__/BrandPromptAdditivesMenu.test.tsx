@@ -15,6 +15,7 @@ describe('BrandPromptAdditivesMenu', () => {
                 uid: 'test_user',
                 email: 'test@example.com',
                 displayName: 'Artist',
+                accountType: 'artist',
                 membership: { tier: 'pro', expiresAt: null },
                 createdAt: {} as any,
                 updatedAt: {} as any,
