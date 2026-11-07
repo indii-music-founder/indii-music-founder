@@ -15,6 +15,20 @@ vi.mock('@/services/CloudStorageService', () => ({
 describe('FreeMiniCampaignService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        class StructuralAudioContext {
+            async decodeAudioData() {
+                const channel = new Float32Array(12 * 8000).fill(0.25);
+                return {
+                    length: channel.length,
+                    sampleRate: 8000,
+                    numberOfChannels: 1,
+                    getChannelData: () => channel,
+                } as unknown as AudioBuffer;
+            }
+            async close() {}
+        }
+        Object.defineProperty(window, 'AudioContext', { configurable: true, value: StructuralAudioContext });
+        URL.createObjectURL = vi.fn().mockReturnValue('blob:http://localhost/teaser.wav');
     });
 
     describe('validateAudioFile', () => {
@@ -84,7 +98,7 @@ describe('FreeMiniCampaignService', () => {
     });
 
     describe('createMiniCampaignPack', () => {
-        it('assembles a pack with 1:1 cover, 9:16 story, and 8s clip without watermarks', () => {
+        it('assembles a pack with 1:1 cover, 9:16 story, and 15s clip without watermarks', () => {
             const pack = FreeMiniCampaignService.createMiniCampaignPack({
                 title: 'Midnight Echoes',
                 artistName: 'Detroit Sound',
@@ -123,6 +137,21 @@ describe('FreeMiniCampaignService', () => {
         });
     });
 
+    describe('createAudioClip', () => {
+        it('exports only the requested duration as a PCM WAV blob', async () => {
+            const file = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
+            Object.defineProperty(file, 'arrayBuffer', { value: async () => new ArrayBuffer(8) });
+            const clip = await FreeMiniCampaignService.createAudioClip(
+                file,
+                2,
+                8,
+            );
+
+            expect(clip).toEqual({ url: 'blob:http://localhost/teaser.wav', durationSeconds: 8 });
+            expect(URL.createObjectURL).toHaveBeenCalledWith(expect.objectContaining({ type: 'audio/wav' }));
+        });
+    });
+
     describe('enforceSaveOrDelete', () => {
         const mockPack: MiniCampaignPack = {
             id: 'minicamp_123',
@@ -152,13 +181,8 @@ describe('FreeMiniCampaignService', () => {
             watermarkPolicy: 'NONE',
         };
 
-        it('saves pack to library when choice is "save"', async () => {
-            const result = await FreeMiniCampaignService.enforceSaveOrDelete('save', mockPack);
-
-            expect(result.action).toBe('saved');
-            expect(result.purgedUrisCount).toBe(0);
-            expect(CloudStorageService.deleteStorageUri).not.toHaveBeenCalled();
-            expect(result.message).toContain('saved to your project library');
+        it('does not claim a save unless library persistence completes', async () => {
+            await expect(FreeMiniCampaignService.enforceSaveOrDelete('save', mockPack)).rejects.toThrow();
         });
 
         it('purges all storage URIs when choice is "delete"', async () => {
@@ -168,7 +192,7 @@ describe('FreeMiniCampaignService', () => {
             expect(result.purgedUrisCount).toBe(2);
             expect(CloudStorageService.deleteStorageUri).toHaveBeenCalledWith('gs://test-bucket/test_cover.png');
             expect(CloudStorageService.deleteStorageUri).toHaveBeenCalledWith('gs://test-bucket/test_audio.mp3');
-            expect(result.message).toContain('permanently deleted');
+            expect(result.message).toContain('2 stored objects deleted');
         });
     });
 
@@ -185,14 +209,14 @@ describe('FreeMiniCampaignService', () => {
             await FreeMiniCampaignService.downloadAsset({
                 id: 'audio_1',
                 type: 'audio_clip',
-                title: 'Stank Face House — 8s Teaser Clip',
+                title: 'Stank Face House — 15s Teaser Clip',
                 url: 'https://example.com/audio/master.wav',
                 aspectRatio: 'audio',
                 isWatermarked: false,
             });
 
             expect(capturedElement).not.toBeNull();
-            expect(capturedElement?.download).toBe('stank-face-house-8s-teaser-clip.wav');
+            expect(capturedElement?.download).toBe('stank-face-house-15s-teaser-clip.wav');
             expect(clickSpy).toHaveBeenCalled();
 
             clickSpy.mockRestore();

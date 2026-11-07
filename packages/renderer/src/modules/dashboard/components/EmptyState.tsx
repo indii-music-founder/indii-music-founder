@@ -29,6 +29,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 import { EntryOverlay } from './EntryOverlay';
 import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
 import { OperationalApprovalGateBanner } from './OperationalApprovalGateBanner';
+import { instantiateQuickWorkflow, type QuickWorkflowTemplateId } from '@/modules/workflow/services/quickWorkflowTemplates';
 
 interface EmptyStateProps {
     /** Legacy: populate the prompt input box without submitting */
@@ -97,7 +98,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
         summary?: string;
         action?: () => void;
         isWorkflow?: boolean;
-        mediaActions?: Array<{ label: string; prompt: string }>;
+        mediaActions?: Array<{ label: string; templateId: QuickWorkflowTemplateId }>;
     }> = [];
 
     if (hasVideo && hasCover) {
@@ -109,8 +110,8 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
             summary: 'AI cover art, social visuals & music videos',
             action: () => onCommandSubmit('/create-media'),
             mediaActions: [
-                { label: 'Cover Art', prompt: '/design-cover' },
-                { label: 'Music Video', prompt: '/create-video' },
+                { label: 'Cover Art', templateId: 'template-simple-image' },
+                { label: 'Music Video', templateId: 'template-video-teaser' },
             ],
         });
 
@@ -260,7 +261,11 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onCommandSubmit(sub.prompt);
+                                            const workflow = instantiateQuickWorkflow(sub.templateId);
+                                            if (!workflow) return;
+                                            setNodes(workflow.nodes);
+                                            setEdges(workflow.edges);
+                                            setModule('workflow');
                                         }}
                                         className="flex-1 px-1.5 py-1 rounded-md bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-300 text-[9px] font-bold text-gray-400 border border-white/5 text-center transition-all truncate"
                                     >

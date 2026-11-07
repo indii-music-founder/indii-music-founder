@@ -54,14 +54,14 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         }
     };
 
-    const handleDeny = async (id: string) => {
+    const handleDeny = async (id: string, reason = 'User denied from dashboard quick-action gate') => {
         if (dispatchBusy.current) return;
         dispatchBusy.current = true;
         setApprovalBusyId(id);
         try {
-            await toolApprovalService.deny(id, 'User denied from dashboard quick-action gate');
+            await toolApprovalService.deny(id, reason);
             if (toast?.success) {
-                toast.success('Gate denied');
+                toast.success(reason.includes('dismiss') ? 'Gate dismissed. Ask your agent to prepare the action again.' : 'Gate denied');
             }
         } catch (err) {
             Logger.error('OperationalApprovalGateBanner', 'Denial error', err);
@@ -180,7 +180,7 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                         <p className="text-[11px] text-gray-300 leading-snug mt-1 line-clamp-2">
                                             {item.description || 'Action awaiting authorization'}
                                         </p>
-                                        {!canApprove && <p className="text-[11px] text-amber-300 mt-1">Requested in another session. Approve it there, or deny and request again.</p>}
+                                        {!canApprove && <p className="text-[11px] text-amber-200/80 mt-1">This request belongs to another session. It cannot be approved here. Dismiss it, then ask your agent to prepare the action again.</p>}
                                     </div>
 
                                     <div className="flex items-center gap-2 pt-1 border-t border-white/5">
@@ -194,6 +194,8 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                                     ? 'bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer'
                                                     : 'bg-white/10 text-white/30 cursor-not-allowed border border-white/5'
                                             } disabled:opacity-50`}
+                                            title={canApprove ? 'Approve this action in the current session' : 'This approval is bound to another session and cannot be executed here'}
+                                            className="flex-1 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 shadow-sm transition-all disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400 disabled:shadow-none disabled:opacity-60"
                                         >
                                             <Check size={12} />
                                             {canApprove ? 'Approve' : 'Expired Session'}
@@ -201,12 +203,13 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                         <button
                                             type="button"
                                             disabled={isBusy}
-                                            onClick={() => handleDeny(item.id)}
+                                            onClick={() => handleDeny(item.id, canApprove ? 'User denied from dashboard quick-action gate' : 'User dismissed an approval from another session')}
                                             data-testid={index === 0 ? 'banner-deny-btn' : `banner-deny-btn-${item.id}`}
+                                            title={canApprove ? 'Deny this action' : 'Dismiss this stale request; ask your agent to prepare it again'}
                                             className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-300 hover:text-red-300 font-bold text-[10px] uppercase tracking-wider border border-white/10 transition-all disabled:opacity-50"
                                         >
                                             <X size={12} />
-                                            Deny
+                                            {canApprove ? 'Deny' : 'Dismiss'}
                                         </button>
                                     </div>
                                 </div>

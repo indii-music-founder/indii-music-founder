@@ -10,7 +10,9 @@ import { isValidModule, type ModuleId } from '@/core/constants';
  */
 export function readModuleDeepLink(search: string): ModuleId | null {
     if (!search) return null;
-    const value = new URLSearchParams(search).get('module');
+    const params = new URLSearchParams(search);
+    if (params.get('mode') === 'free_demo' || params.get('demo') === 'true') return 'workflow';
+    const value = params.get('module');
     return value && isValidModule(value) ? (value as ModuleId) : null;
 }
 

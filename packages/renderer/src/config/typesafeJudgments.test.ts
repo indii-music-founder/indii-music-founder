@@ -2960,6 +2960,26 @@ describe('judgeSocialAudioSnippetSelection (Judgment 43)', () => {
         expect(result.viralHookPotential).toBe(5);
         expect(result.isImmediateVocalOnset).toBe(true);
     });
+
+    it('uses Jev to choose between multiple Gemini timestamps in the same section', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: {
+                candidate: { choice: '2' },
+                section: { choice: 'CHORUS' },
+                immediate_vocal: { noul: 0.8 },
+                viral_potential: { score: 4 },
+            } },
+        }));
+
+        const result = await judgeSocialAudioSnippetSelection([
+            { section: 'CHORUS', startTimeSeconds: 42, endTimeSeconds: 56, energyLevel: 'high', lyricSnippet: 'First chorus' },
+            { section: 'CHORUS', startTimeSeconds: 96, endTimeSeconds: 110, energyLevel: 'peak', lyricSnippet: 'Final chorus' },
+        ], 15);
+
+        expect(result.suggestedStartTimeSeconds).toBe(96);
+        expect(result.suggestedEndTimeSeconds).toBe(110);
+    });
 });
 
 describe('judgeMerchPrintViability (Judgment 44)', () => {
@@ -5731,6 +5751,57 @@ describe('judgeCreativeJourneyIntent (Judgment 81)', () => {
     });
 });
 
+
+
+
+
+    const context = {
+        prompt: 'Use my finished track to make a 9:16 vertical reel',
+        generationMode: 'video' as const,
+        viewMode: 'video_production',
+        ingredients: { audio: true, image: false, video: false },
+    };
+
+    it('routes media and prompt intent deterministically while Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result.intent).toBe('social_clips');
+        expect(result.actionLabel).toBe('Open Social Clips');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('returns a low confidence no-signal fallback when no prompt or ingredients exist', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const result = await judgeCreativeJourneyIntent({
+            ...context,
+            prompt: '',
+            ingredients: { audio: false, image: false, video: false },
+        });
+        expect(result.intent).toBe('music_video');
+        expect(result.confidence).toBeLessThan(0.5);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('uses Jev Choice and returns a recommendation tied to the selected journey', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { intent: { choice: 'guided_campaign', confidence: 0.91 } } },
+        }));
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result.intent).toBe('guided_campaign');
+        expect(result.confidence).toBe(0.91);
+        expect(result.actionLabel).toBe('Open Guided Campaign');
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when the Jev callable fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => { throw new Error('Jev unavailable'); });
+        const result = await judgeCreativeJourneyIntent(context);
+        expect(result).toEqual(deterministicCreativeJourneyFallback(context));
+        expect(result.intent).toBe('social_clips');
+    });
+});
 
 
 

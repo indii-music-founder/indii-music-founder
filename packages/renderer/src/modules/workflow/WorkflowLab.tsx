@@ -27,6 +27,8 @@ import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import { FreeMiniCampaignModal } from '@/modules/creative/components/FreeMiniCampaignModal';
+import { instantiateQuickWorkflow } from './services/quickWorkflowTemplates';
 
 /* ================================================================== */
 /*  Workflow Lab — Three-Panel Layout                                   */
@@ -41,12 +43,13 @@ import 'driver.js/dist/driver.css';
 
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
-    const { nodes, edges, setNodes, setEdges, user, selectedNodeId, setHasUnsavedChanges } = useStore(useShallow(state => ({
+    const { nodes, edges, setNodes, setEdges, user, currentProjectId, selectedNodeId, setHasUnsavedChanges } = useStore(useShallow(state => ({
         nodes: state.nodes,
         edges: state.edges,
         setNodes: state.setNodes,
         setEdges: state.setEdges,
         user: state.user,
+        currentProjectId: state.currentProjectId,
         selectedNodeId: state.selectedNodeId,
         setHasUnsavedChanges: state.setHasUnsavedChanges
     })));
@@ -73,6 +76,25 @@ export default function WorkflowLab() {
     const [aiEditInstruction, setAiEditInstruction] = useState('');
     const [isAiEditing, setIsAiEditing] = useState(false);
     const [isEncapsulating, setIsEncapsulating] = useState(false);
+    const [showFunnelCampaign, setShowFunnelCampaign] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const params = new URLSearchParams(window.location.search);
+        return params.get('mode') === 'free_demo' || params.get('demo') === 'true';
+    });
+    const funnelInitializedRef = useRef(false);
+
+    useEffect(() => {
+        if (!showFunnelCampaign || funnelInitializedRef.current) return;
+        funnelInitializedRef.current = true;
+        if (nodes.length === 0) {
+            const workflow = instantiateQuickWorkflow('template-video-teaser');
+            if (workflow) {
+                setNodes(workflow.nodes);
+                setEdges(workflow.edges);
+                setWorkflowName(workflow.name);
+            }
+        }
+    }, [showFunnelCampaign, nodes.length, setNodes, setEdges]);
 
     // Stable reference to ReactFlowInstance — populated via WorkflowEditor's onInit callback.
     // Used to capture real viewport (pan/zoom) at save time instead of a hardcoded {0,0,1}.
@@ -652,6 +674,12 @@ export default function WorkflowLab() {
                         savedWorkflows={savedWorkflows}
                     />
                 )}
+                <FreeMiniCampaignModal
+                    isOpen={showFunnelCampaign}
+                    onClose={() => setShowFunnelCampaign(false)}
+                    userId={currentUser?.uid}
+                    projectId={currentProjectId}
+                />
             </div>
         </ModuleErrorBoundary>
     );

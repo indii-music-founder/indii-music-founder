@@ -109,9 +109,24 @@ describe('OperationalApprovalGateBanner', () => {
             return vi.fn();
         });
         render(<OperationalApprovalGateBanner />);
-        expect(screen.getByText(/requested in another session/i)).toBeInTheDocument();
+        expect(screen.getByText(/belongs to another session/i)).toBeInTheDocument();
         expect(screen.getByTestId('banner-approve-btn')).toBeDisabled();
+        expect(screen.getByTestId('banner-approve-btn')).toHaveClass('disabled:cursor-not-allowed');
+        expect(screen.getByTestId('banner-approve-btn')).toHaveAttribute('title', expect.stringMatching(/bound to another session/i));
         expect(screen.getByTestId('banner-deny-btn')).toBeEnabled();
+        expect(screen.getByTestId('banner-deny-btn')).toHaveTextContent('Dismiss');
+    });
+
+    it('dismisses an unavailable cross-session request with resubmission guidance', async () => {
+        mocks.canApproveInThisSession.mockReturnValue(false);
+        mocks.onPendingApprovals.mockImplementation(callback => {
+            callback([{ id: 'remote-dismiss', toolName: 'send_email', riskTier: 'write', description: 'Send email', status: 'pending' }]);
+            return vi.fn();
+        });
+        render(<OperationalApprovalGateBanner />);
+        fireEvent.click(screen.getByTestId('banner-deny-btn'));
+        await waitFor(() => expect(mocks.deny).toHaveBeenCalledWith('remote-dismiss', 'User dismissed an approval from another session'));
+        expect(mocks.toastSuccess).toHaveBeenCalledWith('Gate dismissed. Ask your agent to prepare the action again.');
     });
 
     it('blocks other approval actions until the active dispatch settles', async () => {

@@ -222,7 +222,12 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         // the next history snapshot rebuild. Upload media
                         // bytes directly with their real MIME.
                         const blob = await (await fetch(item.url)).blob();
-                        const ext = mimeType.startsWith('video/') ? 'mp4' : 'mp3';
+                        const ext = mimeType.startsWith('video/') ? 'mp4'
+                            : mimeType === 'audio/wav' || mimeType === 'audio/x-wav' ? 'wav'
+                                : mimeType === 'audio/mp4' || mimeType === 'audio/x-m4a' ? 'm4a'
+                                    : mimeType === 'audio/flac' ? 'flac'
+                                        : mimeType === 'audio/ogg' ? 'ogg'
+                                            : mimeType === 'audio/webm' ? 'webm' : 'mp3';
                         const storageRef = ref(storage, `users/${userId}/assets/${item.id}.${ext}`);
                         await uploadBytes(storageRef, blob);
                         imageUrl = await getDownloadURL(storageRef);

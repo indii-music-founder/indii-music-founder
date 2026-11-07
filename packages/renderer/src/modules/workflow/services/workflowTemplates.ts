@@ -211,7 +211,7 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
                 position: { x: 100, y: 200 },
                 data: {
                     nodeType: 'input',
-                    prompt: 'A futuristic city with neon lights',
+                    prompt: 'Create original single-release cover artwork with an analog editorial feel, tactile print texture, a clear focal subject, and thoughtful negative space. Ask for the artist name, release title, mood, and visual references before generating. Avoid generated lettering.',
                     status: Status.PENDING
                 }
             },
@@ -255,7 +255,7 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
                 position: { x: 50, y: 250 },
                 data: {
                     nodeType: 'input',
-                    prompt: 'A documentary portrait of a musician backstage before a show',
+                    prompt: 'Create a short vertical music teaser for the artist’s finished track using their uploaded artwork or footage. Ask for the track, preferred moment, and visual direction before generating. Keep the source artwork recognizable and leave clean space for optional release text.',
                     status: Status.PENDING
                 }
             },

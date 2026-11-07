@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { FreeMiniCampaignModal } from './FreeMiniCampaignModal';
 import { FreeMiniCampaignService } from '@/services/creative/FreeMiniCampaignService';
+import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -18,12 +19,28 @@ describe('FreeMiniCampaignModal', () => {
     const defaultProps = {
         isOpen: true,
         onClose: vi.fn(),
+        userId: 'structural-test-user',
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
         globalThis.URL.createObjectURL = vi.fn().mockReturnValue('blob:http://localhost/mock-blob');
         globalThis.URL.revokeObjectURL = vi.fn();
+        vi.spyOn(FreeMiniCampaignService, 'createAudioClip').mockResolvedValue({
+            url: 'blob:http://localhost/mock-teaser.wav',
+            durationSeconds: 8,
+        });
+        vi.spyOn(FreeMiniCampaignService, 'analyzeSongForHook').mockResolvedValue([
+            { section: 'CHORUS', startTimeSeconds: 24, endTimeSeconds: 48, energyLevel: 'high', lyricSnippet: '' },
+        ]);
+        vi.spyOn(typesafeJudgments, 'judgeSocialAudioSnippetSelection').mockResolvedValue({
+            recommendedSection: 'CHORUS',
+            suggestedStartTimeSeconds: 24,
+            suggestedEndTimeSeconds: 39,
+            viralHookPotential: 4,
+            isImmediateVocalOnset: true,
+            hookStrategy: 'Structural test selection',
+        });
     });
 
     it('renders nothing when isOpen is false', () => {
@@ -49,7 +66,7 @@ describe('FreeMiniCampaignModal', () => {
         expect(defaultProps.onClose).toHaveBeenCalled();
     });
 
-    it('progresses to preview and displays unwatermarked guarantee after intake', async () => {
+    it('progresses to preview and identifies the digital artwork and teaser assets', async () => {
         render(<FreeMiniCampaignModal {...defaultProps} />);
 
         const titleInput = screen.getByPlaceholderText(/electric dreams/i);
@@ -73,18 +90,20 @@ describe('FreeMiniCampaignModal', () => {
         fireEvent.click(generateBtn);
 
         await waitFor(() => {
-            expect(screen.getByText(/square cover/i)).toBeInTheDocument();
+            expect(screen.getByText(/square artwork/i)).toBeInTheDocument();
             expect(screen.getByText(/story \/ reel promo/i)).toBeInTheDocument();
-            expect(screen.getByText(/8s teaser clip/i)).toBeInTheDocument();
-            expect(screen.getByText(/100% unwatermarked/i)).toBeInTheDocument();
+            expect(screen.getByText(/15s song teaser/i)).toBeInTheDocument();
+            expect(screen.getByText(/No watermark\. Image size/i)).toBeInTheDocument();
+            expect(screen.getByText(/digital crops are not print-ready masters/i)).toBeInTheDocument();
+            expect(FreeMiniCampaignService.createAudioClip).toHaveBeenCalledWith(audioFile, 24, 15);
         });
     });
 
-    it('progresses to decision step and supports permanent deletion choice', async () => {
+    it('lets the user remove in-session copies after exporting', async () => {
         vi.spyOn(FreeMiniCampaignService, 'enforceSaveOrDelete').mockResolvedValue({
             action: 'deleted',
-            purgedUrisCount: 1,
-            message: 'All uploads and generated files permanently purged.',
+            purgedUrisCount: 0,
+            message: 'In-session previews removed.',
             timestamp: '2026-09-18T12:00:00Z',
         });
 
@@ -112,14 +131,14 @@ describe('FreeMiniCampaignModal', () => {
         // Decision -> Delete Option
         await waitFor(() => {
             expect(screen.getByText(/pack exported successfully/i)).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /permanently delete all/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /remove in-session copies/i })).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /permanently delete all/i }));
+        fireEvent.click(screen.getByRole('button', { name: /remove in-session copies/i }));
 
         await waitFor(() => {
             expect(screen.getByText('Choice Enforced')).toBeInTheDocument();
-            expect(screen.getByText(/permanently purged/i)).toBeInTheDocument();
+            expect(screen.getByText(/in-session previews removed/i)).toBeInTheDocument();
         });
     });
 });
