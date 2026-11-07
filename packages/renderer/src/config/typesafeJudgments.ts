@@ -165,7 +165,7 @@ export async function refineInjectionRisk(input: string): Promise<InjectionVerdi
 export const JUDGMENT_FAILURE_COOLDOWN_MS = 5 * 60 * 1000;
 let lastJudgmentFailureAt = 0;
 
-function judgmentsAvailable(): boolean {
+export function judgmentsAvailable(): boolean {
     if (!typesafeJudgmentsEnabled()) return false;
     if (Date.now() - lastJudgmentFailureAt < JUDGMENT_FAILURE_COOLDOWN_MS) return false;
     return true;

@@ -478,8 +478,39 @@ vi.mock('@/core/store', () => {
         }
     );
 
+    const mockAgentUIState: Record<string, any> = {
+        conversationMode: 'orchestrated',
+        isLiveConversationActive: false,
+        liveConversationPhase: 'idle',
+        activeSpeakingAgentId: null,
+        agentVoiceOverrides: {},
+        setConversationMode: vi.fn((mode: any) => { mockAgentUIState.conversationMode = mode; }),
+        setLiveConversationActive: vi.fn((active: boolean) => { mockAgentUIState.isLiveConversationActive = active; }),
+        setLiveConversationPhase: vi.fn((phase: any) => { mockAgentUIState.liveConversationPhase = phase; }),
+        setActiveSpeakingAgentId: vi.fn((agentId: any) => { mockAgentUIState.activeSpeakingAgentId = agentId; }),
+        setAgentVoiceOverride: vi.fn((agentId: string, voice: string) => {
+            mockAgentUIState.agentVoiceOverrides[agentId] = voice;
+        }),
+        resetLiveConversationState: vi.fn(() => {
+            mockAgentUIState.isLiveConversationActive = false;
+            mockAgentUIState.liveConversationPhase = 'idle';
+            mockAgentUIState.activeSpeakingAgentId = null;
+        }),
+    };
+
+    const useAgentUIStoreMock = Object.assign(
+        vi.fn((selector) => selector ? selector(mockAgentUIState) : mockAgentUIState),
+        {
+            getState: vi.fn(() => mockAgentUIState),
+            setState: vi.fn((patch) => Object.assign(mockAgentUIState, typeof patch === 'function' ? patch(mockAgentUIState) : patch)),
+            subscribe: vi.fn(() => () => { })
+        }
+    );
+
     return {
-        useStore: useStoreMock
+        useStore: useStoreMock,
+        useAgentUIStore: useAgentUIStoreMock,
+        isConversationMode: (val: unknown) => typeof val === 'string' && ['orchestrated', 'boardroom', 'department', 'direct'].includes(val),
     };
 });
 

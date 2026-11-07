@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';
 
 interface EntryOverlayProps {
     onSubmit: (message: string) => void;
@@ -124,22 +125,25 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask me anything — stats, royalties, or start a new project..."
-                                        className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-5 pr-14 text-sm text-white placeholder:text-white/20 focus:outline-hidden focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
+                                        className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl px-5 pr-28 text-sm text-white placeholder:text-white/20 focus:outline-hidden focus:border-emerald-500/50 focus:bg-white/[0.05] transition-all"
                                         data-testid="entry-overlay-prompt-input"
                                     />
-                                    <button
-                                        type="submit"
-                                        disabled={!input.trim()}
-                                        className={cn(
-                                            "absolute right-2 top-2 w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                                            input.trim() 
-                                                ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" 
-                                                : "bg-white/5 text-white/20 opacity-50"
-                                        )}
-                                        aria-label="Send message"
-                                    >
-                                        <Send size={18} />
-                                    </button>
+                                    <div className="absolute right-2 top-2 flex items-center gap-1.5">
+                                        <LiveConversationButton sizeVariant="docked" />
+                                        <button
+                                            type="submit"
+                                            disabled={!input.trim()}
+                                            className={cn(
+                                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                                                input.trim() 
+                                                    ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 cursor-pointer" 
+                                                    : "bg-white/5 text-white/20 opacity-50"
+                                            )}
+                                            aria-label="Send message"
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </div>
                                 </form>
 
                                 {/* Quick Actions */}

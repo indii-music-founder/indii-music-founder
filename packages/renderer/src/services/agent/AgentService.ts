@@ -42,6 +42,7 @@ import {
     readyBoardroomSteps, formatBoardroomReceipt, boardroomDependencyField, boardroomRequestedSourceId,
     type BoardroomActionStep, type BoardroomStepReceipt,
 } from './orchestration/BoardroomActionPlan';
+import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -237,7 +238,20 @@ export class AgentService {
             });
         }
 
+        this.notifyLiveConversationIfActive(agentId, finalized.text, responseId);
         return finalized.text;
+    }
+
+    private notifyLiveConversationIfActive(agentId: string, text: string, responseId: string): void {
+        try {
+            void liveConversationService.notifyAgentResponse(agentId, text, responseId);
+        } catch (error) {
+            logger.warn('[AgentService] Failed to notify live conversation of agent response', {
+                agentId,
+                responseId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
     }
 
     clearAccountBoundary(): void {
@@ -765,6 +779,7 @@ export class AgentService {
             );
             logger.debug('[AgentService] Trivial input instant-reply (0ms, no API call)');
             updateAgentMessage(responseId, { agentId: activeAgentId, text: instantReply, isStreaming: false });
+            this.notifyLiveConversationIfActive(activeAgentId, instantReply, responseId);
             return;
         } else {
             orchestration = await this.orchestrator.determineOrchestrationPath(context, text);
@@ -997,6 +1012,7 @@ export class AgentService {
                 text: finalReport,
                 isStreaming: false
             });
+            this.notifyLiveConversationIfActive(context.agentId || 'generalist', finalReport, responseId);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[AgentService] Graph execution failed:', error);
@@ -1114,6 +1130,7 @@ export class AgentService {
                 text: combinedReport,
                 isStreaming: false
             });
+            this.notifyLiveConversationIfActive(context.agentId || 'generalist', combinedReport, responseId);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[AgentService] Parallel execution failed:', error);
@@ -1258,7 +1275,9 @@ export class AgentService {
                     response = { text: '', error: error instanceof Error ? error.message : String(error) };
                 }
                 const receipt = receiptForBoardroomStep(step, response, outcomeUncertain);
-                store.getState().updateAgentMessage(messageId, { text: formatBoardroomReceipt(receipt, founder), isStreaming: false });
+                const stepReceiptText = formatBoardroomReceipt(receipt, founder);
+                store.getState().updateAgentMessage(messageId, { text: stepReceiptText, isStreaming: false });
+                this.notifyLiveConversationIfActive(step.agentId, stepReceiptText, messageId);
                 this.flushSyncMessage(messageId, () => store.getState().agentHistory.find(message => message.id === messageId));
                 return receipt;
             }));
@@ -1323,6 +1342,7 @@ export class AgentService {
                 text: instantReply,
                 isStreaming: false,
             });
+            this.notifyLiveConversationIfActive(leadAgentId, instantReply, initialResponseId);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.flushSyncMessage(initialResponseId, () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId));
             return;
