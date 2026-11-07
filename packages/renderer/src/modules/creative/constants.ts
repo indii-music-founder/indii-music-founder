@@ -162,5 +162,35 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Color": ["Color Graded", "Cross-Process", "Bleach Bypass", "Technicolor", "Sepia Tone", "Desaturated"],
         "Texture": ["Film Grain", "Noise", "Scratches", "Dust", "VHS Artifacts", "Glitch"],
         "Artistic": ["Halftone", "Pixelate", "Posterize", "Oil Paint Filter", "Sketch Filter", "Double Exposure"]
+    },
+    "Cinematography": {
+        "Camera Movement": ["Dolly In", "Tracking Shot", "Crane Boom Up", "Whip Pan", "Steadicam Follow", "Handheld Shaky-Cam"],
+        "Shot Scale": ["Microscopic Extreme Detail", "Choker Shot", "Medium Close-up", "Cowboy Shot", "Establishing Epic Vista"],
+        "Lighting Mood": ["Chiaroscuro Silhouette", "Motivated Practical Light", "Volumetric Shafts", "Neon Backlight Accent"]
+    },
+    "Subject & Pose": {
+        "Music Performance": ["Live Stage Vocalist", "Guitar Soloist In Spotlight", "Drummer Mid-Stroke", "DJ Behind Modular Rig"],
+        "Portrait Stance": ["Heroic High-Angle Look", "Introspective Profile", "Dynamic Action Crouch", "Over-The-Shoulder Glare"],
+        "Figurative Form": ["Ethereal Hologram Silhouette", "Cyborg Hybrid Form", "Shadow Figure In Rain", "Dual Reflections"]
+    },
+    "Vibe & Energy": {
+        "Sonic Atmosphere": ["Sub-Bass Rumbling", "High-Voltage Euphoria", "After-Hours Chill", "Reverb Heavy Dreamstate"],
+        "Rhythmic Tension": ["Syncopated Momentum", "Hypnotic Trance Pace", "Aggressive Industrial Drive", "Zero-Gravity Float"],
+        "Emotional Aura": ["Nocturnal Melancholy", "Radiant Triumph", "Cryptic Enigma", "Primal Raw Heat"]
+    },
+    "Cultural Motif": {
+        "Visual Subculture": ["Harajuku Cyberpunk", "Berlin Underground Techno", "London Grime Concrete", "LA Sunset Strip Synth"],
+        "Futuristic Traditions": ["Afrofuturism Neon Tribal", "Neo-Nordic Minimalism", "Latin Cyber-Futurism", "Silk Road Retro-Futurism"],
+        "Counter-Culture": ["Acid House Rave Flyer", "DIY Cassette Zine", "80s Skate Punk", "90s Warehouse Ambient"]
+    },
+    "Digital FX": {
+        "Artifacts": ["RGB Dispersion Glitch", "Analog CRT Scanlines", "Thermal Sensor Heatmap", "Holographic Shimmer"],
+        "Generative": ["Audio-Reactive Particle Swarm", "Fractal Noise Displace", "Wireframe HUD Overlay", "Point Cloud Lidar"],
+        "Optics": ["Prismatic Glass Refraction", "Anamorphic Streaks", "Subsurface Glow", "Liquid Distortion Ripples"]
+    },
+    "Finish": {
+        "Film Grain": ["Super 16mm Raw Grain", "35mm Fine Grain Silver", "65mm IMAX Pristine", "Expired Polaroid Bleed"],
+        "Print & Paper": ["Matte Fine Art Cotton", "Glossy Vinyl Gatefold", "Screenprint Risograph", "Silver Gelatin Fiber"],
+        "Color Grading": ["Custom Teal-Orange Push", "Bleach Bypass Metallic", "Monochrome High Density", "Duotone Royal Velvet"]
     }
 };
