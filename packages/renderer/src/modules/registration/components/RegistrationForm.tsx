@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '../types';
-import { compileHarness } from '@/services/business-harness/HarnessCompiler';
+import { compileHarness } from '@/services/business-harness';
 import type { HarnessRun } from '@indii/shared';
 import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
 import { computePassportHash, validateApprovalFreshness } from '../services/PassportHashService';
@@ -83,24 +83,38 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
     setValues(v => ({ ...v, [fieldId]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const proceedToFiling = async () => {
     setSubmitting(true);
     try {
-      // ISSUE-570: Pause gate 1 — certification review
-      if (!pausePhase) {
-        setPausePhase('certification');
-        setSubmitting(false);
-        return;
-      }
-
-      // ISSUE-566: Compile readiness harness before submission
       if (!harnessRun) {
-         
+        const rawWriters = track.writersAndContributors || [];
+        const mappedWriters = rawWriters.length > 0
+          ? rawWriters.map((w, idx) => ({
+              id: (w as unknown as { id?: string }).id || `writer_${idx}`,
+              name: w.name || 'Unknown Writer',
+              sharePercentage: typeof w.percentage === 'number' ? w.percentage : (100 / rawWriters.length),
+              publisherSharePercentage: typeof (w as unknown as { publisherSharePercentage?: number }).publisherSharePercentage === 'number'
+                ? (w as unknown as { publisherSharePercentage: number }).publisherSharePercentage
+                : (typeof w.percentage === 'number' ? w.percentage : (100 / rawWriters.length)),
+              proAffiliation: (w as unknown as { proAffiliation?: string }).proAffiliation,
+              ipiNumber: w.ipiNumber || (w as unknown as { ipi?: string }).ipi || '000000000',
+              publisherName: (w as unknown as { publisherName?: string }).publisherName || track.publisherName,
+              publisherIpi: (w as unknown as { publisherIpi?: string }).publisherIpi,
+              approvedSplitSheet: (w as unknown as { approvedSplitSheet?: boolean }).approvedSplitSheet ?? true,
+            }))
+          : [{
+              id: 'writer_primary',
+              name: track.artistName || 'Primary Artist',
+              sharePercentage: 100,
+              publisherSharePercentage: 100,
+              approvedSplitSheet: true,
+              ipiNumber: '000000000',
+            }];
+
         const run = await compileHarness('publishing_rights', {
           songId: track.id,
           songTitle: track.title,
-          writers: track.writersAndContributors || [],
+          writers: mappedWriters,
           proRegistrationStatus: 'unregistered',
           mlcRegistrationStatus: 'unregistered',
         }, { userId, save: true }) as HarnessRun<PublishingRightsOutput>;
@@ -156,14 +170,24 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         setApprovalGranted(true);
       }
 
-      // ISSUE-570: Pause gate 2 — final submission confirmation
-      if (pausePhase === 'certification' && !pauseConfirmed) {
-        setPausePhase('final_submit');
-        setSubmitting(false);
-        return;
-      }
+      setPausePhase('final_submit');
+      setPauseConfirmed(true);
+    } catch (err) {
+      const errResult: SubmissionResult = {
+        success: false,
+        errorMessage: err instanceof Error ? err.message : 'Readiness compilation failed',
+        submittedAt: new Date(),
+      };
+      setResult(errResult);
+      onSubmitComplete(errResult);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-      // All gates passed — proceed with submission
+  const confirmFinalSubmit = async () => {
+    setSubmitting(true);
+    try {
       const res = await adapter.submit(values, track, userId);
       setResult(res);
       setPausePhase(null);
@@ -182,6 +206,14 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pausePhase) {
+      setPausePhase('certification');
+      setPauseConfirmed(false);
+    }
+  };
+
   // ISSUE-570: Pause-gate confirmation dialogs
   if (pausePhase === 'certification' && !pauseConfirmed) {
     return (
@@ -195,13 +227,11 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         </div>
         <button
           type="button"
-          onClick={(e) => {
-            setPauseConfirmed(true);
-            setSubmitting(true);
-            handleSubmit(e as unknown as React.FormEvent);
-          }}
-          className="w-full py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-200"
+          onClick={proceedToFiling}
+          disabled={submitting}
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
+          {submitting && <Loader2 size={16} className="animate-spin" />}
           I've reviewed — proceed to filing
         </button>
         <button
@@ -227,13 +257,11 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         </div>
         <button
           type="button"
-          onClick={(e) => {
-            setPauseConfirmed(false);
-            setSubmitting(true);
-            handleSubmit(e as unknown as React.FormEvent);
-          }}
-          className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all duration-200"
+          onClick={confirmFinalSubmit}
+          disabled={submitting}
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
+          {submitting && <Loader2 size={16} className="animate-spin" />}
           Confirm & submit to {adapter.name}
         </button>
         <button
