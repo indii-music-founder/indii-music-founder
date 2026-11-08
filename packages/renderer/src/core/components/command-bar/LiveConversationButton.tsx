@@ -96,7 +96,7 @@ export const LiveConversationButton = React.forwardRef<HTMLButtonElement, LiveCo
                 sizeClasses,
                 storeSlice.isLiveActive
                     ? 'scale-[1.03]'
-                    : 'bg-white text-black hover:bg-white/90 border-white/40 shadow-[0_0_16px_rgba(255,255,255,0.18)]',
+                    : 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border-emerald-500/30 hover:border-emerald-500/50 shadow-[0_0_14px_rgba(16,185,129,0.18)]',
                 storeSlice.isLiveActive && storeSlice.phase === 'listening' && 'animate-pulse',
                 disabled && 'opacity-40 cursor-not-allowed',
                 className
