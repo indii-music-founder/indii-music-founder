@@ -4335,7 +4335,7 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { status: 'FAIL' }));
             });
 
-            it('users/{userId}/agentAuditTrails: owner can read/write, cross-user denied', async () => {
+            it('users/{userId}/agentAuditTrails: owner can read/create, update/delete denied, cross-user denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
@@ -4343,7 +4343,10 @@ describe('Firestore Security Rules', () => {
 
                 await assertSucceeds(setDoc(docRef, { action: 'handshake', timestamp: Timestamp.now() }));
                 await assertSucceeds(getDoc(docRef));
+                await assertFails(updateDoc(docRef, { action: 'tampered' }));
+                await assertFails(deleteDoc(docRef));
                 await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'agentAuditTrails', 'trail-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentAuditTrails', 'trail-2'), { action: 'tampered' }));
             });
 
             it('users/{userId}/roster: owner can read/write, cross-user denied', async () => {
@@ -4802,6 +4805,69 @@ describe('Firestore Security Rules', () => {
 
                 // Unauthenticated cannot delete
                 await assertFails(deleteDoc(filingRef));
+            });
+        });
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1578: AlwaysOnMemoryEngine deletions and agent governance', () => {
+            it('users/{userId}/alwaysOnMemories: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const memRef = doc(aliceDb, 'users', ALICE_UID, 'alwaysOnMemories', 'mem-1');
+
+                await assertSucceeds(setDoc(memRef, { content: 'Alice memory', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(memRef));
+                await assertSucceeds(updateDoc(memRef, { content: 'Alice updated memory' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'alwaysOnMemories', 'mem-1')));
+                await assertSucceeds(deleteDoc(memRef));
+            });
+
+            it('users/{userId}/consolidationInsights: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const insRef = doc(aliceDb, 'users', ALICE_UID, 'consolidationInsights', 'ins-1');
+
+                await assertSucceeds(setDoc(insRef, { insight: 'Alice insight', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(insRef));
+                await assertSucceeds(updateDoc(insRef, { insight: 'Alice updated insight' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'consolidationInsights', 'ins-1')));
+                await assertSucceeds(deleteDoc(insRef));
+            });
+
+            it('users/{userId}/ingestionEvents: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const evtRef = doc(aliceDb, 'users', ALICE_UID, 'ingestionEvents', 'evt-1');
+
+                await assertSucceeds(setDoc(evtRef, { eventType: 'user_action', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(evtRef));
+                await assertSucceeds(updateDoc(evtRef, { eventType: 'updated_action' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'ingestionEvents', 'evt-1')));
+                await assertSucceeds(deleteDoc(evtRef));
+            });
+
+            it('users/{userId}/directives: owner can delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const dirRef = doc(aliceDb, 'users', ALICE_UID, 'directives', 'dir-del-1');
+
+                await assertSucceeds(setDoc(dirRef, { title: 'To Delete', active: false }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'directives', 'dir-del-1')));
+                await assertSucceeds(deleteDoc(dirRef));
+            });
+
+            it('users/{userId}/agentLoopExecutions: owner can delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const execRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1');
+
+                await assertSucceeds(setDoc(execRef, { status: 'COMPLETED', loopId: 'loop-del' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1')));
+                await assertSucceeds(deleteDoc(execRef));
             });
         });
     });

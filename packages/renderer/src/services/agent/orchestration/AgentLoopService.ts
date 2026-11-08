@@ -522,7 +522,7 @@ Respond in JSON format only:
             const result = await FirebaseIntelligenceService.getInstance().generateContent(
                 prompt,
                 INTELLIGENCE_MODELS.TEXT.FAST,
-                { temperature: 0.1, maxOutputTokens: 300 },
+                { temperature: 1.0, maxOutputTokens: 300 },
                 judgeInstruction
             );
             tokenBudget.settle(reservation, result?.response?.usageMetadata?.totalTokenCount);

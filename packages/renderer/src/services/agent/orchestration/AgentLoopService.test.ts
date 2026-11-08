@@ -374,6 +374,12 @@ describe('AgentLoopService', () => {
         const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution).toBeDefined();
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.COMPLETED);
+        expect(mockGenerateContent).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.any(String),
+            expect.objectContaining({ temperature: 1.0, maxOutputTokens: 300 }),
+            expect.any(String)
+        );
         expect(execution?.history).toHaveLength(2);
         
         // First iteration

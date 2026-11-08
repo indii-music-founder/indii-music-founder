@@ -20,14 +20,18 @@ vi.mock('@/services/agent/memory/AlwaysOnMemoryEngine', () => ({
 }));
 
 vi.mock('@/services/directive/DirectiveService', () => ({
-    DirectiveService: { getAllDirectives: vi.fn() },
+    DirectiveService: {
+        getAllDirectives: vi.fn(),
+        updateStatus: vi.fn().mockResolvedValue(undefined),
+    },
 }));
 
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
-    getDocs: vi.fn(),
-    doc: vi.fn(),
-    updateDoc: vi.fn(),
+    getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+    doc: vi.fn((_db, path, ...segments) => ({ path: [path, ...segments].join('/') })),
+    getDoc: vi.fn(),
+    updateDoc: vi.fn().mockResolvedValue(undefined),
     Timestamp: class {},
 }));
 
@@ -95,5 +99,53 @@ describe('memory account boundary', () => {
 
         expect(store.getState().alwaysOnEngineStatus.isRunning).toBe(false);
         expect(store.getState().alwaysOnEngineStatus.totalMemories).toBe(0);
+    });
+
+    it('transitions linked directive to IN_PROGRESS when memory inbox item is approved', async () => {
+        const store = createStore<MemoryAgentSlice>()(createMemoryAgentSlice);
+        const { DirectiveService } = await import('@/services/directive/DirectiveService');
+
+        store.setState({
+            memoryInboxItems: [
+                {
+                    id: 'inbox-1',
+                    type: 'DIGITAL_HANDSHAKE_REQUEST',
+                    directiveId: 'dir-123',
+                    actionDescription: 'Export master wav',
+                    status: 'PENDING',
+                    isDestructive: false,
+                    computeExceeded: false,
+                    createdAt: {} as any,
+                },
+            ],
+        });
+
+        await store.getState().updateMemoryInboxItemStatus('artist-a', 'inbox-1', 'APPROVED');
+
+        expect(DirectiveService.updateStatus).toHaveBeenCalledWith('artist-a', 'dir-123', 'IN_PROGRESS');
+    });
+
+    it('transitions linked directive to CANCELLED when memory inbox item is rejected', async () => {
+        const store = createStore<MemoryAgentSlice>()(createMemoryAgentSlice);
+        const { DirectiveService } = await import('@/services/directive/DirectiveService');
+
+        store.setState({
+            memoryInboxItems: [
+                {
+                    id: 'inbox-2',
+                    type: 'DIGITAL_HANDSHAKE_REQUEST',
+                    directiveId: 'dir-456',
+                    actionDescription: 'Delete all stems',
+                    status: 'PENDING',
+                    isDestructive: true,
+                    computeExceeded: false,
+                    createdAt: {} as any,
+                },
+            ],
+        });
+
+        await store.getState().updateMemoryInboxItemStatus('artist-a', 'inbox-2', 'REJECTED');
+
+        expect(DirectiveService.updateStatus).toHaveBeenCalledWith('artist-a', 'dir-456', 'CANCELLED');
     });
 });
