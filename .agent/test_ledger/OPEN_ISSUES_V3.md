@@ -6441,7 +6441,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **2026-11-08 verification:** Updated `repository.ts` and `StorageMigrationService.ts` to persist and query workflows under top-level `/workflows/{workflowId}` with `userId` ownership (`where('userId', '==', userId)`), aligning with `firestore.rules:2550`. Added `{ contentType: blob.type || 'image/png' }` fallback metadata on `uploadBytes` for `saveAssetToStorage` and `StorageMigrationService.migrateAssets`. Added unit tests in `repository.test.ts` and updated `StorageMigrationService.test.ts` verifying workflow root path sync, query scoping, and asset MIME metadata fallback. 27/27 storage unit tests pass and full workspace typecheck passes.
 
 ### ISSUE-1592: GDPR Article 20 `DataExportService.exportUserData` fails with `PERMISSION_DENIED` on 9 of 11 `EXPORTABLE_COLLECTIONS`, misses 35+ real user collections, and only exports 1 level of subdirectories in Firebase Storage (`users/{uid}/{topLevel}/{file}`), omitting deeper nested files
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08)
 - **Severity:** 🟠 HIGH
 - **Module:** GDPR Article 20 Data Portability Export (`packages/renderer/src/services/account/DataExportService.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Incomplete & Rule-Blocked GDPR Article 20 Data Portability Export
@@ -6452,6 +6452,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Impact:** Every GDPR Article 20 data portability export returns `result.success === false` with 9 `PERMISSION_DENIED` errors, fails to export 9 of the 11 advertised collections plus 35+ actual user collections, and omits all user Storage files nested more than 1 folder deep under `users/{userId}`.
 - **Fix:** Align `DataExportService` with the actual ruled user subcollections (`generated_images`, `generated_videos`, `tracks`, `notifications`, `notes`, `alwaysOnMemories`, etc.) and top-level owner-queried collections (`campaigns`, `contracts`, `split_sheets`, `ddexReleases`, etc.) — or move GDPR export to an Admin SDK Cloud Function — and make `exportUserStorageUrls()` recursively traverse `prefixes` to arbitrary depth.
 - **Acceptance:** Integration tests verify `DataExportService.exportUserData()` completes with `result.success === true`, `result.errors.length === 0`, and includes both multi-level Storage URLs and all ruled user collections.
+- **2026-11-08 verification:** Refactored `DataExportService.ts` to align collection queries with `firestore.rules`: partitioned export into user-owned top-level collections (`releases`, `campaigns`, `workflows`, `ddexReleases`, `projects`, `split_sheets`) queried via `where('userId', '==', userId)` and 50+ ruled user subcollections under `users/{userId}` (`tracks`, `generated_images`, `generated_videos`, `notifications`, `notes`, `alwaysOnMemories`, `publishingCatalog`, `licensingDeals`, `press_releases`, `email_pitches`, `setlists`, `videoProjects`, `canvasDocs`, etc.). Implemented recursive Storage file discovery to arbitrary subdirectory depth via `collectStorageFiles`. Added unit tests in `DataExportService.test.ts` verifying multi-level nested Storage file URL generation and collection extraction. 17/17 account tests pass and full typecheck passes.
 
 ---
 

@@ -23,6 +23,8 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
     getDoc: (...args: unknown[]) => mockGetDoc(...args),
     getDocs: (...args: unknown[]) => mockGetDocs(...args),
+    query: vi.fn((colRef: unknown) => colRef),
+    where: vi.fn(),
 }));
 
 vi.mock('firebase/storage', () => ({
@@ -129,6 +131,49 @@ describe('DataExportService', () => {
                 path: `users/${TEST_USER_ID}/cover-art.png`,
                 url: expect.stringContaining('cover-art.png'),
             });
+        });
+
+        it('should recursively traverse multi-level nested Storage subdirectories', async () => {
+            mockGetDoc.mockResolvedValue({ exists: () => false });
+            mockGetDocs.mockResolvedValue({ docs: [] });
+
+            // Root level: users/TEST_USER_ID -> items: [root.png], prefixes: [brandKit]
+            // Level 1: users/TEST_USER_ID/brandKit -> items: [], prefixes: [brandKit/fonts]
+            // Level 2: users/TEST_USER_ID/brandKit/fonts -> items: [brandKit/fonts/custom.woff2], prefixes: []
+            mockListAll.mockImplementation((storageRef: { fullPath: string }) => {
+                if (storageRef.fullPath === `users/${TEST_USER_ID}`) {
+                    return Promise.resolve({
+                        items: [{ fullPath: `users/${TEST_USER_ID}/root.png` }],
+                        prefixes: [{ fullPath: `users/${TEST_USER_ID}/brandKit` }],
+                    });
+                }
+                if (storageRef.fullPath === `users/${TEST_USER_ID}/brandKit`) {
+                    return Promise.resolve({
+                        items: [],
+                        prefixes: [{ fullPath: `users/${TEST_USER_ID}/brandKit/fonts` }],
+                    });
+                }
+                if (storageRef.fullPath === `users/${TEST_USER_ID}/brandKit/fonts`) {
+                    return Promise.resolve({
+                        items: [{ fullPath: `users/${TEST_USER_ID}/brandKit/fonts/custom.woff2` }],
+                        prefixes: [],
+                    });
+                }
+                return Promise.resolve({ items: [], prefixes: [] });
+            });
+
+            mockGetDownloadURL.mockImplementation((itemRef: { fullPath: string }) =>
+                Promise.resolve(`https://storage.example.com/${itemRef.fullPath}`)
+            );
+
+            const result = await exportUserData(TEST_USER_ID);
+
+            expect(result.success).toBe(true);
+            expect(result.storageFileUrls).toHaveLength(2);
+            expect(result.storageFileUrls.map(f => f.path)).toEqual([
+                `users/${TEST_USER_ID}/root.png`,
+                `users/${TEST_USER_ID}/brandKit/fonts/custom.woff2`,
+            ]);
         });
 
         it('should handle restricted Storage files gracefully', async () => {
