@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('firebase-functions/v2/https', () => ({
   onCall: (_opts: unknown, handler: unknown) => handler,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   HttpsError: class extends (Error as any) {
     constructor(code: string, message: string) {
       super(message);
@@ -51,13 +51,13 @@ function makeRequest(metadata: Record<string, string>, extraData: Record<string,
     auth: { uid: UID, token: { email: 'artist@example.com' } },
     data: {
       userId: UID,
-      items: [{ name: 'Custom beat license', amount: 1, quantity: 1 }],
-      successUrl: 'https://indii.example/success',
-      cancelUrl: 'https://indii.example/cancel',
+      items: [{ name: 'Custom beat license', amount: 1000, quantity: 1 }],
+      successUrl: 'https://indii.music/success',
+      cancelUrl: 'https://indii.music/cancel',
       metadata,
       ...extraData,
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
   } as any;
 }
 
@@ -98,7 +98,7 @@ describe('createOneTimeCheckout metadata authority', () => {
   });
 
   it('drops non-string metadata values instead of passing them to Stripe', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     await callCallable(makeRequest({ sneaky: { nested: 'object' } } as any));
 
     const params = mocks.mockSessionsCreate.mock.calls[0][0];

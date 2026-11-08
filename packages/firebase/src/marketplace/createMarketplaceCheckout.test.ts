@@ -99,7 +99,7 @@ describe('createMarketplaceCheckout', () => {
     });
 
     it('throws unauthenticated when there is no signed-in user', async () => {
-        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://a', cancelUrl: 'https://b' } }))
+        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' } }))
             .rejects.toThrow(expect.objectContaining({ code: 'unauthenticated' }));
     });
 
@@ -114,8 +114,8 @@ describe('createMarketplaceCheckout', () => {
             productId: 'p1',
             amount: 1, // an attacker-supplied near-zero amount — must be fully ignored
             price: 1,
-            successUrl: 'https://a',
-            cancelUrl: 'https://b',
+            successUrl: 'https://indii.music/success',
+            cancelUrl: 'https://indii.music/cancel',
         };
 
         const result = await callable()({ data: maliciousClientPayload, auth: { uid: 'buyer-1' } });
@@ -137,7 +137,7 @@ describe('createMarketplaceCheckout', () => {
         });
         mocks.mockSessionsCreate.mockResolvedValueOnce({ url: 'https://checkout.stripe.com/cs_2', id: 'cs_2' });
 
-        await callable()({ data: { productId: 'p1', successUrl: 'https://a', cancelUrl: 'https://b' }, auth: { uid: 'buyer-1' } });
+        await callable()({ data: { productId: 'p1', successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' }, auth: { uid: 'buyer-1' } });
 
         expect(mocks.mockTx.update).toHaveBeenCalledWith(
             expect.anything(),
@@ -151,7 +151,7 @@ describe('createMarketplaceCheckout', () => {
             data: () => ({ isActive: true, sellerId: 'seller-1', title: 'Sold Out Ticket', price: 5000, currency: 'USD', inventory: 0 }),
         });
 
-        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://a', cancelUrl: 'https://b' }, auth: { uid: 'buyer-1' } }))
+        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' }, auth: { uid: 'buyer-1' } }))
             .rejects.toThrow(expect.objectContaining({ code: 'failed-precondition' }));
         expect(mocks.mockSessionsCreate).not.toHaveBeenCalled();
     });
@@ -162,7 +162,7 @@ describe('createMarketplaceCheckout', () => {
             data: () => ({ isActive: true, sellerId: 'buyer-1', title: 'Own Beat', price: 1000, currency: 'USD' }),
         });
 
-        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://a', cancelUrl: 'https://b' }, auth: { uid: 'buyer-1' } }))
+        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' }, auth: { uid: 'buyer-1' } }))
             .rejects.toThrow(expect.objectContaining({ code: 'failed-precondition' }));
     });
 
@@ -178,7 +178,7 @@ describe('createMarketplaceCheckout', () => {
             });
         mocks.mockSessionsCreate.mockRejectedValueOnce(new Error('Stripe is down'));
 
-        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://a', cancelUrl: 'https://b' }, auth: { uid: 'buyer-1' } }))
+        await expect(callable()({ data: { productId: 'p1', successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' }, auth: { uid: 'buyer-1' } }))
             .rejects.toThrow();
 
         // Second transaction call should restore the +1 that was reserved in the first.

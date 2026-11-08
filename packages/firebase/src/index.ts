@@ -147,6 +147,7 @@ export { createStripeConnectAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
 export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEscrow';
+export { handleEscrowWebhook } from './stripe/escrow';
 
 export { requestTaxForms } from './stripe/taxForms';
 
@@ -3129,3 +3130,6 @@ export { enqueuePrintJob } from './functions/print/enqueuePrintJob';
 export { reconcileRightsSessionsScheduled } from './functions/rights/reconcileRightsSessions';
 
 export { projectRightsFiling } from './functions/rights/projectRightsFiling';
+
+// Dashboard & Marketing Telemetry Aggregation (ISSUE-1595)
+export { aggregateUserDashboardStats } from './analytics/aggregateUserDashboardStats';

@@ -5393,6 +5393,370 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'unauth-font-new'), { family: 'Anon New' }));
             });
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1594: projects/{projectId}/canvases/{canvasId}/signals/{signalId}
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1594: projects/{projectId}/canvases/{canvasId}/signals/{signalId}', () => {
+            const COLLAB_ORG_ID = 'collab-org-1594';
+            const PROJ_ID = 'proj-signal-mesh-1594';
+            const CANVAS_ID = 'canvas-mesh-1';
+            const SENDER_UID = ALICE_UID;
+            const RECIPIENT_UID = BOB_UID;
+            const THIRD_PARTY_COLLAB_UID = 'collab-charlie-1594';
+            const NON_COLLAB_UID = 'non-collab-eve-1594';
+
+            beforeEach(async () => {
+                if (requireEmulator()) return;
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    // Organization with Alice, Bob, and Charlie as members
+                    await setDoc(doc(ctx.firestore(), 'organizations', COLLAB_ORG_ID), {
+                        name: 'WebRTC Signaling Org',
+                        ownerId: SENDER_UID,
+                        members: [SENDER_UID, RECIPIENT_UID, THIRD_PARTY_COLLAB_UID],
+                        createdAt: Timestamp.now(),
+                    });
+
+                    // Project owned by Alice, linked to org
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID), {
+                        userId: SENDER_UID,
+                        orgId: COLLAB_ORG_ID,
+                        name: 'Mesh Project',
+                    });
+
+                    // Canvas under project
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID), {
+                        name: 'Collaboration Board',
+                    });
+                });
+            });
+
+            it('collaborator sender create signal with fromUserId == auth.uid succeeds', async () => {
+                if (requireEmulator()) return;
+                const senderDb = verifiedCtx(SENDER_UID).firestore();
+                const signalRef = doc(senderDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-alice-to-bob');
+
+                await assertSucceeds(setDoc(signalRef, {
+                    id: 'signal-alice-to-bob',
+                    projectId: PROJ_ID,
+                    canvasId: CANVAS_ID,
+                    fromUserId: SENDER_UID,
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                    payload: { sdp: 'fake-sdp-offer' },
+                    createdAt: Date.now(),
+                }));
+            });
+
+            it('collaborator spoofed create with fromUserId != auth.uid fails', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(RECIPIENT_UID).firestore();
+                const spoofedSignalRef = doc(bobDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-spoofed');
+
+                // Bob (a collaborator) attempts to create a signal claiming it is from Alice
+                await assertFails(setDoc(spoofedSignalRef, {
+                    id: 'signal-spoofed',
+                    projectId: PROJ_ID,
+                    canvasId: CANVAS_ID,
+                    fromUserId: SENDER_UID, // Spoofed!
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                    payload: { sdp: 'malicious-sdp' },
+                    createdAt: Date.now(),
+                }));
+            });
+
+            it('collaborator sender deleteDoc succeeds', async () => {
+                if (requireEmulator()) return;
+                const senderDb = verifiedCtx(SENDER_UID).firestore();
+                const signalDocRef = doc(senderDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-sender');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-sender'), {
+                        id: 'signal-to-delete-by-sender',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'candidate',
+                    });
+                });
+
+                // Sender (Alice) can delete the signal
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+
+            it('collaborator recipient (toUserId == auth.uid) deleteDoc succeeds', async () => {
+                if (requireEmulator()) return;
+                const recipientDb = verifiedCtx(RECIPIENT_UID).firestore();
+                const signalDocRef = doc(recipientDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-recipient');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-recipient'), {
+                        id: 'signal-to-delete-by-recipient',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'answer',
+                    });
+                });
+
+                // Recipient (Bob) can delete the transient signal after consumption
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+
+            it('non-collaborator create, read, and delete fail', async () => {
+                if (requireEmulator()) return;
+                const nonCollabDb = verifiedCtx(NON_COLLAB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                const existingSignalRef = doc(nonCollabDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing'), {
+                        id: 'signal-existing',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'offer',
+                    });
+                });
+
+                // Non-collaborator (Eve) read fails
+                await assertFails(getDoc(existingSignalRef));
+
+                // Non-collaborator (Eve) create fails
+                await assertFails(setDoc(doc(nonCollabDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-eve'), {
+                    fromUserId: NON_COLLAB_UID,
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                }));
+
+                // Non-collaborator (Eve) delete fails
+                await assertFails(deleteDoc(existingSignalRef));
+
+                // Unauthenticated read, create, delete fail
+                const unauthSignalRef = doc(unauthDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing');
+                await assertFails(getDoc(unauthSignalRef));
+                await assertFails(setDoc(doc(unauthDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-unauth'), {
+                    fromUserId: 'anon',
+                    toUserId: RECIPIENT_UID,
+                }));
+                await assertFails(deleteDoc(unauthSignalRef));
+            });
+
+            it('third-party collaborator (neither sender, recipient, nor project owner) deleteDoc fails', async () => {
+                if (requireEmulator()) return;
+                const charlieDb = verifiedCtx(THIRD_PARTY_COLLAB_UID).firestore();
+                const signalDocRef = doc(charlieDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-charlie-tamper');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-charlie-tamper'), {
+                        id: 'signal-charlie-tamper',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'offer',
+                    });
+                });
+
+                // Charlie can read because he is a project collaborator
+                await assertSucceeds(getDoc(signalDocRef));
+
+                // But Charlie cannot delete because he is neither sender, recipient, nor project owner
+                await assertFails(deleteDoc(signalDocRef));
+            });
+
+            it('project owner can delete any signal in their project canvas', async () => {
+                if (requireEmulator()) return;
+                const ownerDb = verifiedCtx(SENDER_UID).firestore();
+                const signalDocRef = doc(ownerDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-bob-to-charlie');
+
+                // Bob sent to Charlie (Alice is neither sender nor recipient, but Alice owns the project)
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-bob-to-charlie'), {
+                        id: 'signal-bob-to-charlie',
+                        fromUserId: RECIPIENT_UID,
+                        toUserId: THIRD_PARTY_COLLAB_UID,
+                        type: 'candidate',
+                    });
+                });
+
+                // Alice (project owner) can deleteDoc
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+        });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1596: Career events, career timeline, split sheets, CWR drafts, and splits
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1596: Career events, career timeline, split sheets, CWR drafts, and splits', () => {
+            it('career_events: owner can read own document, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const eventRef = doc(aliceDb, 'career_events', 'event-alice-1596');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'career_events', 'event-alice-1596'), {
+                        userId: ALICE_UID,
+                        headline: 'Album Charted #1',
+                    });
+                });
+
+                // Owner (Alice) can read own career event
+                await assertSucceeds(getDoc(eventRef));
+
+                // Cross-tenant user (Bob) is denied read
+                await assertFails(getDoc(doc(bobDb, 'career_events', 'event-alice-1596')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'career_events', 'event-alice-1596')));
+
+                // Client writes denied: create, update, delete
+                await assertFails(setDoc(doc(aliceDb, 'career_events', 'event-new'), {
+                    userId: ALICE_UID,
+                    headline: 'Tour Announced',
+                }));
+                await assertFails(updateDoc(eventRef, { headline: 'Tampered' }));
+                await assertFails(deleteDoc(eventRef));
+            });
+
+            it('split_sheets: initiator and user can read own documents, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const eveDb = verifiedCtx('eve-cross-tenant-1596').firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    // Document with initiatorUid == ALICE_UID
+                    await setDoc(doc(ctx.firestore(), 'split_sheets', 'sheet-alice-initiator'), {
+                        initiatorUid: ALICE_UID,
+                        title: 'Alice Initiated Split',
+                    });
+                    // Document with userId == BOB_UID
+                    await setDoc(doc(ctx.firestore(), 'split_sheets', 'sheet-bob-user'), {
+                        userId: BOB_UID,
+                        title: 'Bob User Split',
+                    });
+                });
+
+                // Initiator (Alice) can read own split_sheet
+                await assertSucceeds(getDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator')));
+
+                // User (Bob) can read own split_sheet
+                await assertSucceeds(getDoc(doc(bobDb, 'split_sheets', 'sheet-bob-user')));
+
+                // Cross-tenant user (Eve) is denied read on both documents
+                await assertFails(getDoc(doc(eveDb, 'split_sheets', 'sheet-alice-initiator')));
+                await assertFails(getDoc(doc(eveDb, 'split_sheets', 'sheet-bob-user')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'split_sheets', 'sheet-alice-initiator')));
+
+                // Client writes denied (create, update, delete)
+                await assertFails(setDoc(doc(aliceDb, 'split_sheets', 'sheet-new'), {
+                    initiatorUid: ALICE_UID,
+                    title: 'New Split',
+                }));
+                await assertFails(updateDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator'), { title: 'Tampered' }));
+                await assertFails(deleteDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator')));
+            });
+
+            it('users/{userId}/career_timeline: owner can read, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const timelineRef = doc(aliceDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'career_timeline', 'timeline-1'), {
+                        title: 'Signed Record Deal',
+                        year: 2024,
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(timelineRef));
+
+                // Cross-tenant user is denied read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1')));
+
+                // Client writes are denied even for owner (allow write: if false)
+                await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'career_timeline', 'timeline-new'), { title: 'New' }));
+                await assertFails(updateDoc(timelineRef, { title: 'Updated' }));
+                await assertFails(deleteDoc(timelineRef));
+            });
+
+            it('users/{userId}/cwrDrafts: owner can read, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const draftRef = doc(aliceDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1'), {
+                        workTitle: 'CWR Draft Opus',
+                        version: 1,
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(draftRef));
+
+                // Cross-tenant user is denied read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1')));
+
+                // Client writes are denied even for owner (allow write: if false)
+                await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-new'), { workTitle: 'New' }));
+                await assertFails(updateDoc(draftRef, { workTitle: 'Updated' }));
+                await assertFails(deleteDoc(draftRef));
+            });
+
+            it('users/{userId}/splits: owner can read/write their own splits, cross-tenant users are denied read and write', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const splitRef = doc(aliceDb, 'users', ALICE_UID, 'splits', 'split-1');
+
+                // Owner can create
+                await assertSucceeds(setDoc(splitRef, {
+                    title: 'Co-written Track',
+                    percentages: { [ALICE_UID]: 50, [BOB_UID]: 50 },
+                }));
+
+                // Owner can read
+                await assertSucceeds(getDoc(splitRef));
+
+                // Owner can update
+                await assertSucceeds(updateDoc(splitRef, {
+                    title: 'Co-written Track (Remix)',
+                }));
+
+                // Cross-tenant user (Bob) is denied read and write under Alice's splits
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-bob-spoofed'), {
+                    title: 'Injected Split',
+                }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1'), {
+                    title: 'Bob Hijack',
+                }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1')));
+
+                // Unauthenticated is denied read and write
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'splits', 'split-1')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'splits', 'split-anon'), { title: 'Anon' }));
+
+                // Owner can delete their own split
+                await assertSucceeds(deleteDoc(splitRef));
+            });
+        });
     });
 });
 
