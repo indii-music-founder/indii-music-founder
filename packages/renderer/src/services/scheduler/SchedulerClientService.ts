@@ -102,6 +102,26 @@ export const SchedulerClientService = {
         return api().onNeuralSync(callback as (e: unknown) => void);
     },
 
+    onRoyaltySync(callback: (payload: { taskId: string; firedAt: string }) => void): () => void {
+        if (!isElectron()) return () => void 0;
+        return api().onRoyaltySync(callback as (e: unknown) => void);
+    },
+
+    onDistributionHealth(callback: (payload: { taskId: string; firedAt: string }) => void): () => void {
+        if (!isElectron()) return () => void 0;
+        return api().onDistributionHealth(callback as (e: unknown) => void);
+    },
+
+    onFinanceSnapshot(callback: (payload: { taskId: string; firedAt: string }) => void): () => void {
+        if (!isElectron()) return () => void 0;
+        return api().onFinanceSnapshot(callback as (e: unknown) => void);
+    },
+
+    onWorkflowFlush(callback: (payload: { taskId: string; firedAt: string }) => void): () => void {
+        if (!isElectron()) return () => void 0;
+        return api().onWorkflowFlush(callback as (e: unknown) => void);
+    },
+
     /** True if running inside Electron (scheduler is available). */
     get isAvailable(): boolean {
         return isElectron();

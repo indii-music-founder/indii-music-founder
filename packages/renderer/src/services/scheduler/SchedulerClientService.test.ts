@@ -24,6 +24,10 @@ const mockSchedulerAPI = {
     get: vi.fn(),
     onTick: vi.fn(),
     onNeuralSync: vi.fn(),
+    onRoyaltySync: vi.fn(),
+    onDistributionHealth: vi.fn(),
+    onFinanceSnapshot: vi.fn(),
+    onWorkflowFlush: vi.fn(),
 };
 
 // Stub window.electronAPI globally BEFORE module import so `isElectron` evaluates true
@@ -249,6 +253,80 @@ describe('SchedulerClientService', () => {
 
             expect(mockSchedulerAPI.onNeuralSync).toHaveBeenCalledOnce();
             expect(mockSchedulerAPI.onTick).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('built-in task subscriptions', () => {
+        it('registers onRoyaltySync and passes payload', () => {
+            const unsub = vi.fn();
+            mockSchedulerAPI.onRoyaltySync.mockReturnValue(unsub);
+            let captured: ((payload: unknown) => void) | undefined;
+            mockSchedulerAPI.onRoyaltySync.mockImplementation((cb: (payload: unknown) => void) => {
+                captured = cb;
+                return unsub;
+            });
+
+            const callback = vi.fn();
+            const res = SchedulerClientService.onRoyaltySync(callback);
+            expect(mockSchedulerAPI.onRoyaltySync).toHaveBeenCalledWith(expect.any(Function));
+            expect(res).toBe(unsub);
+
+            captured?.({ taskId: 'royalty-task', firedAt: '2026-03-27T03:00:00.000Z' });
+            expect(callback).toHaveBeenCalledWith({ taskId: 'royalty-task', firedAt: '2026-03-27T03:00:00.000Z' });
+        });
+
+        it('registers onDistributionHealth and passes payload', () => {
+            const unsub = vi.fn();
+            mockSchedulerAPI.onDistributionHealth.mockReturnValue(unsub);
+            let captured: ((payload: unknown) => void) | undefined;
+            mockSchedulerAPI.onDistributionHealth.mockImplementation((cb: (payload: unknown) => void) => {
+                captured = cb;
+                return unsub;
+            });
+
+            const callback = vi.fn();
+            const res = SchedulerClientService.onDistributionHealth(callback);
+            expect(mockSchedulerAPI.onDistributionHealth).toHaveBeenCalledWith(expect.any(Function));
+            expect(res).toBe(unsub);
+
+            captured?.({ taskId: 'dist-task', firedAt: '2026-03-27T04:15:00.000Z' });
+            expect(callback).toHaveBeenCalledWith({ taskId: 'dist-task', firedAt: '2026-03-27T04:15:00.000Z' });
+        });
+
+        it('registers onFinanceSnapshot and passes payload', () => {
+            const unsub = vi.fn();
+            mockSchedulerAPI.onFinanceSnapshot.mockReturnValue(unsub);
+            let captured: ((payload: unknown) => void) | undefined;
+            mockSchedulerAPI.onFinanceSnapshot.mockImplementation((cb: (payload: unknown) => void) => {
+                captured = cb;
+                return unsub;
+            });
+
+            const callback = vi.fn();
+            const res = SchedulerClientService.onFinanceSnapshot(callback);
+            expect(mockSchedulerAPI.onFinanceSnapshot).toHaveBeenCalledWith(expect.any(Function));
+            expect(res).toBe(unsub);
+
+            captured?.({ taskId: 'finance-task', firedAt: '2026-03-30T06:00:00.000Z' });
+            expect(callback).toHaveBeenCalledWith({ taskId: 'finance-task', firedAt: '2026-03-30T06:00:00.000Z' });
+        });
+
+        it('registers onWorkflowFlush and passes payload', () => {
+            const unsub = vi.fn();
+            mockSchedulerAPI.onWorkflowFlush.mockReturnValue(unsub);
+            let captured: ((payload: unknown) => void) | undefined;
+            mockSchedulerAPI.onWorkflowFlush.mockImplementation((cb: (payload: unknown) => void) => {
+                captured = cb;
+                return unsub;
+            });
+
+            const callback = vi.fn();
+            const res = SchedulerClientService.onWorkflowFlush(callback);
+            expect(mockSchedulerAPI.onWorkflowFlush).toHaveBeenCalledWith(expect.any(Function));
+            expect(res).toBe(unsub);
+
+            captured?.({ taskId: 'workflow-task', firedAt: '2026-03-27T00:05:00.000Z' });
+            expect(callback).toHaveBeenCalledWith({ taskId: 'workflow-task', firedAt: '2026-03-27T00:05:00.000Z' });
         });
     });
 });

@@ -296,6 +296,10 @@ export interface ElectronSchedulerAPI {
     get: (taskId: string) => Promise<unknown>;
     onTick: (callback: (event: unknown) => void) => () => void;
     onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+    onRoyaltySync: (callback: (payload: unknown) => void) => () => void;
+    onDistributionHealth: (callback: (payload: unknown) => void) => () => void;
+    onFinanceSnapshot: (callback: (payload: unknown) => void) => () => void;
+    onWorkflowFlush: (callback: (payload: unknown) => void) => () => void;
 }
 
 export interface ElectronSidecarAPI {
@@ -352,8 +356,14 @@ export interface ElectronFsAPI {
 }
 
 export interface ElectronFoundryAPI {
+    grantSession: (req: { sessionId: string; ownerUserId?: string; ttlMs?: number }) => Promise<{ success: boolean; error?: string; expiresAt?: number }>;
+    revokeGrant: (req: { sessionId: string }) => Promise<{ success: boolean; error?: string }>;
     readFile: (filePath: string) => Promise<{ success: boolean; content?: string; sha256?: string; sizeBytes?: number; error?: string }>;
     getMetadata: (filePath: string) => Promise<{ success: boolean; size?: number; modifiedAt?: string; error?: string }>;
+    saveHypothesis: (req: { sessionId: string; formatId: string; ledgerJson: string }) => Promise<{ success: boolean; path?: string; error?: string; savedAt?: string }>;
+    loadHypothesis: (req: { formatId: string }) => Promise<{ success: boolean; ledgerJson?: string; error?: string }>;
+    listHypotheses: () => Promise<{ success: boolean; formatIds?: string[]; error?: string }>;
+    bookStatement: (req: { sessionId: string; statementId: string; normalizedReportJson: string }) => Promise<{ success: boolean; bookedAt?: string; receiptHash?: string; error?: string }>;
 }
 
 export interface ElectronRawAPI {

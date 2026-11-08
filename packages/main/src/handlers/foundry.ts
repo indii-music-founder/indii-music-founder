@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { formatFoundryService } from '../services/FormatFoundryService';
+import { authStorage } from '../services/AuthStorage';
 
 const IngestFileSchema = z.object({
   filePath: z.string().min(1),
@@ -14,7 +15,7 @@ const FileMetadataSchema = z.object({
 
 const GrantSessionSchema = z.object({
   sessionId: z.string().min(1),
-  ownerUserId: z.string().min(1),
+  ownerUserId: z.string().min(1).optional(),
   ttlMs: z.number().positive().optional(),
 });
 
@@ -34,7 +35,7 @@ const LoadHypothesisSchema = z.object({
 
 const BookStatementSchema = z.object({
   sessionId: z.string().min(1),
-  statementId: z.string().min(1),
+  statementId: z.string().regex(/^[a-zA-Z0-9_-]+$/),
   normalizedReportJson: z.string().min(1),
 });
 
@@ -43,7 +44,15 @@ export const registerFoundryHandlers = (): void => {
     try {
       validateSender(event);
       const validated = GrantSessionSchema.parse(payload);
-      return formatFoundryService.grantSession(validated.sessionId, validated.ownerUserId, validated.ttlMs);
+      const sessionUid = await authStorage.getAuthenticatedUserId();
+      const ownerUserId = sessionUid || validated.ownerUserId;
+      if (!ownerUserId) {
+        throw new Error('Authentication required to grant a Format Foundry session');
+      }
+      if (sessionUid && validated.ownerUserId && validated.ownerUserId !== sessionUid) {
+        throw new Error('Unauthorized: ownerUserId does not match active authenticated session');
+      }
+      return formatFoundryService.grantSession(validated.sessionId, ownerUserId, validated.ttlMs);
     } catch (error) {
       log.error('[FoundryHandler] foundry:grant-session failed:', error);
       throw error;
