@@ -91,4 +91,30 @@ describe('MCPClientService', () => {
         const result = JSON.parse(response.content[0].text);
         expect(result.roots.some((root: { uri: string }) => root.uri === pathToFileURL(realpathSync(tmpdir())).href)).toBe(true);
     });
+
+    it('resets local and harness client on transport close and reconnects on subsequent connect call', async () => {
+        expect(await service.connectLocal()).toBe(true);
+
+        const localTransport = (service as any).localTransport;
+        const harnessTransport = (service as any).harnessTransport;
+
+        expect(localTransport).toBeDefined();
+        expect((service as any).localClient).toBeDefined();
+
+        // Simulate transport closing unexpectedly (e.g. child process exit)
+        localTransport.onclose?.();
+
+        expect((service as any).localClient).toBeNull();
+        expect((service as any).localTransport).toBeNull();
+
+        if (harnessTransport) {
+            harnessTransport.onclose?.();
+            expect((service as any).harnessClient).toBeNull();
+            expect((service as any).harnessTransport).toBeNull();
+        }
+
+        // Reconnection succeeds because client state was reset cleanly
+        expect(await service.connectLocal()).toBe(true);
+        expect((service as any).localClient).toBeDefined();
+    });
 });
