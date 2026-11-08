@@ -4,8 +4,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-- Trigger declarations: **215** across **105** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **215**.
+- Trigger declarations: **216** across **106** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **216**.
 - Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
@@ -16,6 +16,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 
 | Source (relative to packages/firebase/src) | Declaration | Trigger | ARCJET_KEY option reference | Local guard-call reference |
 |---|---|---|---|---|
+| `analytics/aggregateUserDashboardStats.ts:25` | `aggregateUserDashboardStats` | `onCall` | Present | Present |
 | `analytics/platformTokenExchange.ts:139` | `analyticsExchangeToken` | `onCall` | Present | Present |
 | `analytics/platformTokenExchange.ts:238` | `analyticsFinalizeInstagramConnection` | `onCall` | Present | Present |
 | `analytics/platformTokenExchange.ts:271` | `analyticsGetConnectionStatus` | `onCall` | Present | Present |

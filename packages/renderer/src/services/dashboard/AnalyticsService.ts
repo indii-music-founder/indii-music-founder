@@ -371,4 +371,19 @@ export class AnalyticsService {
             lastUpdated: Date.now(),
         };
     }
+
+    /**
+     * Trigger on-demand backend aggregation of dashboard stats from domain collections.
+     */
+    static async triggerStatsAggregation(): Promise<void> {
+        try {
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
+            const aggregateStatsFn = httpsCallable(functions, 'aggregateUserDashboardStats');
+            await aggregateStatsFn();
+            logger.info('[AnalyticsService] Dashboard stats aggregation triggered successfully');
+        } catch (error: unknown) {
+            logger.warn('[AnalyticsService] Failed to trigger dashboard stats aggregation:', error);
+        }
+    }
 }

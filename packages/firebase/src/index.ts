@@ -3129,3 +3129,6 @@ export { enqueuePrintJob } from './functions/print/enqueuePrintJob';
 export { reconcileRightsSessionsScheduled } from './functions/rights/reconcileRightsSessions';
 
 export { projectRightsFiling } from './functions/rights/projectRightsFiling';
+
+// Dashboard & Marketing Telemetry Aggregation (ISSUE-1595)
+export { aggregateUserDashboardStats } from './analytics/aggregateUserDashboardStats';
