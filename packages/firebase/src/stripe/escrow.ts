@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
-import { arcjetKey } from '../config/secrets';
+import { arcjetKey, escrowWebhookSecret } from '../config/secrets';
 import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 
 // Lazy Firestore handle: a bare getFirestore() at module top level throws at
@@ -15,7 +15,7 @@ function getDb() {
  * Settles escrow transactions using immutable ACID transactions and HMAC signature verification.
  */
 export const handleEscrowWebhook = onRequest({
-    secrets: [arcjetKey],
+    secrets: [arcjetKey, escrowWebhookSecret],
     timeoutSeconds: 30,
     memory: '512MiB',
     cpu: 'gcf_gen1',
@@ -38,7 +38,7 @@ export const handleEscrowWebhook = onRequest({
     const webhookPayload = request.rawBody.toString('utf8');
     
     // In production, fetch this securely from Google Cloud Secret Manager
-    const secret = process.env.ESCROW_WEBHOOK_SECRET;
+    const secret = escrowWebhookSecret.value() || process.env.ESCROW_WEBHOOK_SECRET;
     if (!secret) {
         console.error("CRITICAL: ESCROW_WEBHOOK_SECRET is unset. Aborting to prevent forgery.");
         response.status(500).send("Internal Server Error: Misconfigured Environment");
@@ -47,7 +47,9 @@ export const handleEscrowWebhook = onRequest({
 
     try {
         const expectedSig = crypto.createHmac('sha256', secret).update(webhookPayload).digest('hex');
-        if (signature !== expectedSig) {
+        const signatureBuf = Buffer.from(signature || '', 'utf8');
+        const expectedBuf = Buffer.from(expectedSig, 'utf8');
+        if (signatureBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(signatureBuf, expectedBuf)) {
             console.error("Invalid HMAC Signature");
             response.status(401).send("Unauthorized");
             return;
@@ -70,14 +72,15 @@ export const handleEscrowWebhook = onRequest({
 
         // ACID Transaction to prevent double-spending
         await getDb().runTransaction(async (t) => {
-            const escrowRef = getDb().collection('escrows').doc(transactionId);
+            const escrowRef = getDb().collection('split_escrows').doc(transactionId);
             const doc = await t.get(escrowRef);
 
             if (!doc.exists) {
                 throw new Error("Transaction not found");
             }
 
-            if (doc.data()?.status !== 'LOCKED') {
+            const currentStatus = doc.data()?.status;
+            if (currentStatus === 'RELEASED' || currentStatus === 'REFUNDED') {
                 throw new Error("Idempotency check failed: Transaction already settled or invalid.");
             }
 

@@ -112,6 +112,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('../config/secrets', () => ({
   arcjetKey: { name: 'ARCJET_KEY' },
+  escrowWebhookSecret: { name: 'ESCROW_WEBHOOK_SECRET', value: () => 'test_escrow_secret' },
   stripeSecretKey: { name: 'STRIPE_SECRET_KEY' },
   stripeWebhookSecret: { name: 'STRIPE_WEBHOOK_SECRET' },
   printfulApiKey: { name: 'PRINTFUL_API_KEY' },

@@ -20,6 +20,9 @@ interface SplitEscrowRequest {
     parties: string[]; // collaborator UIDs
     splits?: Record<string, number>; // mapping of UID -> split percentage
     stripeAccountIds?: Record<string, string>; // mapping of UID -> Stripe Account ID
+    paymentMethodId?: string;
+    confirm?: boolean;
+    customerId?: string;
 }
 
 interface SplitEscrowResponse {
@@ -29,6 +32,7 @@ interface SplitEscrowResponse {
     status: string;
     pendingParties: string[];
     stripePaymentIntentId: string;
+    clientSecret?: string;
     amountCents: number;
     amountFormatted: string;
     fundsHeld: boolean;
@@ -70,18 +74,19 @@ export const initiateSplitEscrow = onCall(
             }
         }
 
-        const { trackId, holdAmount, parties } = data;
+        const { trackId, holdAmount, parties, paymentMethodId, confirm, customerId } = data;
 
         if (
             !trackId ||
             typeof holdAmount !== 'number' ||
+            !Number.isInteger(holdAmount) ||
             holdAmount <= 0 ||
             !Array.isArray(parties) ||
             parties.length === 0
         ) {
             throw new HttpsError(
                 'invalid-argument',
-                'trackId, holdAmount (positive cents), and non-empty parties array are required.'
+                'trackId, holdAmount (positive integer cents), and non-empty parties array are required.'
             );
         }
 
@@ -130,9 +135,11 @@ export const initiateSplitEscrow = onCall(
         }
 
         let stripeEscrowId: string;
+        let clientSecret: string | undefined;
+        let fundsHeld = false;
         try {
             // Create a manual-capture PaymentIntent to hold funds without charging
-            const intent = await stripe.paymentIntents.create({
+            const paymentIntentParams: Record<string, unknown> = {
                 amount: holdAmount,
                 currency: 'usd',
                 capture_method: 'manual',
@@ -143,8 +150,26 @@ export const initiateSplitEscrow = onCall(
                     partiesCount: String(parties.length),
                 },
                 description: `Split escrow for track ${trackId}`,
-            });
+            };
+
+            if (paymentMethodId) {
+                paymentIntentParams.payment_method = paymentMethodId;
+            }
+            if (customerId) {
+                paymentIntentParams.customer = customerId;
+            }
+            if (confirm && paymentMethodId) {
+                paymentIntentParams.confirm = true;
+                paymentIntentParams.automatic_payment_methods = {
+                    enabled: true,
+                    allow_redirects: 'never',
+                };
+            }
+
+            const intent = await stripe.paymentIntents.create(paymentIntentParams as never);
             stripeEscrowId = intent.id;
+            clientSecret = intent.client_secret ?? undefined;
+            fundsHeld = intent.status === 'requires_capture';
         } catch (stripeErr) {
             console.error('[splitEscrow] Stripe PaymentIntent creation failed:', stripeErr);
             throw new HttpsError(
@@ -156,6 +181,8 @@ export const initiateSplitEscrow = onCall(
         const signoffs: Record<string, boolean> = {};
         parties.forEach((p) => { signoffs[p] = false; });
 
+        const initialStatus = fundsHeld ? 'PENDING_SIGNATURES' : 'AWAITING_FUNDING';
+
         const escrowRef = await db.collection('split_escrows').add({
             trackId,
             holdAmountCents: holdAmount,
@@ -166,7 +193,8 @@ export const initiateSplitEscrow = onCall(
             initiatorUid: uid,
             stripeTransferGroup: transferGroup,
             stripePaymentIntentId: stripeEscrowId,
-            status: 'PENDING_SIGNATURES',
+            status: initialStatus,
+            fundsHeld,
             signoffs,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -178,12 +206,13 @@ export const initiateSplitEscrow = onCall(
             escrowAccount,
             escrowDocId: escrowRef.id,
             stripeTransferGroup: transferGroup,
-            status: 'PENDING_SIGNATURES',
+            status: initialStatus,
             pendingParties: parties,
             stripePaymentIntentId: stripeEscrowId,
+            ...(clientSecret ? { clientSecret } : {}),
             amountCents: holdAmount,
             amountFormatted: `$${(holdAmount / 100).toFixed(2)}`,
-            fundsHeld: true,
+            fundsHeld,
         };
 
         console.info(
@@ -249,7 +278,19 @@ export const signEscrow = onCall(
             }
 
             const data = snap.data()!;
-            if (data.status !== 'PENDING_SIGNATURES') {
+            if (data.status === 'AWAITING_FUNDING') {
+                const intent = await stripe.paymentIntents.retrieve(data.stripePaymentIntentId);
+                if (intent.status === 'requires_capture') {
+                    data.status = 'PENDING_SIGNATURES';
+                    data.fundsHeld = true;
+                    tx.update(escrowRef, { fundsHeld: true, status: 'PENDING_SIGNATURES' });
+                } else {
+                    throw new HttpsError(
+                        'failed-precondition',
+                        `Escrow cannot be signed while awaiting funding. Payment intent is in status '${intent.status}'.`
+                    );
+                }
+            } else if (data.status !== 'PENDING_SIGNATURES') {
                 throw new HttpsError(
                     'failed-precondition',
                     `Escrow cannot be signed in status ${data.status}.`
