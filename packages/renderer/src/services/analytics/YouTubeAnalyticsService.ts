@@ -28,7 +28,6 @@ import {
     GoogleAuthProvider,
     reauthenticateWithPopup,
     linkWithPopup,
-    signInWithPopup,
 } from 'firebase/auth';
 import type { PlatformData, StreamDataPoint, RegionData } from './types';
 
@@ -178,16 +177,9 @@ export class YouTubeAnalyticsService {
         if (!user) throw new Error('Not authenticated.');
 
         const isGoogleLinked = Array.isArray(user.providerData) && user.providerData.some(p => p.providerId === 'google.com');
-        let result;
-        if (isGoogleLinked) {
-            result = await reauthenticateWithPopup(user, provider);
-        } else {
-            try {
-                result = await linkWithPopup(user, provider);
-            } catch {
-                result = await signInWithPopup(auth, provider);
-            }
-        }
+        const result = isGoogleLinked
+            ? await reauthenticateWithPopup(user, provider)
+            : await linkWithPopup(user, provider);
         const credential = GoogleAuthProvider.credentialFromResult(result);
         const token = credential?.accessToken;
 

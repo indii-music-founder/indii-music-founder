@@ -86,6 +86,7 @@ interface TikTokUserInfoResponse {
 
 export class TikTokAnalyticsService {
     private redirectUri = `${window.location.origin}/auth/tiktok/callback`;
+    private cachedToken: { accessToken: string; expiresAt: number } | null = null;
 
     // ── OAuth / Connection ────────────────────────────────────────────────────
 
@@ -141,6 +142,7 @@ export class TikTokAnalyticsService {
      * Disconnect TikTok — revokes token and removes from Firestore.
      */
     async disconnect(): Promise<void> {
+        this.cachedToken = null;
         const revokeFn = httpsCallable(firebaseFunctions, 'analyticsRevokeToken');
         await revokeFn({ platform: 'tiktok' });
         clearAccountBoundOAuthSession('tiktok');
@@ -272,12 +274,20 @@ export class TikTokAnalyticsService {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated.');
 
+        if (this.cachedToken && this.cachedToken.expiresAt > Date.now() + 5 * 60 * 1000) {
+            return this.cachedToken.accessToken;
+        }
+
         const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
             firebaseFunctions, 'analyticsRefreshToken'
         );
         const result = await refreshFn({ platform: 'tiktok' });
         if (!result.data.accessToken) throw new Error('TikTok not connected.');
-        return result.data.accessToken;
+        this.cachedToken = {
+            accessToken: result.data.accessToken,
+            expiresAt: result.data.expiresAt ?? (Date.now() + 86400 * 1000),
+        };
+        return this.cachedToken.accessToken;
     }
 
     private async _fetch<T>(url: string, token: string): Promise<T> {
