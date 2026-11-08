@@ -537,6 +537,42 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                 <PromptInputActions className="px-2 pb-2">
                     <div className="flex items-center gap-1.5 flex-1">
+                        {/* TalkButton — studio talkback: leftmost control, mic + send combined. */}
+                        <PromptInputAction tooltip={
+                            (isLocalProcessing || isAgentProcessing)
+                                ? "Stop Agent (Esc)"
+                                : "Voice Input"
+                        }>
+                            <TalkButton
+                                value={commandBarInput}
+                                isAgentBusy={isLocalProcessing || isAgentProcessing}
+                                onStopAgent={stopAgent}
+                                onLiveText={handleVoiceLiveText}
+                                onSessionStart={() => { autoSendArmedRef.current = true; }}
+                                onRelease={handleTalkRelease}
+                                onNaturalEnd={handleTalkNaturalEnd}
+                                onMicError={handleMicError}
+                                isAutoSendArmed={() => autoSendArmedRef.current}
+                                disabled={!voiceSupported}
+                                accent={isIndiiMode ? 'indii' : 'glass'}
+                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
+                            />
+                        </PromptInputAction>
+
+                        {/* Two-Way Multimodal Conversation Button (Circle Waveform + Sparkle) */}
+                        <PromptInputAction tooltip={
+                            isLiveActive
+                                ? `Two-Way Conversation (${activeSpeakingIdentity.displayName}): Active`
+                                : "Two-Way Multimodal Conversation"
+                        }>
+                            <LiveConversationButton
+                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
+                                disabled={isLocalProcessing || isAgentProcessing}
+                            />
+                        </PromptInputAction>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
                         {!isMobile && (
                             <div className="flex items-center gap-0.5">
                                 <input
@@ -592,42 +628,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
                         </PromptInputAction>
 
-                        {/* TalkButton — studio talkback mic + send */}
-                        <PromptInputAction tooltip={
-                            (isLocalProcessing || isAgentProcessing)
-                                ? "Stop Agent (Esc)"
-                                : "Voice Input"
-                        }>
-                            <TalkButton
-                                value={commandBarInput}
-                                isAgentBusy={isLocalProcessing || isAgentProcessing}
-                                onStopAgent={stopAgent}
-                                onLiveText={handleVoiceLiveText}
-                                onSessionStart={() => { autoSendArmedRef.current = true; }}
-                                onRelease={handleTalkRelease}
-                                onNaturalEnd={handleTalkNaturalEnd}
-                                onMicError={handleMicError}
-                                isAutoSendArmed={() => autoSendArmedRef.current}
-                                disabled={!voiceSupported}
-                                accent={isIndiiMode ? 'indii' : 'glass'}
-                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
-                            />
-                        </PromptInputAction>
-
-                        {/* Two-Way Multimodal Conversation Button (Circle Waveform + Sparkle) */}
-                        <PromptInputAction tooltip={
-                            isLiveActive
-                                ? `Two-Way Conversation (${activeSpeakingIdentity.displayName}): Active`
-                                : "Two-Way Multimodal Conversation"
-                        }>
-                            <LiveConversationButton
-                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
-                                disabled={isLocalProcessing || isAgentProcessing}
-                            />
-                        </PromptInputAction>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
                         {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
                         {/* Hierarchical Agent Mode Picker */}
