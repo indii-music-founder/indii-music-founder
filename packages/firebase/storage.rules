@@ -51,7 +51,8 @@ service firebase.storage {
              request.resource.contentType.matches('application/zip') ||
              request.resource.contentType.matches('application/x-zip-compressed') ||
              request.resource.contentType.matches('font/.*') ||
-             request.resource.contentType.matches('application/x-font-.*');
+             request.resource.contentType.matches('application/x-font-.*') ||
+             request.resource.contentType.matches('application/font-woff.*');
     }
 
     // ========================================
@@ -96,7 +97,9 @@ service firebase.storage {
                               topLevel != 'rights' &&
                               isUnderSizeLimit(500) &&
                               isAllowedMediaType();
-      allow delete: if false; // Direct deletion blocked; must route through Trash
+      allow delete: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      topLevel in ['assets', 'thumbnails', 'audio', 'likeness', 'brandKit'];
     }
 
     match /users/{userId}/rights/deposits/{fileName} {

@@ -751,3 +751,69 @@ describe('distribution delivery receipts (/distribution/receipts — ISSUE-1588)
         await assertFails(uploadBytes(missingReleaseRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
     });
 });
+
+describe('client asset and likeness deletion lifecycle (ISSUE-1589)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-deletion-lifecycle`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const ownerStorage = () => testEnv.authenticatedContext(OWNER_ID, {
+        email: 'owner@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-user', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows owner to upload and delete assets, thumbnails, audio, likeness, and brandKit files', async () => {
+        const assetRef = ref(ownerStorage(), `users/${OWNER_ID}/assets/img-1589.png`);
+        const thumbRef = ref(ownerStorage(), `users/${OWNER_ID}/thumbnails/img-1589.png`);
+        const audioRef = ref(ownerStorage(), `users/${OWNER_ID}/audio/song-1589.wav`);
+        const likenessRef = ref(ownerStorage(), `users/${OWNER_ID}/likeness/face-1589.webp`);
+        const fontRef = ref(ownerStorage(), `users/${OWNER_ID}/brandKit/fonts/font-1589.ttf`);
+
+        await assertSucceeds(uploadBytes(assetRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertSucceeds(uploadBytes(thumbRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertSucceeds(uploadBytes(audioRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertSucceeds(uploadBytes(likenessRef, new Uint8Array([1, 2, 3]), { contentType: 'image/webp' }));
+        await assertSucceeds(uploadBytes(fontRef, new Uint8Array([1, 2, 3]), { contentType: 'font/ttf' }));
+
+        await assertSucceeds(deleteObject(assetRef));
+        await assertSucceeds(deleteObject(thumbRef));
+        await assertSucceeds(deleteObject(audioRef));
+        await assertSucceeds(deleteObject(likenessRef));
+        await assertSucceeds(deleteObject(fontRef));
+    });
+
+    it('denies delete on other protected user topLevels', async () => {
+        const protectedRef = ref(ownerStorage(), `users/${OWNER_ID}/brand_assets/logo-1589.png`);
+        await assertSucceeds(uploadBytes(protectedRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertFails(deleteObject(protectedRef));
+    });
+
+    it('denies cross-tenant and unauthenticated deletion of user assets and likeness images', async () => {
+        const likenessRef = ref(ownerStorage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertSucceeds(uploadBytes(likenessRef, new Uint8Array([1, 2, 3]), { contentType: 'image/webp' }));
+
+        const foreignRef = ref(otherStorage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertFails(deleteObject(foreignRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertFails(deleteObject(unauthRef));
+    });
+});
