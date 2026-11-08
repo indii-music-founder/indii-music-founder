@@ -10777,5 +10777,381 @@ export async function judgeCreativePromptAdditiveSuggestions(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Boardroom Multi-View Workspace Judgments (TypeSafe Jev System One)
+// ---------------------------------------------------------------------------
+
+export type BoardroomWebpageCategory =
+    | 'dsp'
+    | 'pro_rights'
+    | 'legal_compliance'
+    | 'marketing_social'
+    | 'press_pr'
+    | 'distribution'
+    | 'general_research';
+
+export type BoardroomDepartment =
+    | 'marketing'
+    | 'finance'
+    | 'legal'
+    | 'distribution'
+    | 'publishing'
+    | 'creative'
+    | 'social';
+
+export interface BoardroomWebpageSemantics {
+    category: BoardroomWebpageCategory;
+    categoryLabel: string;
+    recommendedDepartment: BoardroomDepartment;
+    relevanceScore: number;
+    source: 'jev' | 'deterministic';
+}
+
+const BOARDROOM_CATEGORY_LABELS: Record<BoardroomWebpageCategory, string> = {
+    dsp: 'Streaming Platform (DSP)',
+    pro_rights: 'PRO & Mechanical Rights',
+    legal_compliance: 'Legal & Copyright',
+    marketing_social: 'Marketing & Social',
+    press_pr: 'Press & Editorial',
+    distribution: 'Music Distribution',
+    general_research: 'General Web Research',
+};
+
+export function heuristicBoardroomWebpageSemantics(
+    url: string,
+    title?: string,
+    _snippet?: string
+): BoardroomWebpageSemantics {
+    const raw = `${url} ${title || ''}`.toLowerCase();
+
+    // DSPs
+    if (/(spotify\.com|apple\.com\/music|tidal\.com|amazon\.com\/music|deezer\.com|pandora\.com|audiomack\.com)/.test(raw)) {
+        return {
+            category: 'dsp',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.dsp,
+            recommendedDepartment: 'distribution',
+            relevanceScore: 0.95,
+            source: 'deterministic',
+        };
+    }
+
+    // PROs & Mechanical Rights
+    if (/(ascap\.com|bmi\.com|themlc\.com|soundexchange\.com|sesac\.com|songtrust\.com|prsformusic\.com|socan\.com)/.test(raw)) {
+        return {
+            category: 'pro_rights',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.pro_rights,
+            recommendedDepartment: 'publishing',
+            relevanceScore: 0.95,
+            source: 'deterministic',
+        };
+    }
+
+    // Legal & Copyright
+    if (/(copyright\.gov|uspto\.gov|wipo\.int|law\.|contract|split(\s|_|-)?sheet|trademark|licensing(\s|_|-)?agreement)/.test(raw)) {
+        return {
+            category: 'legal_compliance',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.legal_compliance,
+            recommendedDepartment: 'legal',
+            relevanceScore: 0.9,
+            source: 'deterministic',
+        };
+    }
+
+    // Marketing & Social
+    if (/(instagram\.com|tiktok\.com|youtube\.com|meta\.com|ads\.twitter\.com|x\.com|facebook\.com)/.test(raw)) {
+        return {
+            category: 'marketing_social',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.marketing_social,
+            recommendedDepartment: 'social',
+            relevanceScore: 0.85,
+            source: 'deterministic',
+        };
+    }
+
+    // Press & PR
+    if (/(pitchfork\.com|rollingstone\.com|billboard\.com|stereogum\.com|complex\.com|thefader\.com|variety\.com|spin\.com)/.test(raw)) {
+        return {
+            category: 'press_pr',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.press_pr,
+            recommendedDepartment: 'marketing',
+            relevanceScore: 0.85,
+            source: 'deterministic',
+        };
+    }
+
+    // Music Distribution
+    if (/(distrokid\.com|tunecore\.com|cdbaby\.com|symphonic\.com|awal\.com|ditto\.com|unitedmasters\.com)/.test(raw)) {
+        return {
+            category: 'distribution',
+            categoryLabel: BOARDROOM_CATEGORY_LABELS.distribution,
+            recommendedDepartment: 'distribution',
+            relevanceScore: 0.95,
+            source: 'deterministic',
+        };
+    }
+
+    return {
+        category: 'general_research',
+        categoryLabel: BOARDROOM_CATEGORY_LABELS.general_research,
+        recommendedDepartment: 'marketing',
+        relevanceScore: 0.6,
+        source: 'deterministic',
+    };
+}
+
+export async function judgeBoardroomWebpageSemantics(
+    url: string,
+    title?: string,
+    snippet?: string
+): Promise<BoardroomWebpageSemantics> {
+    const fallback = heuristicBoardroomWebpageSemantics(url, title, snippet);
+    if (!judgmentsAvailable()) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                url: url.slice(0, 300),
+                title: (title || '').slice(0, 200),
+                snippet: (snippet || '').slice(0, 800),
+            },
+            questions: {
+                industry_category: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Classify this webpage into the primary music business category it belongs to.',
+                    criteria: {
+                        dsp: 'Streaming service or digital music store (Spotify, Apple Music, Tidal, etc.)',
+                        pro_rights: 'Performance Rights Org, mechanical rights, or royalty society (ASCAP, BMI, The MLC, SoundExchange)',
+                        legal_compliance: 'Copyright office, legal contracts, split sheets, or intellectual property governance',
+                        marketing_social: 'Social media, creator channel, ad manager, or fan engagement platform',
+                        press_pr: 'Music journalism, editorial blog, press release, or review magazine',
+                        distribution: 'Music aggregator or distributor (DistroKid, TuneCore, CD Baby, Symphonic)',
+                        general_research: 'General website, documentation, or uncategorized resource',
+                    },
+                },
+                recommended_department: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Which indii boardroom executive department head is best suited to own and act on this web resource?',
+                    criteria: {
+                        distribution: 'Distribution & DSP Relations (releases, store deliveries, streaming metadata)',
+                        publishing: 'Publishing & Rights (songwriting splits, PRO registrations, mechanicals)',
+                        legal: 'Legal & Compliance (contracts, copyrights, clearances, split sheets)',
+                        marketing: 'Marketing & Campaigns (ad campaigns, press, playlist pitching)',
+                        social: 'Social & Fan Growth (content, TikTok, Instagram, engagement)',
+                        finance: 'Finance & Royalties (accounting, tax, payout reconciliations)',
+                        creative: 'Creative & Visuals (artwork, video, aesthetic direction)',
+                    },
+                },
+                relevance: {
+                    type: 'score' as const,
+                    instructions:
+                        'On a scale from 0.0 to 1.0, how relevant is this webpage to an independent artist or music business founder?',
+                },
+            },
+        });
+
+        const answers = result.data.answers;
+        const categoryAns = answers?.industry_category;
+        const categoryChoice = (typeof categoryAns === 'string' ? categoryAns : (categoryAns as { choice?: unknown } | null)?.choice) as BoardroomWebpageCategory;
+
+        const deptAns = answers?.recommended_department;
+        const deptChoice = (typeof deptAns === 'string' ? deptAns : (deptAns as { choice?: unknown } | null)?.choice) as BoardroomDepartment;
+
+        const rawRelevance = answers?.relevance;
+        const relevanceScore = typeof rawRelevance === 'number'
+            ? Math.max(0, Math.min(1, rawRelevance))
+            : (typeof rawRelevance === 'object' && rawRelevance !== null && 'score' in rawRelevance && typeof (rawRelevance as { score?: unknown }).score === 'number')
+                ? Math.max(0, Math.min(1, (rawRelevance as { score: number }).score))
+                : fallback.relevanceScore;
+
+        const validCategories: BoardroomWebpageCategory[] = [
+            'dsp', 'pro_rights', 'legal_compliance', 'marketing_social', 'press_pr', 'distribution', 'general_research'
+        ];
+        const validDepts: BoardroomDepartment[] = [
+            'marketing', 'finance', 'legal', 'distribution', 'publishing', 'creative', 'social'
+        ];
+
+        const finalCategory = validCategories.includes(categoryChoice) ? categoryChoice : fallback.category;
+        const finalDept = validDepts.includes(deptChoice) ? deptChoice : fallback.recommendedDepartment;
+
+        return {
+            category: finalCategory,
+            categoryLabel: BOARDROOM_CATEGORY_LABELS[finalCategory],
+            recommendedDepartment: finalDept,
+            relevanceScore,
+            source: 'jev',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'boardroom webpage semantics judgment');
+        return fallback;
+    }
+}
+
+export interface BoardroomWorkspaceRecommendation {
+    recommendedTab: 'browser' | 'module' | 'workbench' | 'agent-feed';
+    recommendedModule?: 'creative' | 'publishing' | 'finance' | 'legal' | 'marketing' | 'social' | 'distribution';
+    confidence: number;
+    reasoningHint: string;
+    source: 'jev' | 'deterministic';
+}
+
+export function heuristicBoardroomWorkspaceRecommendation(
+    messages: { role: string; text?: string }[]
+): BoardroomWorkspaceRecommendation {
+    const combined = messages
+        .slice(-5)
+        .map(m => m.text || '')
+        .join(' ')
+        .toLowerCase();
+
+    if (/(split(\s|_|-)?sheet|contract|clearance|copyright|agreement|assignment|terms)/.test(combined)) {
+        return {
+            recommendedTab: 'workbench',
+            recommendedModule: 'legal',
+            confidence: 0.9,
+            reasoningHint: 'Active discussion on contracts & split sheets detected.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/(cover(\s|_|-)?art|visual|artwork|video|teaser|font|render|3d|canvas|animation)/.test(combined)) {
+        return {
+            recommendedTab: 'module',
+            recommendedModule: 'creative',
+            confidence: 0.88,
+            reasoningHint: 'Visual & creative production discussion detected.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/(budget|invoice|royalt|expense|payout|accounting|tax|revenue|financial)/.test(combined)) {
+        return {
+            recommendedTab: 'module',
+            recommendedModule: 'finance',
+            confidence: 0.88,
+            reasoningHint: 'Financial, royalty or budget discussion detected.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/(spotify|apple music|playlist|isrc|upc|ddex|distribute|release date)/.test(combined)) {
+        return {
+            recommendedTab: 'module',
+            recommendedModule: 'distribution',
+            confidence: 0.85,
+            reasoningHint: 'Release distribution or DSP delivery discussion detected.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/(browse|url|website|webpage|search|article|link)/.test(combined)) {
+        return {
+            recommendedTab: 'browser',
+            confidence: 0.8,
+            reasoningHint: 'Web research or link referenced in conversation.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/(kill switch|worker|telemetry|active agent|subagent|daemon|running task)/.test(combined)) {
+        return {
+            recommendedTab: 'agent-feed',
+            confidence: 0.8,
+            reasoningHint: 'Agent execution or background task monitoring detected.',
+            source: 'deterministic',
+        };
+    }
+
+    return {
+        recommendedTab: 'browser',
+        confidence: 0.6,
+        reasoningHint: 'Default workspace reference.',
+        source: 'deterministic',
+    };
+}
+
+export async function judgeBoardroomWorkspaceRecommendation(
+    messages: { role: string; text?: string }[]
+): Promise<BoardroomWorkspaceRecommendation> {
+    const fallback = heuristicBoardroomWorkspaceRecommendation(messages);
+    if (!judgmentsAvailable() || messages.length === 0) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const recentSummary = messages
+            .slice(-4)
+            .map(m => `${m.role.toUpperCase()}: ${(m.text || '').slice(0, 150)}`)
+            .join('\n');
+
+        const result = await judgeFn({
+            state: { conversation: recentSummary },
+            questions: {
+                recommended_tab: {
+                    type: 'choice' as const,
+                    instructions:
+                        'Based on what the boardroom team is currently discussing, which workspace tool should be actively open?',
+                    criteria: {
+                        workbench: 'Inspecting documents, split sheets, Markdown artifacts, or generated media assets',
+                        module: 'Previewing or interacting with an indii studio department module (Creative, Finance, Legal, etc.)',
+                        browser: 'Researching live music industry websites, DSP portals, or documentation',
+                        'agent-feed': 'Monitoring live autonomous agent browser feeds, tasks, or graph executions',
+                    },
+                },
+                recommended_module: {
+                    type: 'choice' as const,
+                    instructions:
+                        'If an in-place studio module preview is recommended or helpful, which department module is most relevant?',
+                    criteria: {
+                        creative: 'Album artwork, video editing, canvas designs, visual styling',
+                        publishing: 'Songwriting splits, mechanical royalties, PRO registrations',
+                        finance: 'Budgets, financial analytics, expenses, streaming revenue',
+                        legal: 'Contracts, split sheets, copyright governance, rights clearances',
+                        marketing: 'Advertising campaigns, press pitching, release rollout',
+                        social: 'TikTok/Instagram content, community engagement',
+                        distribution: 'DSP deliveries, metadata verification, release packaging',
+                    },
+                },
+            },
+        });
+
+        const tabAns = result.data.answers?.recommended_tab;
+        const tabChoice = (typeof tabAns === 'string' ? tabAns : (tabAns as { choice?: unknown } | null)?.choice) as BoardroomWorkspaceRecommendation['recommendedTab'];
+
+        const modAns = result.data.answers?.recommended_module;
+        const modChoice = (typeof modAns === 'string' ? modAns : (modAns as { choice?: unknown } | null)?.choice) as BoardroomWorkspaceRecommendation['recommendedModule'];
+
+        const validTabs: BoardroomWorkspaceRecommendation['recommendedTab'][] = ['browser', 'module', 'workbench', 'agent-feed'];
+        const validMods: NonNullable<BoardroomWorkspaceRecommendation['recommendedModule']>[] = [
+            'creative', 'publishing', 'finance', 'legal', 'marketing', 'social', 'distribution'
+        ];
+
+        return {
+            recommendedTab: validTabs.includes(tabChoice) ? tabChoice : fallback.recommendedTab,
+            recommendedModule: validMods.includes(modChoice as any) ? modChoice : fallback.recommendedModule,
+            confidence: 0.95,
+            reasoningHint: 'Recommended by TypeSafe Jev System One.',
+            source: 'jev',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'boardroom workspace recommendation judgment');
+        return fallback;
+    }
+}
+
+
 
 

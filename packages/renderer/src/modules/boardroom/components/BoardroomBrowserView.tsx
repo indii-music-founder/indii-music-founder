@@ -11,10 +11,16 @@ import {
     BookOpen,
     Globe,
     Check,
+    Sparkles,
+    Plus,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
+import {
+    judgeBoardroomWebpageSemantics,
+    type BoardroomWebpageSemantics,
+} from '@/config/typesafeJudgments';
 
 export interface QuickBookmark {
     id: string;
@@ -45,6 +51,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const boardroomBrowserUrl = useStore(state => state.boardroomBrowserUrl);
     const setBoardroomBrowserUrl = useStore(state => state.setBoardroomBrowserUrl);
     const addReferencedAsset = useStore(state => state.addReferencedAsset);
+    const activeAgents = useStore(state => state.activeAgents) || [];
+    const toggleAgent = useStore(state => state.toggleAgent);
 
     const [inputUrl, setInputUrl] = useState(boardroomBrowserUrl || 'https://artists.spotify.com');
     const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +62,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const [isPinned, setIsPinned] = useState(false);
     const [isReaderMode, setIsReaderMode] = useState(false);
     const [extractedText, setExtractedText] = useState<string | null>(null);
+    const [lastSemanticJudgment, setLastSemanticJudgment] = useState<BoardroomWebpageSemantics | null>(null);
 
     const isNativeElectron = typeof window !== 'undefined' && Boolean(window.electronAPI?.boardroomBrowser);
 
@@ -190,17 +199,25 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 }
             }
 
+            // TypeSafe Jev System One semantic enrichment
+            const semantics = await judgeBoardroomWebpageSemantics(pageData.url, pageData.title, pageData.text);
+            setLastSemanticJudgment(semantics);
+
+            const promptText = pageData.text
+                ? `[TypeSafe Jev: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()} | Relevance: ${Math.round(semantics.relevanceScore * 100)}%]\n\nExtracted Webpage Content:\n${pageData.text.slice(0, 10000)}`
+                : `[TypeSafe Jev: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()}]`;
+
             addReferencedAsset({
                 id: `web-${Date.now()}`,
                 name: pageData.title || pageData.url,
                 type: 'url',
                 value: pageData.url,
-                prompt: pageData.text ? `Extracted Webpage Content:\n${pageData.text.slice(0, 10000)}` : undefined,
+                prompt: promptText,
                 origin: 'boardroom_browser',
             });
 
             setIsPinned(true);
-            toast.success(`Pinned "${pageData.title.slice(0, 40)}" into Boardroom swarm context!`);
+            toast.success(`Pinned & classified via Jev: ${semantics.categoryLabel} (${semantics.recommendedDepartment.toUpperCase()})`);
         } catch (error) {
             toast.error('Failed to capture webpage context.');
         } finally {
@@ -367,6 +384,41 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     </button>
                 ))}
             </div>
+
+            {/* TypeSafe Jev Semantic Classification Banner */}
+            {lastSemanticJudgment && (
+                <div
+                    className="flex items-center justify-between px-3 py-1 bg-indigo-950/50 border-b border-indigo-500/20 text-[11px] shrink-0 select-none animate-fadeIn"
+                    data-testid="boardroom-browser-jev-badge"
+                >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="flex items-center gap-1 font-bold text-indigo-300 shrink-0">
+                            <Sparkles size={11} className="text-indigo-400" />
+                            TypeSafe Jev:
+                        </span>
+                        <span className="text-white/90 font-medium truncate">{lastSemanticJudgment.categoryLabel}</span>
+                        <span className="text-white/30 shrink-0">•</span>
+                        <span className="text-indigo-200/80 font-mono text-[10px] shrink-0">
+                            Owner: <strong className="text-indigo-200">{lastSemanticJudgment.recommendedDepartment.toUpperCase()}</strong> ({Math.round(lastSemanticJudgment.relevanceScore * 100)}% match)
+                        </span>
+                    </div>
+                    {!activeAgents.includes(lastSemanticJudgment.recommendedDepartment) && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                toggleAgent(lastSemanticJudgment.recommendedDepartment);
+                                toast.success(`Seated ${lastSemanticJudgment.recommendedDepartment.toUpperCase()} Head at the Boardroom table!`);
+                            }}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 hover:text-white text-[10px] font-bold border border-indigo-500/30 transition-all shrink-0 ml-2"
+                            title={`Seat ${lastSemanticJudgment.recommendedDepartment.toUpperCase()} Head`}
+                            data-testid="boardroom-jev-seat-department-btn"
+                        >
+                            <Plus size={10} />
+                            <span>Seat {lastSemanticJudgment.recommendedDepartment.toUpperCase()}</span>
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* Browser Viewport */}
             <div className="flex-1 relative min-h-0 min-w-0 bg-black flex flex-col overflow-hidden">
