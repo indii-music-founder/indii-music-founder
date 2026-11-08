@@ -320,7 +320,7 @@ export interface ElectronAPI {
 
     // Publicist IPC bridge (Electron-only)
     publicist?: {
-        generatePdf: (data: unknown) => Promise<{ success: boolean; path?: string; error?: string }>;
+        generatePdf: (data: unknown) => Promise<{ success: boolean; filePath?: string; path?: string; message?: string; error?: string }>;
     };
 
     // Marketing analysis IPC bridge (Electron-only)

@@ -79,7 +79,7 @@ export interface ElectronBrandAPI {
 }
 
 export interface ElectronPublicistAPI {
-    generatePdf: (data: unknown) => Promise<unknown>;
+    generatePdf: (data: unknown) => Promise<{ success: boolean; filePath?: string; path?: string; message?: string; error?: string }>;
 }
 
 export interface ElectronMarketingAPI {

@@ -92,14 +92,21 @@ export const registerUpscaleHandlers = (): void => {
     ipcMain.handle('upscale:run', async (event, raw: unknown) => {
         let scratch: string | null = null;
         let requestId: string | null = null;
+        let onSenderDestroyed: (() => void) | null = null;
         try {
             validateSender(event);
             const req = UpscaleRunSchema.parse(raw);
             requestId = req.requestId;
-            const { enginePath } = await ensureEngine();
+            if (activeRuns.has(req.requestId)) {
+                throw new Error(`An upscale run with requestId '${req.requestId}' is already in progress.`);
+            }
 
             const controller = new AbortController();
             activeRuns.set(req.requestId, controller);
+            onSenderDestroyed = () => controller.abort();
+            event.sender.once('destroyed', onSenderDestroyed);
+
+            const { enginePath } = await ensureEngine();
 
             const inputBytes = decodeDataUrl(req.dataUrl);
             scratch = await mkdtemp(path.join(tmpdir(), 'indii-upscale-run-'));
@@ -133,6 +140,13 @@ export const registerUpscaleHandlers = (): void => {
             };
         } finally {
             if (requestId) activeRuns.delete(requestId);
+            if (onSenderDestroyed) {
+                try {
+                    event.sender.removeListener('destroyed', onSenderDestroyed);
+                } catch {
+                    // Sender may already be destroyed
+                }
+            }
             if (scratch) await rm(scratch, { recursive: true, force: true }).catch(() => {});
         }
     });
