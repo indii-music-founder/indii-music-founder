@@ -15,7 +15,17 @@ vi.mock('electron-log', () => ({
 }));
 
 vi.mock('electron', () => ({
-    BrowserWindow: class BrowserWindow {},
+    BrowserWindow: class BrowserWindow {
+        webContents = {
+            on: vi.fn(),
+            setWindowOpenHandler: vi.fn(),
+            executeJavaScript: vi.fn(),
+            loadURL: vi.fn(),
+        };
+        close = vi.fn();
+        isDestroyed = vi.fn().mockReturnValue(false);
+        static fromWebContents = vi.fn();
+    },
     ipcMain: { handle: vi.fn() },
     shell: { openExternal: vi.fn() },
 }));
@@ -290,6 +300,44 @@ describe('RightsCopilotController', () => {
                     },
                 })
             ).rejects.toThrow('No active Rights Copilot browser session');
+        });
+
+        it('scopes credential isolation so that an unrelated hidden password field does not block metadata autofill', async () => {
+            const action: CopilotAction = { id: 'title', type: 'autofill_input', description: 'Title', targetSelector: '#workTitle', value: 'Midnight Sun', requiresUserAction: false };
+            const { executeJavaScript, sender, input } = activeStep(action, [undefined, { found: true, currentValue: 'Midnight Sun' }]);
+            await expect(rightsCopilotController.executeActionStep({ sender } as never, input)).resolves.toMatchObject({ success: true });
+            const injectedScript = executeJavaScript.mock.calls[1][0];
+            expect(injectedScript).toContain('enclosingForm');
+            expect(injectedScript).toContain('isFormPasswordVisible');
+            expect(injectedScript).not.toContain("document.querySelector('input[type=password]')");
+        });
+    });
+
+    describe('launchSession (Security & Validation Gates)', () => {
+        const mockSender = { id: 99, isDestroyed: () => false, send: vi.fn() };
+        const mockEvent = { sender: mockSender } as never;
+
+        it('throws an explicit error when targetUrl is outside allowed portal domains', async () => {
+            await expect(
+                rightsCopilotController.launchSession(mockEvent, {
+                    portalTarget: 'loc_copyright',
+                    manifestId: 'manifest-test-1',
+                    targetUrl: 'https://evil-phishing-site.com',
+                })
+            ).rejects.toThrow('Target URL is not allowed for portal target loc_copyright: https://evil-phishing-site.com');
+        });
+
+        it('throws an explicit error when manifest fails validation', async () => {
+            await expect(
+                rightsCopilotController.launchSession(mockEvent, {
+                    portalTarget: 'loc_copyright',
+                    manifestId: 'manifest-test-2',
+                    manifest: {
+                        manifestId: 'invalid-manifest',
+                        work: { title: '' }, // Missing required fields
+                    },
+                })
+            ).rejects.toThrow('Manifest validation failed');
         });
     });
 });

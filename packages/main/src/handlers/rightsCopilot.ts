@@ -210,9 +210,19 @@ class RightsCopilotController {
             depositChecksum,
         } = input;
 
-        const officialUrl = targetUrl && this.isUrlAllowedForPortal(targetUrl, portalTarget)
-            ? targetUrl
-            : PORTAL_DEFAULT_URLS[portalTarget];
+        if (targetUrl && !this.isUrlAllowedForPortal(targetUrl, portalTarget)) {
+            throw new Error(`Target URL is not allowed for portal target ${portalTarget}: ${targetUrl}`);
+        }
+        const officialUrl = targetUrl || PORTAL_DEFAULT_URLS[portalTarget];
+
+        let actions: CopilotAction[] = [];
+        if (input.manifest) {
+            const manifestValidation = validateRegistrationManifest(input.manifest as RightsRegistrationManifest);
+            if (!manifestValidation.isValid) {
+                throw new Error(`Manifest validation failed: ${manifestValidation.errors.join('; ')}`);
+            }
+            actions = generateCopilotActionPlan(input.manifest as RightsRegistrationManifest, portalTarget);
+        }
 
         // Close any existing copilot session window cleanly
         if (this.activeSession?.window && !this.activeSession.window.isDestroyed()) {
@@ -256,7 +266,7 @@ class RightsCopilotController {
             window: copilotWindow,
             createdAtMs: Date.now(),
             senderId: event.sender.id,
-            actions: input.manifest && validateRegistrationManifest(input.manifest as RightsRegistrationManifest).isValid ? generateCopilotActionPlan(input.manifest as RightsRegistrationManifest, portalTarget) : [],
+            actions,
             awaitingUser: true,
             overlayContext,
         };
@@ -422,7 +432,14 @@ class RightsCopilotController {
                 if (!el) return { found: false };
                 const inputType = (el.getAttribute('type') || '').toLowerCase();
                 const autoComplete = (el.getAttribute('autocomplete') || '').toLowerCase();
-                if (document.querySelector('input[type=password]') || inputType === 'password' || autoComplete.startsWith('cc-')) {
+                const isPasswordEl = inputType === 'password' || autoComplete.startsWith('cc-') || (typeof el.matches === 'function' && el.matches('input[type=password]'));
+                const enclosingForm = typeof el.closest === 'function' ? el.closest('form') : null;
+                const formPassword = enclosingForm ? enclosingForm.querySelector('input[type=password]') : null;
+                const isFormPasswordVisible = formPassword ? (() => {
+                    const style = window.getComputedStyle(formPassword);
+                    return style.display !== 'none' && style.visibility !== 'hidden' && formPassword.offsetParent !== null;
+                })() : false;
+                if (isPasswordEl || isFormPasswordVisible) {
                     return { found: false, blockedCredentialField: true };
                 }
                 el.style.outline = '2px solid #ffb800';

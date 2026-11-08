@@ -1292,6 +1292,12 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if false;
       }
+
+      // ISSUE-1574: Rights registration filing receipts
+      match /rights_filings/{filingId} {
+        allow read, create, update: if isOwner(userId);
+        allow delete: if false;
+      }
     }
 
     // =========================================================================

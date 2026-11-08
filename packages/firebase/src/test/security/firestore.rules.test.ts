@@ -4715,6 +4715,95 @@ describe('Firestore Security Rules', () => {
                 await assertFails(getDoc(doc(bobDb, 'prospect_assessments', 'pii-assessment')));
             });
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1574: Rights registration filing receipts
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1574: users/{userId}/rights_filings/{filingId}', () => {
+            it('authenticated owner can read, create, and update; delete is denied even for owner', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'rights_filings', 'filing-1');
+
+                // Authenticated owner can create
+                await assertSucceeds(setDoc(docRef, {
+                    workTitle: 'Song Alpha',
+                    filingType: 'copyright',
+                    status: 'submitted',
+                    submittedAt: Timestamp.now(),
+                }));
+
+                // Authenticated owner can read
+                await assertSucceeds(getDoc(docRef));
+
+                // Authenticated owner can update
+                await assertSucceeds(updateDoc(docRef, {
+                    status: 'accepted',
+                    confirmationNumber: 'CR-123456',
+                }));
+
+                // Deletion is denied even for the owner
+                await assertFails(deleteDoc(docRef));
+            });
+
+            it('non-owner is denied read and write (create, update, delete)', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const aliceFilingRef = doc(bobDb, 'users', ALICE_UID, 'rights_filings', 'filing-bob-target');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'rights_filings', 'filing-bob-target'), {
+                        workTitle: 'Alice Secret Work',
+                        status: 'pending',
+                    });
+                });
+
+                // Non-owner cannot read
+                await assertFails(getDoc(aliceFilingRef));
+
+                // Non-owner cannot create under Alice subcollection
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'rights_filings', 'filing-hacked'), {
+                    workTitle: 'Forged Filing',
+                }));
+
+                // Non-owner cannot update
+                await assertFails(updateDoc(aliceFilingRef, {
+                    status: 'tampered',
+                }));
+
+                // Non-owner cannot delete
+                await assertFails(deleteDoc(aliceFilingRef));
+            });
+
+            it('unauthenticated is denied read and write (create, update, delete)', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const filingRef = doc(unauthDb, 'users', ALICE_UID, 'rights_filings', 'filing-unauth-target');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'rights_filings', 'filing-unauth-target'), {
+                        workTitle: 'Alice Protected Work',
+                        status: 'pending',
+                    });
+                });
+
+                // Unauthenticated cannot read
+                await assertFails(getDoc(filingRef));
+
+                // Unauthenticated cannot create
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'rights_filings', 'filing-unauth-create'), {
+                    workTitle: 'Anon Filing',
+                }));
+
+                // Unauthenticated cannot update
+                await assertFails(updateDoc(filingRef, {
+                    status: 'tampered',
+                }));
+
+                // Unauthenticated cannot delete
+                await assertFails(deleteDoc(filingRef));
+            });
+        });
     });
 });
 

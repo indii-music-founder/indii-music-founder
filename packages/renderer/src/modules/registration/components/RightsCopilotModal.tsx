@@ -244,10 +244,10 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
     }
   };
 
-  const handleRecordConfirmation = () => {
+  const handleRecordConfirmation = async () => {
     const trimmed = confirmationInput.trim();
     if (!trimmed) return;
-    const record = rightsCopilotService.recordFilingConfirmation(manifest, portalTarget, {
+    const record = await rightsCopilotService.recordFilingConfirmation(manifest, portalTarget, {
       confirmationNumber: trimmed,
       serviceRequestId: portalTarget === 'loc_copyright' ? trimmed : undefined,
     });
