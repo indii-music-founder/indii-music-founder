@@ -91,6 +91,7 @@ export function createDefaultAlignmentService(workerUrl?: string): AlignmentServ
                     guideAudioRef: input.guideAudioRef,
                     canonicalMasterRef: input.canonicalMasterRef,
                 }),
+                signal: AbortSignal.timeout(45_000),
             });
 
             if (!response.ok) {

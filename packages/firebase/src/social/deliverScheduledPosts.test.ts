@@ -13,7 +13,11 @@ const logMocks = vi.hoisted(() => ({
 
 vi.mock('firebase-functions', () => ({ logger: logMocks }));
 
-import { deliverScheduledPostsHandler } from './deliverScheduledPosts';
+import {
+    deliverScheduledPostsHandler,
+    deliverToBluesky,
+    waitForInstagramContainerReady,
+} from './deliverScheduledPosts';
 
 type StoredDocument = Record<string, unknown>;
 type CollectionName = 'scheduledPosts' | 'campaigns';
@@ -416,5 +420,130 @@ describe('deliverScheduledPostsHandler production worker path', () => {
         const taskCall = createTaskMock.mock.calls[0][0];
         expect(taskCall.parent).toBe('projects/test-p/locations/us-central1/queues/social-delivery-instagram');
         expect(taskCall.task.httpRequest.oidcToken.serviceAccountEmail).toBe('sa@indii.iam.gserviceaccount.com');
+    });
+});
+
+describe('deliverToBluesky (ISSUE-1569)', () => {
+    it('refreshes session via createSession when token is expired', async () => {
+        const originalFetch = global.fetch;
+        const mockFetch = vi.fn()
+            .mockImplementationOnce(async (url: string) => {
+                if (url.includes('createSession')) {
+                    return {
+                        ok: true,
+                        json: async () => ({ accessJwt: 'fresh_jwt_token', did: 'did:plc:fresh' }),
+                    };
+                }
+                return { ok: false, status: 500 };
+            })
+            .mockImplementationOnce(async (url: string) => {
+                if (url.includes('createRecord')) {
+                    return {
+                        ok: true,
+                        json: async () => ({ uri: 'at://did:plc:fresh/app.bsky.feed.post/12345' }),
+                    };
+                }
+                return { ok: false, status: 500 };
+            });
+
+        global.fetch = mockFetch as unknown as typeof fetch;
+
+        try {
+            const token = {
+                accessToken: 'old_expired_token',
+                expiresAt: Date.now() - 1000,
+                identifier: 'user.bsky.social',
+                appPassword: 'app-password-123',
+            };
+
+            const result = await deliverToBluesky(token, 'Hello Bluesky!', 'post-1');
+            expect(result.success).toBe(true);
+            expect(result.postId).toBe('at://did:plc:fresh/app.bsky.feed.post/12345');
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+            expect(mockFetch).toHaveBeenNthCalledWith(
+                1,
+                'https://bsky.social/xrpc/com.atproto.server.createSession',
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ identifier: 'user.bsky.social', password: 'app-password-123' }),
+                })
+            );
+            expect(mockFetch).toHaveBeenNthCalledWith(
+                2,
+                'https://bsky.social/xrpc/com.atproto.repo.createRecord',
+                expect.objectContaining({
+                    headers: expect.objectContaining({ Authorization: 'Bearer fresh_jwt_token' }),
+                })
+            );
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
+
+    it('retries once via createSession when createRecord returns 401 ExpiredToken', async () => {
+        const originalFetch = global.fetch;
+        const mockFetch = vi.fn()
+            // 1. Initial createRecord fails with 401
+            .mockImplementationOnce(async () => ({
+                ok: false,
+                status: 401,
+                text: async () => '{"error":"ExpiredToken","message":"Token has expired"}',
+            }))
+            // 2. createSession refreshes token
+            .mockImplementationOnce(async () => ({
+                ok: true,
+                json: async () => ({ accessJwt: 'retried_jwt_token', did: 'did:plc:refreshed' }),
+            }))
+            // 3. Retried createRecord succeeds
+            .mockImplementationOnce(async () => ({
+                ok: true,
+                json: async () => ({ uri: 'at://did:plc:refreshed/app.bsky.feed.post/67890' }),
+            }));
+
+        global.fetch = mockFetch as unknown as typeof fetch;
+
+        try {
+            const token = {
+                accessToken: 'initially_valid_token',
+                expiresAt: Date.now() + 3600_000,
+                identifier: 'user.bsky.social',
+                appPassword: 'app-password-123',
+            };
+
+            const result = await deliverToBluesky(token, 'Hello retry!', 'post-2');
+            expect(result.success).toBe(true);
+            expect(result.postId).toBe('at://did:plc:refreshed/app.bsky.feed.post/67890');
+            expect(mockFetch).toHaveBeenCalledTimes(3);
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
+});
+
+describe('waitForInstagramContainerReady (ISSUE-1569)', () => {
+    it('encodes containerId and accessToken in polling request', async () => {
+        const originalFetch = global.fetch;
+        const mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ status_code: 'FINISHED' }),
+        });
+        global.fetch = mockFetch as unknown as typeof fetch;
+
+        try {
+            const result = await waitForInstagramContainerReady(
+                'https://graph.facebook.com/v23.0',
+                'container/123?special=chars',
+                'token/abc==',
+                5000
+            );
+
+            expect(result.ready).toBe(true);
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://graph.facebook.com/v23.0/container%2F123%3Fspecial%3Dchars?fields=status_code,status&access_token=token%2Fabc%3D%3D',
+                expect.objectContaining({ signal: expect.anything() })
+            );
+        } finally {
+            global.fetch = originalFetch;
+        }
     });
 });
