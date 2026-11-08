@@ -5581,6 +5581,182 @@ describe('Firestore Security Rules', () => {
                 await assertSucceeds(deleteDoc(signalDocRef));
             });
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1596: Career events, career timeline, split sheets, CWR drafts, and splits
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1596: Career events, career timeline, split sheets, CWR drafts, and splits', () => {
+            it('career_events: owner can read own document, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const eventRef = doc(aliceDb, 'career_events', 'event-alice-1596');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'career_events', 'event-alice-1596'), {
+                        userId: ALICE_UID,
+                        headline: 'Album Charted #1',
+                    });
+                });
+
+                // Owner (Alice) can read own career event
+                await assertSucceeds(getDoc(eventRef));
+
+                // Cross-tenant user (Bob) is denied read
+                await assertFails(getDoc(doc(bobDb, 'career_events', 'event-alice-1596')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'career_events', 'event-alice-1596')));
+
+                // Client writes denied: create, update, delete
+                await assertFails(setDoc(doc(aliceDb, 'career_events', 'event-new'), {
+                    userId: ALICE_UID,
+                    headline: 'Tour Announced',
+                }));
+                await assertFails(updateDoc(eventRef, { headline: 'Tampered' }));
+                await assertFails(deleteDoc(eventRef));
+            });
+
+            it('split_sheets: initiator and user can read own documents, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const eveDb = verifiedCtx('eve-cross-tenant-1596').firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    // Document with initiatorUid == ALICE_UID
+                    await setDoc(doc(ctx.firestore(), 'split_sheets', 'sheet-alice-initiator'), {
+                        initiatorUid: ALICE_UID,
+                        title: 'Alice Initiated Split',
+                    });
+                    // Document with userId == BOB_UID
+                    await setDoc(doc(ctx.firestore(), 'split_sheets', 'sheet-bob-user'), {
+                        userId: BOB_UID,
+                        title: 'Bob User Split',
+                    });
+                });
+
+                // Initiator (Alice) can read own split_sheet
+                await assertSucceeds(getDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator')));
+
+                // User (Bob) can read own split_sheet
+                await assertSucceeds(getDoc(doc(bobDb, 'split_sheets', 'sheet-bob-user')));
+
+                // Cross-tenant user (Eve) is denied read on both documents
+                await assertFails(getDoc(doc(eveDb, 'split_sheets', 'sheet-alice-initiator')));
+                await assertFails(getDoc(doc(eveDb, 'split_sheets', 'sheet-bob-user')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'split_sheets', 'sheet-alice-initiator')));
+
+                // Client writes denied (create, update, delete)
+                await assertFails(setDoc(doc(aliceDb, 'split_sheets', 'sheet-new'), {
+                    initiatorUid: ALICE_UID,
+                    title: 'New Split',
+                }));
+                await assertFails(updateDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator'), { title: 'Tampered' }));
+                await assertFails(deleteDoc(doc(aliceDb, 'split_sheets', 'sheet-alice-initiator')));
+            });
+
+            it('users/{userId}/career_timeline: owner can read, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const timelineRef = doc(aliceDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'career_timeline', 'timeline-1'), {
+                        title: 'Signed Record Deal',
+                        year: 2024,
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(timelineRef));
+
+                // Cross-tenant user is denied read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'career_timeline', 'timeline-1')));
+
+                // Client writes are denied even for owner (allow write: if false)
+                await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'career_timeline', 'timeline-new'), { title: 'New' }));
+                await assertFails(updateDoc(timelineRef, { title: 'Updated' }));
+                await assertFails(deleteDoc(timelineRef));
+            });
+
+            it('users/{userId}/cwrDrafts: owner can read, cross-tenant users are denied, client writes denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const draftRef = doc(aliceDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1'), {
+                        workTitle: 'CWR Draft Opus',
+                        version: 1,
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(draftRef));
+
+                // Cross-tenant user is denied read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1')));
+
+                // Unauthenticated caller is denied read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-1')));
+
+                // Client writes are denied even for owner (allow write: if false)
+                await assertFails(setDoc(doc(aliceDb, 'users', ALICE_UID, 'cwrDrafts', 'cwr-draft-new'), { workTitle: 'New' }));
+                await assertFails(updateDoc(draftRef, { workTitle: 'Updated' }));
+                await assertFails(deleteDoc(draftRef));
+            });
+
+            it('users/{userId}/splits: owner can read/write their own splits, cross-tenant users are denied read and write', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const splitRef = doc(aliceDb, 'users', ALICE_UID, 'splits', 'split-1');
+
+                // Owner can create
+                await assertSucceeds(setDoc(splitRef, {
+                    title: 'Co-written Track',
+                    percentages: { [ALICE_UID]: 50, [BOB_UID]: 50 },
+                }));
+
+                // Owner can read
+                await assertSucceeds(getDoc(splitRef));
+
+                // Owner can update
+                await assertSucceeds(updateDoc(splitRef, {
+                    title: 'Co-written Track (Remix)',
+                }));
+
+                // Cross-tenant user (Bob) is denied read and write under Alice's splits
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-bob-spoofed'), {
+                    title: 'Injected Split',
+                }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1'), {
+                    title: 'Bob Hijack',
+                }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'splits', 'split-1')));
+
+                // Unauthenticated is denied read and write
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'splits', 'split-1')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'splits', 'split-anon'), { title: 'Anon' }));
+
+                // Owner can delete their own split
+                await assertSucceeds(deleteDoc(splitRef));
+            });
+        });
     });
 });
 

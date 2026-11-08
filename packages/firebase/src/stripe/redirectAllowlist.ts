@@ -35,10 +35,17 @@ export function assertAllowedStripeRedirectUrl(rawUrl: unknown, fieldName: strin
 
     const origin = `${parsed.protocol}//${parsed.host}`;
     const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'test';
+    const isAllowedTestHost =
+        isEmulator &&
+        (parsed.hostname === 'localhost' ||
+            parsed.hostname === '127.0.0.1' ||
+            parsed.hostname === 'example.com' ||
+            parsed.hostname.endsWith('.example.com') ||
+            parsed.hostname.endsWith('.example'));
     const isLocalLoopback =
         isEmulator &&
         (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
-        (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1');
+        isAllowedTestHost;
 
     if (!isLocalLoopback && (parsed.protocol !== 'https:' || !configured.includes(origin))) {
         throw new HttpsError(

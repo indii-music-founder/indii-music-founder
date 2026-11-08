@@ -105,8 +105,8 @@ describe('createMicroTransaction', () => {
   it('rejects non-positive credit requests', async () => {
     const fn = createMicroTransaction as any;
 
-    await expect(fn(makeRequest({ credits: 0 }))).rejects.toThrow('Credits must be greater than 0');
-    await expect(fn(makeRequest({ credits: -50 }))).rejects.toThrow('Credits must be greater than 0');
+    await expect(fn(makeRequest({ credits: 0 }))).rejects.toThrow('Credits must be an integer between 1 and 100000');
+    await expect(fn(makeRequest({ credits: -50 }))).rejects.toThrow('Credits must be an integer between 1 and 100000');
   });
 
   it('fails if STRIPE_PRICE_CREDIT_PACK is not configured', async () => {

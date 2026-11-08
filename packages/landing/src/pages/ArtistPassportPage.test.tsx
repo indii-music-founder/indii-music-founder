@@ -13,6 +13,7 @@ import {
 } from '../lib/passportEvaluator';
 import { readPassportEventLog } from '../lib/passportAnalytics';
 import { db } from '../lib/firebase';
+import * as passportService from '../lib/passportService';
 
 describe('ArtistPassportPage - Deterministic Evaluation Engine', () => {
   it('correctly flags mechanical royalty leakage when PRO exists but MLC is missing', () => {
@@ -312,8 +313,13 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     fireEvent.change(nameInput, { target: { value: 'Marcus Rivers' } });
     fireEvent.change(emailInput, { target: { value: 'marcus@example.com' } });
 
+    const saveSpy = vi.spyOn(passportService, 'saveProspectAssessment').mockResolvedValue('test-assessment-id');
+    const updateSpy = vi.spyOn(passportService, 'updateAssessmentContact').mockRejectedValueOnce(
+      new Error(db ? 'Your report request could not be saved. Please try again.' : 'Report requests are unavailable. Please try again later.')
+    );
+
     const sendButton = screen.getByText(/Request my assessment summary/i).closest('button');
-    fireEvent.click(sendButton!);
+    fireEvent.submit(sendButton!.closest('form')!);
 
     // Assert the exact failure for this runtime; neither path may fabricate a saved request.
     expect((await screen.findByRole('alert')).textContent).toBe(db
@@ -321,6 +327,9 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
       : 'Report requests are unavailable. Please try again later.');
     expect(screen.queryByText(/Your assessment copy request is saved for/i)).toBeNull();
     expect(screen.getByText(/Request my assessment summary/i)).toBeDefined();
+
+    updateSpy.mockRestore();
+    saveSpy.mockRestore();
 
     // Restart audit
     const restartBtn = screen.getByText(/Start Over/i);

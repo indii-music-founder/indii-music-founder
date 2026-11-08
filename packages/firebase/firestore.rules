@@ -1320,6 +1320,21 @@ service cloud.firestore {
         allow read, create, update: if isOwner(userId);
         allow delete: if false;
       }
+
+      // ISSUE-1596: Career timeline, CWR drafts, and split subcollections
+      match /career_timeline/{eventId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /cwrDrafts/{draftId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /splits/{splitId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // =========================================================================
@@ -2386,7 +2401,6 @@ service cloud.firestore {
           allow read: if isProjectCollaborator(projectId);
           allow create: if isProjectCollaborator(projectId) && request.resource.data.get('fromUserId', null) == request.auth.uid;
           allow delete: if isProjectCollaborator(projectId) && (resource.data.get('fromUserId', null) == request.auth.uid || resource.data.get('toUserId', null) == request.auth.uid || get(/databases/$(database)/documents/projects/$(projectId)).data.get('userId', null) == request.auth.uid);
-          allow delete: if isProjectCollaborator(projectId);
         }
       }
     }
@@ -2591,6 +2605,15 @@ service cloud.firestore {
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
       allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
       allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
+    }
+    // ISSUE-1596: Career events and split sheets
+    match /career_events/{eventId} {
+      allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isAdmin())) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow write: if false;
+    }
+    match /split_sheets/{sheetId} {
+      allow read: if (isAuthenticated() && (resource.data.get('initiatorUid', null) == request.auth.uid || resource.data.get('userId', null) == request.auth.uid || isAdmin())) || (isGuest() && resource.data.get('initiatorUid', null) == 'founder-demo-uid');
+      allow write: if false;
     }
     match /earnings/{earningId} {
       allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || resource.data.labelId == request.auth.uid)) || (isGuest() && (resource.data.get('userId', null) == 'founder-demo-uid' || resource.data.labelId == 'founder-demo-uid'));

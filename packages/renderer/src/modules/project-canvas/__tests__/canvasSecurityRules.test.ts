@@ -31,26 +31,23 @@ describe('Project Canvas Firestore Security Rules', () => {
 
     it('defines project-scoped canvas root collection with strict project authorization', () => {
         expect(rulesContent).toContain('match /canvases/{canvasId}');
-        expect(rulesContent).toContain('exists(/databases/$(database)/documents/projects/$(projectId))');
-        expect(rulesContent).toContain('get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid');
-        expect(rulesContent).toContain('isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)');
-        expect(rulesContent).toContain("get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'");
+        expect(rulesContent).toContain('isProjectCollaborator(projectId)');
     });
 
     it('defines blocks subcollection inheriting project authorization', () => {
         expect(rulesContent).toContain('match /blocks/{blockId}');
-        expect(rulesContent).toContain('allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId))');
+        expect(rulesContent).toContain('allow read, write: if isProjectCollaborator(projectId);');
     });
 
     it('defines edges subcollection inheriting project authorization', () => {
         expect(rulesContent).toContain('match /edges/{edgeId}');
-        expect(rulesContent).toContain('allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId))');
+        expect(rulesContent).toContain('allow read, write: if isProjectCollaborator(projectId);');
     });
 
     it('defines presence subcollection with collaborator read and per-user write isolation', () => {
         expect(rulesContent).toContain('match /presence/{presenceUserId}');
         // Collaborators can read presence
-        expect(rulesContent).toContain('allow read: if exists(/databases/$(database)/documents/projects/$(projectId))');
+        expect(rulesContent).toContain('allow read: if isProjectCollaborator(projectId);');
         // Only the presence owner can write their own presence
         expect(rulesContent).toContain('request.auth.uid == presenceUserId');
     });

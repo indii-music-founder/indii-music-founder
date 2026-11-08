@@ -32,6 +32,13 @@ const operatingPrinciples = [
     title: 'Let the next move begin with context.',
     text: 'Approved assets and decisions return to the project so every department can work from the same facts without making you repeat yourself. Connected Intelligence© ensures that what your brand manager defines, your art department executes.',
   },
+  {
+    number: '05',
+    label: 'Replace them, not you',
+    hex: '#FF3366',
+    title: '100% human-made music only.',
+    text: 'AI replaces the administrative overhead, legal paperwork, and middlemen you cannot afford to hire—never the music. Synthetic AI-generated audio is strictly barred from release in our code, while human producers, beatmakers, and sample-based works are pre-registered and protected from automated platform takedowns.',
+  },
 ];
 
 export default function PrinciplesSection() {
