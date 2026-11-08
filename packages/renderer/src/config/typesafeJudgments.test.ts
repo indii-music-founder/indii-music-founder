@@ -111,6 +111,16 @@ import {
     deterministicPlpVariantAdFallback,
     judgeCreativeJourneyIntent,
     deterministicCreativeJourneyFallback,
+    judgeBoardroomExecutiveIntent,
+    deterministicBoardroomExecutiveFallback,
+    judgeDepartmentJourneyIntent,
+    deterministicDepartmentJourneyFallback,
+    judgeCreativeStudioConfigPreset,
+    deterministicCreativeStudioConfigFallback,
+    judgePromptImprovementIntent,
+    deterministicPromptImprovementFallback,
+    judgeCreativePromptAdditiveSuggestions,
+    rankAdditivesDeterministically,
     PERSONA_POSTURE_FADER_MAP,
     refineInjectionRisk,
     __resetJudgmentCooldownForTests,
@@ -5721,7 +5731,228 @@ describe('judgeCreativeJourneyIntent (Judgment 81)', () => {
     });
 });
 
+describe('judgeBoardroomExecutiveIntent (Judgment 82)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
 
+    const baseContext = {
+        prompt: 'Draft a 50/50 split sheet and clear sample rights',
+        activeAgents: ['generalist'],
+        hasReferencedAssets: false,
+        messageCount: 0,
+    };
 
+    it('routes executive prompt and seated agent intent deterministically while Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result.mission).toBe('split_rights');
+        expect(result.actionLabel).toBe('Seat Legal + Finance');
+        expect(result.recommendedAgents).toEqual(['legal', 'finance']);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('routes pinned creative assets to creative_sync when no prompt is entered', () => {
+        const verdict = deterministicBoardroomExecutiveFallback({
+            prompt: '',
+            activeAgents: ['generalist'],
+            hasReferencedAssets: true,
+            messageCount: 0,
+        });
+        expect(verdict.mission).toBe('creative_sync');
+        expect(verdict.recommendedAgents).toContain('creative');
+        expect(verdict.confidence).toBeGreaterThanOrEqual(0.5);
+    });
+
+    it('returns a low-confidence fallback when no prompt, specialist, or asset signal is present', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const result = await judgeBoardroomExecutiveIntent({
+            prompt: '',
+            activeAgents: ['generalist'],
+            hasReferencedAssets: false,
+            messageCount: 0,
+        });
+        expect(result.mission).toBe('master_audit');
+        expect(result.confidence).toBeLessThan(0.5);
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('uses Jev Choice and returns a mission verdict with recommended agents', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { mission: { choice: 'royalty_waterfall', confidence: 0.94 } } },
+        }));
+
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result.mission).toBe('royalty_waterfall');
+        expect(result.confidence).toBe(0.94);
+        expect(result.actionLabel).toBe('Seat Finance Chief');
+        expect(result.recommendedAgents).toEqual(['finance']);
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when the Jev callable fails', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev unavailable');
+        });
+        const result = await judgeBoardroomExecutiveIntent(baseContext);
+        expect(result).toEqual(deterministicBoardroomExecutiveFallback(baseContext));
+        expect(result.mission).toBe('split_rights');
+    });
+});
+
+describe('judgeDepartmentJourneyIntent (Judgment 83)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('recommends the next logical workflow across department modules when Jev is disabled', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeDepartmentJourneyIntent({
+            department: 'marketing',
+            activeTab: 'departments',
+            itemCount: 3,
+        });
+        expect(result.department).toBe('marketing');
+        expect(result.journeyId).toBe('brand_identity');
+        expect(result.targetTab).toBe('brand');
+        expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('uses Jev Choice to resolve a department journey online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { journey: { choice: 'preflight_qc', confidence: 0.93 } } },
+        }));
+
+        const result = await judgeDepartmentJourneyIntent({
+            department: 'distribution',
+            activeTab: 'releases',
+            itemCount: 2,
+        });
+        expect(result.journeyId).toBe('preflight_qc');
+        expect(result.targetTab).toBe('brain');
+        expect(result.confidence).toBe(0.93);
+        expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
+    });
+
+    it('falls back deterministically when Jev fails on department journey', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('Jev network error');
+        });
+        const ctx = { department: 'legal' as const, activeTab: 'analyzer', prompt: 'split sheet' };
+        const result = await judgeDepartmentJourneyIntent(ctx);
+        expect(result).toEqual(deterministicDepartmentJourneyFallback(ctx));
+        expect(result.journeyId).toBe('split_agreements');
+    });
+});
+
+describe('judgeCreativeStudioConfigPreset (Judgment 84)', () => {
+    beforeEach(() => {
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+        __resetJudgmentCooldownForTests();
+    });
+
+    it('selects vertical story preset offline when prompt mentions reels or tiktok', async () => {
+        mocks.enabled.mockReturnValue(false);
+        const result = await judgeCreativeStudioConfigPreset({
+            mode: 'image',
+            prompt: 'Neon vertical reel cover for TikTok launch',
+        });
+        expect(result.presetId).toBe('social_vertical_story');
+        expect(result.controlsPatch.aspectRatio).toBe('9:16');
+    });
+
+    it('uses Jev Choice to resolve a unified Creative Hub config preset online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { preset: { choice: 'grounded_editorial', confidence: 0.92 } } },
+        }));
+
+        const result = await judgeCreativeStudioConfigPreset({
+            mode: 'image',
+            prompt: 'Press photo at Red Rocks Amphitheatre',
+        });
+        expect(result.presetId).toBe('grounded_editorial');
+        expect(result.controlsPatch.useGrounding).toBe(true);
+        expect(result.confidence).toBe(0.92);
+    });
+
+    it('falls back deterministically when Jev callable throws', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => {
+            throw new Error('callable error');
+        });
+        const ctx = { mode: 'video' as const, prompt: 'wide cinema trailer' };
+        const result = await judgeCreativeStudioConfigPreset(ctx);
+        expect(result).toEqual(deterministicCreativeStudioConfigFallback(ctx));
+        expect(result.presetId).toBe('cinematic_widescreen');
+    });
+});
+
+describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions (Judgment 85)', () => {
+    beforeEach(() => {
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReset();
+        mocks.httpsCallable.mockReset();
+    });
+
+    it('classifies visual archetypes deterministically offline', () => {
+        const film = deterministicPromptImprovementFallback('cinematic 35mm film still of musician');
+        expect(film.archetype).toBe('cinematic_film');
+        expect(film.focusTechnical).toContain('anamorphic lens');
+
+        const surreal = deterministicPromptImprovementFallback('surreal 3d octane render of chrome sphere');
+        expect(surreal.archetype).toBe('digital_3d_surreal');
+
+        const cover = deterministicPromptImprovementFallback('vinyl album cover typography art');
+        expect(cover.archetype).toBe('graphic_cover_typography');
+
+        const editorial = deterministicPromptImprovementFallback('high fashion editorial portrait dramatic lighting');
+        expect(editorial.archetype).toBe('moody_editorial');
+    });
+
+    it('uses Jev Choice to resolve prompt archetype online', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    archetype: { choice: 'cinematic_film', confidence: 0.94 },
+                },
+            },
+        }));
+
+        const result = await judgePromptImprovementIntent('close up of singer on stage', 'Neo-noir aesthetic');
+        expect(result.archetype).toBe('cinematic_film');
+        expect(result.confidence).toBe(0.94);
+    });
+
+    it('ranks additives contextually with Jev Choice', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    bestFit: { choice: 'cand_1' },
+                },
+            },
+        }));
+
+        const candidates = [
+            { tag: 'Sunny Day', category: 'Weather', count: 5 },
+            { tag: 'Tokyo Neon', category: 'Environment', count: 2 },
+            { tag: 'Leica M6', category: 'Camera', count: 1 },
+        ];
+
+        const ranked = await judgeCreativePromptAdditiveSuggestions('cyberpunk night rain', candidates);
+        expect(ranked[0].tag).toBe('Tokyo Neon');
+    });
+});
 
 

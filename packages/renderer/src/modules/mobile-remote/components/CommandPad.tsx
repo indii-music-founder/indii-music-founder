@@ -19,12 +19,13 @@ import {
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Layers, Settings, FileText, Globe, BarChart3, Shield,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  MessageSquare, Package, Wand2, Play, Pause, Navigation
+  MessageSquare, Package, Wand2, Play, Pause, Navigation, AudioLines
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
+import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 
 interface CommandPadProps {
   onSendCommand: (command: { type: string; payload: unknown }) => void;
@@ -76,6 +77,18 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   };
 
   const quickActions: QuickAction[] = [
+    {
+      id: 'two-way-live',
+      icon: AudioLines,
+      label: 'Two-Way Live',
+      color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
+      glow: 'shadow-emerald-500/25 hover:shadow-emerald-500/40',
+      action: () => {
+        triggerHaptic(50);
+        void liveConversationService.startSession({ source: 'mobile-remote' });
+        onSendCommand({ type: 'agent_action', payload: { action: 'open_chat' } });
+      },
+    },
     {
       id: 'generate-image',
       icon: Wand2,

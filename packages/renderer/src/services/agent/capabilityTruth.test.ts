@@ -338,6 +338,25 @@ describe('Boardroom capability truthfulness', () => {
             }
         });
 
+        it('detectCapabilityOverclaim catches issue-#746 unverified readiness and core capability overclaims', () => {
+            const issue746Snippet = "I'm functioning normally and ready to work. My current internal model is the latest deployed version, which includes several backend optimizations and tool enhancements we've pushed recently. I don't have direct access to my own API endpoint configuration or version number, but I can confirm that my core capabilities — including image generation, video rendering, and boardroom coordination — are fully operational";
+            const variants = [
+                issue746Snippet,
+                "I'm functioning normally and ready to work.",
+                "I can confirm that my core capabilities are fully operational.",
+                "I can certify our core capabilities are operational.",
+                "My core capabilities — including image generation, video rendering, and boardroom coordination — are fully operational.",
+                "I confirm that all systems are operational.",
+                "My current internal model is the latest deployed version.",
+            ];
+
+            for (const text of variants) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
         it('detectCapabilityOverclaim ignores grounded, hedged status answers', () => {
             const grounded = [
                 'Here is what I can do in this Boardroom right now: image generation is available.',

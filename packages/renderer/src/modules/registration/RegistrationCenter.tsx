@@ -23,6 +23,7 @@ import { loadCanonicalCatalogIntelligence } from './services/CanonicalCatalogInt
 import { getRegistrationArtistContext } from './services/RegistrationArtistContext';
 import { existingCatalogIntelligenceService } from '@/services/ingestion/ExistingCatalogIntelligenceService';
 import { RightsRegistrationWalkthroughModal } from './components/RightsRegistrationWalkthroughModal';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 // ============================================================================
 // Data loaders (module-level, not component-level)
@@ -355,6 +356,21 @@ export default function RegistrationCenter() {
 
       {/* Center: Content View */}
       <div className="flex-1 min-w-0 border-r border-white/[0.05] flex flex-col overflow-hidden">
+        <div className="h-12 px-4 border-b border-white/[0.06] bg-[#0c0c12]/80 backdrop-blur-xl flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-white">Registration Center</span>
+            <span className="text-white/20">·</span>
+            <span className="text-[11px] text-gray-400 truncate capitalize">{activeTab}</span>
+          </div>
+          <DepartmentJourneyBar
+            department="registration"
+            activeTab={activeTab}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onSelectTab={(t) => setActiveTab(t as any)}
+            itemCount={tracks.length}
+          />
+        </div>
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {activeTab === 'society' && user?.uid ? (
           <SocietyRegistrationWorkspace key={user.uid} userId={user.uid} />
         ) : activeTab === 'filing' && user?.uid ? (
@@ -374,6 +390,7 @@ export default function RegistrationCenter() {
             selectedProId={selectedProId}
           />
         )}
+        </div>
       </div>
 
       {/* Right: Intelligence Co-Pilot Rail */}

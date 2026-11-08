@@ -27,6 +27,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { AgentModePicker } from '@/components/AgentModePicker';
 import { ProductSkillRegistry } from '@/services/agent/skills/ProductSkillRegistry';
+import { LiveConversationButton } from './LiveConversationButton';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 interface PromptAreaProps {
     className?: string;
@@ -65,6 +67,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         directTargetAgentId,
         activeDepartmentId,
         activeAgents,
+        isLiveActive,
+        livePhase,
+        activeSpeakingAgentId,
     } = useStore(useShallow(state => ({
         currentModule: state.currentModule,
         isRightPanelOpen: state.isRightPanelOpen,
@@ -87,7 +92,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         directTargetAgentId: state.directTargetAgentId,
         activeDepartmentId: state.activeDepartmentId,
         activeAgents: state.activeAgents,
+        isLiveActive: state?.isLiveConversationActive ?? false,
+        livePhase: state?.liveConversationPhase ?? 'idle',
+        activeSpeakingAgentId: state?.activeSpeakingAgentId ?? null,
     })));
+
+    const activeSpeakingIdentity = useMemo(() => {
+        const id = activeSpeakingAgentId || directTargetAgentId || activeDepartmentId || 'generalist';
+        return resolveAgentVisualIdentity(id);
+    }, [activeSpeakingAgentId, directTargetAgentId, activeDepartmentId]);
 
     const isBoardroom = conversationMode === 'boardroom';
     const isBoardroomBlocked = isBoardroom && (!activeAgents || activeAgents.length === 0);
@@ -431,11 +444,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         <div
             data-testid="command-bar-input-container"
             className={cn(
-                "glass transition-all relative focus-within:ring-2",
-                isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
-                isIndiiMode
-                    ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/30"
-                    : `${!isDocked ? colors.border : ''} ${colors.ring} bg-white/4 shadow-panel`,
+                "glass transition-all relative",
+                isDocked
+                    ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1"
+                    : cn(
+                        "rounded-3xl border border-white/10",
+                        isIndiiMode
+                            ? "shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/25"
+                            : `${colors.border} ${colors.ring} bg-white/4 shadow-panel`
+                    ),
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className
             )}
@@ -443,6 +460,40 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
+            {/* Ambient Faded-Light Glow Aura (tinted to active speaking agent) */}
+            <div
+                aria-hidden="true"
+                className={cn(
+                    "pointer-events-none absolute -inset-2.5 rounded-[28px] transition-opacity duration-700 blur-2xl -z-10",
+                    isLiveActive ? "opacity-100" : "opacity-0"
+                )}
+                style={{
+                    background: `radial-gradient(ellipse at 50% 50%, ${activeSpeakingIdentity.glow} 0%, transparent 72%)`,
+                }}
+            />
+
+            {/* Live Conversation Status Pill Banner */}
+            {isLiveActive && (
+                <div className="flex items-center justify-between px-3.5 pt-2 pb-0.5 text-[11px] font-medium text-gray-300">
+                    <span className="flex items-center gap-1.5">
+                        <span
+                            className="size-2 rounded-full animate-pulse"
+                            style={{ backgroundColor: activeSpeakingIdentity.accent }}
+                        />
+                        <span className="font-semibold text-white">
+                            {livePhase === 'speaking'
+                                ? `Speaking: ${activeSpeakingIdentity.displayName}`
+                                : livePhase === 'thinking'
+                                    ? 'Thinking…'
+                                    : 'Live Conversation: Listening'}
+                        </span>
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                        {livePhase === 'speaking' ? 'Click interrupt or speak' : 'Speak naturally (barge-in enabled)'}
+                    </span>
+                </div>
+            )}
+
             <AnimatePresence>
                 {isDragging && (
                     <motion.div
@@ -465,7 +516,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 value={commandBarInput}
                 onValueChange={handleInputValueChange}
                 onSubmit={() => handleSubmit()}
-                className="bg-transparent border-none shadow-none py-1"
+                className="bg-transparent border-0 rounded-none shadow-none py-1 focus-within:ring-0 focus-within:ring-offset-0 focus-within:ring-transparent focus-visible:ring-0"
             >
                 <PromptInputTextarea
                     placeholder={
@@ -505,6 +556,18 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 disabled={!voiceSupported}
                                 accent={isIndiiMode ? 'indii' : 'glass'}
                                 sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
+                            />
+                        </PromptInputAction>
+
+                        {/* Two-Way Multimodal Conversation Button (Circle Waveform + Sparkle) */}
+                        <PromptInputAction tooltip={
+                            isLiveActive
+                                ? `Two-Way Conversation (${activeSpeakingIdentity.displayName}): Active`
+                                : "Two-Way Multimodal Conversation"
+                        }>
+                            <LiveConversationButton
+                                sizeVariant={isDocked ? 'docked' : isMobile ? 'mobile' : 'default'}
+                                disabled={isLocalProcessing || isAgentProcessing}
                             />
                         </PromptInputAction>
 

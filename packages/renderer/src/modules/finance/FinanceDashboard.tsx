@@ -22,6 +22,7 @@ import { motion } from 'motion/react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import {
     Briefcase, TrendingUp,
     DollarSign, ArrowUpRight, Wallet, Clock, Scale,
@@ -122,6 +123,15 @@ export default function FinanceDashboard() {
             bgBlobClass="bg-dept-royalties/8"
             iconBgClass="bg-linear-to-br from-dept-royalties to-dept-royalties-glow"
             iconShadowClass="shadow-dept-royalties/20"
+            actions={
+                <DepartmentJourneyBar
+                    department="finance"
+                    activeTab={currentTab}
+                    onSelectTab={handleTabChange}
+                    itemCount={expenses.length}
+                    accentColorClass="text-emerald-300 border-emerald-400/25 bg-emerald-400/10 hover:bg-emerald-400/20"
+                />
+            }
             leftPanel={
                 <>
                     <QuickStatsPanel

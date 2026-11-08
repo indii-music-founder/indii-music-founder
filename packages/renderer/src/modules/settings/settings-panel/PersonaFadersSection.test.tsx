@@ -32,7 +32,7 @@ describe('PersonaFadersSection', () => {
         render(<PersonaFadersSection />);
 
         expect(screen.getByTestId('persona-faders-section')).toBeInTheDocument();
-        expect(screen.getByText('AI Persona & Personality Sliders')).toBeInTheDocument();
+        expect(screen.getByText('Specialist Posture & Personality Sliders')).toBeInTheDocument();
 
         // Check persona tabs
         expect(screen.getAllByText('Manager (Conductor)').length).toBeGreaterThanOrEqual(1);

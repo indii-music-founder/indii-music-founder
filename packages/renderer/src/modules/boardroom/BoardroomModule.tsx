@@ -7,9 +7,9 @@ import ParticipantSelector from './components/ParticipantSelector';
 import { BoardroomTable } from './components/BoardroomTable';
 import { BoardroomConversationPanel } from './components/BoardroomConversationPanel';
 import { useMobile } from '@/hooks/useMobile';
-import { HarnessDecisionDigest } from './components/HarnessDecisionDigest';
+import { BoardroomJourney } from './components/BoardroomJourney';
 
-import { ArrowLeft, Users, Layers, Bot } from 'lucide-react';
+import { ArrowLeft, Users, Layers, Bot, Network } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
@@ -114,51 +114,80 @@ export function BoardroomModule() {
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="fixed inset-0 z-[99999] bg-bg-dark flex flex-col"
             >
-                {/* Top Bar */}
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-white/5 shrink-0">
-                    <button
-                        onClick={() => setConversationMode('direct')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
-                        title="Exit Boardroom"
-                        aria-label="Back to Studio"
-                    >
-                        <ArrowLeft size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Back to Studio</span>
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                            Boardroom HQ
-                        </span>
+                {/* Single Unified 48px Header Row */}
+                <div
+                    data-testid="boardroom-header"
+                    className="flex items-center justify-between px-3 md:px-4 py-2 h-12 gap-2 bg-[#060608]/95 backdrop-blur-xl border-b border-white/6 shrink-0 select-none z-20"
+                >
+                    {/* Left: Navigation, Identity & Integrated Executive Missions */}
+                    <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                        <div className="flex items-center gap-0.5 shrink-0 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">
+                            <button
+                                onClick={() => setConversationMode('direct')}
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-[11px] font-semibold"
+                                title="Exit Boardroom"
+                                aria-label="Back to Studio"
+                                data-testid="boardroom-back-btn"
+                            >
+                                <ArrowLeft size={13} />
+                                <span className="hidden sm:inline">Back to Studio</span>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-gray-400 shrink-0">
+                            <Network size={15} className="text-indigo-400" />
+                            <h1 className="text-xs font-bold text-indigo-300 tracking-tight uppercase">
+                                Boardroom HQ
+                            </h1>
+                        </div>
+
                         {(activeCount > 0 || isAnyPhone) && (
                             <button
                                 onClick={() => isAnyPhone && setIsMobileSeatingOpen(true)}
-                                className={`flex items-center gap-1 text-[10px] ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-white/30 bg-white/5 hover:bg-white/10 border-white/5'} px-2 py-0.5 rounded-full border transition-colors ${!isAnyPhone && 'cursor-default hover:bg-white/5'}`}
+                                className={`flex items-center gap-1 text-[10px] font-mono ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-gray-400 bg-white/[0.03] hover:bg-white/10 border-white/8'} px-2 py-0.5 rounded-md border transition-colors shrink-0 ${!isAnyPhone && 'cursor-default hover:bg-white/[0.03]'}`}
                                 aria-label="Seat agents"
                             >
                                 <Users size={10} />
-                                {activeCount > 0 ? `${activeCount} active` : 'Seat Agents'}
+                                <span>{activeCount > 0 ? `${activeCount} active` : 'Seat Agents'}</span>
                             </button>
                         )}
+
+                        <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
+
+                        {/* Integrated Executive Missions, Jev Recommendation & Meta-Harness Pill */}
+                        <BoardroomJourney />
                     </div>
-                    <div className="flex-1" />
-                    <button 
-                        onClick={() => setIsSwarmFeedOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-all border border-indigo-500/20 mr-2"
-                        title="View Swarm Collaboration Feed"
-                        aria-label="Swarm Feed"
-                    >
-                        <Bot size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Swarm Feed</span>
-                    </button>
-                    <button 
-                        onClick={() => setIsTrackerOpen(true)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full ${getColorForModule('agent').bg} hover:${getColorForModule('agent').bg.replace('/10', '/20')} ${getColorForModule('agent').text} transition-all border ${getColorForModule('agent').border} mr-2`}
-                        title="View Active Plans"
-                        aria-label="Living Plans"
-                    >
-                        <Layers size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Living Plans</span>
-                    </button>
+
+                    {/* Right: Consolidated Utility Dock */}
+                    <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                        <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
+                            <button
+                                onClick={() => setIsSwarmFeedOpen(true)}
+                                data-testid="boardroom-swarm-feed-btn"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider text-indigo-300 hover:text-white hover:bg-indigo-500/15"
+                                title="View Swarm Collaboration Feed"
+                                aria-label="Swarm Feed"
+                            >
+                                <Bot size={11} className="text-indigo-400" />
+                                <span className="hidden sm:inline">Swarm Feed</span>
+                            </button>
+                            <button
+                                onClick={() => setIsTrackerOpen(true)}
+                                data-testid="boardroom-living-plans-btn"
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider ${getColorForModule('agent').text} hover:bg-white/8`}
+                                title="View Active Plans"
+                                aria-label="Living Plans"
+                            >
+                                <Layers size={11} />
+                                <span className="hidden sm:inline">Living Plans</span>
+                            </button>
+                        </div>
+
+                        <div className="hidden lg:flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0" title="Executive Swarm Status">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest">ONLINE</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Split-Panel Content */}
@@ -182,14 +211,13 @@ export function BoardroomModule() {
                         </motion.div>
                     )}
 
-                    {/* Right: Persistent Conversation Panel */}
+                    {/* Right: Persistent Conversation Panel (No stacked HarnessDecisionDigest row above it) */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
                         className={`flex flex-col min-h-0 min-w-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1 overflow-hidden`}
                     >
-                        <HarnessDecisionDigest />
                         <BoardroomConversationPanel messages={boardroomMessages} />
                     </motion.div>
 

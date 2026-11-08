@@ -29,7 +29,7 @@ interface QuickAction {
  * Expanded to cover all key departments with department colors
  */
 const ACTIONS: QuickAction[] = [
-    { id: 'creative', name: 'Creative', icon: Sparkles, hint: 'AI image generation studio' },
+    { id: 'creative', name: 'Creative', icon: Sparkles, hint: 'Creative image generation studio' },
     { id: 'marketing', name: 'Marketing', icon: Megaphone, hint: 'Campaigns & brand copy' },
     { id: 'distribution', name: 'Distribution', icon: Globe, hint: 'Release management' },
     { id: 'finance', name: 'Finance', icon: DollarSign, hint: 'Revenue & royalties' },

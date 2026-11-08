@@ -20,7 +20,16 @@ vi.mock('firebase/auth', () => ({
     },
 }));
 
-vi.mock('@/services/firebase', () => ({ auth: { currentUser: { uid: 'user-1' } } }));
+vi.mock('@/services/firebase', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        auth: { currentUser: { uid: 'user-1' } },
+        remoteConfig: actual?.remoteConfig ?? {},
+        functions: actual?.functions ?? {},
+        db: actual?.db ?? {},
+    };
+});
 
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     DESKTOP_HEARTBEAT_STALE_MS: 120_000,
@@ -55,7 +64,7 @@ vi.mock('@/core/context/VoiceContext', () => ({
 vi.mock('@/components/AgentModePicker', () => ({ AgentModePicker: () => <div>Agent picker</div> }));
 vi.mock('@/services/commands/EntryCommandRegistry', () => ({ resolveEntryCommand: () => undefined }));
 vi.mock('@/utils/logger', () => ({
-    logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
+    logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
 vi.mock('motion/react', () => {

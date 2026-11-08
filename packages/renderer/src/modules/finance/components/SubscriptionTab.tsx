@@ -111,21 +111,21 @@ export const SubscriptionTab = () => {
                             {/* Images */}
                             <div className="space-y-2">
                                 <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-gray-400 font-medium tracking-tight uppercase">AI Images</span>
+                                    <span className="text-gray-400 font-medium tracking-tight uppercase">Images</span>
                                     <span className="text-white font-mono">{usage.imagesGenerated} / {usage.imagesPerMonth}</span>
                                 </div>
                                 <Progress value={(usage.imagesGenerated / usage.imagesPerMonth) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-creative" />
-                                <p className="text-[10px] text-gray-500">Monthly image synthesis limit</p>
+                                <p className="text-[10px] text-gray-500">Monthly image generation limit</p>
                             </div>
 
                             {/* Video */}
                             <div className="space-y-2">
                                 <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-gray-400 font-medium tracking-tight uppercase">AI Video</span>
+                                    <span className="text-gray-400 font-medium tracking-tight uppercase">Video</span>
                                     <span className="text-white font-mono">{usage.videoDurationMinutes.toFixed(1)} / {usage.videoTotalMinutes}m</span>
                                 </div>
                                 <Progress value={(usage.videoDurationMinutes / usage.videoTotalMinutes) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-royalties" />
-                                <p className="text-[10px] text-gray-500">AI video generation compute</p>
+                                <p className="text-[10px] text-gray-500">Video generation compute</p>
                             </div>
 
                             {/* Tokens */}
@@ -135,7 +135,7 @@ export const SubscriptionTab = () => {
                                     <span className="text-white font-mono">{(usage.aiChatTokensUsed / 1000).toFixed(1)}k / {(usage.aiChatTokensPerMonth / 1000).toFixed(1)}k</span>
                                 </div>
                                 <Progress value={(usage.aiChatTokensUsed / usage.aiChatTokensPerMonth) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-marketing" />
-                                <p className="text-[10px] text-gray-500">AI intelligence token quota</p>
+                                <p className="text-[10px] text-gray-500">Workspace intelligence token quota</p>
                             </div>
 
                             {/* Storage */}

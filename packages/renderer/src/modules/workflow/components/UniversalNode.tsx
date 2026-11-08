@@ -306,7 +306,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             const src = (asset as WorkflowResultAsset).base64 ? `data:${(asset as WorkflowResultAsset).mimeType || 'image/png'};base64,${(asset as WorkflowResultAsset).base64}` : resultString;
             return (
                 <div className="relative w-full h-full">
-                    <img src={src} alt="AI Result" className="w-full h-full object-cover" />
+                    <img src={src} alt="Workflow Result" className="w-full h-full object-cover" />
                     {(asset as WorkflowResultAsset).aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />

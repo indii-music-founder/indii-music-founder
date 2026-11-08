@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { DEPARTMENTS } from '@/services/agent/departments';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
 import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, User, LayoutGrid, Check, X } from 'lucide-react';
+import { Users, User, LayoutGrid, Check, X, Volume2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { agentRegistry } from '@/services/agent/registry';
+import { resolveAgentVoice, CURATED_VOICE_OPTIONS } from '@/services/agent/AgentVoiceRegistry';
+import { voiceService } from '@/services/intelligence/VoiceService';
 
 /**
  * AgentModePicker — Hybrid hierarchical agent selector.
@@ -26,6 +28,8 @@ interface AgentModePickerProps {
     onClose?: () => void;
 }
 
+const EMPTY_VOICE_MAP: Readonly<Record<string, string>> = Object.freeze({});
+
 export function AgentModePicker({ 
     className,
     allowAutomaticRouting = true,
@@ -37,13 +41,17 @@ export function AgentModePicker({
     onAgentChange,
     onClose,
 }: AgentModePickerProps) {
+    const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
     const store = useStore(useShallow(state => ({
         conversationMode: state.conversationMode,
         activeDepartmentId: state.activeDepartmentId,
         directTargetAgentId: state.directTargetAgentId,
+        agentVoiceOverrides: state?.agentVoiceOverrides ?? EMPTY_VOICE_MAP,
         setConversationMode: state.setConversationMode,
         setActiveDepartmentId: state.setActiveDepartmentId,
         setDirectTargetAgentId: state.setDirectTargetAgentId,
+        setAgentVoiceOverride: state.setAgentVoiceOverride,
     })));
 
     // Use controlled props if provided, otherwise fallback to store
@@ -54,6 +62,22 @@ export function AgentModePicker({
     const setConversationMode = onModeChange ?? store.setConversationMode;
     const setActiveDepartmentId = onDepartmentChange ?? store.setActiveDepartmentId;
     const setDirectTargetAgentId = onAgentChange ?? store.setDirectTargetAgentId;
+
+    const effectiveAgentId = directTargetAgentId || activeDepartmentId || 'generalist';
+    const currentVoice = resolveAgentVoice(effectiveAgentId, store.agentVoiceOverrides);
+    const agentName = agentRegistry.get?.(effectiveAgentId)?.name || (effectiveAgentId === 'generalist' ? 'indii Conductor' : effectiveAgentId);
+
+    const handlePreviewVoice = async () => {
+        if (isPreviewPlaying) return;
+        setIsPreviewPlaying(true);
+        try {
+            await voiceService.speak(`Hello! I am ${agentName}. Ready whenever you are.`, currentVoice);
+        } catch {
+            // ignore
+        } finally {
+            setIsPreviewPlaying(false);
+        }
+    };
 
     const modes = ([
         { id: 'orchestrated', label: 'Auto', icon: LayoutGrid, desc: 'Automatic routing' },
@@ -244,6 +268,47 @@ export function AgentModePicker({
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Curated Voice Control Row ("Less is More") */}
+            <div className="pt-2 border-t border-white/10 px-2 flex items-center justify-between gap-2">
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Voice Persona</span>
+                    <span className="text-[11px] font-medium text-white/90 truncate">{agentName}</span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    <select
+                        aria-label="Select Agent Voice"
+                        value={currentVoice}
+                        onChange={(e) => store.setAgentVoiceOverride(effectiveAgentId, e.target.value)}
+                        className="bg-white/10 hover:bg-white/15 border border-white/15 rounded-md px-2 py-1 text-[11px] font-medium text-white outline-none cursor-pointer focus:ring-1 focus:ring-blue-400"
+                    >
+                        {!CURATED_VOICE_OPTIONS.some(opt => opt.voice === currentVoice) && (
+                            <option key={currentVoice} value={currentVoice} className="bg-[#12161f] text-white">
+                                {currentVoice} (Default)
+                            </option>
+                        )}
+                        {CURATED_VOICE_OPTIONS.map((opt) => (
+                            <option key={opt.voice} value={opt.voice} className="bg-[#12161f] text-white">
+                                {opt.voice} ({opt.tone})
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        type="button"
+                        onClick={handlePreviewVoice}
+                        disabled={isPreviewPlaying}
+                        aria-label={`Preview voice for ${agentName}`}
+                        title="Preview voice"
+                        className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+                    >
+                        {isPreviewPlaying ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                        ) : (
+                            <Volume2 className="w-3.5 h-3.5 text-blue-400" />
+                        )}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

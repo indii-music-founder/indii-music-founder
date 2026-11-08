@@ -1,8 +1,15 @@
 import { StateCreator } from 'zustand';
 import type { EntryCommandWorkflowState } from '@/services/commands/EntryCommandRegistry';
 import { EMPTY_ENTRY_COMMAND_STATE } from '@/services/commands/EntryCommandRegistry';
+import {
+    loadPersistedVoiceOverrides,
+    savePersistedVoiceOverrides,
+    isGeminiTTSVoice,
+    type GeminiTTSVoice,
+} from '@/services/agent/AgentVoiceRegistry';
 
 export type AgentMode = 'assistant' | 'autonomous' | 'creative' | 'research';
+export type LiveConversationPhase = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 /**
  * ConversationMode — user-selected routing and hierarchical execution mode.
@@ -85,6 +92,15 @@ export interface AgentUISlice {
     setEntryCommandWorkflow: (workflow: EntryCommandWorkflowState) => void;
     updateEntryCommandWorkflow: (updates: Partial<EntryCommandWorkflowState>) => void;
     clearEntryCommandWorkflow: () => void;
+
+    isLiveConversationActive: boolean;
+    liveConversationPhase: LiveConversationPhase;
+    activeSpeakingAgentId: string | null;
+    agentVoiceOverrides: Record<string, string>;
+    setLiveConversationActive: (active: boolean) => void;
+    setLiveConversationPhase: (phase: LiveConversationPhase) => void;
+    setActiveSpeakingAgentId: (agentId: string | null) => void;
+    setAgentVoiceOverride: (agentId: string, voice: string) => void;
 }
 
 export function buildAgentUIState(
@@ -111,6 +127,10 @@ export function buildAgentUIState(
         isKnowledgeBaseEnabled: true,
         agentWindowSize: { width: 500, height: 800 },
         entryCommandWorkflow: { ...EMPTY_ENTRY_COMMAND_STATE },
+        isLiveConversationActive: false,
+        liveConversationPhase: 'idle',
+        activeSpeakingAgentId: null,
+        agentVoiceOverrides: loadPersistedVoiceOverrides(),
 
         toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
         setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
@@ -158,6 +178,22 @@ export function buildAgentUIState(
             },
         })),
         clearEntryCommandWorkflow: () => set({ entryCommandWorkflow: { ...EMPTY_ENTRY_COMMAND_STATE } }),
+
+        setLiveConversationActive: (active: boolean) => set({
+            isLiveConversationActive: active,
+            liveConversationPhase: active ? 'listening' : 'idle',
+            ...(active ? {} : { activeSpeakingAgentId: null }),
+        }),
+        setLiveConversationPhase: (phase: LiveConversationPhase) => set({ liveConversationPhase: phase }),
+        setActiveSpeakingAgentId: (agentId: string | null) => set({ activeSpeakingAgentId: agentId }),
+        setAgentVoiceOverride: (agentId: string, voice: string) => set((state) => {
+            const normalized = agentId.trim().toLowerCase();
+            const next = { ...state.agentVoiceOverrides, [normalized]: voice };
+            if (isGeminiTTSVoice(voice)) {
+                savePersistedVoiceOverrides(next as Record<string, GeminiTTSVoice>);
+            }
+            return { agentVoiceOverrides: next };
+        }),
 
         requestApproval: (content: string, type: string): Promise<boolean> => {
             return new Promise((resolve) => {

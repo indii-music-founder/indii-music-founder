@@ -138,7 +138,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
 
         try {
             const sections = await FreeMiniCampaignService.analyzeSongForHook(audioFile, userId || '', durationSeconds);
-            setLoadingLabel('Jev is choosing the strongest teaser moment...');
+            setLoadingLabel('Selecting the strongest teaser moment...');
             const hook = await judgeSocialAudioSnippetSelection(sections, 15);
             setLoadingLabel('Preparing your campaign assets...');
             const [squareVisualUrl, storyVisualUrl, audioClip] = await Promise.all([
@@ -234,7 +234,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             Guided Free Mini-Campaign
                         </h2>
                         <p className="mt-1 text-sm text-neutral-400">
-                            Gemini listens for teaser moments, Jev helps choose one, and your browser exports the clip.
+                            Our audio tools identify key teaser moments, select the best hook, and your browser exports the clip.
                         </p>
                     </div>
                     <button
@@ -399,7 +399,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                                         <div className="mt-3 font-semibold text-white">15s Song Teaser</div>
                                         <p className="text-xs text-neutral-400">
                                             {pack.audioHook
-                                                ? `${pack.audioHook.strategy.startsWith('System One selected') ? 'Jev picked' : 'Automatic selection'}: ${pack.audioHook.section.toLowerCase().replace('_', ' ')} · ${pack.audioHook.potential}/5 hook potential`
+                                                ? `${pack.audioHook.strategy.startsWith('System One selected') ? 'Selected hook' : 'Automatic selection'}: ${pack.audioHook.section.toLowerCase().replace('_', ' ')} · ${pack.audioHook.potential}/5 hook potential`
                                                 : '15-second excerpt from your track'}
                                         </p>
                                         <audio

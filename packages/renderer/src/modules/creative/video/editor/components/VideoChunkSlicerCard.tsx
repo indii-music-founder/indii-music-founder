@@ -113,7 +113,7 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
 
         if (frameMetrics && frameMetrics.length > 0) {
             const keptCount = generatedChunks.filter((c) => c.verdict?.isKeep).length;
-            toast.success(`Jev Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
+            toast.success(`Smart Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
         } else {
             toast.success(`Sliced footage into ${generatedChunks.length} segments (${chunkDuration}s each). Ready for timeline placement.`);
         }
@@ -191,7 +191,7 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
                     </div>
                     <div>
                         <h4 className="text-sm font-semibold text-gray-100 flex items-center gap-1.5">
-                            Jev Smart Slicer
+                            Smart Slicer
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 font-mono">
                                 Vision QC
                             </span>

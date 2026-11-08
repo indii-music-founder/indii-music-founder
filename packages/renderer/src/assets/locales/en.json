@@ -97,7 +97,7 @@
     },
     "legal": {
         "title": "Legal",
-        "subtitle": "AI-POWERED CONTRACT ANALYSIS",
+        "subtitle": "AUTOMATED CONTRACT ANALYSIS",
         "tabs": {
             "analyzer": "Contract Analysis",
             "dmca": "DMCA Notices",
@@ -105,16 +105,16 @@
         }
     },
     "agent": {
-        "title": "AI Assistant",
+        "title": "Assistant",
         "placeholder": "Ask me anything…",
         "thinking": "Thinking…",
-        "sidecarOnline": "AI Service Online",
-        "sidecarOffline": "AI Service Offline",
-        "sidecarChecking": "Checking AI Service…",
-        "restart": "Restart AI Service",
+        "sidecarOnline": "Service Online",
+        "sidecarOffline": "Service Offline",
+        "sidecarChecking": "Checking Service…",
+        "restart": "Restart Service",
         "scout": {
             "title": "The Scout",
-            "description": "AI-powered venue scouting and booking intelligence.",
+            "description": "Venue scouting and booking intelligence.",
             "ready": "Ready to scan",
             "initializing": "Initializing scan...",
             "scanCompleteNoNew": "Scan complete. No new venues found.",

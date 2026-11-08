@@ -312,7 +312,7 @@ export function SplitSheetEscrow() {
                             <div className="flex items-center justify-between">
                                 <span className="font-bold uppercase tracking-wider text-[10px] text-purple-300 flex items-center gap-1.5">
                                     <ShieldCheck size={12} className="text-purple-400" />
-                                    Jev Rights Scope: {splitAudit.rightsScope.replace(/_/g, ' ')}
+                                    Rights Scope: {splitAudit.rightsScope.replace(/_/g, ' ')}
                                 </span>
                                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${splitAudit.splitRiskLevel > 1 ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
                                     Risk Score: {splitAudit.splitRiskLevel}/3

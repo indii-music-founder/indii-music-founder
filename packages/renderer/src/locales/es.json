@@ -248,8 +248,20 @@
   "settings": {
     "title": "Configuración",
     "sections": {
+      "wallet": {
+        "label": "Billetera de Créditos",
+        "title": "Billetera de Créditos y Microtransacciones",
+        "description": "Saldo, paquetes de recarga e historial de transacciones"
+      },
+      "personas": {
+        "label": "Personas de Agentes",
+        "title": "Personas de Agentes",
+        "description": "Controles deslizantes de personalidad y postura para cada agente"
+      },
       "desktop": {
-        "label": "Escritorio y Actualizaciones"
+        "label": "Escritorio y Actualizaciones",
+        "title": "Escritorio y Actualizaciones",
+        "description": "Versión de la aplicación, controles de actualización y canal de lanzamiento"
       },
       "profile": {
         "label": "Perfil",

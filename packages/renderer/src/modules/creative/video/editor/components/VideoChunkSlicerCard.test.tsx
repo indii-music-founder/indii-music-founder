@@ -59,7 +59,7 @@ describe('VideoChunkSlicerCard', () => {
 
     it('renders slicer card with initial placeholder state', () => {
         render(<VideoChunkSlicerCard videoDurationSeconds={20} />);
-        expect(screen.getByText('Jev Smart Slicer')).toBeInTheDocument();
+        expect(screen.getByText('Smart Slicer')).toBeInTheDocument();
         expect(screen.getByText('No slices generated yet')).toBeInTheDocument();
     });
 

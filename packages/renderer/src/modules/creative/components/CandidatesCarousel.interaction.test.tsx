@@ -67,7 +67,7 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('renders Jev recommended pick badge when candidates are presented', async () => {
+    it('renders recommended pick badge when candidates are presented', async () => {
         render(
             <CandidatesCarousel
                 candidates={mockCandidates}
@@ -79,6 +79,6 @@ describe('CandidatesCarousel Interaction (🖱️ Click)', () => {
         // When judgeTopImageVariationCandidate resolves (defaulting to c1 as first candidate fallback)
         const badge = await screen.findByTestId('jev-recommended-badge');
         expect(badge).toBeInTheDocument();
-        expect(badge).toHaveTextContent('⭐ Jev Pick');
+        expect(badge).toHaveTextContent('⭐ Top Pick');
     });
 });

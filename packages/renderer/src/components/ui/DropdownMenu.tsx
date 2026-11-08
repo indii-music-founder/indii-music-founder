@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 /**
  * DropdownMenu — thin house wrapper over @radix-ui/react-dropdown-menu
@@ -16,6 +16,70 @@ import { Check, ChevronDown } from 'lucide-react';
 export const DropdownMenu = DropdownMenuPrimitive.Root;
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuGroup = DropdownMenuPrimitive.Group;
+export const DropdownMenuSub = DropdownMenuPrimitive.Sub;
+export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
+export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+export function DropdownMenuSubTrigger({
+    children,
+    className = '',
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.SubTrigger>) {
+    return (
+        <DropdownMenuPrimitive.SubTrigger
+            className={`flex cursor-pointer select-none items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-gray-300 outline-none transition-colors data-highlighted:bg-white/5 data-[state=open]:bg-white/5 ${className}`}
+            {...props}
+        >
+            {children}
+            <ChevronRight size={14} className="text-gray-500" />
+        </DropdownMenuPrimitive.SubTrigger>
+    );
+}
+
+export function DropdownMenuSubContent({
+    children,
+    className = '',
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+    return (
+        <DropdownMenuPrimitive.Portal>
+            <DropdownMenuPrimitive.SubContent
+                sideOffset={4}
+                className={`z-[130] min-w-[200px] max-h-[300px] overflow-y-auto custom-scrollbar rounded-xl border border-gray-700 bg-[#141821] p-1.5 shadow-2xl shadow-black/60 ${className}`}
+                {...props}
+            >
+                {children}
+            </DropdownMenuPrimitive.SubContent>
+        </DropdownMenuPrimitive.Portal>
+    );
+}
+
+export function DropdownMenuSeparator({
+    className = '',
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+    return (
+        <DropdownMenuPrimitive.Separator
+            className={`my-1 h-px bg-white/10 ${className}`}
+            {...props}
+        />
+    );
+}
+
+export function DropdownMenuLabel({
+    children,
+    className = '',
+    ...props
+}: ComponentProps<typeof DropdownMenuPrimitive.Label>) {
+    return (
+        <DropdownMenuPrimitive.Label
+            className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 ${className}`}
+            {...props}
+        >
+            {children}
+        </DropdownMenuPrimitive.Label>
+    );
+}
 
 export function DropdownMenuTriggerButton({
     children,

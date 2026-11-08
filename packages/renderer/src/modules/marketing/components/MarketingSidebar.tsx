@@ -190,7 +190,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
 
                 <div className="px-3 mt-auto">
                     <div className="p-4 rounded-xl bg-dept-marketing/10 border border-dept-marketing/20 relative overflow-hidden group">
-                        <h4 className="font-semibold text-dept-marketing mb-1 relative z-10">AI Insights</h4>
+                        <h4 className="font-semibold text-dept-marketing mb-1 relative z-10">Campaign Insights</h4>
                         <p className="text-xs text-gray-400 leading-relaxed relative z-10">
                             Check prediction scores before launching to maximize reach.
                         </p>

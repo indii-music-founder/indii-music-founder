@@ -21,6 +21,7 @@ import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { resolveTouringTab } from '@/modules/handoffViews';
 import { createTouringStopId } from './itinerary';
 
@@ -528,6 +529,19 @@ const RoadManager: React.FC = () => {
 
                 {/* ── CENTER — Main Content ──────────────────────────── */}
                 <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar selection:bg-yellow-500/30">
+                    <div className="h-12 px-6 border-b border-white/[0.06] bg-[#0c0c12]/80 backdrop-blur-xl flex items-center justify-between gap-4 shrink-0 sticky top-0 z-20">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs font-extrabold uppercase tracking-wider text-white">Road / Tour Manager</span>
+                            <span className="text-white/20">·</span>
+                            <span className="text-[11px] text-gray-400 capitalize truncate">{activeTab}</span>
+                        </div>
+                        <DepartmentJourneyBar
+                            department="road"
+                            activeTab={activeTab}
+                            onSelectTab={(t) => setActiveTab(t as TouringTab)}
+                            itemCount={itinerary?.stops?.length ?? 0}
+                        />
+                    </div>
                     <main className="flex-1 p-6 md:p-8 w-full">
                         <AnimatePresence mode="wait">
                             <motion.div

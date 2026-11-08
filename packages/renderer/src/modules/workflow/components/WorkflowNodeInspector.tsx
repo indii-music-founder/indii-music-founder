@@ -270,7 +270,7 @@ export default function WorkflowNodeInspector() {
                         )}
 
                         {!showAudition && (
-                            <p className="text-[11px] text-gray-500">Get 3 AI-generated creative directions for this node. Click to expand.</p>
+                            <p className="text-[11px] text-gray-500">Get 3 suggested creative directions for this node. Click to expand.</p>
                         )}
                     </div>
                 )}

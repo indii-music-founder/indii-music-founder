@@ -574,16 +574,9 @@ export class BaseAgent implements SpecializedAgent {
                 const { text, voice } = args as { text: string; voice?: string };
                 const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
                 const { audioService } = await importWithRetry(() => import('@/services/audio/AudioService'));
+                const { resolveAgentVoice, isGeminiTTSVoice } = await importWithRetry(() => import('@/services/agent/AgentVoiceRegistry'));
 
-                const VOICE_MAP: Record<string, string> = {
-                    'kyra': 'Kore',
-                    'liora': 'Aoede',
-                    'mistral': 'Charon',
-                    'seraph': 'Leda',
-                    'vance': 'Puck'
-                };
-
-                const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
+                const selectedVoice = isGeminiTTSVoice(voice) ? voice : resolveAgentVoice(this.id);
 
                 try {
                     const response = await AutonomousIntelligence.generateSpeech(text, selectedVoice);

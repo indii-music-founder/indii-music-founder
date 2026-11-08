@@ -17,7 +17,13 @@ import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
 import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 import { SavedArtworkPanel } from './CanvasEditor/SavedArtworkPanel';
-import { judgeCreativePromptModeIntent, type CreativePromptModeVerdict } from '@/config/typesafeJudgments';
+import {
+    judgeCreativePromptModeIntent,
+    judgeCreativeStudioConfigPreset,
+    deterministicCreativeStudioConfigFallback,
+    type CreativePromptModeVerdict,
+    type CreativeStudioConfigPresetVerdict,
+} from '@/config/typesafeJudgments';
 
 // ISSUE-788: the backend only special-cases '9:16' for a Veo video request
 // and silently coerces every other aspect ratio to '16:9'
@@ -26,6 +32,7 @@ import { judgeCreativePromptModeIntent, type CreativePromptModeVerdict } from '@
 const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 import { DropdownMenu, DropdownMenuTriggerButton, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/DropdownMenu';
+import { BrandPromptAdditivesMenu } from './BrandPromptAdditivesMenu';
 
 export default function DirectGenerationTab() {
     const toast = useToast();
@@ -66,7 +73,7 @@ export default function DirectGenerationTab() {
         cancelJob
     } = useDirectGeneration();
 
-    const [activeSection, setActiveSection] = useState<'basics' | 'advanced'>('basics');
+    const [, setActiveSection] = useState<'basics' | 'advanced'>('basics');
     const [previewedAssetId, setPreviewedAssetId] = useState<string | null>(null);
     const latestItem = results.find(item => item.type === mode);
     const isAssetPreviewOpen = !!latestItem && previewedAssetId === latestItem.id;
@@ -86,16 +93,6 @@ export default function DirectGenerationTab() {
         ...(characterReferences.length ? [`Characters: ${characterReferences.length} reference${characterReferences.length === 1 ? '' : 's'}`] : []),
     ] : [];
 
-    const quickModifiers = [
-        'Cinematic Lighting',
-        '8k Photorealistic',
-        'Watercolor Vibe',
-        'Editorial Portrait',
-        'Leica SL2 50mm',
-        'Analog Film Grain',
-        '3D Octane Render',
-        'Surrealist Dream'
-    ];
 
     const aspectRatios = [
         { id: '1:1', label: 'Square', desc: 'Cover Art / Social', w: 'w-6', h: 'h-6' },
@@ -138,6 +135,47 @@ export default function DirectGenerationTab() {
     const directorFrames = Math.round((resolvedDuration || 0) * directorFps);
 
     const [promptModeVerdict, setPromptModeVerdict] = useState<CreativePromptModeVerdict | null>(null);
+    const [configPresetVerdict, setConfigPresetVerdict] = useState<CreativeStudioConfigPresetVerdict>(() =>
+        deterministicCreativeStudioConfigFallback({
+            mode: mode === 'video' ? 'video' : 'image',
+            prompt: localPrompt,
+            aspectRatio: studioControls.aspectRatio,
+            model: studioControls.model,
+        }),
+    );
+
+    // JEV System One: Evaluate unified studio configuration preset (Basics + Advanced)
+    useEffect(() => {
+        const activeMode: 'image' | 'video' = mode === 'video' ? 'video' : 'image';
+        setConfigPresetVerdict(
+            deterministicCreativeStudioConfigFallback({
+                mode: activeMode,
+                prompt: localPrompt,
+                aspectRatio: studioControls.aspectRatio,
+                model: studioControls.model,
+            }),
+        );
+
+        let isCurrent = true;
+        const timer = setTimeout(() => {
+            if (typeof judgeCreativeStudioConfigPreset !== 'function') return;
+            void judgeCreativeStudioConfigPreset({
+                mode: activeMode,
+                prompt: localPrompt,
+                aspectRatio: studioControls.aspectRatio,
+                model: studioControls.model,
+            }).then((verdict) => {
+                if (isCurrent && verdict) {
+                    setConfigPresetVerdict(verdict);
+                }
+            });
+        }, 220);
+
+        return () => {
+            isCurrent = false;
+            clearTimeout(timer);
+        };
+    }, [mode, localPrompt, studioControls.aspectRatio, studioControls.model]);
 
     // JEV System One: Ambiently evaluate prompt intent and offer smart mode switch
     useEffect(() => {
@@ -175,6 +213,13 @@ export default function DirectGenerationTab() {
         }
     }, [mode, studioControls.aspectRatio, setStudioControls]);
 
+    const handleApplyJevPreset = () => {
+        const patch = configPresetVerdict.controlsPatch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setStudioControls(patch as any);
+        toast.info(`Applied ${configPresetVerdict.label}`);
+    };
+
     return (
         <div
             className={`flex flex-col h-full min-h-0 w-full bg-[#050406] text-foreground select-none overflow-y-auto ${
@@ -183,33 +228,59 @@ export default function DirectGenerationTab() {
             data-testid="direct-generation-workspace"
             data-workspace-mode={workspaceMode}
         >
-            {/* FULL AREA: Premium Glassmorphic Creative Hub Workspace */}
+            {/* Unified Fixed-Proportion Creative Hub Console */}
             <div
-                className="w-full flex-1 flex flex-col justify-between overflow-y-auto shrink-0 select-none relative p-6 max-w-6xl mx-auto"
+                className="w-full flex-1 flex flex-col justify-between shrink-0 select-none relative p-3 sm:p-4 max-w-4xl mx-auto"
                 data-testid="direct-generation-controls"
             >
                 
                 {/* Glowing subtle top gradient mesh for a premium look */}
-                <div className="absolute top-0 left-0 right-0 h-40 bg-radial-gradient from-dept-creative/10 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-32 bg-radial-gradient from-dept-creative/10 to-transparent pointer-events-none" />
 
-                <div className="flex flex-col gap-6 z-10 w-full">
-                    {/* Console Header */}
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
-                                <Wand2 size={18} />
+                <div className="flex flex-col gap-2.5 z-10 w-full">
+                    {/* Compact Console Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-lg bg-dept-creative/10 border border-dept-creative/20 text-dept-creative shadow-[0_0_12px_rgba(var(--color-dept-creative-rgb),0.1)]">
+                                <Wand2 size={14} />
                             </div>
                             <div>
-                                <h2 className="text-sm uppercase font-extrabold tracking-widest text-white/95">Creative Hub</h2>
-                                <p className="text-[10px] text-gray-400 font-medium">Direct Creative Generation Studio</p>
+                                <h2 className="text-xs uppercase font-extrabold tracking-widest text-white/95">Creative Hub</h2>
+                                <p className="text-[9.5px] text-gray-400 font-medium">Direct Creative Generation Studio</p>
                             </div>
                         </div>
 
+                        {/* Mode Toggle Tabs (Inline Fixed Width) */}
+                        <div className="inline-flex bg-white/4 rounded-xl p-0.5 border border-white/8 shadow-inner">
+                            <button
+                                onClick={() => handleModeSwitch('image')}
+                                data-testid="direct-image-mode-btn"
+                                className={`px-3 py-1 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'image'
+                                    ? 'bg-gradient-to-r from-dept-creative/25 to-dept-creative/10 text-white border border-dept-creative/30 font-bold shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                    }`}
+                            >
+                                <ImageIcon size={12} className={mode === 'image' ? 'text-dept-creative' : ''} />
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider">Image Creator</span>
+                            </button>
+                            <button
+                                onClick={() => handleModeSwitch('video')}
+                                data-testid="direct-video-mode-btn"
+                                className={`px-3 py-1 flex items-center justify-center gap-1.5 rounded-lg transition-all duration-200 ${mode === 'video'
+                                    ? 'bg-gradient-to-r from-green-500/25 to-pink-500/10 text-white border border-green-500/30 font-bold shadow-sm'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                    }`}
+                            >
+                                <Video size={12} className={mode === 'video' ? 'text-green-400' : ''} />
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider">Video Creator</span>
+                            </button>
+                        </div>
+
                         {/* Quick Header Actions */}
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                                <span className="text-[9.5px] font-mono text-gray-300 font-bold uppercase tracking-wider">
+                                <span className="text-[9px] font-mono text-gray-300 font-bold uppercase tracking-wider">
                                     {mode === 'image' 
                                         ? (studioControls.model === 'pro' ? 'Nano Banana Pro' : 'Nano Banana 2') 
                                         : 'Veo 3.1'}
@@ -259,9 +330,9 @@ export default function DirectGenerationTab() {
                                     };
                                     input.click();
                                 }}
-                                className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white transition-all flex items-center gap-1.5"
+                                className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[9.5px] font-bold text-white transition-all flex items-center gap-1.5"
                             >
-                                <ImageIcon size={12} />
+                                <ImageIcon size={11} />
                                 Upload Photo
                             </button>
                             
@@ -270,151 +341,211 @@ export default function DirectGenerationTab() {
                                     const { useStore } = await import('@/core/store');
                                     useStore.getState().setRightPanelTab('assets');
                                 }}
-                                className="px-3 py-1.5 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-xl text-[10px] font-bold text-dept-creative transition-all flex items-center gap-1.5"
+                                className="px-2 py-1 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-lg text-[9.5px] font-bold text-dept-creative transition-all flex items-center gap-1.5"
                             >
-                                <Layers size={12} />
+                                <Layers size={11} />
                                 Project Assets
                             </button>
                         </div>
                     </div>
 
-                    {mode === 'image' && <div className="rounded-xl border border-white/10 bg-white/[0.02]">
-                        <SavedArtworkPanel key={currentProjectId ?? 'project_default'} projectId={currentProjectId ?? 'project_default'} />
-                    </div>}
-
-                    {/* Mode Toggle Tabs */}
-                    <div className="flex bg-white/4 rounded-xl p-1 border border-white/5 shadow-inner max-w-md mx-auto w-full">
+                    {/* Unified Configuration Bar */}
+                    <div
+                        data-testid="jev-creative-config-preset"
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dept-creative/25 bg-dept-creative/[0.06] px-3 py-1.5"
+                    >
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-dept-creative/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-dept-creative">
+                                <Wand2 size={10} /> Recommended
+                            </span>
+                            <span className="text-[11px] font-bold text-white truncate">
+                                {configPresetVerdict.label}
+                            </span>
+                            <span className="hidden sm:inline text-[10px] text-gray-400 truncate">
+                                — {configPresetVerdict.summary}
+                            </span>
+                        </div>
                         <button
-                            onClick={() => handleModeSwitch('image')}
-                            data-testid="direct-image-mode-btn"
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-300 relative ${mode === 'image'
-                                ? 'bg-gradient-to-r from-dept-creative/25 to-dept-creative/10 text-white border border-dept-creative/30 font-bold shadow-lg shadow-dept-creative/10'
-                                : 'text-gray-400 hover:text-gray-200 hover:bg-white/3'
-                                }`}
+                            type="button"
+                            onClick={handleApplyJevPreset}
+                            data-testid="jev-apply-config-preset-btn"
+                            className="px-2.5 py-1 rounded-lg bg-dept-creative/20 hover:bg-dept-creative/35 border border-dept-creative/30 text-[10px] font-bold uppercase tracking-wider text-dept-creative hover:text-white transition-all shrink-0"
                         >
-                            <ImageIcon size={14} className={mode === 'image' ? 'text-dept-creative' : ''} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Image Creator</span>
-                        </button>
-                        <button
-                            onClick={() => handleModeSwitch('video')}
-                            data-testid="direct-video-mode-btn"
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-300 relative ${mode === 'video'
-                                ? 'bg-gradient-to-r from-green-500/25 to-pink-500/10 text-white border border-green-500/30 font-bold shadow-lg shadow-green-500/10'
-                                : 'text-gray-400 hover:text-gray-200 hover:bg-white/3'
-                                }`}
-                        >
-                            <Video size={14} className={mode === 'video' ? 'text-green-400' : ''} />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Video Creator</span>
+                            Apply Preset
                         </button>
                     </div>
 
-                    {/* Settings Navigation */}
-                    <div className="flex gap-4 border-b border-white/5 pb-1">
-                        <button 
-                            onClick={() => setActiveSection('basics')}
-                            className={`text-[10px] uppercase font-extrabold tracking-wider pb-1.5 transition-all relative ${activeSection === 'basics' ? 'text-white border-b border-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Basics
-                        </button>
-                        <button 
-                            onClick={() => setActiveSection('advanced')}
-                            className={`text-[10px] uppercase font-extrabold tracking-wider pb-1.5 transition-all relative ${activeSection === 'advanced' ? 'text-white border-b border-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            Advanced Config
-                        </button>
-                    </div>
+                    {mode === 'image' && (
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02]">
+                            <SavedArtworkPanel key={currentProjectId ?? 'project_default'} projectId={currentProjectId ?? 'project_default'} />
+                        </div>
+                    )}
 
-                    {/* Dynamic Configurations Panel */}
-                    <div className="flex flex-col gap-5 min-h-[220px]">
-                        {activeSection === 'basics' ? (
-                            <>
-                                {/* Aspect Ratio Cards */}
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                                        <Layers size={10} /> Choose Aspect Ratio
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {visibleAspectRatios.map((ratio) => {
-                                            const isSelected = studioControls.aspectRatio === ratio.id;
-                                            return (
-                                                <button
-                                                    key={ratio.id}
-                                                    onClick={() => setStudioControls({ aspectRatio: ratio.id })}
-                                                    className={`p-2.5 rounded-xl border flex flex-col items-start gap-2.5 transition-all group ${isSelected 
-                                                        ? 'bg-white/4 border-white/20 shadow-md shadow-white/3' 
-                                                        : 'bg-white/2 border-white/5 hover:border-white/10 hover:bg-white/3'}`}
-                                                >
-                                                    <div className="flex items-center justify-between w-full">
-                                                        <span className="text-[11px] font-bold text-white/95">{ratio.label}</span>
-                                                        <span className="text-[9px] font-mono text-gray-500 group-hover:text-gray-400 font-bold">{ratio.id}</span>
-                                                    </div>
-                                                    <div className="h-10 w-full flex items-center justify-center bg-black/35 rounded-lg border border-white/3">
-                                                        <div className={`${ratio.w} ${ratio.h} border-2 ${isSelected ? 'border-dept-creative bg-dept-creative/10 shadow-[0_0_8px_rgba(var(--color-dept-creative-rgb),0.2)]' : 'border-gray-600'} rounded-sm transition-all`} />
-                                                    </div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                    {/* Unified Single-Page Studio Configuration Grid (Basics + Advanced Side-by-Side) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+                        {/* LEFT COLUMN: Basics (Format, Aspect Ratio & Sequence Timing) */}
+                        <div className="lg:col-span-6 flex flex-col gap-2.5 rounded-2xl border border-white/8 bg-white/[0.02] p-3">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveSection('basics')}
+                                    className="text-[9.5px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
+                                >
+                                    <Layers size={10} className="text-dept-creative" />
+                                    Basics
+                                </button>
+                                <span className="text-[8.5px] font-mono uppercase tracking-wider text-gray-500">
+                                    Canvas & Framing
+                                </span>
+                            </div>
+
+                            {/* Aspect Ratio Cards — Compact 3-Column Fixed Tiles */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
+                                    Choose Aspect Ratio
+                                </label>
+                                <div className={`grid gap-1.5 ${mode === 'video' ? 'grid-cols-2 max-w-[280px]' : 'grid-cols-3'}`}>
+                                    {visibleAspectRatios.map((ratio) => {
+                                        const isSelected = studioControls.aspectRatio === ratio.id;
+                                        return (
+                                            <button
+                                                key={ratio.id}
+                                                onClick={() => setStudioControls({ aspectRatio: ratio.id })}
+                                                className={`p-1.5 rounded-xl border flex flex-col items-start gap-1 transition-all group ${isSelected 
+                                                    ? 'bg-white/6 border-dept-creative/40 shadow-sm' 
+                                                    : 'bg-white/2 border-white/5 hover:border-white/15 hover:bg-white/4'}`}
+                                            >
+                                                <div className="flex items-center justify-between w-full gap-1">
+                                                    <span className="text-[9.5px] font-bold text-white/95 truncate">{ratio.label}</span>
+                                                    <span className="text-[8px] font-mono text-gray-500 group-hover:text-gray-400 font-bold shrink-0">{ratio.id}</span>
+                                                </div>
+                                                <div className="h-6 w-full flex items-center justify-center bg-black/40 rounded-lg border border-white/5">
+                                                    <div className={`${ratio.w} ${ratio.h} scale-60 border-2 ${isSelected ? 'border-dept-creative bg-dept-creative/15' : 'border-gray-600'} rounded-sm transition-all`} />
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
+                            </div>
 
-                                {/* Dynamic Video Parameters */}
-                                {mode === 'video' && (
-                                    <motion.div 
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex flex-col gap-4 border-t border-white/5 pt-4"
-                                    >
-                                        <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/2 px-3 py-2">
-                                            <div>
-                                                <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
-                                                <p className="text-[11px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
-                                            </div>
-                                            <span className="text-[9px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-1">
-                                                24 FPS locked
+                            {/* Dynamic Video Parameters */}
+                            {mode === 'video' && (
+                                <div className="flex flex-col gap-2 border-t border-white/5 pt-2">
+                                    <div className="flex items-center justify-between rounded-xl border border-white/5 bg-black/30 px-2.5 py-1.5">
+                                        <div>
+                                            <p className="text-[8.5px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
+                                            <p className="text-[10px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
+                                        </div>
+                                        <span className="text-[8.5px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-1.5 py-0.5">
+                                            24 FPS locked
+                                        </span>
+                                    </div>
+
+                                    {/* Duration Preset pills — Fixed Inline Segmented Group */}
+                                    <div className="flex items-center justify-between gap-2">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                            Sequence Duration
+                                        </label>
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8">
+                                            {durationOptions.map((dur) => {
+                                                const isSelected = studioControls.duration === dur;
+                                                return (
+                                                    <button
+                                                        key={dur}
+                                                        onClick={() => setStudioControls({ duration: dur })}
+                                                        className={`min-w-[44px] px-2 py-0.5 rounded-lg text-[9.5px] font-mono font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-green-500/15 border-green-500/40 text-green-300'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-white'}`}
+                                                    >
+                                                        {dur}s
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Camera Motion Pills */}
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1">
+                                            <Compass size={10} /> Camera Movement
+                                        </label>
+                                        <div className="flex flex-wrap gap-1">
+                                            {cameraMovements.map((move) => {
+                                                const isSelected = studioControls.cameraMovement === move;
+                                                return (
+                                                    <button
+                                                        key={move}
+                                                        onClick={() => setStudioControls({ cameraMovement: move })}
+                                                        className={`px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-green-500/15 border-green-500/40 text-green-300'
+                                                            : 'bg-white/3 border-white/8 text-gray-400 hover:text-gray-200'}`}
+                                                    >
+                                                        {move}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Motion Strength — Fixed Inline Segmented Group */}
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                                Motion Strength
+                                            </label>
+                                            <span className="text-[9.5px] font-mono font-extrabold text-green-400">
+                                                {Math.round(studioControls.motionStrength * 100)}%
                                             </span>
                                         </div>
-
-                                        {/* Duration Preset pills */}
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                                                Sequence Duration
-                                            </label>
-                                            <div className="grid grid-cols-4 gap-1.5">
-                                                {durationOptions.map((dur) => {
-                                                    const isSelected = studioControls.duration === dur;
-                                                    return (
-                                                        <button
-                                                            key={dur}
-                                                            onClick={() => setStudioControls({ duration: dur })}
-                                                            className={`py-2 rounded-lg text-[10px] font-mono font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                                                        >
-                                                            {dur}s
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8">
+                                            {[
+                                                { label: 'Subtle', val: 0.3 },
+                                                { label: 'Cinematic', val: 0.7 },
+                                                { label: 'Dynamic', val: 0.95 }
+                                            ].map((preset) => {
+                                                const isSelected = Math.abs(studioControls.motionStrength - preset.val) < 0.05;
+                                                return (
+                                                    <button
+                                                        key={preset.label}
+                                                        onClick={() => setStudioControls({ motionStrength: preset.val })}
+                                                        className={`px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-green-500/15 border-green-500/40 text-green-300'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-white'}`}
+                                                    >
+                                                        {preset.label}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                                    </motion.div>
-                                )}
-                            </>
-                        ) : (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex flex-col gap-4 text-xs"
-                            >
-                                {/* Advanced configs */}
-                                {/* ISSUE-777: resolution only reaches the video payload
-                                    (useDirectGeneration.ts handleVideoGenerate's effectiveResolution);
-                                    image submission uses imageSize instead, so this control did
-                                    nothing in image mode. Mode-aware, matching StudioControlsPanel. */}
+                        {/* RIGHT COLUMN: Advanced Config (Always Visible, Fixed-Size Controls) */}
+                        <div className="lg:col-span-6 flex flex-col gap-2.5 rounded-2xl border border-white/8 bg-white/[0.02] p-3 text-xs">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveSection('advanced')}
+                                    className="text-[9.5px] uppercase font-extrabold tracking-wider text-white flex items-center gap-1.5"
+                                >
+                                    <Settings2 size={10} className="text-dept-creative" />
+                                    Advanced Config
+                                </button>
+                                <span className="text-[8.5px] font-mono uppercase tracking-wider text-gray-500">
+                                    Engine & Output
+                                </span>
+                            </div>
+
+                            {/* Row 1: Output Size / Resolution + API Engine Grade (Compact Fixed Pills) */}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                                 {mode === 'video' ? (
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Engine Resolution Preset</label>
-                                        <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                            Engine Resolution Preset
+                                        </label>
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                             {['720p', '1080p', '4k'].map((res) => {
                                                 const isSelected = studioControls.resolution === res;
                                                 return (
@@ -422,9 +553,9 @@ export default function DirectGenerationTab() {
                                                         key={res}
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         onClick={() => setStudioControls({ resolution: res as any })}
-                                                        className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
-                                                            ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
-                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
                                                         {res}
                                                     </button>
@@ -433,9 +564,11 @@ export default function DirectGenerationTab() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Image Output Size</label>
-                                        <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                            Image Output Size
+                                        </label>
+                                        <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                             {(studioControls.model === 'fast' ? ['0.5K', '1K', '2K'] : ['1K', '2K', '4K']).map((size) => {
                                                 const isSelected = (studioControls.imageSize || '2K') === size;
                                                 return (
@@ -443,9 +576,9 @@ export default function DirectGenerationTab() {
                                                         key={size}
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         onClick={() => setStudioControls({ imageSize: size as any })}
-                                                        className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
-                                                            ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
-                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                        className={`min-w-[46px] px-2 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                     >
                                                         {size}
                                                     </button>
@@ -453,72 +586,13 @@ export default function DirectGenerationTab() {
                                             })}
                                         </div>
                                     </div>
-                )}
+                                )}
 
-                {/* ISSUE-1440 residue: camera/motion are video-only secondaries — demoted
-                    from Basics to Advanced to keep the default creation flow lean. */}
-                {mode === 'video' && (
-                    <>
-                                        {/* Camera Motion Pills */}
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                                                <Compass size={10} /> Camera Movement
-                                            </label>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {cameraMovements.map((move) => {
-                                                    const isSelected = studioControls.cameraMovement === move;
-                                                    return (
-                                                        <button
-                                                            key={move}
-                                                            onClick={() => setStudioControls({ cameraMovement: move })}
-                                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                                                        >
-                                                            {move}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        {/* Motion Strength slider preset cards */}
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex justify-between items-center">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                                                    Motion Strength
-                                                </label>
-                                                <span className="text-[10px] font-mono font-extrabold text-green-400">{Math.round(studioControls.motionStrength * 100)}%</span>
-                                            </div>
-                                            <div className="grid grid-cols-3 gap-1.5">
-                                                {[
-                                                    { label: 'Subtle', val: 0.3 },
-                                                    { label: 'Cinematic', val: 0.7 },
-                                                    { label: 'Dynamic', val: 0.95 }
-                                                ].map((preset) => {
-                                                    const isSelected = Math.abs(studioControls.motionStrength - preset.val) < 0.05;
-                                                    return (
-                                                        <button
-                                                            key={preset.label}
-                                                            onClick={() => setStudioControls({ motionStrength: preset.val })}
-                                                            className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                        >
-                                                            {preset.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                    </>
-                )}
-
-                <div className="flex flex-col gap-2">
-                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">API Engine Grade</label>
-                                    <div className="grid grid-cols-2 gap-1.5">
-                                        {/* No supported Lite image model exists (ISSUE-871) — offering it
-                                            silently downgraded to the legacy 2.5 model. Fast + Pro only. */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                        API Engine Grade
+                                    </label>
+                                    <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                         {['fast', 'pro'].map((tier) => {
                                             const isSelected = studioControls.model === tier
                                                 || (tier === 'fast' && studioControls.model === 'lite');
@@ -527,9 +601,9 @@ export default function DirectGenerationTab() {
                                                     key={tier}
                                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     onClick={() => setStudioControls({ model: tier as any })}
-                                                    className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
-                                                        ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
-                                                        : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                    className={`min-w-[52px] px-2.5 py-0.5 rounded-lg text-[9.5px] font-bold uppercase border transition-all ${isSelected
+                                                        ? 'bg-white/10 border-white/25 text-white font-extrabold shadow-sm'
+                                                        : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
                                                 >
                                                     {tier}
                                                 </button>
@@ -537,16 +611,85 @@ export default function DirectGenerationTab() {
                                         })}
                                     </div>
                                 </div>
+                            </div>
 
-                                {mode === 'image' && (
-                                    <>
-                                        <div className="flex flex-col gap-3 bg-white/2 p-3 rounded-xl border border-white/5">
-                                            <div className="flex justify-between items-center">
+                            {mode === 'image' && (
+                                <>
+                                    {/* Row 2: Thinking Level + Batch Count + Response Format */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                                Thinking Level
+                                            </label>
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                                {(studioControls.model === 'fast' ? ['none', 'minimal', 'high'] : ['high']).map((level) => (
+                                                    <button
+                                                        key={level}
+                                                        data-testid={`direct-thinking-${level}`}
+                                                        onClick={() => setStudioControls({ thinkingLevel: level as 'none' | 'minimal' | 'high' })}
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${studioControls.thinkingLevel === level || (studioControls.model === 'pro' && level === 'high')
+                                                            ? 'bg-green-500/15 border-green-500/40 text-green-300'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
+                                                    >
+                                                        {studioControls.model === 'pro' ? 'High' : level}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                                Image Count
+                                            </label>
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                                {[1, 2, 3, 4].map(count => (
+                                                    <button
+                                                        key={count}
+                                                        data-testid={`direct-batch-${count}`}
+                                                        onClick={() => setStudioControls({ batchCount: count })}
+                                                        className={`min-w-[32px] px-1.5 py-0.5 rounded-lg text-[8.5px] font-bold border transition-all ${studioControls.batchCount === count
+                                                            ? 'bg-white/10 border-white/25 text-white'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
+                                                    >
+                                                        {count}×
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
+                                                Response
+                                            </label>
+                                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
+                                                {([
+                                                    ['image_only', 'Image'],
+                                                    ['image_and_text', '+ Text'],
+                                                ] as const).map(([format, label]) => (
+                                                    <button
+                                                        key={format}
+                                                        data-testid={`direct-response-${format}`}
+                                                        onClick={() => setStudioControls({ responseFormat: format })}
+                                                        className={`min-w-[48px] px-2 py-0.5 rounded-lg text-[8.5px] font-bold uppercase border transition-all ${studioControls.responseFormat === format
+                                                            ? 'bg-white/10 border-white/25 text-white'
+                                                            : 'bg-transparent border-transparent text-gray-400 hover:text-gray-200'}`}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 3: Compact Toggles (Grounding & Thought Summary) */}
+                                    <div className="flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                                        <div className="flex flex-col gap-1.5 bg-black/30 px-2.5 py-1.5 rounded-xl border border-white/5">
+                                            <div className="flex justify-between items-center gap-2">
                                                 <div className="flex items-center gap-2">
-                                                    <Globe size={13} className="text-gray-400" />
+                                                    <Globe size={12} className="text-gray-400 shrink-0" />
                                                     <div>
-                                                        <h4 className="text-[11px] font-bold text-white">Google Search Grounding</h4>
-                                                        <p className="text-[9px] text-gray-500">Injects current web knowledge</p>
+                                                        <h4 className="text-[9.5px] font-bold text-white">Google Search Grounding</h4>
+                                                        <p className="text-[8.5px] text-gray-500">Injects current web knowledge</p>
                                                     </div>
                                                 </div>
                                                 <button
@@ -556,161 +699,84 @@ export default function DirectGenerationTab() {
                                                         useGrounding: !studioControls.useGrounding,
                                                         useImageSearch: studioControls.useGrounding ? false : studioControls.useImageSearch,
                                                     })}
-                                                    className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
+                                                    className={`w-8 h-4 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
                                                 >
-                                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                    <div className={`w-3 h-3 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
                                                 </button>
                                             </div>
                                             {studioControls.useGrounding && studioControls.model === 'fast' && (
-                                                <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                                                <div className="flex justify-between items-center border-t border-white/5 pt-1.5">
                                                     <div>
-                                                        <h4 className="text-[11px] font-bold text-white">Include Image Search</h4>
-                                                        <p className="text-[9px] text-gray-500">Use visual search results as grounding</p>
+                                                        <h4 className="text-[9.5px] font-bold text-white">Include Image Search</h4>
+                                                        <p className="text-[8.5px] text-gray-500">Use visual search results as grounding</p>
                                                     </div>
                                                     <button
                                                         aria-label="Toggle Image Search grounding"
                                                         data-testid="direct-image-search-toggle"
                                                         onClick={() => setStudioControls({ useImageSearch: !studioControls.useImageSearch })}
-                                                        className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
+                                                        className={`w-8 h-4 rounded-full p-0.5 transition-colors shrink-0 ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
                                                     >
-                                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Thinking Level</label>
-                                            <div className="grid grid-cols-3 gap-1.5">
-                                                {(studioControls.model === 'fast' ? ['none', 'minimal', 'high'] : ['high']).map((level) => (
-                                                    <button
-                                                        key={level}
-                                                        data-testid={`direct-thinking-${level}`}
-                                                        onClick={() => setStudioControls({ thinkingLevel: level as 'none' | 'minimal' | 'high' })}
-                                                        className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.thinkingLevel === level || (studioControls.model === 'pro' && level === 'high')
-                                                            ? 'bg-green-500/10 border-green-500/30 text-green-300'
-                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                    >
-                                                        {studioControls.model === 'pro' ? 'Always High' : level}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <button
-                                                data-testid="direct-include-thoughts-toggle"
-                                                onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
-                                                className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left transition-all ${studioControls.includeThoughts
-                                                    ? 'border-green-500/30 bg-green-500/10 text-green-200'
-                                                    : 'border-white/5 bg-white/2 text-gray-400'}`}
-                                            >
-                                                <span>
-                                                    <span className="block text-[10px] font-bold uppercase">Return thought summary</span>
-                                                    <span className="block text-[9px] text-gray-500">Stores the provider summary with the generated asset</span>
-                                                </span>
-                                                <span className="text-[9px] font-bold uppercase">{studioControls.includeThoughts ? 'On' : 'Off'}</span>
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="flex flex-col gap-2">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Image Count</label>
-                                                <div className="grid grid-cols-4 gap-1">
-                                                    {[1, 2, 3, 4].map(count => (
-                                                        <button
-                                                            key={count}
-                                                            data-testid={`direct-batch-${count}`}
-                                                            onClick={() => setStudioControls({ batchCount: count })}
-                                                            className={`py-1.5 rounded-lg text-[9px] font-bold border transition-all ${studioControls.batchCount === count
-                                                                ? 'bg-white/5 border-white/25 text-white'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                        >
-                                                            {count}×
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-2">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Response</label>
-                                                <div className="grid grid-cols-2 gap-1">
-                                                    {([
-                                                        ['image_only', 'Image'],
-                                                        ['image_and_text', '+ Text'],
-                                                    ] as const).map(([format, label]) => (
-                                                        <button
-                                                            key={format}
-                                                            data-testid={`direct-response-${format}`}
-                                                            onClick={() => setStudioControls({ responseFormat: format })}
-                                                            className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.responseFormat === format
-                                                                ? 'bg-white/5 border-white/25 text-white'
-                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                        >
-                                                            {label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* ISSUE-777: personGeneration is only in GenerateVideoSchema —
-                                    the image payload (handleImageGenerate) never sends it, so this
-                                    toggle had zero effect in image mode. Video-only until the image
-                                    gateway/schema actually accepts a safety field. */}
-                                {mode === 'video' && (
-                                    <div className="flex flex-col gap-2 bg-white/2 p-3 rounded-xl border border-white/5">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <Shield size={13} className="text-gray-400" />
-                                                <div>
-                                                    <h4 className="text-[11px] font-bold text-white">Safety Policy Grade</h4>
-                                                    <p className="text-[9px] text-gray-500">Filters adult or unsafe contents</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setStudioControls({
-                                                    personGeneration: studioControls.personGeneration === 'allow_adult' ? 'dont_allow' : 'allow_adult'
-                                                })}
-                                                className={`px-2 py-1 rounded-lg text-[9px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
-                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
-                                            >
-                                                {studioControls.personGeneration === 'allow_adult' ? 'Standard' : 'Strict'}
-                                            </button>
-                                        </div>
+                                        <button
+                                            data-testid="direct-include-thoughts-toggle"
+                                            onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
+                                            className={`flex items-center justify-between rounded-xl border px-2.5 py-1.5 text-left transition-all ${studioControls.includeThoughts
+                                                ? 'border-green-500/30 bg-green-500/10 text-green-200'
+                                                : 'border-white/5 bg-black/30 text-gray-400'}`}
+                                        >
+                                            <span>
+                                                <span className="block text-[9.5px] font-bold uppercase">Return thought summary</span>
+                                                <span className="block text-[8.5px] text-gray-500">Stores the provider summary with the generated asset</span>
+                                            </span>
+                                            <span className="text-[8.5px] font-bold uppercase px-1.5 py-0.5 rounded bg-white/5">{studioControls.includeThoughts ? 'On' : 'Off'}</span>
+                                        </button>
                                     </div>
-                                )}
-                            </motion.div>
-                        )}
+                                </>
+                            )}
+
+                            {/* Video-only Safety Policy Grade */}
+                            {mode === 'video' && (
+                                <div className="flex flex-col gap-1.5 bg-black/30 px-2.5 py-1.5 rounded-xl border border-white/5 mt-0.5">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <Shield size={12} className="text-gray-400" />
+                                            <div>
+                                                <h4 className="text-[9.5px] font-bold text-white">Safety Policy Grade</h4>
+                                                <p className="text-[8.5px] text-gray-500">Filters adult or unsafe contents</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setStudioControls({
+                                                personGeneration: studioControls.personGeneration === 'allow_adult' ? 'dont_allow' : 'allow_adult'
+                                            })}
+                                            className={`px-2 py-0.5 rounded-lg text-[8.5px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
+                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+                                        >
+                                            {studioControls.personGeneration === 'allow_adult' ? 'Standard' : 'Strict'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Bottom docked capsule for input & prompt builder */}
-                <div className="flex flex-col gap-3 mt-6 z-10 pt-4 border-t border-white/5 bg-[#0a090c]/40">
+                <div className="flex flex-col gap-2 mt-3 z-10 pt-2 border-t border-white/5 bg-[#0a090c]/40">
                     
-                    {/* ISSUE-1440 residue: 8 quick-modifier pills collapsed into one
-                        "+ Modifiers" popover — appending to the prompt is a ratchet
-                        action, not something that needs a permanent rail. */}
-                    <DropdownMenu>
-                        <DropdownMenuTriggerButton
-                            data-testid="modifiers-trigger"
-                            className="self-start text-[9px] font-bold uppercase tracking-widest"
-                        >
-                            + Modifiers
-                        </DropdownMenuTriggerButton>
-                        <DropdownMenuContent>
-                            {quickModifiers.map((tag) => (
-                                <DropdownMenuItem
-                                    key={tag}
-                                    onSelect={(event) => {
-                                        event.preventDefault();
-                                        setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
-                                    }}
-                                >
-                                    + {tag}
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Brand & Prompt Additives Menu — Drawn directly from brand kit preferences + tracked frequent descriptors */}
+                    <BrandPromptAdditivesMenu
+                        currentPrompt={localPrompt}
+                        onSelectAdditive={(tag) => {
+                            setLocalPrompt(localPrompt ? `${localPrompt}, ${tag}` : tag);
+                        }}
+                    />
 
                     {/* Integrated Reference Dropzone inline */}
                     {mode === 'video' && (
@@ -744,9 +810,9 @@ export default function DirectGenerationTab() {
                             }}
                             placeholder={`Describe your ${mode}...`}
                             disabled={isGenerating}
-                            rows={3}
+                            rows={2}
                             data-testid="direct-prompt-input"
-                            className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 focus:outline-none resize-none px-2 py-1.5 no-scrollbar"
+                            className="w-full bg-transparent border-none text-xs text-white placeholder-gray-500 focus:ring-0 focus:outline-none resize-none px-2 py-1 no-scrollbar"
                         />
 
                         {/* Expandable synthesized prompt */}
@@ -832,7 +898,7 @@ export default function DirectGenerationTab() {
             </div>
 
             {/* Live Generation Results & Active Jobs */}
-            <div data-testid="direct-generation-results" className="min-w-0 w-full max-w-6xl mx-auto px-6 pb-3">
+            <div data-testid="direct-generation-results" className="min-w-0 w-full max-w-4xl mx-auto px-5 pb-3">
                 {activeJobs.length > 0 && (
                     <div className="flex flex-col gap-3 mb-4">
                         <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 flex items-center gap-1.5">

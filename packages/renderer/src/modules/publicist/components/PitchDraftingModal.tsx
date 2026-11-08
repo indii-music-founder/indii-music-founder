@@ -90,7 +90,7 @@ Do not include a subject line — just the email body.
                                     <Sparkles size={14} className="text-dept-marketing-glow" />
                                 </div>
                                 <div>
-                                    <h3 id="pitch-modal-title" className="text-sm font-bold text-white">AI Pitch Drafter</h3>
+                                    <h3 id="pitch-modal-title" className="text-sm font-bold text-white">Press Pitch Drafter</h3>
                                     <p className="text-[10px] text-slate-500">
                                         Pitching <span className="text-slate-300">{contact?.name}</span> @ {contact?.outlet}
                                     </p>

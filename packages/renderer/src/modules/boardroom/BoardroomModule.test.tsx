@@ -129,6 +129,16 @@ describe('BoardroomModule', () => {
         expect(screen.getByText('Boardroom HQ')).toBeInTheDocument();
     });
 
+    it('keeps Boardroom executive missions and governance inside the single 48px header row without a stacked digest bar', () => {
+        render(<BoardroomModule />);
+        const headerRow = screen.getByTestId('boardroom-header');
+        const journey = screen.getByTestId('boardroom-journey');
+        expect(headerRow).toHaveClass('h-12');
+        expect(headerRow).toContainElement(journey);
+        expect(headerRow).toContainElement(screen.getByTestId('boardroom-missions-toggle'));
+        expect(headerRow).toContainElement(screen.getByTestId('boardroom-governance-toggle'));
+    });
+
     it('shows messages when boardroomMessages is populated', () => {
         mockStoreState.agentHistory = [
             { id: 'msg-1', role: 'model', text: 'Hello from marketing', timestamp: Date.now(), agentId: 'marketing' },

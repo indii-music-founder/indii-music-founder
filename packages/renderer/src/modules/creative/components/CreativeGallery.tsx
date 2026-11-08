@@ -72,7 +72,7 @@ const runLocalUpscale = async (
             projectId: projId,
             type: 'image',
             url: outputUrl,
-            prompt: `${item.prompt || 'Artwork'} (AI Upscale ${scale}× · ${model})`,
+            prompt: `${item.prompt || 'Artwork'} (Upscale ${scale}× · ${model})`,
             timestamp: Date.now(),
             meta: 'upscale',
         };
@@ -671,7 +671,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         data-testid="send-to-upscale-2x"
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
                                                     >
-                                                        <span>→ AI Upscale 2×</span>
+                                                        <span>→ Upscale 2×</span>
                                                     </button>
                                                     <button
                                                         onClick={async (e) => {
@@ -684,7 +684,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         data-testid="send-to-upscale-4x"
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
                                                     >
-                                                        <span>→ AI Upscale 4×</span>
+                                                        <span>→ Upscale 4×</span>
                                                     </button>
                                                     <button
                                                         onClick={async (e) => {

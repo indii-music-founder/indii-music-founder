@@ -3,6 +3,11 @@ import { Mic, MicOff, Send, Loader2, Sparkles, X, Edit3, ChevronDown, ChevronUp,
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { LiveConversationButton } from '@/core/components/command-bar/LiveConversationButton';
+import type { LiveConversationStartOptions } from '@/services/intelligence/LiveConversationService';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 export interface StageAttachment {
     url?: string;
@@ -47,6 +52,8 @@ export interface VoiceTextViewingStageProps {
     onRemoveAttachment?: (index: number) => void;
     /** Add attachment file callback */
     onAddAttachmentFile?: (file: File) => void;
+    /** Optional live two-way conversation session options */
+    startOptions?: LiveConversationStartOptions;
 }
 
 export default function VoiceTextViewingStage({
@@ -67,12 +74,23 @@ export default function VoiceTextViewingStage({
     attachments,
     onRemoveAttachment,
     onAddAttachmentFile,
+    startOptions,
 }: VoiceTextViewingStageProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const viewingTextareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isEditingInViewingStage, setIsEditingInViewingStage] = useState(false);
     const [isManualExpanded, setIsManualExpanded] = useState(false);
+
+    const { isLiveActive, activeSpeakingAgentId, directTargetAgentId, activeDepartmentId } = useStore(useShallow(state => ({
+        isLiveActive: state?.isLiveConversationActive ?? false,
+        activeSpeakingAgentId: state?.activeSpeakingAgentId ?? null,
+        directTargetAgentId: state?.directTargetAgentId ?? null,
+        activeDepartmentId: state?.activeDepartmentId ?? null,
+    })));
+
+    const effectiveAgentId = activeSpeakingAgentId || directTargetAgentId || activeDepartmentId || 'generalist';
+    const activeIdentity = resolveAgentVisualIdentity(effectiveAgentId);
 
     // Dictation automatically opens the Viewing Stage
     const showViewingStage = isListening || isManualExpanded || (value.length > 80 && !isWaiting);
@@ -276,7 +294,19 @@ export default function VoiceTextViewingStage({
             </AnimatePresence>
 
             {/* ─── Docked Input Bar ────────────────────────────────────────────── */}
-            <div className="flex flex-col p-2 rounded-[26px] bg-[#1a1512]/90 border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+            <div className="relative">
+                {/* Ambient Faded Light Glow Aura */}
+                <div
+                    aria-hidden="true"
+                    className={cn(
+                        "pointer-events-none absolute -inset-2.5 rounded-[30px] transition-opacity duration-700 blur-2xl -z-10",
+                        isLiveActive ? "opacity-100" : "opacity-0"
+                    )}
+                    style={{
+                        background: `radial-gradient(ellipse at 50% 50%, ${activeIdentity.glow} 0%, transparent 72%)`,
+                    }}
+                />
+                <div className="flex flex-col p-2 rounded-[26px] bg-[#1a1512]/90 border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
                 {/* Staged Attachment Chips */}
                 {attachments && attachments.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 px-2 pt-1 pb-2 border-b border-white/5 mb-1.5">
@@ -392,6 +422,13 @@ export default function VoiceTextViewingStage({
                             </motion.button>
                         )}
 
+                        {/* Two-Way Multimodal Conversation Button (Circular Waveform + Sparkle) */}
+                        <LiveConversationButton
+                            sizeVariant="mobile"
+                            disabled={isWaiting || !isPaired}
+                            startOptions={startOptions}
+                        />
+
                         <motion.button
                             type="button"
                             whileTap={{ scale: 0.9 }}
@@ -414,6 +451,7 @@ export default function VoiceTextViewingStage({
                         </motion.button>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );

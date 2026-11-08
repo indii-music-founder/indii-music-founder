@@ -346,7 +346,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             if (results && results.length > 0 && results[0]?.url) {
                 setGeneratedAvatarUrl(results[0].url);
                 triggerHaptic([40, 80, 40]);
-                toast.success('Generated AI avatar from portrait!');
+                toast.success('Generated avatar from portrait!');
             } else {
                 throw new Error('Image generation completed without a valid result URL');
             }
@@ -416,7 +416,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                     payload: {
                         audioUrl: audioDownloadUrl,
                         imageUrl: photoAsset?.downloadUrl,
-                        transcription: 'Voice contact intake: AI extraction pending',
+                        transcription: 'Voice contact intake: extraction pending',
                     },
                 });
             } catch {
@@ -424,7 +424,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             }
 
             triggerHaptic([50, 100, 50]);
-            toast.success('Voice contact sent to AI — parsing into Contacts!');
+            toast.success('Voice contact saved — parsing into Contacts!');
             handleClose();
             onSaved?.();
         } catch (error) {
@@ -506,7 +506,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                     {mode === 'voice' ? 'Voice Contact' : 'Manual Contact'}
                                 </h3>
                                 <p className="text-[10px] text-stone-400 font-mono">
-                                    {mode === 'voice' ? 'AI parses voice into contacts' : 'Direct manual entry'}
+                                    {mode === 'voice' ? 'Automated contact parsing' : 'Direct manual entry'}
                                 </p>
                             </div>
                         </div>
@@ -601,7 +601,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                         {isRecording
                                             ? 'Say their name, phone, email, organization, and role...'
                                             : capturedAudioBlob
-                                                ? 'Review your recording or snap a photo before AI extraction.'
+                                                ? 'Review your recording or snap a photo before extraction.'
                                                 : 'Say: "Alex Morgan, booking manager at Live Nation, 313-555-0199, alex@livenation.com"'}
                                     </p>
                                 </div>
@@ -642,7 +642,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                         </button>
                                         <div>
                                             <p className="text-xs font-semibold text-stone-200">Audio Recorded</p>
-                                            <p className="text-[10px] text-stone-400 font-mono">Ready for AI parsing</p>
+                                            <p className="text-[10px] text-stone-400 font-mono">Ready for parsing</p>
                                         </div>
                                     </div>
 
@@ -683,7 +683,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                         )}
                                         <div>
                                             <p className="text-xs font-semibold text-stone-200">
-                                                {generatedAvatarUrl ? 'AI Avatar Ready' : 'Photo / Portrait'}
+                                                {generatedAvatarUrl ? 'Avatar Ready' : 'Photo / Portrait'}
                                             </p>
                                             <p className="text-[10px] text-stone-400">
                                                 {generatedAvatarUrl ? 'Generated from captured portrait' : 'Snap headshot or card'}
@@ -720,19 +720,19 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                         {isGeneratingAvatar ? (
                                             <>
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                                                <span>Crafting AI Avatar…</span>
+                                                <span>Crafting Avatar…</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                                                <span>Generate AI Avatar from Photo</span>
+                                                <span>Generate Avatar from Photo</span>
                                             </>
                                         )}
                                     </button>
                                 )}
                             </div>
 
-                            {/* Save with AI button */}
+                            {/* Save button */}
                             <button
                                 type="button"
                                 onClick={handleVoiceSubmit}
@@ -742,12 +742,12 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                 {isSaving ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                        <span>Extracting & Saving with AI...</span>
+                                        <span>Extracting & Saving...</span>
                                     </>
                                 ) : (
                                     <>
                                         <Sparkles className="w-4 h-4" />
-                                        <span>Save & Extract with AI</span>
+                                        <span>Save & Extract Contact</span>
                                     </>
                                 )}
                             </button>

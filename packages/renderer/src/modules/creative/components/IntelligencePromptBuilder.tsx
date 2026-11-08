@@ -7,6 +7,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { IntelligencePromptService } from '@/services/creative/IntelligencePromptService';
 import { useToast } from '@/core/context/ToastContext';
+import { PromptAdditiveTracker } from '@/services/creative/PromptAdditiveTracker';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import IntelligenceCampaignModal from '@/modules/marketing/components/IntelligenceCampaignModal';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -55,7 +56,7 @@ interface CategoryDropdownProps {
     values: string[] | Record<string, string[]>;
     isOpen: boolean;
     onToggle: () => void;
-    onTagClick: (tag: string) => void;
+    onTagClick: (tag: string, category: string) => void;
     variant?: 'creative' | 'royalties';
 }
 
@@ -105,7 +106,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                         {Array.isArray(values) ? (
                             <div className="flex flex-wrap gap-1">
                                 {values.length > 0 ? values.map((tag) => (
-                                    <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag)} variant={variant} />
+                                    <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag, category)} variant={variant} />
                                 )) : (
                                     <p className="text-[10px] text-gray-500 italic p-2">No tags available.</p>
                                 )}
@@ -117,7 +118,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                                         <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">{subCat}</p>
                                         <div className="flex flex-wrap gap-1">
                                             {tags.map((tag) => (
-                                                <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag)} variant={variant} />
+                                                <TagButton key={tag} tag={tag} onClick={() => onTagClick(tag, category)} variant={variant} />
                                             ))}
                                         </div>
                                     </div>
@@ -150,10 +151,11 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
         brandKit?.fonts ? `Font: ${brandKit.fonts}` : null
     ].filter(Boolean) as string[], [brandKit]);
 
-    // Tag click: add to both prompt AND local builder-tags tracker
-    const handleTagClick = useCallback((tag: string) => {
+    // Tag click: add to prompt, local builder-tags tracker, and persist to PromptAdditiveTracker
+    const handleTagClick = useCallback((tag: string, category: string) => {
         onAddTag(tag);
         setBuilderTags(prev => [...prev, tag]);
+        PromptAdditiveTracker.recordUsage(tag, category);
     }, [onAddTag]);
 
     const handleRemoveBuilderTag = useCallback((index: number) => {
@@ -254,7 +256,7 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                 </div>
             )}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 {/* Brand Category */}
                 <CategoryDropdown
                     category="Brand"
@@ -282,19 +284,21 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                     <button
                         onClick={handleImprove}
                         disabled={isImproving || !currentPrompt.trim()}
-                        className="ml-auto px-4 py-1.5 text-xs rounded-full bg-linear-to-r from-dept-creative to-dept-marketing text-white font-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-dept-creative/20"
+                        title="Improve prompt with Intelligence"
+                        aria-label="Improve with Intelligence"
+                        className="ml-auto w-[230px] sm:w-[240px] px-3.5 py-1.5 text-xs rounded-full bg-dept-creative/15 hover:bg-dept-creative/25 text-dept-creative border border-dept-creative/30 font-semibold flex items-center justify-center gap-2 hover:border-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
                     >
                         {isImproving ? (
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                             >
-                                <Sparkles size={14} />
+                                <Sparkles size={13} className="shrink-0" />
                             </motion.div>
                         ) : (
-                            <Sparkles size={14} />
+                            <Sparkles size={13} className="shrink-0" />
                         )}
-                        <span>Improve with Intelligence</span>
+                        <span className="truncate">Improve with Intelligence</span>
                     </button>
                 )}
             </div>

@@ -181,10 +181,10 @@ export const VideoStage = React.memo<VideoStageProps>(({
     }, [activeVideo]);
 
     const PROGRESS_MESSAGES = React.useMemo(() => [
-        "AI Director is framing the scene...",
+        "Director is framing the scene...",
         "Analyzing temporal continuity...",
         "Synthesizing lighting and textures...",
-        "Neural networks are dreaming...",
+        "Generating motion sequences...",
         "Calibrating movement vectors...",
         "Baking cinematic details...",
         "Finalizing pixels...",

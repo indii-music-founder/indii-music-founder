@@ -4,6 +4,7 @@ import { VisualVerificationsPane } from './VisualVerificationsPane';
 import { AgentEncryptionPane } from './AgentEncryptionPane';
 import { ApiCredentialsPane } from './ApiCredentialsPane';
 import { AccessControlPane } from './AccessControlPane';
+import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 
 export default function SecurityDashboard() {
     return (
@@ -11,17 +12,19 @@ export default function SecurityDashboard() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-            {/* Header */}
-            <div className="px-6 py-8 border-b border-white/5 relative z-10 flex-shrink-0">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-linear-to-br from-blue-500 to-blue-400 rounded-lg shadow-lg shadow-blue-500/20">
-                        <Shield size={20} className="text-white" />
+            {/* Header — Unified 48px Top Bar */}
+            <div className="h-12 px-6 border-b border-white/[0.06] bg-[#0c0c12]/80 backdrop-blur-xl relative z-10 flex-shrink-0 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-1.5 bg-linear-to-br from-blue-500 to-blue-400 rounded-lg shadow-sm">
+                        <Shield size={15} className="text-white" />
                     </div>
-                    <h1 className="text-2xl font-black text-white tracking-tight">Security Center</h1>
+                    <h1 className="text-xs font-extrabold uppercase tracking-wider text-white">Security Center</h1>
+                    <span className="hidden md:inline text-white/20">·</span>
+                    <p className="hidden md:inline text-[11px] text-gray-400 truncate">
+                        Manage your API keys, permissions, and security policies
+                    </p>
                 </div>
-                <p className="text-sm text-gray-400 ml-12">
-                    Manage your API keys, permissions, and security policies
-                </p>
+                <DepartmentJourneyBar department="security" activeTab="access" />
             </div>
 
             {/* 4-Pane Dashboard Content */}

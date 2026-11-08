@@ -210,7 +210,7 @@ export const WalletSection: React.FC = () => {
         <div className="space-y-8 max-w-4xl" data-testid="wallet-section">
             <SectionHeader
                 title="Credit Wallet & Micro-Transactions"
-                description="Power on-demand AI generative workflows, studio audio mastering, and distribution delivery."
+                description="Power on-demand creative generation, studio audio mastering, and distribution delivery."
             />
 
             {/* Balance Platinum Card */}
@@ -380,7 +380,7 @@ export const WalletSection: React.FC = () => {
                                 )}
                             </h3>
                             <p className="text-xs text-slate-400 mt-1">
-                                Automatically replenish your credit balance before high-demand AI rendering or distribution delivery is interrupted.
+                                Automatically replenish your credit balance before high-demand creative rendering or distribution delivery is interrupted.
                             </p>
                         </div>
                     </div>
@@ -515,7 +515,7 @@ export const WalletSection: React.FC = () => {
                             <Coins size={32} className="mx-auto text-slate-600 mb-2" />
                             <p className="text-sm font-medium text-slate-300">No transactions recorded yet</p>
                             <p className="text-xs text-slate-500 mt-1">
-                                Top up credits above to begin creating with indii AI intelligence.
+                                Top up credits above to begin creating with your studio tools.
                             </p>
                         </div>
                     ) : (

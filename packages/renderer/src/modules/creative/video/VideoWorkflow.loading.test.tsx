@@ -167,7 +167,7 @@ describe('VideoWorkflow UI States', () => {
         expect(screen.getByText(/Imaginating Scene.../i)).toBeInTheDocument();
 
         // Assert progress text
-        expect(screen.getByText(/AI Director is framing the scene... \(45%\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/Director is framing the scene... \(45%\)/i)).toBeInTheDocument();
     });
 
     it('renders the Stitching Overlay when status is "stitching"', () => {

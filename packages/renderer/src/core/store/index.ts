@@ -47,7 +47,15 @@ import { isValidModule, type ModuleId } from '@/core/constants';
 import {
     isConversationMode,
     type ConversationMode,
+    type LiveConversationPhase,
+    type AgentUISlice,
 } from '@/core/store/slices/agent/agentUISlice';
+export {
+    isConversationMode,
+    type ConversationMode,
+    type LiveConversationPhase,
+    type AgentUISlice,
+};
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 

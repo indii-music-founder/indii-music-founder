@@ -226,7 +226,7 @@ export default function StudioWorkView({
                                 </div>
                                 <h4 className="text-sm font-bold text-stone-200 font-display">No Studio Outputs Yet</h4>
                                 <p className="text-xs text-stone-500 max-w-[240px]">
-                                    Tell your desktop AI to make a flyer or generate artwork, and the high-res results will appear here.
+                                    Tell your desktop team to make a flyer or generate artwork, and the high-res results will appear here.
                                 </p>
                             </div>
                         ) : (

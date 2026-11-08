@@ -231,7 +231,7 @@ const SecuritySection: React.FC = () => {
                     {!user?.emailVerified && (
                         <div className="pt-2 border-t border-slate-700/30 flex items-center justify-between">
                             <p className="text-xs text-amber-300/80 flex items-center gap-1">
-                                <AlertCircle size={12} /> Email verification is required for AI generation.
+                                <AlertCircle size={12} /> Email verification is required for creative generation.
                             </p>
                             <button
                                 onClick={handleResendVerification}
@@ -319,7 +319,7 @@ const SecuritySection: React.FC = () => {
                                 <div className="grid gap-2 sm:grid-cols-2">
                                     <UsageMeter label="Images" used={usage.imagesGenerated} total={usage.imagesPerMonth} remaining={usage.imagesRemaining} icon={ImageIcon} />
                                     <UsageMeter label="Video minutes" used={usage.videoDurationMinutes} total={usage.videoTotalMinutes} remaining={usage.videoRemainingMinutes} icon={Video} />
-                                    <UsageMeter label="AI chat tokens" used={usage.aiChatTokensUsed} total={usage.aiChatTokensPerMonth} remaining={usage.aiChatTokensRemaining} icon={MessageSquareText} />
+                                    <UsageMeter label="Chat tokens" used={usage.aiChatTokensUsed} total={usage.aiChatTokensPerMonth} remaining={usage.aiChatTokensRemaining} icon={MessageSquareText} />
                                     <UsageMeter label="Storage (GB)" used={usage.storageUsedGB} total={usage.storageTotalGB} remaining={usage.storageRemainingGB} icon={HardDrive} />
                                 </div>
                             </div>

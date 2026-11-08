@@ -161,10 +161,10 @@ export default function EmailMarketingPanel() {
                         onClick={handleGenerateSubject}
                         disabled={generatingSubject}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-dept-marketing/10 border border-dept-marketing/20 text-dept-marketing text-xs font-medium hover:bg-dept-marketing/20 transition-all disabled:opacity-50"
-                        title="Generate with AI"
+                        title="Generate Subject"
                     >
                         {generatingSubject ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-                        AI
+                        Draft
                     </button>
                 </div>
             </div>
