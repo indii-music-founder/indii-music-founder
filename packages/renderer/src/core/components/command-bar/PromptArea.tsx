@@ -570,7 +570,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 disabled={isLocalProcessing || isAgentProcessing}
                             />
                         </PromptInputAction>
+                    </div>
 
+                    <div className="flex items-center gap-1.5 shrink-0">
                         {!isMobile && (
                             <div className="flex items-center gap-0.5">
                                 <input
@@ -625,9 +627,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 {isMobile && <span>RAG</span>}
                             </button>
                         </PromptInputAction>
-                    </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
                         {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
                         {/* Hierarchical Agent Mode Picker */}

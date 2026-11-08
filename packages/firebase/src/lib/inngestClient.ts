@@ -9,12 +9,15 @@ import { inngestEventKey } from '../config/secrets.js';
 
 export const getInngestClient = (): Inngest => {
     let eventKey = process.env.INNGEST_EVENT_KEY || '';
+    let eventKey = process.env.INNGEST_EVENT_KEY;
     if (!eventKey) {
         try {
             eventKey = inngestEventKey.value();
         } catch {
             // SecretParam.value() cannot be read during deployment analysis.
             eventKey = 'deployment-analysis-placeholder';
+            // Secret values are only available at runtime, not during deployment analysis
+            eventKey = undefined;
         }
     }
     return new Inngest({

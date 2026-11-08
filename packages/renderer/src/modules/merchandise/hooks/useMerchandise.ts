@@ -67,19 +67,19 @@ export const useMerchandise = () => {
                 }
             });
 
-        // Defensive timeout
+        // Defensive timeout: if Firestore catalog fetch takes too long, unblock the loading state
+        // and allow dashboard to render with existing products instead of locking the screen.
         const timer = setTimeout(() => {
             if (mounted) {
                 setIsCatalogLoading((prev) => {
                     if (prev) {
-                        logger.warn("[Merchandise] Catalog load timed out.");
-                        setError("Merchandise catalog timed out.");
+                        logger.warn("[Merchandise] Catalog load timed out. Continuing with empty catalog to unblock dashboard.");
                         return false;
                     }
                     return prev;
                 });
             }
-        }, 5000);
+        }, 10000);
 
         return () => {
             mounted = false;
