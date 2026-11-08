@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -19,6 +19,10 @@ import { BoardroomWorkbenchView } from './BoardroomWorkbenchView';
 import { BoardroomAgentFeedView } from './BoardroomAgentFeedView';
 import { AVAILABLE_AGENTS } from './ParticipantSelector';
 import type { BoardroomWorkspaceTab } from '@/core/store/slices/boardroomSlice';
+import {
+    judgeBoardroomWorkspaceRecommendation,
+    type BoardroomWorkspaceRecommendation,
+} from '@/config/typesafeJudgments';
 
 export function BoardroomWorkspacePane() {
     const {
@@ -26,6 +30,8 @@ export function BoardroomWorkspacePane() {
         setBoardroomWorkspaceLayout,
         boardroomWorkspaceTab,
         setBoardroomWorkspaceTab,
+        setBoardroomPreviewModuleId,
+        agentHistory,
         activeAgents,
         toggleAgent,
         soloAgent,
@@ -35,11 +41,27 @@ export function BoardroomWorkspacePane() {
             setBoardroomWorkspaceLayout: state.setBoardroomWorkspaceLayout,
             boardroomWorkspaceTab: state.boardroomWorkspaceTab,
             setBoardroomWorkspaceTab: state.setBoardroomWorkspaceTab,
+            setBoardroomPreviewModuleId: state.setBoardroomPreviewModuleId,
+            agentHistory: state.agentHistory || [],
             activeAgents: state.activeAgents || [],
             toggleAgent: state.toggleAgent,
             soloAgent: state.soloAgent,
         }))
     );
+
+    const [jevRecommendation, setJevRecommendation] = useState<BoardroomWorkspaceRecommendation | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        if (agentHistory.length > 0) {
+            void judgeBoardroomWorkspaceRecommendation(agentHistory).then(rec => {
+                if (isMounted) setJevRecommendation(rec);
+            });
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, [agentHistory]);
 
     const tabs: { id: BoardroomWorkspaceTab; label: string; icon: React.ElementType }[] = [
         { id: 'browser', label: 'Live Browser', icon: Globe },
@@ -82,6 +104,29 @@ export function BoardroomWorkspacePane() {
                         );
                     })}
                 </div>
+
+                {/* Center: TypeSafe Jev Smart Recommendation Pill */}
+                {jevRecommendation && jevRecommendation.recommendedTab !== boardroomWorkspaceTab && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setBoardroomWorkspaceTab(jevRecommendation.recommendedTab);
+                            if (jevRecommendation.recommendedModule && setBoardroomPreviewModuleId) {
+                                setBoardroomPreviewModuleId(jevRecommendation.recommendedModule);
+                            }
+                        }}
+                        data-testid="boardroom-workspace-jev-suggestion"
+                        className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[10px] text-indigo-200 transition-all shadow-sm group animate-fadeIn"
+                        title={jevRecommendation.reasoningHint}
+                    >
+                        <Sparkles size={11} className="text-indigo-400 group-hover:rotate-12 transition-transform shrink-0" />
+                        <span className="font-semibold text-indigo-300">Jev Suggests:</span>
+                        <span className="font-bold text-white uppercase">{jevRecommendation.recommendedTab}</span>
+                        {jevRecommendation.recommendedModule && (
+                            <span className="text-indigo-300/80 font-mono text-[9px]">({jevRecommendation.recommendedModule})</span>
+                        )}
+                    </button>
+                )}
 
                 {/* Right: Stage / Split toggle & Close button */}
                 <div className="flex items-center gap-1 shrink-0">
