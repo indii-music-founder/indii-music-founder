@@ -5079,6 +5079,98 @@ describe('Firestore Security Rules', () => {
                 // Verified user can delete
                 await assertSucceeds(deleteDoc(agreementRef));
             });
+
+            it('public_profiles/{userId}: authenticated read allowed, unauthenticated denied, owner create/update with matching identity, delete denied (ISSUE-1583)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const aliceProfileRef = doc(aliceDb, 'public_profiles', ALICE_UID);
+
+                // Owner can create public profile with matching id/userId/uid
+                await assertSucceeds(setDoc(aliceProfileRef, {
+                    displayName: 'Alice Artist',
+                    handle: 'alice',
+                    userId: ALICE_UID,
+                    uid: ALICE_UID,
+                    id: ALICE_UID,
+                }));
+
+                // Any authenticated user can read Alice's public profile
+                await assertSucceeds(getDoc(doc(bobDb, 'public_profiles', ALICE_UID)));
+
+                // Unauthenticated user cannot read
+                await assertFails(getDoc(doc(unauthDb, 'public_profiles', ALICE_UID)));
+
+                // Owner can update public profile
+                await assertSucceeds(updateDoc(aliceProfileRef, {
+                    bio: 'Producer and Sound Designer',
+                }));
+
+                // Owner cannot update with mismatched identity
+                await assertFails(updateDoc(aliceProfileRef, {
+                    userId: BOB_UID,
+                }));
+
+                // Non-owner cannot create or update Alice's public profile
+                await assertFails(setDoc(doc(bobDb, 'public_profiles', ALICE_UID), {
+                    displayName: 'Hacked Alice',
+                }));
+                await assertFails(updateDoc(doc(bobDb, 'public_profiles', ALICE_UID), {
+                    displayName: 'Hacked Alice',
+                }));
+
+                // Delete is denied for everyone (even owner)
+                await assertFails(deleteDoc(aliceProfileRef));
+            });
+
+            it('users/{userId}/auditLogs/{entryId}: tamper-evident owner create with matching or omitted userId, update/delete denied, cross-user denied (ISSUE-1584)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const aliceLog1 = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-1');
+                const aliceLog2 = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-2');
+                const aliceLogBad = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-bad');
+
+                // Owner can create with matching userId
+                await assertSucceeds(setDoc(aliceLog1, {
+                    action: 'LOGIN',
+                    userId: ALICE_UID,
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner can create with omitted userId
+                await assertSucceeds(setDoc(aliceLog2, {
+                    action: 'SIGNOUT',
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner CANNOT create with mismatched userId (tamper-evident prevention)
+                await assertFails(setDoc(aliceLogBad, {
+                    action: 'IMPERSONATE',
+                    userId: BOB_UID,
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner can read audit log
+                await assertSucceeds(getDoc(aliceLog1));
+
+                // Append-only: updates are denied
+                await assertFails(updateDoc(aliceLog1, { action: 'MODIFIED' }));
+
+                // Append-only: deletions are denied
+                await assertFails(deleteDoc(aliceLog1));
+
+                // Cross-user access is denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'entry-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'entry-cross'), {
+                    action: 'CROSS_USER',
+                }));
+
+                // Unauthenticated access is denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'entry-1')));
+            });
         });
     });
 });

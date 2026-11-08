@@ -34,7 +34,9 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
         if (!targetId) return;
         setLoading(true);
         try {
-            const data = await UserService.getUserProfile(targetId);
+            const data = (currentUser?.id === targetId)
+                ? await UserService.getUserProfile(targetId)
+                : await UserService.getPublicProfile(targetId);
             setProfile(data);
         } catch (error: unknown) {
             logger.error("Failed to load profile", error);

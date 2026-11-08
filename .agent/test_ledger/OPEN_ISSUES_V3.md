@@ -6280,7 +6280,11 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Unit tests verify `hydrateCustomCommands` retries after a failed `loadCloudCommands` call, `saveToTeamScope` preserves `ownerId` on team command updates, and `saveCustomCommand` surfaces cloud sync errors to the caller.
 
 ### ISSUE-1583: `SocialService` & `UserProfileHeader` social graph breakdown — `followUser`, `unfollowUser`, `getFeed('following')`, `isFollowing`, and `recalculateStats` target unruled `users/{uid}/following` and `users/{targetId}/followers` (instead of `social_follows`) and attempt cross-user writes on `users/{targetId}`, while `UserProfileHeader` reads `users/{targetId}` directly (blocked by owner-only `firestore.rules`)
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08)
+  - Remediated social graph relationships to use the ruled `social_follows` collection for `followUser`, `unfollowUser`, `isFollowing`, and `getFeed('following')`.
+  - Added ruled `match /public_profiles/{userId}` top-level projection in `packages/firebase/firestore.rules` with owner write and authenticated/guest read permissions.
+  - Implemented `UserService.getPublicProfile` and updated `UserProfileHeader` to load peer profiles from `public_profiles` alongside `social_stats`, falling back from private user profile reads.
+  - Added unit test suite in `UserService.test.ts` (5 tests passing) and verified all 346 security rules tests pass.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Social Service & Profile UI (`packages/renderer/src/services/social/SocialService.ts`, `packages/renderer/src/modules/social/components/UserProfileHeader.tsx`, `packages/renderer/src/services/UserService.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Complete Social Graph & Peer Profile `PERMISSION_DENIED` Breakdown
