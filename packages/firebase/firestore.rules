@@ -598,7 +598,8 @@ service cloud.firestore {
       // ── User Stats (Dashboard Analytics) ──────────────────────────
       match /stats/{statId} {
         allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
-        allow write: if false; // Stats should be updated via backend functions
+        allow create, update: if isOwner(userId) && statId == 'marketing';
+        allow delete: if false;
       }
 
       // Server-owned, per-creator cost aggregates. Clients may inspect only
@@ -2526,8 +2527,8 @@ service cloud.firestore {
     }
 
     match /api_inventory/{apiKey} {
-      allow read: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isAdmin());
-      allow write: if false;
+      allow read: if isAuthenticated() || isGuest();
+      allow write: if isAdmin();
     }
 
     match /campaign_metrics/{metricId} {

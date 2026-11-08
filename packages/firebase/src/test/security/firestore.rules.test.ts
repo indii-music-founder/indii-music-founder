@@ -4499,10 +4499,11 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(bobDb, 'merch_config', ALICE_UID), { currency: 'EUR' }));
             });
 
-            it('api_inventory/{apiKey}: owner/admin can read, cross-user denied, client writes denied', async () => {
+            it('api_inventory/{apiKey}: authenticated can read, unauth denied, non-admin write denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
                 const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
 
                 await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
@@ -4512,13 +4513,13 @@ describe('Firestore Security Rules', () => {
                     });
                 });
 
-                // Alice reads own key
+                // Authenticated users read key
                 await assertSucceeds(getDoc(doc(aliceDb, 'api_inventory', 'key-alice')));
-                // Admin reads key
+                await assertSucceeds(getDoc(doc(bobDb, 'api_inventory', 'key-alice')));
                 await assertSucceeds(getDoc(doc(adminDb, 'api_inventory', 'key-alice')));
-                // Bob cannot read Alice's key
-                await assertFails(getDoc(doc(bobDb, 'api_inventory', 'key-alice')));
-                // Client writes denied
+                // Unauthenticated read denied
+                await assertFails(getDoc(doc(unauthDb, 'api_inventory', 'key-alice')));
+                // Non-admin client writes denied
                 await assertFails(setDoc(doc(aliceDb, 'api_inventory', 'key-new'), { userId: ALICE_UID }));
             });
 
@@ -5248,6 +5249,78 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(unauthVersionDoc, {
                     content: 'Unauth text',
                 }));
+            });
+
+            it('users/{userId}/stats/marketing: owner create/update allowed, non-owner denied, other statId denied (ISSUE-1586)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const marketingDocRef = doc(aliceDb, 'users', ALICE_UID, 'stats', 'marketing');
+                const billingDocRef = doc(aliceDb, 'users', ALICE_UID, 'stats', 'billing');
+
+                // Owner create allowed for marketing stats
+                await assertSucceeds(setDoc(marketingDocRef, { totalViews: 100, updatedAt: Timestamp.now() }));
+
+                // Owner update allowed for marketing stats
+                await assertSucceeds(updateDoc(marketingDocRef, { totalViews: 150 }));
+
+                // Owner read allowed
+                await assertSucceeds(getDoc(marketingDocRef));
+
+                // Owner delete denied
+                await assertFails(deleteDoc(marketingDocRef));
+
+                // Non-owner write denied for marketing stats
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 999 }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 999 }));
+
+                // Non-owner read denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing')));
+
+                // Unauthenticated denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'stats', 'marketing')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 0 }));
+
+                // Other statId (e.g. 'billing') denied for client write
+                await assertFails(setDoc(billingDocRef, { invoiceCount: 5 }));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'billing'), { invoiceCount: 5 }));
+            });
+
+            it('api_inventory/{apiKey}: authenticated read allowed, unauthenticated denied, non-admin write denied (ISSUE-1586)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'api_inventory', 'key-test-1586'), {
+                        service: 'marketing-api',
+                        active: true,
+                    });
+                });
+
+                const docRefAlice = doc(aliceDb, 'api_inventory', 'key-test-1586');
+                const docRefBob = doc(bobDb, 'api_inventory', 'key-test-1586');
+                const docRefUnauth = doc(unauthDb, 'api_inventory', 'key-test-1586');
+
+                // Authenticated read allowed
+                await assertSucceeds(getDoc(docRefAlice));
+                await assertSucceeds(getDoc(docRefBob));
+
+                // Unauthenticated read denied
+                await assertFails(getDoc(docRefUnauth));
+
+                // Non-admin write denied
+                await assertFails(setDoc(doc(aliceDb, 'api_inventory', 'key-new-alice-1586'), { service: 'stripe' }));
+                await assertFails(updateDoc(docRefAlice, { active: false }));
+                await assertFails(deleteDoc(docRefAlice));
+
+                // Admin write allowed
+                await assertSucceeds(setDoc(doc(adminDb, 'api_inventory', 'key-admin-1586'), { service: 'admin-service' }));
+                await assertSucceeds(updateDoc(doc(adminDb, 'api_inventory', 'key-test-1586'), { active: false }));
+                await assertSucceeds(deleteDoc(doc(adminDb, 'api_inventory', 'key-test-1586')));
             });
         });
     });
