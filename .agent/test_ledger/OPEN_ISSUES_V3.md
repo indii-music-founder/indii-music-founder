@@ -6864,7 +6864,7 @@ outcome. Reproduce against current source before implementation or closure.
 
 ### ISSUE-1604: Marketing Cinematic Reel always calls the retired direct-video facade and returns a generic generation failure
 
-- **Status:** 🔴 OPEN (production failure reproduced 2026-10-29; source cause confirmed)
+- **Status:** 🟡 PARTIAL (2026-11-08; secured video gateway integration verified, live deployed generation pending)
 - **Severity:** 🔴 HIGH — advertised core Marketing creation path cannot create any reel.
 - **Module:** Marketing → Departments → Release Assets → Asset Generator → Cinematic Reel (`https://app.indii.music/marketing`).
 - **Evidence:** Production entry followed from `https://indii.music/` → Log in, using the existing genuine signed-in `wiil` session; no account created, authentication injected, entitlement changed, mocks or simulated service responses used. Actual plan could not be established: subscription/usage requests reported `functions/unavailable: Request protection is temporarily unavailable`; no free-tier claim. Screenshot: `artifacts/content-audit-2026-10-29/marketing-reel-failure.png`. Local source inspected at HEAD `31ad7df33843522ec9153fc7c47c5920e5c33b16`; this is source correlation, not proof of the deployed commit SHA.
@@ -6875,10 +6875,11 @@ outcome. Reproduce against current source before implementation or closure.
 - **Dependencies / fix:** Route through existing `VideoGenerationService` and the secured `generateVideoV3` job lifecycle, including completion, URL persistence and error handling. Review the existing `durationSeconds: 15` against gateway-supported durations rather than blindly forwarding it. Preserve quota, cost admission and security checks. Avatar lip-sync is separately disabled by the UI with an explicit backend-worker dependency; do not treat that unavailable mode as a second duplicate reel failure.
 - **Acceptance:** With a genuine signed-in account and real displayed plan, complete the exact Marketing flow through a real backend job; play the actual clip, export and inspect it, reload and retrieve/reuse it. Reject failure/empty URL without a success screen. Test supported duration and vertical aspect ratio; expose an actionable error when admission/provider calls fail. Mock-backed service/UI tests do not establish this acceptance.
 - **Duplicate check:** Searched active V3 for `short-form`, `marketing video`, `generateMarketingVideo`, the retired-method error and Avatar lip-sync; no existing entry for this retired Marketing connection. Historical ISSUE-954 concerns truthful text-only/no-audio presentation; ISSUE-1360 concerns Arcjet/cost admission and video payloads, not this unconditional facade rejection.
+- **2026-11-08 verification:** Verified `CampaignIntelligenceService` routes through secured `VideoGenerationService` (`generateVideoV3`) with vertical 9:16 aspect ratio and supported duration defaults, awaiting job completion and surfacing actionable errors. `MarketingAssetGeneratorUI` renders completed video asset in step 4 and handles generation errors with inline alert. Unit test suites pass (`CampaignIntelligenceService`: 24/24, `MarketingAssetGeneratorUI`: 4/4). Jev (`jev-1.14.0`) verified: `remediation_valid` Noul `0.91`, `completeness` Score `3.67/4.00`.
 
 ### ISSUE-1605: Merchandise Showroom mockup generation sends an image model to the text-only gateway and fails with an unauthorized-model error
 
-- **Status:** 🔴 OPEN — production failure reproduced 2026-10-29.
+- **Status:** 🟡 PARTIAL (2026-11-08; secured image gateway composite pipeline verified, live deployed generation pending)
 - **Severity:** 🔴 HIGH — mockup creation blocks the downstream merchandise animation workflow.
 - **Module:** Art & Merch Dept → Designer → Export to Showroom → Product Showroom.
 - **Reproduction:** On the genuine signed-in founder session, add Shape and Text in Designer; name draft `Content Audit 2026-10-29`; Save Draft; Export to Showroom → PNG → Export; confirm an Asset preview appears; choose Studio Minimal (populates `Clean white studio background with soft professional lighting`); click Generate Mockup.
@@ -6888,6 +6889,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Dependencies / fix:** Use the existing secured image-edit/composition pipeline and its correct response contract, not the text stream. Preserve the server-owned model allowlist and admission/cost controls; do not fix this by broadly admitting media models to a text-only endpoint. Review other `generateComposite` and legacy `GenAI.generateImage` consumers for the same connection, but their production outcomes remain unverified.
 - **Acceptance:** Repeat the genuine UI journey; inspect the real mockup for the input artwork, save/reload/retrieve the artifact, and use it to generate, play and export a real product video. Include clear failure and retry feedback; a toast alone is not acceptance.
 - **Duplicate check:** No active V3 entry found for `generateComposite`/`Invalid or unauthorized model ID`/image-model text-gateway mismatch. Existing creative editing issues are not asserted to cover this specific Showroom connection.
+- **2026-11-08 verification:** Verified `EnhancedShowroom` routes mockup generation through `Editing.generateComposite` via the secured image gateway (`ImageGeneration.generateImages` / `generateImageV3`) rather than the text stream. Actionable errors surface via toast alerts. Unit test suites pass (`EditingService`: 16/16, `EnhancedShowroom`: 2/2). Jev (`jev-1.14.0`) verified: `remediation_valid` Noul `0.86`, `completeness` Score `3.52/4.00`.
 
 ### ISSUE-1606: Saved merchandise drafts are not restored on reload, while Version History hides a missing-index failure as an empty library
 
