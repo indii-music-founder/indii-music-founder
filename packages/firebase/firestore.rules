@@ -1281,6 +1281,17 @@ service cloud.firestore {
       match /campaign_metrics/{metricId} {
         allow read, write: if isOwner(userId);
       }
+
+      // ── Audit logs and API inventory subcollections (ISSUE-1573) ──
+      match /auditLogs/{logId} {
+        allow read, create: if isOwner(userId);
+        allow update, delete: if false;
+      }
+
+      match /api_inventory/{apiId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
 
     // =========================================================================

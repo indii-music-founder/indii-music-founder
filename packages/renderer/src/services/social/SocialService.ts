@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -61,51 +62,35 @@ function fromDeliveryDoc(id: string, data: Record<string, unknown>): ScheduledPo
 
 export class SocialService {
   /**
-   * Follow a user
+   * Follow a user using the canonical public social_follows collection
    */
   static async followUser(targetUserId: string): Promise<void> {
     const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
     const currentUserId = userProfile.id;
+    if (currentUserId === targetUserId) throw new Error("Cannot follow yourself");
 
-    const connectionRef = doc(
-      db,
-      "users",
-      currentUserId,
-      "following",
-      targetUserId,
-    );
-    const followerRef = doc(
-      db,
-      "users",
-      targetUserId,
-      "followers",
-      currentUserId,
-    );
-
-    await runTransaction(db, async (transaction) => {
-      const connectionDoc = await transaction.get(connectionRef);
-      if (connectionDoc.exists()) return; // Already following
-
-      transaction.set(connectionRef, {
-        timestamp: serverTimestamp(),
-      });
-      transaction.set(followerRef, {
-        timestamp: serverTimestamp(),
-      });
-
-      // Update stats
-      const currentUserRef = doc(db, "users", currentUserId);
-      const targetUserRef = doc(db, "users", targetUserId);
-
-      transaction.update(currentUserRef, {
-        "socialStats.following": increment(1),
-      });
-      transaction.update(targetUserRef, {
-        "socialStats.followers": increment(1),
-      });
+    const followId = `${currentUserId}_${targetUserId}`;
+    const followDoc = doc(db, "social_follows", followId);
+    await setDoc(followDoc, {
+      followerId: currentUserId,
+      followingId: targetUserId,
+      timestamp: serverTimestamp(),
     });
+  }
+
+  /**
+   * Unfollow a user
+   */
+  static async unfollowUser(targetUserId: string): Promise<void> {
+    const { useStore } = await import("@/core/store");
+    const userProfile = useStore.getState().userProfile;
+    if (!userProfile?.id) throw new Error("User not authenticated");
+    const currentUserId = userProfile.id;
+
+    const followId = `${currentUserId}_${targetUserId}`;
+    await deleteDoc(doc(db, "social_follows", followId));
   }
 
   /**
@@ -117,33 +102,20 @@ export class SocialService {
     if (!userProfile?.id)
       return { followers: 0, following: 0, posts: 0, drops: 0 };
 
-    const userRef = doc(db, "users", userProfile.id);
-    const snapshot = await getDoc(userRef);
+    const statsRef = doc(db, "social_stats", userProfile.id);
+    const snapshot = await getDoc(statsRef);
 
-    if (snapshot.exists() && snapshot.data().socialStats) {
-      return snapshot.data().socialStats as SocialStats;
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      return {
+        followers: typeof data.followers === "number" ? data.followers : 0,
+        following: typeof data.following === "number" ? data.following : 0,
+        posts: typeof data.posts === "number" ? data.posts : 0,
+        drops: typeof data.drops === "number" ? data.drops : 0,
+      };
     }
 
-    // Return calculated/real stats if no specific stats exist
-    // Note: Real reach/engagement would come from an aggregation document or external API
-    return {
-      followers:
-        snapshot.exists() && snapshot.data().socialStats?.followers
-          ? snapshot.data().socialStats.followers
-          : 0,
-      following:
-        snapshot.exists() && snapshot.data().socialStats?.following
-          ? snapshot.data().socialStats.following
-          : 0,
-      posts:
-        snapshot.exists() && snapshot.data().socialStats?.posts
-          ? snapshot.data().socialStats.posts
-          : 0,
-      drops:
-        snapshot.exists() && snapshot.data().socialStats?.drops
-          ? snapshot.data().socialStats.drops
-          : 0,
-    };
+    return this.recalculateStats(userProfile.id);
   }
 
   /**
@@ -235,52 +207,6 @@ export class SocialService {
   }
 
   /**
-    /**
-     * Unfollow a user
-     */
-  static async unfollowUser(targetUserId: string): Promise<void> {
-    const { useStore } = await import("@/core/store");
-    const userProfile = useStore.getState().userProfile;
-    if (!userProfile?.id) throw new Error("User not authenticated");
-    const currentUserId = userProfile.id;
-
-    const connectionRef = doc(
-      db,
-      "users",
-      currentUserId,
-      "following",
-      targetUserId,
-    );
-    const followerRef = doc(
-      db,
-      "users",
-      targetUserId,
-      "followers",
-      currentUserId,
-    );
-
-    await runTransaction(db, async (transaction) => {
-      const connectionDoc = await transaction.get(connectionRef);
-      if (!connectionDoc.exists()) return; // Not following
-
-      transaction.delete(connectionRef);
-      transaction.delete(followerRef);
-
-      // Update stats
-      const currentUserRef = doc(db, "users", currentUserId);
-      const targetUserRef = doc(db, "users", targetUserId);
-
-      // Use negative increment
-      transaction.update(currentUserRef, {
-        "socialStats.following": increment(-1),
-      });
-      transaction.update(targetUserRef, {
-        "socialStats.followers": increment(-1),
-      });
-    });
-  }
-
-  /**
    * Create a new post
    */
   static async createPost(
@@ -315,14 +241,6 @@ export class SocialService {
     // Add to global 'posts' collection (and ideally user's subcollection or performing fan-out)
     // For MVP, global collection indexed by authorId is fine.
     const postRef = await addDoc(collection(db, "posts"), postData);
-
-    // Update user's post count
-    const userRef = doc(db, "users", userProfile.id);
-    await updateDoc(userRef, {
-      "socialStats.posts": increment(1),
-      ...(productId && { "socialStats.drops": increment(1) }),
-    });
-
     return postRef.id;
   }
 
@@ -346,7 +264,7 @@ export class SocialService {
         limit(50),
       );
     } else if (filter === "following") {
-      // Fetch the current user's following list, then query posts by those author IDs
+      // Fetch the current user's following list from canonical social_follows, then query posts by those author IDs
       const { useStore } = await import("@/core/store");
       const currentUser = useStore.getState().userProfile;
 
@@ -355,11 +273,16 @@ export class SocialService {
         return [];
       }
 
-      // Get all user IDs this user follows
+      // Get all user IDs this user follows from canonical social_follows
       const followingSnap = await getDocs(
-        collection(db, `users/${currentUser.id}/following`),
+        query(
+          collection(db, "social_follows"),
+          where("followerId", "==", currentUser.id),
+        ),
       );
-      const followingIds = followingSnap.docs.map((d) => d.id);
+      const followingIds = followingSnap.docs
+        .map((d) => (d.data()?.followingId as string))
+        .filter(Boolean);
 
       if (followingIds.length === 0) {
         // User doesn't follow anyone — return empty feed
@@ -417,7 +340,8 @@ export class SocialService {
     if (!userProfile?.id) return false;
     const currentUserId = userProfile.id;
 
-    const docRef = doc(db, "users", currentUserId, "following", targetUserId);
+    const followId = `${currentUserId}_${targetUserId}`;
+    const docRef = doc(db, "social_follows", followId);
     const snapshot = await getDoc(docRef);
     return snapshot.exists();
   }
@@ -430,21 +354,19 @@ export class SocialService {
       query(collection(db, "posts"), where("authorId", "==", userId)),
     );
     const followingSnap = await getDocs(
-      collection(db, `users/${userId}/following`),
+      query(collection(db, "social_follows"), where("followerId", "==", userId)),
+    );
+    const followersSnap = await getDocs(
+      query(collection(db, "social_follows"), where("followingId", "==", userId)),
     );
 
     const stats: SocialStats = {
       posts: postsSnap.size,
       following: followingSnap.size,
-      followers: 0, // Need collection for this
+      followers: followersSnap.size,
       drops: postsSnap.docs.filter((doc) => !!doc.data().productId).length,
     };
 
-    await setDoc(
-      doc(db, "users", userId),
-      { socialStats: stats },
-      { merge: true },
-    );
     return stats;
   }
 

@@ -4401,6 +4401,60 @@ describe('Firestore Security Rules', () => {
                 await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'campaign_metrics', 'metric-1')));
             });
 
+            it('users/{userId}/auditLogs: owner can read/create (append-only), update/delete denied, cross-user denied (ISSUE-1573)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'log-1');
+
+                // Owner can create
+                await assertSucceeds(setDoc(docRef, { action: 'LOGIN', timestamp: Timestamp.now() }));
+                // Owner can read
+                await assertSucceeds(getDoc(docRef));
+                // Owner cannot update (append-only)
+                await assertFails(updateDoc(docRef, { action: 'MODIFIED' }));
+                // Owner cannot delete (append-only)
+                await assertFails(deleteDoc(docRef));
+
+                // Cross-user cannot read or create
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'log-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'log-2'), { action: 'HACK' }));
+
+                // Unauth cannot read or create
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'log-1')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'log-3'), { action: 'ANON' }));
+            });
+
+            it('users/{userId}/api_inventory: owner can read, client writes denied, cross-user denied (ISSUE-1573)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1');
+
+                // Seed document via admin/rules-disabled context
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'api_inventory', 'api-key-1'), {
+                        keyId: 'api-key-1',
+                        status: 'active',
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(docRef));
+                // Owner cannot write (allow write: if false)
+                await assertFails(setDoc(docRef, { keyId: 'api-key-1', status: 'revoked' }));
+                await assertFails(updateDoc(docRef, { status: 'revoked' }));
+                await assertFails(deleteDoc(docRef));
+
+                // Cross-user cannot read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1')));
+
+                // Unauth cannot read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1')));
+            });
+
             it('feature_requests: authenticated can create with their uid and read all; unauth denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();

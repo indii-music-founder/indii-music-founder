@@ -28,12 +28,26 @@ export const SecurityTools = {
 
         // Try to get status from Firestore first
         try {
-            const docRef = doc(db, 'api_inventory', apiKey);
-            const docSnap = await getDoc(docRef);
+            const uid = auth.currentUser?.uid;
+            const refs = [
+                ...(uid ? [doc(db, 'users', uid, 'api_inventory', apiKey)] : []),
+                doc(db, 'api_inventory', apiKey),
+            ];
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                
+            let data: Record<string, unknown> | null = null;
+            for (const ref of refs) {
+                try {
+                    const snap = await getDoc(ref);
+                    if (snap.exists()) {
+                        data = snap.data() as Record<string, unknown>;
+                        break;
+                    }
+                } catch {
+                    continue;
+                }
+            }
+
+            if (data) {
                 if (data.endpointUrl) {
                     try {
                         const parsedUrl = new URL(String(data.endpointUrl));
