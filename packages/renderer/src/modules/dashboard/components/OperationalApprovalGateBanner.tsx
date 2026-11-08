@@ -180,6 +180,11 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
                                         <p className="text-[11px] text-gray-300 leading-snug mt-1 line-clamp-2">
                                             {item.description || 'Action awaiting authorization'}
                                         </p>
+                                        {item.toolName === 'report_bug' && typeof item.args?.title === 'string' && (
+                                            <p className="text-[11px] text-gray-200 leading-snug mt-1 line-clamp-2">
+                                                Report: {item.args.title}
+                                            </p>
+                                        )}
                                         {!canApprove && <p className="text-[11px] text-amber-200/80 mt-1">This request belongs to another session. It cannot be approved here. Dismiss it, then ask your agent to prepare the action again.</p>}
                                     </div>
 

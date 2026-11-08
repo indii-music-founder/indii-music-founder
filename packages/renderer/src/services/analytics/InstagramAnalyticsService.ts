@@ -39,11 +39,6 @@ import {
 } from '@/services/auth/AccountBoundOAuthSession';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-// Facebook Login grants a Facebook Graph user token. Keep analytics on the
-// same graph as publishing; graph.instagram.com is the incompatible Basic
-// Display API token model.
-const GRAPH_BASE = 'https://graph.facebook.com/v23.0';
 // ── Meta/Instagram API response types ─────────────────────────────────────────
 
 export interface InstagramPageChoice {
@@ -244,25 +239,18 @@ export class InstagramAnalyticsService {
     /**
      * Get Instagram Business/Creator account info.
      */
-    async getUserProfile(): Promise<IGUserResponse> {
-        const { token, igUserId } = await this._getValidToken();
-        return this._fetch<IGUserResponse>(
-            `${GRAPH_BASE}/${igUserId}?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website`,
-            token
-        );
+    async getUserProfile(igUserId?: string): Promise<IGUserResponse> {
+        return this._callProxy<IGUserResponse>('getUserProfile', igUserId ? { igUserId } : undefined);
     }
 
     /**
      * Get recent Reels and video posts with basic stats.
      */
-    async getReels(limit = 20): Promise<IGMedia[]> {
-        const { token, igUserId } = await this._getValidToken();
-        const fields = 'id,media_type,media_product_type,caption,timestamp,permalink,thumbnail_url,like_count,comments_count';
-
-        const res = await this._fetch<IGMediaListResponse>(
-            `${GRAPH_BASE}/${igUserId}/media?fields=${fields}&limit=${limit}`,
-            token
-        );
+    async getReels(limit = 20, igUserId?: string): Promise<IGMedia[]> {
+        const res = await this._callProxy<IGMediaListResponse>('getReels', {
+            limit,
+            ...(igUserId ? { igUserId } : {}),
+        });
 
         // Filter to only Reels and video content
         return (res.data ?? []).filter(m =>
@@ -282,21 +270,11 @@ export class InstagramAnalyticsService {
         shares: number;
         saved: number;
     }> {
-        const { token } = await this._getValidToken();
-
-        // Reels-specific metrics
-        const metrics = [
-            'plays', 'reach', 'impressions', 'likes', 'comments', 'shares', 'saved',
-        ].join(',');
-
-        const res = await this._fetch<IGMediaInsights>(
-            `${GRAPH_BASE}/${mediaId}/insights?metric=${metrics}&period=lifetime`,
-            token
-        );
+        const res = await this._callProxy<IGMediaInsights>('getReelInsights', { mediaId });
 
         const getValue = (name: string): number => {
             const item = res.data?.find(d => d.name === name);
-            return Number(item?.value ?? 0);
+            return Number(item?.values?.[0]?.value ?? item?.value ?? 0);
         };
 
         return {
@@ -314,22 +292,20 @@ export class InstagramAnalyticsService {
      * Get account-level daily insights for the last 30 days.
      * Metrics: impressions, reach, profile_views, follower_count.
      */
-    async getAccountDailyInsights(igUserId: string): Promise<{
+    async getAccountDailyInsights(igUserId?: string): Promise<{
         date: string;
         impressions: number;
         reach: number;
         profileViews: number;
     }[]> {
-        const { token } = await this._getValidToken();
-
         const since = Math.floor(Date.now() / 1000) - 30 * 24 * 3600;
         const until = Math.floor(Date.now() / 1000);
 
-        const metrics = 'impressions,reach,profile_views';
-        const res = await this._fetch<IGAccountInsightsResponse>(
-            `${GRAPH_BASE}/${igUserId}/insights?metric=${metrics}&period=day&since=${since}&until=${until}`,
-            token
-        );
+        const res = await this._callProxy<IGAccountInsightsResponse>('getAccountDailyInsights', {
+            ...(igUserId ? { igUserId } : {}),
+            since,
+            until,
+        });
 
         // Pivot: the API returns one series per metric
         const byDate = new Map<string, { impressions: number; reach: number; profileViews: number }>();
@@ -359,8 +335,6 @@ export class InstagramAnalyticsService {
      * Build PlatformData for the analytics engine from Instagram Reels insights.
      */
     async buildPlatformData(): Promise<PlatformData> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { igUserId } = await this._getValidToken();
         const reels = await this.getReels(20);
 
         if (reels.length === 0) {
@@ -404,7 +378,7 @@ export class InstagramAnalyticsService {
     /**
      * Build a 30-day stream history from Instagram account-level daily insights.
      */
-    async buildStreamHistory(igUserId: string): Promise<StreamDataPoint[]> {
+    async buildStreamHistory(igUserId?: string): Promise<StreamDataPoint[]> {
         const dailyInsights = await this.getAccountDailyInsights(igUserId);
         const byDate = new Map(dailyInsights.map(d => [d.date, d]));
 
@@ -431,26 +405,13 @@ export class InstagramAnalyticsService {
 
     // ── Internal ──────────────────────────────────────────────────────────────
 
-    private async _getValidToken(): Promise<never> {
-        throw new Error('Instagram credentials are server-only. Browser-side Graph requests are disabled until the authenticated analytics proxy is available.');
-    }
-
-    private async _fetch<T>(url: string, token: string): Promise<T> {
-        const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}access_token=${token}`, {
-            signal: AbortSignal.timeout(15_000),
-        });
-
-        if (res.status === 401 || res.status === 190) {
-            throw new Error('Instagram token expired — please reconnect.');
-        }
-        if (res.status === 429) {
-            throw new Error('Instagram API rate limit hit. Please wait before retrying.');
-        }
-        if (!res.ok) {
-            const err = await res.text().catch(() => res.statusText);
-            throw new Error(`Instagram Graph API error ${res.status}: ${err}`);
-        }
-        return res.json() as Promise<T>;
+    private async _callProxy<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
+        const callable = httpsCallable<{ endpoint: string; params?: Record<string, unknown> }, { ok: boolean; data: T }>(
+            firebaseFunctions,
+            'instagramAnalyticsProxy',
+        );
+        const res = await callable({ endpoint, params });
+        return res.data.data;
     }
 }
 

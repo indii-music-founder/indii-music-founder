@@ -1,6 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { RightsCopilotService } from './RightsCopilotService';
 import { DepositAsset } from '@indii/shared';
+
+const mockSetDoc = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/services/firebase', () => ({
+  db: { _type: 'mock-db' },
+  auth: { currentUser: { uid: 'artist-user-123' } },
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn((_db, ...parts) => ({ path: parts.join('/') })),
+  setDoc: (...args: unknown[]) => mockSetDoc(...args),
+}));
 
 describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine', () => {
   const service = new RightsCopilotService();
@@ -88,7 +99,7 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
     expect(brief).toContain('Target Registration Portals:');
   });
 
-  it('generates action plans for all 6 supported rights portals and records official filing confirmations', () => {
+  it('generates action plans for all 6 supported rights portals and records official filing confirmations', async () => {
     const manifest = service.createManifestFromPassport(
       { artistName: 'Nova Pulse' },
       { title: 'Starlight Drive', isrc: 'USIND2699901' },
@@ -100,7 +111,7 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
       expect(plan.length).toBeGreaterThanOrEqual(4);
     }
 
-    const record = service.recordFilingConfirmation(manifest, 'loc_copyright', {
+    const record = await service.recordFilingConfirmation(manifest, 'loc_copyright', {
       serviceRequestId: '1-9876543210',
       confirmationNumber: 'SR-2026-000999',
     });
@@ -109,5 +120,15 @@ describe('RightsCopilotService - ISSUE-1511 Assisted Rights Registration Engine'
     expect(record.serviceRequestId).toBe('1-9876543210');
     expect(record.confirmationNumber).toBe('SR-2026-000999');
     expect(record.portalTarget).toBe('loc_copyright');
+    expect(mockSetDoc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: `users/artist-user-123/rights_filings/${record.id}` }),
+      expect.objectContaining({
+        id: record.id,
+        userId: 'artist-user-123',
+        confirmationNumber: 'SR-2026-000999',
+        serviceRequestId: '1-9876543210',
+        status: 'outcome_unknown',
+      }),
+    );
   });
 });

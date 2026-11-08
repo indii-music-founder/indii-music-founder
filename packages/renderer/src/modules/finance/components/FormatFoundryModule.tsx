@@ -11,6 +11,8 @@ import {
   Lock,
   FileCheck
 } from 'lucide-react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '@/services/firebase';
 import { FormatForensicsEngine } from '@/services/foundry/FormatForensicsEngine';
 import { HypothesisLedger } from '@/services/foundry/HypothesisLedger';
 import { AdapterConstructor } from '@/services/foundry/AdapterConstructor';
@@ -77,6 +79,7 @@ export const FormatFoundryModule: React.FC = () => {
   const [validation, setValidation] = useState<LayeredValidationReport | null>(null);
   const [graph, setGraph] = useState<ArtistBusinessGraphResolution | null>(null);
   const [isBooked, setIsBooked] = useState<boolean>(false);
+  const [isBooking, setIsBooking] = useState<boolean>(false);
 
   const analysisVersion = useRef(0);
   const bookingAllowed = canBookStatement(report, validation);
@@ -143,9 +146,60 @@ export const FormatFoundryModule: React.FC = () => {
     }
   };
 
-  const handleConfirmBooking = () => {
-    if (!bookingAllowed) return;
-    setIsBooked(true);
+  const handleConfirmBooking = async () => {
+    if (!bookingAllowed || !report || isBooking) return;
+    setIsBooking(true);
+    try {
+      const sessionId = `foundry_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const rawStatementId = report.reportId || report.provenance?.deterministicHash || `statement_${Date.now()}`;
+      const statementId = rawStatementId.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      if (window.electronAPI?.foundry?.grantSession) {
+        await window.electronAPI.foundry.grantSession({
+          sessionId,
+          ttlMs: 60_000,
+        });
+      }
+
+      if (window.electronAPI?.foundry?.bookStatement) {
+        await window.electronAPI.foundry.bookStatement({
+          sessionId,
+          statementId,
+          normalizedReportJson: JSON.stringify(report),
+        });
+      }
+
+      const user = auth.currentUser;
+      if (user && db) {
+        try {
+          const docRef = doc(db, 'earnings_reports', statementId);
+          await setDoc(docRef, {
+            userId: user.uid,
+            statementId,
+            formatId: report.formatId,
+            reportingEntity: report.reportingEntity,
+            currency: report.currency,
+            totalGrossRevenue: report.totalGrossRevenue,
+            totalNetRevenue: report.totalNetRevenue,
+            totalDistributorFees: report.totalDistributorFees,
+            totalTransactions: report.transactions.length,
+            periodStart: report.periodStart ?? null,
+            periodEnd: report.periodEnd ?? null,
+            provenance: report.provenance,
+            bookedAt: serverTimestamp(),
+            status: 'booked',
+          }, { merge: true });
+        } catch (firestoreErr) {
+          console.warn('[FormatFoundryModule] Firestore persistence failed (local booking preserved):', firestoreErr);
+        }
+      }
+
+      setIsBooked(true);
+    } catch (err) {
+      console.error('[FormatFoundryModule] Statement booking failed:', err);
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   return (
@@ -383,10 +437,10 @@ export const FormatFoundryModule: React.FC = () => {
             {!isBooked ? (
               <button
                 onClick={handleConfirmBooking}
-                disabled={!bookingAllowed}
+                disabled={!bookingAllowed || isBooking}
                 className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition flex items-center space-x-1.5"
               >
-                <span>Approve & Book Statement</span>
+                <span>{isBooking ? 'Booking...' : 'Approve & Book Statement'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (

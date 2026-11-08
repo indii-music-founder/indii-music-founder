@@ -3,6 +3,8 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { typesafeApiKey, arcjetKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { protectAuthenticatedApiRequest } from '../security/arcjet';
+import { enforceRateLimit, RATE_LIMITS } from '../../lib/rateLimit';
+import { recordUsage } from '../creative/gateway';
 import {
     createTypesafeClient,
     TypesafeClientError,
@@ -67,6 +69,8 @@ export const typesafeJudge = onCall(
             }
         }
 
+        await enforceRateLimit(request.auth.uid, 'typesafeJudge', RATE_LIMITS.generation);
+
         const input = (request.data ?? {}) as {
             state?: unknown;
             questions?: unknown;
@@ -112,6 +116,10 @@ export const typesafeJudge = onCall(
 
         try {
             const result = await client.judge({ state: input.state, questions: input.questions });
+            const totalTokens = (result.inputTokens || 0) + (result.outputTokens || 0);
+            if (totalTokens > 0) {
+                void recordUsage(request.auth.uid, 'chat_tokens', totalTokens, 'typesafe-judge');
+            }
             return { answers: result.answers };
         } catch (err: unknown) {
             if (err instanceof TypesafeClientError) {

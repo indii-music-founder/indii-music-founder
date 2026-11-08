@@ -190,6 +190,7 @@ describe('alignSessionMaster Handler', () => {
             expect.objectContaining({
                 method: 'POST',
                 headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+                signal: expect.anything(),
             })
         );
         fetchSpy.mockRestore();

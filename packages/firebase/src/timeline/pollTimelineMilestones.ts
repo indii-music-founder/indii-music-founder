@@ -18,6 +18,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { Inngest } from 'inngest';
 import { defineSecret } from 'firebase-functions/params';
+import { getInngestClient } from '../lib/inngestClient';
 
 const inngestEventKey = defineSecret('INNGEST_EVENT_KEY');
 
@@ -78,23 +79,11 @@ interface Timeline {
 }
 
 // ============================================================================
-// Inngest Client (lazy init — secrets only available at runtime)
+// Inngest Client (unified indii-music-functions client)
 // ============================================================================
 
-let inngestClient: Inngest | null = null;
-
 function getInngest(): Inngest {
-    if (!inngestClient) {
-        const eventKey = inngestEventKey.value();
-        if (!eventKey) {
-            throw new Error('INNGEST_EVENT_KEY secret is not configured.');
-        }
-        inngestClient = new Inngest({
-            id: 'indii-os-timeline-poller',
-            eventKey,
-        });
-    }
-    return inngestClient;
+    return getInngestClient();
 }
 
 // ============================================================================

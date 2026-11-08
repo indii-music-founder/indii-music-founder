@@ -284,17 +284,8 @@ export const DevOpsTools = {
     }),
 
     configure_sentry_crash_reporting: wrapTool('configure_sentry_crash_reporting', async (args: { environment: string }) => {
-        // Item 185: Initialize Sentry via Cloud Function or Electron IPC
+        // Item 185: Initialize Sentry via Cloud Function
         try {
-            if (typeof window !== 'undefined' && window.electronAPI) {
-                // Electron: configure via main process
-                return toolSuccess({
-                    environment: args.environment,
-                    provider: 'Sentry',
-                    features: ['Native Crash Reporting', 'C++ / V8 Catching', 'Minidump Analysis'],
-                    status: 'Configured via Electron Main Process'
-                }, `Sentry native crash reporting initialized for ${args.environment} via Electron main process.`);
-            }
             const configFn = httpsCallable<
                 { environment: string },
                 { dsn: string; status: string }
@@ -308,7 +299,7 @@ export const DevOpsTools = {
             }, `Sentry crash reporting configured for ${args.environment}.`);
         } catch (_error: unknown) {
             return toolError(
-                `Sentry crash reporting for ${args.environment} requires: (1) Electron main process (Desktop app) or (2) deployed Cloud Function 'configureSentryCrashReporting' (web). Configure environment variable VITE_SENTRY_DSN if running in browser.`,
+                `Sentry crash reporting for ${args.environment} requires deployed Cloud Function 'configureSentryCrashReporting'. Configure environment variable VITE_SENTRY_DSN if running in browser or main process Sentry initialization.`,
                 'SENTRY_CONFIG_UNAVAILABLE'
             );
         }

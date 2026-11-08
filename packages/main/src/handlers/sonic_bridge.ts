@@ -16,8 +16,16 @@ import chokidar from 'chokidar';
 import path from 'path';
 import log from 'electron-log';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 
 let watcher: ReturnType<typeof chokidar.watch> | null = null;
+
+export const _resetWatcherForTesting = async (): Promise<void> => {
+    if (watcher) {
+        await watcher.close();
+        watcher = null;
+    }
+};
 
 export function registerSonicBridgeHandlers() {
     /**
@@ -38,9 +46,11 @@ export function registerSonicBridgeHandlers() {
         }
 
         const watchPath = result.filePaths[0];
+        accessControlService.grantAccess(watchPath);
         
         if (watcher) {
             await watcher.close();
+            watcher = null;
         }
 
         log.info(`[SonicBridge] Starting watch on: ${watchPath}`);
@@ -52,9 +62,19 @@ export function registerSonicBridgeHandlers() {
             depth: 0 // only top level for bounces usually
         });
 
+        // Clean up watcher when the renderer window closes
+        window.once('closed', async () => {
+            if (watcher) {
+                await watcher.close();
+                watcher = null;
+                log.info('[SonicBridge] Watcher cleaned up on window close.');
+            }
+        });
+
         watcher.on('add', (filePath: string) => {
             const ext = path.extname(filePath).toLowerCase();
             if (['.wav', '.mp3', '.aif', '.flac'].includes(ext)) {
+                accessControlService.grantAccess(filePath);
                 log.info(`[SonicBridge] New bounce detected: ${filePath}`);
                 if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
                     try {

@@ -12,8 +12,9 @@
  *
  * This service is the real fix: a persisted pending-approval record, and an
  * `approve()` that executes the selected implementation with the original
- * arguments (not a re-run of the LLM turn). Non-computer bindings are session
- * scoped: after a reload, the approval must be requested again.
+ * arguments (not a re-run of the LLM turn). Session-local implementations stay
+ * session scoped; validated report_bug calls can resume through their stable
+ * registry handler after reload.
  *
  * Collection: users/{uid}/tool_approvals/{approvalId}
  */
@@ -32,9 +33,9 @@ import {
     getDoc,
     type Unsubscribe,
 } from 'firebase/firestore';
-import { db, auth } from '@/services/firebase';
-import { functions } from '@/services/firebase';
+import { db, auth, functions, appCheck } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { getToken } from 'firebase/app-check';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -48,7 +49,7 @@ export interface PendingToolApproval {
     args: ToolFunctionArgs;
     riskTier: ToolRiskTier;
     description: string;
-    /** Non-computer calls must resolve against their original renderer session binding. */
+    /** Session-local non-computer calls resolve against their originating renderer session. */
     bindingSessionId?: string;
     status: 'pending' | 'approved' | 'claimed' | 'denied' | 'executed' | 'failed';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
@@ -102,6 +103,33 @@ function canonicalArgs(value: unknown): string {
     return json;
 }
 
+/**
+ * Bug reports have a stable, global implementation and a durable, explicit
+ * payload. They can be resumed from another renderer after the requesting
+ * session closes. Other non-computer tools may close over session-only state
+ * and remain bound to the renderer that created them.
+ */
+function isRecoverableBugReport(approval: PendingToolApproval): boolean {
+    if (approval.status !== 'pending'
+        || approval.agentId !== 'generalist'
+        || approval.toolName !== 'report_bug'
+        || approval.riskTier !== 'write'
+        || approval.description !== 'File a bug report and sync it to GitHub Issues'
+        || !approval.args || typeof approval.args !== 'object' || Array.isArray(approval.args)) return false;
+
+    const args = approval.args as Record<string, unknown>;
+    const allowedKeys = new Set([
+        'title', 'description', 'stepsToReproduce', 'expectedBehavior',
+        'actualBehavior', 'severity', 'module', 'errorMessage',
+    ]);
+    if (Object.keys(args).some(key => !allowedKeys.has(key))) return false;
+    if (typeof args.title !== 'string' || !args.title.trim() || args.title.length > 200) return false;
+    if (typeof args.description !== 'string' || !args.description.trim() || args.description.length > 20_000) return false;
+    if (args.severity !== undefined && !['critical', 'major', 'minor', 'cosmetic'].includes(String(args.severity))) return false;
+    return ['stepsToReproduce', 'expectedBehavior', 'actualBehavior', 'module', 'errorMessage']
+        .every(key => args[key] === undefined || (typeof args[key] === 'string' && (args[key] as string).length <= 20_000));
+}
+
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
 }
@@ -120,6 +148,7 @@ class ToolApprovalService {
     canApproveInThisSession(approval: PendingToolApproval & { id: string }): boolean {
         if (approval.status !== 'pending') return false;
         if (approval.toolName.startsWith('computer_')) return !approval.bindingSessionId;
+        if (isRecoverableBugReport(approval)) return getUserId() !== null;
         const binding = this.boundCalls.get(approval.id);
         try {
             return Boolean(binding && binding.userId === getUserId()
@@ -202,6 +231,7 @@ class ToolApprovalService {
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
         let approval: PendingToolApproval;
         let isComputerApproval = false;
+        let reportBugHandler: ((args: ToolFunctionArgs) => Promise<ToolFunctionResult>) | undefined;
         const binding = this.boundCalls.get(approvalId);
         const matchesBinding = (candidate: PendingToolApproval): boolean => {
             try {
@@ -222,6 +252,11 @@ class ToolApprovalService {
             if (!snapshot.exists()) throw new Error(`Approval ${approvalId} not found`);
             const candidate = snapshot.data() as PendingToolApproval;
             isComputerApproval = candidate.toolName.startsWith('computer_') && !candidate.bindingSessionId && !binding;
+            if (isRecoverableBugReport(candidate)) {
+                const { TOOL_REGISTRY } = await import('../tools');
+                reportBugHandler = TOOL_REGISTRY.report_bug;
+                if (!reportBugHandler) throw new Error('The registered bug-report handler is unavailable. The request remains pending.');
+            }
             if (isComputerApproval) {
                 if (candidate.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${candidate.status})`);
                 approval = candidate;
@@ -230,7 +265,9 @@ class ToolApprovalService {
                 if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                 const current = snap.data() as PendingToolApproval;
                 if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
-                if (!matchesBinding(current)) throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                if (!matchesBinding(current) && !isRecoverableBugReport(current)) {
+                    throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                }
                 transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
                 return current;
             });
@@ -261,7 +298,20 @@ class ToolApprovalService {
                 const user = auth.currentUser;
                 if (!user || !window.electronAPI?.computer) throw new Error('Verified desktop sign-in is required for computer control.');
                 const idToken = await user.getIdToken();
-                const authorized = await window.electronAPI.computer.authorizeApproval({ idToken, approvalId, rendererSessionId: this.rendererSessionId });
+                let appCheckToken: string | undefined;
+                if (appCheck) {
+                    try {
+                        appCheckToken = (await getToken(appCheck, false))?.token;
+                    } catch {
+                        // App Check is optional in dev/test
+                    }
+                }
+                const authorized = await window.electronAPI.computer.authorizeApproval({
+                    idToken,
+                    approvalId,
+                    rendererSessionId: this.rendererSessionId,
+                    appCheckToken,
+                });
                 if (!authorized.success || !authorized.data) throw new Error(authorized.error || 'Main-process computer authorization failed.');
                 const executionArgs = {
                     ...approval.args,
@@ -270,6 +320,11 @@ class ToolApprovalService {
                     __computerAgentId: approval.agentId,
                 };
                 result = await toolFn(executionArgs);
+            } else if (isRecoverableBugReport(approval)) {
+                // This tool has no renderer-local closure and consumes only its
+                // persisted, validated arguments, so it remains executable after
+                // reload or approval from another active renderer.
+                result = await reportBugHandler!(approval.args);
             } else {
                 // Use the selected implementation and original arguments from the requesting turn.
                 // A reload loses this binding and fails closed instead of replaying a bare tool name.
@@ -305,6 +360,17 @@ class ToolApprovalService {
                     success: false,
                     error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,
                 };
+            }
+        } else {
+            try {
+                const completeFn = httpsCallable(functions, 'completeComputerApproval');
+                await completeFn({
+                    approvalId,
+                    success: result.success,
+                    ...(result.error ? { error: result.error } : {}),
+                });
+            } catch (completeErr) {
+                logger.warn(`[ToolApprovalService] Failed to complete computer approval ${approvalId}:`, completeErr);
             }
         }
 

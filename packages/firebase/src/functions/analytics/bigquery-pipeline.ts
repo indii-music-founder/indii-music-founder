@@ -24,6 +24,7 @@ interface AnalyticsEvent {
   userId: string;
   timestamp: string | number;
   data: Record<string, unknown>;
+  _bigQuerySynced?: boolean;
 }
 
 interface BigQueryRow extends AnalyticsEvent {
@@ -71,9 +72,14 @@ async function isDuplicate(idempotencyKey: string): Promise<boolean> {
 }
 
 /**
- * Should event be sampled? (10% by default)
+ * Should event be sampled? (10% deterministic by eventId when provided, or random fallback)
  */
-function shouldSample(): boolean {
+export function shouldSample(eventId?: string): boolean {
+  if (eventId && typeof eventId === 'string') {
+    const digest = crypto.createHash('sha256').update(eventId).digest();
+    const bucket = digest.readUInt32BE(0) / 0xffffffff;
+    return bucket < SAMPLING_RATE;
+  }
   return Math.random() < SAMPLING_RATE;
 }
 
@@ -88,7 +94,8 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
 
   // Filter and prepare rows
   for (const event of events) {
-    if (!shouldSample()) continue;
+    if (event._bigQuerySynced === true) continue;
+    if (!shouldSample(event.eventId)) continue;
 
     const idempotencyKey = generateIdempotencyKey(event);
     const isDupe = await isDuplicate(idempotencyKey);
@@ -108,8 +115,8 @@ async function streamEventsToBigQuery(events: AnalyticsEvent[]): Promise<void> {
 
   // Batch insert into BigQuery
   try {
-    const result = await table.insert(rows);
-    console.log(`[BigQueryEventsPipeline] Inserted ${result.length} rows`);
+    await table.insert(rows);
+    console.log(`[BigQueryEventsPipeline] Inserted ${rows.length} rows`);
   } catch (error: unknown) {
     const err = error as Error & { errors?: unknown[] };
     if (err.name === 'PartialFailureError') {
@@ -132,20 +139,31 @@ export async function runBatchEventsSync(
   const syncStateRef = dbInstance.collection('admin').doc('bigquerySyncState');
   const syncDoc = await syncStateRef.get();
   const lastWatermark = syncDoc.data()?.lastSyncedTimestamp || '1970-01-01T00:00:00.000Z';
+  const lastSyncedDocId: string | undefined = syncDoc.data()?.lastSyncedDocId;
 
-  // Chronological query starting strictly after the last watermark
+  // Query from >= lastWatermark so same-millisecond boundary events are never dropped;
+  // skip events at lastWatermark whose doc.id <= lastSyncedDocId or _bigQuerySynced === true.
   const snapshot = await dbInstance.collection('events')
-    .where('timestamp', '>', lastWatermark)
+    .where('timestamp', '>=', lastWatermark)
     .orderBy('timestamp', 'asc')
     .limit(BATCH_SIZE)
     .get();
 
-  if (snapshot.empty) {
+  const pendingDocs = snapshot.docs.filter((doc) => {
+    const data = doc.data();
+    if (data?._bigQuerySynced === true) return false;
+    if (String(data?.timestamp) === lastWatermark && lastSyncedDocId && doc.id <= lastSyncedDocId) {
+      return false;
+    }
+    return true;
+  });
+
+  if (pendingDocs.length === 0) {
     console.log('[BigQueryEventsPipeline] No new events to process after watermark:', lastWatermark);
     return { processed: 0, lastWatermark };
   }
 
-  const events = snapshot.docs.map(doc => ({
+  const events = pendingDocs.map(doc => ({
     eventId: doc.id,
     ...doc.data(),
   } as unknown as AnalyticsEvent));
@@ -153,13 +171,15 @@ export async function runBatchEventsSync(
   await streamer(events);
 
   const batch = dbInstance.batch();
-  snapshot.docs.forEach(doc => {
+  pendingDocs.forEach(doc => {
     batch.update(doc.ref, { _bigQuerySynced: true });
   });
 
-  const newestTimestamp = String(events[events.length - 1].timestamp);
+  const lastDoc = pendingDocs[pendingDocs.length - 1]!;
+  const newestTimestamp = String(events[events.length - 1]!.timestamp);
   batch.set(syncStateRef, {
     lastSyncedTimestamp: newestTimestamp,
+    lastSyncedDocId: lastDoc.id,
     lastSyncedAt: new Date().toISOString(),
     eventCount: admin.firestore.FieldValue.increment(events.length),
   }, { merge: true });
@@ -193,13 +213,14 @@ export const batchEventsScheduled = onSchedule(
  */
 export const streamEventOnCreate = onDocumentCreated('events/{eventId}', async (event: FirestoreEvent<QueryDocumentSnapshot | undefined, { eventId: string }>) => {
     try {
-      if (!shouldSample()) return;
-
       const data = event.data?.data();
       if (!data) return;
 
+      const resolvedEventId = String(data.eventId || event.params.eventId);
+      if (!shouldSample(resolvedEventId)) return;
+
       const analyticsEvent: AnalyticsEvent = {
-        eventId: data.eventId || event.params.eventId,
+        eventId: resolvedEventId,
         eventType: data.eventType,
         userId: data.userId,
         timestamp: data.timestamp,

@@ -175,7 +175,7 @@ import { enqueuePrintJob } from '../functions/print/enqueuePrintJob';
 import { preparePrintHandoff } from '../functions/print/preparePrintHandoff';
 import { sendForDigitalSignature } from './digitalSignature';
 import { exportSplitSheet } from './exportSplitSheet';
-import { verifyMechanicalLicense } from './mechanicalLicense';
+import { verifyMechanicalLicense, searchSongfile, requestMechanicalLicense } from './mechanicalLicense';
 import {
   pandadocListTemplates,
   pandadocCreateDocument,
@@ -229,7 +229,9 @@ describe('Legal & POD Callables Admission & Arcjet Protection', () => {
     { name: 'preparePrintHandoff', fn: preparePrintHandoff },
     { name: 'sendForDigitalSignature', fn: sendForDigitalSignature },
     { name: 'exportSplitSheet', fn: exportSplitSheet },
-    { name: 'verifyMechanicalLicense', fn: verifyMechanicalLicense },
+    { name: 'verifyMechanicalLicense', fn: verifyMechanicalLicense, data: { trackTitle: 'Song', originalArtist: 'Artist' } },
+    { name: 'searchSongfile', fn: searchSongfile, data: { title: 'Song' } },
+    { name: 'requestMechanicalLicense', fn: requestMechanicalLicense, data: { licenseId: 'ml_123', userId: 'legal_pod_user_1' } },
     { name: 'pandadocListTemplates', fn: pandadocListTemplates },
     { name: 'pandadocCreateDocument', fn: pandadocCreateDocument },
     { name: 'pandadocSendDocument', fn: pandadocSendDocument },
@@ -335,6 +337,47 @@ describe('Legal & POD Callables Admission & Arcjet Protection', () => {
 
       expect(res.status).toHaveBeenCalledWith(429);
       expect(res.send).toHaveBeenCalledWith('Too Many Requests');
+    });
+  });
+
+  describe('Mechanical Licensing Functional Contracts (ISSUE-1566)', () => {
+    beforeEach(() => {
+      mocks.protectAuthenticated.mockResolvedValue({ allowed: true });
+    });
+
+    it('verifyMechanicalLicense returns structured guidance and statutory rate without throwing unimplemented', async () => {
+      const invoke = verifyMechanicalLicense as unknown as (req: unknown) => Promise<{
+        status: string;
+        requiresClearance: boolean;
+        rate: number;
+        guidance: string;
+        clearanceLinks: { songfile: string; mlc: string };
+      }>;
+      const res = await invoke(baseRequest({}, { trackTitle: 'Blackbird', originalArtist: 'The Beatles' }));
+      expect(res.status).toBe('UNVERIFIED');
+      expect(res.requiresClearance).toBe(true);
+      expect(res.rate).toBe(0.124);
+      expect(res.clearanceLinks.songfile).toBe('https://www.songfile.com');
+      expect(res.guidance).toContain('No automated licensing API is connected');
+    });
+
+    it('searchSongfile returns composition metadata', async () => {
+      const invoke = searchSongfile as unknown as (req: unknown) => Promise<{
+        result: { title: string; writers: string[]; controlled: boolean };
+      }>;
+      const res = await invoke(baseRequest({}, { title: 'Yesterday', writer: 'Paul McCartney' }));
+      expect(res.result.title).toBe('Yesterday');
+      expect(res.result.writers).toContain('Paul McCartney');
+      expect(res.result.controlled).toBe(true);
+    });
+
+    it('requestMechanicalLicense returns generated licenseNumber and requested status', async () => {
+      const invoke = requestMechanicalLicense as unknown as (req: unknown) => Promise<{
+        result: { licenseNumber: string; status: string };
+      }>;
+      const res = await invoke(baseRequest({ auth: { uid: 'user-1' } }, { licenseId: 'lic-123', userId: 'user-1' }));
+      expect(res.result.licenseNumber).toMatch(/^HFA_[A-F0-9]{8}$/);
+      expect(res.result.status).toBe('license_requested');
     });
   });
 });

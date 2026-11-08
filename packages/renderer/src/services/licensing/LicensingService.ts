@@ -183,14 +183,30 @@ export class LicensingService {
      */
     async getCatalogTracksForSync(): Promise<SyncCatalogTrack[]> {
         const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) return [];
+        const currentUid = auth.currentUser?.uid;
+        const targetId = userProfile?.id || currentUid;
+        if (!targetId) return [];
 
         try {
-            const snapshot = await getDocs(
-                query(collection(db, 'proprietaryIngestionReleases'), where('orgId', '==', userProfile.id), limit(50))
+            const col = collection(db, 'proprietaryIngestionReleases');
+            const userSnap = await getDocs(
+                query(col, where('userId', '==', targetId), limit(50))
             );
 
-            return snapshot.docs.map(d => {
+            let docs = [...userSnap.docs];
+            if (docs.length === 0 && userProfile?.id && userProfile.id !== targetId) {
+                const orgSnap = await getDocs(
+                    query(col, where('orgId', '==', userProfile.id), limit(50))
+                );
+                docs = [...orgSnap.docs];
+            } else if (docs.length === 0 && userProfile?.id) {
+                const orgSnap = await getDocs(
+                    query(col, where('orgId', '==', userProfile.id), limit(50))
+                );
+                docs = [...orgSnap.docs];
+            }
+
+            return docs.map(d => {
                 const data = d.data();
                 const meta = data.metadata ?? {};
                 const audioFeatures = data.audioFeatures ?? {};

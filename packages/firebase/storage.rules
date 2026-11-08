@@ -51,7 +51,8 @@ service firebase.storage {
              request.resource.contentType.matches('application/zip') ||
              request.resource.contentType.matches('application/x-zip-compressed') ||
              request.resource.contentType.matches('font/.*') ||
-             request.resource.contentType.matches('application/x-font-.*');
+             request.resource.contentType.matches('application/x-font-.*') ||
+             request.resource.contentType.matches('application/font-woff.*');
     }
 
     // ========================================
@@ -96,7 +97,9 @@ service firebase.storage {
                               topLevel != 'rights' &&
                               isUnderSizeLimit(500) &&
                               isAllowedMediaType();
-      allow delete: if false; // Direct deletion blocked; must route through Trash
+      allow delete: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      topLevel in ['assets', 'thumbnails', 'audio', 'likeness', 'brandKit'];
     }
 
     match /users/{userId}/rights/deposits/{fileName} {
@@ -355,6 +358,64 @@ service firebase.storage {
                       isUnderSizeLimit(20) &&
                       request.resource.contentType in ['application/pdf', 'image/png', 'image/jpeg'];
       allow update: if false;
+    }
+
+    // ========================================
+    // VIDEO RENDER RELAY (Desktop Jobs — ISSUE-1588)
+    // ========================================
+
+    match /video-render-jobs/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(500) &&
+                      isVideoType();
+    }
+
+    // ========================================
+    // CEO SYNC ENCRYPTED BACKUP (ISSUE-1588)
+    // ========================================
+
+    match /ceo_sync/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(100);
+    }
+
+    // ========================================
+    // WHITE-GLOVE INGESTION (ISSUE-1588)
+    // ========================================
+
+    match /ingest/white-glove/{artistId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == artistId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == artistId &&
+                      isUnderSizeLimit(500) &&
+                      isAllowedMediaType();
+    }
+
+    // ========================================
+    // DISTRIBUTION DELIVERY RECEIPTS (ISSUE-1588)
+    // ========================================
+
+    match /distribution/receipts/{releaseId}/{allPaths=**} {
+      allow read: if isAuthenticated() &&
+        firestore.exists(/databases/(default)/documents/releases/$(releaseId)) &&
+        (('userId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.userId == request.auth.uid) ||
+         ('ownerId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.ownerId == request.auth.uid));
+      allow create: if isAuthenticated() &&
+        resource == null &&
+        isUnderSizeLimit(10) &&
+        request.resource.contentType == 'application/json' &&
+        firestore.exists(/databases/(default)/documents/releases/$(releaseId)) &&
+        (('userId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.userId == request.auth.uid) ||
+         ('ownerId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.ownerId == request.auth.uid));
+      allow update, delete: if false;
     }
 
     // ========================================

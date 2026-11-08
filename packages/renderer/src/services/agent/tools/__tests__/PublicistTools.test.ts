@@ -48,6 +48,53 @@ describe('PublicistTools', () => {
         expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
     });
 
+    it('write_press_release persists filePath from electron publicist pdf generator', async () => {
+        const mockResponse = {
+            headline: 'New Single',
+            dateline: 'LOS ANGELES, Feb 2026',
+            introduction: 'Intro',
+            body_paragraphs: ['Para 1'],
+            quotes: [{ speaker: 'Artist', text: 'Excited' }],
+            boilerplate: 'About us',
+            contact_info: { name: 'PR', email: 'pr@example.com' },
+            pdf: null
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+
+        const generatePdfMock = vi.fn().mockResolvedValue({
+            success: true,
+            filePath: '/rendered/press_releases/single.pdf',
+            message: 'PDF successfully generated'
+        });
+
+        const originalElectronAPI = (window as unknown as { electronAPI?: unknown }).electronAPI;
+        (window as unknown as { electronAPI: unknown }).electronAPI = {
+            publicist: {
+                generatePdf: generatePdfMock
+            }
+        };
+
+        try {
+            const result = await PublicistTools.write_press_release({ topic: 'New Single', generate_pdf: true });
+
+            expect(result.success).toBe(true);
+            expect(generatePdfMock).toHaveBeenCalled();
+            expect(addDoc).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    pdfPath: '/rendered/press_releases/single.pdf'
+                })
+            );
+            expect(result.data.pdf).toEqual({
+                success: true,
+                filePath: '/rendered/press_releases/single.pdf',
+                message: 'PDF successfully generated'
+            });
+        } finally {
+            (window as unknown as { electronAPI?: unknown }).electronAPI = originalElectronAPI;
+        }
+    });
+
     it('draft_pitch_email returns valid schema', async () => {
         const mockResponse = {
             subject_line: 'Playlist Pitch',

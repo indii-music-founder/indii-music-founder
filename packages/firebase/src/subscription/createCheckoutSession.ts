@@ -9,6 +9,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe, getPriceId } from '../stripe/config';
+import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
@@ -55,6 +56,9 @@ export const createCheckoutSession = onCall({
   if (tier === SubscriptionTier.FOUNDER) {
     throw new HttpsError('invalid-argument', 'Founder passes must be activated manually via admin.');
   }
+
+  const validatedSuccessUrl = assertAllowedStripeRedirectUrl(successUrl, 'successUrl');
+  const validatedCancelUrl = assertAllowedStripeRedirectUrl(cancelUrl, 'cancelUrl');
 
   try {
     const db = getFirestore();
@@ -106,8 +110,8 @@ export const createCheckoutSession = onCall({
           quantity: 1
         }
       ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: validatedSuccessUrl,
+      cancel_url: validatedCancelUrl,
       metadata: { userId, tier, billingPeriod: cadence },
       allow_promotion_codes: true,
       automatic_tax: { enabled: true },

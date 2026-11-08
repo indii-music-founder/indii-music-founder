@@ -21,6 +21,8 @@ import {
   type CopilotAction,
   type ProspectAssessment,
 } from '@indii/shared';
+import { doc, setDoc } from 'firebase/firestore';
+import { db, auth } from '@/services/firebase';
 
 export interface ManifestCreationOptions {
   title?: string;
@@ -178,9 +180,10 @@ ${depositsList}
   }
 
   /**
-   * Records a verified filing confirmation or Service Request (SR) ID into a tamper-evident RegistrationFilingRecord.
+   * Records a verified filing confirmation or Service Request (SR) ID into a tamper-evident RegistrationFilingRecord,
+   * persisting the record to Firestore under users/{userId}/rights_filings/{record.id}.
    */
-  recordFilingConfirmation(
+  async recordFilingConfirmation(
     manifest: RightsRegistrationManifest,
     portalTarget: PortalTarget,
     confirmation: {
@@ -189,8 +192,22 @@ ${depositsList}
       filingFeeUsd?: number;
       officialFilingDate?: string;
     },
-  ): RegistrationFilingRecord {
-    return createRegistrationFilingRecord(manifest, portalTarget, confirmation);
+  ): Promise<RegistrationFilingRecord> {
+    const record = createRegistrationFilingRecord(manifest, portalTarget, confirmation);
+    const uid = auth?.currentUser?.uid || manifest.artistId;
+    if (uid && db) {
+      try {
+        const filingRef = doc(db, 'users', uid, 'rights_filings', record.id);
+        await setDoc(filingRef, {
+          ...record,
+          userId: uid,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('[RightsCopilotService] Failed to persist filing record to Firestore:', err);
+      }
+    }
+    return record;
   }
 }
 

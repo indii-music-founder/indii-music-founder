@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 import { auth, db, storage } from '../firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { UserProfile } from '@/modules/workflow/types';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
@@ -68,7 +68,7 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
         // nodes). Fail loudly instead: callers surface an honest error and
         // never claim a cloud copy that does not exist.
         const storageRef = ref(storage, `users/${userId}/assets/${id}`);
-        await uploadBytes(storageRef, blob);
+        await uploadBytes(storageRef, blob, { contentType: blob.type || 'image/png' });
     }
 
     return id;
@@ -218,8 +218,8 @@ export async function saveWorkflowToStorage(workflow: Workflow): Promise<void> {
     const userId = getRealAuthenticatedUserId(user);
     if (userId) {
         try {
-            const docRef = doc(db, 'users', userId, 'workflows', workflowId);
-            await setDoc(docRef, { ...workflowWithId, synced: true }, { merge: true });
+            const docRef = doc(db, 'workflows', workflowId);
+            await setDoc(docRef, { ...workflowWithId, userId, synced: true }, { merge: true });
         } catch (_error: unknown) {
             // Failed to sync workflow ${workflowId} to cloud
         }
@@ -237,12 +237,15 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
     const userId = getRealAuthenticatedUserId(user);
     if (userId) {
         try {
-            const docRef = doc(db, 'users', userId, 'workflows', id);
+            const docRef = doc(db, 'workflows', id);
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                workflow = snap.data();
-                await dbLocal.put(WORKFLOWS_STORE, workflow);
-                return workflow;
+                const data = snap.data() as Workflow;
+                if (!('userId' in (data as Record<string, unknown>)) || (data as Record<string, unknown>).userId === userId) {
+                    workflow = data;
+                    await dbLocal.put(WORKFLOWS_STORE, workflow);
+                    return workflow;
+                }
             }
         } catch (_error: unknown) {
             // Failed to fetch workflow from cloud
@@ -321,8 +324,8 @@ export async function getAllWorkflowsFromStorage(): Promise<Workflow[]> {
     const userId = getRealAuthenticatedUserId(user);
     if (userId) {
         try {
-            const collectionRef = collection(db, 'users', userId, 'workflows');
-            const snap = await getDocs(collectionRef);
+            const q = query(collection(db, 'workflows'), where('userId', '==', userId));
+            const snap = await getDocs(q);
 
             const cloudWorkflows = snap.docs.map(d => d.data());
 
@@ -352,8 +355,8 @@ export async function syncWorkflows(): Promise<void> {
 
     const batchPromises = localWorkflows.map(async (wf) => {
         try {
-            const docRef = doc(db, 'users', userId, 'workflows', wf.id);
-            await setDoc(docRef, { ...wf, synced: true }, { merge: true });
+            const docRef = doc(db, 'workflows', wf.id);
+            await setDoc(docRef, { ...wf, userId, synced: true }, { merge: true });
         } catch (__e: unknown) {
             // Failed to sync workflow ${wf.id}
         }

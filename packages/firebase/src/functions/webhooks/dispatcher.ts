@@ -17,6 +17,7 @@ import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 import { arcjetKey } from '../../config/secrets';
 import { protectAuthenticatedApiRequest } from '../security/arcjet';
+import { isSafeExternalHttpsUrl } from '../../lib/safeExternalUrl';
 
 function maskId(id: string): string {
   if (!id) return '';
@@ -105,6 +106,13 @@ async function deliverWebhook(
   event: WebhookEvent,
   payload: string
 ): Promise<{ success: boolean; status?: number; error?: string }> {
+  if (!isSafeExternalHttpsUrl(webhook.url)) {
+    return {
+      success: false,
+      status: 400,
+      error: 'Blocked unsafe webhook destination URL',
+    };
+  }
   const signature = generateSignature(webhook.secret, payload);
   const timeout = 10000; // 10 seconds
 
@@ -114,6 +122,7 @@ async function deliverWebhook(
 
     const response = await fetch(webhook.url, {
       method: 'POST',
+      redirect: 'error',
       headers: {
         'Content-Type': 'application/json',
         'X-indii-Signature': signature,
@@ -466,11 +475,16 @@ export const createWebhook = onRequest(
       return;
     }
 
+    if (!isSafeExternalHttpsUrl(url)) {
+      res.status(400).json({ error: 'Webhook URL must be a valid external HTTPS URL and may not target private or loopback addresses.' });
+      return;
+    }
+
     const webhookId = getDb().collection('_').doc().id;
     const webhook: Webhook = {
       id: webhookId,
       userId,
-      url,
+      url: String(url).trim(),
       secret,
       events,
       active: true,

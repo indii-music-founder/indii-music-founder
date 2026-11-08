@@ -12,6 +12,7 @@ import * as admin from 'firebase-admin';
 import { validateAppCheckV2 } from '../middleware/appCheck';
 import { metaAppId, metaAppSecret, arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { assertSafeApiPathSegment, assertSafeExternalHttpsUrl } from '../lib/safeExternalUrl';
 
 const ALL_SECRETS = [metaAppId, metaAppSecret, arcjetKey];
 const META_GRAPH_API_BASE = 'https://graph.facebook.com/v23.0';
@@ -99,15 +100,18 @@ export const sendInstagramMessageCallable = onCall(
             throw new HttpsError('failed-precondition', 'Instagram authorization expired. Please reconnect your account.');
         }
 
+        const safeMediaUrl = mediaUrl ? assertSafeExternalHttpsUrl(mediaUrl, 'mediaUrl') : undefined;
+        const safeIgUserId = assertSafeApiPathSegment(token.igUserId, 'igUserId');
+
         const bodyPayload: Record<string, unknown> = {
             recipient: { id: recipientIgUserId },
-            message: mediaUrl
-                ? { attachment: { type: 'image', payload: { url: mediaUrl } } }
+            message: safeMediaUrl
+                ? { attachment: { type: 'image', payload: { url: safeMediaUrl } } }
                 : { text: messageText },
         };
 
         try {
-            const url = `${META_GRAPH_API_BASE}/${token.igUserId}/messages?access_token=${encodeURIComponent(token.accessToken!)}`;
+            const url = `${META_GRAPH_API_BASE}/${encodeURIComponent(safeIgUserId)}/messages?access_token=${encodeURIComponent(token.accessToken!)}`;
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

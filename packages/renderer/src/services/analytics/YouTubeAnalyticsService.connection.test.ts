@@ -84,4 +84,18 @@ describe('YouTubeAnalyticsService connection state', () => {
         expect(sessionStorage.getItem('yt_google_access_token:password-user')).toBe('scoped-yt-token');
         await expect(service.isConnected()).resolves.toBe(true);
     });
+
+    it('propagates failure and never falls back to signInWithPopup when linkWithPopup fails', async () => {
+        const { linkWithPopup, signInWithPopup } = await import('firebase/auth');
+        vi.mocked(linkWithPopup).mockRejectedValueOnce(new Error('auth/credential-already-in-use'));
+
+        firebase.auth.currentUser = {
+            uid: 'password-user',
+            providerData: [{ providerId: 'password' }],
+        };
+
+        const service = new YouTubeAnalyticsService();
+        await expect(service.requestYouTubeAccess()).rejects.toThrow('auth/credential-already-in-use');
+        expect(signInWithPopup).not.toHaveBeenCalled();
+    });
 });

@@ -412,7 +412,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
             const answer = await AIService.getInstance().generateText(
                 prompt,
                 0,
-                { temperature: 0.3 } as Record<string, unknown>
+                { temperature: 1.0 } as Record<string, unknown>
             );
             this.requireCurrentOwner(userId, ownerVersion);
 

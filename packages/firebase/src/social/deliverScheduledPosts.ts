@@ -136,56 +136,113 @@ async function deliverToTwitter(token: PlatformToken, text: string, postId: stri
     }
 }
 
-async function deliverToBluesky(token: PlatformToken, text: string, _postId: string): Promise<DeliveryResult> {
+export async function deliverToBluesky(
+    token: PlatformToken,
+    text: string,
+    _postId: string,
+    db?: DeliveryDatabase,
+    userId?: string,
+): Promise<DeliveryResult> {
     try {
         let accessToken = token.accessToken;
         let did = token.did || token.identifier;
 
+        const isTokenExpired = !accessToken || (typeof token.expiresAt === 'number' && token.expiresAt <= Date.now() + 60_000);
+
+        const refreshSession = async (): Promise<boolean> => {
+            if (!token.identifier || !token.appPassword) {
+                return false;
+            }
+            try {
+                const sessionRes = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: token.identifier, password: token.appPassword }),
+                    signal: AbortSignal.timeout(15000),
+                });
+                if (!sessionRes.ok) {
+                    return false;
+                }
+                const sessionData = await sessionRes.json() as { accessJwt?: string; did?: string };
+                if (!sessionData.accessJwt) {
+                    return false;
+                }
+                accessToken = sessionData.accessJwt;
+                token.accessToken = sessionData.accessJwt;
+                did = sessionData.did || did;
+                token.did = did;
+                token.expiresAt = Date.now() + 2 * 3600 * 1000;
+                if (db && userId) {
+                    try {
+                        await db.collection('users').doc(userId).collection('socialTokens').doc('bluesky').set({
+                            accessToken: token.accessToken,
+                            did: token.did,
+                            expiresAt: token.expiresAt,
+                        }, { merge: true });
+                    } catch (persistErr) {
+                        logger.warn(`[deliverToBluesky] Failed to persist refreshed Bluesky token for user ${userId}:`, persistErr);
+                    }
+                }
+                return true;
+            } catch (err) {
+                logger.warn('[deliverToBluesky] Failed to refresh Bluesky session:', err);
+                return false;
+            }
+        };
+
         // If accessToken is missing or expired, and identifier + appPassword are provided, exchange credentials
-        if (!accessToken && token.identifier && token.appPassword) {
-            const sessionRes = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier: token.identifier, password: token.appPassword }),
-                signal: AbortSignal.timeout(15000),
-            });
-            if (!sessionRes.ok) {
-                return { success: false, error: `Bluesky session creation failed: ${sessionRes.status}` };
+        if (isTokenExpired) {
+            if (token.identifier && token.appPassword) {
+                const refreshed = await refreshSession();
+                if (!refreshed && !accessToken) {
+                    return { success: false, error: 'Bluesky session creation failed' };
+                }
+            } else if (!accessToken) {
+                return { success: false, error: 'Bluesky access token or credentials missing' };
             }
-            const sessionData = await sessionRes.json() as { accessJwt?: string; did?: string };
-            if (!sessionData.accessJwt) {
-                return { success: false, error: 'Bluesky session returned no access token' };
-            }
-            accessToken = sessionData.accessJwt;
-            did = sessionData.did || did;
         }
 
         if (!accessToken) {
             return { success: false, error: 'Bluesky access token or credentials missing' };
         }
 
-        const repo = did || 'self';
-        const res = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                repo,
-                collection: 'app.bsky.feed.post',
-                record: {
-                    $type: 'app.bsky.feed.post',
-                    text,
-                    createdAt: new Date().toISOString(),
+        const makeCreateRecordCall = async (tokenToUse: string, didToUse?: string) => {
+            const repo = didToUse || 'self';
+            return fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${tokenToUse}`,
+                    'Content-Type': 'application/json',
                 },
-            }),
-            signal: AbortSignal.timeout(15000),
-        });
+                body: JSON.stringify({
+                    repo,
+                    collection: 'app.bsky.feed.post',
+                    record: {
+                        $type: 'app.bsky.feed.post',
+                        text,
+                        createdAt: new Date().toISOString(),
+                    },
+                }),
+                signal: AbortSignal.timeout(15000),
+            });
+        };
+
+        let res = await makeCreateRecordCall(accessToken, did);
 
         if (!res.ok) {
             const errBody = await res.text().catch(() => '');
-            return { success: false, error: `Bluesky ${res.status}: ${errBody}` };
+            if ((res.status === 401 || res.status === 400) && (errBody.includes('ExpiredToken') || res.status === 401)) {
+                if (token.identifier && token.appPassword) {
+                    const refreshed = await refreshSession();
+                    if (refreshed) {
+                        res = await makeCreateRecordCall(accessToken, did);
+                    }
+                }
+            }
+            if (!res.ok) {
+                const finalErr = await res.text().catch(() => errBody);
+                return { success: false, error: `Bluesky ${res.status}: ${finalErr || errBody}` };
+            }
         }
 
         const data = await res.json() as { uri?: string; cid?: string };
@@ -196,7 +253,7 @@ async function deliverToBluesky(token: PlatformToken, text: string, _postId: str
     }
 }
 
-async function waitForInstagramContainerReady(
+export async function waitForInstagramContainerReady(
     base: string,
     containerId: string,
     accessToken: string,
@@ -205,7 +262,7 @@ async function waitForInstagramContainerReady(
     const startTime = Date.now();
     while (Date.now() - startTime < maxWaitMs) {
         try {
-            const res = await fetch(`${base}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`, {
+            const res = await fetch(`${base}/${encodeURIComponent(containerId)}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`, {
                 signal: AbortSignal.timeout(10000),
             });
             if (res.ok) {
@@ -254,13 +311,13 @@ async function deliverToInstagram(
                 const receiptKey = String(segment.sequence);
                 if (validDeliveredPostId(receipts[receiptKey])) { lastPostId = receipts[receiptKey]; continue; }
                 const params = new URLSearchParams({ access_token: token.accessToken, media_type: 'STORIES', video_url: segment.mediaUrl });
-                const createResponse = await fetch(`${base}/${token.igUserId}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30_000) });
+                const createResponse = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30_000) });
                 if (!createResponse.ok) return { success: false, error: `IG Story segment ${segment.sequence} container failed: ${createResponse.status}` };
                 const created = await createResponse.json() as { id?: string };
                 if (!validDeliveredPostId(created.id)) return { success: false, error: `IG Story segment ${segment.sequence} returned no container ID` };
                 const ready = await waitForInstagramContainerReady(base, created.id, token.accessToken);
                 if (!ready.ready) return { success: false, error: `IG Story segment ${segment.sequence}: ${ready.error ?? 'processing failed'}` };
-                const publishResponse = await fetch(`${base}/${token.igUserId}/media_publish`, {
+                const publishResponse = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media_publish`, {
                     method: 'POST', body: new URLSearchParams({ creation_id: created.id, access_token: token.accessToken }), signal: AbortSignal.timeout(15_000),
                 });
                 if (!publishResponse.ok) return { success: false, error: `IG Story segment ${segment.sequence} publish failed: ${publishResponse.status}` };
@@ -290,7 +347,7 @@ async function deliverToInstagram(
                     image_url: url,
                     is_carousel_item: 'true',
                 });
-                const childRes = await fetch(`${base}/${token.igUserId}/media?${childParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+                const childRes = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media?${childParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
                 if (!childRes.ok) return { success: false, error: `IG carousel child item failed: ${childRes.status}` };
                 const childData = await childRes.json() as { id?: string };
                 if (childData.id) childIds.push(childData.id);
@@ -303,7 +360,7 @@ async function deliverToInstagram(
                 children: childIds.join(','),
                 caption,
             });
-            const carouselRes = await fetch(`${base}/${token.igUserId}/media?${carouselParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+            const carouselRes = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media?${carouselParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
             if (!carouselRes.ok) return { success: false, error: `IG carousel parent failed: ${carouselRes.status}` };
             const carouselData = await carouselRes.json() as { id?: string };
             containerId = carouselData.id;
@@ -332,7 +389,7 @@ async function deliverToInstagram(
                 return { success: false, error: 'Instagram posts require image_url or video_url media' };
             }
 
-            const createRes = await fetch(`${base}/${token.igUserId}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+            const createRes = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
             if (!createRes.ok) return { success: false, error: `IG container ${createRes.status}` };
             const { id } = await createRes.json() as { id?: string };
             containerId = id;
@@ -360,7 +417,7 @@ async function deliverToInstagram(
             }
         }
 
-        const publishRes = await fetch(`${base}/${token.igUserId}/media_publish`, {
+        const publishRes = await fetch(`${base}/${encodeURIComponent(token.igUserId)}/media_publish`, {
             method: 'POST',
             body: new URLSearchParams({ creation_id: containerId, access_token: token.accessToken }),
             signal: AbortSignal.timeout(15000),
@@ -523,7 +580,7 @@ async function deliverPost(
         case 'twitter':
             return deliverToTwitter(token, post.text || '', postId);
         case 'bluesky':
-            return deliverToBluesky(token, post.text || '', postId);
+            return deliverToBluesky(token, post.text || '', postId, db, post.userId);
         case 'instagram':
             if (!db || !postRef) {
                 return { success: false, error: 'Instagram delivery requires the queue document reference for container persistence.' };

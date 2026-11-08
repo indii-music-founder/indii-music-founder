@@ -321,7 +321,7 @@ function StreamsTodayWidget() {
     );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
@@ -1458,6 +1458,9 @@ function ApprovalGatesWidget() {
                                                 </span>
                                             </div>
                                             <p className="text-[9px] text-gray-400 truncate mt-0.5">{item.description || 'Action awaiting authorization'}</p>
+                                            {item.toolName === 'report_bug' && typeof item.args?.title === 'string' && (
+                                                <p className="text-[9px] text-gray-300 truncate mt-0.5">Report: {item.args.title}</p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1532,7 +1535,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     cost_estimator: () => <CostEstimatorWidget />,
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
+
 
 // eslint-disable-next-line react-refresh/only-export-components
 function CostEstimatorWidget() {

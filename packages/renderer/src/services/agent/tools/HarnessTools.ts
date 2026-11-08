@@ -40,21 +40,23 @@ export const HarnessTools: Record<string, AnyToolFunction> = {
     }
 
     try {
+      const inputPayload = {
+        projectId: args.projectId,
+        releaseId: args.releaseId,
+        trackId: args.trackId,
+        sourceRunIds: args.sourceRunIds,
+        inputRefs: args.inputRefs ?? [],
+        requestedAction: args.requestedAction,
+        ...(args.payload as Record<string, unknown> ?? {}),
+      };
+
       const run = await compileHarness(
         args.domain,
-        {
-          projectId: args.projectId,
-          releaseId: args.releaseId,
-          trackId: args.trackId,
-          sourceRunIds: args.sourceRunIds,
-          inputRefs: args.inputRefs ?? [],
-          requestedAction: args.requestedAction,
-          payload: args.payload ?? {},
-        },
+        inputPayload,
         {
           userId,
           projectId: args.projectId,
-          save: args.save,
+          save: false,
         }
       );
 

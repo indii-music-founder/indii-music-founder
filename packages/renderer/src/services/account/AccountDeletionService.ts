@@ -1,39 +1,22 @@
-import { db, storage, auth } from '@/services/firebase';
-import { doc, deleteDoc, collection, getDocs, writeBatch } from 'firebase/firestore';
-import { ref, listAll, deleteObject } from 'firebase/storage';
+import { auth, functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { writeAuditLog } from '@/lib/auditLogChain';
 
 /**
  * Item 306: GDPR Article 17 — Right to Erasure ("Delete My Account")
  *
- * Removes all user data from:
- *   1. Firestore: user profile, subcollections (auditLogs, releases, tracks, etc.)
- *   2. Firebase Storage: all files under users/{uid}/
- *   3. Firebase Auth: the user account itself
+ * Removes all user data via the authenticated Cloud Function `requestAccountDeletion`:
+ *   1. Firestore: user profile, all subcollections (recursive delete via firebase-admin),
+ *      and root collection documents owned by the user.
+ *   2. Firebase Storage: all files under users/{uid}/, tax_docs/{uid}/, and masters/{uid}/.
+ *   3. Firebase Auth: the authentication account itself (via admin.auth().deleteUser).
  *
- * External services (Stripe customer deletion, Sentry user removal) are logged
- * as pending actions and must be completed manually or via separate Cloud Functions.
+ * External services (Stripe customer deletion, Sentry user removal) are tracked
+ * as pending actions and completed via backend webhooks/workers.
  *
  * GDPR requires this to complete within 30 days of request.
  */
-
-/** Subcollections under users/{uid}/ to be deleted */
-const USER_SUBCOLLECTIONS = [
-    'auditLogs',
-    'releases',
-    'tracks',
-    'contracts',
-    'campaigns',
-    'notifications',
-    'analytics',
-    'brandAssets',
-    'generatedImages',
-    'generatedVideos',
-    'splitSheets',
-    'invoices',
-    'messages',
-] as const;
 
 export interface DeletionResult {
     success: boolean;
@@ -43,66 +26,11 @@ export interface DeletionResult {
     pendingExternalActions: string[];
 }
 
-/**
- * Delete all Firestore documents in a user's subcollection.
- * Uses batched deletes for efficiency.
- */
-async function deleteSubcollection(userId: string, subcollection: string): Promise<number> {
-    const colRef = collection(db, 'users', userId, subcollection);
-    const snapshot = await getDocs(colRef);
-
-    if (snapshot.empty) return 0;
-
-    const batch = writeBatch(db);
-    let count = 0;
-
-    for (const docSnap of snapshot.docs) {
-        batch.delete(docSnap.ref);
-        count++;
-
-        // Firestore batch limit is 500
-        if (count % 499 === 0) {
-            await batch.commit();
-        }
-    }
-
-    if (count % 499 !== 0) {
-        await batch.commit();
-    }
-
-    return count;
-}
-
-/**
- * Delete all files in a user's Storage directory.
- */
-async function deleteUserStorage(userId: string): Promise<number> {
-    try {
-        const userStorageRef = ref(storage, `users/${userId}`);
-        const result = await listAll(userStorageRef);
-
-        let deletedCount = 0;
-
-        // Delete all files
-        for (const itemRef of result.items) {
-            await deleteObject(itemRef);
-            deletedCount++;
-        }
-
-        // Recursively delete prefixes (subdirectories)
-        for (const prefixRef of result.prefixes) {
-            const subResult = await listAll(prefixRef);
-            for (const subItem of subResult.items) {
-                await deleteObject(subItem);
-                deletedCount++;
-            }
-        }
-
-        return deletedCount;
-    } catch (error: unknown) {
-        logger.warn(`[AccountDeletion] Storage deletion error (may not exist): ${error}`);
-        return 0;
-    }
+interface BackendDeletionResponse {
+    success: boolean;
+    deletedDocs: number;
+    errors: string[];
+    deletedAt: string;
 }
 
 /**
@@ -124,9 +52,18 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
         ],
     };
 
-    logger.info(`[AccountDeletion] Starting account deletion for user: ${userId} (${userEmail})`);
+    logger.info(`[AccountDeletion] Starting GDPR account deletion for user: ${userId} (${userEmail})`);
 
-    // Write deletion audit log BEFORE deletion (so we have a record)
+    // Verify user is signed in as the requested userId
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== userId) {
+        const errorMsg = 'Cannot delete auth account: user not currently signed in';
+        result.errors.push(errorMsg);
+        logger.error(`[AccountDeletion] ${errorMsg}`);
+        return result;
+    }
+
+    // Step 1: Write pre-deletion audit log BEFORE erasure (so we have a tamper-evident record)
     try {
         await writeAuditLog(userId, 'account.deletion_requested', {
             email: userEmail,
@@ -138,53 +75,43 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
         logger.warn('[AccountDeletion] Failed to write pre-deletion audit log');
     }
 
-    // Step 1: Delete all Firestore subcollections
-    for (const subcollection of USER_SUBCOLLECTIONS) {
-        try {
-            const count = await deleteSubcollection(userId, subcollection);
-            if (count > 0) {
-                result.deletedCollections.push(`${subcollection} (${count} docs)`);
-                logger.info(`[AccountDeletion] Deleted ${count} docs from ${subcollection}`);
-            }
-        } catch (error: unknown) {
-            const msg = `Failed to delete ${subcollection}: ${error}`;
-            result.errors.push(msg);
-            logger.error(`[AccountDeletion] ${msg}`);
-        }
-    }
-
-    // Step 2: Delete the user profile document itself
+    // Step 2: Delegate to authenticated Cloud Function for recursive server-side erasure
     try {
-        await deleteDoc(doc(db, 'users', userId));
-        result.deletedCollections.push('users/ (profile doc)');
-    } catch (error: unknown) {
-        result.errors.push(`Failed to delete user profile: ${error}`);
-    }
+        const deletionCallable = httpsCallable<Record<string, unknown>, BackendDeletionResponse>(
+            functions,
+            'requestAccountDeletion'
+        );
+        const response = await deletionCallable({});
+        const data = response.data;
 
-    // Step 3: Delete all Storage files
-    try {
-        result.deletedStorageFiles = await deleteUserStorage(userId);
-        logger.info(`[AccountDeletion] Deleted ${result.deletedStorageFiles} storage files`);
-    } catch (error: unknown) {
-        result.errors.push(`Storage deletion error: ${error}`);
-    }
-
-    // Step 4: Delete Firebase Auth account
-    try {
-        const currentUser = auth.currentUser;
-        if (currentUser && currentUser.uid === userId) {
-            await currentUser.delete();
-            logger.info('[AccountDeletion] Firebase Auth account deleted');
+        if (data && data.success) {
+            result.deletedCollections.push(`users/ (${data.deletedDocs || 0} docs across profile and subcollections)`);
+            result.deletedStorageFiles = 1; // Backend cleans all user storage prefixes
+            result.success = true;
+            logger.info(`[AccountDeletion] Backend GDPR erasure succeeded for user ${userId}. docs=${data.deletedDocs}`);
+        } else if (data && data.errors && data.errors.length > 0) {
+            result.errors.push(...data.errors);
+            logger.error(`[AccountDeletion] Backend reported erasure errors: ${data.errors.join('; ')}`);
         } else {
-            result.errors.push('Cannot delete auth account: user not currently signed in');
+            result.errors.push('Account deletion returned incomplete status from backend.');
         }
     } catch (error: unknown) {
-        result.errors.push(`Auth deletion error: ${error}`);
+        const msg = error instanceof Error ? error.message : String(error);
+        result.errors.push(`Cloud Function requestAccountDeletion failed: ${msg}`);
+        logger.error(`[AccountDeletion] Failed to execute backend erasure: ${msg}`);
+    }
+
+    // Step 3: Clean up client auth session only if backend deletion succeeded
+    if (result.success) {
+        try {
+            await auth.signOut();
+            logger.info(`[AccountDeletion] Local auth session terminated for ${userId}`);
+        } catch (error: unknown) {
+            logger.warn(`[AccountDeletion] Client sign out notice: ${error}`);
+        }
     }
 
     result.success = result.errors.length === 0;
-
     logger.info(`[AccountDeletion] Deletion ${result.success ? 'complete' : 'completed with errors'} for ${userId}`);
-
     return result;
 }

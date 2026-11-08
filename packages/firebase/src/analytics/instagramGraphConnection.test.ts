@@ -98,7 +98,7 @@ describe('exchangeFacebookInstagramConnection', () => {
             igUserId: 'ig-1',
             adAccountId: '1234567890',
         });
-        expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('/me/adaccounts'));
+        expect(fetcher).toHaveBeenCalledWith(expect.stringContaining('/me/adaccounts'), expect.anything());
     });
 });
 

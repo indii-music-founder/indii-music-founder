@@ -43,6 +43,7 @@ export async function verifyProviderAccount(
     if (provider === 'gmail') {
         const response = await fetch('https://www.googleapis.com/gmail/v1/users/me/profile', {
             headers: { Authorization: `Bearer ${accessToken}` },
+            signal: AbortSignal.timeout(15_000),
         });
         if (!response.ok) throw new Error(`Gmail profile verification failed (${response.status}).`);
         const profile = await response.json() as { emailAddress?: unknown };
@@ -63,6 +64,7 @@ export async function verifyProviderAccount(
 
     const response = await fetch('https://graph.microsoft.com/v1.0/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(15_000),
     });
     if (!response.ok) throw new Error(`Outlook profile verification failed (${response.status}).`);
     const profile = await response.json() as {
@@ -448,6 +450,7 @@ export const emailRevokeToken = onCall(
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ token: refreshToken }),
+                        signal: AbortSignal.timeout(15_000),
                     });
                     if (!revokeResponse.ok) {
                         throw new HttpsError('unavailable', 'Google did not accept the token revocation. Try again.');
@@ -498,6 +501,7 @@ async function exchangeGmailCode(code: string, redirectUri: string): Promise<Tok
             redirect_uri: redirectUri,
             grant_type: 'authorization_code',
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -527,6 +531,7 @@ async function refreshGmailToken(refreshToken: string): Promise<TokenResult> {
             client_secret: clientSecret,
             grant_type: 'refresh_token',
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -561,6 +566,7 @@ async function exchangeOutlookCode(code: string, redirectUri: string): Promise<T
             redirect_uri: redirectUri,
             grant_type: 'authorization_code',
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -590,6 +596,7 @@ async function refreshOutlookToken(refreshToken: string): Promise<TokenResult> {
             client_secret: clientSecret,
             grant_type: 'refresh_token',
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {

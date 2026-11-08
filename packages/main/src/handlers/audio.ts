@@ -107,25 +107,28 @@ export function registerAudioHandlers() {
             ]);
 
             log.info("Generating compressed MP3 proxy for cloud analysis...");
-            const tempProxyPath = path.join(os.tmpdir(), `${hash}_proxy.mp3`);
-            
-            await new Promise<void>((resolve, reject) => {
-                ffmpeg(validatedPath, { timeout: 300000 }) // A hung encode must fail the analysis, not stall it.
-                    .audioChannels(1)
-                    .audioFrequency(32000)
-                    .audioBitrate('64k')
-                    .format('mp3')
-                    .on('end', () => resolve())
-                    .on('error', (err) => reject(new Error(`FFmpeg proxy generation failed: ${err.message}`)))
-                    .save(tempProxyPath);
-            });
+            const tempProxyPath = path.join(os.tmpdir(), `${hash}_${crypto.randomUUID()}_proxy.mp3`);
+            let proxyBuffer: Buffer;
 
-            const proxyBuffer = await fs.promises.readFile(tempProxyPath);
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    ffmpeg(validatedPath, { timeout: 300000 }) // A hung encode must fail the analysis, not stall it.
+                        .audioChannels(1)
+                        .audioFrequency(32000)
+                        .audioBitrate('64k')
+                        .format('mp3')
+                        .on('end', () => resolve())
+                        .on('error', (err) => reject(new Error(`FFmpeg proxy generation failed: ${err.message}`)))
+                        .save(tempProxyPath);
+                });
+
+                proxyBuffer = await fs.promises.readFile(tempProxyPath);
+            } finally {
+                // Clean up the temp file reliably in finally
+                await fs.promises.unlink(tempProxyPath).catch(() => log.warn('Failed to delete temp proxy file'));
+            }
+
             const proxyBase64 = proxyBuffer.toString('base64');
-            
-            // Clean up the temp file silently
-            fs.promises.unlink(tempProxyPath).catch(() => log.warn('Failed to delete temp proxy file'));
-
             log.info(`Analysis Complete. Hash: ${hash.substring(0, 8)}... Proxy Size: ${(proxyBuffer.length / 1024).toFixed(1)} KB`);
 
             return {

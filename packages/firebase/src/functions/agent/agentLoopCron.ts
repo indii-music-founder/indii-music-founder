@@ -1,6 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
+import { ChunkedBatch } from '../../lib/chunkedBatch';
 
 // ISSUE-1393: lazily resolve the Firestore handle INSIDE the invocation.
 function getDb() {
@@ -45,7 +46,7 @@ export async function processAgentLoopCron(
         return { scheduledCount: 0 };
     }
 
-    const batch = db.batch();
+    const batch = new ChunkedBatch(db);
     let count = 0;
     const seenLoopIds = new Set<string>();
 
@@ -65,7 +66,7 @@ export async function processAgentLoopCron(
         if (targetUserId) {
             // Target the canonical path expected by AgentLoopService.ts
             const executionRef = db.collection('users').doc(targetUserId).collection('agentLoopExecutions').doc();
-            batch.set(executionRef, {
+            await batch.set(executionRef, {
                 id: executionRef.id,
                 loopId: doc.id,
                 userId: targetUserId,
@@ -79,7 +80,7 @@ export async function processAgentLoopCron(
         } else {
             // Root fallback when no user association can be resolved
             const executionRef = db.collection('agentLoopExecutions').doc();
-            batch.set(executionRef, {
+            await batch.set(executionRef, {
                 id: executionRef.id,
                 loopId: doc.id,
                 status: 'IDLE',

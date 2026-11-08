@@ -530,3 +530,290 @@ describe('ephemeral audio analysis storage (/tmp/audio-analysis)', () => {
         await assertFails(deleteObject(unauthAccess));
     });
 });
+
+describe('video-render-jobs (/video-render-jobs — ISSUE-1588)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-video-render-jobs`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const ownerStorage = () => testEnv.authenticatedContext(OWNER_ID, {
+        email: 'owner@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-user', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows authenticated owner to upload and read mp4 video render artifact', async () => {
+        const fileRef = ref(ownerStorage(), `video-render-jobs/${OWNER_ID}/job-1588-output.mp4`);
+        await assertSucceeds(uploadBytes(fileRef, new Uint8Array([1, 2, 3]), { contentType: 'video/mp4' }));
+        await assertSucceeds(getMetadata(fileRef));
+    });
+
+    it('denies non-video uploads to video-render-jobs', async () => {
+        const fileRef = ref(ownerStorage(), `video-render-jobs/${OWNER_ID}/job-1588-report.json`);
+        await assertFails(uploadBytes(fileRef, new Uint8Array([1, 2, 3]), { contentType: 'application/json' }));
+    });
+
+    it('denies cross-tenant and unauthenticated access to video-render-jobs', async () => {
+        const otherRef = ref(otherStorage(), `video-render-jobs/${OWNER_ID}/job-1588-output.mp4`);
+        await assertFails(uploadBytes(otherRef, new Uint8Array([1, 2, 3]), { contentType: 'video/mp4' }));
+        await assertFails(getMetadata(otherRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), `video-render-jobs/${OWNER_ID}/job-1588-output.mp4`);
+        await assertFails(uploadBytes(unauthRef, new Uint8Array([1, 2, 3]), { contentType: 'video/mp4' }));
+        await assertFails(getMetadata(unauthRef));
+    });
+});
+
+describe('ceo_sync encrypted backups (/ceo_sync — ISSUE-1588)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-ceo-sync`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const ownerStorage = () => testEnv.authenticatedContext(OWNER_ID, {
+        email: 'owner@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-user', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows authenticated owner to upload and read backup payload and manifest', async () => {
+        const dataRef = ref(ownerStorage(), `ceo_sync/${OWNER_ID}/backup-1588/data.enc`);
+        const manifestRef = ref(ownerStorage(), `ceo_sync/${OWNER_ID}/backup-1588/manifest.json`);
+
+        await assertSucceeds(uploadBytes(dataRef, new Uint8Array([10, 20, 30])));
+        await assertSucceeds(uploadBytes(manifestRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+
+        await assertSucceeds(getMetadata(dataRef));
+        await assertSucceeds(getMetadata(manifestRef));
+    });
+
+    it('denies cross-tenant and unauthenticated access to ceo_sync', async () => {
+        const foreignRef = ref(otherStorage(), `ceo_sync/${OWNER_ID}/backup-1588/data.enc`);
+        await assertFails(uploadBytes(foreignRef, new Uint8Array([1])));
+        await assertFails(getMetadata(foreignRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), `ceo_sync/${OWNER_ID}/backup-1588/data.enc`);
+        await assertFails(uploadBytes(unauthRef, new Uint8Array([1])));
+        await assertFails(getMetadata(unauthRef));
+    });
+});
+
+describe('white-glove asset ingestion (/ingest/white-glove — ISSUE-1588)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-white-glove`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const artistStorage = () => testEnv.authenticatedContext('artist-1588', {
+        email: 'artist@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-artist', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows authenticated artist to upload and read audio, visual, and archive files', async () => {
+        const audioRef = ref(artistStorage(), 'ingest/white-glove/artist-1588/audio/track1.wav');
+        await assertSucceeds(uploadBytes(audioRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertSucceeds(getMetadata(audioRef));
+
+        const zipRef = ref(artistStorage(), 'ingest/white-glove/artist-1588/archive/masters.zip');
+        await assertSucceeds(uploadBytes(zipRef, new Uint8Array([1, 2, 3]), { contentType: 'application/zip' }));
+        await assertSucceeds(getMetadata(zipRef));
+    });
+
+    it('denies cross-tenant and unauthenticated access to white-glove ingestion', async () => {
+        const foreignRef = ref(otherStorage(), 'ingest/white-glove/artist-1588/audio/track1.wav');
+        await assertFails(uploadBytes(foreignRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertFails(getMetadata(foreignRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), 'ingest/white-glove/artist-1588/audio/track1.wav');
+        await assertFails(uploadBytes(unauthRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertFails(getMetadata(unauthRef));
+    });
+});
+
+describe('distribution delivery receipts (/distribution/receipts — ISSUE-1588)', () => {
+    let testEnv: RulesTestEnvironment;
+    const releaseId = 'release-1588-doc';
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: 'indii-music-founder',
+            firestore: {
+                host: FIRESTORE_EMULATOR_HOST,
+                port: FIRESTORE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../firestore.rules'), 'utf8'),
+            },
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+
+        // Seed release document with owner
+        await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await setDoc(doc(ctx.firestore(), 'releases', releaseId), {
+                userId: OWNER_ID,
+                title: 'Test Album',
+                status: 'submitted',
+            });
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const ownerStorage = () => testEnv.authenticatedContext(OWNER_ID, {
+        email: 'owner@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-user', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows authenticated owner of release to upload and read delivery receipt', async () => {
+        const receiptRef = ref(ownerStorage(), `distribution/receipts/${releaseId}/receipt_init.json`);
+        await assertSucceeds(uploadBytes(receiptRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+        await assertSucceeds(getMetadata(receiptRef));
+    });
+
+    it('denies update or deletion of immutable delivery receipts', async () => {
+        const receiptRef = ref(ownerStorage(), `distribution/receipts/${releaseId}/receipt_single.json`);
+        await assertSucceeds(uploadBytes(receiptRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+        await assertFails(uploadBytes(receiptRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+        await assertFails(deleteObject(receiptRef));
+    });
+
+    it('denies non-owner and unauthenticated access to delivery receipts', async () => {
+        const foreignRef = ref(otherStorage(), `distribution/receipts/${releaseId}/receipt_other.json`);
+        await assertFails(uploadBytes(foreignRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+        await assertFails(getMetadata(foreignRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), `distribution/receipts/${releaseId}/receipt_unauth.json`);
+        await assertFails(uploadBytes(unauthRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+        await assertFails(getMetadata(unauthRef));
+    });
+
+    it('denies receipt upload for non-existent release', async () => {
+        const missingReleaseRef = ref(ownerStorage(), 'distribution/receipts/non-existent-release-1588/receipt.json');
+        await assertFails(uploadBytes(missingReleaseRef, new Uint8Array([123, 125]), { contentType: 'application/json' }));
+    });
+});
+
+describe('client asset and likeness deletion lifecycle (ISSUE-1589)', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-deletion-lifecycle`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const ownerStorage = () => testEnv.authenticatedContext(OWNER_ID, {
+        email: 'owner@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const otherStorage = () => testEnv.authenticatedContext('other-user', {
+        email: 'other@example.com',
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('allows owner to upload and delete assets, thumbnails, audio, likeness, and brandKit files', async () => {
+        const assetRef = ref(ownerStorage(), `users/${OWNER_ID}/assets/img-1589.png`);
+        const thumbRef = ref(ownerStorage(), `users/${OWNER_ID}/thumbnails/img-1589.png`);
+        const audioRef = ref(ownerStorage(), `users/${OWNER_ID}/audio/song-1589.wav`);
+        const likenessRef = ref(ownerStorage(), `users/${OWNER_ID}/likeness/face-1589.webp`);
+        const fontRef = ref(ownerStorage(), `users/${OWNER_ID}/brandKit/fonts/font-1589.ttf`);
+
+        await assertSucceeds(uploadBytes(assetRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertSucceeds(uploadBytes(thumbRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertSucceeds(uploadBytes(audioRef, new Uint8Array([1, 2, 3]), { contentType: 'audio/wav' }));
+        await assertSucceeds(uploadBytes(likenessRef, new Uint8Array([1, 2, 3]), { contentType: 'image/webp' }));
+        await assertSucceeds(uploadBytes(fontRef, new Uint8Array([1, 2, 3]), { contentType: 'font/ttf' }));
+
+        await assertSucceeds(deleteObject(assetRef));
+        await assertSucceeds(deleteObject(thumbRef));
+        await assertSucceeds(deleteObject(audioRef));
+        await assertSucceeds(deleteObject(likenessRef));
+        await assertSucceeds(deleteObject(fontRef));
+    });
+
+    it('denies delete on other protected user topLevels', async () => {
+        const protectedRef = ref(ownerStorage(), `users/${OWNER_ID}/brand_assets/logo-1589.png`);
+        await assertSucceeds(uploadBytes(protectedRef, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+        await assertFails(deleteObject(protectedRef));
+    });
+
+    it('denies cross-tenant and unauthenticated deletion of user assets and likeness images', async () => {
+        const likenessRef = ref(ownerStorage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertSucceeds(uploadBytes(likenessRef, new Uint8Array([1, 2, 3]), { contentType: 'image/webp' }));
+
+        const foreignRef = ref(otherStorage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertFails(deleteObject(foreignRef));
+
+        const unauthRef = ref(testEnv.unauthenticatedContext().storage(), `users/${OWNER_ID}/likeness/biometric-ref-1589.webp`);
+        await assertFails(deleteObject(unauthRef));
+    });
+});

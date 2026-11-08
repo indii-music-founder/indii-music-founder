@@ -131,7 +131,9 @@ describe('StorageMigrationService', () => {
     // In our mock, `ref` returns undefined by default unless configured.
     // The implementation is `const storageRef = ref(storage, ...); await uploadBytes(storageRef, blob);`
     // Since we mocked `ref` with `vi.fn()` and didn't set a return value, it returns undefined.
-    expect(uploadBytes).toHaveBeenCalledWith(undefined, assetCursor.value);
+    expect(uploadBytes).toHaveBeenCalledWith(undefined, assetCursor.value, {
+      contentType: assetCursor.value.type || 'image/png',
+    });
 
     // Verify Workflow Migration
     expect(mockIDB.transaction).toHaveBeenCalledWith('workflows', 'readonly');
@@ -142,6 +144,7 @@ describe('StorageMigrationService', () => {
       expect.objectContaining({
         id: 'workflow-legacy-1',
         name: 'Legacy Workflow',
+        userId: mockUserId,
         synced: true
       }),
       { merge: true }

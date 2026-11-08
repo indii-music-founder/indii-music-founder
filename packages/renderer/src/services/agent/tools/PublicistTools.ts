@@ -8,7 +8,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for publicist tools */
 interface ElectronPublicistBridge {
-    generatePdf: (data: unknown) => Promise<{ success: boolean; path?: string }>;
+    generatePdf: (data: unknown) => Promise<{ success: boolean; filePath?: string; path?: string; message?: string; error?: string }>;
 }
 
 interface ElectronWindowAPI {
@@ -74,7 +74,7 @@ export const PublicistTools = {
 
         const validated = WritePressReleaseSchema.parse(data);
 
-        let pdfResult: { success: boolean; path?: string } | null = null;
+        let pdfResult: { success: boolean; filePath?: string; path?: string; message?: string; error?: string } | null = null;
         const electronWin = window as unknown as ElectronWindowAPI;
         if (generate_pdf && electronWin.electronAPI?.publicist) {
             try {
@@ -97,7 +97,7 @@ export const PublicistTools = {
                 const docRef = await addDoc(collection(db, 'users', uid, 'press_releases'), {
                     ...validated,
                     topic,
-                    pdfPath: pdfResult?.path || null,
+                    pdfPath: pdfResult?.filePath ?? pdfResult?.path ?? null,
                     createdAt: serverTimestamp()
                 });
                 docId = docRef.id;

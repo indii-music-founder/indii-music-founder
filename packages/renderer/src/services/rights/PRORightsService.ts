@@ -24,7 +24,7 @@
  */
 
 import { db, functions } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -238,14 +238,48 @@ export async function verifyCoverSongLicense(
     }
 
     try {
-        // 1) A manually confirmed license recorded by the user is real evidence.
+        // 1) A manually confirmed or active license recorded by the user in mechanical_licenses
         if (metadata.isrc) {
-            const licenseRef = doc(db, 'users', uid, 'coverLicenses', metadata.isrc);
+            const licenseRef = doc(db, 'users', uid, 'mechanical_licenses', metadata.isrc);
             const licenseSnap = await getDoc(licenseRef);
-            if (licenseSnap.exists() && licenseSnap.data()?.status === 'confirmed') {
+            if (licenseSnap.exists()) {
+                const status = licenseSnap.data()?.status;
+                if (status === 'confirmed' || status === 'license_active') {
+                    return {
+                        isVerified: true,
+                        licenseNumber: licenseSnap.data()?.licenseNumber,
+                        licenseType: 'direct',
+                        requiresLicense: true,
+                        submittedAt,
+                    };
+                }
+            }
+
+            // Also query by isrc field in users/{uid}/mechanical_licenses
+            const colRef = collection(db, 'users', uid, 'mechanical_licenses');
+            const q = query(colRef, where('isrc', '==', metadata.isrc));
+            const querySnap = await getDocs(q);
+            const activeDoc = querySnap.docs.find(d => {
+                const s = d.data()?.status;
+                return s === 'confirmed' || s === 'license_active';
+            });
+            if (activeDoc) {
                 return {
                     isVerified: true,
-                    licenseNumber: licenseSnap.data()?.licenseNumber,
+                    licenseNumber: activeDoc.data()?.licenseNumber,
+                    licenseType: 'direct',
+                    requiresLicense: true,
+                    submittedAt,
+                };
+            }
+
+            // Fallback for legacy coverLicenses path
+            const legacyRef = doc(db, 'users', uid, 'coverLicenses', metadata.isrc);
+            const legacySnap = await getDoc(legacyRef);
+            if (legacySnap.exists() && legacySnap.data()?.status === 'confirmed') {
+                return {
+                    isVerified: true,
+                    licenseNumber: legacySnap.data()?.licenseNumber,
                     licenseType: 'direct',
                     requiresLicense: true,
                     submittedAt,

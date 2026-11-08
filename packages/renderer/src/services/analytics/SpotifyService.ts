@@ -82,6 +82,7 @@ export interface SpotifyArtist {
 
 export class SpotifyService {
     private redirectUri = `${window.location.origin}/auth/spotify/callback`;
+    private cachedToken: { accessToken: string; expiresAt: number } | null = null;
 
     // ── OAuth / Connection ────────────────────────────────────────────────────
 
@@ -144,6 +145,7 @@ export class SpotifyService {
      * Disconnect Spotify — revokes token and removes from Firestore.
      */
     async disconnect(): Promise<void> {
+        this.cachedToken = null;
         const revokeFn = httpsCallable(firebaseFunctions, 'analyticsRevokeToken');
         await revokeFn({ platform: 'spotify' });
         clearAccountBoundOAuthSession('spotify');
@@ -177,7 +179,7 @@ export class SpotifyService {
     async getTrack(trackId: string): Promise<SpotifyTrack | null> {
         try {
             const token = await this._getValidToken();
-            return await this._fetch<SpotifyTrack>(`/v1/tracks/${trackId}`, token);
+            return await this._fetch<SpotifyTrack>(`/v1/tracks/${encodeURIComponent(trackId)}`, token);
         } catch (err: unknown) {
             logger.error('[SpotifyService] Failed to get track:', err);
             Sentry.captureException(err);
@@ -192,7 +194,7 @@ export class SpotifyService {
     async getArtist(artistId: string): Promise<SpotifyArtist | null> {
         try {
             const token = await this._getValidToken();
-            return await this._fetch<SpotifyArtist>(`/v1/artists/${artistId}`, token);
+            return await this._fetch<SpotifyArtist>(`/v1/artists/${encodeURIComponent(artistId)}`, token);
         } catch (err: unknown) {
             logger.error('[SpotifyService] Failed to get artist:', err);
             Sentry.captureException(err);
@@ -206,12 +208,20 @@ export class SpotifyService {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated.');
 
+        if (this.cachedToken && this.cachedToken.expiresAt > Date.now() + 5 * 60 * 1000) {
+            return this.cachedToken.accessToken;
+        }
+
         const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
             firebaseFunctions, 'analyticsRefreshToken'
         );
         const result = await refreshFn({ platform: 'spotify' });
         if (!result.data.accessToken) throw new Error('Spotify not connected.');
-        return result.data.accessToken;
+        this.cachedToken = {
+            accessToken: result.data.accessToken,
+            expiresAt: result.data.expiresAt ?? (Date.now() + 3600 * 1000),
+        };
+        return this.cachedToken.accessToken;
     }
 
     private async _fetch<T>(path: string, token: string): Promise<T> {

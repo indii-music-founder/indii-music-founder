@@ -70,7 +70,7 @@ export class MemorySummarizer {
             const summary = await AIService.getInstance().generateText(
                 prompt,
                 0,
-                { temperature: 0.2 } as Record<string, unknown>
+                { temperature: 1.0 } as Record<string, unknown>
             );
 
             return summary;
@@ -99,6 +99,7 @@ export class MemorySummarizer {
                 Output a JSON object with:
                 - connections: Array of { fromId, toId, relationship, confidence }
                 - insights: Array of strings describing cross-cutting patterns (e.g. "User's dark aesthetic preference influences their choice of synth textures").
+                - confidence: Number between 0.0 and 1.0 representing overall confidence in the synthesized insight.
                 
                 Memories:
                 ${memories.map(m => `ID: ${m.id} | Content: ${m.content}`).join('\n')}
@@ -110,7 +111,8 @@ export class MemorySummarizer {
                     ],
                     "insights": [
                         "Synthesized pattern description here..."
-                    ]
+                    ],
+                    "confidence": 0.85
                 }
             `);
 
@@ -118,34 +120,52 @@ export class MemorySummarizer {
                 prompt,
                 0,
                 {
-                    temperature: 0.3,
+                    temperature: 1.0,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );
 
-            const parsed = safeParseJson(response, { insights: [], connections: [], confidence: 0 });
+            const parsed = safeParseJson<{
+                insights?: string[];
+                connections?: Array<{ fromId?: unknown; toId?: unknown; relationship?: unknown; confidence?: unknown }>;
+                confidence?: unknown;
+            }>(response, { insights: [], connections: [], confidence: 0 });
 
-            if (parsed.insights.length === 0 || parsed.confidence < 0.3) {
+            const rawInsights = Array.isArray(parsed.insights) ? parsed.insights.filter((i): i is string => typeof i === 'string' && i.trim().length > 0) : [];
+            const rawConnections = Array.isArray(parsed.connections) ? parsed.connections : [];
+            const connectionConfidences = rawConnections
+                .map(c => (typeof c?.confidence === 'number' && Number.isFinite(c.confidence) ? c.confidence : null))
+                .filter((n): n is number => n !== null);
+            const fallbackConfidence = connectionConfidences.length > 0
+                ? connectionConfidences.reduce((sum, val) => sum + val, 0) / connectionConfidences.length
+                : (rawInsights.length > 0 ? 0.8 : 0);
+            const topConfidence = typeof parsed.confidence === 'number' && Number.isFinite(parsed.confidence)
+                ? Math.max(0, Math.min(1, parsed.confidence))
+                : Math.max(0, Math.min(1, fallbackConfidence));
+
+            if (rawInsights.length === 0 || topConfidence < 0.3) {
                 return null;
             }
 
             const now = Timestamp.now();
-            const connections: MemoryConnection[] = (parsed.connections || []).map((c: any) => ({
+            const connections: MemoryConnection[] = rawConnections.map((c: any) => ({
                 fromMemoryId: String(c.fromId),
                 toMemoryId: String(c.toId),
                 relationship: String(c.relationship),
-                confidence: parsed.confidence,
+                confidence: typeof c.confidence === 'number' && Number.isFinite(c.confidence)
+                    ? Math.max(0, Math.min(1, c.confidence))
+                    : topConfidence,
                 discoveredAt: now,
             }));
 
             return {
                 userId,
                 sourceMemoryIds: memories.map(m => m.id),
-                summary: parsed.insights.join(' '),
-                insight: parsed.insights[0] || 'No specific insight identified.',
+                summary: rawInsights.join(' '),
+                insight: rawInsights[0] || 'No specific insight identified.',
                 connections,
                 createdAt: now,
-                confidence: parsed.confidence,
+                confidence: topConfidence,
             };
         } catch (error: unknown) {
             logger.error('[MemorySummarizer] Insight generation failed:', error);
@@ -185,7 +205,7 @@ export class MemorySummarizer {
                 prompt,
                 0,
                 {
-                    temperature: 0.1,
+                    temperature: 1.0,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );
@@ -230,7 +250,7 @@ export class MemorySummarizer {
                 prompt,
                 0,
                 {
-                    temperature: 0.1,
+                    temperature: 1.0,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );

@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import { arcjetKey, getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
 import { validateAppCheckV2 } from "../middleware/appCheck";
 import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
+import { assertSafeApiPathSegment } from "../lib/safeExternalUrl";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
@@ -69,11 +70,13 @@ export const sendForDigitalSignature = onCall(
 
         console.log(`[sendForDigitalSignature] Initiating multi-party signature request via ${providerName} for contract ${contractId} with ${signers.length} signers.`);
 
+        const safeContractId = assertSafeApiPathSegment(contractId, "contractId");
+
         // Ownership gate (ISSUE-889): the caller's local contract record must
         // exist BEFORE any external PandaDoc call — the platform API key can
         // reach any document in the account, so contractId alone is not proof.
         const db = admin.firestore();
-        const contractRef = db.doc(`users/${request.auth.uid}/contracts/${contractId}`);
+        const contractRef = db.doc(`users/${request.auth.uid}/contracts/${safeContractId}`);
         const existingSnap = await contractRef.get();
         if (!existingSnap.exists) {
             throw new HttpsError(
@@ -86,7 +89,7 @@ export const sendForDigitalSignature = onCall(
 
         // Standard PandaDoc API document creation and send flow for multi-recipients
         // We specify the recipients in the document creation or send payload
-        const response = await fetch(`${PANDADOC_API}/documents/${contractId}/send`, {
+        const response = await fetch(`${PANDADOC_API}/documents/${encodeURIComponent(safeContractId)}/send`, {
             method: "POST",
             headers: {
                 "Authorization": `API-Key ${apiKey}`,

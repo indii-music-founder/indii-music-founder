@@ -56,7 +56,7 @@ interface DeliveryRecord {
  * Returns null if the distributor doesn't support status polling or
  * no API key is configured.
  */
-async function checkDistributorStatus(
+export async function checkDistributorStatus(
     distributorId: string,
     distributorReleaseId: string,
     apiKey?: string
@@ -64,10 +64,11 @@ async function checkDistributorStatus(
     if (!apiKey || !distributorReleaseId) return null;
 
     try {
+        const encodedId = encodeURIComponent(distributorReleaseId);
         const endpoints: Record<string, string> = {
-            tunecore: `https://api.tunecore.com/v1/releases/${distributorReleaseId}`,
-            onerpm: `https://api.onerpm.com/v1/releases/${distributorReleaseId}`,
-            unitedmasters: `https://api.unitedmasters.com/v1/releases/${distributorReleaseId}`,
+            tunecore: `https://api.tunecore.com/v1/releases/${encodedId}`,
+            onerpm: `https://api.onerpm.com/v1/releases/${encodedId}`,
+            unitedmasters: `https://api.unitedmasters.com/v1/releases/${encodedId}`,
         };
 
         const url = endpoints[distributorId];
@@ -178,54 +179,55 @@ export const pollDeliveryStatus = onSchedule({
 
         logger.info(`[pollDeliveryStatus] Checking ${snapshot.size} pending releases.`);
 
-        const updates: Promise<void>[] = [];
-
-        for (const doc of snapshot.docs) {
+        const eligibleDocs = snapshot.docs.filter((doc) => {
             const data = doc.data() as DeliveryRecord;
+            return !data.lastStatusCheck || data.lastStatusCheck <= cutoffMs;
+        });
 
-            // Skip if checked too recently
-            if (data.lastStatusCheck && data.lastStatusCheck > cutoffMs) {
-                continue;
-            }
+        const BATCH_SIZE = 10;
+        let processedCount = 0;
 
-            const apiStatus = await checkDistributorStatus(
-                data.distributorId,
-                data.distributorReleaseId || '',
-                data.apiKey
-            );
+        for (let i = 0; i < eligibleDocs.length; i += BATCH_SIZE) {
+            const chunk = eligibleDocs.slice(i, i + BATCH_SIZE);
+            await Promise.allSettled(
+                chunk.map(async (doc) => {
+                    const data = doc.data() as DeliveryRecord;
 
-            const newStatus = apiStatus ?? applyStatusHeuristic(
-                data.deliveryStatus,
-                data.distributorId,
-                data.deliveredAt
-            );
+                    const apiStatus = await checkDistributorStatus(
+                        data.distributorId,
+                        data.distributorReleaseId || '',
+                        data.apiKey
+                    );
 
-            if (newStatus !== data.deliveryStatus || !data.lastStatusCheck) {
-                updates.push(
-                    doc.ref.update({
-                        deliveryStatus: newStatus,
-                        lastStatusCheck: now,
-                        statusHistory: FieldValue.arrayUnion({
-                            status: newStatus,
-                            checkedAt: now,
-                            source: apiStatus ? 'api' : 'heuristic',
-                        }),
-                    }).then(() => {
+                    const newStatus = apiStatus ?? applyStatusHeuristic(
+                        data.deliveryStatus,
+                        data.distributorId,
+                        data.deliveredAt
+                    );
+
+                    if (newStatus !== data.deliveryStatus || !data.lastStatusCheck) {
+                        await doc.ref.update({
+                            deliveryStatus: newStatus,
+                            lastStatusCheck: now,
+                            statusHistory: FieldValue.arrayUnion({
+                                status: newStatus,
+                                checkedAt: now,
+                                source: apiStatus ? 'api' : 'heuristic',
+                            }),
+                        });
                         logger.info(
                             `[pollDeliveryStatus] ${doc.id} (${data.distributorId}): ${data.deliveryStatus} → ${newStatus}`
                         );
-                    })
-                );
-            } else {
-                // Just update the heartbeat timestamp
-                updates.push(
-                    doc.ref.update({ lastStatusCheck: now }).then(() => undefined)
-                );
-            }
+                    } else {
+                        // Just update the heartbeat timestamp
+                        await doc.ref.update({ lastStatusCheck: now });
+                    }
+                    processedCount++;
+                })
+            );
         }
 
-        await Promise.allSettled(updates);
-        logger.info(`[pollDeliveryStatus] Completed. Processed ${updates.length} updates.`);
+        logger.info(`[pollDeliveryStatus] Completed. Processed ${processedCount} updates.`);
 
     } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);

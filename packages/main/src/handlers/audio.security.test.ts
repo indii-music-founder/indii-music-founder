@@ -126,4 +126,31 @@ describe('Vulnerability: Audio Handler Symlink Exploit', () => {
         // Verify we DID check the real path
         expect(fs.realpathSync).toHaveBeenCalledWith(maliciousPath);
     });
+
+    it('generates distinct temp paths with UUID for concurrent calls and cleans up in finally', async () => {
+        registerAudioHandlers();
+        accessControlService.grantAccess('/tmp/track.wav');
+
+        const calls = (ipcMain.handle as Mock).mock.calls;
+        const handler = calls.find((call: unknown[]) => call[0] === 'audio:analyze')![1] as (event: unknown, path: string) => Promise<unknown>;
+
+        const res1 = await handler({ senderFrame: { url: 'file://app/index.html' } }, '/tmp/track.wav') as { status: string };
+        const res2 = await handler({ senderFrame: { url: 'file://app/index.html' } }, '/tmp/track.wav') as { status: string };
+
+        expect(res1.status).toBe('success');
+        expect(res2.status).toBe('success');
+
+        const ffmpegInstances = (ffmpeg as unknown as Mock).mock.results.map(r => r.value);
+        const saveCalls = ffmpegInstances.flatMap(inst => (inst.save as Mock).mock.calls.map(c => c[0] as string));
+
+        expect(saveCalls.length).toBeGreaterThanOrEqual(2);
+        // Ensure paths are distinct (UUID present) and not colliding
+        expect(saveCalls[0]).not.toEqual(saveCalls[1]);
+        expect(saveCalls[0]).toMatch(/_proxy\.mp3$/);
+        expect(saveCalls[1]).toMatch(/_proxy\.mp3$/);
+
+        // Ensure fs.promises.unlink was called to clean up each temp file
+        expect(fs.promises.unlink).toHaveBeenCalledWith(saveCalls[0]);
+        expect(fs.promises.unlink).toHaveBeenCalledWith(saveCalls[1]);
+    });
 });

@@ -5,7 +5,7 @@ import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { arcjetKey } from '../config/secrets';
-import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../functions/security/arcjet';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from '../functions/security/arcjet';
 import { requireVerifiedServerEntitlement } from '../functions/auth/entitlements';
 
 import { McpToolRegistry } from './registry.js';
@@ -25,7 +25,33 @@ const app = express.default();
 // 'http' even for a real HTTPS caller (X-Forwarded-Proto is set but ignored
 // unless Express is told to trust the proxy).
 app.set('trust proxy', true);
-app.use(cors({ origin: true }));
+
+const ALLOWED_ORIGINS = new Set([
+    'https://indii.music',
+    'https://app.indii.music',
+    'https://founder.indii.music',
+    'https://www.indii.music',
+    'https://studio.indii.music',
+    'https://indii-music-studio.web.app',
+    'https://indii-music-studio.firebaseapp.com',
+    'https://indii-music-founder.web.app',
+    'https://indii-music-founder.firebaseapp.com',
+    'https://indii-studio.firebaseapp.com',
+    'app://.',
+]);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.has(origin)) {
+            return callback(null, true);
+        }
+        if (process.env.FUNCTIONS_EMULATOR === 'true' && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))) {
+            return callback(null, true);
+        }
+        callback(new Error('CORS not allowed'));
+    },
+    credentials: true,
+}));
 
 interface McpSession {
     context: McpContext;
@@ -185,6 +211,18 @@ export const mcpEndpoint = onRequest(
         if (isMcpCorsPreflight(req.method, req.path)) {
             return app(req, res);
         }
+
+        // Pre-auth IP rate-limiting to prevent unauthenticated DoS / resource starvation
+        const anonProtection = await protectAnonymousSignupRequest(
+            req as never,
+            `mcp-endpoint:${req.ip || 'anonymous'}`,
+            'allow-low-risk-read'
+        );
+        if (!anonProtection.allowed) {
+            res.status(anonProtection.status || 429).send(anonProtection.message || 'Too Many Requests');
+            return;
+        }
+
         let decoded: admin.auth.DecodedIdToken;
         try {
             decoded = await verifyBearerToken(req as express.Request);

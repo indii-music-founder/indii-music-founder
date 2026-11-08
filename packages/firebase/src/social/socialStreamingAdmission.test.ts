@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as crypto from 'crypto';
 
 const mocks = vi.hoisted(() => ({
   protectAuthenticated: vi.fn(),
@@ -12,6 +11,11 @@ const mocks = vi.hoisted(() => ({
   firestoreDocUpdate: vi.fn(),
   firestoreRunTransaction: vi.fn(),
   authVerifyIdToken: vi.fn(),
+  generateContentStream: vi.fn(),
+  recordUsage: vi.fn(),
+  claimOperationReservation: vi.fn(),
+  finalizeOperationReservation: vi.fn(),
+  enforceRateLimit: vi.fn(),
 }));
 
 vi.mock('firebase-admin', () => {
@@ -137,6 +141,28 @@ vi.mock('../functions/security/arcjet', () => ({
   protectAnonymousSignupRequest: mocks.protectAnonymous,
 }));
 
+vi.mock('../lib/vertexClient', () => ({
+  getVertexAIClient: vi.fn(() => ({
+    models: {
+      generateContentStream: mocks.generateContentStream,
+    },
+  })),
+}));
+
+vi.mock('../lib/rateLimit', () => ({
+  RATE_LIMITS: { generation: 10 },
+  enforceRateLimit: mocks.enforceRateLimit,
+}));
+
+vi.mock('../functions/billing/enforceOperationCost', () => ({
+  claimOperationReservation: mocks.claimOperationReservation,
+  finalizeOperationReservation: mocks.finalizeOperationReservation,
+}));
+
+vi.mock('../functions/creative/gateway', () => ({
+  recordUsage: mocks.recordUsage,
+}));
+
 import {
   sendInstagramMessageCallable,
   replyInstagramCommentCallable,
@@ -208,7 +234,11 @@ describe('Social Connections, Messaging, Webhook & Streaming Admission Gates (IS
     mocks.validateAppCheckHttp.mockResolvedValue(true);
     mocks.protectAuthenticated.mockResolvedValue({ allowed: true });
     mocks.protectAnonymous.mockResolvedValue({ allowed: true });
-    mocks.authVerifyIdToken.mockResolvedValue({ uid: 'user-123' });
+    mocks.authVerifyIdToken.mockResolvedValue({ uid: 'user-123', email_verified: true });
+    mocks.enforceRateLimit.mockResolvedValue(undefined);
+    mocks.claimOperationReservation.mockResolvedValue(undefined);
+    mocks.finalizeOperationReservation.mockResolvedValue(undefined);
+    mocks.recordUsage.mockResolvedValue(undefined);
 
     mocks.firestoreDocGet.mockResolvedValue({
       exists: true,
@@ -349,6 +379,42 @@ describe('Social Connections, Messaging, Webhook & Streaming Admission Gates (IS
     });
 
     describe('agentStreamResponse', () => {
+      it('rejects unverified email addresses with 403', async () => {
+        mocks.authVerifyIdToken.mockResolvedValueOnce({
+          uid: 'user-123',
+          email_verified: false,
+        });
+
+        const req = {
+          method: 'POST',
+          headers: {
+            authorization: 'Bearer valid-id-token',
+          },
+          body: {
+            userId: 'user-123',
+            agentId: 'agent-1',
+            input: 'Generate track description',
+          },
+        };
+        const statusFn = vi.fn().mockReturnThis();
+        const jsonFn = vi.fn();
+        const res = {
+          status: statusFn,
+          json: jsonFn,
+          setHeader: vi.fn(),
+        };
+
+        const stream = agentStreamResponse as unknown as (req: unknown, res: unknown) => Promise<void>;
+        await stream(req, res);
+
+        expect(statusFn).toHaveBeenCalledWith(403);
+        expect(jsonFn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: expect.stringContaining('Verify your email'),
+          })
+        );
+      });
+
       it('rejects when Arcjet denies the stream request', async () => {
         mocks.protectAuthenticated.mockResolvedValueOnce({
           allowed: false,
@@ -383,6 +449,133 @@ describe('Social Connections, Messaging, Webhook & Streaming Admission Gates (IS
         expect(statusFn).toHaveBeenCalledWith(429);
         expect(jsonFn).toHaveBeenCalledWith({ error: 'Rate limit exceeded' });
         expect(setHeaderFn).toHaveBeenCalledWith('Retry-After', '60');
+      });
+
+      it('streams response chunks, records usage, and settles reservation', async () => {
+        async function* mockChunks() {
+          yield {
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Here ' }],
+                },
+              },
+            ],
+          };
+          yield {
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'is your plan.' }],
+                },
+              },
+            ],
+          };
+        }
+        mocks.generateContentStream.mockResolvedValueOnce(mockChunks());
+
+        const req = {
+          method: 'POST',
+          headers: {
+            authorization: 'Bearer valid-id-token',
+          },
+          body: {
+            userId: 'user-123',
+            agentId: 'agent-1',
+            input: 'Generate track description',
+            costReservationId: 'res-999',
+          },
+        };
+        const writtenData: string[] = [];
+        let ended = false;
+        const res = {
+          setHeader: vi.fn(),
+          write: vi.fn((data: string) => {
+            writtenData.push(data);
+            return true;
+          }),
+          end: vi.fn(() => {
+            ended = true;
+          }),
+          headersSent: true,
+        };
+
+        const stream = agentStreamResponse as unknown as (req: unknown, res: unknown) => Promise<void>;
+        await stream(req, res);
+
+        expect(mocks.claimOperationReservation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 'user-123',
+            operationId: 'res-999',
+            operationType: 'agent_stream',
+          })
+        );
+        expect(writtenData.some((chunk) => chunk.includes('Here '))).toBe(true);
+        expect(writtenData.some((chunk) => chunk.includes('complete'))).toBe(true);
+        expect(ended).toBe(true);
+        expect(mocks.finalizeOperationReservation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 'user-123',
+            operationId: 'res-999',
+            outcome: 'SETTLED',
+          })
+        );
+        expect(mocks.recordUsage).toHaveBeenCalledWith('user-123', 'chat_tokens', 2);
+      });
+
+      it('handles mid-stream errors by emitting SSE error frame without crashing headersSent and voiding reservation', async () => {
+        async function* faultyStream() {
+          yield {
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: 'Starting output...' }],
+                },
+              },
+            ],
+          };
+          throw new Error('Gemini API quota exceeded');
+        }
+        mocks.generateContentStream.mockResolvedValueOnce(faultyStream());
+
+        const req = {
+          method: 'POST',
+          headers: {
+            authorization: 'Bearer valid-id-token',
+          },
+          body: {
+            userId: 'user-123',
+            agentId: 'agent-1',
+            input: 'Generate track description',
+            costReservationId: 'res-quota',
+          },
+        };
+        const writtenData: string[] = [];
+        let ended = false;
+        const res = {
+          setHeader: vi.fn(),
+          write: vi.fn((data: string) => {
+            writtenData.push(data);
+            return true;
+          }),
+          end: vi.fn(() => {
+            ended = true;
+          }),
+          headersSent: true,
+        };
+
+        const stream = agentStreamResponse as unknown as (req: unknown, res: unknown) => Promise<void>;
+        await stream(req, res);
+
+        expect(mocks.finalizeOperationReservation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: 'user-123',
+            operationId: 'res-quota',
+            outcome: 'VOIDED',
+          })
+        );
+        expect(writtenData.some((chunk) => chunk.includes('Gemini API quota exceeded'))).toBe(true);
+        expect(ended).toBe(true);
       });
     });
 

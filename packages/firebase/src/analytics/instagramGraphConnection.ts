@@ -62,7 +62,7 @@ function graphUrl(path: string, params: Record<string, string>): string {
 }
 
 async function readGraphToken(fetcher: GraphFetcher, url: string, stage: string): Promise<GraphTokenResponse> {
-    const response = await fetcher(url);
+    const response = await fetcher(url, { signal: AbortSignal.timeout(15_000) });
     if (!response.ok) {
         throw new MetaInstagramConnectionError('META_TOKEN_EXCHANGE_FAILED', `Meta ${stage} failed. Reconnect Instagram and try again.`);
     }
@@ -135,7 +135,7 @@ export async function resolveFacebookInstagramConnection(
     const pagesResponse = await fetcher(graphUrl('/me/accounts', {
         fields: 'id,name,instagram_business_account{id,username}',
         access_token: longLived.access_token!,
-    }));
+    }), { signal: AbortSignal.timeout(15_000) });
     if (!pagesResponse.ok) {
         throw new MetaInstagramConnectionError('META_TOKEN_EXCHANGE_FAILED', 'Meta Page lookup failed. Reconnect Instagram and try again.');
     }
@@ -149,7 +149,7 @@ export async function resolveFacebookInstagramConnection(
         const adAccountsResponse = await fetcher(graphUrl('/me/adaccounts', {
             fields: 'id,account_id,name',
             access_token: longLived.access_token!,
-        }));
+        }), { signal: AbortSignal.timeout(15_000) });
         if (adAccountsResponse.ok) {
             const body = await adAccountsResponse.json() as {
                 data?: Array<{ id?: string; account_id?: string; name?: string }>;

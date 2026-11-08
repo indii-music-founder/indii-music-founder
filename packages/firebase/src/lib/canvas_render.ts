@@ -103,7 +103,25 @@ async function composeCanvasVideo(
 }
 
 export const canvasRenderFn = (inngestClient: Inngest) => inngestClient.createFunction(
-    { id: 'canvas-render-compose', retries: 1 },
+    {
+        id: 'canvas-render-compose',
+        retries: 1,
+        onFailure: async ({ event, error, step }) => {
+            const originalData = (event.data?.event?.data || {}) as Partial<CanvasRenderPayload>;
+            const jobId = originalData.jobId;
+            if (!jobId) return;
+            const db = admin.firestore();
+            const jobRef = db.collection('mcpRenderJobs').doc(jobId);
+            const message = error instanceof Error ? error.message : String(error);
+            await step.run('mark-failed', async () => {
+                await jobRef.update({
+                    status: 'failed',
+                    error: message,
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            });
+        },
+    },
     { event: 'mcp/render.requested' },
     async ({ event, step }) => {
         const { jobId, uid, releaseId, canvasType, animationSpec } = event.data as CanvasRenderPayload;
@@ -114,71 +132,59 @@ export const canvasRenderFn = (inngestClient: Inngest) => inngestClient.createFu
             await jobRef.update({ status: 'rendering', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
         });
 
-        try {
-            const assetPaths = await step.run('resolve-assets', async () => {
-                const owned = await db.collection('users').doc(uid).collection('releases').doc(releaseId).get();
-                const source = owned.exists ? owned : await db.collection('releases').doc(releaseId).get();
-                if (!source.exists) {
-                    throw new Error(`Release ${releaseId} not found.`);
-                }
-                const data = source.data() || {};
-                const coverArtStoragePath = resolveCoverArtStoragePath(data);
-                const audioStoragePath = resolveAudioStoragePath(data);
-                if (!coverArtStoragePath) {
-                    throw new Error('Release has no cover art storage path — cannot compose canvas.');
-                }
-                if (!audioStoragePath) {
-                    throw new Error("Release has no artist-uploaded audio (audioUrl) — cannot compose canvas without the artist's own audio.");
-                }
-                return { coverArtStoragePath, audioStoragePath };
-            });
+        const assetPaths = await step.run('resolve-assets', async () => {
+            const owned = await db.collection('users').doc(uid).collection('releases').doc(releaseId).get();
+            const source = owned.exists ? owned : await db.collection('releases').doc(releaseId).get();
+            if (!source.exists) {
+                throw new Error(`Release ${releaseId} not found.`);
+            }
+            const data = source.data() || {};
+            const coverArtStoragePath = resolveCoverArtStoragePath(data);
+            const audioStoragePath = resolveAudioStoragePath(data);
+            if (!coverArtStoragePath) {
+                throw new Error('Release has no cover art storage path — cannot compose canvas.');
+            }
+            if (!audioStoragePath) {
+                throw new Error("Release has no artist-uploaded audio (audioUrl) — cannot compose canvas without the artist's own audio.");
+            }
+            return { coverArtStoragePath, audioStoragePath };
+        });
 
-            const outputStoragePath = await step.run('compose-and-upload', async () => {
-                const bucket = admin.storage().bucket();
-                const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'canvas-'));
-                const coverLocal = path.join(tmpDir, 'cover.img');
-                const audioLocal = path.join(tmpDir, 'audio.src');
-                const outputLocal = path.join(tmpDir, `${randomUUID()}.mp4`);
+        const outputStoragePath = await step.run('compose-and-upload', async () => {
+            const bucket = admin.storage().bucket();
+            const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'canvas-'));
+            const coverLocal = path.join(tmpDir, 'cover.img');
+            const audioLocal = path.join(tmpDir, 'audio.src');
+            const outputLocal = path.join(tmpDir, `${randomUUID()}.mp4`);
 
-                try {
-                    await bucket.file(assetPaths.coverArtStoragePath).download({ destination: coverLocal });
-                    await bucket.file(assetPaths.audioStoragePath).download({ destination: audioLocal });
+            try {
+                await bucket.file(assetPaths.coverArtStoragePath).download({ destination: coverLocal });
+                await bucket.file(assetPaths.audioStoragePath).download({ destination: audioLocal });
 
-                    const { width, height } = CANVAS_ASPECTS[canvasType] || CANVAS_ASPECTS.Spotify;
-                    const durationSeconds = resolveCanvasDurationSeconds(animationSpec);
+                const { width, height } = CANVAS_ASPECTS[canvasType] || CANVAS_ASPECTS.Spotify;
+                const durationSeconds = resolveCanvasDurationSeconds(animationSpec);
 
-                    await composeCanvasVideo(coverLocal, audioLocal, outputLocal, durationSeconds, width, height);
+                await composeCanvasVideo(coverLocal, audioLocal, outputLocal, durationSeconds, width, height);
 
-                    const destPath = `users/${uid}/canvas/${jobId}.mp4`;
-                    await bucket.upload(outputLocal, {
-                        destination: destPath,
-                        metadata: { contentType: 'video/mp4' },
-                    });
-                    return destPath;
-                } finally {
-                    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
-                }
-            });
-
-            await step.run('mark-complete', async () => {
-                await jobRef.update({
-                    status: 'complete',
-                    outputStoragePath,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                const destPath = `users/${uid}/canvas/${jobId}.mp4`;
+                await bucket.upload(outputLocal, {
+                    destination: destPath,
+                    metadata: { contentType: 'video/mp4' },
                 });
-            });
+                return destPath;
+            } finally {
+                await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
+            }
+        });
 
-            return { jobId, status: 'complete', outputStoragePath };
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            await step.run('mark-failed', async () => {
-                await jobRef.update({
-                    status: 'failed',
-                    error: message,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
+        await step.run('mark-complete', async () => {
+            await jobRef.update({
+                status: 'complete',
+                outputStoragePath,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
-            return { jobId, status: 'failed', error: message };
-        }
+        });
+
+        return { jobId, status: 'complete', outputStoragePath };
     },
 );

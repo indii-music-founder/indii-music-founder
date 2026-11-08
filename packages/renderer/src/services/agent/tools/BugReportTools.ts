@@ -242,7 +242,10 @@ ${featureRequest.useCase}
             logger.info(`[BugReportTools] Feature request saved: ${featureRequest.id} — "${featureRequest.title}"`);
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to persist feature request to Firestore:', e);
-            // Non-blocking — still return success to the agent
+            return toolError(
+                `Failed to record feature request in feedback tracker: ${e instanceof Error ? e.message : 'Database write error'}.`,
+                'FEATURE_REQUEST_PERSISTENCE_FAILED'
+            );
         }
 
         // 2. Save to Agent Memory

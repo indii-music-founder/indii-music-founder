@@ -67,6 +67,56 @@ function parseAnalyticsPlatform(value: unknown): AnalyticsPlatform {
     throw new HttpsError('invalid-argument', 'platform must be spotify, tiktok, or instagram.');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper: validate the exact redirect URI used to mint the authorization code
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function resolveAnalyticsOAuthRedirectUri(
+    platform: AnalyticsPlatform,
+    requestedRedirectUri: unknown,
+): string {
+    if (typeof requestedRedirectUri !== 'string') {
+        throw new HttpsError('invalid-argument', 'Missing OAuth redirect URI.');
+    }
+
+    let requested: URL;
+    try {
+        requested = new URL(requestedRedirectUri);
+    } catch {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI is invalid.');
+    }
+
+    const expectedPath = `/auth/${platform}/callback`;
+    if (requested.pathname !== expectedPath || requested.search || requested.hash || requested.username || requested.password) {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI does not match the platform callback.');
+    }
+
+    const allowedOrigins = new Set(['https://app.indii.music']);
+    const configuredAppUrl = process.env.APP_URL;
+    if (configuredAppUrl) {
+        try {
+            const configured = new URL(configuredAppUrl);
+            if (configured.protocol === 'https:' && configured.pathname === '/' && !configured.search && !configured.hash) {
+                allowedOrigins.add(configured.origin);
+            }
+        } catch {
+            console.warn('[AnalyticsToken] Ignoring invalid APP_URL configuration.');
+        }
+    }
+
+    if (process.env.FUNCTIONS_EMULATOR === 'true'
+        && requested.protocol === 'http:'
+        && (requested.hostname === 'localhost' || requested.hostname === '127.0.0.1')) {
+        return `${requested.origin}${expectedPath}`;
+    }
+
+    if (!allowedOrigins.has(requested.origin)) {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI is not an authorized Studio origin.');
+    }
+
+    return `${requested.origin}${expectedPath}`;
+}
+
 // ── Helper: make authenticated assertion ─────────────────────────────────────
 function assertAuth(request: CallableRequest): string {
     if (!request.auth) {
@@ -116,10 +166,13 @@ export const analyticsExchangeToken = onCall(
             throw new HttpsError("invalid-argument", "platform, code, and redirectUri are required.");
         }
 
+        const targetPlatform = parseAnalyticsPlatform(platform);
+        const validatedRedirectUri = resolveAnalyticsOAuthRedirectUri(targetPlatform, redirectUri);
+
         let tokenRes: SpotifyTokenResponse | TikTokTokenResponse;
 
-        if (platform === "spotify") {
-            tokenRes = await exchangeSpotifyCode(code, redirectUri, codeVerifier);
+        if (targetPlatform === "spotify") {
+            tokenRes = await exchangeSpotifyCode(code, validatedRedirectUri, codeVerifier);
             await storeToken(uid, "spotify", {
                 accessToken: tokenRes.access_token,
                 refreshToken: tokenRes.refresh_token,
@@ -129,8 +182,8 @@ export const analyticsExchangeToken = onCall(
             return { ok: true, expiresIn: tokenRes.expires_in };
         }
 
-        if (platform === "tiktok") {
-            tokenRes = await exchangeTikTokCode(code, redirectUri) as TikTokTokenResponse;
+        if (targetPlatform === "tiktok") {
+            tokenRes = await exchangeTikTokCode(code, validatedRedirectUri) as TikTokTokenResponse;
             await storeToken(uid, "tiktok", {
                 accessToken: tokenRes.access_token,
                 refreshToken: tokenRes.refresh_token,
@@ -140,12 +193,12 @@ export const analyticsExchangeToken = onCall(
             return { ok: true, expiresIn: tokenRes.expires_in };
         }
 
-        if (platform === "instagram") {
+        if (targetPlatform === "instagram") {
             let resolution;
             try {
                 resolution = await resolveFacebookInstagramConnection({
                     code,
-                    redirectUri,
+                    redirectUri: validatedRedirectUri,
                     appId: metaAppId.value(),
                     appSecret: metaAppSecret.value(),
                 });
@@ -304,7 +357,9 @@ export const auditInstagramConnectionCallable = onCall(
 
         if (token.accessToken && !isExpired && activePermissions.length === 0) {
             try {
-                const res = await fetch(`https://graph.facebook.com/v23.0/me/permissions?access_token=${encodeURIComponent(token.accessToken)}`);
+                const res = await fetch(`https://graph.facebook.com/v23.0/me/permissions?access_token=${encodeURIComponent(token.accessToken)}`, {
+                    signal: AbortSignal.timeout(15_000),
+                });
                 if (res.ok) {
                     const body = await res.json() as { data?: Array<{ permission?: string; status?: string }> };
                     activePermissions = (body.data ?? [])
@@ -337,6 +392,112 @@ export const auditInstagramConnectionCallable = onCall(
             lastCheckedAt: Date.now(),
         };
     });
+
+/** Authenticated server-side proxy for Instagram Graph API analytics calls. */
+export const instagramAnalyticsProxy = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 30, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: uid,
+                policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
+                operationId: `instagramAnalyticsProxy:${randomUUID()}`,
+            });
+            if (!protection.allowed) {
+                throw new HttpsError(
+                    protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                    protection.message,
+                );
+            }
+        }
+
+        const snap = await tokenPath(uid, 'instagram').get();
+        if (!snap.exists) {
+            throw new HttpsError('not-found', 'Instagram account is not connected.');
+        }
+
+        const stored = snap.data() as StoredToken;
+        if (!stored.accessToken) {
+            throw new HttpsError('failed-precondition', 'Instagram account has no valid access token. Please reconnect.');
+        }
+
+        if (typeof stored.expiresAt === 'number' && stored.expiresAt <= Date.now()) {
+            throw new HttpsError('unauthenticated', 'Instagram token expired — please reconnect.');
+        }
+
+        const { endpoint, params } = (request.data ?? {}) as {
+            endpoint?: string;
+            params?: {
+                igUserId?: string;
+                limit?: number;
+                mediaId?: string;
+                since?: number;
+                until?: number;
+            };
+        };
+
+        if (!endpoint || typeof endpoint !== 'string') {
+            throw new HttpsError('invalid-argument', 'Missing endpoint.');
+        }
+
+        const token = stored.accessToken;
+        const defaultIgUserId = typeof stored.igUserId === 'string' ? stored.igUserId : '';
+
+        let targetUrl: string;
+
+        switch (endpoint) {
+            case 'getUserProfile': {
+                const targetIgId = params?.igUserId || defaultIgUserId;
+                if (!targetIgId) throw new HttpsError('invalid-argument', 'Missing Instagram user ID.');
+                targetUrl = `https://graph.facebook.com/v23.0/${encodeURIComponent(targetIgId)}?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website&access_token=${encodeURIComponent(token)}`;
+                break;
+            }
+            case 'getReels': {
+                const targetIgId = params?.igUserId || defaultIgUserId;
+                if (!targetIgId) throw new HttpsError('invalid-argument', 'Missing Instagram user ID.');
+                const limit = Math.min(Math.max(Number(params?.limit) || 20, 1), 100);
+                const fields = 'id,media_type,media_product_type,caption,timestamp,permalink,thumbnail_url,like_count,comments_count';
+                targetUrl = `https://graph.facebook.com/v23.0/${encodeURIComponent(targetIgId)}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`;
+                break;
+            }
+            case 'getReelInsights': {
+                const mediaId = params?.mediaId;
+                if (!mediaId || typeof mediaId !== 'string') throw new HttpsError('invalid-argument', 'mediaId is required.');
+                const metrics = 'plays,reach,impressions,likes,comments,shares,saved';
+                targetUrl = `https://graph.facebook.com/v23.0/${encodeURIComponent(mediaId)}/insights?metric=${metrics}&period=lifetime&access_token=${encodeURIComponent(token)}`;
+                break;
+            }
+            case 'getAccountDailyInsights': {
+                const targetIgId = params?.igUserId || defaultIgUserId;
+                if (!targetIgId) throw new HttpsError('invalid-argument', 'Missing Instagram user ID.');
+                const since = Number(params?.since) || Math.floor(Date.now() / 1000) - 30 * 24 * 3600;
+                const until = Number(params?.until) || Math.floor(Date.now() / 1000);
+                const metrics = 'impressions,reach,profile_views';
+                targetUrl = `https://graph.facebook.com/v23.0/${encodeURIComponent(targetIgId)}/insights?metric=${metrics}&period=day&since=${since}&until=${until}&access_token=${encodeURIComponent(token)}`;
+                break;
+            }
+            default:
+                throw new HttpsError('invalid-argument', `Unsupported Instagram analytics endpoint: ${endpoint}`);
+        }
+
+        const res = await fetch(targetUrl, { signal: AbortSignal.timeout(15_000) });
+        if (res.status === 401 || res.status === 190) {
+            throw new HttpsError('unauthenticated', 'Instagram token expired — please reconnect.');
+        }
+        if (res.status === 429) {
+            throw new HttpsError('resource-exhausted', 'Instagram API rate limit hit. Please wait before retrying.');
+        }
+        if (!res.ok) {
+            const err = await res.text().catch(() => res.statusText);
+            throw new HttpsError('internal', `Instagram Graph API error ${res.status}: ${err}`);
+        }
+
+        const data = await res.json();
+        return { ok: true, data };
+    }
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // analyticsRefreshToken
@@ -652,6 +813,7 @@ async function exchangeSpotifyCode(
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -673,6 +835,7 @@ async function refreshSpotifyToken(refreshToken: string): Promise<SpotifyTokenRe
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -686,6 +849,7 @@ async function revokeSpotifyToken(accessToken: string): Promise<void> {
     await fetch(`https://accounts.spotify.com/api/token`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(15_000),
     }).catch((err: unknown) => {
         logger.warn('[revokeSpotifyToken] Network request failed for Spotify token deletion:', err);
     });
@@ -702,6 +866,7 @@ async function exchangeTikTokCode(code: string, redirectUri: string): Promise<Ti
             grant_type: "authorization_code",
             redirect_uri: redirectUri,
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -723,6 +888,7 @@ async function refreshTikTokToken(refreshToken: string): Promise<TikTokTokenResp
             grant_type: "refresh_token",
             refresh_token: refreshToken,
         }).toString(),
+        signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {

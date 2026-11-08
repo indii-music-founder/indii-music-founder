@@ -2,13 +2,14 @@
  * AgentStreamingService
  *
  * Handles real-time streaming of agent responses via Server-Sent Events (SSE).
- * Integrates with Cloud Function v2 agentStreamResponse endpoint.
+ * Integrates with Cloud Function v2 agentStreamResponse endpoint over HTTP POST.
  *
  * Features:
- * - Token-by-token streaming
- * - Automatic reconnection on network loss
- * - Token buffering and rate limiting
- * - Metadata tracking (latency, token count)
+ * - Token-by-token streaming via fetch + ReadableStream reader
+ * - Authenticated with Firebase ID token (Authorization: Bearer) and App Check
+ * - Automatic exponential-backoff reconnection on network loss
+ * - Clean cancellation via AbortController
+ * - Metadata tracking (latency, token count, duration)
  */
 
 import { logger } from '@/utils/logger';
@@ -34,13 +35,23 @@ interface StreamState {
   error: Error | null;
 }
 
+interface StreamRequestParams {
+  input: string;
+  agentId: string;
+  userId: string;
+  context?: Record<string, unknown>;
+  costReservationId?: string;
+  endpoint?: string;
+}
+
 export class AgentStreamingService {
-  private eventSource: EventSource | null = null;
+  private abortController: AbortController | null = null;
+  private currentParams: StreamRequestParams | null = null;
   private state: StreamState = {
     isStreaming: false,
     tokens: [],
     metadata: {},
-    error: null
+    error: null,
   };
   private startTime: number = 0;
   private streamCallbacks: {
@@ -60,12 +71,22 @@ export class AgentStreamingService {
     agentId: string,
     userId: string,
     context?: Record<string, unknown>,
-    callbacks?: typeof this.streamCallbacks
+    callbacks?: typeof this.streamCallbacks,
+    options?: { costReservationId?: string; endpoint?: string },
   ): Promise<void> {
     try {
       if (this.state.isStreaming) {
         throw new Error('Stream already in progress');
       }
+
+      this.currentParams = {
+        input,
+        agentId,
+        userId,
+        context,
+        costReservationId: options?.costReservationId,
+        endpoint: options?.endpoint,
+      };
 
       this.streamCallbacks = callbacks || {};
       this.state.isStreaming = true;
@@ -73,22 +94,9 @@ export class AgentStreamingService {
       this.state.error = null;
       this.startTime = Date.now();
       this.reconnectAttempts = 0;
+      this.abortController = new AbortController();
 
-      const idToken = await this.getIdToken();
-      const endpoint = `${import.meta.env.VITE_API_URL || ''}/api/agents/stream`;
-
-      const requestBody = JSON.stringify({
-        userId,
-        agentId,
-        input,
-        context
-      });
-
-      logger.info(
-        `[AgentStream] Starting stream for agent=${agentId}, inputLength=${input.length}`
-      );
-
-      this.connectStream(endpoint, requestBody, idToken);
+      await this.executeStream();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.state.error = err;
@@ -102,9 +110,9 @@ export class AgentStreamingService {
    * Stop streaming
    */
   stop(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
     }
     this.state.isStreaming = false;
   }
@@ -121,62 +129,147 @@ export class AgentStreamingService {
    */
   reset(): void {
     this.stop();
+    this.currentParams = null;
     this.state = {
       isStreaming: false,
       tokens: [],
       metadata: {},
-      error: null
+      error: null,
     };
     this.streamCallbacks = {};
+    this.reconnectAttempts = 0;
   }
 
   // ========================================================================
   // Private Methods
   // ========================================================================
 
-  private connectStream(
-    endpoint: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    requestBody: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    idToken: string
-  ): void {
+  private async executeStream(): Promise<void> {
+    if (!this.currentParams) return;
+    const { input, agentId, userId, context, costReservationId, endpoint: customEndpoint } = this.currentParams;
+
+    if (!this.abortController) {
+      this.abortController = new AbortController();
+    }
+    const controller = this.abortController;
+
     try {
-      const url = new URL(endpoint, window.location.origin);
+      const idToken = await this.getIdToken();
+      if (controller.signal.aborted) return;
 
-      const eventSource = new EventSource(url.toString(), {
-        withCredentials: true
+      const appCheckToken = await this.getAppCheckToken();
+      if (controller.signal.aborted) return;
+
+      let targetUrl: string;
+      if (customEndpoint) {
+        targetUrl = customEndpoint;
+      } else {
+        const { endpointService } = await importWithRetry(() => import('@/core/config/EndpointService'));
+        targetUrl = endpointService.getFunctionUrl('agentStreamResponse');
+      }
+
+      if (controller.signal.aborted) return;
+
+      const requestBody = JSON.stringify({
+        userId,
+        agentId,
+        input,
+        ...(context ? { context } : {}),
+        ...(costReservationId ? { costReservationId } : {}),
       });
 
-      eventSource.addEventListener('message', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data) as Partial<StreamToken> & { complete?: boolean; totalTokens?: number };
+      logger.info(`[AgentStream] Connecting POST stream to ${targetUrl} (agent=${agentId})`);
 
-          if (data.complete) {
-            this.finishStream(data.totalTokens as number);
-          } else if (data.token !== undefined) {
-            const token = data.token as string;
-            const index = data.index as number;
-            this.state.tokens.push(token);
-            this.streamCallbacks.onToken?.(token, index);
-          }
-        } catch (error) {
-          logger.error('[AgentStream] Failed to parse token', error);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      };
+      if (appCheckToken) {
+        headers['X-Firebase-AppCheck'] = appCheckToken;
+      }
+
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers,
+        body: requestBody,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const error = new Error(`Stream request failed (${response.status}): ${errorText}`);
+        if (response.status >= 400 && response.status < 500) {
+          // Client or auth error (4xx) - fail immediately without retry loop
+          this.state.error = error;
+          this.state.isStreaming = false;
+          this.streamCallbacks.onError?.(error);
+          return;
         }
-      });
+        throw error;
+      }
 
-      eventSource.addEventListener('error', () => {
-        eventSource.close();
-        this.handleStreamError('Stream connection lost');
-      });
+      if (!response.body) {
+        throw new Error('ReadableStream not supported on response body');
+      }
 
-      this.eventSource = eventSource;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const jsonStr = trimmed.slice(5).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr) as Partial<StreamToken> & {
+              complete?: boolean;
+              totalTokens?: number;
+              error?: string;
+            };
+
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            if (data.complete) {
+              this.finishStream(data.totalTokens ?? this.state.tokens.length);
+              return;
+            } else if (data.token !== undefined) {
+              const token = String(data.token);
+              const index = typeof data.index === 'number' ? data.index : this.state.tokens.length;
+              this.state.tokens.push(token);
+              this.streamCallbacks.onToken?.(token, index);
+            }
+          } catch (err) {
+            logger.error('[AgentStream] Failed to parse token frame:', err);
+          }
+        }
+      }
+
+      if (this.state.isStreaming) {
+        this.finishStream(this.state.tokens.length);
+      }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      this.state.error = err;
-      this.state.isStreaming = false;
-      this.streamCallbacks.onError?.(err);
-      logger.error('[AgentStream] Connection failed', err);
+      if (controller.signal.aborted) {
+        logger.info('[AgentStream] Stream aborted by client.');
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      this.handleStreamError(message);
+    } finally {
+      if (this.abortController === controller) {
+        this.abortController = null;
+      }
     }
   }
 
@@ -187,24 +280,17 @@ export class AgentStreamingService {
       totalTokens,
       duration,
       latency: 0,
-      completedAt: Date.now()
+      completedAt: Date.now(),
     };
 
     this.state.isStreaming = false;
     this.streamCallbacks.onComplete?.(this.state.metadata as StreamMetadata);
 
-    logger.info(
-      `[AgentStream] Stream completed: ${totalTokens} tokens in ${duration}ms`
-    );
-
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
+    logger.info(`[AgentStream] Stream completed: ${totalTokens} tokens in ${duration}ms`);
   }
 
   private handleStreamError(message: string): void {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+    if (this.reconnectAttempts < this.maxReconnectAttempts && this.currentParams) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
@@ -214,7 +300,7 @@ export class AgentStreamingService {
 
       setTimeout(() => {
         if (this.state.isStreaming) {
-          // Re-initiate connection (requires storing original parameters)
+          void this.executeStream();
         }
       }, delay);
     } else {
@@ -239,6 +325,19 @@ export class AgentStreamingService {
       );
     }
   }
+
+  private async getAppCheckToken(): Promise<string | undefined> {
+    try {
+      const { appCheck } = await importWithRetry(() => import('@/services/firebase'));
+      if (!appCheck) return undefined;
+      const { getToken } = await import('firebase/app-check');
+      const tokenResult = await getToken(appCheck);
+      return tokenResult?.token;
+    } catch (error) {
+      logger.warn('[AgentStream] Could not obtain App Check token:', error);
+      return undefined;
+    }
+  }
 }
 
 // ============================================================================
@@ -248,9 +347,7 @@ export class AgentStreamingService {
 let agentStreamingService: AgentStreamingService | null = null;
 
 export function initializeAgentStreamingService(): AgentStreamingService {
-  if (!agentStreamingService) {
-    agentStreamingService = new AgentStreamingService();
-  }
+  agentStreamingService = new AgentStreamingService();
   return agentStreamingService;
 }
 

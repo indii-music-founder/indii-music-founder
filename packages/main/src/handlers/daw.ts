@@ -1,11 +1,16 @@
 import { validateSender } from '../utils/ipc-security';
 import { ipcMain } from 'electron';
 import { dawServer, DAWState } from '../daw-server';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import log from 'electron-log';
 import { BrowserWindow } from 'electron';
 
 export const registerDawHandlers = () => {
+    // Persistent error listener ensures that error events from WebSocketServer or bind collisions
+    // (such as EADDRINUSE) do not trigger unhandled EventEmitter crashes in the Electron main process.
+    dawServer.on('error', (err: unknown) => {
+        log.error('[DawServer] Server error:', err);
+    });
+
     ipcMain.handle('daw:start', async (event) => {
         validateSender(event);
         await dawServer.start();

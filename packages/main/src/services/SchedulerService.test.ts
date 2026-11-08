@@ -291,6 +291,52 @@ describe('SchedulerService', () => {
             expect(updated?.enabled).toBe(false);
             expect(updated?.nextRunAt).toBeUndefined();
         });
+
+        it('executes registered action handler before broadcasting tick', async () => {
+            const handler = vi.fn().mockResolvedValue(undefined);
+            SchedulerService.registerActionHandler('test:custom-action', handler);
+
+            SchedulerService.register({
+                name: 'Action Exec Task',
+                action: 'test:custom-action',
+                schedule: { type: 'interval', ms: 100 },
+                enabled: true,
+                notify: false,
+            });
+
+            vi.advanceTimersByTime(150);
+            await Promise.resolve();
+
+            expect(handler).toHaveBeenCalledWith(expect.objectContaining({
+                taskId: expect.any(String),
+                firedAt: expect.any(String),
+            }));
+            expect(mockSend).toHaveBeenCalledWith('scheduler:tick', expect.objectContaining({
+                result: 'success',
+            }));
+        });
+
+        it('records result: error when action handler throws', async () => {
+            SchedulerService.registerActionHandler('test:failing-action', () => {
+                throw new Error('Action handler failure');
+            });
+
+            SchedulerService.register({
+                name: 'Failing Task',
+                action: 'test:failing-action',
+                schedule: { type: 'interval', ms: 100 },
+                enabled: true,
+                notify: false,
+            });
+
+            vi.advanceTimersByTime(150);
+            await Promise.resolve();
+
+            expect(mockSend).toHaveBeenCalledWith('scheduler:tick', expect.objectContaining({
+                result: 'error',
+                error: 'Action handler failure',
+            }));
+        });
     });
 
     // ── Start / Stop ─────────────────────────────────────────────────────────

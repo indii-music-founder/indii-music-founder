@@ -802,5 +802,21 @@ describe('Image and Content Generation Functions', () => {
                 }),
             });
         });
+
+        it('rejects fan arrays exceeding MAX_FANS_PER_BATCH (50 records) with invalid-argument', async () => {
+            const callEnrichFanData = enrichFanData as any;
+            const oversizedFans = Array.from({ length: 51 }, (_, i) => ({ email: `fan${i}@example.com` }));
+
+            await expect(callEnrichFanData({
+                auth: { uid: 'user123' },
+                data: {
+                    fans: oversizedFans,
+                    provider: 'Clearbit',
+                    orgId: 'personal',
+                },
+            })).rejects.toMatchObject({
+                code: 'invalid-argument',
+            });
+        });
     });
 });

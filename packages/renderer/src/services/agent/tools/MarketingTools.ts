@@ -211,16 +211,21 @@ export const MarketingTools = {
             ];
 
             for (const ref of refs) {
-                const snap = await getDoc(ref);
-                if (!snap.exists()) continue;
+                try {
+                    const snap = await getDoc(ref);
+                    if (!snap.exists()) continue;
 
-                const data = snap.data();
-                const validated = TrackPerformanceSchema.parse({
-                    campaignId,
-                    metrics: data.metrics,
-                    roi: data.roi
-                });
-                return toolSuccess(validated, `Performance metrics loaded for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+                    const data = snap.data();
+                    const validated = TrackPerformanceSchema.parse({
+                        campaignId,
+                        metrics: data.metrics,
+                        roi: data.roi
+                    });
+                    return toolSuccess(validated, `Performance metrics loaded for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+                } catch {
+                    // Fall back to next eligible document reference
+                    continue;
+                }
             }
 
             return toolError(`No live performance metrics found for Campaign ID: ${campaignId}.`, 'METRICS_NOT_FOUND');

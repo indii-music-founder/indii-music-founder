@@ -92,6 +92,16 @@ describe('ComputerExecutionService', () => {
             await svc.openApp('Safari');
             expect(provider.openApp).toHaveBeenCalledWith('Safari');
         });
+
+        it('allows default curated music apps even when not explicitly in the allowlist store', async () => {
+            mocks.isAllowed.mockReturnValue(false);
+            const provider = fakeProvider();
+            const svc = new ComputerExecutionService(provider);
+            await svc.openApp('Logic Pro');
+            expect(provider.openApp).toHaveBeenCalledWith('Logic Pro');
+            await svc.openApp('Ableton Live');
+            expect(provider.openApp).toHaveBeenCalledWith('Ableton Live');
+        });
     });
 
     describe('unsupported platform', () => {
@@ -100,6 +110,8 @@ describe('ComputerExecutionService', () => {
             expect(svc.isSupported()).toBe(false);
             await expect(svc.screenshot()).rejects.toThrow(/not supported on this platform/);
             await expect(svc.click(1, 1, 'left')).rejects.toThrow(/not supported on this platform/);
+            await expect(svc.listApps()).rejects.toThrow(/not supported on this platform/);
+            await expect(svc.openApp('Logic Pro')).rejects.toThrow(/not supported on this platform/);
         });
 
         it('reports unsupported permission status without touching systemPreferences guidance path', () => {

@@ -18,7 +18,7 @@ export interface ComputerAuthorizationBackend {
     verifyIdentity(idToken: string): Promise<VerifiedComputerIdentity>;
     hasComputerControlOptIn(uid: string, idToken: string): Promise<boolean>;
     getApproval(uid: string, approvalId: string, idToken: string): Promise<StoredComputerApproval | null>;
-    claimApproval(uid: string, approval: StoredComputerApproval, idToken: string): Promise<StoredComputerApproval>;
+    claimApproval(uid: string, approval: StoredComputerApproval, idToken: string, appCheckToken?: string): Promise<StoredComputerApproval>;
 }
 
 export interface ComputerApprovalScope { userId: string; approvalId: string; agentId: string; toolName: string; action: ComputerAction; args: Record<string, unknown> }
@@ -90,7 +90,7 @@ export class ComputerAuthorizationService {
         private readonly capabilityTtlMs = 60_000,
     ) {}
 
-    async authorize(input: { idToken: string; approvalId: string; rendererId: number; rendererSessionId: string; confirm: (scope: ComputerApprovalScope) => Promise<boolean> }): Promise<{ token: string; expiresAt: number }> {
+    async authorize(input: { idToken: string; approvalId: string; rendererId: number; rendererSessionId: string; appCheckToken?: string; confirm: (scope: ComputerApprovalScope) => Promise<boolean> }): Promise<{ token: string; expiresAt: number }> {
         const generation = this.abortGeneration;
         if (!input.idToken || !input.approvalId || !input.rendererSessionId) throw new Error('Computer authorization requires identity, approval, and renderer session.');
         const identity = await this.backend.verifyIdentity(input.idToken);
@@ -112,7 +112,7 @@ export class ComputerAuthorizationService {
             const scope = { userId: identity.uid, approvalId: approval.id, agentId: approval.agentId, toolName: approval.toolName, action, args: normalizeComputerArgs(action, approval.args) };
             if (!await input.confirm(scope)) throw new Error('Computer approval was cancelled by the user.');
             if (generation !== this.abortGeneration) throw new Error('Computer control was aborted during approval.');
-            claimed = await this.backend.claimApproval(identity.uid, approval, input.idToken);
+            claimed = await this.backend.claimApproval(identity.uid, approval, input.idToken, input.appCheckToken);
         } finally {
             this.pendingClaims.delete(claimKey);
         }

@@ -105,3 +105,54 @@ export const denyComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1', 
     });
     return { denied: true };
 });
+
+export const completeComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, secrets: [arcjetKey] }, async request => {
+    validateAppCheckV2(request);
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'A signed-in user is required.');
+    if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+        throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+    }
+    if (request.auth?.token?.email_verified !== true) {
+        throw new HttpsError('permission-denied', 'A verified signed-in user is required.');
+    }
+    if (request.rawRequest) {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+            userId: uid,
+            policy: 'verified-free',
+            operationId: `complete-computer-approval:${randomUUID()}`,
+        });
+        if (!protection.allowed) {
+            throw new HttpsError(
+                protection.status === 429 ? 'resource-exhausted' : protection.status === 403 ? 'permission-denied' : 'unavailable',
+                protection.message,
+            );
+        }
+    }
+    const approvalId = request.data?.approvalId;
+    if (typeof approvalId !== 'string' || approvalId.length < 1 || approvalId.length > 256) {
+        throw new HttpsError('invalid-argument', 'A valid approval ID is required.');
+    }
+    const success = Boolean(request.data?.success);
+    const error = typeof request.data?.error === 'string' ? request.data.error.slice(0, 1000) : undefined;
+    const ref = getFirestore().doc(`users/${uid}/tool_approvals/${approvalId}`);
+
+    return getFirestore().runTransaction(async transaction => {
+        const snapshot = await transaction.get(ref);
+        if (!snapshot.exists) throw new HttpsError('not-found', 'Computer approval was not found.');
+        const data = snapshot.data() ?? {};
+        if (data.status !== 'claimed') {
+            throw new HttpsError('failed-precondition', `Computer approval is not claimed (status: ${String(data.status)}).`);
+        }
+        const newStatus = success ? 'executed' : 'failed';
+        transaction.update(ref, {
+            status: newStatus,
+            completedAt: FieldValue.serverTimestamp(),
+            result: {
+                success,
+                ...(error ? { error } : {}),
+            },
+        });
+        return { id: approvalId, status: newStatus, success };
+    });
+});

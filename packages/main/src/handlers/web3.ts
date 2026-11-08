@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeUrlAsync } from '../utils/network-security';
 import log from 'electron-log';
 
 // Types for transaction input
@@ -45,9 +46,16 @@ class EthereumNetworkWrapper {
     }
 
     /**
-     * Set/update the RPC URL dynamically
+     * Set/update the RPC URL dynamically with SSRF validation
      */
-    public setRpcUrl(url: string | null) {
+    public async setRpcUrl(url: string | null): Promise<void> {
+        if (url) {
+            const parsed = new URL(url);
+            if (!['https:', 'http:'].includes(parsed.protocol)) {
+                throw new Error(`Security Violation: Protocol '${parsed.protocol}' is not allowed for Web3 RPC.`);
+            }
+            await validateSafeUrlAsync(url);
+        }
         this.rpcUrl = url;
         log.info(`[Web3] Ethereum RPC URL updated to: ${url || 'SIMULATED'}`);
     }
@@ -212,7 +220,8 @@ class EthereumNetworkWrapper {
         const res = await fetch(this.rpcUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body
+            body,
+            signal: AbortSignal.timeout(15_000)
         });
 
         if (!res.ok) {
@@ -278,7 +287,7 @@ export function registerWeb3Handlers() {
     ipcMain.handle('web3:set-rpc-url', async (event, rpcUrl: string | null) => {
         validateSender(event);
         try {
-            ethereumNetworkWrapper.setRpcUrl(rpcUrl);
+            await ethereumNetworkWrapper.setRpcUrl(rpcUrl);
             return { success: true };
         } catch (err: unknown) {
             log.error('[Web3] Error setting RPC URL:', err);

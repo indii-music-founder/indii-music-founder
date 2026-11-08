@@ -2,10 +2,13 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe } from '../stripe/config';
+import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import Stripe from 'stripe';
 import { stripeSecretKey, arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
+
+const MAX_CREDIT_PURCHASE = 100_000;
 
 export const createMicroTransaction = onCall({
   secrets: [stripeSecretKey, arcjetKey],
@@ -39,9 +42,12 @@ export const createMicroTransaction = onCall({
     }
   }
 
-  if (!credits || credits <= 0) {
-    throw new HttpsError('invalid-argument', 'Credits must be greater than 0');
+  if (typeof credits !== 'number' || !Number.isInteger(credits) || credits <= 0 || credits > MAX_CREDIT_PURCHASE) {
+    throw new HttpsError('invalid-argument', `Credits must be an integer between 1 and ${MAX_CREDIT_PURCHASE}`);
   }
+
+  const validatedSuccessUrl = assertAllowedStripeRedirectUrl(successUrl, 'successUrl');
+  const validatedCancelUrl = assertAllowedStripeRedirectUrl(cancelUrl, 'cancelUrl');
 
   try {
     const db = getFirestore();
@@ -88,8 +94,8 @@ export const createMicroTransaction = onCall({
           quantity: credits
         }
       ],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: validatedSuccessUrl,
+      cancel_url: validatedCancelUrl,
       metadata: { userId, type: 'micro_transaction', credits: credits.toString() },
       client_reference_id: userId
     };

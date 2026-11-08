@@ -87,6 +87,7 @@ import {
     specialistFailureDiagnostics,
     SpecialistUnavailableError,
 } from './lib/specialistAvailability';
+import { ChunkedBatch } from './lib/chunkedBatch';
 
 
 // Vertex AI SDK
@@ -125,7 +126,7 @@ export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './f
 export { getCanonicalMusicCatalogIntelligence } from './functions/music/getCanonicalMusicCatalogIntelligence';
 export { getCanonicalClaimsInbox, declareCanonicalRightsClaim, respondToCanonicalRightsClaim } from './functions/music/claimsInbox';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
-export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
+export { claimComputerApproval, denyComputerApproval, completeComputerApproval } from './functions/security/claimComputerApproval';
 export { listErrorReports, updateErrorReportStatus } from './functions/security/errorReportCallables';
 
 // Field Intelligence & Ingestion Triggers (ISSUE-1477, ISSUE-1478, ISSUE-1479)
@@ -179,9 +180,10 @@ export { rightsRegistration } from './functions/rights/rightsRegistration';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
+export { analyzeContract } from './legal/analyzeContract';
 
 export { sendForDigitalSignature } from './legal/digitalSignature';
-export { verifyMechanicalLicense } from './legal/mechanicalLicense';
+export { verifyMechanicalLicense, searchSongfile, requestMechanicalLicense } from './legal/mechanicalLicense';
 
 // Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
 export {
@@ -231,7 +233,7 @@ export {
 } from './foundingArtist/communications';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
-export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable } from './analytics/platformTokenExchange';
+export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable, instagramAnalyticsProxy } from './analytics/platformTokenExchange';
 export { sendInstagramMessageCallable, replyInstagramCommentCallable, getInstagramMediaCommentsCallable } from './social/instagramMessaging';
 export { instagramWebhook } from './social/instagramWebhook';
 export { syncPlatformStats } from './functions/social-stats-sync';
@@ -345,7 +347,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 };
 
 // Import Shared Secrets
-import { inngestEventKey, inngestSigningKey } from "./config/secrets";
+import { inngestEventKey, inngestSigningKey, resendApiKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client — factory lives in lib/inngestClient.ts so
 // non-index.ts callers (MCP tools, Inngest step functions) can use it without
@@ -1136,7 +1138,7 @@ export const renderVideo = onCall(
  */
 export const inngestApi = onRequest(
     {
-        secrets: [inngestSigningKey, inngestEventKey, typesafeApiKey, arcjetKey],
+        secrets: [inngestSigningKey, inngestEventKey, typesafeApiKey, arcjetKey, resendApiKey],
         timeoutSeconds: 540, // 9 minutes
         // ffmpeg canvas rendering (canvasRenderFn) needs headroom well beyond
         // the 256MB Gen1 default this function used to inherit.
@@ -1241,7 +1243,7 @@ export const generateContentStream = onRequest(
         concurrency: 1,
     },
     (req, res) => {
-        corsHandler(req, res, async () => {
+        return corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
                 res.status(405).send('Method Not Allowed');
                 return;
@@ -1679,14 +1681,15 @@ export const ragProxy = onRequest(
         concurrency: 1,
     },
     (req, res) => {
-        corsHandler(req, res, async () => {
-            const protection = await protectAuthenticatedApiRequest(req as never, {
-                userId: 'rag-proxy-caller',
-                policy: 'verified-free',
-                operationId: `rag-proxy:${req.ip || 'caller'}`,
-            });
-            if (!protection.allowed) {
-                res.status(protection.status || 429).send({ error: protection.message || 'Too Many Requests' });
+        return corsHandler(req, res, async () => {
+            // Pre-auth IP rate-limiting to prevent unauthenticated DoS / shared bucket starvation
+            const anonProtection = await protectAnonymousSignupRequest(
+                req as never,
+                `rag-proxy:${req.ip || 'caller'}`,
+                'allow-low-risk-read'
+            );
+            if (!anonProtection.allowed) {
+                res.status(anonProtection.status || 429).send({ error: anonProtection.message || 'Too Many Requests' });
                 return;
             }
 
@@ -1701,10 +1704,22 @@ export const ragProxy = onRequest(
                 res.status(401).send('Unauthorized: Missing token');
                 return;
             }
+            let decodedToken: admin.auth.DecodedIdToken;
             try {
-                await admin.auth().verifyIdToken(idToken);
+                decodedToken = await admin.auth().verifyIdToken(idToken);
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
+            // User-keyed rate limiting per caller UID (stops shared-bucket starvation)
+            const protection = await protectAuthenticatedApiRequest(req as never, {
+                userId: decodedToken.uid,
+                policy: 'verified-free',
+                operationId: `rag-proxy:${decodedToken.uid}`,
+            });
+            if (!protection.allowed) {
+                res.status(protection.status || 429).send({ error: protection.message || 'Too Many Requests' });
                 return;
             }
 
@@ -1986,6 +2001,406 @@ export const restartGCEInstance = onCall(
             throw new HttpsError('internal', error.message);
         }
     });
+
+// ----------------------------------------------------------------------------
+// DevOps & Storage Autonomous Operations (ISSUE-1557)
+// ----------------------------------------------------------------------------
+
+export const runChaosMeshTests = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `run-chaos-mesh-tests:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { targetService: string; duration: string };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.runChaosMeshTestsOp({
+                targetService: data.targetService,
+                duration: data.duration,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const configureCircuitBreaker = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `configure-circuit-breaker:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { serviceName: string; threshold: number; fallbackBehavior: string };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.configureCircuitBreakerOp({
+                serviceName: data.serviceName,
+                threshold: data.threshold,
+                fallbackBehavior: data.fallbackBehavior,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const configureWebSocketKeepalive = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `configure-websocket-keepalive:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { serviceId: string; pingInterval: number };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.configureWebSocketKeepaliveOp({
+                serviceId: data.serviceId,
+                pingInterval: data.pingInterval,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const runContentionTest = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `run-contention-test:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { database: string; parallelWrites: number };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.runContentionTestOp({
+                database: data.database,
+                parallelWrites: data.parallelWrites,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const configureSentryCrashReporting = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `configure-sentry-crash-reporting:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { environment: string };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.configureSentryCrashReportingOp({
+                environment: data.environment,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const triggerWatchdogRecovery = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `trigger-watchdog-recovery:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { agentId: string; loopThreshold: number };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.triggerWatchdogRecoveryOp({
+                agentId: data.agentId,
+                loopThreshold: data.loopThreshold,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const configureLogicalSharding = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `configure-logical-sharding:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { collection: string; shards: number };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.configureLogicalShardingOp({
+                collection: data.collection,
+                shards: data.shards,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const provisionQASandbox = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 60,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `provision-qa-sandbox:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { environmentName: string; snapshotId: string };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.provisionQASandboxOp({
+                environmentName: data.environmentName,
+                snapshotId: data.snapshotId,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
+
+export const scrubOrphanedMedia = onCall(
+    {
+        secrets: [arcjetKey],
+        enforceAppCheck: false,
+        timeoutSeconds: 120,
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
+
+        if (request.rawRequest) {
+            const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+                userId: request.auth?.uid || 'admin',
+                policy: 'admin',
+                operationId: `scrub-orphaned-media:${request.auth?.uid || 'admin'}`,
+            });
+            if (!protection.allowed) {
+                const code = protection.status === 429
+                    ? 'resource-exhausted'
+                    : protection.status === 403
+                        ? 'permission-denied'
+                        : 'unavailable';
+                throw new HttpsError(code, protection.message || 'Request rate limit exceeded.');
+            }
+        }
+
+        const data = (request.data || {}) as { olderThanDays: number; bucketId: string };
+        try {
+            const devopsOps = await import('./devops/devopsOperations');
+            return await devopsOps.scrubOrphanedMediaOp({
+                olderThanDays: data.olderThanDays,
+                bucketId: data.bucketId,
+                userId: request.auth?.uid || 'admin',
+            });
+        } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new HttpsError('internal', error.message);
+        }
+    }
+);
 
 // ----------------------------------------------------------------------------
 // BigQuery Analytics
@@ -2326,45 +2741,114 @@ export const requestAccountDeletion = onCall(
         const errors: string[] = [];
         let deletedDocs = 0;
 
-        // Step 2 — Delete user subcollections
-        const subcollections = [
-            'releases', 'tracks', 'contracts', 'campaigns', 'analytics',
-            'splitSheets', 'generatedImages', 'generatedVideos', 'notifications',
-            'invoices', 'auditLogs', 'fanPurchases', 'contacts', 'projects',
-            'history', 'knowledge',
+        // Step 2 — Recursively delete user document and all subcollections (including all >25 user subcollections)
+        const userRef = db.collection('users').doc(userId);
+        try {
+            await db.recursiveDelete(userRef);
+            logger.info(`[GDPR] Recursively deleted users/${userId} and all subcollections`);
+        } catch (err) {
+            logger.error(`[GDPR] Failed to recursively delete users/${userId}:`, err);
+            errors.push(`users_recursive: ${err}`);
+        }
+
+        // Step 3 — Query and delete root collections owned by the user
+        const rootCollections = [
+            'releases',
+            'ddexReleases',
+            'campaigns',
+            'scheduledPosts',
+            'smartLinks',
+            'subscriptions',
+            'user_credits',
         ];
-        for (const sub of subcollections) {
+
+        for (const colName of rootCollections) {
             try {
-                const snap = await db.collection('users').doc(userId).collection(sub).limit(500).get();
-                if (!snap.empty) {
-                    const batch = db.batch();
-                    snap.docs.forEach(d => batch.delete(d.ref));
+                // Delete direct doc if ID matches userId (e.g. subscriptions, user_credits)
+                const directDoc = await db.collection(colName).doc(userId).get();
+                if (directDoc.exists) {
+                    await directDoc.ref.delete();
+                    deletedDocs++;
+                }
+
+                // Query by userId
+                const snapUserId = await db.collection(colName).where('userId', '==', userId).get();
+                if (!snapUserId.empty) {
+                    const batch = new ChunkedBatch(db);
+                    snapUserId.docs.forEach((d) => batch.delete(d.ref));
                     await batch.commit();
-                    deletedDocs += snap.size;
+                    deletedDocs += snapUserId.size;
+                }
+
+                // Query by ownerId
+                const snapOwnerId = await db.collection(colName).where('ownerId', '==', userId).get();
+                if (!snapOwnerId.empty) {
+                    const batch = new ChunkedBatch(db);
+                    snapOwnerId.docs.forEach((d) => batch.delete(d.ref));
+                    await batch.commit();
+                    deletedDocs += snapOwnerId.size;
                 }
             } catch (err) {
-                errors.push(`${sub}: ${err}`);
+                logger.error(`[GDPR] Failed deleting root collection ${colName} for ${userId}:`, err);
+                errors.push(`root_${colName}: ${err}`);
             }
         }
 
-        // Step 3 — Delete user root document
-        try { await db.collection('users').doc(userId).delete(); }
-        catch (err) { errors.push(`profile: ${err}`); }
+        // Step 4 — Delete Cloud Storage objects under user prefixes
+        const storagePrefixes = [
+            `users/${userId}/`,
+            `tax_docs/${userId}/`,
+            `masters/${userId}/`,
+        ];
 
-        // Step 4 — Delete Firebase Auth account (signs user out of all devices)
+        try {
+            const bucket = admin.storage().bucket();
+            for (const prefix of storagePrefixes) {
+                try {
+                    await bucket.deleteFiles({ prefix });
+                    logger.info(`[GDPR] Deleted storage prefix ${prefix}`);
+                } catch (err) {
+                    logger.warn(`[GDPR] Storage delete for ${prefix} failed or prefix empty:`, err);
+                    errors.push(`storage_${prefix}: ${err}`);
+                }
+            }
+        } catch (err) {
+            logger.error(`[GDPR] Storage bucket access failed for ${userId}:`, err);
+            errors.push(`storage_bucket: ${err}`);
+        }
+
+        // Step 5 — Only delete Firebase Auth account AFTER data erasure succeeds
+        if (errors.length > 0) {
+            await db.collection("_deletion_requests").doc(userId).set({
+                status: "failed",
+                errors,
+                failedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            logger.error(`[GDPR] Account deletion failed with ${errors.length} errors; preserving Auth account for retry`);
+            throw new HttpsError('internal', `Account deletion incomplete: ${errors.join('; ')}`);
+        }
+
         try {
             await admin.auth().deleteUser(userId);
             logger.info(`[GDPR] Auth account deleted for ${userId}`);
         } catch (err) {
+            logger.error(`[GDPR] Auth account deletion failed for ${userId}:`, err);
             errors.push(`auth: ${err}`);
+            throw new HttpsError('internal', `Failed to delete authentication account: ${err}`);
         }
 
-        logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs} errors=${errors.length}`);
+        await db.collection("_deletion_requests").doc(userId).set({
+            status: "completed",
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            deletedDocs,
+        }, { merge: true });
+
+        logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs}`);
 
         return {
-            success: errors.length === 0,
+            success: true,
             deletedDocs,
-            errors,
+            errors: [],
             deletedAt: new Date().toISOString(),
         };
     });
@@ -2439,6 +2923,21 @@ export const healthCheckWest1 = onRequest(
         });
     });
 
+export const MAX_FANS_PER_BATCH = 50;
+
+async function runWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = new Array(items.length);
+    let index = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+        while (index < items.length) {
+            const current = index++;
+            results[current] = await fn(items[current]!);
+        }
+    });
+    await Promise.all(workers);
+    return results;
+}
+
 /**
  * Fan Data Enrichment Service
  * Process batches of fans through configured third-party enrichment providers.
@@ -2485,8 +2984,11 @@ export const enrichFanData = onCall(
 
         const { fans, provider, orgId } = data as { fans?: Record<string, unknown>[]; provider?: string; orgId?: string };
 
-        if (!fans || !Array.isArray(fans)) {
-            throw new HttpsError("invalid-argument", "Missing fan data array.");
+        if (!fans || !Array.isArray(fans) || fans.length === 0 || fans.length > MAX_FANS_PER_BATCH) {
+            throw new HttpsError(
+                "invalid-argument",
+                `Fans must be a non-empty array with at most ${MAX_FANS_PER_BATCH} records.`
+            );
         }
 
         // 2. Validate Org Access
@@ -2518,9 +3020,9 @@ export const enrichFanData = onCall(
 
         try {
             if (providerName === 'clearbit') {
-                // Clearbit Enrichment API batch lookup
+                // Clearbit Enrichment API batch lookup with bounded concurrency
                 // See https://dashboard.clearbit.com/docs#enrichment-api
-                const batchResults = await Promise.all(fans.map(async (fan) => {
+                const batchResults = await runWithConcurrency(fans, 5, async (fan) => {
                     try {
                         const res = await fetch(`https://person.clearbit.com/v2/combined/find?email=${encodeURIComponent(String(fan.email || ''))}`, {
                             headers: { 'Authorization': `Bearer ${apiKey}` },
@@ -2544,12 +3046,12 @@ export const enrichFanData = onCall(
                         logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
                         return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit_error' };
                     }
-                }));
+                });
                 enrichedFans = batchResults;
             } else {
-                // Apollo People Enrichment API
+                // Apollo People Enrichment API with bounded concurrency
                 // See https://apolloio.github.io/apollo-api-docs/
-                const batchResults = await Promise.all(fans.map(async (fan) => {
+                const batchResults = await runWithConcurrency(fans, 5, async (fan) => {
                     try {
                         const res = await fetch('https://api.apollo.io/v1/people/match', {
                             method: 'POST',
@@ -2573,7 +3075,7 @@ export const enrichFanData = onCall(
                         logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
                         return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'apollo_error' };
                     }
-                }));
+                });
                 enrichedFans = batchResults;
             }
         } catch (error) {

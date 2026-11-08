@@ -93,5 +93,27 @@ describe('reviewAIVoiceLikenessClause — ISSUE-1443 severity derivation', () =>
         expect(r.flags.join(' ').toLowerCase()).toContain('voice cloning');
         expect(r.severity).toBe('high');
     });
+
+    it('ISSUE-1556: does not flag protective artist prohibitions as high risk', () => {
+        const r = svc.reviewAIVoiceLikenessClause(
+            'No AI voice clone, digital replica, synthetic performance, or model training is permitted under any circumstances; rights are non-sublicensable and revocable.'
+        );
+        expect(r.severity).toBe('low');
+        expect(r.flags).toHaveLength(0);
+    });
+
+    it('ISSUE-1556: reviewAIVoiceLikenessClauseWithJev falls back cleanly to negation-aware baseline when Jev is unavailable', async () => {
+        const protective = await svc.reviewAIVoiceLikenessClauseWithJev(
+            'Company shall not train models or create any digital replica or voice clone without prior written consent.'
+        );
+        expect(protective.severity).toBe('low');
+        expect(protective.flags).toHaveLength(0);
+
+        const exploitative = await svc.reviewAIVoiceLikenessClauseWithJev(
+            'Artist grants perpetual irrevocable rights to train models and create a digital replica.'
+        );
+        expect(exploitative.severity).toBe('high');
+        expect(exploitative.flags.length).toBeGreaterThan(0);
+    });
 });
 

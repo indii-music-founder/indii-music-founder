@@ -55,10 +55,24 @@ export const PublishingAgent: AgentConfig = {
                 };
             }
         },
-        analyze_contract: async (_args: { file_data: string, mime_type: string }) => {
-            const prompt = `Analyze this publishing contract for fair royalty rates and reversion clauses. Return a summary.`;
+        analyze_contract: async (args: { file_data: string, mime_type: string }) => {
+            const { creatorProtectionHarnessService } = await import('@/services/creator-protection');
+            const isPdf = args.mime_type === 'application/pdf';
+            const prompt = isPdf
+                ? `Analyze the attached publishing contract (${args.mime_type}) for fair royalty rates, reversion clauses, and AI voice/likeness protections. Return a summary.`
+                : `Analyze this publishing contract (${args.mime_type || 'text/plain'}) for fair royalty rates, reversion clauses, and AI voice/likeness protections. Return a summary.\n\nContract Content:\n${(args.file_data || '').slice(0, 30000)}`;
             const summary = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-            return { success: true, data: { summary } };
+            const aiClauseReview = await creatorProtectionHarnessService.reviewAIVoiceLikenessClauseWithJev(
+                isPdf ? summary : (args.file_data || summary)
+            );
+            return {
+                success: true,
+                data: {
+                    summary,
+                    mimeType: args.mime_type || 'text/plain',
+                    aiClauseReview,
+                },
+            };
         },
         package_release_assets: async (args: { releaseId: string, assets: Record<string, unknown> }) => {
             const prompt = `Prepare release delivery metadata readiness for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}. Return missing delivery fields and review blockers. Do not claim external DSP delivery.`;

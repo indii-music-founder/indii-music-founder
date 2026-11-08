@@ -4304,6 +4304,1095 @@ describe('Firestore Security Rules', () => {
                 await assertFails(deleteDoc(doc(aliceDb, 'prospect_assessments', 'doc-del-2')));
             });
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1554: 11 Client-Accessed Collections
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1554: Client-accessed collections', () => {
+            it('users/{userId}/directives: owner can read/write, cross-user and unauth denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const aliceDoc = doc(aliceDb, 'users', ALICE_UID, 'directives', 'dir-1');
+
+                await assertSucceeds(setDoc(aliceDoc, { title: 'Focus on Mixing', active: true }));
+                await assertSucceeds(getDoc(aliceDoc));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'directives', 'dir-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'directives', 'dir-2'), { title: 'Tamper' }));
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'directives', 'dir-1')));
+            });
+
+            it('users/{userId}/agentLoopExecutions: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1');
+
+                await assertSucceeds(setDoc(docRef, { status: 'EXECUTING', loopId: 'loop-1' }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { status: 'FAIL' }));
+            });
+
+            it('users/{userId}/agentAuditTrails: owner can read/create, update/delete denied, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'agentAuditTrails', 'trail-1');
+
+                await assertSucceeds(setDoc(docRef, { action: 'handshake', timestamp: Timestamp.now() }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(updateDoc(docRef, { action: 'tampered' }));
+                await assertFails(deleteDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'agentAuditTrails', 'trail-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentAuditTrails', 'trail-2'), { action: 'tampered' }));
+            });
+
+            it('users/{userId}/roster: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'roster', 'roster-1');
+
+                await assertSucceeds(setDoc(docRef, { artistName: 'New Artist', role: 'producer' }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'roster', 'roster-1')));
+            });
+
+            it('users/{userId}/id3_operations: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'id3_operations', 'op-1');
+
+                await assertSucceeds(setDoc(docRef, { file: 'track.mp3', tags: { title: 'Song' } }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'id3_operations', 'op-1')));
+            });
+
+            it('users/{userId}/mechanical_license_checks: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'mechanical_license_checks', 'check-1');
+
+                await assertSucceeds(setDoc(docRef, { songTitle: 'Cover Song', verified: true }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'mechanical_license_checks', 'check-1')));
+            });
+
+            it('users/{userId}/mechanical_licenses: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'mechanical_licenses', 'lic-1');
+
+                await assertSucceeds(setDoc(docRef, { releaseId: 'rel-1', trackTitle: 'Cover Song' }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'mechanical_licenses', 'lic-1')));
+            });
+
+            it('users/{userId}/campaign_metrics: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'campaign_metrics', 'metric-1');
+
+                await assertSucceeds(setDoc(docRef, { clicks: 120, conversions: 5 }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'campaign_metrics', 'metric-1')));
+            });
+
+            it('users/{userId}/auditLogs: owner can read/create (append-only), update/delete denied, cross-user denied (ISSUE-1573)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'log-1');
+
+                // Owner can create
+                await assertSucceeds(setDoc(docRef, { action: 'LOGIN', timestamp: Timestamp.now() }));
+                // Owner can read
+                await assertSucceeds(getDoc(docRef));
+                // Owner cannot update (append-only)
+                await assertFails(updateDoc(docRef, { action: 'MODIFIED' }));
+                // Owner cannot delete (append-only)
+                await assertFails(deleteDoc(docRef));
+
+                // Cross-user cannot read or create
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'log-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'log-2'), { action: 'HACK' }));
+
+                // Unauth cannot read or create
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'log-1')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'log-3'), { action: 'ANON' }));
+            });
+
+            it('users/{userId}/api_inventory: owner can read, client writes denied, cross-user denied (ISSUE-1573)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1');
+
+                // Seed document via admin/rules-disabled context
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'api_inventory', 'api-key-1'), {
+                        keyId: 'api-key-1',
+                        status: 'active',
+                    });
+                });
+
+                // Owner can read
+                await assertSucceeds(getDoc(docRef));
+                // Owner cannot write (allow write: if false)
+                await assertFails(setDoc(docRef, { keyId: 'api-key-1', status: 'revoked' }));
+                await assertFails(updateDoc(docRef, { status: 'revoked' }));
+                await assertFails(deleteDoc(docRef));
+
+                // Cross-user cannot read
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1')));
+
+                // Unauth cannot read
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'api_inventory', 'api-key-1')));
+            });
+
+            it('feature_requests: owner and admin can read; cross-user denied; immutable after create', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const reqDoc = doc(aliceDb, 'feature_requests', 'req-1');
+
+                // Alice creates with userId == ALICE_UID
+                await assertSucceeds(setDoc(reqDoc, { userId: ALICE_UID, feature: 'Dark mode' }));
+                // Alice can read own feature request
+                await assertSucceeds(getDoc(reqDoc));
+                // Admin can read feature request
+                await assertSucceeds(getDoc(doc(adminDb, 'feature_requests', 'req-1')));
+                // Bob (cross-user non-admin) cannot read feature request
+                await assertFails(getDoc(doc(bobDb, 'feature_requests', 'req-1')));
+                // Alice cannot spoof Bob's userId
+                await assertFails(setDoc(doc(aliceDb, 'feature_requests', 'req-2'), { userId: BOB_UID, feature: 'Spoofed' }));
+                // Anonymous user cannot create
+                const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
+                await assertFails(setDoc(doc(anonDb, 'feature_requests', 'req-anon'), { userId: ANON_UID, feature: 'Anon' }));
+                // Client updates and deletes denied
+                await assertFails(updateDoc(reqDoc, { feature: 'Light mode' }));
+                await assertFails(deleteDoc(reqDoc));
+                // Unauthenticated denied
+                await assertFails(getDoc(doc(unauthDb, 'feature_requests', 'req-1')));
+                await assertFails(setDoc(doc(unauthDb, 'feature_requests', 'req-3'), { userId: 'anon', feature: 'Fail' }));
+            });
+
+            it('merch_config/{userId}: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'merch_config', ALICE_UID);
+
+                await assertSucceeds(setDoc(docRef, { currency: 'USD', markupPercent: 20 }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'merch_config', ALICE_UID)));
+                await assertFails(setDoc(doc(bobDb, 'merch_config', ALICE_UID), { currency: 'EUR' }));
+            });
+
+            it('api_inventory/{apiKey}: authenticated can read, unauth denied, non-admin write denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'api_inventory', 'key-alice'), {
+                        userId: ALICE_UID,
+                        status: 'active',
+                    });
+                });
+
+                // Authenticated users read key
+                await assertSucceeds(getDoc(doc(aliceDb, 'api_inventory', 'key-alice')));
+                await assertSucceeds(getDoc(doc(bobDb, 'api_inventory', 'key-alice')));
+                await assertSucceeds(getDoc(doc(adminDb, 'api_inventory', 'key-alice')));
+                // Unauthenticated read denied
+                await assertFails(getDoc(doc(unauthDb, 'api_inventory', 'key-alice')));
+                // Non-admin client writes denied
+                await assertFails(setDoc(doc(aliceDb, 'api_inventory', 'key-new'), { userId: ALICE_UID }));
+            });
+
+            it('campaign_metrics/{metricId}: owner/admin can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+                const metricRef = doc(aliceDb, 'campaign_metrics', 'metric-top-1');
+
+                await assertSucceeds(setDoc(metricRef, { userId: ALICE_UID, views: 500 }));
+                await assertSucceeds(getDoc(metricRef));
+                await assertSucceeds(getDoc(doc(adminDb, 'campaign_metrics', 'metric-top-1')));
+                await assertFails(getDoc(doc(bobDb, 'campaign_metrics', 'metric-top-1')));
+                await assertFails(updateDoc(doc(bobDb, 'campaign_metrics', 'metric-top-1'), { views: 999 }));
+            });
+
+            it('releases/{releaseId}: owner can create with matching userId, read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const relRef = doc(aliceDb, 'releases', 'rel-1');
+
+                await assertSucceeds(setDoc(relRef, { userId: ALICE_UID, title: 'Debut Album' }));
+                await assertSucceeds(getDoc(relRef));
+                await assertSucceeds(updateDoc(relRef, { title: 'Debut Album Deluxe' }));
+                await assertFails(getDoc(doc(bobDb, 'releases', 'rel-1')));
+                await assertFails(updateDoc(doc(bobDb, 'releases', 'rel-1'), { title: 'Hacked' }));
+                await assertFails(setDoc(doc(aliceDb, 'releases', 'rel-2'), { userId: BOB_UID, title: 'Spoofed' }));
+                await assertFails(getDoc(doc(unauthDb, 'releases', 'rel-1')));
+            });
+        });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1559: Fix 4 Critical Vulnerabilities
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1559: Authorization bypass fixes', () => {
+            const FOUNDER_DEMO_UID = 'founder-demo-uid';
+
+            it('founder-demo-uid project subcollections: denies unauthenticated and non-collaborator access', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', 'proj-founder'), {
+                        userId: FOUNDER_DEMO_UID,
+                        name: 'Founder Project',
+                    });
+                    await setDoc(doc(ctx.firestore(), 'projects', 'proj-founder', 'canvases', 'canvas-1'), {
+                        name: 'Main Canvas',
+                    });
+                    await setDoc(doc(ctx.firestore(), 'projects', 'proj-founder', 'livingPlans', 'plan-1'), {
+                        content: 'Strategy Plan',
+                    });
+                    await setDoc(doc(ctx.firestore(), 'projects', 'proj-founder', 'releaseHarnessRuns', 'run-1'), {
+                        status: 'done',
+                    });
+                });
+
+                // Unauthenticated user is DENIED access to founder-demo-uid project subcollections
+                await assertFails(getDoc(doc(unauthDb, 'projects', 'proj-founder', 'canvases', 'canvas-1')));
+                await assertFails(getDoc(doc(unauthDb, 'projects', 'proj-founder', 'livingPlans', 'plan-1')));
+                await assertFails(getDoc(doc(unauthDb, 'projects', 'proj-founder', 'releaseHarnessRuns', 'run-1')));
+                await assertFails(setDoc(doc(unauthDb, 'projects', 'proj-founder', 'canvases', 'canvas-2'), { name: 'Injected' }));
+
+                // Bob (non-collaborator) is also DENIED access
+                await assertFails(getDoc(doc(bobDb, 'projects', 'proj-founder', 'canvases', 'canvas-1')));
+                await assertFails(getDoc(doc(bobDb, 'projects', 'proj-founder', 'livingPlans', 'plan-1')));
+                await assertFails(getDoc(doc(bobDb, 'projects', 'proj-founder', 'releaseHarnessRuns', 'run-1')));
+                await assertFails(setDoc(doc(bobDb, 'projects', 'proj-founder', 'canvases', 'canvas-2'), { name: 'Injected' }));
+            });
+
+            it('founder-demo-uid project subcollections: allows authenticated collaborator/owner', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', 'proj-alice'), {
+                        userId: ALICE_UID,
+                        name: 'Alice Project',
+                    });
+                });
+
+                // Alice can read/write subcollections on her project
+                const canvasRef = doc(aliceDb, 'projects', 'proj-alice', 'canvases', 'canvas-alice');
+                await assertSucceeds(setDoc(canvasRef, { name: 'Alice Canvas' }));
+                await assertSucceeds(getDoc(canvasRef));
+
+                const planRef = doc(aliceDb, 'projects', 'proj-alice', 'livingPlans', 'plan-alice');
+                await assertSucceeds(setDoc(planRef, { goal: 'Launch' }));
+                await assertSucceeds(getDoc(planRef));
+            });
+
+            it('organizations create: rejects arbitrary members array injection', async () => {
+                if (requireEmulator()) return;
+                const aliceCtx = testEnv.authenticatedContext(ALICE_UID, { email: 'alice@example.com' });
+                const aliceDb = aliceCtx.firestore();
+
+                // Alice creating org with ONLY herself in members SUCCEEDS
+                await assertSucceeds(setDoc(doc(aliceDb, 'organizations', 'legit-org'), {
+                    name: 'Legit Org',
+                    ownerId: ALICE_UID,
+                    members: [ALICE_UID],
+                    createdAt: Timestamp.now(),
+                }));
+
+                // Alice attempting to inject Bob into members on creation FAILS
+                await assertFails(setDoc(doc(aliceDb, 'organizations', 'injected-org'), {
+                    name: 'Injected Org',
+                    ownerId: ALICE_UID,
+                    members: [ALICE_UID, BOB_UID],
+                    createdAt: Timestamp.now(),
+                }));
+            });
+
+            it('organization_invites: prevents role escalation by regular members', async () => {
+                if (requireEmulator()) return;
+                const aliceCtx = testEnv.authenticatedContext(ALICE_UID, { email: 'alice@example.com' });
+                const bobCtx = testEnv.authenticatedContext(BOB_UID, { email: 'bob@example.com' });
+                const aliceDb = aliceCtx.firestore();
+                const bobDb = bobCtx.firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    // Alice is owner, Bob is member
+                    await setDoc(doc(ctx.firestore(), 'organizations', 'shared-org'), {
+                        name: 'Shared Org',
+                        ownerId: ALICE_UID,
+                        members: [ALICE_UID, BOB_UID],
+                        createdAt: Timestamp.now(),
+                    });
+                    await setDoc(doc(ctx.firestore(), 'organization_invites', 'invite-member'), {
+                        orgId: 'shared-org',
+                        email: 'guest@example.com',
+                        role: 'member',
+                        status: 'pending',
+                    });
+                });
+
+                // Bob (member, non-owner) cannot escalate role to admin
+                await assertFails(updateDoc(doc(bobDb, 'organization_invites', 'invite-member'), {
+                    role: 'admin',
+                }));
+
+                // Bob cannot change the invite email or inviteeUid
+                await assertFails(updateDoc(doc(bobDb, 'organization_invites', 'invite-member'), {
+                    email: 'attacker@example.com',
+                }));
+
+                // Bob cannot create an invite with elevated role 'admin'
+                await assertFails(setDoc(doc(bobDb, 'organization_invites', 'invite-escalated'), {
+                    orgId: 'shared-org',
+                    email: 'newbie@example.com',
+                    role: 'admin',
+                    status: 'pending',
+                }));
+
+                // Bob CAN create an invite with role 'member'
+                await assertSucceeds(setDoc(doc(bobDb, 'organization_invites', 'invite-regular'), {
+                    orgId: 'shared-org',
+                    email: 'regular@example.com',
+                    role: 'member',
+                    status: 'pending',
+                }));
+
+                // Alice (owner) CAN create an invite with role 'admin'
+                await assertSucceeds(setDoc(doc(aliceDb, 'organization_invites', 'invite-admin'), {
+                    orgId: 'shared-org',
+                    email: 'manager@example.com',
+                    role: 'admin',
+                    status: 'pending',
+                }));
+            });
+
+            it('prospect_assessments: unauthenticated caller cannot read PII on unclaimed assessment', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const aliceCtx = testEnv.authenticatedContext(ALICE_UID, { email: 'alice@example.com' });
+                const aliceDb = aliceCtx.firestore();
+                const bobCtx = testEnv.authenticatedContext(BOB_UID, { email: 'bob@example.com' });
+                const bobDb = bobCtx.firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'prospect_assessments', 'pii-assessment'), {
+                        id: 'pii-assessment',
+                        createdAt: Timestamp.now(),
+                        clientSessionId: 'session-pii-123',
+                        careerStage: 'Just starting out',
+                        genre: 'Pop',
+                        proAffiliation: 'BMI',
+                        mlcRegistered: 'Yes',
+                        distributor: 'TuneCore',
+                        releaseStatus: 'Writing songs',
+                        goals: ['Grow audience'],
+                        artistName: 'Secret Artist',
+                        email: 'alice@example.com',
+                    });
+                });
+
+                // Unauthenticated visitor is DENIED reading assessment with PII
+                await assertFails(getDoc(doc(unauthDb, 'prospect_assessments', 'pii-assessment')));
+
+                // Alice (whose token email matches assessment email) CAN read it
+                await assertSucceeds(getDoc(doc(aliceDb, 'prospect_assessments', 'pii-assessment')));
+
+                // Bob (mismatched email) is DENIED reading Alice's assessment PII
+                await assertFails(getDoc(doc(bobDb, 'prospect_assessments', 'pii-assessment')));
+            });
+        });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1574: Rights registration filing receipts
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1574: users/{userId}/rights_filings/{filingId}', () => {
+            it('authenticated owner can read, create, and update; delete is denied even for owner', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'rights_filings', 'filing-1');
+
+                // Authenticated owner can create
+                await assertSucceeds(setDoc(docRef, {
+                    workTitle: 'Song Alpha',
+                    filingType: 'copyright',
+                    status: 'submitted',
+                    submittedAt: Timestamp.now(),
+                }));
+
+                // Authenticated owner can read
+                await assertSucceeds(getDoc(docRef));
+
+                // Authenticated owner can update
+                await assertSucceeds(updateDoc(docRef, {
+                    status: 'accepted',
+                    confirmationNumber: 'CR-123456',
+                }));
+
+                // Deletion is denied even for the owner
+                await assertFails(deleteDoc(docRef));
+            });
+
+            it('non-owner is denied read and write (create, update, delete)', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const aliceFilingRef = doc(bobDb, 'users', ALICE_UID, 'rights_filings', 'filing-bob-target');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'rights_filings', 'filing-bob-target'), {
+                        workTitle: 'Alice Secret Work',
+                        status: 'pending',
+                    });
+                });
+
+                // Non-owner cannot read
+                await assertFails(getDoc(aliceFilingRef));
+
+                // Non-owner cannot create under Alice subcollection
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'rights_filings', 'filing-hacked'), {
+                    workTitle: 'Forged Filing',
+                }));
+
+                // Non-owner cannot update
+                await assertFails(updateDoc(aliceFilingRef, {
+                    status: 'tampered',
+                }));
+
+                // Non-owner cannot delete
+                await assertFails(deleteDoc(aliceFilingRef));
+            });
+
+            it('unauthenticated is denied read and write (create, update, delete)', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const filingRef = doc(unauthDb, 'users', ALICE_UID, 'rights_filings', 'filing-unauth-target');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'rights_filings', 'filing-unauth-target'), {
+                        workTitle: 'Alice Protected Work',
+                        status: 'pending',
+                    });
+                });
+
+                // Unauthenticated cannot read
+                await assertFails(getDoc(filingRef));
+
+                // Unauthenticated cannot create
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'rights_filings', 'filing-unauth-create'), {
+                    workTitle: 'Anon Filing',
+                }));
+
+                // Unauthenticated cannot update
+                await assertFails(updateDoc(filingRef, {
+                    status: 'tampered',
+                }));
+
+                // Unauthenticated cannot delete
+                await assertFails(deleteDoc(filingRef));
+            });
+        });
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1578: AlwaysOnMemoryEngine deletions and agent governance', () => {
+            it('users/{userId}/alwaysOnMemories: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const memRef = doc(aliceDb, 'users', ALICE_UID, 'alwaysOnMemories', 'mem-1');
+
+                await assertSucceeds(setDoc(memRef, { content: 'Alice memory', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(memRef));
+                await assertSucceeds(updateDoc(memRef, { content: 'Alice updated memory' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'alwaysOnMemories', 'mem-1')));
+                await assertSucceeds(deleteDoc(memRef));
+            });
+
+            it('users/{userId}/consolidationInsights: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const insRef = doc(aliceDb, 'users', ALICE_UID, 'consolidationInsights', 'ins-1');
+
+                await assertSucceeds(setDoc(insRef, { insight: 'Alice insight', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(insRef));
+                await assertSucceeds(updateDoc(insRef, { insight: 'Alice updated insight' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'consolidationInsights', 'ins-1')));
+                await assertSucceeds(deleteDoc(insRef));
+            });
+
+            it('users/{userId}/ingestionEvents: owner can read, create, update, delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const evtRef = doc(aliceDb, 'users', ALICE_UID, 'ingestionEvents', 'evt-1');
+
+                await assertSucceeds(setDoc(evtRef, { eventType: 'user_action', createdAt: Timestamp.now() }));
+                await assertSucceeds(getDoc(evtRef));
+                await assertSucceeds(updateDoc(evtRef, { eventType: 'updated_action' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'ingestionEvents', 'evt-1')));
+                await assertSucceeds(deleteDoc(evtRef));
+            });
+
+            it('users/{userId}/directives: owner can delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const dirRef = doc(aliceDb, 'users', ALICE_UID, 'directives', 'dir-del-1');
+
+                await assertSucceeds(setDoc(dirRef, { title: 'To Delete', active: false }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'directives', 'dir-del-1')));
+                await assertSucceeds(deleteDoc(dirRef));
+            });
+
+            it('users/{userId}/agentLoopExecutions: owner can delete; cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const execRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1');
+
+                await assertSucceeds(setDoc(execRef, { status: 'COMPLETED', loopId: 'loop-del' }));
+                await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1')));
+                await assertSucceeds(deleteDoc(execRef));
+            });
+        });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1580: DistributionTools releases, registrations, user subcollections, and legal root collections
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1580: DistributionTools releases, registrations, user subcollections, legal collections', () => {
+            it('releases/{releaseId}: DistributionTools can read and update by userId, ownerId, orgId; delete hard-blocked', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                // Setup org with Alice as member
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID), {
+                        ownerId: ALICE_UID,
+                        members: [ALICE_UID],
+                    });
+                });
+
+                // Alice creates release with userId
+                const relUserRef = doc(aliceDb, 'releases', 'rel-user-1');
+                await assertSucceeds(setDoc(relUserRef, { userId: ALICE_UID, title: 'Release 1' }));
+                await assertSucceeds(getDoc(relUserRef));
+                await assertSucceeds(updateDoc(relUserRef, { status: 'distributed' }));
+
+                // Bob (cross-user) cannot read or update Alice's release
+                await assertFails(getDoc(doc(bobDb, 'releases', 'rel-user-1')));
+                await assertFails(updateDoc(doc(bobDb, 'releases', 'rel-user-1'), { status: 'hacked' }));
+
+                // Delete is hard-blocked for everyone, including creator
+                await assertFails(deleteDoc(relUserRef));
+
+                // Alice can read and update a release owned by ownerId
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'releases', 'rel-owner-1'), {
+                        ownerId: ALICE_UID,
+                        title: 'Owner Release',
+                    });
+                });
+                const relOwnerRef = doc(aliceDb, 'releases', 'rel-owner-1');
+                await assertSucceeds(getDoc(relOwnerRef));
+                await assertSucceeds(updateDoc(relOwnerRef, { title: 'Updated Owner Release' }));
+
+                // Alice can read and update a release associated with her org
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'releases', 'rel-org-1'), {
+                        orgId: ORG_ID,
+                        title: 'Org Release',
+                    });
+                });
+                const relOrgRef = doc(aliceDb, 'releases', 'rel-org-1');
+                await assertSucceeds(getDoc(relOrgRef));
+                await assertSucceeds(updateDoc(relOrgRef, { title: 'Updated Org Release' }));
+
+                // Bob (not a member of ORG_ID) cannot read or update the org release
+                await assertFails(getDoc(doc(bobDb, 'releases', 'rel-org-1')));
+                await assertFails(updateDoc(doc(bobDb, 'releases', 'rel-org-1'), { title: 'Hacked Org' }));
+
+                // Anonymous user cannot create or update
+                await assertFails(setDoc(doc(anonDb, 'releases', 'rel-anon'), { userId: ANON_UID, title: 'Anon Rel' }));
+                await assertFails(updateDoc(doc(anonDb, 'releases', 'rel-user-1'), { title: 'Anon Edit' }));
+
+                // Unauthenticated cannot read or write
+                await assertFails(getDoc(doc(unauthDb, 'releases', 'rel-user-1')));
+                await assertFails(setDoc(doc(unauthDb, 'releases', 'rel-unauth'), { userId: 'unauth', title: 'Unauth' }));
+            });
+
+            it('registrations/{userId}/tracks/{trackId}/orgs/{orgId}: allows in_progress and submitted client writes', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                const regRef = doc(aliceDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi');
+
+                // Owner can create with in_progress
+                await assertSucceeds(setDoc(regRef, { status: 'in_progress' }));
+                await assertSucceeds(getDoc(regRef));
+
+                // Owner can update with submitted and confirmationNumber
+                await assertSucceeds(updateDoc(regRef, {
+                    status: 'submitted',
+                    confirmationNumber: 'BMI-2026-998877',
+                }));
+
+                // Owner cannot set arbitrary unapproved status like approved or completed
+                await assertFails(updateDoc(regRef, { status: 'approved' }));
+
+                // Delete is hard-blocked
+                await assertFails(deleteDoc(regRef));
+
+                // Cross-user denied read and write
+                const crossRegRef = doc(bobDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi');
+                await assertFails(getDoc(crossRegRef));
+                await assertFails(updateDoc(crossRegRef, { status: 'submitted' }));
+
+                // Unauthenticated denied
+                const unauthRegRef = doc(unauthDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi');
+                await assertFails(getDoc(unauthRegRef));
+                await assertFails(setDoc(unauthRegRef, { status: 'in_progress' }));
+            });
+
+            it('users/{userId}/analytics: owner can read/write, cross-user and unauth denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'analytics', 'overview');
+
+                await assertSucceeds(setDoc(docRef, { monthlyListeners: 42000, streams: 150000 }));
+                await assertSucceeds(getDoc(docRef));
+                await assertSucceeds(updateDoc(docRef, { streams: 160000 }));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'analytics', 'overview')));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'analytics', 'overview'), { streams: 0 }));
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'analytics', 'overview')));
+                await assertSucceeds(deleteDoc(docRef));
+            });
+
+            it('users/{userId}/payouts: owner can read/write, cross-user and unauth denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'payouts', 'payout-101');
+
+                await assertSucceeds(setDoc(docRef, { amount: 1250.50, currency: 'USD', status: 'pending' }));
+                await assertSucceeds(getDoc(docRef));
+                await assertSucceeds(updateDoc(docRef, { status: 'processed' }));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'payouts', 'payout-101')));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'payouts', 'payout-101'), { amount: 0 }));
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'payouts', 'payout-101')));
+                await assertSucceeds(deleteDoc(docRef));
+            });
+
+            it('contract_snippets/{docId}: authenticated can read, verified can write, anon/unauth denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const snippetRef = doc(aliceDb, 'contract_snippets', 'snip-1');
+
+                // Verified user Alice creates snippet
+                await assertSucceeds(setDoc(snippetRef, { title: 'Master Use Clause', clause: '...' }));
+                // Authenticated non-anonymous users can read
+                await assertSucceeds(getDoc(snippetRef));
+                await assertSucceeds(getDoc(doc(bobDb, 'contract_snippets', 'snip-1')));
+                // Anonymous and unauthenticated cannot read
+                await assertFails(getDoc(doc(anonDb, 'contract_snippets', 'snip-1')));
+                await assertFails(getDoc(doc(unauthDb, 'contract_snippets', 'snip-1')));
+
+                // Verified user can update and delete
+                await assertSucceeds(updateDoc(snippetRef, { title: 'Updated Master Clause' }));
+
+                // Anonymous user cannot create, update, or delete
+                await assertFails(setDoc(doc(anonDb, 'contract_snippets', 'snip-anon'), { title: 'Anon Clause' }));
+                await assertFails(updateDoc(doc(anonDb, 'contract_snippets', 'snip-1'), { title: 'Anon Defaced' }));
+                await assertFails(deleteDoc(doc(anonDb, 'contract_snippets', 'snip-1')));
+
+                // Unauthenticated cannot create or update
+                await assertFails(setDoc(doc(unauthDb, 'contract_snippets', 'snip-unauth'), { title: 'Unauth' }));
+
+                // Verified user can delete
+                await assertSucceeds(deleteDoc(snippetRef));
+            });
+
+            it('legal_agreements/{docId}: authenticated can read, verified can write, anon/unauth denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const agreementRef = doc(aliceDb, 'legal_agreements', 'agree-1');
+
+                // Verified user Alice creates agreement
+                await assertSucceeds(setDoc(agreementRef, { title: 'Distribution Agreement v1', terms: 'Standard' }));
+                // Authenticated non-anonymous users can read
+                await assertSucceeds(getDoc(agreementRef));
+                await assertSucceeds(getDoc(doc(bobDb, 'legal_agreements', 'agree-1')));
+                // Anonymous and unauthenticated cannot read
+                await assertFails(getDoc(doc(anonDb, 'legal_agreements', 'agree-1')));
+                await assertFails(getDoc(doc(unauthDb, 'legal_agreements', 'agree-1')));
+
+                // Verified user can update and delete
+                await assertSucceeds(updateDoc(agreementRef, { title: 'Distribution Agreement v2' }));
+
+                // Anonymous user cannot create, update, or delete
+                await assertFails(setDoc(doc(anonDb, 'legal_agreements', 'agree-anon'), { title: 'Anon Agreement' }));
+                await assertFails(updateDoc(doc(anonDb, 'legal_agreements', 'agree-1'), { title: 'Anon Defaced' }));
+                await assertFails(deleteDoc(doc(anonDb, 'legal_agreements', 'agree-1')));
+
+                // Unauthenticated cannot write
+                await assertFails(setDoc(doc(unauthDb, 'legal_agreements', 'agree-unauth'), { title: 'Unauth' }));
+
+                // Verified user can delete
+                await assertSucceeds(deleteDoc(agreementRef));
+            });
+
+            it('public_profiles/{userId}: authenticated read allowed, unauthenticated denied, owner create/update with matching identity, delete denied (ISSUE-1583)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const aliceProfileRef = doc(aliceDb, 'public_profiles', ALICE_UID);
+
+                // Owner can create public profile with matching id/userId/uid
+                await assertSucceeds(setDoc(aliceProfileRef, {
+                    displayName: 'Alice Artist',
+                    handle: 'alice',
+                    userId: ALICE_UID,
+                    uid: ALICE_UID,
+                    id: ALICE_UID,
+                }));
+
+                // Any authenticated user can read Alice's public profile
+                await assertSucceeds(getDoc(doc(bobDb, 'public_profiles', ALICE_UID)));
+
+                // Unauthenticated user cannot read
+                await assertFails(getDoc(doc(unauthDb, 'public_profiles', ALICE_UID)));
+
+                // Owner can update public profile
+                await assertSucceeds(updateDoc(aliceProfileRef, {
+                    bio: 'Producer and Sound Designer',
+                }));
+
+                // Owner cannot update with mismatched identity
+                await assertFails(updateDoc(aliceProfileRef, {
+                    userId: BOB_UID,
+                }));
+
+                // Non-owner cannot create or update Alice's public profile
+                await assertFails(setDoc(doc(bobDb, 'public_profiles', ALICE_UID), {
+                    displayName: 'Hacked Alice',
+                }));
+                await assertFails(updateDoc(doc(bobDb, 'public_profiles', ALICE_UID), {
+                    displayName: 'Hacked Alice',
+                }));
+
+                // Delete is denied for everyone (even owner)
+                await assertFails(deleteDoc(aliceProfileRef));
+            });
+
+            it('users/{userId}/auditLogs/{entryId}: tamper-evident owner create with matching or omitted userId, update/delete denied, cross-user denied (ISSUE-1584)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const aliceLog1 = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-1');
+                const aliceLog2 = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-2');
+                const aliceLogBad = doc(aliceDb, 'users', ALICE_UID, 'auditLogs', 'entry-bad');
+
+                // Owner can create with matching userId
+                await assertSucceeds(setDoc(aliceLog1, {
+                    action: 'LOGIN',
+                    userId: ALICE_UID,
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner can create with omitted userId
+                await assertSucceeds(setDoc(aliceLog2, {
+                    action: 'SIGNOUT',
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner CANNOT create with mismatched userId (tamper-evident prevention)
+                await assertFails(setDoc(aliceLogBad, {
+                    action: 'IMPERSONATE',
+                    userId: BOB_UID,
+                    timestamp: Timestamp.now(),
+                }));
+
+                // Owner can read audit log
+                await assertSucceeds(getDoc(aliceLog1));
+
+                // Append-only: updates are denied
+                await assertFails(updateDoc(aliceLog1, { action: 'MODIFIED' }));
+
+                // Append-only: deletions are denied
+                await assertFails(deleteDoc(aliceLog1));
+
+                // Cross-user access is denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'entry-1')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'auditLogs', 'entry-cross'), {
+                    action: 'CROSS_USER',
+                }));
+
+                // Unauthenticated access is denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'entry-1')));
+            });
+
+            it('users/{userId}/assetRights/{assetId}: owner read/write allowed, cross-user denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const assetDocRef = doc(aliceDb, 'users', ALICE_UID, 'assetRights', 'asset-001');
+
+                // Owner: read and write allowed
+                await assertSucceeds(setDoc(assetDocRef, { title: 'Asset Rights 1', territory: 'Worldwide' }));
+                await assertSucceeds(getDoc(assetDocRef));
+                await assertSucceeds(updateDoc(assetDocRef, { territory: 'North America' }));
+                await assertSucceeds(deleteDoc(assetDocRef));
+
+                // Cross-user: read and write denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-001')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-cross'), { title: 'Cross User' }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-001'), { territory: 'Denied' }));
+
+                // Unauthenticated: denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'assetRights', 'asset-001')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'assetRights', 'asset-unauth'), { title: 'Unauth' }));
+            });
+
+            it('users/{userId}/coverLicenses/{isrc}: owner read/write allowed, cross-user denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const coverDocRef = doc(aliceDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234');
+
+                // Owner: read and write allowed
+                await assertSucceeds(setDoc(coverDocRef, { isrc: 'US-RC1-76-01234', song: 'Cover Song', status: 'cleared' }));
+                await assertSucceeds(getDoc(coverDocRef));
+                await assertSucceeds(updateDoc(coverDocRef, { status: 'licensed' }));
+                await assertSucceeds(deleteDoc(coverDocRef));
+
+                // Cross-user: read and write denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-99999'), { isrc: 'Cross', status: 'denied' }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234'), { status: 'hacked' }));
+
+                // Unauthenticated: denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-00000'), { status: 'unauth' }));
+            });
+
+            it('legal_templates/{templateId}/versions/{versionId}: verified user create version allowed, unauthenticated create denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const versionDocWithCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v1');
+                const versionDocWithoutCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v2');
+                const versionDocSpoof = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v3');
+                const unauthVersionDoc = doc(unauthDb, 'legal_templates', 'template-001', 'versions', 'v4');
+
+                // Verified user create version allowed (with matching createdBy)
+                await assertSucceeds(setDoc(versionDocWithCreatedBy, {
+                    content: 'Template text v1',
+                    createdBy: ALICE_UID,
+                }));
+
+                // Verified user create version allowed (without createdBy field)
+                await assertSucceeds(setDoc(versionDocWithoutCreatedBy, {
+                    content: 'Template text v2',
+                }));
+
+                // Verified user create denied if createdBy does not match auth uid
+                await assertFails(setDoc(versionDocSpoof, {
+                    content: 'Spoofed template text',
+                    createdBy: BOB_UID,
+                }));
+
+                // Unauthenticated create denied
+                await assertFails(setDoc(unauthVersionDoc, {
+                    content: 'Unauth text',
+                }));
+            });
+
+            it('users/{userId}/stats/marketing: owner create/update allowed, non-owner denied, other statId denied (ISSUE-1586)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const marketingDocRef = doc(aliceDb, 'users', ALICE_UID, 'stats', 'marketing');
+                const billingDocRef = doc(aliceDb, 'users', ALICE_UID, 'stats', 'billing');
+
+                // Owner create allowed for marketing stats
+                await assertSucceeds(setDoc(marketingDocRef, { totalViews: 100, updatedAt: Timestamp.now() }));
+
+                // Owner update allowed for marketing stats
+                await assertSucceeds(updateDoc(marketingDocRef, { totalViews: 150 }));
+
+                // Owner read allowed
+                await assertSucceeds(getDoc(marketingDocRef));
+
+                // Owner delete denied
+                await assertFails(deleteDoc(marketingDocRef));
+
+                // Non-owner write denied for marketing stats
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 999 }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 999 }));
+
+                // Non-owner read denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'marketing')));
+
+                // Unauthenticated denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'stats', 'marketing')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'stats', 'marketing'), { totalViews: 0 }));
+
+                // Other statId (e.g. 'billing') denied for client write
+                await assertFails(setDoc(billingDocRef, { invoiceCount: 5 }));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'stats', 'billing'), { invoiceCount: 5 }));
+            });
+
+            it('api_inventory/{apiKey}: authenticated read allowed, unauthenticated denied, non-admin write denied (ISSUE-1586)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const adminDb = testEnv.authenticatedContext('admin-user', { admin: true }).firestore();
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'api_inventory', 'key-test-1586'), {
+                        service: 'marketing-api',
+                        active: true,
+                    });
+                });
+
+                const docRefAlice = doc(aliceDb, 'api_inventory', 'key-test-1586');
+                const docRefBob = doc(bobDb, 'api_inventory', 'key-test-1586');
+                const docRefUnauth = doc(unauthDb, 'api_inventory', 'key-test-1586');
+
+                // Authenticated read allowed
+                await assertSucceeds(getDoc(docRefAlice));
+                await assertSucceeds(getDoc(docRefBob));
+
+                // Unauthenticated read denied
+                await assertFails(getDoc(docRefUnauth));
+
+                // Non-admin write denied
+                await assertFails(setDoc(doc(aliceDb, 'api_inventory', 'key-new-alice-1586'), { service: 'stripe' }));
+                await assertFails(updateDoc(docRefAlice, { active: false }));
+                await assertFails(deleteDoc(docRefAlice));
+
+                // Admin write allowed
+                await assertSucceeds(setDoc(doc(adminDb, 'api_inventory', 'key-admin-1586'), { service: 'admin-service' }));
+                await assertSucceeds(updateDoc(doc(adminDb, 'api_inventory', 'key-test-1586'), { active: false }));
+                await assertSucceeds(deleteDoc(doc(adminDb, 'api_inventory', 'key-test-1586')));
+            });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: authenticated owner can create, read, update, and delete (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const fontDocRef = doc(aliceDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                const fontData = {
+                    id: 'font-1590',
+                    family: 'Custom Typography',
+                    format: 'woff2',
+                    storagePath: `users/${ALICE_UID}/brandKit/fonts/font-1590.woff2`,
+                    createdAt: Timestamp.now(),
+                };
+
+                // Owner create allowed
+                await assertSucceeds(setDoc(fontDocRef, fontData));
+
+                // Owner read allowed
+                await assertSucceeds(getDoc(fontDocRef));
+
+                // Owner update allowed
+                await assertSucceeds(updateDoc(fontDocRef, { family: 'Updated Typography' }));
+
+                // Owner delete allowed
+                await assertSucceeds(deleteDoc(fontDocRef));
+            });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: non-owner authenticated users cannot read or write (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const fontDocRefBob = doc(bobDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590'), {
+                        id: 'font-1590',
+                        family: 'Custom Typography',
+                    });
+                });
+
+                // Non-owner read denied
+                await assertFails(getDoc(fontDocRefBob));
+
+                // Non-owner write denied (create, update, delete)
+                await assertFails(setDoc(fontDocRefBob, { family: 'Bob Override' }));
+                await assertFails(updateDoc(fontDocRefBob, { family: 'Bob Update' }));
+                await assertFails(deleteDoc(fontDocRefBob));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'bob-font-new'), { family: 'Bob New' }));
+            });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: unauthenticated users cannot read or write (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const fontDocRefUnauth = doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590'), {
+                        id: 'font-1590',
+                        family: 'Custom Typography',
+                    });
+                });
+
+                // Unauthenticated read denied
+                await assertFails(getDoc(fontDocRefUnauth));
+
+                // Unauthenticated write denied (create, update, delete)
+                await assertFails(setDoc(fontDocRefUnauth, { family: 'Anon Override' }));
+                await assertFails(updateDoc(fontDocRefUnauth, { family: 'Anon Update' }));
+                await assertFails(deleteDoc(fontDocRefUnauth));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'unauth-font-new'), { family: 'Anon New' }));
+            });
+        });
     });
 });
 

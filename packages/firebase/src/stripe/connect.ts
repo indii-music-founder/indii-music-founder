@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe } from './config';
 import { stripeSecretKey, arcjetKey } from '../config/secrets';
@@ -39,12 +40,20 @@ export const createStripeConnectAccount = onCall(
             }
         }
 
-        const { email, businessType } = (request.data ?? {}) as { email: string; businessType?: string };
+        const { email: clientEmail, businessType } = (request.data ?? {}) as { email?: string; businessType?: string };
+        const verifiedTokenEmail = typeof request.auth.token?.email === 'string' ? request.auth.token.email.trim() : '';
+        const candidateEmail = verifiedTokenEmail || (typeof clientEmail === 'string' ? clientEmail.trim() : '');
 
-        if (!email || typeof email !== 'string' || email.trim().length === 0) {
+        if (!candidateEmail) {
             throw new HttpsError(
                 'invalid-argument',
                 "Missing or invalid 'email' parameter."
+            );
+        }
+        if (verifiedTokenEmail && typeof clientEmail === 'string' && clientEmail.trim() && clientEmail.trim().toLowerCase() !== verifiedTokenEmail.toLowerCase()) {
+            throw new HttpsError(
+                'permission-denied',
+                'Stripe Connect onboarding email must match the authenticated user email.'
             );
         }
         if (businessType !== undefined && typeof businessType !== 'string') {
@@ -54,38 +63,55 @@ export const createStripeConnectAccount = onCall(
             );
         }
 
-        console.log(`[createStripeConnectAccount] Initiating onboarding for ${email} (${businessType})`);
-
         try {
-            // Create the Express account
-            const account = await stripe.accounts.create({
-                type: 'express',
-                email: email,
-                business_type: businessType === 'company' ? 'company' : 'individual',
-                metadata: { userId: request.auth.uid },
-                capabilities: {
-                    card_payments: { requested: true },
-                    transfers: { requested: true },
-                },
-            });
+            const db = getFirestore();
+            const userRef = db.collection('users').doc(request.auth.uid);
+            const userSnap = await userRef.get();
+            const existingAccountId = typeof userSnap.data()?.stripeConnectAccountId === 'string'
+                ? userSnap.data()!.stripeConnectAccountId.trim()
+                : '';
+
+            let accountId = existingAccountId;
+            if (!accountId) {
+                const account = await stripe.accounts.create({
+                    type: 'express',
+                    email: candidateEmail,
+                    business_type: businessType === 'company' ? 'company' : 'individual',
+                    metadata: { userId: request.auth.uid },
+                    capabilities: {
+                        card_payments: { requested: true },
+                        transfers: { requested: true },
+                    },
+                }, {
+                    idempotencyKey: `stripe_connect_account_${request.auth.uid}`,
+                });
+                accountId = account.id;
+                await userRef.set({
+                    stripeConnectAccountId: accountId,
+                    stripeConnectUpdatedAt: FieldValue.serverTimestamp(),
+                }, { merge: true });
+            }
 
             // Generate the onboarding link
             const accountLink = await stripe.accountLinks.create({
-                account: account.id,
+                account: accountId,
                 refresh_url: 'https://app.indii.music/finance/stripe/refresh',
                 return_url: 'https://app.indii.music/finance/stripe/success',
                 type: 'account_onboarding',
             });
 
             return {
-                accountId: account.id,
+                accountId,
                 onboardingUrl: accountLink.url
             };
         } catch (error: unknown) {
+            if (error instanceof HttpsError) {
+                throw error;
+            }
             console.error('[StripeConnect] Error creating collaborator account:', error);
             throw new HttpsError(
                 'internal',
-                `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`
+                'Stripe Connect onboarding could not be completed.'
             );
         }
     },

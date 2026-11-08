@@ -623,7 +623,74 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
  * FIX #5: Now supports audio when source videos have audio tracks
  */
 export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFunction(
-    { id: "stitch-video-segments" },
+    {
+        id: "stitch-video-segments",
+        retries: 3,
+        onFailure: async ({ event, error: _err, step }) => {
+            const eventData = ((event.data?.event?.data as Record<string, unknown>) || {}) as Record<string, unknown>;
+            const jobId = typeof eventData.jobId === 'string' ? eventData.jobId : '';
+            const userId = typeof eventData.userId === 'string' ? eventData.userId : '';
+            const costReservationId = typeof eventData.costReservationId === 'string'
+                ? eventData.costReservationId
+                : undefined;
+            const rawPrivateOutputIdentity = eventData.privateOutputIdentity;
+            let privateLifecycleIdentity: PrivateRenderJobIdentity | undefined;
+
+            if (jobId && userId && rawPrivateOutputIdentity !== undefined) {
+                const privateOutputIdentity = rawPrivateOutputIdentity as PrivateRenderOutputIdentity;
+                privateLifecycleIdentity = {
+                    jobId,
+                    ownerUid: userId,
+                    projectId: privateOutputIdentity.projectId,
+                };
+            }
+
+            if (jobId) {
+                try {
+                    await step.run("mark-failed", async () => {
+                        if (privateLifecycleIdentity) {
+                            await transitionPrivateRenderJob(admin.firestore(), {
+                                identity: privateLifecycleIdentity,
+                                allowedStatuses: ['queued', 'processing', 'stitching'],
+                                nextStatus: 'failed',
+                                update: {
+                                    stitchError: 'The cloud renderer could not complete this job.',
+                                    error: 'The private project render could not complete.',
+                                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                                },
+                            });
+                            return;
+                        }
+                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                            status: "failed",
+                            stitchError: 'The cloud renderer could not complete this job.',
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+                } catch {
+                    console.error('Unable to record render failure status', { jobId });
+                }
+            }
+
+            if (costReservationId && userId) {
+                const transcoderSubmissionAttempted = jobId
+                    ? await step.run('inspect-transcoder-submission-for-cost', async () => {
+                        try {
+                            const job = await admin.firestore().collection('videoJobs').doc(jobId).get();
+                            const submission = job.data()?.transcoderSubmission as Record<string, unknown> | undefined;
+                            return submission?.attemptedAt !== undefined;
+                        } catch {
+                            return true;
+                        }
+                    })
+                    : false;
+                const outcome = renderFailureReservationOutcome({ transcoderSubmissionAttempted });
+                await step.run('reconcile-failed-render-cost', async () => {
+                    await finalizeOperationReservation({ userId, operationId: costReservationId, outcome });
+                });
+            }
+        },
+    },
     { event: "video/stitch.requested" },
     async ({ event, step }) => {
         const eventData = event.data as Record<string, unknown>;
@@ -1070,56 +1137,11 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             }
 
         } catch (error: unknown) {
-            console.error('Stitching failed', {
+            console.error('Stitching failed, propagating for Inngest retry / onFailure', {
                 jobId,
                 message: error instanceof Error ? error.message : 'unknown',
             });
-            try {
-                await step.run("mark-failed", async () => {
-                    if (privateLifecycleIdentity) {
-                        await transitionPrivateRenderJob(admin.firestore(), {
-                            identity: privateLifecycleIdentity,
-                            allowedStatuses: ['queued', 'processing', 'stitching'],
-                            nextStatus: 'failed',
-                            update: {
-                                stitchError: 'The cloud renderer could not complete this job.',
-                                error: 'The private project render could not complete.',
-                                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                            },
-                        });
-                        return;
-                    }
-                    await admin.firestore().collection("videoJobs").doc(jobId).set({
-                        status: "failed",
-                        stitchError: 'The cloud renderer could not complete this job.',
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-            } catch {
-                // Continue into financial reconciliation. A status-write outage
-                // must not turn a possibly submitted provider job into a refund.
-                console.error('Unable to record render failure status', { jobId });
-            }
-            if (costReservationId) {
-                const transcoderSubmissionAttempted = jobId
-                    ? await step.run('inspect-transcoder-submission-for-cost', async () => {
-                        try {
-                            const job = await admin.firestore().collection('videoJobs').doc(jobId).get();
-                            const submission = job.data()?.transcoderSubmission as Record<string, unknown> | undefined;
-                            return submission?.attemptedAt !== undefined;
-                        } catch {
-                            // Fail closed financially: if the worker cannot
-                            // inspect durable evidence, do not assert that no
-                            // provider submission occurred.
-                            return true;
-                        }
-                    })
-                    : false;
-                const outcome = renderFailureReservationOutcome({ transcoderSubmissionAttempted });
-                await step.run('reconcile-failed-render-cost', async () => {
-                    await finalizeOperationReservation({ userId, operationId: costReservationId, outcome });
-                });
-            }
+            throw error;
         } finally {
             await transcoder.close();
         }

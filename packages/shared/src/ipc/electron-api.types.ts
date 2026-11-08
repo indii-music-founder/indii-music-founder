@@ -79,7 +79,7 @@ export interface ElectronBrandAPI {
 }
 
 export interface ElectronPublicistAPI {
-    generatePdf: (data: unknown) => Promise<unknown>;
+    generatePdf: (data: unknown) => Promise<{ success: boolean; filePath?: string; path?: string; message?: string; error?: string }>;
 }
 
 export interface ElectronMarketingAPI {
@@ -129,7 +129,7 @@ export interface ComputerScreenshotData {
 
 export interface ElectronComputerAPI {
     checkPermissions: () => Promise<{ success: boolean; data?: ComputerPermissionStatusData; error?: string }>;
-    authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
+    authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string; appCheckToken?: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
     beginDrive: (goal: string, maxSteps: number, authorization: ComputerActionAuthorization) => Promise<{ success: boolean; data?: { sessionToken: string; expiresAt: number }; error?: string }>;
     endDrive: (sessionToken: string) => Promise<{ success: boolean; error?: string }>;
     screenshot: (options: { displayId?: number; authorization?: ComputerActionAuthorization; driveSessionToken?: string }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
@@ -140,6 +140,7 @@ export interface ElectronComputerAPI {
     key: (combo: string, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
     scroll: (dx: number, dy: number, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
     abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+    resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
 }
@@ -295,6 +296,10 @@ export interface ElectronSchedulerAPI {
     get: (taskId: string) => Promise<unknown>;
     onTick: (callback: (event: unknown) => void) => () => void;
     onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+    onRoyaltySync: (callback: (payload: unknown) => void) => () => void;
+    onDistributionHealth: (callback: (payload: unknown) => void) => () => void;
+    onFinanceSnapshot: (callback: (payload: unknown) => void) => () => void;
+    onWorkflowFlush: (callback: (payload: unknown) => void) => () => void;
 }
 
 export interface ElectronSidecarAPI {
@@ -351,8 +356,14 @@ export interface ElectronFsAPI {
 }
 
 export interface ElectronFoundryAPI {
+    grantSession: (req: { sessionId: string; ownerUserId?: string; ttlMs?: number }) => Promise<{ success: boolean; error?: string; expiresAt?: number }>;
+    revokeGrant: (req: { sessionId: string }) => Promise<{ success: boolean; error?: string }>;
     readFile: (filePath: string) => Promise<{ success: boolean; content?: string; sha256?: string; sizeBytes?: number; error?: string }>;
     getMetadata: (filePath: string) => Promise<{ success: boolean; size?: number; modifiedAt?: string; error?: string }>;
+    saveHypothesis: (req: { sessionId: string; formatId: string; ledgerJson: string }) => Promise<{ success: boolean; path?: string; error?: string; savedAt?: string }>;
+    loadHypothesis: (req: { formatId: string }) => Promise<{ success: boolean; ledgerJson?: string; error?: string }>;
+    listHypotheses: () => Promise<{ success: boolean; formatIds?: string[]; error?: string }>;
+    bookStatement: (req: { sessionId: string; statementId: string; normalizedReportJson: string }) => Promise<{ success: boolean; bookedAt?: string; receiptHash?: string; error?: string }>;
 }
 
 export interface ElectronRawAPI {

@@ -10,6 +10,7 @@
 
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
+import { ChunkedBatch } from "../lib/chunkedBatch";
 
 // ============================================================================
 // Configuration
@@ -315,8 +316,8 @@ export const trackStorageQuotas = onSchedule(
             }
         }
 
-        // Write per-user usage to Firestore
-        const batch = admin.firestore().batch();
+        // Write per-user usage to Firestore safely in chunks (ISSUE-1554)
+        const batch = new ChunkedBatch(admin.firestore());
         let userCount = 0;
 
         for (const [userId, usage] of Object.entries(userUsage)) {
@@ -326,7 +327,7 @@ export const trackStorageQuotas = onSchedule(
                 .collection("usage")
                 .doc("storage");
 
-            batch.set(usageRef, {
+            await batch.set(usageRef, {
                 totalBytes: usage.totalBytes,
                 totalMB: Math.round(usage.totalBytes / (1024 * 1024)),
                 totalGB: parseFloat((usage.totalBytes / (1024 * 1024 * 1024)).toFixed(2)),

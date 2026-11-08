@@ -46,7 +46,7 @@ export class StorageMigrationService {
 
             try {
                 const storageRef = ref(storage, `users/${userId}/assets/${assetId}`);
-                await uploadBytes(storageRef, blob);
+                await uploadBytes(storageRef, blob, { contentType: blob.type || 'image/png' });
                 // Migrated asset: ${assetId}
             } catch (_e: unknown) {
                 // Failed to migrate asset ${assetId}
@@ -68,9 +68,10 @@ export class StorageMigrationService {
             const workflowId = workflow.id;
 
             try {
-                const workflowRef = doc(db, 'users', userId, 'workflows', workflowId);
+                const workflowRef = doc(db, 'workflows', workflowId);
                 await setDoc(workflowRef, {
                     ...workflow,
+                    userId,
                     updatedAt: new Date().toISOString(),
                     synced: true
                 }, { merge: true });

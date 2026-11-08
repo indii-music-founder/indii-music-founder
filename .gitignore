@@ -162,6 +162,7 @@ graphify-out/
 
 # Editor/manual backup files
 *.bak
+*.orig
 
 # Accidentally cloned external repos (CI checkout breaks on stale gitlinks)
 /graphify/

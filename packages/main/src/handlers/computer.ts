@@ -16,7 +16,7 @@ export function abortComputerControl(): void {
 const SessionId = z.string().min(16).max(256);
 const Token = z.string().min(32).max(256);
 const Authorization = z.object({ token: Token, rendererSessionId: SessionId, agentId: z.string().min(1).max(128) }).strict();
-const AuthorizeRequest = z.object({ idToken: z.string().min(32).max(16_384), approvalId: z.string().min(1).max(256), rendererSessionId: SessionId }).strict();
+const AuthorizeRequest = z.object({ idToken: z.string().min(32).max(16_384), approvalId: z.string().min(1).max(256), rendererSessionId: SessionId, appCheckToken: z.string().min(1).max(16_384).optional() }).strict();
 const DriveStart = z.object({ goal: z.string().trim().min(1).max(4000), maxSteps: z.number().int().min(1).max(30).default(15), authorization: Authorization }).strict();
 
 const rendererId = (event: IpcMainInvokeEvent) => event.sender.id;
@@ -136,5 +136,29 @@ export function registerComputerHandlers() {
         try { validateSender(event); return { success: true, data: { apps: computerAllowlistStore.getAll() } }; }
         catch (error) { return failure('Computer allowlist read failed', error); }
     });
-    // No renderer-accessible reset, allowlist mutation, or broad grant endpoints: fail closed.
+    ipcMain.handle('computer:reset-abort', async event => {
+        try {
+            validateSender(event);
+            const owner = BrowserWindow.fromWebContents(event.sender);
+            const options = {
+                type: 'question' as const,
+                title: 'Resume Computer Control',
+                message: 'Resume autonomous computer control?',
+                detail: 'The computer kill switch was previously triggered. Are you sure you want to re-enable autonomous computer control?',
+                buttons: ['Keep Disabled', 'Resume Control'],
+                defaultId: 0,
+                cancelId: 0,
+                noLink: true,
+            };
+            const result = owner ? await dialog.showMessageBox(owner, options) : await dialog.showMessageBox(options);
+            if (result.response === 1) {
+                computerExecutionService.resetAbort();
+                log.info('Computer control kill switch reset via native user confirmation.');
+                return { success: true, data: { aborted: false } };
+            }
+            return { success: false, error: 'User declined to reset computer control abort.' };
+        } catch (error) {
+            return failure('Computer reset abort failed', error);
+        }
+    });
 }

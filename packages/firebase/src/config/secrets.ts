@@ -15,9 +15,11 @@ export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
 // Request/operation abuse protection. This value is injected only into the
 // Cloud Functions that declare it in their runtime options.
 export const arcjetKey = defineSecret("ARCJET_KEY");
+export const escrowWebhookSecret = defineSecret("ESCROW_WEBHOOK_SECRET");
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
 export const shopifyWebhookSecret = defineSecret("SHOPIFY_WEBHOOK_SECRET");
+export const resendApiKey = defineSecret("RESEND_API_KEY");
 
 // ---------------------------------------------------------------------------
 // Founders Program

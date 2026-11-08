@@ -131,6 +131,36 @@ describe('router Arcjet boundary', () => {
       error: expect.objectContaining({ code: 'FAILED_PRECONDITION' }),
     }));
   });
+
+  it('handles CORS OPTIONS preflight request with 204 on getProfile, health, and sdkApi', async () => {
+    const endMock = vi.fn();
+    const res = response();
+    mocks.status.mockReturnValue({ end: endMock, json: mocks.json, send: vi.fn() });
+    (res as any).end = endMock;
+
+    const getProfileHandler = router.getProfile as unknown as (req: any, res: any) => Promise<void>;
+    await getProfileHandler({ method: 'OPTIONS', path: '/api/profile', headers: {} }, res);
+
+    expect(mocks.set).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+    expect(mocks.set).toHaveBeenCalledWith('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    expect(mocks.status).toHaveBeenCalledWith(204);
+    expect(endMock).toHaveBeenCalled();
+  });
+
+  it('rejects unauthenticated getProfile requests when validateAppCheckHttp rejects', async () => {
+    const appCheckModule = await import('../../../middleware/appCheck');
+    const spy = vi.spyOn(appCheckModule, 'validateAppCheckHttp').mockImplementation(async (_req, mockRes: any) => {
+      mockRes.status(401).json({ error: 'Unauthorized: Missing App Check token' });
+      return false;
+    });
+
+    const res = response();
+    const handler = router.getProfile as unknown as (req: any, res: any) => Promise<void>;
+    await handler(request('GET', '/api/profile'), res);
+
+    expect(mocks.protect).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
 });
 
 describe('router pagination normalization', () => {

@@ -9,6 +9,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe } from '../stripe/config';
+import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import { stripeSecretKey, arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
@@ -45,6 +46,8 @@ export const getCustomerPortal = onCall({
     }
   }
 
+  const validatedReturnUrl = assertAllowedStripeRedirectUrl(returnUrl, 'returnUrl');
+
   try {
     const db = getFirestore();
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
@@ -68,11 +71,14 @@ export const getCustomerPortal = onCall({
     // Create customer portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: returnUrl
+      return_url: validatedReturnUrl
     });
 
     return { url: session.url };
   } catch (error: any) {
+    if (error instanceof HttpsError) {
+      throw error;
+    }
     console.error('[getCustomerPortal] Error:', error);
     throw new HttpsError('internal', error.message || 'Failed to create customer portal session');
   }

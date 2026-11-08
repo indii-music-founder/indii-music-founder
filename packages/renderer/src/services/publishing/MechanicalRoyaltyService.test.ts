@@ -1,12 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MechanicalRoyaltyService } from './MechanicalRoyaltyService';
 import { auth } from '@/services/firebase';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getDocs, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { getDocs, setDoc, updateDoc, doc, collection } from 'firebase/firestore';
 
-// Legacy mock-backed structural checks only; not real-user licensing acceptance.
-// Mock dependencies are handled by src/test/setup.ts
-// We just need to mock the specific behaviors for these tests
+const mockCallableFns = {
+    searchSongfile: vi.fn(),
+    requestMechanicalLicense: vi.fn(),
+};
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn((_functions, name: string) => {
+        if (name === 'searchSongfile') {
+            return mockCallableFns.searchSongfile;
+        }
+        if (name === 'requestMechanicalLicense') {
+            return mockCallableFns.requestMechanicalLicense;
+        }
+        return vi.fn();
+    }),
+}));
 
 vi.mock('firebase/firestore', async () => {
     const actual = await vi.importActual<typeof import('firebase/firestore')>('firebase/firestore');
@@ -15,7 +27,7 @@ vi.mock('firebase/firestore', async () => {
         getDocs: vi.fn(),
         setDoc: vi.fn(),
         updateDoc: vi.fn(),
-        collection: vi.fn(() => ({ id: 'licenses' })),
+        collection: vi.fn(() => ({ id: 'mechanical_licenses' })),
         doc: vi.fn(() => ({ id: 'mock-doc' })),
         query: vi.fn(),
         where: vi.fn(),
@@ -40,29 +52,30 @@ describe('MechanicalRoyaltyService', () => {
         // @ts-expect-error - Mocking readonly property
         auth.currentUser = { uid: mockUid };
 
-        // Mock global fetch
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({ result: mockComposition }),
+        mockCallableFns.searchSongfile.mockResolvedValue({
+            data: { result: mockComposition },
+        });
+        mockCallableFns.requestMechanicalLicense.mockResolvedValue({
+            data: { result: { licenseNumber: 'HFA123' } },
         });
     });
 
     describe('searchComposition', () => {
-        it('should fetch composition info from API', async () => {
+        it('should fetch composition info via searchSongfile callable', async () => {
             const result = await MechanicalRoyaltyService.searchComposition('Test Song');
-            expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('searchSongfile?title=Test+Song'));
+            expect(mockCallableFns.searchSongfile).toHaveBeenCalledWith({ title: 'Test Song' });
             expect(result).toEqual(mockComposition);
         });
 
-        it('should return null if API fails', async () => {
-            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({ ok: false, status: 500 });
+        it('should return null if callable fails', async () => {
+            mockCallableFns.searchSongfile.mockRejectedValueOnce(new Error('Network error'));
             const result = await MechanicalRoyaltyService.searchComposition('Test Song');
             expect(result).toBeNull();
         });
     });
 
     describe('createLicense', () => {
-        it('should create a license record in Firestore', async () => {
+        it('should create a license record in Firestore under users/{uid}/mechanical_licenses', async () => {
             const params = {
                 releaseId: 'rel_123',
                 durationSeconds: 180,
@@ -72,6 +85,13 @@ describe('MechanicalRoyaltyService', () => {
 
             const result = await MechanicalRoyaltyService.createLicense(params);
 
+            expect(doc).toHaveBeenCalledWith(
+                expect.anything(),
+                'users',
+                mockUid,
+                'mechanical_licenses',
+                expect.stringContaining(`ml_${mockUid}_`)
+            );
             expect(setDoc).toHaveBeenCalled();
             expect(result.id).toBeDefined();
             expect(result.status).toBe('pending_search');
@@ -91,19 +111,20 @@ describe('MechanicalRoyaltyService', () => {
     });
 
     describe('requestLicense', () => {
-        it('should call the proxy API and update status', async () => {
-            (global.fetch as import("vitest").Mock).mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ result: { licenseNumber: 'HFA123' } }),
-            });
-
+        it('should call the requestMechanicalLicense callable and update status', async () => {
             await MechanicalRoyaltyService.requestLicense('ml_123');
 
-            expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('requestMechanicalLicense'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ licenseId: 'ml_123', userId: mockUid }),
+            expect(mockCallableFns.requestMechanicalLicense).toHaveBeenCalledWith({
+                licenseId: 'ml_123',
+                userId: mockUid,
             });
+            expect(doc).toHaveBeenCalledWith(
+                expect.anything(),
+                'users',
+                mockUid,
+                'mechanical_licenses',
+                'ml_123'
+            );
             expect(updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
                 status: 'license_requested',
                 licenseNumber: 'HFA123',
@@ -112,7 +133,7 @@ describe('MechanicalRoyaltyService', () => {
     });
 
     describe('getLicenses', () => {
-        it('should return licenses from Firestore', async () => {
+        it('should query licenses from users/{uid}/mechanical_licenses', async () => {
             (getDocs as import("vitest").Mock).mockResolvedValueOnce({
                 docs: [
                     { id: 'l1', data: () => ({ releaseId: 'r1', trackTitle: 'S1' }) }
@@ -120,8 +141,9 @@ describe('MechanicalRoyaltyService', () => {
             });
 
             const result = await MechanicalRoyaltyService.getLicenses('r1');
+            expect(collection).toHaveBeenCalledWith(expect.anything(), 'users', mockUid, 'mechanical_licenses');
             expect(result).toHaveLength(1);
-            expect(result[0]?.trackTitle).toBe('S1');
+            expect(result?.[0]?.trackTitle).toBe('S1');
         });
     });
 

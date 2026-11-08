@@ -100,6 +100,17 @@ export class MCPClientService {
             env: { ...process.env, INDII_BLENDER_PAIRING_TOKEN: this.blenderPairingToken, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
         });
 
+        const resetLocal = () => {
+            log.warn('[MCP] Local MCP transport closed or errored; resetting client.');
+            this.localClient = null;
+            this.localTransport = null;
+        };
+        this.localTransport.onclose = resetLocal;
+        this.localTransport.onerror = (err) => {
+            log.error('[MCP] Local MCP transport error:', err);
+            resetLocal();
+        };
+
         this.localClient = new Client(
             {
                 name: 'indii-main-mcp-client-local',
@@ -152,6 +163,17 @@ export class MCPClientService {
             args: [serverPath],
             env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } as Record<string, string>,
         });
+
+        const resetHarness = () => {
+            log.warn('[MCP] Harness MCP transport closed or errored; resetting client.');
+            this.harnessClient = null;
+            this.harnessTransport = null;
+        };
+        this.harnessTransport.onclose = resetHarness;
+        this.harnessTransport.onerror = (err) => {
+            log.error('[MCP] Harness MCP transport error:', err);
+            resetHarness();
+        };
 
         this.harnessClient = new Client(
             {

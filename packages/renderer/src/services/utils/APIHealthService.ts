@@ -1,5 +1,5 @@
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { auth, db, functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
@@ -49,7 +49,8 @@ class APIHealthService {
             this.checkFirebaseAuth(),
             this.checkFirestore(),
             this.checkFunctions(),
-            this.checkGeminiAPI()
+            this.checkGeminiAPI(),
+            this.checkStripe()
         ];
 
         await Promise.allSettled(checks);
@@ -70,28 +71,35 @@ class APIHealthService {
     private async checkFirestore() {
         const start = Date.now();
         try {
-            // Minimal check: attempt to read a known path or just check persistence status
-            // We use a non-existent doc to minimize costs but verify connectivity
-            const { doc } = await import('firebase/firestore');
-            const _heartbeatRef = doc(db, '_system/heartbeat');
-
-            // In a real app, we might write a heartbeat if the user is authenticated
-            // For now, we just verify we can reach the service
+            const { doc, getDoc } = await import('firebase/firestore');
+            const probeRef = doc(db, '_health_check', 'probe');
+            await Promise.race([
+                getDoc(probeRef),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore probe timeout')), 5000))
+            ]);
             this.updateStatus('firestore', 'healthy', Date.now() - start);
         } catch (e: unknown) {
-            this.updateStatus('firestore', 'offline', undefined, String(e));
+            this.updateStatus('firestore', 'offline', undefined, e instanceof Error ? e.message : String(e));
         }
     }
 
     private async checkFunctions() {
         const start = Date.now();
         try {
-            // In a real app, we might have a dedicated ping function
-            // For now, we assume if Firestore is up, Functions are likely up 
-            // but we could call a dummy function if needed.
+            const { httpsCallable } = await import('firebase/functions');
+            const pingFn = httpsCallable(functions, 'healthCheck');
+            await Promise.race([
+                pingFn(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Functions probe timeout')), 5000))
+            ]);
             this.updateStatus('functions', 'healthy', Date.now() - start);
         } catch (e: unknown) {
-            this.updateStatus('functions', 'offline', undefined, String(e));
+            const errMsg = e instanceof Error ? e.message : String(e);
+            if (errMsg.includes('not-found') || errMsg.includes('unauthenticated')) {
+                this.updateStatus('functions', 'healthy', Date.now() - start);
+            } else {
+                this.updateStatus('functions', 'offline', undefined, errMsg);
+            }
         }
     }
 
@@ -109,6 +117,36 @@ class APIHealthService {
             }
         } catch (e: unknown) {
             this.updateStatus('gemini_api', 'offline', undefined, String(e));
+        }
+    }
+
+    private async checkStripe() {
+        const start = Date.now();
+        try {
+            const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+            if (!stripeKey) {
+                this.updateStatus('stripe', 'unstable', undefined, 'Missing Stripe publishable key');
+                return;
+            }
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            try {
+                const res = await fetch('https://api.stripe.com/healthcheck', {
+                    method: 'HEAD',
+                    signal: controller.signal,
+                }).catch(() => null);
+                clearTimeout(timer);
+                if (res && (res.ok || res.status === 404 || res.status === 405 || res.status === 401)) {
+                    this.updateStatus('stripe', 'healthy', Date.now() - start);
+                } else {
+                    this.updateStatus('stripe', 'offline', undefined, 'Stripe endpoint unreachable');
+                }
+            } catch (err: unknown) {
+                clearTimeout(timer);
+                this.updateStatus('stripe', 'offline', undefined, err instanceof Error ? err.message : String(err));
+            }
+        } catch (e: unknown) {
+            this.updateStatus('stripe', 'offline', undefined, e instanceof Error ? e.message : String(e));
         }
     }
 

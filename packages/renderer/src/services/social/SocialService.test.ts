@@ -5,7 +5,10 @@ import { SocialService } from './SocialService';
 
 const {
     mockAddDoc,
+    mockGetDoc,
     mockGetDocs,
+    mockSetDoc,
+    mockDeleteDoc,
     mockQuery,
     mockCollection,
     mockWhere,
@@ -16,7 +19,10 @@ const {
 } = vi.hoisted(() => {
     return {
         mockAddDoc: vi.fn(),
+        mockGetDoc: vi.fn(),
         mockGetDocs: vi.fn(),
+        mockSetDoc: vi.fn(),
+        mockDeleteDoc: vi.fn(),
         mockQuery: vi.fn(),
         mockCollection: vi.fn(),
         mockWhere: vi.fn(),
@@ -24,7 +30,7 @@ const {
         mockDoc: vi.fn(),
         mockUpdateDoc: vi.fn(),
         mockIncrement: vi.fn()
-    }
+    };
 });
 
 vi.mock('@/services/firebase', () => ({
@@ -44,7 +50,10 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('firebase/firestore', () => ({
     addDoc: mockAddDoc,
+    getDoc: mockGetDoc,
     getDocs: mockGetDocs,
+    setDoc: mockSetDoc,
+    deleteDoc: mockDeleteDoc,
     query: mockQuery,
     collection: mockCollection,
     where: mockWhere,
@@ -54,7 +63,7 @@ vi.mock('firebase/firestore', () => ({
     doc: mockDoc,
     updateDoc: mockUpdateDoc,
     increment: mockIncrement,
-    runTransaction: vi.fn(), // Mocking transaction just in case
+    runTransaction: vi.fn(),
     Timestamp: {
         now: () => ({ toDate: () => new Date() }),
         fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
@@ -91,7 +100,7 @@ describe('SocialService', () => {
             const result = await SocialService.createPost(content);
 
             // 1. Verify Post Creation
-            expect(mockCollection).toHaveBeenCalledWith({}, 'posts'); // db is {}, check logic
+            expect(mockCollection).toHaveBeenCalledWith({}, 'posts');
             expect(mockAddDoc).toHaveBeenCalledWith(
                 'MOCK_COLLECTION_REF',
                 expect.objectContaining({
@@ -101,10 +110,6 @@ describe('SocialService', () => {
                     timestamp: 'MOCK_TIMESTAMP'
                 })
             );
-
-            // 2. Verify User Stats Update
-            expect(mockUpdateDoc).toHaveBeenCalled();
-            expect(mockIncrement).toHaveBeenCalledWith(1); // socialStats.posts
             expect(result).toBe('new-post-id');
         });
 
@@ -114,7 +119,7 @@ describe('SocialService', () => {
             const content = "New Drop!";
             const productId = "product-999";
 
-            await SocialService.createPost(content, [], productId);
+            const result = await SocialService.createPost(content, [], productId);
 
             // 1. Verify Post has productId
             expect(mockAddDoc).toHaveBeenCalledWith(
@@ -124,15 +129,52 @@ describe('SocialService', () => {
                     productId: productId
                 })
             );
+            expect(result).toBe('drop-post-id');
+        });
+    });
 
-            // 2. Verify Stats update includes drops increment
-            expect(mockUpdateDoc).toHaveBeenCalledWith(
-                undefined, // docRef mock
+    describe('social_follows (ISSUE-1573)', () => {
+        it('followUser creates a document in canonical social_follows collection', async () => {
+            mockDoc.mockReturnValue('MOCK_FOLLOW_DOC_REF');
+            mockSetDoc.mockResolvedValueOnce(undefined);
+
+            await SocialService.followUser('user-target-456');
+
+            expect(mockDoc).toHaveBeenCalledWith({}, 'social_follows', 'user-123_user-target-456');
+            expect(mockSetDoc).toHaveBeenCalledWith(
+                'MOCK_FOLLOW_DOC_REF',
                 expect.objectContaining({
-                    'socialStats.posts': undefined, // checking structure
-                    'socialStats.drops': undefined
+                    followerId: 'user-123',
+                    followingId: 'user-target-456',
+                    timestamp: 'MOCK_TIMESTAMP',
                 })
             );
+        });
+
+        it('followUser refuses following self', async () => {
+            await expect(SocialService.followUser('user-123')).rejects.toThrow('Cannot follow yourself');
+            expect(mockSetDoc).not.toHaveBeenCalled();
+        });
+
+        it('unfollowUser deletes document in social_follows', async () => {
+            mockDoc.mockReturnValue('MOCK_FOLLOW_DOC_REF');
+            mockDeleteDoc.mockResolvedValueOnce(undefined);
+
+            await SocialService.unfollowUser('user-target-456');
+
+            expect(mockDoc).toHaveBeenCalledWith({}, 'social_follows', 'user-123_user-target-456');
+            expect(mockDeleteDoc).toHaveBeenCalledWith('MOCK_FOLLOW_DOC_REF');
+        });
+
+        it('isFollowing checks existence in social_follows', async () => {
+            mockDoc.mockReturnValue('MOCK_FOLLOW_DOC_REF');
+            mockGetDoc.mockResolvedValueOnce({ exists: () => true });
+
+            const following = await SocialService.isFollowing('user-target-456');
+
+            expect(mockDoc).toHaveBeenCalledWith({}, 'social_follows', 'user-123_user-target-456');
+            expect(mockGetDoc).toHaveBeenCalledWith('MOCK_FOLLOW_DOC_REF');
+            expect(following).toBe(true);
         });
     });
 

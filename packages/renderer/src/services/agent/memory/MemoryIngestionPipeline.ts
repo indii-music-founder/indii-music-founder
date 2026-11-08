@@ -349,7 +349,7 @@ export class MemoryIngestionPipeline {
                 prompt,
                 0,
                 {
-                    temperature: 0.2,
+                    temperature: 1.0,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );
@@ -426,7 +426,7 @@ export class MemoryIngestionPipeline {
             const summary = await AIService.getInstance().generateText(
                 prompt,
                 0,
-                { temperature: 0.2 } as Record<string, unknown>
+                { temperature: 1.0 } as Record<string, unknown>
             );
 
             return summary.trim();
@@ -465,7 +465,7 @@ export class MemoryIngestionPipeline {
                 prompt,
                 0,
                 {
-                    temperature: 0.1,
+                    temperature: 1.0,
                     responseMimeType: 'application/json',
                 } as Record<string, unknown>
             );
@@ -516,7 +516,7 @@ export class MemoryIngestionPipeline {
                     ],
                 }] as Content[],
                 INTELLIGENCE_MODELS.TEXT.FAST,
-                { temperature: 0.3 } as GenerationConfig,
+                { temperature: 1.0 } as GenerationConfig,
             );
 
             // Extract text from response

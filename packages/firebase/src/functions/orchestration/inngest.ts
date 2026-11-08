@@ -8,11 +8,9 @@
  * - User onboarding workflows
  */
 
-import { Inngest } from 'inngest';
 import { Resend } from 'resend';
-import { defineSecret } from 'firebase-functions/params';
-
-const resendApiKey = defineSecret('RESEND_API_KEY');
+import { resendApiKey } from '../../config/secrets';
+import { getInngestClient } from '../../lib/inngestClient';
 
 function getResendApiKey() {
   const envKey = process.env.RESEND_API_KEY;
@@ -40,12 +38,9 @@ import * as admin from 'firebase-admin';
 const db = admin.firestore();
 
 /**
- * Inngest client
+ * Unified Inngest client (shared across all functions)
  */
-export const inngest = new Inngest({
-  id: 'indii-api',
-  name: 'indii Analytics & Distribution API',
-});
+export const inngest = getInngestClient();
 
 interface DistributionJobPayload {
   distributionId: string;

@@ -18,9 +18,9 @@ import type {
     MemoryTier,
     MemorySource,
 } from '@/types/AlwaysOnMemory';
-import type { Directive } from '@/services/directive/DirectiveTypes';
+import type { Directive, DirectiveStatus } from '@/services/directive/DirectiveTypes';
 import { DirectiveService } from '@/services/directive/DirectiveService';
-import { collection, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import type { HandshakeRequest } from '@/services/agent/governance/DigitalHandshake';
 
@@ -234,6 +234,18 @@ export const createMemoryAgentSlice: StateCreator<MemoryAgentSlice> = (set, get)
             if (auth.currentUser?.uid !== userId) return;
             const itemRef = doc(db, `users/${userId}/memoryInbox`, itemId);
             await updateDoc(itemRef, { status });
+
+            // Transition associated directive out of WAITING_ON_HANDSHAKE
+            let directiveId = get().memoryInboxItems.find(item => item.id === itemId)?.directiveId;
+            if (!directiveId) {
+                const snap = await getDoc(itemRef);
+                directiveId = snap.data()?.['directiveId'];
+            }
+
+            if (directiveId) {
+                const targetStatus: DirectiveStatus = status === 'APPROVED' ? 'IN_PROGRESS' : 'CANCELLED';
+                await DirectiveService.updateStatus(userId, directiveId, targetStatus);
+            }
 
             // Reload the inbox
             if (auth.currentUser?.uid === userId) await get().loadMemoryInbox(userId);

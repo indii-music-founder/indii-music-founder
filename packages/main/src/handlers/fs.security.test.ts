@@ -48,7 +48,7 @@ vi.mock('electron-log', () => ({
     },
 }));
 
-import { registerFsHandlers } from './fs';
+import { registerFsHandlers, MAX_IPC_TEXT_FILE_BYTES, MAX_IPC_BINARY_FILE_BYTES } from './fs';
 
 describe('fs IPC handlers security and functionality', () => {
     let handlers: Map<string, (...args: any[]) => any>;
@@ -118,6 +118,7 @@ describe('fs IPC handlers security and functionality', () => {
 
         it('reads text file when authorized', async () => {
             mocks.verifyAccess.mockReturnValue(true);
+            mocks.stat.mockResolvedValue({ isFile: () => true, size: 128 });
             mocks.readFile.mockResolvedValue('file content utf-8');
 
             const readText = handlers.get('fs:read-text-file')!;
@@ -126,11 +127,23 @@ describe('fs IPC handlers security and functionality', () => {
             expect(content).toBe('file content utf-8');
             expect(mocks.readFile).toHaveBeenCalledWith(expect.any(String), 'utf-8');
         });
+
+        it('rejects text file exceeding MAX_IPC_TEXT_FILE_BYTES before reading into memory', async () => {
+            mocks.verifyAccess.mockReturnValue(true);
+            mocks.stat.mockResolvedValue({ isFile: () => true, size: MAX_IPC_TEXT_FILE_BYTES + 1 });
+
+            const readText = handlers.get('fs:read-text-file')!;
+            await expect(readText({}, '/authorized/huge.txt')).rejects.toThrow(
+                /File exceeds maximum IPC text read size/
+            );
+            expect(mocks.readFile).not.toHaveBeenCalled();
+        });
     });
 
     describe('fs:read-binary-file', () => {
         it('reads binary file as Uint8Array when authorized', async () => {
             mocks.verifyAccess.mockReturnValue(true);
+            mocks.stat.mockResolvedValue({ isFile: () => true, size: 4 });
             const buf = Buffer.from([1, 2, 3, 4]);
             mocks.readFile.mockResolvedValue(buf);
 
@@ -139,6 +152,17 @@ describe('fs IPC handlers security and functionality', () => {
 
             expect(result).toBeInstanceOf(Uint8Array);
             expect(Array.from(result)).toEqual([1, 2, 3, 4]);
+        });
+
+        it('rejects binary file exceeding MAX_IPC_BINARY_FILE_BYTES before reading into memory', async () => {
+            mocks.verifyAccess.mockReturnValue(true);
+            mocks.stat.mockResolvedValue({ isFile: () => true, size: MAX_IPC_BINARY_FILE_BYTES + 1 });
+
+            const readBinary = handlers.get('fs:read-binary-file')!;
+            await expect(readBinary({}, '/authorized/huge.wav')).rejects.toThrow(
+                /File exceeds maximum IPC binary read size/
+            );
+            expect(mocks.readFile).not.toHaveBeenCalled();
         });
     });
 

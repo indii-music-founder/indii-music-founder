@@ -123,7 +123,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer: {
         checkPermissions: () => ipcRenderer.invoke('computer:check-permissions'),
-        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => ipcRenderer.invoke('computer:authorize-approval', args),
+        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string; appCheckToken?: string }) => ipcRenderer.invoke('computer:authorize-approval', args),
         beginDrive: (goal: string, maxSteps: number, authorization: { token: string; rendererSessionId: string; agentId: string }) => ipcRenderer.invoke('computer:begin-drive', { goal, maxSteps, authorization }),
         endDrive: (sessionToken: string) => ipcRenderer.invoke('computer:end-drive', { sessionToken }),
         screenshot: (options: { displayId?: number; authorization?: { token: string; rendererSessionId: string; agentId: string }; driveSessionToken?: string }) => ipcRenderer.invoke('computer:screenshot', options),
@@ -134,6 +134,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         key: (combo: string, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => ipcRenderer.invoke('computer:key', { combo, authorization, driveSessionToken }),
         scroll: (dx: number, dy: number, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => ipcRenderer.invoke('computer:scroll', { dx, dy, authorization, driveSessionToken }),
         abort: () => ipcRenderer.invoke('computer:abort'),
+        resetAbort: () => ipcRenderer.invoke('computer:reset-abort'),
         getAbortState: () => ipcRenderer.invoke('computer:get-abort-state'),
         allowlistGet: () => ipcRenderer.invoke('computer:allowlist-get'),
     },
@@ -268,6 +269,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('scheduler:neural-sync', handler);
             return () => ipcRenderer.removeListener('scheduler:neural-sync', handler);
         },
+        onRoyaltySync: (callback: (payload: unknown) => void) => {
+            const handler = (_e: unknown, payload: unknown) => callback(payload);
+            ipcRenderer.on('scheduler:royalty-sync', handler);
+            return () => ipcRenderer.removeListener('scheduler:royalty-sync', handler);
+        },
+        onDistributionHealth: (callback: (payload: unknown) => void) => {
+            const handler = (_e: unknown, payload: unknown) => callback(payload);
+            ipcRenderer.on('scheduler:distribution-health', handler);
+            return () => ipcRenderer.removeListener('scheduler:distribution-health', handler);
+        },
+        onFinanceSnapshot: (callback: (payload: unknown) => void) => {
+            const handler = (_e: unknown, payload: unknown) => callback(payload);
+            ipcRenderer.on('scheduler:finance-snapshot', handler);
+            return () => ipcRenderer.removeListener('scheduler:finance-snapshot', handler);
+        },
+        onWorkflowFlush: (callback: (payload: unknown) => void) => {
+            const handler = (_e: unknown, payload: unknown) => callback(payload);
+            ipcRenderer.on('scheduler:workflow-flush', handler);
+            return () => ipcRenderer.removeListener('scheduler:workflow-flush', handler);
+        },
     },
 
     // DAW Integration
@@ -351,8 +372,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // indii Format Intelligence & Capability Foundry
     foundry: {
+        grantSession: (req: { sessionId: string; ownerUserId?: string; ttlMs?: number }) => ipcRenderer.invoke('foundry:grant-session', req),
+        revokeGrant: (req: { sessionId: string }) => ipcRenderer.invoke('foundry:revoke-grant', req),
         readFile: (filePath: string) => ipcRenderer.invoke('foundry:read-file', filePath),
         getMetadata: (filePath: string) => ipcRenderer.invoke('foundry:get-metadata', filePath),
+        saveHypothesis: (req: { sessionId: string; formatId: string; ledgerJson: string }) => ipcRenderer.invoke('foundry:save-hypothesis', req),
+        loadHypothesis: (req: { formatId: string }) => ipcRenderer.invoke('foundry:load-hypothesis', req),
+        listHypotheses: () => ipcRenderer.invoke('foundry:list-hypotheses'),
+        bookStatement: (req: { sessionId: string; statementId: string; normalizedReportJson: string }) => ipcRenderer.invoke('foundry:book-statement', req),
     },
 
     // indii Blender 3D Bridge (MCP & Headless 3D Music Videos)

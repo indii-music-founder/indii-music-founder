@@ -262,6 +262,7 @@ export class AgentLoopService {
             const service = this.getService(userId);
             const executions = await service.list();
             return executions.filter(e =>
+                e.status === AgentLoopStatusEnum.enum.IDLE ||
                 e.status === AgentLoopStatusEnum.enum.EXECUTING ||
                 e.status === AgentLoopStatusEnum.enum.EVALUATING ||
                 e.status === AgentLoopStatusEnum.enum.FAILED
@@ -521,7 +522,7 @@ Respond in JSON format only:
             const result = await FirebaseIntelligenceService.getInstance().generateContent(
                 prompt,
                 INTELLIGENCE_MODELS.TEXT.FAST,
-                { temperature: 0.1, maxOutputTokens: 300 },
+                { temperature: 1.0, maxOutputTokens: 300 },
                 judgeInstruction
             );
             tokenBudget.settle(reservation, result?.response?.usageMetadata?.totalTokenCount);

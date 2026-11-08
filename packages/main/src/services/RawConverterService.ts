@@ -108,7 +108,7 @@ export class RawConverterService {
      * Converts a single RAW file into a standards-compliant DNG file.
      * Guaranteed never to delete, overwrite, or mutate the source RAW file.
      */
-    public async convert(options: RawConvertOptions): Promise<RawConvertResult> {
+    public async convert(options: RawConvertOptions, jobId?: string): Promise<RawConvertResult> {
         this.verifyInputPath(options.inputPath);
 
         const inputDir = path.dirname(options.inputPath);
@@ -171,7 +171,7 @@ export class RawConverterService {
         }
 
         try {
-            const output = await this.execBinary(binary, args);
+            const output = await this.execBinary(binary, args, jobId);
             const report = JSON.parse(output);
 
             if (!report.success) {
@@ -181,6 +181,14 @@ export class RawConverterService {
 
             // Atomic rename from temp to destination
             await fs.rename(tempOutputPath, outputPath);
+
+            const ext = path.extname(options.inputPath).toLowerCase();
+            const fallbackMake = ext === '.cr3' || ext === '.cr2' ? 'Canon'
+                : ext === '.nef' ? 'Nikon'
+                : ext === '.raf' ? 'Fujifilm'
+                : ext === '.arw' ? 'SONY'
+                : ext === '.dng' ? 'Adobe'
+                : 'Unknown';
 
             return {
                 success: true,
@@ -192,9 +200,9 @@ export class RawConverterService {
                 durationMs: report.duration_ms,
                 cfaSampleHash: report.cfa_sample_hash,
                 metadata: {
-                    make: 'SONY',
-                    model: 'Sony Alpha',
-                    orientation: 1,
+                    make: report.metadata?.make || report.make || fallbackMake,
+                    model: report.metadata?.model || report.model || 'Unknown',
+                    orientation: report.metadata?.orientation ?? report.orientation ?? 1,
                 },
                 error: undefined,
             };
@@ -268,7 +276,7 @@ export class RawConverterService {
                     outputPath: targetDng,
                     compressionMode: options.compressionMode,
                     embedOriginalRaw: options.embedOriginalRaw,
-                });
+                }, jobId);
 
                 results.push(res);
                 succeededCount++;
@@ -389,16 +397,24 @@ export class RawConverterService {
         }
     }
 
-    private async verifyDiskSpace(dir: string, _requiredBytes: number): Promise<void> {
+    private async verifyDiskSpace(dir: string, requiredBytes: number): Promise<void> {
         try {
-            // Check stat of directory exists
-            await fs.stat(dir);
-        } catch {
             await fs.mkdir(dir, { recursive: true });
+            if (typeof fs.statfs === 'function') {
+                const stats = await fs.statfs(dir);
+                const freeBytes = Number(stats.bavail) * Number(stats.bsize);
+                if (freeBytes < requiredBytes) {
+                    throw new Error(`Insufficient disk space in ${dir}: required ${requiredBytes} bytes, available ${freeBytes} bytes.`);
+                }
+            }
+        } catch (err) {
+            if (err instanceof Error && err.message.includes('Insufficient disk space')) {
+                throw err;
+            }
         }
     }
 
-    private execBinary(binaryPath: string, args: string[]): Promise<string> {
+    private execBinary(binaryPath: string, args: string[], jobId?: string, timeoutMs = 120_000): Promise<string> {
         return new Promise((resolve, reject) => {
             log.info(`[RawConverterService] Spawning indii-raw (${args.length} arguments)`);
 
@@ -406,22 +422,41 @@ export class RawConverterService {
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
 
+            if (jobId) {
+                const job = this.activeJobs.get(jobId);
+                if (job) {
+                    job.process = proc;
+                }
+            }
+
             let stdout = '';
             let stderr = '';
+            const MAX_OUTPUT = 10 * 1024 * 1024; // 10MB cap
+
+            const timer = setTimeout(() => {
+                proc.kill('SIGTERM');
+                reject(new Error(`Native indii-raw process timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
 
             proc.stdout.on('data', chunk => {
-                stdout += chunk.toString();
+                if (stdout.length < MAX_OUTPUT) {
+                    stdout += chunk.toString();
+                }
             });
 
             proc.stderr.on('data', chunk => {
-                stderr += chunk.toString();
+                if (stderr.length < MAX_OUTPUT) {
+                    stderr += chunk.toString();
+                }
             });
 
             proc.on('error', err => {
+                clearTimeout(timer);
                 reject(new Error(`Failed to execute ${binaryPath}: ${err.message}`));
             });
 
             proc.on('close', code => {
+                clearTimeout(timer);
                 if (code === 0) {
                     resolve(stdout.trim());
                 } else {

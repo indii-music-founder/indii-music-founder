@@ -200,7 +200,7 @@ export interface ElectronAPI {
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer?: {
         checkPermissions: () => Promise<{ success: boolean; data?: { platform: string; supported: boolean; screenRecording: string; accessibility: string; guidance: string[] }; error?: string }>;
-        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
+        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string; appCheckToken?: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
         beginDrive: (goal: string, maxSteps: number, authorization: { token: string; rendererSessionId: string; agentId: string }) => Promise<{ success: boolean; data?: { sessionToken: string; expiresAt: number }; error?: string }>;
         endDrive: (sessionToken: string) => Promise<{ success: boolean; error?: string }>;
         screenshot: (options: { displayId?: number; authorization?: { token: string; rendererSessionId: string; agentId: string }; driveSessionToken?: string }) => Promise<{ success: boolean; data?: { base64: string; width: number; height: number; displayId: number }; error?: string }>;
@@ -211,6 +211,7 @@ export interface ElectronAPI {
         key: (combo: string, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
         scroll: (dx: number, dy: number, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
         abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+        resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
         getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
         allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
     };
@@ -319,7 +320,7 @@ export interface ElectronAPI {
 
     // Publicist IPC bridge (Electron-only)
     publicist?: {
-        generatePdf: (data: unknown) => Promise<{ success: boolean; path?: string; error?: string }>;
+        generatePdf: (data: unknown) => Promise<{ success: boolean; filePath?: string; path?: string; message?: string; error?: string }>;
     };
 
     // Marketing analysis IPC bridge (Electron-only)
@@ -336,6 +337,22 @@ export interface ElectronAPI {
         get: (taskId: string) => Promise<{ success: boolean; task?: SchedulerTypes.ScheduledTask; error?: string }>;
         onTick: (callback: (event: SchedulerTypes.SchedulerTickEvent) => void) => () => void;
         onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+        onRoyaltySync: (callback: (payload: unknown) => void) => () => void;
+        onDistributionHealth: (callback: (payload: unknown) => void) => () => void;
+        onFinanceSnapshot: (callback: (payload: unknown) => void) => () => void;
+        onWorkflowFlush: (callback: (payload: unknown) => void) => () => void;
+    };
+
+    // Format Intelligence & Capability Foundry
+    foundry?: {
+        grantSession: (req: { sessionId: string; ownerUserId?: string; ttlMs?: number }) => Promise<{ success: boolean; error?: string; expiresAt?: number }>;
+        revokeGrant: (req: { sessionId: string }) => Promise<{ success: boolean; error?: string }>;
+        readFile: (filePath: string) => Promise<{ success: boolean; content?: string; sha256?: string; sizeBytes?: number; error?: string }>;
+        getMetadata: (filePath: string) => Promise<{ success: boolean; size?: number; modifiedAt?: string; error?: string }>;
+        saveHypothesis: (req: { sessionId: string; formatId: string; ledgerJson: string }) => Promise<{ success: boolean; path?: string; error?: string; savedAt?: string }>;
+        loadHypothesis: (req: { formatId: string }) => Promise<{ success: boolean; ledgerJson?: string; error?: string }>;
+        listHypotheses: () => Promise<{ success: boolean; formatIds?: string[]; error?: string }>;
+        bookStatement: (req: { sessionId: string; statementId: string; normalizedReportJson: string }) => Promise<{ success: boolean; bookedAt?: string; receiptHash?: string; error?: string }>;
     };
     // Web3 / Ethereum Integration
     web3?: {
