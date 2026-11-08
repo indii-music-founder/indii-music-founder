@@ -107,4 +107,43 @@ describe('DevOpsTools', () => {
             expect(result.message).toContain('Successfully restarted test-instance');
         });
     });
+
+    describe('configure_sentry_crash_reporting', () => {
+        it('calls configureSentryCrashReporting callable and does not fabricate Electron success', async () => {
+            (global as any).window = {
+                electronAPI: {
+                    someFakeChannel: vi.fn(),
+                },
+            };
+
+            mockHttpsCallable.mockResolvedValueOnce({
+                data: {
+                    dsn: 'https://mock@o0.ingest.sentry.io/0',
+                    status: 'active',
+                },
+            });
+
+            const result = await DevOpsTools.configure_sentry_crash_reporting({
+                environment: 'production',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.dsn).toBe('https://mock@o0.ingest.sentry.io/0');
+            expect(result.data.status).toBe('active');
+            expect(result.data.status).not.toBe('Configured via Electron Main Process');
+            expect(mockHttpsCallable).toHaveBeenCalledWith({ environment: 'production' });
+        });
+
+        it('returns SENTRY_CONFIG_UNAVAILABLE when Cloud Function is unavailable', async () => {
+            mockHttpsCallable.mockRejectedValueOnce(new Error('Function not found'));
+
+            const result = await DevOpsTools.configure_sentry_crash_reporting({
+                environment: 'staging',
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('SENTRY_CONFIG_UNAVAILABLE');
+            expect(result.error).toContain('configureSentryCrashReporting');
+        });
+    });
 });

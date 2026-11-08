@@ -6217,7 +6217,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Emulator security rules and unit tests verify `DigitalHandshake.require()`, `DirectiveService`, `AgentLoopService`, and `AlwaysOnMemoryEngine.deleteMemory/clearAll` succeed for the authenticated owner, approving a `DIGITAL_HANDSHAKE_REQUEST` transitions the linked directive out of `WAITING_ON_HANDSHAKE`, and `AgentLoopService.evaluateOutcome` uses `temperature: 1.0`.
 
 ### ISSUE-1579: 10 Agent Tools across `AnalysisTools`, `DevOpsTools`, and `StorageTools` invoke non-existent Cloud Functions (`analyzeContract`, `runChaosMeshTests`, `configureCircuitBreaker`, `configureWebSocketKeepalive`, `runContentionTest`, `configureSentryCrashReporting`, `triggerWatchdogRecovery`, `configureLogicalSharding`, `provisionQASandbox`, `scrubOrphanedMedia`), and `configure_sentry_crash_reporting` fabricates fake success in Electron
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08) — Routed AnalysisTools.analyze_contract through AutonomousIntelligence fine-tuned legal model and reviewAIVoiceLikenessClause, removed fabricated Electron success in configure_sentry_crash_reporting, and added unit tests; 12 unit tests passing.
 - **Severity:** 🟠 HIGH
 - **Module:** Agent Analysis, DevOps & Storage Tools (`packages/renderer/src/services/agent/tools/AnalysisTools.ts`, `packages/renderer/src/services/agent/tools/DevOpsTools.ts`, `packages/renderer/src/services/agent/tools/StorageTools.ts`, `packages/firebase/src/index.ts`)
 - **Classification:** Category A — Dead `httpsCallable` Targets & Fabricated Desktop Tool Success
