@@ -8,6 +8,8 @@ describe('specialist unavailable contract', () => {
       .toEqual({ providerStatus: 403, providerCode: 'PERMISSION_DENIED' });
     expect(specialistFailureDiagnostics({ status: 'secret', code: 'Bearer secret', statusCode: Infinity })).toEqual({});
     expect(specialistFailureDiagnostics(null)).toEqual({});
+    expect(specialistFailureDiagnostics(new Error('* GenerateContentRequest.tools[0].function_declarations[15].parameters.properties[rawRows].items: missing field.')))
+      .toEqual({ providerDetail: 'GenerateContentRequest.tools[0].function_declarations[15].parameters.properties[rawRows].items: missing field.' });
   });
   it.each([
     [new VertexRoutingError('UNSUPPORTED_LOCATION', 'bad route'), 'routing_misconfiguration', false],

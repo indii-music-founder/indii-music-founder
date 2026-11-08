@@ -490,6 +490,18 @@ export interface ElectronAPI {
         onProgress: (callback: (progress: any) => void) => () => void;
     };
     rightsCopilot?: ElectronRightsCopilotAPI;
+    boardroomBrowser?: {
+        attach: (options?: { initialUrl?: string }) => Promise<{ success: boolean; state?: { url: string; title: string; isLoading: boolean; canGoBack: boolean; canGoForward: boolean; error: string | null }; error?: string }>;
+        setBounds: (bounds: { x: number; y: number; width: number; height: number; visible?: boolean }) => Promise<{ success: boolean; error?: string }>;
+        navigate: (url: string) => Promise<{ success: boolean; url?: string; error?: string }>;
+        goBack: () => Promise<{ success: boolean; error?: string }>;
+        goForward: () => Promise<{ success: boolean; error?: string }>;
+        reload: () => Promise<{ success: boolean; error?: string }>;
+        captureContext: () => Promise<{ success: boolean; data?: { url: string; title: string; text: string }; error?: string }>;
+        detach: () => Promise<{ success: boolean; error?: string }>;
+        openExternal: (url?: string) => Promise<{ success: boolean; error?: string }>;
+        onStateChange: (callback: (state: { url: string; title: string; isLoading: boolean; canGoBack: boolean; canGoForward: boolean; error: string | null }) => void) => () => void;
+    };
 }
 
 // ── Window Augmentation ───────────────────────────────────────────────────

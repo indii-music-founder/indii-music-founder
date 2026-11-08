@@ -114,6 +114,7 @@ import { registerUpscaleHandlers } from './handlers/upscale';
 import { registerFoundryHandlers } from './handlers/foundry';
 import { registerBlenderHandlers } from './handlers/blender';
 import { registerRightsCopilotHandlers } from './handlers/rightsCopilot';
+import { registerBoardroomBrowserHandlers } from './handlers/boardroomBrowser';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -524,6 +525,7 @@ if (!gotTheLock) {
         registerUpscaleHandlers();
         registerFoundryHandlers();
         registerRightsCopilotHandlers();
+        registerBoardroomBrowserHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -569,6 +571,7 @@ if (!gotTheLock) {
             'foundry:save-hypothesis', 'foundry:load-hypothesis', 'foundry:list-hypotheses', 'foundry:book-statement',
             'blender:pair-session', 'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
             'rightsCopilot:launch-session', 'rightsCopilot:execute-step', 'rightsCopilot:close-session', 'rightsCopilot:get-session-status',
+            'boardroom-browser:attach', 'boardroom-browser:set-bounds', 'boardroom-browser:navigate', 'boardroom-browser:go-back', 'boardroom-browser:go-forward', 'boardroom-browser:reload', 'boardroom-browser:capture-context', 'boardroom-browser:detach', 'boardroom-browser:open-external',
             'dev:heap-snapshot',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 
 // ── Mock Element.scrollTo (not implemented in jsdom) ─────────────
@@ -105,6 +105,10 @@ describe('BoardroomModule', () => {
             conversationMode: 'boardroom',
             consumeHandoff: vi.fn(() => null),
             addReferencedAsset: vi.fn(),
+            boardroomWorkspaceLayout: 'closed',
+            boardroomWorkspaceTab: 'browser',
+            setBoardroomWorkspaceLayout: vi.fn((layout) => { mockStoreState.boardroomWorkspaceLayout = layout; }),
+            setBoardroomWorkspaceTab: vi.fn((tab) => { mockStoreState.boardroomWorkspaceTab = tab; }),
         });
     });
 
@@ -151,6 +155,45 @@ describe('BoardroomModule', () => {
         expect(screen.getByText('Finance agrees')).toBeInTheDocument();
         // The empty state text should NOT be present
         expect(screen.queryByText('Awaiting discussion...')).not.toBeInTheDocument();
+    });
+
+    it('renders workspace dock toggles and responds to tab selection', () => {
+        render(<BoardroomModule />);
+        const dock = screen.getByTestId('boardroom-workspace-dock');
+        expect(dock).toBeInTheDocument();
+
+        const browserBtn = screen.getByTestId('boardroom-workspace-toggle-browser');
+        const studioBtn = screen.getByTestId('boardroom-workspace-toggle-module');
+        const workbenchBtn = screen.getByTestId('boardroom-workspace-toggle-workbench');
+        const feedBtn = screen.getByTestId('boardroom-workspace-toggle-feed');
+
+        expect(browserBtn).toBeInTheDocument();
+        expect(studioBtn).toBeInTheDocument();
+        expect(workbenchBtn).toBeInTheDocument();
+        expect(feedBtn).toBeInTheDocument();
+
+        fireEvent.click(browserBtn);
+        expect(mockStoreState.setBoardroomWorkspaceTab).toHaveBeenCalledWith('browser');
+        expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('split');
+    });
+
+    it('renders workspace pane in split layout alongside the orbital table', () => {
+        mockStoreState.boardroomWorkspaceLayout = 'split';
+        mockStoreState.boardroomWorkspaceTab = 'browser';
+
+        render(<BoardroomModule />);
+        expect(screen.getByTestId('boardroom-workspace-container')).toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-workspace-pane')).toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-orbital-panel')).toBeInTheDocument();
+    });
+
+    it('hides orbital table when in stage layout to maximize workspace focus', () => {
+        mockStoreState.boardroomWorkspaceLayout = 'stage';
+        mockStoreState.boardroomWorkspaceTab = 'browser';
+
+        render(<BoardroomModule />);
+        expect(screen.getByTestId('boardroom-workspace-container')).toBeInTheDocument();
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
     });
 });
 

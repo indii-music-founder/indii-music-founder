@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Image as ImageIcon, FileText, Music, Video, X, ExternalLink, Sparkles, Download } from 'lucide-react';
+import { Image as ImageIcon, FileText, Music, Video, X, ExternalLink, Sparkles, Download, Layers } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
@@ -28,10 +28,11 @@ function AssetIcon({ type }: { type: HistoryItem['type'] }) {
 }
 
 export const BoardroomAssetStrip: React.FC = () => {
-    const { generatedHistory, openImageInStudio } = useStore(
+    const { generatedHistory, openImageInStudio, openBoardroomWorkbench } = useStore(
         useShallow(state => ({
             generatedHistory: state.generatedHistory || [],
             openImageInStudio: state.openImageInStudio,
+            openBoardroomWorkbench: state.openBoardroomWorkbench,
         })),
     );
     const toast = useToast();
@@ -209,6 +210,19 @@ export const BoardroomAssetStrip: React.FC = () => {
                             >
                                 <ExternalLink size={12} />
                                 Open in Studio
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (openBoardroomWorkbench) {
+                                        openBoardroomWorkbench({ kind: 'asset', itemId: previewItem.id }, 'split');
+                                    }
+                                    setPreviewItem(null);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-purple-200 border border-purple-500/30 transition-all text-xs font-bold uppercase tracking-wider"
+                                data-testid="boardroom-asset-open-in-workbench"
+                            >
+                                <Layers size={12} />
+                                Inspect in Workbench
                             </button>
                             <button
                                 onClick={() => void exportAsset(previewItem)}

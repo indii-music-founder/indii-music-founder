@@ -88,6 +88,7 @@ import {
     SpecialistUnavailableError,
 } from './lib/specialistAvailability';
 import { ChunkedBatch } from './lib/chunkedBatch';
+import { sanitizeBackendTools } from './lib/sanitizeTools';
 
 
 // Vertex AI SDK
@@ -1444,6 +1445,9 @@ export const generateContentStream = onRequest(
                 }
                 const config = { ...(rawConfig ?? {}) } as Record<string, unknown>;
                 config.maxOutputTokens = clampTextStreamOutputTokens(config.maxOutputTokens, entitlement.tier);
+                if (Array.isArray(config.tools)) {
+                    config.tools = sanitizeBackendTools(config.tools);
+                }
                 if (model !== undefined && (typeof model !== 'string' || !model.trim() || model.length > 256)) {
                     await voidAgentStreamReservation('invalid-model');
                     res.status(400).send('Invalid or unauthorized model ID.');

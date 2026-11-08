@@ -70,8 +70,14 @@ vi.mock('crypto', () => ({
         createHash: () => ({
             update: vi.fn(),
             digest: vi.fn(() => 'mock-hash-123')
-        })
-    }
+        }),
+        randomUUID: () => 'mock-uuid-123'
+    },
+    createHash: () => ({
+        update: vi.fn(),
+        digest: vi.fn(() => 'mock-hash-123')
+    }),
+    randomUUID: () => 'mock-uuid-123'
 }));
 
 // Mock dependencies

@@ -21,7 +21,7 @@
   "scripts": {
     "build": "tsc && node scripts/build-cjs.cjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
+    "test": "cd ../.. && vitest run packages/sdk",
     "prepublishOnly": "npm run build && npm run test"
   },
   "dependencies": {

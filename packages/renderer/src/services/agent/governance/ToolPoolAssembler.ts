@@ -1,6 +1,44 @@
-import { FunctionDeclaration } from '../types';
+import { FunctionDeclaration, ToolParameters, ToolParameterSchema } from '../types';
 import { resolveToolRiskMetadata } from '../ToolRiskRegistry';
 import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
+
+function sanitizeSchemaProperty(schema: ToolParameterSchema, propertyName: string): ToolParameterSchema {
+    if (!schema || typeof schema !== 'object') return schema;
+    const cloned: ToolParameterSchema = { ...schema };
+    const typeUpper = typeof cloned.type === 'string' ? cloned.type.toUpperCase() : '';
+    if (typeUpper === 'ARRAY' && !cloned.items) {
+        cloned.items = { type: 'OBJECT', description: `${propertyName} record` };
+    } else if (cloned.items && typeof cloned.items === 'object') {
+        cloned.items = sanitizeSchemaProperty(cloned.items, `${propertyName}Item`);
+    }
+    if (cloned.properties && typeof cloned.properties === 'object') {
+        const nested: Record<string, ToolParameterSchema> = {};
+        for (const [subKey, subProp] of Object.entries(cloned.properties)) {
+            nested[subKey] = sanitizeSchemaProperty(subProp, subKey);
+        }
+        cloned.properties = nested;
+    }
+    return cloned;
+}
+
+/**
+ * Defensive schema sanitizer: Ensures all array schemas specify an items field.
+ * Vertex AI and Gemini APIs reject function declarations with HTTP 400 INVALID_ARGUMENT
+ * when an ARRAY parameter does not specify items.
+ */
+export function sanitizeToolParameters(params: ToolParameters): ToolParameters {
+    if (!params || typeof params !== 'object') return params;
+    const sanitizedProps: Record<string, ToolParameterSchema> = {};
+    if (params.properties && typeof params.properties === 'object') {
+        for (const [key, schema] of Object.entries(params.properties)) {
+            sanitizedProps[key] = sanitizeSchemaProperty(schema, key);
+        }
+    }
+    return {
+        ...params,
+        properties: sanitizedProps,
+    };
+}
 
 export interface ToolPoolContext {
     agentId: string;
@@ -106,6 +144,9 @@ export class ToolPoolAssembler {
 
         // 4. Truncate to limit and return, ensuring specialist-declared tools are always preserved
         const limit = Math.max(maxTools, specialistTools.length + collaborationTools.length);
-        return pool.slice(0, limit);
+        return pool.slice(0, limit).map(tool => ({
+            ...tool,
+            parameters: sanitizeToolParameters(tool.parameters),
+        }));
     }
 }

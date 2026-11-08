@@ -43,16 +43,24 @@ export class SpecialistUnavailableError extends Error {
 }
 
 /** Allowlisted fields only: provider errors may contain prompts, credentials, or URLs. */
-export function specialistFailureDiagnostics(error: unknown): { providerStatus?: number; providerCode?: string } {
+export function specialistFailureDiagnostics(error: unknown): { providerStatus?: number; providerCode?: string; providerDetail?: string } {
   if (!error || typeof error !== 'object') return {};
   const record = error as Record<string, unknown>;
   const status = [record.status, record.statusCode, record.code].find(value =>
     typeof value === 'number' && Number.isInteger(value) && value >= 100 && value <= 599);
   const codes = ['INVALID_ARGUMENT', 'UNAUTHENTICATED', 'PERMISSION_DENIED', 'NOT_FOUND', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'DEADLINE_EXCEEDED', 'INTERNAL'];
   const code = typeof record.code === 'string' && codes.includes(record.code) ? record.code : undefined;
+  let providerDetail: string | undefined;
+  if (error instanceof Error && typeof error.message === 'string') {
+    const match = error.message.match(/GenerateContentRequest[A-Za-z0-9_.[\]]+:\s*[^.\n]+\.?/);
+    if (match) {
+      providerDetail = match[0].slice(0, 200);
+    }
+  }
   return {
     ...(typeof status === 'number' ? { providerStatus: status } : {}),
     ...(code ? { providerCode: code } : {}),
+    ...(providerDetail ? { providerDetail } : {}),
   };
 }
 
