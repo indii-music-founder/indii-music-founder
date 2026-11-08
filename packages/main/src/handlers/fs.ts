@@ -6,6 +6,9 @@ import os from 'os';
 import { validateSender } from '../utils/ipc-security';
 import { accessControlService } from '../security/AccessControlService';
 
+export const MAX_IPC_TEXT_FILE_BYTES = 10 * 1024 * 1024; // 10 MiB
+export const MAX_IPC_BINARY_FILE_BYTES = 50 * 1024 * 1024; // 50 MiB
+
 function resolveFsPath(rawPath: string): string {
     if (!rawPath || typeof rawPath !== 'string') {
         throw new Error('Path must be a non-empty string');
@@ -66,6 +69,14 @@ export function registerFsHandlers(): void {
             throw new Error(`Security Violation: Access to ${resolvedPath} is denied.`);
         }
 
+        const stat = await fs.promises.stat(resolvedPath);
+        if (typeof stat.isFile === 'function' && !stat.isFile()) {
+            throw new Error(`Path is not a regular file: ${resolvedPath}`);
+        }
+        if (stat.size > MAX_IPC_TEXT_FILE_BYTES) {
+            throw new Error(`File exceeds maximum IPC text read size (${MAX_IPC_TEXT_FILE_BYTES} bytes): ${resolvedPath}`);
+        }
+
         return await fs.promises.readFile(resolvedPath, 'utf-8');
     });
 
@@ -75,6 +86,14 @@ export function registerFsHandlers(): void {
 
         if (!accessControlService.verifyAccess(resolvedPath)) {
             throw new Error(`Security Violation: Access to ${resolvedPath} is denied.`);
+        }
+
+        const stat = await fs.promises.stat(resolvedPath);
+        if (typeof stat.isFile === 'function' && !stat.isFile()) {
+            throw new Error(`Path is not a regular file: ${resolvedPath}`);
+        }
+        if (stat.size > MAX_IPC_BINARY_FILE_BYTES) {
+            throw new Error(`File exceeds maximum IPC binary read size (${MAX_IPC_BINARY_FILE_BYTES} bytes): ${resolvedPath}`);
         }
 
         const buffer = await fs.promises.readFile(resolvedPath);

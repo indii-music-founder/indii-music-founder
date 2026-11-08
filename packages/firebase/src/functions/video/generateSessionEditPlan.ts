@@ -143,7 +143,7 @@ export function createDefaultEditPlanGenerator(models: Pick<Models, 'generateCon
                 config: {
                     responseMimeType: 'application/json',
                     responseJsonSchema: GENERATED_EDIT_PLAN_JSON_SCHEMA,
-                    temperature: 0.2,
+                    temperature: 1.0,
                     maxOutputTokens: 8192,
                 },
             });

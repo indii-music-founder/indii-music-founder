@@ -74,9 +74,11 @@ Return ONLY a JSON object that adheres to the following schema:
                             }
                         ]
                     }],
-                    temperature: 0.1,
-                    responseMimeType: "application/json"
-                } as unknown as Parameters<typeof genai.models.generateContent>[0]);
+                    config: {
+                        temperature: 1.0,
+                        responseMimeType: "application/json",
+                    },
+                });
 
                 const part = result?.candidates?.[0]?.content?.parts?.[0];
                 const analysisText = part && 'text' in part ? (part as { text?: string }).text : null;

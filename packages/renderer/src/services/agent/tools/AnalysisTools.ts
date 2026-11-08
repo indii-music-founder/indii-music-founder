@@ -18,9 +18,12 @@ export const AnalysisTools = {
 
         const result = await analyzeContract({ fileData: args.file_data, mimeType: args.mime_type });
         const data = result.data;
-        const aiClauseReview = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(args.file_data);
+        const clauseSource = args.mime_type === 'application/pdf'
+            ? `${data.summary ?? ''}\n${(data.risks ?? []).join('\n')}`
+            : args.file_data;
+        const aiClauseReview = await creatorProtectionHarnessService.reviewAIVoiceLikenessClauseWithJev(clauseSource);
 
-        const risks = [...(data.risks ?? []), ...aiClauseReview.flags];
+        const risks = Array.from(new Set([...(data.risks ?? []), ...aiClauseReview.flags]));
         return toolSuccess({ ...data, risks, aiClauseReview }, `Contract Analysis:\nScore: ${data.score ?? 'N/A'}\nSummary: ${data.summary ?? 'N/A'}\nRisks:\n- ${risks.join('\n- ')}`);
     }),
 

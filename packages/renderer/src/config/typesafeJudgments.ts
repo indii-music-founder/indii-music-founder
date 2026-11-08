@@ -9629,6 +9629,265 @@ export async function judgeCreativeJourneyIntent(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Judgment 82: Creator Protection AI Voice/Likeness Clause & Replica Incident Triage
+// (consumer: CreatorProtectionHarnessService, LegalDashboard, AnalysisTools)
+// ---------------------------------------------------------------------------
+
+export interface ContractAIClauseJudgmentVerdict {
+    severity: 'low' | 'medium' | 'high';
+    grantsUnrestrictedAiTraining: boolean;
+    grantsUnrestrictedVoiceLikenessClone: boolean;
+    containsArtistProtectiveProhibition: boolean;
+    clauseRiskScore: number; // 0 to 4
+    flags: string[];
+    confidence: number;
+}
+
+export const CONTRACT_AI_CLAUSE_QUESTIONS = {
+    grants_unrestricted_ai_training: {
+        type: 'noul' as const,
+        instructions:
+            'Does this contract clause GRANT or PERMIT the company/licensee to train machine learning or AI models on the artist\'s voice, likeness, or recordings? ' +
+            'Answer FALSE if the clause explicitly PROHIBITS or FORBIDS model training (e.g. "no AI training is permitted", "Company shall not train models").',
+        criteria: {
+            true: 'The contract grants or permits AI/ML model training on the artist\'s voice, likeness, or masters.',
+            false: 'The contract does not grant model training rights, or explicitly prohibits/restricts AI model training.',
+        },
+    },
+    grants_unrestricted_voice_likeness_clone: {
+        type: 'noul' as const,
+        instructions:
+            'Does this contract clause GRANT broad, perpetual, irrevocable, or sublicensable rights to create AI voice clones, digital replicas, or synthetic performances of the artist? ' +
+            'Answer FALSE if the clause PROHIBITS digital replicas/clones or requires separate signed written consent.',
+        criteria: {
+            true: 'The contract grants broad, perpetual, irrevocable, or sublicensable rights to synthesize or clone the artist\'s voice or likeness.',
+            false: 'The contract prohibits unauthorized voice/likeness cloning or requires separate written artist approval.',
+        },
+    },
+    contains_artist_protective_prohibition: {
+        type: 'noul' as const,
+        instructions:
+            'Does this clause act as a PROTECTIVE artist safeguard that explicitly forbids unauthorized AI voice cloning, digital replicas, or model training without separate written consent?',
+        criteria: {
+            true: 'The clause is protective of the artist and prohibits unauthorized AI voice/likeness/training uses.',
+            false: 'The clause is not a protective prohibition (it either grants rights or is silent on protections).',
+        },
+    },
+    overall_clause_risk: {
+        type: 'score' as const,
+        instructions:
+            'Rate the overall AI voice, likeness, and model-training risk of this contract text for the recording artist from 0 (protective/safe) to 4 (severe/exploitative grant).',
+        criteria: [
+            'Protective or benign — explicitly prohibits unauthorized AI voice/likeness/training or has no AI/persona grant.',
+            'Low risk — standard limited promotional name/likeness use during the term with no AI cloning or training.',
+            'Moderate risk — references voice/likeness or digital uses with ambiguous scope that should be clarified.',
+            'High risk — grants AI voice clone, digital replica, or model training rights without clear revocation or compensation bounds.',
+            'Critical risk — grants perpetual, irrevocable, or sublicensable AI voice clone, digital replica, or model training rights.',
+        ],
+    },
+} as const;
+
+/**
+ * TypeSafe System One (JEV) judgment to evaluate contract clauses for AI voice,
+ * likeness, digital replica, and model-training risk while respecting negation
+ * semantics (e.g. "No AI voice clone or model training is permitted").
+ */
+export async function judgeContractAIClauseProtection(
+    contractText: string,
+): Promise<ContractAIClauseJudgmentVerdict | null> {
+    if (!judgmentsAvailable() || !contractText.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                contractText: contractText.slice(0, 4000),
+            },
+            questions: CONTRACT_AI_CLAUSE_QUESTIONS,
+        });
+
+        const answers = result.data.answers;
+        const trainProb = boundedJudgmentNumber(answers?.grants_unrestricted_ai_training, 'noul', 1);
+        const cloneProb = boundedJudgmentNumber(answers?.grants_unrestricted_voice_likeness_clone, 'noul', 1);
+        const protectProb = boundedJudgmentNumber(answers?.contains_artist_protective_prohibition, 'noul', 1);
+        const riskScore = boundedJudgmentNumber(
+            answers?.overall_clause_risk,
+            'score',
+            CONTRACT_AI_CLAUSE_QUESTIONS.overall_clause_risk.criteria.length - 1,
+        );
+
+        if (trainProb === null || cloneProb === null || protectProb === null || riskScore === null) {
+            return null;
+        }
+
+        const grantsUnrestrictedAiTraining = trainProb >= 0.60;
+        const grantsUnrestrictedVoiceLikenessClone = cloneProb >= 0.60;
+        const containsArtistProtectiveProhibition = protectProb >= 0.65 && !grantsUnrestrictedAiTraining && !grantsUnrestrictedVoiceLikenessClone;
+
+        let severity: 'low' | 'medium' | 'high' = 'low';
+        if (grantsUnrestrictedAiTraining || grantsUnrestrictedVoiceLikenessClone || riskScore >= 2.75) {
+            severity = 'high';
+        } else if (!containsArtistProtectiveProhibition && riskScore >= 1.25) {
+            severity = 'medium';
+        }
+
+        const flags: string[] = [];
+        if (grantsUnrestrictedAiTraining) {
+            flags.push('Jev confirmed contract grants AI/ML model training rights on artist assets.');
+        }
+        if (grantsUnrestrictedVoiceLikenessClone) {
+            flags.push('Jev confirmed contract grants broad or perpetual AI voice/likeness replica rights.');
+        }
+        if (containsArtistProtectiveProhibition && flags.length === 0) {
+            flags.push('Protective AI voice/likeness prohibition detected (unauthorized AI training/cloning barred).');
+        }
+
+        const rawConf = typeof answers?.overall_clause_risk === 'object' && answers?.overall_clause_risk !== null
+            ? (answers.overall_clause_risk as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConf === 'number' && Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1
+            ? rawConf
+            : 0.85;
+
+        return {
+            severity,
+            grantsUnrestrictedAiTraining,
+            grantsUnrestrictedVoiceLikenessClone,
+            containsArtistProtectiveProhibition,
+            clauseRiskScore: riskScore,
+            flags,
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'contract AI clause protection judgment');
+        return null;
+    }
+}
+
+export type CreatorIncidentTypeChoice =
+    | 'copyright_infringement'
+    | 'voice_clone'
+    | 'likeness_image'
+    | 'artist_name_brand_confusion'
+    | 'impersonation_fraud'
+    | 'platform_policy_violation'
+    | 'take_it_down_ncii'
+    | 'uncertain';
+
+export type CreatorTakedownRouteChoice =
+    | 'dmca'
+    | 'platform_digital_replica'
+    | 'platform_impersonation'
+    | 'trademark_brand_confusion'
+    | 'dsp_duplicate_fraud'
+    | 'take_it_down_ftc'
+    | 'attorney_escalation';
+
+export interface CreatorIncidentClassificationVerdict {
+    incidentType: CreatorIncidentTypeChoice;
+    route: CreatorTakedownRouteChoice;
+    confidence: number;
+}
+
+export const CREATOR_INCIDENT_CLASSIFICATION_QUESTIONS = {
+    incident_type: {
+        type: 'choice' as const,
+        instructions:
+            'Classify this artist protection incident report into the single most accurate incident category.',
+        criteria: {
+            take_it_down_ncii: 'Nonconsensual intimate visual depiction (NCII) or sexually explicit deepfake.',
+            voice_clone: 'Unauthorized AI voice clone, soundalike vocal synthesis, or synthetic singing impersonating the artist.',
+            likeness_image: 'Unauthorized visual deepfake video or AI-generated likeness/photo of the artist.',
+            artist_name_brand_confusion: 'Unauthorized use of artist stage name, trademark, brand, logo, or false DSP artist page attribution.',
+            impersonation_fraud: 'Fake social account, scam profile, or fraudulent impersonation pretending to be the artist.',
+            copyright_infringement: 'Unauthorized upload, rip, sample, or distribution of the artist\'s copyrighted sound recording or composition.',
+            platform_policy_violation: 'General platform community guidelines or terms of service violation.',
+            uncertain: 'Insufficient detail to classify into a specific right or policy category.',
+        } satisfies Record<CreatorIncidentTypeChoice, string>,
+    },
+    takedown_route: {
+        type: 'choice' as const,
+        instructions:
+            'Select the primary operational takedown or escalation route for this creator protection incident.',
+        criteria: {
+            take_it_down_ftc: 'TAKE IT DOWN Act platform removal process (for qualifying NCII depictions).',
+            dmca: 'Standard DMCA copyright infringement takedown notice.',
+            platform_digital_replica: 'Platform AI digital replica / synthetic voice-likeness removal process.',
+            platform_impersonation: 'Platform impersonation and scam account reporting flow.',
+            trademark_brand_confusion: 'Trademark, brand confusion, or false endorsement notice.',
+            dsp_duplicate_fraud: 'DSP (Spotify/Apple Music) artist profile mismatch or fraudulent upload report.',
+            attorney_escalation: 'Escalate to entertainment/IP legal counsel for complex or contested claims.',
+        } satisfies Record<CreatorTakedownRouteChoice, string>,
+    },
+} as const;
+
+export async function judgeCreatorIncidentClassification(input: {
+    description: string;
+    suspectedUrl?: string;
+    platform?: string;
+    nonconsensualIntimateImagery?: boolean;
+}): Promise<CreatorIncidentClassificationVerdict | null> {
+    if (!judgmentsAvailable() || !input.description.trim()) return null;
+
+    try {
+        const functions = getFunctions();
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(functions, 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                description: input.description.slice(0, 1500),
+                suspectedUrl: input.suspectedUrl ?? '',
+                platform: input.platform ?? '',
+                nonconsensualIntimateImagery: Boolean(input.nonconsensualIntimateImagery),
+            },
+            questions: CREATOR_INCIDENT_CLASSIFICATION_QUESTIONS,
+        });
+
+        const typeAns = result.data.answers?.incident_type;
+        const routeAns = result.data.answers?.takedown_route;
+        const typeChoice = typeof typeAns === 'string' ? typeAns : (typeAns as { choice?: unknown } | null)?.choice;
+        const routeChoice = typeof routeAns === 'string' ? routeAns : (routeAns as { choice?: unknown } | null)?.choice;
+
+        const validTypes = Object.keys(CREATOR_INCIDENT_CLASSIFICATION_QUESTIONS.incident_type.criteria) as CreatorIncidentTypeChoice[];
+        const validRoutes = Object.keys(CREATOR_INCIDENT_CLASSIFICATION_QUESTIONS.takedown_route.criteria) as CreatorTakedownRouteChoice[];
+
+        if (
+            typeof typeChoice !== 'string' ||
+            !validTypes.includes(typeChoice as CreatorIncidentTypeChoice) ||
+            typeof routeChoice !== 'string' ||
+            !validRoutes.includes(routeChoice as CreatorTakedownRouteChoice)
+        ) {
+            return null;
+        }
+
+        const rawConf = typeof typeAns === 'object' && typeAns !== null
+            ? (typeAns as { confidence?: unknown }).confidence
+            : undefined;
+        const confidence = typeof rawConf === 'number' && Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1
+            ? rawConf
+            : 0.85;
+
+        return {
+            incidentType: input.nonconsensualIntimateImagery ? 'take_it_down_ncii' : (typeChoice as CreatorIncidentTypeChoice),
+            route: input.nonconsensualIntimateImagery ? 'take_it_down_ftc' : (routeChoice as CreatorTakedownRouteChoice),
+            confidence,
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'creator incident classification judgment');
+        return null;
+    }
+}
+
+
 
 
 

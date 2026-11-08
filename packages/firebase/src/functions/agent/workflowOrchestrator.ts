@@ -2,6 +2,7 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
 import * as admin from 'firebase-admin';
 import { findReadyWorkflowStep, hasActiveWorkflowStep } from './workflowExecutionGraph';
+import { inngestEventKey } from '../../config/secrets';
 
 interface WorkflowStepExecution {
     stepId: string;
@@ -22,7 +23,12 @@ interface WorkflowExecution {
 }
 
 export const workflowOrchestrator = onDocumentWritten(
-    { document: 'users/{userId}/workflowExecutions/{executionId}', region: 'us-central1', memory: '512MiB' },
+    {
+        document: 'users/{userId}/workflowExecutions/{executionId}',
+        region: 'us-central1',
+        memory: '512MiB',
+        secrets: [inngestEventKey],
+    },
     async event => {
         const snapshot = event.data;
         const after = snapshot?.after.data() as WorkflowExecution | undefined;
@@ -67,7 +73,8 @@ export const workflowOrchestrator = onDocumentWritten(
         });
         if (!claimed) return;
 
-        const { inngest } = await import('../orchestration/inngest');
+        const { getInngestClient } = await import('../../lib/inngestClient');
+        const inngest = getInngestClient();
         try {
             await inngest.send({
                 name: 'workflow/step-started',

@@ -41,10 +41,12 @@ const mocks = vi.hoisted(() => {
             set: mockSet,
             get: mockGet,
             batch: mockBatch,
+            recursiveDelete: vi.fn().mockResolvedValue(undefined),
         },
         storage: {
             save: vi.fn(),
             makePublic: vi.fn(),
+            deleteFiles: vi.fn().mockResolvedValue(undefined),
         },
         inngest: {
             send: vi.fn(),
@@ -81,6 +83,7 @@ vi.mock('firebase-admin', () => {
                 runTransaction: mocks.firestore.runTransaction,
                 doc: mocks.firestore.doc,
                 batch: mocks.firestore.batch,
+                recursiveDelete: mocks.firestore.recursiveDelete,
             })),
             {
                 FieldValue: {
@@ -97,6 +100,7 @@ vi.mock('firebase-admin', () => {
                     makePublic: mocks.storage.makePublic,
                     publicUrl: () => 'https://mock-storage-url.com/video.mp4',
                 }),
+                deleteFiles: mocks.storage.deleteFiles,
             }),
         })),
         auth: vi.fn(() => ({
@@ -218,7 +222,8 @@ vi.mock('../functions/billing/enforceOperationCost', () => ({
 
 vi.mock('cors', () => ({
     default: vi.fn(() => vi.fn((_req: unknown, _res: unknown, next: unknown) => {
-        if (typeof next === 'function') (next as () => void)();
+        if (typeof next === 'function') return (next as () => unknown)();
+        return undefined;
     })),
 }));
 
@@ -409,8 +414,8 @@ describe('Unit 23 Admission Security: Remaining Infrastructure, Utility & Video 
     });
 
     describe('ragProxy', () => {
-        it('returns 429 when Arcjet protection denies request', async () => {
-            mocks.arcjet.mockResolvedValueOnce({
+        it('returns 429 when anonymous IP Arcjet protection denies request', async () => {
+            mocks.arcjetAnon.mockResolvedValueOnce({
                 allowed: false,
                 status: 429,
                 message: 'Too Many Requests',
@@ -429,11 +434,55 @@ describe('Unit 23 Admission Security: Remaining Infrastructure, Utility & Video 
 
             expect(res.status).toHaveBeenCalledWith(429);
             expect(res.send).toHaveBeenCalledWith({ error: 'Too Many Requests' });
+            expect(mocks.arcjetAnon).toHaveBeenCalledWith(
+                expect.anything(),
+                'rag-proxy:10.0.0.1',
+                'allow-low-risk-read'
+            );
+        });
+
+        it('returns 401 when Authorization header is missing', async () => {
+            const res = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+
+            await call(
+                ragProxy,
+                { headers: {}, ip: '10.0.0.1' },
+                res
+            );
+
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.send).toHaveBeenCalledWith('Unauthorized');
+        });
+
+        it('returns 429 when authenticated Arcjet protection denies request keyed by caller uid', async () => {
+            mocks.verifyIdToken.mockResolvedValueOnce({ uid: 'authenticated-rag-user' });
+            mocks.arcjet.mockResolvedValueOnce({
+                allowed: false,
+                status: 429,
+                message: 'Rate limit exceeded',
+            });
+
+            const res = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+            };
+
+            await call(
+                ragProxy,
+                { headers: { authorization: 'Bearer valid-rag-token' }, ip: '10.0.0.1' },
+                res
+            );
+
+            expect(res.status).toHaveBeenCalledWith(429);
+            expect(res.send).toHaveBeenCalledWith({ error: 'Rate limit exceeded' });
             expect(mocks.arcjet).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
-                    userId: 'rag-proxy-caller',
-                    operationId: 'rag-proxy:10.0.0.1',
+                    userId: 'authenticated-rag-user',
+                    operationId: 'rag-proxy:authenticated-rag-user',
                 })
             );
         });
@@ -544,6 +593,26 @@ describe('Unit 23 Admission Security: Remaining Infrastructure, Utility & Video 
             const anon = { ...userContext, auth: { uid: 'anon', token: { firebase: { sign_in_provider: 'anonymous' } } } };
             await expect(call(requestAccountDeletion, anon)).rejects.toMatchObject({ code: 'permission-denied' });
         });
+
+        it('executes complete GDPR account erasure: recursively deletes users/{userId}, deletes root collections, deletes Storage prefixes, and deletes Auth user', async () => {
+            const result = await call(requestAccountDeletion, userContext);
+
+            expect(result.success).toBe(true);
+            expect(mocks.firestore.recursiveDelete).toHaveBeenCalled();
+            expect(mocks.storage.deleteFiles).toHaveBeenCalledWith({ prefix: 'users/user-123/' });
+            expect(mocks.storage.deleteFiles).toHaveBeenCalledWith({ prefix: 'tax_docs/user-123/' });
+            expect(mocks.storage.deleteFiles).toHaveBeenCalledWith({ prefix: 'masters/user-123/' });
+            expect(mocks.deleteUser).toHaveBeenCalledWith('user-123');
+        });
+
+        it('preserves Auth account and throws when recursive Firestore erasure fails', async () => {
+            mocks.firestore.recursiveDelete.mockRejectedValueOnce(new Error('Firestore internal failure'));
+
+            await expect(call(requestAccountDeletion, userContext)).rejects.toMatchObject({
+                code: 'internal',
+            });
+            expect(mocks.deleteUser).not.toHaveBeenCalled();
+        });
     });
 
     describe('healthCheck & healthCheckWest1', () => {
@@ -597,6 +666,23 @@ describe('Unit 23 Admission Security: Remaining Infrastructure, Utility & Video 
                 data: { fans: [] },
             };
             await expect(call(enrichFanData, context)).rejects.toMatchObject({ code: 'permission-denied' });
+        });
+
+        it('enrichFanData rejects empty fan array with invalid-argument', async () => {
+            const context: any = {
+                auth: { uid: 'user-123', token: { firebase: { sign_in_provider: 'password' } } },
+                data: { fans: [], provider: 'clearbit' },
+            };
+            await expect(call(enrichFanData, context)).rejects.toMatchObject({ code: 'invalid-argument' });
+        });
+
+        it('enrichFanData rejects fan array exceeding MAX_FANS_PER_BATCH with invalid-argument', async () => {
+            const oversizedFans = Array.from({ length: 51 }, (_, i) => ({ email: `fan${i}@example.com` }));
+            const context: any = {
+                auth: { uid: 'user-123', token: { firebase: { sign_in_provider: 'password' } } },
+                data: { fans: oversizedFans, provider: 'clearbit' },
+            };
+            await expect(call(enrichFanData, context)).rejects.toMatchObject({ code: 'invalid-argument' });
         });
     });
 });

@@ -262,6 +262,7 @@ export class AgentLoopService {
             const service = this.getService(userId);
             const executions = await service.list();
             return executions.filter(e =>
+                e.status === AgentLoopStatusEnum.enum.IDLE ||
                 e.status === AgentLoopStatusEnum.enum.EXECUTING ||
                 e.status === AgentLoopStatusEnum.enum.EVALUATING ||
                 e.status === AgentLoopStatusEnum.enum.FAILED

@@ -10,15 +10,16 @@ const getDb = () => admin.firestore();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_ATTEMPTS_PER_WINDOW = 10; // max 10 requests per minute
 
-interface StoredHandoff {
+export interface StoredHandoff {
     userId: string;
-    idToken: string;
-    accessToken: string | null;
+    codeChallenge?: string;
+    codeChallengeMethod?: 'S256' | 'plain';
     expiresAt: Date;
 }
 
 export type HandoffRedemptionResult =
-    | { status: 200; customToken: string; idToken: string; accessToken: string | null }
+    | { status: 200; customToken: string }
+    | { status: 400; message: 'Invalid code verifier' }
     | { status: 404; message: 'Invalid or expired code' };
 
 export interface HandoffRedemptionDependencies {
@@ -30,13 +31,44 @@ export interface HandoffRedemptionDependencies {
 }
 
 /**
- * Mint before consuming the one-time record. A production IAM outage must not
- * destroy a valid QR code before Firebase can create the phone's custom token.
- * The final atomic consume remains the single winner for concurrent requests;
- * tokens minted by losing requests are never returned to a client.
+ * Validates a PKCE code_verifier against a stored code_challenge using timing-safe comparison.
+ * Supports both base64url and hex digests for S256.
+ */
+export function verifyPkce(
+    codeVerifier: string,
+    codeChallenge: string,
+    method: 'S256' | 'plain' = 'S256',
+): boolean {
+    if (!codeVerifier || !codeChallenge) return false;
+    if (method === 'plain') {
+        if (codeVerifier.length !== codeChallenge.length) return false;
+        return crypto.timingSafeEqual(Buffer.from(codeVerifier), Buffer.from(codeChallenge));
+    }
+
+    const hashHex = crypto.createHash('sha256').update(codeVerifier).digest('hex');
+    const hashBase64Url = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+
+    if (hashHex.length === codeChallenge.length &&
+        crypto.timingSafeEqual(Buffer.from(hashHex), Buffer.from(codeChallenge))) {
+        return true;
+    }
+
+    if (hashBase64Url.length === codeChallenge.length &&
+        crypto.timingSafeEqual(Buffer.from(hashBase64Url), Buffer.from(codeChallenge))) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Mint strictly AFTER consuming the one-time record.
+ * A production IAM outage or expired/used code must never invoke IAM signBlob
+ * before the atomic transaction confirms the redemption was claimed.
  */
 export async function redeemStoredHandoff(
     dependencies: HandoffRedemptionDependencies,
+    options?: { codeVerifier?: string },
 ): Promise<HandoffRedemptionResult> {
     const now = dependencies.now?.() ?? new Date();
     const handoff = await dependencies.load();
@@ -50,35 +82,55 @@ export async function redeemStoredHandoff(
         return { status: 404, message: 'Invalid or expired code' };
     }
 
-    const customToken = await dependencies.mintCustomToken(handoff.userId);
+    // Verify PKCE if a codeChallenge was registered
+    if (handoff.codeChallenge) {
+        if (!options?.codeVerifier || !verifyPkce(options.codeVerifier, handoff.codeChallenge, handoff.codeChallengeMethod || 'S256')) {
+            return { status: 400, message: 'Invalid code verifier' };
+        }
+    }
+
     const consumeTime = dependencies.now?.() ?? new Date();
     const consumed = await dependencies.consume(handoff.userId, consumeTime);
     if (!consumed) {
         return { status: 404, message: 'Invalid or expired code' };
     }
 
+    // Mint custom token strictly after atomic consume succeeds
+    const customToken = await dependencies.mintCustomToken(handoff.userId);
+
     return {
         status: 200,
         customToken,
-        idToken: handoff.idToken,
-        accessToken: handoff.accessToken,
     };
 }
 
 /**
- * Clean and extract IP from request
+ * Clean and extract IP from request, avoiding spoofable client-supplied x-forwarded-for headers.
  */
-function getClientIp(req: Request): string {
-    const rawIp = req.ip || (req.headers['x-forwarded-for'] as string) || 'unknown';
-    const firstIp = Array.isArray(rawIp) ? rawIp[0] : rawIp.split(',')[0].trim();
-    return firstIp || 'unknown';
+export function getClientIp(req: Request): string {
+    if (req.ip && req.ip !== '127.0.0.1' && req.ip !== '::1' && req.ip !== 'unknown') {
+        return req.ip;
+    }
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    if (xForwardedFor) {
+        const parts = (Array.isArray(xForwardedFor) ? xForwardedFor.join(',') : xForwardedFor)
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        if (parts.length > 0) {
+            // When behind Cloud Load Balancers, the rightmost entry was appended by the edge proxy
+            return parts[parts.length - 1] || 'unknown';
+        }
+    }
+    return req.ip || 'unknown';
 }
 
 /**
- * Firestore-based IP Rate Limiting middleware helper
+ * Firestore-based IP Rate Limiting middleware helper.
+ * Fails closed on database transaction errors or contention to prevent brute-force bypass.
  */
-async function isRateLimited(ip: string, action: string): Promise<boolean> {
-    const db = getDb();
+export async function isRateLimited(ip: string, action: string, dbOverride?: admin.firestore.Firestore): Promise<boolean> {
+    const db = dbOverride || getDb();
     const cleanIp = ip.replace(/[^a-zA-Z0-9]/g, '_');
     const docRef = db.collection('rate_limits').doc(`${action}_${cleanIp}`);
     
@@ -107,8 +159,8 @@ async function isRateLimited(ip: string, action: string): Promise<boolean> {
         });
     } catch (err) {
         console.error(`[RateLimit] Transaction error for ${ip} / ${action}:`, err);
-        // Fallback to allow request in case of database issues
-        return false;
+        // Security requirement: fail closed on database error or transaction contention
+        return true;
     }
 }
 
@@ -117,7 +169,7 @@ async function isRateLimited(ip: string, action: string): Promise<boolean> {
  * Used by the login bridge (landing page) to hand off credentials to the desktop app.
  * 
  * POST /createHandoffCode
- * Body: { idToken: string, accessToken?: string }
+ * Body: { idToken: string, codeChallenge?: string, codeChallengeMethod?: 'S256' | 'plain' }
  */
 export const createHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] }, async (req: Request, res: express.Response) => {
     // 1. Validate method
@@ -139,9 +191,14 @@ export const createHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
         return;
     }
 
-    const { idToken, accessToken } = req.body;
-    if (!idToken) {
+    const { idToken, codeChallenge, codeChallengeMethod } = req.body || {};
+    if (!idToken || typeof idToken !== 'string') {
         res.status(400).send('Missing idToken');
+        return;
+    }
+
+    if (codeChallenge && typeof codeChallenge !== 'string') {
+        res.status(400).send('Invalid codeChallenge format');
         return;
     }
 
@@ -153,18 +210,20 @@ export const createHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
 
     try {
         const db = getDb();
-        // 2. Verify the ID token to ensure the request is legitimate
+        // 2. Verify the ID token to ensure the request is legitimate and extract caller UID
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const userId = decodedToken.uid;
 
         // 3. Generate a secure random code (64 hex characters)
         const code = crypto.randomBytes(32).toString('hex');
 
-        // 4. Store in Firestore with a short TTL (5 minutes)
+        // 4. Store in Firestore with a short TTL (5 minutes) - NEVER store raw idToken or accessToken!
         await db.collection('auth_handoffs').doc(code).set({
             userId,
-            idToken,
-            accessToken: accessToken || null,
+            ...(codeChallenge ? {
+                codeChallenge,
+                codeChallengeMethod: codeChallengeMethod === 'plain' ? 'plain' : 'S256',
+            } : {}),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
         });
@@ -177,11 +236,11 @@ export const createHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
 });
 
 /**
- * Redeems a handoff code for the original authentication tokens.
- * Used by the desktop app to retrieve tokens passed from the login bridge.
+ * Redeems a handoff code for a newly-minted custom token.
+ * Used by the companion/desktop app to retrieve tokens passed from the login bridge.
  * 
  * POST /redeemHandoffCode
- * Body: { code: string }
+ * Body: { code: string, codeVerifier?: string }
  */
 export const redeemHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] }, async (req: Request, res: express.Response) => {
     // 1. Validate method
@@ -203,7 +262,7 @@ export const redeemHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
         return;
     }
 
-    const { code } = req.body;
+    const { code, codeVerifier } = req.body || {};
     if (!code) {
         res.status(400).send('Missing code');
         return;
@@ -225,36 +284,39 @@ export const redeemHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
         const db = getDb();
         const docRef = db.collection('auth_handoffs').doc(code);
 
-        const result = await redeemStoredHandoff({
-            load: async () => {
-                const doc = await docRef.get();
-                const data = doc.data();
-                if (!doc.exists || !data) return null;
-                return {
-                    userId: data.userId,
-                    idToken: data.idToken,
-                    accessToken: data.accessToken ?? null,
-                    expiresAt: data.expiresAt.toDate(),
-                };
-            },
-            expire: async () => {
-                await docRef.delete();
-            },
-            mintCustomToken: (userId) => admin.auth().createCustomToken(userId),
-            consume: async (expectedUserId, now) => db.runTransaction(async (transaction) => {
-                const current = await transaction.get(docRef);
-                const data = current.data();
-                if (!current.exists || !data || data.userId !== expectedUserId) return false;
+        const result = await redeemStoredHandoff(
+            {
+                load: async () => {
+                    const doc = await docRef.get();
+                    const data = doc.data();
+                    if (!doc.exists || !data) return null;
+                    return {
+                        userId: data.userId,
+                        codeChallenge: data.codeChallenge,
+                        codeChallengeMethod: data.codeChallengeMethod,
+                        expiresAt: data.expiresAt.toDate(),
+                    };
+                },
+                expire: async () => {
+                    await docRef.delete();
+                },
+                mintCustomToken: (userId) => admin.auth().createCustomToken(userId),
+                consume: async (expectedUserId, now) => db.runTransaction(async (transaction) => {
+                    const current = await transaction.get(docRef);
+                    const data = current.data();
+                    if (!current.exists || !data || data.userId !== expectedUserId) return false;
 
-                if (data.expiresAt.toDate() < now) {
+                    if (data.expiresAt.toDate() < now) {
+                        transaction.delete(docRef);
+                        return false;
+                    }
+
                     transaction.delete(docRef);
-                    return false;
-                }
-
-                transaction.delete(docRef);
-                return true;
-            }),
-        });
+                    return true;
+                }),
+            },
+            { codeVerifier },
+        );
 
         if (result.status !== 200) {
             res.status(result.status).send(result.message);
@@ -262,8 +324,6 @@ export const redeemHandoffCode = onRequest({ cors: true, secrets: [arcjetKey] },
         }
 
         res.status(200).json({
-            idToken: result.idToken,
-            accessToken: result.accessToken,
             customToken: result.customToken,
         });
     } catch (err) {

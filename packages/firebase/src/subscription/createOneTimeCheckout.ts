@@ -9,15 +9,22 @@
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe } from '../stripe/config';
+import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import { stripeSecretKey, arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
 
+const MIN_UNIT_AMOUNT_CENTS = 50; // Stripe minimum $0.50 USD
+const MAX_UNIT_AMOUNT_CENTS = 5_000_000; // $50,000.00 cap per item
+const MAX_QUANTITY = 100;
+
 export interface OneTimeCheckoutParams {
     userId: string;
     items: Array<{
+        productId?: string;
         name: string;
         description?: string;
         amount: number; // in cents
@@ -63,8 +70,67 @@ export const createOneTimeCheckout = onCall({
         }
     }
 
-    if (!items || items.length === 0) {
-        throw new HttpsError('invalid-argument', 'At least one item is required.');
+    if (!items || !Array.isArray(items) || items.length === 0 || items.length > 50) {
+        throw new HttpsError('invalid-argument', 'Between 1 and 50 items are required.');
+    }
+
+    const validatedSuccessUrl = assertAllowedStripeRedirectUrl(successUrl, 'successUrl');
+    const validatedCancelUrl = assertAllowedStripeRedirectUrl(cancelUrl, 'cancelUrl');
+
+    const resolvedItems: Array<{
+        name: string;
+        description?: string;
+        amount: number;
+        quantity: number;
+        metadata?: Record<string, string>;
+    }> = [];
+
+    for (const item of items) {
+        if (!item || typeof item.name !== 'string' || !item.name.trim()) {
+            throw new HttpsError('invalid-argument', 'Each item must have a valid name.');
+        }
+        if (
+            typeof item.quantity !== 'number' ||
+            !Number.isInteger(item.quantity) ||
+            item.quantity < 1 ||
+            item.quantity > MAX_QUANTITY
+        ) {
+            throw new HttpsError('invalid-argument', `Item quantity must be an integer between 1 and ${MAX_QUANTITY}.`);
+        }
+
+        let authoritativeAmount = item.amount;
+        const catalogProductId = item.productId || item.metadata?.productId;
+        if (typeof catalogProductId === 'string' && catalogProductId.trim()) {
+            const productSnap = await getFirestore().collection('products').doc(catalogProductId.trim()).get();
+            if (!productSnap.exists) {
+                throw new HttpsError('not-found', `Catalog product '${catalogProductId}' not found.`);
+            }
+            const productData = productSnap.data();
+            if (typeof productData?.price !== 'number' || !Number.isInteger(productData.price)) {
+                throw new HttpsError('failed-precondition', `Catalog product '${catalogProductId}' has an invalid price.`);
+            }
+            authoritativeAmount = productData.price;
+        }
+
+        if (
+            typeof authoritativeAmount !== 'number' ||
+            !Number.isInteger(authoritativeAmount) ||
+            authoritativeAmount < MIN_UNIT_AMOUNT_CENTS ||
+            authoritativeAmount > MAX_UNIT_AMOUNT_CENTS
+        ) {
+            throw new HttpsError(
+                'invalid-argument',
+                `Item amount must be an integer in cents between ${MIN_UNIT_AMOUNT_CENTS} and ${MAX_UNIT_AMOUNT_CENTS}.`,
+            );
+        }
+
+        resolvedItems.push({
+            name: item.name.trim(),
+            description: item.description,
+            amount: authoritativeAmount,
+            quantity: item.quantity,
+            metadata: item.metadata,
+        });
     }
 
     // SECURITY: client metadata may never override the server-set routing
@@ -82,7 +148,7 @@ export const createOneTimeCheckout = onCall({
     }
 
     try {
-        const lineItems: any[] = items.map((item) => ({
+        const lineItems: any[] = resolvedItems.map((item) => ({
             price_data: {
                 currency: 'usd',
                 unit_amount: item.amount,
@@ -96,7 +162,7 @@ export const createOneTimeCheckout = onCall({
         }));
 
         if (applySurcharge) {
-            const totalBaseAmount = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
+            const totalBaseAmount = resolvedItems.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
             if (totalBaseAmount > 0) {
                 // Surcharge calculation: (totalBaseAmount + 30 cents) / (1 - 0.029) - totalBaseAmount
                 const surchargeAmount = Math.ceil((totalBaseAmount + 30) / (1 - 0.029)) - totalBaseAmount;
@@ -119,8 +185,8 @@ export const createOneTimeCheckout = onCall({
             payment_method_types: ['card'],
             customer_email: customerEmail || request.auth.token?.email || undefined,
             line_items: lineItems,
-            success_url: successUrl,
-            cancel_url: cancelUrl,
+            success_url: validatedSuccessUrl,
+            cancel_url: validatedCancelUrl,
             allow_promotion_codes: true,
             automatic_tax: { enabled: true },
             payment_intent_data: {

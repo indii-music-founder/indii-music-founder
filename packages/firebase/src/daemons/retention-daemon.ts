@@ -1,5 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore } from 'firebase-admin/firestore';
+import { isSafeExternalHttpsUrl } from '../lib/safeExternalUrl';
+import { ChunkedBatch } from '../lib/chunkedBatch';
 
 // ISSUE-1393: lazily resolve the Firestore handle INSIDE the invocation.
 // A module-top-level getFirestore() runs at import time — when index.ts
@@ -40,7 +42,7 @@ export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
         throw error;
     }
 
-    const batch = db.batch();
+    const batch = new ChunkedBatch(db as unknown as FirebaseFirestore.Firestore);
     let updates = 0;
 
     for (const doc of snapshot.docs) {
@@ -50,8 +52,15 @@ export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
         let statusCode = 0;
         
         try {
+            if (!isSafeExternalHttpsUrl(placement.url)) {
+                throw new Error(`Unsafe placement URL rejected: ${String(placement.url)}`);
+            }
             // Programmatic HTTP GET query to audit external placement with a timeout
-            const response = await fetch(placement.url, { method: 'GET', signal: AbortSignal.timeout(10000) });
+            const response = await fetch(placement.url, {
+                method: 'GET',
+                redirect: 'error',
+                signal: AbortSignal.timeout(10000),
+            });
             statusCode = response.status;
             
             if (response.status === 404) {
@@ -67,8 +76,8 @@ export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
         if (isDefinitivelyRemoved) {
             console.log(`Placement ${doc.id} removed prematurely (404). Blacklisting vendor.`);
             const vendorRef = db.collection('vendors').doc(placement.vendorId);
-            batch.update(vendorRef, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
-            batch.update(doc.ref, { status: 'VIOLATION_REMOVED', failureCount: 0 });
+            await batch.update(vendorRef as unknown as FirebaseFirestore.DocumentReference, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
+            await batch.update(doc.ref as unknown as FirebaseFirestore.DocumentReference, { status: 'VIOLATION_REMOVED', failureCount: 0 });
             updates++;
         } else if (isTransientError) {
             const currentFailures = (placement.failureCount ?? 0) + 1;
@@ -76,17 +85,17 @@ export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
             if (currentFailures >= 3) {
                 console.log(`Placement ${doc.id} reached maximum failure threshold. Blacklisting vendor.`);
                 const vendorRef = db.collection('vendors').doc(placement.vendorId);
-                batch.update(vendorRef, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
-                batch.update(doc.ref, { status: 'VIOLATION_REMOVED', failureCount: currentFailures });
+                await batch.update(vendorRef as unknown as FirebaseFirestore.DocumentReference, { status: 'BLACKLISTED', blacklistedAt: new Date().toISOString() });
+                await batch.update(doc.ref as unknown as FirebaseFirestore.DocumentReference, { status: 'VIOLATION_REMOVED', failureCount: currentFailures });
                 updates++;
             } else {
-                batch.update(doc.ref, { failureCount: currentFailures });
+                await batch.update(doc.ref as unknown as FirebaseFirestore.DocumentReference, { failureCount: currentFailures });
                 updates++;
             }
         } else {
             // Placement is active and healthy - reset failure count if previously set
             if (placement.failureCount && placement.failureCount > 0) {
-                batch.update(doc.ref, { failureCount: 0 });
+                await batch.update(doc.ref as unknown as FirebaseFirestore.DocumentReference, { failureCount: 0 });
                 updates++;
             }
         }

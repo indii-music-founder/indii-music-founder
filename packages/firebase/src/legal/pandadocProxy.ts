@@ -13,6 +13,7 @@ import * as admin from "firebase-admin";
 import { arcjetKey, getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
 import { validateAppCheckV2 } from "../middleware/appCheck";
 import { protectAuthenticatedApiRequest } from "../functions/security/arcjet";
+import { assertSafeApiPathSegment } from "../lib/safeExternalUrl";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
@@ -33,7 +34,8 @@ function getHeaders(apiKey: string): Record<string, string> {
  * not authorization.
  */
 async function assertPandaDocOwnership(documentId: string, uid: string): Promise<void> {
-    const snap = await admin.firestore().doc(`pandadoc_documents/${documentId}`).get();
+    const safeDocId = assertSafeApiPathSegment(documentId, "documentId");
+    const snap = await admin.firestore().doc(`pandadoc_documents/${safeDocId}`).get();
     // Fail closed: unknown documents (including pre-registry ones) are denied.
     // Same error for "missing" and "not yours" so existence doesn't leak.
     if (!snap.exists || snap.data()?.ownerUid !== uid) {
@@ -258,13 +260,11 @@ export const pandadocSendDocument = onCall(
         }
 
         const input = (request.data ?? {}) as { documentId: string; message?: string; subject?: string };
-        if (!input.documentId) {
-            throw new HttpsError("invalid-argument", "documentId is required.");
-        }
-        await assertPandaDocOwnership(input.documentId, request.auth.uid);
+        const safeDocId = assertSafeApiPathSegment(input.documentId, "documentId");
+        await assertPandaDocOwnership(safeDocId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
-        const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}/send`, {
+        const response = await fetch(`${PANDADOC_API}/documents/${encodeURIComponent(safeDocId)}/send`, {
             method: "POST",
             headers: getHeaders(apiKey),
             body: JSON.stringify({
@@ -321,13 +321,11 @@ export const pandadocGetDocumentStatus = onCall(
         }
 
         const input = (request.data ?? {}) as { documentId: string };
-        if (!input.documentId) {
-            throw new HttpsError("invalid-argument", "documentId is required.");
-        }
-        await assertPandaDocOwnership(input.documentId, request.auth.uid);
+        const safeDocId = assertSafeApiPathSegment(input.documentId, "documentId");
+        await assertPandaDocOwnership(safeDocId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
-        const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}`, {
+        const response = await fetch(`${PANDADOC_API}/documents/${encodeURIComponent(safeDocId)}`, {
             headers: getHeaders(apiKey),
         });
 
@@ -395,11 +393,12 @@ export const pandadocGetSigningLink = onCall(
         if (!input.documentId || !input.recipientId) {
             throw new HttpsError("invalid-argument", "documentId and recipientId are required.");
         }
-        await assertPandaDocOwnership(input.documentId, request.auth.uid);
+        const safeDocId = assertSafeApiPathSegment(input.documentId, "documentId");
+        await assertPandaDocOwnership(safeDocId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(
-            `${PANDADOC_API}/documents/${input.documentId}/session`,
+            `${PANDADOC_API}/documents/${encodeURIComponent(safeDocId)}/session`,
             {
                 method: "POST",
                 headers: getHeaders(apiKey),

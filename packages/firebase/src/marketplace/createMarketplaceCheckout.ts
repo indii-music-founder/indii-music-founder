@@ -24,6 +24,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { logger } from 'firebase-functions';
 import { stripe } from '../stripe/config';
+import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import { stripeSecretKey, arcjetKey } from '../config/secrets';
 import { protectAuthenticatedApiRequest } from '../functions/security/arcjet';
 import { validateAppCheckV2 } from '../middleware/appCheck';
@@ -73,6 +74,8 @@ export const createMarketplaceCheckout = onCall({
   if (!productId || !successUrl || !cancelUrl) {
     throw new HttpsError('invalid-argument', 'productId, successUrl, and cancelUrl are required.');
   }
+  const validatedSuccessUrl = assertAllowedStripeRedirectUrl(successUrl, 'successUrl');
+  const validatedCancelUrl = assertAllowedStripeRedirectUrl(cancelUrl, 'cancelUrl');
 
   const db = getFirestore();
   const productRef = db.collection('products').doc(productId);
@@ -135,8 +138,8 @@ export const createMarketplaceCheckout = onCall({
         },
         quantity: 1,
       }],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: validatedSuccessUrl,
+      cancel_url: validatedCancelUrl,
       expires_at: Math.floor((Date.now() + RESERVATION_TTL_SECONDS * 1000) / 1000),
       metadata: {
         type: 'marketplace_purchase',

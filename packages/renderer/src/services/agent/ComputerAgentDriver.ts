@@ -124,7 +124,7 @@ export class ComputerAgentDriver {
                         }
                     ],
                     INTELLIGENCE_MODELS.COMPUTER.AGENT,
-                    { responseMimeType: 'application/json', temperature: 0.0 }
+                    { responseMimeType: 'application/json', temperature: 1.0 }
                 );
 
                 const plan = AI.parseJSON(getResponseText(response)) as ComputerAgentAction;

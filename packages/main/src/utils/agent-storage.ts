@@ -11,7 +11,7 @@ export function agentStoragePaths(packaged: boolean, userData: string, resources
 
 function artifactName(value: unknown): string {
     if (typeof value !== 'string' || !value || value.includes('\0') || value.includes('\\') ||
-        path.basename(value) !== value || value === '.' || value === '..') {
+        path.basename(value) !== value || value === '.' || value === '..' || !value.endsWith('.md') || value === '.md') {
         throw new Error('Invalid artifact filename');
     }
     return value;

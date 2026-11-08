@@ -75,7 +75,7 @@ Did the generated result successfully achieve the objective and follow the plan?
 If yes, respond EXACTLY with "PASS".
 If no, respond with "FAIL" followed by a newline and specific feedback on what needs to be fixed.`,
             config: {
-                temperature: 0.0,
+                temperature: 1.0,
             }
         });
 

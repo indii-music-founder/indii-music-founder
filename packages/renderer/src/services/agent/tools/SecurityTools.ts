@@ -36,7 +36,21 @@ export const SecurityTools = {
                 
                 if (data.endpointUrl) {
                     try {
-                        const res = await fetch(data.endpointUrl);
+                        const parsedUrl = new URL(String(data.endpointUrl));
+                        const host = parsedUrl.hostname.toLowerCase();
+                        if (
+                            parsedUrl.protocol !== 'https:' ||
+                            host === 'localhost' ||
+                            host.endsWith('.local') ||
+                            host.endsWith('.internal') ||
+                            /^(?:127\.|10\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2\d|3[0-1])\.)/.test(host)
+                        ) {
+                            return toolError(`Blocked unsafe API inventory endpoint URL for ${api_name}.`, 'UNSAFE_ENDPOINT_URL');
+                        }
+                        const res = await fetch(parsedUrl.toString(), {
+                            redirect: 'error',
+                            signal: AbortSignal.timeout(10000),
+                        });
                         return toolSuccess({
                             api: api_name,
                             status: res.ok ? 'UP' : 'DOWN',

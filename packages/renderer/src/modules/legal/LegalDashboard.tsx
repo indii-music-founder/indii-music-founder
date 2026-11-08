@@ -93,19 +93,33 @@ export default function LegalDashboard() {
         toast.info(`Analyzing ${file.name}...`);
 
         try {
-            const readFileAsText = (file: File): Promise<string> => {
+            const readFileAsText = (targetFile: File): Promise<string> => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result as string);
                     reader.onerror = reject;
-                    reader.readAsText(file);
+                    reader.readAsText(targetFile);
                 });
             };
 
-            const content = await readFileAsText(file);
+            const readFileAsBase64 = (targetFile: File): Promise<string> => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const dataUrl = String(reader.result || '');
+                        const commaIdx = dataUrl.indexOf(',');
+                        resolve(commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(targetFile);
+                });
+            };
+
+            const isPdf = file.type === 'application/pdf';
+            const content = isPdf ? await readFileAsBase64(file) : await readFileAsText(file);
 
             const systemPrompt = `
-You are an expert entertainment lawyer. Analyze the provided contract text.
+You are an expert entertainment lawyer. Analyze the provided contract.
 Return a JSON response with the following structure:
 {
   "score": number (0-100 ranking how safe/standard the contract is),
@@ -115,10 +129,17 @@ Return a JSON response with the following structure:
 Only return valid JSON.
 `;
 
+            const userParts = isPdf
+                ? [
+                    { text: 'Analyze the attached PDF contract document and return the requested JSON risk assessment.' },
+                    { inlineData: { mimeType: 'application/pdf', data: content } },
+                ]
+                : [{ text: `Contract Content:\n${content}` }];
+
             const response = await AI.generateContent(
-                [{ role: 'user', parts: [{ text: `Contract Content:\n${content}` }] }],
+                [{ role: 'user', parts: userParts }],
                 INTELLIGENCE_MODELS.TEXT.FAST,
-                { responseMimeType: 'application/json' },
+                { responseMimeType: 'application/json', temperature: 1.0 },
                 systemPrompt
             );
 
@@ -126,12 +147,15 @@ Only return valid JSON.
                 ? response.response.text()
                 : (typeof response.response.text === 'string' ? response.response.text : JSON.stringify(response.response));
             const data = JSON.parse(responseText);
-            const aiClauseReview = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(content);
+            const clauseSourceText = isPdf
+                ? `${data.summary || ''}\n${Array.isArray(data.risks) ? data.risks.join('\n') : ''}`
+                : content;
+            const aiClauseReview = await creatorProtectionHarnessService.reviewAIVoiceLikenessClauseWithJev(clauseSourceText);
 
             const result = {
                 score: data.score || 0,
                 summary: data.summary || "No summary provided.",
-                risks: [...(data.risks || []), ...aiClauseReview.flags],
+                risks: Array.from(new Set([...(data.risks || []), ...aiClauseReview.flags])),
                 aiClauseFlags: aiClauseReview.flags,
             };
 

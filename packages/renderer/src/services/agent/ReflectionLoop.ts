@@ -193,7 +193,7 @@ export class ReflectionLoop {
         evaluationPrompt,
         INTELLIGENCE_MODELS.TEXT.FAST,
         {
-          temperature: 0.2,
+          temperature: 1.0,
           maxOutputTokens: 200,
         },
         EVALUATION_SYSTEM_PROMPT

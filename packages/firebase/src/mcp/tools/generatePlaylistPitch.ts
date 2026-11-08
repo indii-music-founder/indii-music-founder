@@ -119,7 +119,7 @@ export const generatePlaylistPitch: IndiiMcpTool = {
                 const response = await genai.models.generateContent({
                     model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
                     contents: buildPrompt(grounding, targetPlaylist, curatorName),
-                    config: { temperature: 0.7 },
+                    config: { temperature: 1.0 },
                 });
                 pitchDraft = response.text?.trim() ?? '';
             } catch (error) {

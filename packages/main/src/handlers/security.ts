@@ -20,6 +20,36 @@ const RotationInputSchema = z.object({
     vaultData: z.record(z.unknown()),
 });
 
+const GITHUB_SEGMENT_PATTERN = /^[A-Za-z0-9_.-]{1,100}$/;
+const GITHUB_SECRET_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/;
+
+function parseGitHubRotationTarget(repo: unknown, secretName: unknown): { owner: string; repoName: string; secretName: string } {
+    if (typeof repo !== 'string' || typeof secretName !== 'string') {
+        throw new Error('GitHub token, secret_name, and repo required in vault.');
+    }
+    const parts = repo.split('/');
+    if (parts.length !== 2) {
+        throw new Error('Invalid GitHub repository format; expected "owner/repo".');
+    }
+    const [owner, repoName] = parts;
+    if (
+        !owner ||
+        !repoName ||
+        owner === '.' ||
+        owner === '..' ||
+        repoName === '.' ||
+        repoName === '..' ||
+        !GITHUB_SEGMENT_PATTERN.test(owner) ||
+        !GITHUB_SEGMENT_PATTERN.test(repoName)
+    ) {
+        throw new Error('Invalid GitHub repository owner or name.');
+    }
+    if (!GITHUB_SECRET_NAME_PATTERN.test(secretName)) {
+        throw new Error('Invalid GitHub Actions secret_name.');
+    }
+    return { owner, repoName, secretName };
+}
+
 const ScanSchema = z.object({
     scope: z.string().optional()
 });
@@ -68,10 +98,13 @@ export function registerSecurityHandlers() {
                 if (!github_token || !secret_name || !repo) {
                     return { success: false, error: 'GitHub token, secret_name, and repo required in vault.' };
                 }
-                const [owner, repoName] = repo.split('/');
+                const { owner, repoName, secretName } = parseGitHubRotationTarget(repo, secret_name);
+                const encodedOwner = encodeURIComponent(owner);
+                const encodedRepo = encodeURIComponent(repoName);
+                const encodedSecretName = encodeURIComponent(secretName);
                 // Get the repo's public key for secret encryption
                 const pubKeyRes = await fetch(
-                    `https://api.github.com/repos/${owner}/${repoName}/actions/secrets/public-key`,
+                    `https://api.github.com/repos/${encodedOwner}/${encodedRepo}/actions/secrets/public-key`,
                     { headers: { 'Authorization': `Bearer ${github_token}`, 'Accept': 'application/vnd.github+json' } }
                 );
                 if (!pubKeyRes.ok) {
@@ -88,7 +121,7 @@ export function registerSecurityHandlers() {
                 const encrypted_value = sodium.to_base64(encBytes, sodium.base64_variants.ORIGINAL);
 
                 const patchRes = await fetch(
-                    `https://api.github.com/repos/${owner}/${repoName}/actions/secrets/${secret_name}`,
+                    `https://api.github.com/repos/${encodedOwner}/${encodedRepo}/actions/secrets/${encodedSecretName}`,
                     {
                         method: 'PUT',
                         headers: {
@@ -105,7 +138,7 @@ export function registerSecurityHandlers() {
                 if (!patchRes.ok && patchRes.status !== 204) {
                     return { success: false, error: `GitHub secret update failed: ${patchRes.statusText}` };
                 }
-                newKey = `[github-secret-updated:${secret_name}]`; // Not returned — stays in GitHub
+                newKey = `[github-secret-updated:${secretName}]`; // Not returned — stays in GitHub
 
             } else {
                 // ISSUE-900: Unsupported service. Fail closed rather than fabricate success.

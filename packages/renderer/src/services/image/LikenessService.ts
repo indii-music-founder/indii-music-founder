@@ -207,7 +207,7 @@ Respond in EXACTLY this JSON format:
                 ] as any,
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 {
-                    temperature: 0.1,
+                    temperature: 1.0,
                     maxOutputTokens: 200,
                 }
             );

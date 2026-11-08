@@ -31,7 +31,7 @@ describe('app-owned artifact filesystem and packaged resource paths', () => {
         expect(await store.list()).toEqual([]);
     });
     it('rejects traversal and non-filenames before creating directories', async () => {
-        for (const filename of ['', '..', '.', '../private.md', '/private.md', 'sub/file.md', 'sub\\file.md', 'bad\0.md']) {
+        for (const filename of ['', '..', '.', '.md', '../private.md', '/private.md', 'sub/file.md', 'sub\\file.md', 'bad\0.md', 'script.sh', 'payload.exe', 'notes.txt']) {
             await expect(store.write(filename, 'data')).rejects.toThrow('Invalid artifact filename');
             await expect(store.read(filename)).rejects.toThrow('Invalid artifact filename');
         }

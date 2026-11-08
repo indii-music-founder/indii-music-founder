@@ -5,6 +5,10 @@ import type {
   HarnessRecommendation,
 } from '@/services/business-harness/types';
 import { createHarnessRun } from '@/services/business-harness/types';
+import {
+  judgeContractAIClauseProtection,
+  judgeCreatorIncidentClassification,
+} from '@/config/typesafeJudgments';
 import type {
   CreatorProtectionReadinessOutput,
   CreatorProtectionRun,
@@ -221,6 +225,38 @@ export class CreatorProtectionHarnessService {
     };
   }
 
+  async classifyIncidentWithJev(input: {
+    userId: string;
+    profileId?: string;
+    suspectedUrl?: string;
+    platform?: string;
+    description: string;
+    nonconsensualIntimateImagery?: boolean;
+    evidenceRefs?: HarnessEvidenceRef[];
+  }): Promise<ReplicaIncident> {
+    const baseline = this.classifyIncident(input);
+    const jevVerdict = await judgeCreatorIncidentClassification({
+      description: input.description,
+      suspectedUrl: input.suspectedUrl,
+      platform: input.platform,
+      nonconsensualIntimateImagery: input.nonconsensualIntimateImagery,
+    });
+    if (!jevVerdict) {
+      return baseline;
+    }
+
+    const incidentType = jevVerdict.incidentType;
+    const route = jevVerdict.route;
+    return {
+      ...baseline,
+      incidentType,
+      route,
+      severity: severityForIncident(incidentType),
+      confidence: jevVerdict.confidence,
+      legalBasisRefs: legalBasisRefsForIncident(incidentType),
+    };
+  }
+
   generateEvidencePacket(input: {
     userId: string;
     title?: string;
@@ -290,30 +326,75 @@ export class CreatorProtectionHarnessService {
     recommendedClause: string;
   } {
     const text = contractText.toLowerCase();
-    const clauseChecks: Array<[string, string]> = [
-      ['voice', 'Contract references voice rights.'],
-      ['likeness', 'Contract references likeness rights.'],
-      ['digital replica', 'Contract references digital replica rights.'],
-      ['synthetic', 'Contract references synthetic performance rights.'],
-      ['training', 'Contract references AI/model training rights.'],
-      ['perpetual', 'Contract may grant rights forever.'],
-      ['sublicense', 'Contract may allow sublicensing.'],
-      ['irrevocable', 'Contract may limit revocation.'],
-      ['voice clone', 'Contract references voice cloning rights.'],
-      ['soundalike', 'Contract references soundalike rights.'],
-      ['digital double', 'Contract references digital double rights.'],
+    const sentences = text
+      .split(/(?:[.!?\n]+|;\s+)/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const isNegatedSentence = (sentence: string): boolean => {
+      return /\b(?:no|not|never|neither|nor|prohibit(?:ed|s|ing)?|forbid(?:den|s|ding)?|without\s+(?:prior\s+)?(?:written\s+)?(?:consent|approval|permission)|non-sublicensable|revocable|shall\s+not|may\s+not|must\s+not|is\s+not\s+(?:authorized|permitted|allowed)|are\s+not\s+(?:authorized|permitted|allowed)|expressly\s+excluded)\b/i.test(sentence);
+    };
+
+    const hasUnnegatedMatch = (pattern: RegExp): boolean => {
+      if (sentences.length === 0) return false;
+      return sentences.some(sentence => pattern.test(sentence) && !isNegatedSentence(sentence));
+    };
+
+    const clauseChecks: Array<[RegExp, string]> = [
+      [/\bvoice\b/i, 'Contract references voice rights.'],
+      [/\blikeness\b/i, 'Contract references likeness rights.'],
+      [/digital replica/i, 'Contract references digital replica rights.'],
+      [/synthetic/i, 'Contract references synthetic performance rights.'],
+      [/training|train\s+models?/i, 'Contract references AI/model training rights.'],
+      [/perpetual|perpetuity|forever/i, 'Contract may grant rights forever.'],
+      [/\bsublicens(?:e|ing|able)\b/i, 'Contract may allow sublicensing.'],
+      [/\birrevocable\b/i, 'Contract may limit revocation.'],
+      [/voice clone/i, 'Contract references voice cloning rights.'],
+      [/soundalike/i, 'Contract references soundalike rights.'],
+      [/digital double/i, 'Contract references digital double rights.'],
     ];
-    const flags = clauseChecks.filter(([needle]) => text.includes(needle)).map(([, flag]) => flag);
-    // ISSUE-1443: severity must be derived from the CONTRACT text, not from the
-    // canned flag strings (the old regex tested the flags themselves, so severity
-    // was decoupled from contract content). Negation semantics ("no sublicensing
-    // permitted") are a semantic judgment — a future TypeSafe Noul candidate —
-    // out of scope for this deterministic fix.
-    const highRisk = /training|perpetual|perpetuity|forever|sublicens|irrevocable|voice clone|soundalike|digital double|digital replica|synthetic performance/i.test(text);
+
+    const flags = clauseChecks
+      .filter(([pattern]) => hasUnnegatedMatch(pattern))
+      .map(([, flag]) => flag);
+
+    const highRiskPattern = /\b(?:training|train\s+models?|perpetual|perpetuity|forever|sublicens(?:e|ing|able)|irrevocable|voice clone|soundalike|digital double|digital replica|synthetic performance)\b/i;
+    const highRisk = hasUnnegatedMatch(highRiskPattern);
+
     return {
       flags,
       severity: highRisk ? 'high' : flags.length ? 'medium' : 'low',
       recommendedClause: 'No AI voice, likeness, digital replica, synthetic performance, or model-training use is authorized unless separately approved in a signed writing that states scope, duration, compensation, sublicensing limits, revocation rights, and deletion obligations.',
+    };
+  }
+
+  async reviewAIVoiceLikenessClauseWithJev(contractText: string): Promise<{
+    flags: string[];
+    severity: 'low' | 'medium' | 'high';
+    recommendedClause: string;
+    jevVerdict?: Awaited<ReturnType<typeof judgeContractAIClauseProtection>>;
+  }> {
+    const baseline = this.reviewAIVoiceLikenessClause(contractText);
+    const jevVerdict = await judgeContractAIClauseProtection(contractText);
+    if (!jevVerdict) {
+      return baseline;
+    }
+
+    if (jevVerdict.containsArtistProtectiveProhibition && !jevVerdict.grantsUnrestrictedAiTraining && !jevVerdict.grantsUnrestrictedVoiceLikenessClone) {
+      return {
+        flags: [],
+        severity: 'low',
+        recommendedClause: baseline.recommendedClause,
+        jevVerdict,
+      };
+    }
+
+    const mergedFlags = Array.from(new Set([...baseline.flags, ...jevVerdict.flags]));
+    return {
+      flags: mergedFlags,
+      severity: jevVerdict.severity,
+      recommendedClause: baseline.recommendedClause,
+      jevVerdict,
     };
   }
 

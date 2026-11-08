@@ -12,7 +12,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 import { ProjectList } from './sidebar/ProjectList';
-import { NextBestActionCard } from './sidebar/NextBestActionCard';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 import { AgentCanvasToggle } from './AgentCanvasToggle';
 
@@ -47,7 +46,7 @@ const NavItem = React.memo(function NavItem({
                     <button
                         onClick={() => onNavigate(item.id)}
                         className={cn(
-                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
+                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
                             isActive
                                 ? `${colors.text} font-bold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
                                 : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
@@ -297,22 +296,6 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Next Best Action Suggestion (TypeSafe System One / Jev) */}
-            <NextBestActionCard
-                onNavigate={throttledSetModule}
-                currentModule={currentModule}
-                isSidebarOpen={isSidebarOpen}
-            />
-
-            {/*
-              ISSUE-1269: the god_mode "Command Center" pill lived here and routed to
-              `observability` — the ops dashboard, not the artist-facing Command Center
-              tab in the agent workspace. Two unrelated surfaces shared one name, and the
-              dev-only one was the loudest element in the sidebar. Removed on founder
-              instruction. The same metrics are still served by the "Observability &
-              Metrics" tab inside the Devops module.
-            */}
-
             {/* Swarm Intelligence & Automations Cluster */}
             <div className={`px-3 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
                 {isSidebarOpen && (
@@ -321,48 +304,68 @@ export default function Sidebar() {
                     </div>
                 )}
                 <div className="space-y-1">
-                    {/* Boardroom Zen Mode Toggle */}
-                    <button
-                        onClick={toggleBoardroomMode}
-                        className={cn(
-                            "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
-                            isBoardroomMode
-                                ? "bg-indigo-500/20 border border-indigo-500/50"
-                                : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_var(--color-dept-creative-glow)]",
-                            isSidebarOpen ? "gap-3" : ""
-                        )}
-                        style={{
-                            boxShadow: isBoardroomMode
-                                ? '0 0 20px var(--color-dept-creative-glow, rgba(0, 255, 102, 0.3))'
-                                : undefined
-                        }}
-                        aria-label="Enter Boardroom"
-                        title={!isSidebarOpen ? "Enter Boardroom" : undefined}
-                    >
-                        {isBoardroomMode && (
-                            <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
-                        )}
-                        <Network size={16} className={cn(
-                            "transition-all relative z-10",
-                            isBoardroomMode
-                                ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
-                                : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
-                        )} />
-                        {isSidebarOpen ? (
-                            <span className={cn(
-                                "text-sm font-bold tracking-wide transition-colors relative z-10",
-                                isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
-                            )}>
-                                Boardroom
-                            </span>
-                        ) : null}
+                    {/* Dual Action Dock: Boardroom Zen Mode & Agent Canvas */}
+                    {isSidebarOpen ? (
+                        <div className="grid grid-cols-2 gap-1.5 mb-1">
+                            {/* Boardroom Zen Mode Toggle */}
+                            <button
+                                onClick={toggleBoardroomMode}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 p-2 rounded-xl transition-all group relative overflow-hidden text-xs",
+                                    isBoardroomMode
+                                        ? "bg-indigo-500/20 border border-indigo-500/50"
+                                        : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_var(--color-dept-creative-glow)]"
+                                )}
+                                style={{
+                                    boxShadow: isBoardroomMode
+                                        ? '0 0 20px var(--color-dept-creative-glow, rgba(0, 255, 102, 0.3))'
+                                        : undefined
+                                }}
+                                aria-label="Enter Boardroom"
+                                title="Enter Boardroom (Multi-Agent Zen Mode)"
+                            >
+                                {isBoardroomMode && (
+                                    <div className="absolute inset-0 rounded-xl border border-indigo-500/20 animate-pulse pointer-events-none" />
+                                )}
+                                <Network size={14} className={cn(
+                                    "transition-all relative z-10 shrink-0",
+                                    isBoardroomMode
+                                        ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]"
+                                        : "text-indigo-400 group-hover:text-indigo-300 group-hover:scale-110"
+                                )} />
+                                <span className={cn(
+                                    "font-bold tracking-wide transition-colors relative z-10 truncate",
+                                    isBoardroomMode ? "text-indigo-200" : "text-indigo-300/90 group-hover:text-indigo-200"
+                                )}>
+                                    Boardroom
+                                </span>
+                                <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                            </button>
 
-                        {/* Shimmer sweep */}
-                        <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-indigo-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                    </button>
-
-                    {/* Agent Canvas Drawer Toggle */}
-                    <AgentCanvasToggle variant={isSidebarOpen ? 'sidebar' : 'compact'} />
+                            {/* Agent Canvas Drawer Toggle */}
+                            <AgentCanvasToggle variant="sidebar" className="py-2" />
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                onClick={toggleBoardroomMode}
+                                className={cn(
+                                    "w-full flex items-center justify-center p-2 rounded-xl transition-all group relative overflow-hidden",
+                                    isBoardroomMode
+                                        ? "bg-indigo-500/20 border border-indigo-500/50"
+                                        : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40"
+                                )}
+                                aria-label="Enter Boardroom"
+                                title="Enter Boardroom"
+                            >
+                                <Network size={16} className={cn(
+                                    "transition-all relative z-10",
+                                    isBoardroomMode ? "text-indigo-300 drop-shadow-[0_0_8px_rgba(99,102,241,0.8)]" : "text-indigo-400"
+                                )} />
+                            </button>
+                            <AgentCanvasToggle variant="compact" />
+                        </>
+                    )}
 
                     {/* Workflow Builder & Knowledge Base */}
                     {visibleIntelligenceItems.map(item => (
@@ -377,69 +380,7 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            {/* Founders Round — Primary Sales CTA */}
-            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
-                <button
-                    onClick={() => throttledSetModule('founders-checkout')}
-                    className={cn(
-                        "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
-                        currentModule === 'founders-checkout'
-                            ? "bg-amber-500/20 border border-amber-500/50"
-                            : "bg-linear-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_var(--color-dept-royalties-glow)]",
-                        isSidebarOpen ? "gap-3" : ""
-                    )}
-                    style={{
-                        boxShadow: currentModule === 'founders-checkout'
-                            ? '0 0 20px var(--color-dept-royalties-glow, rgba(255, 193, 7, 0.3))'
-                            : undefined
-                    }}
-                    aria-label="Back the Vision — Invest"
-                    title={!isSidebarOpen ? "Back the Vision" : undefined}
-                >
-                    {/* Pulsing glow ring */}
-                    <div className="absolute inset-0 rounded-xl border border-amber-500/20 animate-pulse pointer-events-none" />
-
-                    <Gem size={16} className={cn(
-                        "transition-all relative z-10",
-                        currentModule === 'founders-checkout'
-                            ? "text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"
-                            : "text-amber-400 group-hover:text-amber-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]"
-                    )} />
-                    {isSidebarOpen ? (
-                        <span className={cn(
-                            "text-sm font-bold tracking-wide transition-colors relative z-10",
-                            currentModule === 'founders-checkout' ? "text-amber-200" : "text-amber-300/90 group-hover:text-amber-200"
-                        )}>
-                            Back the Vision
-                        </span>
-                    ) : (
-                        <span className="text-[8px] font-black text-amber-400/70 uppercase tracking-widest absolute -bottom-0.5">
-                        </span>
-                    )}
-
-                    {/* Shimmer sweep */}
-                    <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                </button>
-            </div>
-
-            {/* Founders Recognition Link */}
-            <div className="px-4 pb-2">
-                <button
-                    onClick={() => throttledSetModule('founders-recognition')}
-                    className={cn(
-                        "w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider",
-                        currentModule === 'founders-recognition'
-                            ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
-                            : "text-gray-400 hover:text-gray-300 hover:bg-white/5"
-                    )}
-                    title="View Founder Recognition"
-                    aria-label="Founders"
-                >
-                    {isSidebarOpen ? "Founders" : "⭐"}
-                </button>
-            </div>
-
-            <div className="flex-1 py-4 space-y-2">
+            <div className="flex-1 py-2 space-y-2">
                 {/* Projects */}
                 <ProjectList isSidebarOpen={isSidebarOpen} />
 
@@ -499,6 +440,59 @@ export default function Sidebar() {
                     </AnimatePresence>
                 </div>
 
+            </div>
+
+            {/* Founders Round — Sleek Status Pill above bottom rail */}
+            <div className={`px-3 pb-2 pt-1 border-t border-white/5 ${!isSidebarOpen ? 'flex flex-col items-center' : ''}`}>
+                <div className={cn("flex items-center gap-1.5", !isSidebarOpen ? "flex-col" : "")}>
+                    <button
+                        onClick={() => throttledSetModule('founders-checkout')}
+                        className={cn(
+                            "flex items-center justify-center p-2 rounded-lg transition-all group relative overflow-hidden",
+                            isSidebarOpen ? "flex-1 gap-2 text-xs" : "",
+                            currentModule === 'founders-checkout'
+                                ? "bg-amber-500/20 border border-amber-500/50"
+                                : "bg-linear-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_20px_var(--color-dept-royalties-glow)]"
+                        )}
+                        style={{
+                            boxShadow: currentModule === 'founders-checkout'
+                                ? '0 0 16px var(--color-dept-royalties-glow, rgba(255, 193, 7, 0.3))'
+                                : undefined
+                        }}
+                        aria-label="Back the Vision — Invest"
+                        title={!isSidebarOpen ? "Back the Vision" : undefined}
+                    >
+                        <Gem size={14} className={cn(
+                            "transition-all relative z-10 shrink-0",
+                            currentModule === 'founders-checkout'
+                                ? "text-amber-300 drop-shadow-[0_0_6px_rgba(245,158,11,0.8)]"
+                                : "text-amber-400 group-hover:text-amber-300 group-hover:scale-110"
+                        )} />
+                        {isSidebarOpen && (
+                            <span className={cn(
+                                "font-bold tracking-wide transition-colors relative z-10 truncate",
+                                currentModule === 'founders-checkout' ? "text-amber-200" : "text-amber-300/90 group-hover:text-amber-200"
+                            )}>
+                                Back the Vision
+                            </span>
+                        )}
+                        <div className="absolute inset-0 rounded-lg bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    </button>
+
+                    <button
+                        onClick={() => throttledSetModule('founders-recognition')}
+                        className={cn(
+                            "flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider",
+                            currentModule === 'founders-recognition'
+                                ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
+                                : "text-gray-400 hover:text-gray-300 hover:bg-white/5"
+                        )}
+                        title="View Founder Recognition"
+                        aria-label="Founders"
+                    >
+                        {isSidebarOpen ? "Founders" : "⭐"}
+                    </button>
+                </div>
             </div>
             {/* Persistent Bottom Rail Dock */}
             {isSidebarOpen ? (

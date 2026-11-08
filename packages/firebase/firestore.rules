@@ -154,6 +154,20 @@ service cloud.firestore {
         get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid;
     }
 
+    // Check if user is owner or org collaborator for a project (ISSUE-1559)
+    function isProjectCollaborator(projectId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/projects/$(projectId)) &&
+        (
+          get(/databases/$(database)/documents/projects/$(projectId)).data.get('userId', null) == request.auth.uid ||
+          (
+            ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
+            get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
+            isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
+          )
+        );
+    }
+
     function canReadReleaseCollection(collectionName, releaseId) {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/$(collectionName)/$(releaseId)) &&
@@ -1234,6 +1248,35 @@ service cloud.firestore {
         allow read, create, update: if isOwner(userId);
         allow delete: if false;
       }
+
+      // ── Client-accessed agent & tooling subcollections (ISSUE-1554) ──
+      match /directives/{directiveId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /agentLoopExecutions/{executionId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /agentAuditTrails/{trailId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /roster/{rosterId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /id3_operations/{opId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /mechanical_license_checks/{checkId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /campaign_metrics/{metricId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // =========================================================================
@@ -1243,10 +1286,11 @@ service cloud.firestore {
       // Members can read org data. Do NOT use get() here to allow query execution.
       allow read: if (isAuthenticated() && request.auth.uid in resource.data.members) || isGuest();
       
-      // Authenticated users with email can create orgs
+      // Authenticated users with email can create orgs (only caller in members initially)
       allow create: if (isEmailAuthenticated() &&
         request.resource.data.ownerId == request.auth.uid &&
-        request.auth.uid in request.resource.data.members) || isGuest();
+        request.resource.data.members.size() == 1 &&
+        request.resource.data.members[0] == request.auth.uid) || isGuest();
       
       // Only org owner can update
       allow update: if (isVerifiedUser() && resource.data.ownerId == request.auth.uid &&
@@ -1627,11 +1671,27 @@ service cloud.firestore {
     }
 
     // Org invites: visible/creatable by members of the referenced org.
+    // Role escalation prevention: role, email, and inviteeUid are immutable on update,
+    // and only org owners/admins can create or manage invites with elevated roles (ISSUE-1559).
     match /organization_invites/{inviteId} {
       allow read: if isAuthenticated() && isOrgMember(resource.data.orgId);
-      allow create: if isAuthenticated() && isOrgMember(request.resource.data.orgId);
-      allow update: if orgUpdateIsValid();
-      allow delete: if isAuthenticated() && isOrgMember(resource.data.orgId);
+      allow create: if isAuthenticated() && isOrgMember(request.resource.data.orgId) &&
+        clientIdentityFieldsMatchCaller() &&
+        (
+          !('role' in request.resource.data) ||
+          request.resource.data.role == 'member' ||
+          isOrgOwner(request.resource.data.orgId) ||
+          isAdmin()
+        );
+      allow update: if orgUpdateIsValid() &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email', 'inviteeUid']) &&
+        (
+          !('role' in resource.data) ||
+          resource.data.role == 'member' ||
+          isOrgOwner(resource.data.orgId) ||
+          isAdmin()
+        );
+      allow delete: if isAuthenticated() && (isOrgOwner(resource.data.orgId) || isAdmin() || isOrgMember(resource.data.orgId));
     }
 
     match /print_jobs/{jobId} {
@@ -2244,144 +2304,34 @@ service cloud.firestore {
       allow delete: if (isVerifiedUser() && (resource.data.get('userId', null) == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
 
       match /releaseHarnessRuns/{runId} {
-        allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-          (
-            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-            (
-              isAuthenticated() &&
-              ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-              get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-              isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-            ) ||
-            get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-          );
+        allow read, write: if isProjectCollaborator(projectId);
       }
 
       match /harnessRuns/{runId} {
-        allow read, create, update: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-          (
-            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-            (
-              isAuthenticated() &&
-              ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-              get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-              isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-            ) ||
-            get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-          );
+        allow read, create, update: if isProjectCollaborator(projectId);
         allow delete: if false;
       }
 
       match /canvases/{canvasId} {
-        allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-          (
-            (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-            (
-              isAuthenticated() &&
-              ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-              get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-              isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-            ) ||
-            get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-          );
+        allow read, write: if isProjectCollaborator(projectId);
 
         match /blocks/{blockId} {
-          allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-              (
-                isAuthenticated() &&
-                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-              ) ||
-              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-            );
+          allow read, write: if isProjectCollaborator(projectId);
         }
 
         match /edges/{edgeId} {
-          allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-              (
-                isAuthenticated() &&
-                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-              ) ||
-              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-            );
+          allow read, write: if isProjectCollaborator(projectId);
         }
 
         match /presence/{presenceUserId} {
-          allow read: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-              (
-                isAuthenticated() &&
-                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-              ) ||
-              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-            );
-          allow write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid && request.auth.uid == presenceUserId) ||
-              (
-                isAuthenticated() &&
-                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId) &&
-                request.auth.uid == presenceUserId
-              ) ||
-              (presenceUserId == 'founder-demo-uid' && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
-            );
+          allow read: if isProjectCollaborator(projectId);
+          allow write: if isProjectCollaborator(projectId) && request.auth.uid == presenceUserId;
         }
 
         match /signals/{signalId} {
-          allow read: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-              (
-                isAuthenticated() &&
-                ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-              ) ||
-              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-            );
-          allow create: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (
-                isAuthenticated() &&
-                (
-                  get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
-                  (
-                    ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                    get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                    isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-                  )
-                ) &&
-                request.resource.data.fromUserId == request.auth.uid
-              ) ||
-              (request.resource.data.fromUserId == 'founder-demo-uid' && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid')
-            );
-          allow delete: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-            (
-              (
-                isAuthenticated() &&
-                (
-                  get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid ||
-                  (
-                    ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-                    get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-                    isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-                  )
-                )
-              ) ||
-              get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-            );
+          allow read: if isProjectCollaborator(projectId);
+          allow create: if isProjectCollaborator(projectId) && request.resource.data.get('fromUserId', null) == request.auth.uid;
+          allow delete: if isProjectCollaborator(projectId);
         }
       }
     }
@@ -2500,17 +2450,37 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
     match /projects/{projectId}/livingPlans/{planId} {
-      allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
-        (
-          (isAuthenticated() && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid) ||
-          (
-            isAuthenticated() &&
-            ('orgId' in get(/databases/$(database)/documents/projects/$(projectId)).data) &&
-            get(/databases/$(database)/documents/projects/$(projectId)).data.orgId != null &&
-            isOrgMember(get(/databases/$(database)/documents/projects/$(projectId)).data.orgId)
-          ) ||
-          get(/databases/$(database)/documents/projects/$(projectId)).data.userId == 'founder-demo-uid'
-        );
+      allow read, write: if isProjectCollaborator(projectId);
+    }
+
+    // =========================================================================
+    // Client-Accessed Root Collections (ISSUE-1554)
+    // =========================================================================
+
+    match /feature_requests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.get('userId', null) == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /merch_config/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /api_inventory/{apiKey} {
+      allow read: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    match /campaign_metrics/{metricId} {
+      allow read, update, delete: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && (request.resource.data.get('userId', null) == request.auth.uid || isAdmin());
+    }
+
+    match /releases/{releaseId} {
+      allow read: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isOwner(resource.data.get('userId', '')));
+      allow create: if isAuthenticated() && request.resource.data.get('userId', null) == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isOwner(resource.data.get('userId', '')));
     }
     match /workflows/{flowId} {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
@@ -3108,9 +3078,13 @@ service cloud.firestore {
       // Visitor enumeration and scanning blocked
       allow list: if false;
 
-      // Single doc read allowed if unclaimed or owned by caller
-      allow get: if resource.data.get('claimedByUid', null) == null ||
-                    (isAuthenticated() && resource.data.get('claimedByUid', null) == request.auth.uid);
+      // Single doc read: unclaimed assessments without PII can be read by session visitor;
+      // reading assessment PII (email / artistName) or claimed docs strictly requires authentication (ISSUE-1559).
+      allow get: if (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null) && (!('artistName' in resource.data) || resource.data.artistName == null)) ||
+                    (isAuthenticated() && (
+                      resource.data.get('claimedByUid', null) == request.auth.uid ||
+                      (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null || (request.auth.token.email != null && request.auth.token.email == resource.data.email)))
+                    ));
 
       // Unauthenticated prospect creation allowed with strict schema and unclaimed state
       allow create: if isValidProspectAssessment(request.resource.data) &&
