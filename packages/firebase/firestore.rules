@@ -2385,7 +2385,7 @@ service cloud.firestore {
         match /signals/{signalId} {
           allow read: if isProjectCollaborator(projectId);
           allow create: if isProjectCollaborator(projectId) && request.resource.data.get('fromUserId', null) == request.auth.uid;
-          allow delete: if isProjectCollaborator(projectId);
+          allow delete: if isProjectCollaborator(projectId) && (resource.data.get('fromUserId', null) == request.auth.uid || resource.data.get('toUserId', null) == request.auth.uid || get(/databases/$(database)/documents/projects/$(projectId)).data.get('userId', null) == request.auth.uid);
         }
       }
     }

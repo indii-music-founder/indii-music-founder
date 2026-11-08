@@ -5393,6 +5393,194 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'unauth-font-new'), { family: 'Anon New' }));
             });
         });
+
+        // ──────────────────────────────────────────────────────────────────
+        // ISSUE-1594: projects/{projectId}/canvases/{canvasId}/signals/{signalId}
+        // ──────────────────────────────────────────────────────────────────
+        describe('ISSUE-1594: projects/{projectId}/canvases/{canvasId}/signals/{signalId}', () => {
+            const COLLAB_ORG_ID = 'collab-org-1594';
+            const PROJ_ID = 'proj-signal-mesh-1594';
+            const CANVAS_ID = 'canvas-mesh-1';
+            const SENDER_UID = ALICE_UID;
+            const RECIPIENT_UID = BOB_UID;
+            const THIRD_PARTY_COLLAB_UID = 'collab-charlie-1594';
+            const NON_COLLAB_UID = 'non-collab-eve-1594';
+
+            beforeEach(async () => {
+                if (requireEmulator()) return;
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    // Organization with Alice, Bob, and Charlie as members
+                    await setDoc(doc(ctx.firestore(), 'organizations', COLLAB_ORG_ID), {
+                        name: 'WebRTC Signaling Org',
+                        ownerId: SENDER_UID,
+                        members: [SENDER_UID, RECIPIENT_UID, THIRD_PARTY_COLLAB_UID],
+                        createdAt: Timestamp.now(),
+                    });
+
+                    // Project owned by Alice, linked to org
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID), {
+                        userId: SENDER_UID,
+                        orgId: COLLAB_ORG_ID,
+                        name: 'Mesh Project',
+                    });
+
+                    // Canvas under project
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID), {
+                        name: 'Collaboration Board',
+                    });
+                });
+            });
+
+            it('collaborator sender create signal with fromUserId == auth.uid succeeds', async () => {
+                if (requireEmulator()) return;
+                const senderDb = verifiedCtx(SENDER_UID).firestore();
+                const signalRef = doc(senderDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-alice-to-bob');
+
+                await assertSucceeds(setDoc(signalRef, {
+                    id: 'signal-alice-to-bob',
+                    projectId: PROJ_ID,
+                    canvasId: CANVAS_ID,
+                    fromUserId: SENDER_UID,
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                    payload: { sdp: 'fake-sdp-offer' },
+                    createdAt: Date.now(),
+                }));
+            });
+
+            it('collaborator spoofed create with fromUserId != auth.uid fails', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(RECIPIENT_UID).firestore();
+                const spoofedSignalRef = doc(bobDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-spoofed');
+
+                // Bob (a collaborator) attempts to create a signal claiming it is from Alice
+                await assertFails(setDoc(spoofedSignalRef, {
+                    id: 'signal-spoofed',
+                    projectId: PROJ_ID,
+                    canvasId: CANVAS_ID,
+                    fromUserId: SENDER_UID, // Spoofed!
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                    payload: { sdp: 'malicious-sdp' },
+                    createdAt: Date.now(),
+                }));
+            });
+
+            it('collaborator sender deleteDoc succeeds', async () => {
+                if (requireEmulator()) return;
+                const senderDb = verifiedCtx(SENDER_UID).firestore();
+                const signalDocRef = doc(senderDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-sender');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-sender'), {
+                        id: 'signal-to-delete-by-sender',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'candidate',
+                    });
+                });
+
+                // Sender (Alice) can delete the signal
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+
+            it('collaborator recipient (toUserId == auth.uid) deleteDoc succeeds', async () => {
+                if (requireEmulator()) return;
+                const recipientDb = verifiedCtx(RECIPIENT_UID).firestore();
+                const signalDocRef = doc(recipientDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-recipient');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-to-delete-by-recipient'), {
+                        id: 'signal-to-delete-by-recipient',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'answer',
+                    });
+                });
+
+                // Recipient (Bob) can delete the transient signal after consumption
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+
+            it('non-collaborator create, read, and delete fail', async () => {
+                if (requireEmulator()) return;
+                const nonCollabDb = verifiedCtx(NON_COLLAB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+
+                const existingSignalRef = doc(nonCollabDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing'), {
+                        id: 'signal-existing',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'offer',
+                    });
+                });
+
+                // Non-collaborator (Eve) read fails
+                await assertFails(getDoc(existingSignalRef));
+
+                // Non-collaborator (Eve) create fails
+                await assertFails(setDoc(doc(nonCollabDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-eve'), {
+                    fromUserId: NON_COLLAB_UID,
+                    toUserId: RECIPIENT_UID,
+                    type: 'offer',
+                }));
+
+                // Non-collaborator (Eve) delete fails
+                await assertFails(deleteDoc(existingSignalRef));
+
+                // Unauthenticated read, create, delete fail
+                const unauthSignalRef = doc(unauthDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-existing');
+                await assertFails(getDoc(unauthSignalRef));
+                await assertFails(setDoc(doc(unauthDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-unauth'), {
+                    fromUserId: 'anon',
+                    toUserId: RECIPIENT_UID,
+                }));
+                await assertFails(deleteDoc(unauthSignalRef));
+            });
+
+            it('third-party collaborator (neither sender, recipient, nor project owner) deleteDoc fails', async () => {
+                if (requireEmulator()) return;
+                const charlieDb = verifiedCtx(THIRD_PARTY_COLLAB_UID).firestore();
+                const signalDocRef = doc(charlieDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-charlie-tamper');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-charlie-tamper'), {
+                        id: 'signal-charlie-tamper',
+                        fromUserId: SENDER_UID,
+                        toUserId: RECIPIENT_UID,
+                        type: 'offer',
+                    });
+                });
+
+                // Charlie can read because he is a project collaborator
+                await assertSucceeds(getDoc(signalDocRef));
+
+                // But Charlie cannot delete because he is neither sender, recipient, nor project owner
+                await assertFails(deleteDoc(signalDocRef));
+            });
+
+            it('project owner can delete any signal in their project canvas', async () => {
+                if (requireEmulator()) return;
+                const ownerDb = verifiedCtx(SENDER_UID).firestore();
+                const signalDocRef = doc(ownerDb, 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-bob-to-charlie');
+
+                // Bob sent to Charlie (Alice is neither sender nor recipient, but Alice owns the project)
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'projects', PROJ_ID, 'canvases', CANVAS_ID, 'signals', 'signal-bob-to-charlie'), {
+                        id: 'signal-bob-to-charlie',
+                        fromUserId: RECIPIENT_UID,
+                        toUserId: THIRD_PARTY_COLLAB_UID,
+                        type: 'candidate',
+                    });
+                });
+
+                // Alice (project owner) can deleteDoc
+                await assertSucceeds(deleteDoc(signalDocRef));
+            });
+        });
     });
 });
 
