@@ -25,7 +25,7 @@
     "@google-cloud/video-transcoder": "4.4.1",
     "@google/genai": "^2.12.0",
     "@googlemaps/google-maps-services-js": "3.4.2",
-    "@indii/shared": "*",
+    "@indii/shared": "file:./indii-shared-0.0.1.tgz",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "cors": "2.8.5",
     "express": "^4.22.3",
