@@ -122,8 +122,10 @@ Every department in the indii Studio operates on specialized Product Skills loca
     *   Superfan segmentation, direct-to-consumer email/SMS broadcasts, and city-by-city touring ticket demand mapping.
 
 ### 8. Meta-Orchestration & Governance
-*   **`business_harness_system` (Boardroom Orchestrator):**
+*   **`business_harness_system` (Boardroom Orchestrator & Multi-View Workspace):**
     *   Detects cross-department conflicts (e.g., Marketing wants to run ads, but Finance flags a negative tour balance) and calls an automated multi-agent Boardroom conference to reconcile tradeoffs.
+    *   **Interactive Multi-View Workspace:** Bridges executive strategy and execution with an embedded Electron desktop browser (`WebContentsView`), in-place studio module inspection, asset/split-sheet workbench, and live agent DAG telemetry.
+    *   **TypeSafe Jev System One Classification:** Employs deterministic semantic intelligence to automatically categorize browsed web portals (DSP, PRO, mechanical, legal), score relevance, assign department owners, and suggest relevant studio workspaces during conversation turns.
 
 ---
 
@@ -149,7 +151,7 @@ Use these copy blocks directly across marketing pages, product feature matrices,
 1. **The Sonic Director Skill:** *"Mastering that never gets turned down by Spotify."* Ingests your tracks, scans technical audio DNA, and flags phase cancellation or harsh mid-frequencies before you upload.
 2. **The Publishing Administrator Skill:** *"Never leave black-box royalties on the table."* Guides you through performance vs. mechanical splits, acapella stem organization, and one-stop sync licensing packages.
 3. **The Distribution Chief Skill:** *"Direct DDEX packaging at enterprise scale."* Turns album artwork, high-res WAVs, and track credits into commercial XML packages ready for global DSP ingestion.
-4. **The Boardroom Meta-Skill:** *"Your virtual executive board."* When marketing opportunities conflict with tour budgets, indii convenes your 23 specialist directors to present balanced options with clear risk scores.
+4. **The Boardroom Meta-Skill:** *"Your virtual executive board with a live workspace."* When marketing opportunities conflict with tour budgets, indii convenes your 23 specialist directors to present balanced options with clear risk scores—allowing you to inspect live DSP portals, audit split sheets, or review live agent execution feeds right beside the boardroom table.
 
 ---
 

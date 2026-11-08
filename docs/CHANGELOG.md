@@ -6,6 +6,23 @@ All notable changes to indii are documented in this file.
 
 ### Added
 
+#### Boardroom Multi-View Workspace & Embedded Browser
+
+- **Multi-View Workspace Engine** (`packages/renderer/src/modules/boardroom/components/BoardroomWorkspacePane.tsx`):
+  - 4 interactive tool viewports: **Live Browser**, **Studio Module In-Place Preview**, **Asset / Legal Workbench**, and **Agent Live Telemetry Feed**.
+  - Dynamic 3-pane responsive layout: Split View (28% table / 40% workspace / 32% chat) and full Stage View with persistent conversation dock.
+  - In-chat markdown URL interception: Clicking external web links in boardroom discussion turns immediately opens the workspace browser.
+- **Native Electron Web Browser Handler** (`packages/main/src/handlers/boardroomBrowser.ts`):
+  - Electron `WebContentsView` attached to `BrowserWindow` bypassing `X-Frame-Options` and CSP frame restrictions for external DSPs and PRO portals.
+  - Isolated persistent partition (`persist:boardroom-browser`) ensuring safe session caching.
+  - Strict IPC security validation and SSRF filtering via `validateSafeUrlAsync`.
+  - Sandboxed HTML `<iframe>` with automated Reader Mode fallback for web/Next.js builds.
+- **TypeSafe Jev System One Semantic Intelligence** (`packages/renderer/src/config/typesafeJudgments.ts`):
+  - Deterministic semantic classification of browsed URLs into 7 music industry categories (`dsp`, `pro_rights`, `legal_compliance`, `marketing_social`, `press_pr`, `distribution`, `general_research`).
+  - Automated department specialist assignment and relevance scoring (0.0 to 1.0).
+  - Swarm discussion turn analyzer with autonomous proactive workspace and module recommendations.
+- **Comprehensive User Guide**: Authored [`docs/USER_MANUAL_BOARDROOM_WORKSPACE.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/USER_MANUAL_BOARDROOM_WORKSPACE.md) detailing architecture, platform differences, navigation, and shortcuts.
+
 #### Production Readiness & Security Audit
 
 - **Critical Lint Remediation**: Resolved all blocking ESLint errors including `setState` in `useEffect` loops and render-cycle component creation bugs.
