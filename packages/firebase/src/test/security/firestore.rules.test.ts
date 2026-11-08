@@ -5322,6 +5322,76 @@ describe('Firestore Security Rules', () => {
                 await assertSucceeds(updateDoc(doc(adminDb, 'api_inventory', 'key-test-1586'), { active: false }));
                 await assertSucceeds(deleteDoc(doc(adminDb, 'api_inventory', 'key-test-1586')));
             });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: authenticated owner can create, read, update, and delete (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const fontDocRef = doc(aliceDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                const fontData = {
+                    id: 'font-1590',
+                    family: 'Custom Typography',
+                    format: 'woff2',
+                    storagePath: `users/${ALICE_UID}/brandKit/fonts/font-1590.woff2`,
+                    createdAt: Timestamp.now(),
+                };
+
+                // Owner create allowed
+                await assertSucceeds(setDoc(fontDocRef, fontData));
+
+                // Owner read allowed
+                await assertSucceeds(getDoc(fontDocRef));
+
+                // Owner update allowed
+                await assertSucceeds(updateDoc(fontDocRef, { family: 'Updated Typography' }));
+
+                // Owner delete allowed
+                await assertSucceeds(deleteDoc(fontDocRef));
+            });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: non-owner authenticated users cannot read or write (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const fontDocRefBob = doc(bobDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590'), {
+                        id: 'font-1590',
+                        family: 'Custom Typography',
+                    });
+                });
+
+                // Non-owner read denied
+                await assertFails(getDoc(fontDocRefBob));
+
+                // Non-owner write denied (create, update, delete)
+                await assertFails(setDoc(fontDocRefBob, { family: 'Bob Override' }));
+                await assertFails(updateDoc(fontDocRefBob, { family: 'Bob Update' }));
+                await assertFails(deleteDoc(fontDocRefBob));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'bob-font-new'), { family: 'Bob New' }));
+            });
+
+            it('users/{userId}/brandKit/fonts/items/{fontId}: unauthenticated users cannot read or write (ISSUE-1590)', async () => {
+                if (requireEmulator()) return;
+                const unauthDb = unauthCtx().firestore();
+                const fontDocRefUnauth = doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590');
+
+                await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                    await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'font-1590'), {
+                        id: 'font-1590',
+                        family: 'Custom Typography',
+                    });
+                });
+
+                // Unauthenticated read denied
+                await assertFails(getDoc(fontDocRefUnauth));
+
+                // Unauthenticated write denied (create, update, delete)
+                await assertFails(setDoc(fontDocRefUnauth, { family: 'Anon Override' }));
+                await assertFails(updateDoc(fontDocRefUnauth, { family: 'Anon Update' }));
+                await assertFails(deleteDoc(fontDocRefUnauth));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'brandKit', 'fonts', 'items', 'unauth-font-new'), { family: 'Anon New' }));
+            });
         });
     });
 });

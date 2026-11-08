@@ -766,6 +766,11 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      // ── Custom Typography & Font Library (ISSUE-1590) ────────────
+      match /brandKit/fonts/items/{fontId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // ── Tax Collaborators (Finance/W9/W8BEN) ──────────────────────────────
       // Collaborators for tax form collection. Owner manages list; backend
       // handles form uploads to Storage and Firestore documents.

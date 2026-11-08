@@ -6409,7 +6409,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **2026-11-08 verification:** Updated `packages/firebase/storage.rules` to allow authenticated owner deletion on mutable user assets (`assets`, `thumbnails`, `audio`, `likeness`, and `brandKit`), enabling immediate biometric likeness removal upon revocation, user image/audio deletion, and font removal, while keeping other topLevel paths blocked against direct client deletion. Added `application/font-woff.*` to `isAllowedMediaType()`. Verified all 37 tests in `packages/firebase/src/test/security/storage.rules.test.ts` pass alongside `AccountDeletionService.test.ts` (9 tests passing).
 
 ### ISSUE-1590: `FontLibrary` custom typography persistence is 100% broken — `users/{uid}/brandKit/fonts/items/{id}` has no rule in `firestore.rules` (`PERMISSION_DENIED` on `registerFont`, `listFonts`, `fetchOpenTypeFont`, `deleteFont`), and `.woff` font uploads fail `storage.rules` when browsers report `application/font-woff` or empty `file.type`
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08; added owner rule for users/{userId}/brandKit/fonts/items/{fontId} in firestore.rules, verified 357 security tests and 6 font library tests passing, awaiting exact-SHA CI)
 - **Severity:** 🟠 HIGH
 - **Module:** Custom Typography & Font Library (`packages/renderer/src/services/typography/FontLibrary.ts`, `packages/firebase/firestore.rules`, `packages/firebase/storage.rules`)
 - **Classification:** Category A / B — Unruled Firestore Subcollection (`brandKit/fonts/items`) & Storage Font MIME Mismatch
@@ -6424,6 +6424,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Impact:** Users cannot register, list, load, or delete custom brand fonts in `FontLibrary`; every font registration orphans the uploaded font binary in Cloud Storage and fails to save metadata in Firestore.
 - **Fix:** Add an owner-scoped rule for `match /users/{userId}/brandKit/fonts/items/{fontId}` in `packages/firebase/firestore.rules`, normalize `contentType: \`font/\${format}\`` in `FontLibrary.registerFont()`, and include `font-woff` in `isAllowedMediaType()` in `packages/firebase/storage.rules`.
 - **Acceptance:** Rules and service tests verify `registerFont`, `listFonts`, `loadOpenTypeFont`, and `deleteFont` succeed end-to-end for `.ttf`, `.otf`, `.woff`, and `.woff2` files.
+- **2026-11-08 verification:** Delegated to `firestore-rules-author` subagent to add owner-scoped read/write rules for `users/{userId}/brandKit/fonts/items/{fontId}` in `packages/firebase/firestore.rules`. Added security tests in `firestore.rules.test.ts` verifying authenticated owner CRUD success and non-owner / unauthenticated denial. Verified 357/357 security rules tests passing and 6/6 unit tests passing in `FontLibrary.test.ts`.
 
 ### ISSUE-1591: Local-to-Cloud Repository & Storage Migration failures — `repository.ts` and `StorageMigrationService.ts` sync workflows to unruled `users/{userId}/workflows/{workflowId}` (failing `firestore.rules` which only defines top-level `/workflows/{flowId}`) and upload raw IndexedDB `Blob`s without fallback `contentType` metadata when `blob.type` is empty
 - **Status:** 🔴 OPEN (2026-10-28)
