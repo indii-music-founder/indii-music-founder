@@ -6253,7 +6253,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Firestore emulator rule tests verify authenticated owners can read/write their own documents across all 11 collections and `RegistrationPersistence.persistOrgRecord` succeeds both with and without a `confirmationNumber`.
 
 ### ISSUE-1581: `APIHealthService` and `LicensingService` silent/broken behavior — `APIHealthService` reports `'healthy'` for `firestore` and `functions` without making any network/RPC call (only constructing an in-memory `DocumentReference` `doc(db, '_system/heartbeat')`) and never checks `stripe`, while `LicensingService.getCatalogTracksForSync` queries `where('orgId', '==', userProfile.id)` which misses user-owned releases and violates `proprietaryIngestionReleases` security rules when `userProfile.id !== auth.uid`
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08) — Implemented real network probes for Firestore, Functions, and Stripe in APIHealthService with timeout, updated LicensingService.getCatalogTracksForSync to query user-owned releases, and added unit tests; 10 unit tests passing.
 - **Severity:** 🟠 HIGH
 - **Module:** API Health Monitor & Sync Licensing Service (`packages/renderer/src/services/utils/APIHealthService.ts`, `packages/renderer/src/services/licensing/LicensingService.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A — Fake Health Check Probe (`doc()` Without `getDoc()`) & Broken Sync Catalog Query

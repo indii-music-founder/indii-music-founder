@@ -179,4 +179,42 @@ describe('LicensingService', () => {
         });
     });
 
+    describe('getCatalogTracksForSync', () => {
+        it('retrieves user-owned releases by userId and maps sync track metadata', async () => {
+            const mockTrackDoc = {
+                id: 'rel-1',
+                data: () => ({
+                    title: 'Electric Horizon',
+                    metadata: {
+                        title: 'Electric Horizon (Remix)',
+                        mood: ['Energetic', 'Upbeat'],
+                        durationFormatted: '3:45',
+                        isrc: 'US-XYZ-26-00001',
+                    },
+                    audioFeatures: {
+                        bpm: 128,
+                    },
+                }),
+            };
+            mockGetDocs.mockResolvedValueOnce({
+                docs: [mockTrackDoc],
+                empty: false,
+            });
+
+            const tracks = await service.getCatalogTracksForSync();
+
+            expect(mockGetDocs).toHaveBeenCalled();
+            expect(mockWhere).toHaveBeenCalledWith('userId', '==', 'user-123');
+            expect(tracks).toHaveLength(1);
+            expect(tracks[0]).toEqual({
+                id: 'rel-1',
+                title: 'Electric Horizon (Remix)',
+                bpm: 128,
+                moods: ['Energetic', 'Upbeat'],
+                duration: '3:45',
+                isrc: 'US-XYZ-26-00001',
+            });
+        });
+    });
+
 });
