@@ -8,8 +8,17 @@ import { Inngest } from 'inngest';
 import { inngestEventKey } from '../config/secrets.js';
 
 export const getInngestClient = (): Inngest => {
+    let eventKey = process.env.INNGEST_EVENT_KEY;
+    if (!eventKey) {
+        try {
+            eventKey = inngestEventKey.value();
+        } catch {
+            // Secret values are only available at runtime, not during deployment analysis
+            eventKey = undefined;
+        }
+    }
     return new Inngest({
         id: 'indii-music-functions',
-        eventKey: inngestEventKey.value(),
+        eventKey,
     });
 };
