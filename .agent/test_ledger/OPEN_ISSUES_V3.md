@@ -6316,7 +6316,10 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Unit and emulator tests verify `writeAuditLog` and `verifyAuditChain` succeed for the authenticated owner, and `deleteUserAccount` erases the user's Firestore tree, Storage objects, and Auth record without orphaning data or returning `PERMISSION_DENIED`.
 
 ### ISSUE-1585: Creative Asset Rights, Cover Song License Verification & Legal Template Versioning blocked by `firestore.rules` — `AssetRightsService` (`users/{uid}/assetRights`), `PRORightsService.verifyCoverSongLicense` (`users/{uid}/coverLicenses`), and `ContractVersioningService.publishNewVersion` (`legal_templates/{id}/versions`) all fail with `PERMISSION_DENIED`
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08)
+  - Added owner-scoped rules for `users/{userId}/assetRights/{assetId}` and `users/{userId}/coverLicenses/{isrc}` in `packages/firebase/firestore.rules`.
+  - Added version creation permissions for verified users on `legal_templates/{templateId}/versions/{versionId}` with identity validation.
+  - Implemented unit test coverage in `ContractVersioningService.test.ts` (7 tests passing) and verified all 352 security rules tests pass.
 - **Severity:** 🔴 CRITICAL
 - **Module:** Creative Asset Rights, PRO Cover Song Verification & Legal Contract Versioning (`packages/renderer/src/services/assets/AssetRightsService.ts`, `packages/renderer/src/services/agent/tools/MediaTools.ts`, `packages/renderer/src/services/rights/PRORightsService.ts`, `packages/renderer/src/services/legal/ContractVersioningService.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Missing Firestore Security Rules for Asset Rights & Cover Licenses + Admin-Only Rule on Contract Versioning

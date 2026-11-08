@@ -1059,6 +1059,8 @@ service cloud.firestore {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidAgentQueue(request.resource.data);
       }
+      match /assetRights/{assetId} { allow read, write: if isOwner(userId); }
+      match /coverLicenses/{isrc} { allow read, write: if isOwner(userId); }
       match /browserHistory/{entryId} { allow read, write: if isOwner(userId); }
       match /computerSessions/{sessionId} { allow read, write: if isOwner(userId); }
       match /contacts/{contactId} { allow read, write: if isOwner(userId); }
@@ -2567,9 +2569,16 @@ service cloud.firestore {
       allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
       allow update, delete: if false;
     }
-    match /legal_templates/{templateId}/{allPaths=**} {
+    match /legal_templates/{templateId} {
       allow read: if isAuthenticated() || isGuest();
       allow write: if isAdmin();
+
+      match /versions/{versionId} {
+        allow read: if isAuthenticated() || isGuest();
+        allow create: if isVerifiedUser() &&
+          (!('createdBy' in request.resource.data) || request.resource.data.createdBy == request.auth.uid);
+        allow update, delete: if isAdmin();
+      }
     }
     match /expenses/{expenseId} {
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;

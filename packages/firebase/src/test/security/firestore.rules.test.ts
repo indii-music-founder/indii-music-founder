@@ -5171,6 +5171,84 @@ describe('Firestore Security Rules', () => {
                 // Unauthenticated access is denied
                 await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'auditLogs', 'entry-1')));
             });
+
+            it('users/{userId}/assetRights/{assetId}: owner read/write allowed, cross-user denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const assetDocRef = doc(aliceDb, 'users', ALICE_UID, 'assetRights', 'asset-001');
+
+                // Owner: read and write allowed
+                await assertSucceeds(setDoc(assetDocRef, { title: 'Asset Rights 1', territory: 'Worldwide' }));
+                await assertSucceeds(getDoc(assetDocRef));
+                await assertSucceeds(updateDoc(assetDocRef, { territory: 'North America' }));
+                await assertSucceeds(deleteDoc(assetDocRef));
+
+                // Cross-user: read and write denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-001')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-cross'), { title: 'Cross User' }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'assetRights', 'asset-001'), { territory: 'Denied' }));
+
+                // Unauthenticated: denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'assetRights', 'asset-001')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'assetRights', 'asset-unauth'), { title: 'Unauth' }));
+            });
+
+            it('users/{userId}/coverLicenses/{isrc}: owner read/write allowed, cross-user denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const coverDocRef = doc(aliceDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234');
+
+                // Owner: read and write allowed
+                await assertSucceeds(setDoc(coverDocRef, { isrc: 'US-RC1-76-01234', song: 'Cover Song', status: 'cleared' }));
+                await assertSucceeds(getDoc(coverDocRef));
+                await assertSucceeds(updateDoc(coverDocRef, { status: 'licensed' }));
+                await assertSucceeds(deleteDoc(coverDocRef));
+
+                // Cross-user: read and write denied
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234')));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-99999'), { isrc: 'Cross', status: 'denied' }));
+                await assertFails(updateDoc(doc(bobDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234'), { status: 'hacked' }));
+
+                // Unauthenticated: denied
+                await assertFails(getDoc(doc(unauthDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-01234')));
+                await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-00000'), { status: 'unauth' }));
+            });
+
+            it('legal_templates/{templateId}/versions/{versionId}: verified user create version allowed, unauthenticated create denied (ISSUE-1585)', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const unauthDb = unauthCtx().firestore();
+                const versionDocWithCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v1');
+                const versionDocWithoutCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v2');
+                const versionDocSpoof = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v3');
+                const unauthVersionDoc = doc(unauthDb, 'legal_templates', 'template-001', 'versions', 'v4');
+
+                // Verified user create version allowed (with matching createdBy)
+                await assertSucceeds(setDoc(versionDocWithCreatedBy, {
+                    content: 'Template text v1',
+                    createdBy: ALICE_UID,
+                }));
+
+                // Verified user create version allowed (without createdBy field)
+                await assertSucceeds(setDoc(versionDocWithoutCreatedBy, {
+                    content: 'Template text v2',
+                }));
+
+                // Verified user create denied if createdBy does not match auth uid
+                await assertFails(setDoc(versionDocSpoof, {
+                    content: 'Spoofed template text',
+                    createdBy: BOB_UID,
+                }));
+
+                // Unauthenticated create denied
+                await assertFails(setDoc(unauthVersionDoc, {
+                    content: 'Unauth text',
+                }));
+            });
         });
     });
 });
