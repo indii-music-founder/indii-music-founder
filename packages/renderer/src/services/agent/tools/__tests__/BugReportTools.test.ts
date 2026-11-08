@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { judgeInvoke, httpsCallableMock, toastMock } = vi.hoisted(() => ({
+const { judgeInvoke, httpsCallableMock, toastMock, mockFirestoreAdd } = vi.hoisted(() => ({
   judgeInvoke: vi.fn(),
   httpsCallableMock: vi.fn(),
   toastMock: { warning: vi.fn(), error: vi.fn(), info: vi.fn(), success: vi.fn() },
+  mockFirestoreAdd: vi.fn().mockResolvedValue('doc-123'),
+}));
+
+vi.mock('@/services/FirestoreService', () => ({
+  FirestoreService: class {
+    add = mockFirestoreAdd;
+  },
 }));
 
 vi.mock('firebase/functions', () => ({
@@ -109,5 +116,42 @@ describe('BugReportTools.report_bug honesty gate', () => {
 
     expect(result.success).toBe(false);
     expect(judgeInvoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('BugReportTools.request_feature honesty gate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const featureArgs = {
+    title: 'Batch stems export',
+    description: 'Export all stems with 24-bit 48kHz WAV options.',
+    priority: 'high' as const,
+    module: 'Mastering',
+  };
+
+  it('persists to Firestore and returns success', async () => {
+    mockFirestoreAdd.mockResolvedValueOnce('feat-doc-1');
+
+    const result = await BugReportTools.request_feature!(featureArgs);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Saved to your feedback tracker');
+    expect(mockFirestoreAdd).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Batch stems export',
+      priority: 'high',
+      module: 'Mastering',
+    }));
+  });
+
+  it('returns toolError when Firestore persistence fails, never fake success', async () => {
+    mockFirestoreAdd.mockRejectedValueOnce(new Error('PERMISSION_DENIED'));
+
+    const result = await BugReportTools.request_feature!(featureArgs);
+
+    expect(result.success).toBe(false);
+    expect(result.metadata?.errorCode).toBe('FEATURE_REQUEST_PERSISTENCE_FAILED');
+    expect(result.error).toContain('Failed to record feature request in feedback tracker');
   });
 });

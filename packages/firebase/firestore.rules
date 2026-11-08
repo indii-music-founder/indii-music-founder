@@ -24,7 +24,7 @@ service cloud.firestore {
     
     // Check if user is admin
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
+      return isAuthenticated() && request.auth.token.get('admin', false) == true;
     }
     // Guest explorer writes are retired. Keep this helper so legacy rule branches
     // stay syntactically stable, but make every guest path fail closed.
@@ -1269,6 +1269,14 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      match /analytics/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /payouts/{payoutId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /id3_operations/{opId} {
         allow read, write: if isOwner(userId);
       }
@@ -1930,11 +1938,8 @@ service cloud.firestore {
         allow write: if false;
       }
       allow read: if isOwner(userId);
-      // Legacy clients may save preparations, but never assert external success.
       allow create, update: if isOwner(userId)
-        && request.resource.data.status == 'in_progress'
-        && request.resource.data.get('confirmationNumber', null) == null
-        && (resource == null || resource.data.status == 'in_progress');
+        && request.resource.data.status in ['in_progress', 'submitted'];
       allow delete: if false;
     }
 
@@ -2482,13 +2487,23 @@ service cloud.firestore {
     // =========================================================================
 
     match /feature_requests/{requestId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.get('userId', null) == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /merch_config/{userId} {
       allow read, write: if isOwner(userId);
+    }
+
+    match /contract_snippets/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isVerifiedUser();
+    }
+
+    match /legal_agreements/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isVerifiedUser();
     }
 
     match /api_inventory/{apiKey} {
@@ -2502,9 +2517,10 @@ service cloud.firestore {
     }
 
     match /releases/{releaseId} {
-      allow read: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isOwner(resource.data.get('userId', '')));
-      allow create: if isAuthenticated() && request.resource.data.get('userId', null) == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || isOwner(resource.data.get('userId', '')));
+      allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || resource.data.get('ownerId', null) == request.auth.uid || (('orgId' in resource.data) && (resource.data.orgId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)))))) || (isGuest() && (resource.data.get('userId', null) == 'founder-demo-uid' || (('orgId' in resource.data) && resource.data.orgId == 'founder-demo-uid')));
+      allow create: if isVerifiedUser() && ownerOrOrgCreateIsValid();
+      allow update: if isVerifiedUser() && (resource.data.get('userId', null) == request.auth.uid || resource.data.get('ownerId', null) == request.auth.uid || (('orgId' in resource.data) && isOrgMember(resource.data.orgId)));
+      allow delete: if false;
     }
     match /workflows/{flowId} {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
