@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     onCall: vi.fn((_options: unknown, handler: unknown) => handler),
     fetch: vi.fn(),
     apiKeyValue: vi.fn(() => 'sk-test-key'),
+    enforceRateLimit: vi.fn().mockResolvedValue(undefined),
+    recordUsage: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -26,6 +28,15 @@ vi.mock('firebase-functions/v2/https', () => ({
 vi.mock('../../config/secrets', () => ({
     typesafeApiKey: { value: () => mocks.apiKeyValue() },
     arcjetKey: {},
+}));
+
+vi.mock('../../lib/rateLimit', () => ({
+    enforceRateLimit: mocks.enforceRateLimit,
+    RATE_LIMITS: { generation: { maxRequests: 20, windowMs: 60000 } },
+}));
+
+vi.mock('../creative/gateway', () => ({
+    recordUsage: mocks.recordUsage,
 }));
 
 import { typesafeJudge } from './typesafeJudge';
@@ -125,6 +136,40 @@ describe('typesafeJudge', () => {
     it('rejects an upstream response without an answers object', async () => {
         mocks.fetch.mockResolvedValue(new Response(JSON.stringify({ unexpected: true }), { status: 200 }));
         await expect(callJudge(validPayload())).rejects.toMatchObject({ code: 'internal' });
+    });
+
+    it('enforces rate limit for authenticated caller and records token usage', async () => {
+        mocks.fetch.mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    answers: { transient: 0.9 },
+                    usage: { input_tokens: 120, output_tokens: 30 },
+                }),
+                { status: 200 }
+            )
+        );
+
+        const result = await callJudge(validPayload());
+        expect(result).toEqual({ answers: { transient: 0.9 } });
+        expect(mocks.enforceRateLimit).toHaveBeenCalledWith(
+            'artist-1',
+            'typesafeJudge',
+            expect.objectContaining({ maxRequests: 20, windowMs: 60000 })
+        );
+        expect(mocks.recordUsage).toHaveBeenCalledWith(
+            'artist-1',
+            'chat_tokens',
+            150,
+            'typesafe-judge'
+        );
+    });
+
+    it('rejects when enforceRateLimit throws resource-exhausted', async () => {
+        const { HttpsError } = await import('firebase-functions/v2/https');
+        mocks.enforceRateLimit.mockRejectedValueOnce(new HttpsError('resource-exhausted', 'Rate limit exceeded'));
+
+        await expect(callJudge(validPayload())).rejects.toMatchObject({ code: 'resource-exhausted' });
+        expect(mocks.fetch).not.toHaveBeenCalled();
     });
 });
 

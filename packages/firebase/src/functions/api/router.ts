@@ -8,6 +8,7 @@
 import { onRequest, Request, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import type * as express from 'express';
+import { validateAppCheckHttp } from '../../middleware/appCheck';
 import {
   protectAuthenticatedApiRequest,
   protectAnonymousSignupRequest,
@@ -185,11 +186,32 @@ function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: s
   }
 }
 
+function applyCorsHeaders(req: Request, res: express.Response, methods = 'GET, OPTIONS'): boolean {
+  if (typeof res.setHeader === 'function') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', methods);
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+  } else if (typeof res.set === 'function') {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', methods);
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+  }
+  if (req.method === 'OPTIONS') {
+    if (typeof res.status === 'function') {
+      const s = res.status(204);
+      if (typeof s?.end === 'function') s.end();
+    }
+    return true;
+  }
+  return false;
+}
+
 /** Public SDK HTTP boundary. A verified Firebase principal and Arcjet decision
  * precede every private data access. Submission is refused until the draft can
  * be bound to the actual release assets, rights, and distributor delivery path.
  */
 export const sdkApi = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
+  if (applyCorsHeaders(req, res, 'GET, POST, PUT, DELETE, OPTIONS')) return;
   const requestId = generateRequestId();
   try {
     const route = sdkRoute(req.method, req.path.replace(/^\/api(?=\/)/, ''));
@@ -224,12 +246,15 @@ export const sdkApi = onRequest(arcjetProtectedRequestOptions, async (req: Reque
 
 // GET /api/profile - Get user profile
 export const getProfile = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
+  if (applyCorsHeaders(req, res, 'GET, OPTIONS')) return;
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
       res.status(405).json(errorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', requestId));
       return;
     }
+
+    if (!(await validateAppCheckHttp(req, res))) return;
 
     const principal = await verifyAuth(req);
     if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
@@ -251,6 +276,7 @@ export const getProfile = onRequest(arcjetProtectedRequestOptions, async (req: R
 
 // Health check endpoint (no auth required)
 export const health = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
+  if (applyCorsHeaders(req, res, 'GET, OPTIONS')) return;
   const requestId = generateRequestId();
   if (req.method !== 'GET') {
     res.status(405).json(errorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', requestId));
