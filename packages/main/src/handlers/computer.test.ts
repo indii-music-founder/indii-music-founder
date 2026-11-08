@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
     auth: { authorize: vi.fn(), consume: vi.fn(), beginDrive: vi.fn(), consumeDriveAction: vi.fn(), revoke: vi.fn(), revokeAll: vi.fn() },
     execution: {
         getPermissionStatus: vi.fn(() => ({ supported: true })), screenshot: vi.fn().mockResolvedValue({ base64: 'secret' }), listApps: vi.fn().mockResolvedValue([]),
-        openApp: vi.fn(), click: vi.fn(), key: vi.fn(), scroll: vi.fn(), abort: vi.fn(), isAborted: vi.fn(() => false),
+        openApp: vi.fn(), click: vi.fn(), key: vi.fn(), scroll: vi.fn(), abort: vi.fn(), resetAbort: vi.fn(), isAborted: vi.fn(() => false),
     },
 }));
 vi.mock('electron', () => ({ ipcMain: mocks.ipcMain, dialog: { showMessageBox: mocks.showMessageBox }, BrowserWindow: { fromWebContents: vi.fn(() => null) }, app: { isPackaged: false, getAppPath: () => '/app', getPath: () => '/tmp' } }));
@@ -34,10 +34,24 @@ describe('Computer IPC main-process security boundary', () => {
         registerComputerHandlers();
     });
 
-    it('does not expose renderer bypass endpoints', () => {
+    it('does not expose unconfirmed renderer bypass endpoints', () => {
         expect(handlers['computer:grant-session']).toBeUndefined();
-        expect(handlers['computer:reset-abort']).toBeUndefined();
         expect(handlers['computer:allowlist-add']).toBeUndefined();
+    });
+
+    it('requires native user confirmation before resetting abort', async () => {
+        mocks.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        const res = await handlers['computer:reset-abort'](good);
+        expect(res.success).toBe(true);
+        expect(mocks.execution.resetAbort).toHaveBeenCalledOnce();
+        expect(mocks.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({
+            title: 'Resume Computer Control',
+            defaultId: 0,
+        }));
+
+        mocks.showMessageBox.mockResolvedValueOnce({ response: 0 });
+        const declined = await handlers['computer:reset-abort'](good);
+        expect(declined.success).toBe(false);
     });
 
     it('rejects direct IPC and untrusted renderer attempts before provider execution', async () => {

@@ -123,7 +123,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer: {
         checkPermissions: () => ipcRenderer.invoke('computer:check-permissions'),
-        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => ipcRenderer.invoke('computer:authorize-approval', args),
+        authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string; appCheckToken?: string }) => ipcRenderer.invoke('computer:authorize-approval', args),
         beginDrive: (goal: string, maxSteps: number, authorization: { token: string; rendererSessionId: string; agentId: string }) => ipcRenderer.invoke('computer:begin-drive', { goal, maxSteps, authorization }),
         endDrive: (sessionToken: string) => ipcRenderer.invoke('computer:end-drive', { sessionToken }),
         screenshot: (options: { displayId?: number; authorization?: { token: string; rendererSessionId: string; agentId: string }; driveSessionToken?: string }) => ipcRenderer.invoke('computer:screenshot', options),
@@ -134,6 +134,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         key: (combo: string, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => ipcRenderer.invoke('computer:key', { combo, authorization, driveSessionToken }),
         scroll: (dx: number, dy: number, authorization?: { token: string; rendererSessionId: string; agentId: string }, driveSessionToken?: string) => ipcRenderer.invoke('computer:scroll', { dx, dy, authorization, driveSessionToken }),
         abort: () => ipcRenderer.invoke('computer:abort'),
+        resetAbort: () => ipcRenderer.invoke('computer:reset-abort'),
         getAbortState: () => ipcRenderer.invoke('computer:get-abort-state'),
         allowlistGet: () => ipcRenderer.invoke('computer:allowlist-get'),
     },

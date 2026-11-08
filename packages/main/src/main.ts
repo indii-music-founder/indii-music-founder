@@ -550,7 +550,7 @@ if (!gotTheLock) {
             'agent:multi-replace-file-content', 'agent:update-knowledge', 'agent:read-knowledge', 'agent:get-capability-registry',
             'computer:check-permissions', 'computer:authorize-approval', 'computer:begin-drive', 'computer:end-drive',
             'computer:screenshot', 'computer:list-apps', 'computer:open-app', 'computer:click', 'computer:key', 'computer:scroll',
-            'computer:type', 'computer:abort', 'computer:get-abort-state', 'computer:allowlist-get',
+            'computer:type', 'computer:abort', 'computer:reset-abort', 'computer:get-abort-state', 'computer:allowlist-get',
             'brand:analyze-consistency', 'marketing:analyze-trends', 'publicist:generate-pdf',
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',

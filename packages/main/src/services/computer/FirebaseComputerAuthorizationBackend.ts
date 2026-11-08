@@ -72,11 +72,18 @@ export class FirebaseComputerAuthorizationBackend implements ComputerAuthorizati
         };
     }
 
-    async claimApproval(uid: string, approval: StoredComputerApproval, idToken: string): Promise<StoredComputerApproval> {
+    async claimApproval(uid: string, approval: StoredComputerApproval, idToken: string, appCheckToken?: string): Promise<StoredComputerApproval> {
         const url = `https://us-central1-${encodeURIComponent(this.projectId)}.cloudfunctions.net/claimComputerApproval`;
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+        };
+        if (appCheckToken) {
+            headers['X-Firebase-AppCheck'] = appCheckToken;
+        }
         const response = await fetch(url, {
             method: 'POST',
-            headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify({ data: { approvalId: approval.id, expected: { agentId: approval.agentId, toolName: approval.toolName, args: approval.args, createdAtMs: approval.createdAtMs } } }),
             signal: AbortSignal.timeout(this.requestTimeoutMs),
         });

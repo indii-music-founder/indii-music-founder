@@ -126,7 +126,7 @@ export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './f
 export { getCanonicalMusicCatalogIntelligence } from './functions/music/getCanonicalMusicCatalogIntelligence';
 export { getCanonicalClaimsInbox, declareCanonicalRightsClaim, respondToCanonicalRightsClaim } from './functions/music/claimsInbox';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
-export { claimComputerApproval, denyComputerApproval } from './functions/security/claimComputerApproval';
+export { claimComputerApproval, denyComputerApproval, completeComputerApproval } from './functions/security/claimComputerApproval';
 export { listErrorReports, updateErrorReportStatus } from './functions/security/errorReportCallables';
 
 // Field Intelligence & Ingestion Triggers (ISSUE-1477, ISSUE-1478, ISSUE-1479)

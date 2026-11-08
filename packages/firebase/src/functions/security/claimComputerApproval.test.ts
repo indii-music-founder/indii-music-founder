@@ -30,9 +30,10 @@ vi.mock('../security/arcjet', () => ({ protectAuthenticatedApiRequest: mocks.pro
 vi.mock('../../config/secrets', () => ({ arcjetKey: {} }));
 
 import { Timestamp } from 'firebase-admin/firestore';
-import { claimComputerApproval } from './claimComputerApproval';
+import { claimComputerApproval, completeComputerApproval } from './claimComputerApproval';
 
 const invoke = claimComputerApproval as unknown as (request: unknown) => Promise<unknown>;
+const invokeComplete = completeComputerApproval as unknown as (request: unknown) => Promise<unknown>;
 const args = { x: 10, y: 20 };
 let currentCreatedMs = Date.now() - 1000;
 const request = () => ({
@@ -67,6 +68,69 @@ describe('claimComputerApproval expiry', () => {
                 args, createdAt: Timestamp.fromMillis(expiredMs) }),
         }));
         await expect(invoke(request())).rejects.toMatchObject({ code: 'failed-precondition' });
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+});
+
+describe('completeComputerApproval', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('transitions a claimed approval to executed on success', async () => {
+        mocks.get.mockImplementation(async () => ({
+            exists: true,
+            data: () => ({ status: 'claimed', agentId: 'generalist', toolName: 'computer_click' }),
+        }));
+
+        const result = await invokeComplete({
+            auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+            data: { approvalId: 'approval-1', success: true },
+        });
+
+        expect(result).toMatchObject({ id: 'approval-1', status: 'executed', success: true });
+        expect(mocks.update).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                status: 'executed',
+                result: expect.objectContaining({ success: true }),
+            })
+        );
+    });
+
+    it('transitions a claimed approval to failed on error', async () => {
+        mocks.get.mockImplementation(async () => ({
+            exists: true,
+            data: () => ({ status: 'claimed', agentId: 'generalist', toolName: 'computer_click' }),
+        }));
+
+        const result = await invokeComplete({
+            auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+            data: { approvalId: 'approval-1', success: false, error: 'OS click rejected' },
+        });
+
+        expect(result).toMatchObject({ id: 'approval-1', status: 'failed', success: false });
+        expect(mocks.update).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                status: 'failed',
+                result: expect.objectContaining({ success: false, error: 'OS click rejected' }),
+            })
+        );
+    });
+
+    it('rejects when approval is not claimed', async () => {
+        mocks.get.mockImplementation(async () => ({
+            exists: true,
+            data: () => ({ status: 'pending', agentId: 'generalist', toolName: 'computer_click' }),
+        }));
+
+        await expect(
+            invokeComplete({
+                auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+                data: { approvalId: 'approval-1', success: true },
+            })
+        ).rejects.toMatchObject({ code: 'failed-precondition' });
         expect(mocks.update).not.toHaveBeenCalled();
     });
 });

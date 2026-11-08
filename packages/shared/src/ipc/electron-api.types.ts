@@ -129,7 +129,7 @@ export interface ComputerScreenshotData {
 
 export interface ElectronComputerAPI {
     checkPermissions: () => Promise<{ success: boolean; data?: ComputerPermissionStatusData; error?: string }>;
-    authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
+    authorizeApproval: (args: { idToken: string; approvalId: string; rendererSessionId: string; appCheckToken?: string }) => Promise<{ success: boolean; data?: { token: string; expiresAt: number }; error?: string }>;
     beginDrive: (goal: string, maxSteps: number, authorization: ComputerActionAuthorization) => Promise<{ success: boolean; data?: { sessionToken: string; expiresAt: number }; error?: string }>;
     endDrive: (sessionToken: string) => Promise<{ success: boolean; error?: string }>;
     screenshot: (options: { displayId?: number; authorization?: ComputerActionAuthorization; driveSessionToken?: string }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
@@ -140,6 +140,7 @@ export interface ElectronComputerAPI {
     key: (combo: string, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
     scroll: (dx: number, dy: number, authorization?: ComputerActionAuthorization, driveSessionToken?: string) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
     abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+    resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
     allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
 }

@@ -33,9 +33,9 @@ import {
     getDoc,
     type Unsubscribe,
 } from 'firebase/firestore';
-import { db, auth } from '@/services/firebase';
-import { functions } from '@/services/firebase';
+import { db, auth, functions, appCheck } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { getToken } from 'firebase/app-check';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -298,7 +298,20 @@ class ToolApprovalService {
                 const user = auth.currentUser;
                 if (!user || !window.electronAPI?.computer) throw new Error('Verified desktop sign-in is required for computer control.');
                 const idToken = await user.getIdToken();
-                const authorized = await window.electronAPI.computer.authorizeApproval({ idToken, approvalId, rendererSessionId: this.rendererSessionId });
+                let appCheckToken: string | undefined;
+                if (appCheck) {
+                    try {
+                        appCheckToken = (await getToken(appCheck, false))?.token;
+                    } catch {
+                        // App Check is optional in dev/test
+                    }
+                }
+                const authorized = await window.electronAPI.computer.authorizeApproval({
+                    idToken,
+                    approvalId,
+                    rendererSessionId: this.rendererSessionId,
+                    appCheckToken,
+                });
                 if (!authorized.success || !authorized.data) throw new Error(authorized.error || 'Main-process computer authorization failed.');
                 const executionArgs = {
                     ...approval.args,
@@ -347,6 +360,17 @@ class ToolApprovalService {
                     success: false,
                     error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,
                 };
+            }
+        } else {
+            try {
+                const completeFn = httpsCallable(functions, 'completeComputerApproval');
+                await completeFn({
+                    approvalId,
+                    success: result.success,
+                    ...(result.error ? { error: result.error } : {}),
+                });
+            } catch (completeErr) {
+                logger.warn(`[ToolApprovalService] Failed to complete computer approval ${approvalId}:`, completeErr);
             }
         }
 

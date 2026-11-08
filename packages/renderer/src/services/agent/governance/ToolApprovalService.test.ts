@@ -19,6 +19,7 @@ vi.mock('@/utils/authGuards', () => ({
 vi.mock('@/services/firebase', () => ({
     db: {},
     functions: {},
+    appCheck: null,
     get auth() {
         return { get currentUser() { return mocks.currentUser; } };
     },

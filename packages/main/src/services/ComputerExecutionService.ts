@@ -45,6 +45,22 @@ const DEFAULT_GRANT_TTL_MS = 15 * 60 * 1000; // 15 minutes — one drive session
  * system alongside whatever ISSUE-1116 eventually builds platform-wide — so this class
  * exposes the grant primitive for that future wiring to consume, and stops there.
  */
+export const DEFAULT_MUSIC_APPS = [
+    'Logic Pro',
+    'Ableton Live',
+    'FL Studio',
+    'Pro Tools',
+    'Reaper',
+    'GarageBand',
+    'Audacity',
+    'Spotify',
+];
+
+export function isDefaultAllowedMusicApp(app: string): boolean {
+    const normalized = app.trim().toLowerCase();
+    return DEFAULT_MUSIC_APPS.some(allowed => allowed.toLowerCase() === normalized);
+}
+
 export class ComputerExecutionService {
     private provider: ComputerProvider | null;
     private aborted = false;
@@ -192,8 +208,9 @@ export class ComputerExecutionService {
     }
 
     async openApp(app: string): Promise<void> {
+        this.requireProvider();
         this.checkNotAborted();
-        if (!computerAllowlistStore.isAllowed(app)) {
+        if (!computerAllowlistStore.isAllowed(app) && !isDefaultAllowedMusicApp(app)) {
             throw new Error(
                 `App "${app}" is not on the computer-control allowlist. ` +
                 `Add it via the allowlist store before it can be launched by an agent.`
