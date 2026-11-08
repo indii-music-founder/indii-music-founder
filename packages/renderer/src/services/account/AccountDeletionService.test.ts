@@ -2,75 +2,58 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteUserAccount } from './AccountDeletionService';
 
 // ============================================================================
-// Mocks — Firebase services are globally mocked in src/test/setup.ts
+// Mocks
 // ============================================================================
 
-// Mock auditLogChain
+const mockCallableFn = vi.fn();
+const mockHttpsCallable = vi.fn(() => mockCallableFn);
+
 vi.mock('@/lib/auditLogChain', () => ({
-    writeAuditLog: vi.fn().mockResolvedValue(undefined),
+    writeAuditLog: vi.fn().mockResolvedValue('audit-entry-1'),
 }));
 
-// Re-import after mocking to get references
+vi.mock('firebase/functions', () => ({
+    httpsCallable: (...args: [unknown, string]) => (mockHttpsCallable as any)(...args),
+}));
+
 const { writeAuditLog } = await import('@/lib/auditLogChain');
-const { getDocs, deleteDoc } = await import('firebase/firestore');
-const { listAll, deleteObject } = await import('firebase/storage');
 const { auth } = await import('@/services/firebase');
 
 describe('AccountDeletionService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Default: subcollections are empty
-        vi.mocked(getDocs).mockResolvedValue({
-            empty: true,
-            docs: [],
-            size: 0,
-            metadata: { fromCache: false, hasPendingWrites: false },
-            query: {} as never,
-            forEach: vi.fn(),
-            docChanges: vi.fn().mockReturnValue([]),
-            toJSON: vi.fn(),
-        } as unknown as Awaited<ReturnType<typeof getDocs>>);
-
-        // Default: storage directory is empty
-        vi.mocked(listAll).mockResolvedValue({
-            items: [],
-            prefixes: [],
-        } as unknown as Awaited<ReturnType<typeof listAll>>);
-
-        // Default: deleteDoc succeeds
-        vi.mocked(deleteDoc).mockResolvedValue(undefined);
-        vi.mocked(deleteObject).mockResolvedValue(undefined);
-    });
-
-    // ==========================================================================
-    // Successful deletion
-    // ==========================================================================
-
-    describe('successful deletion', () => {
-        it('returns success when all operations succeed with no data', async () => {
-            // Mock auth.currentUser
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
-            });
-
-            const result = await deleteUserAccount('user-123', 'test@example.com');
-
-            expect(result.success).toBe(true);
-            expect(result.errors).toHaveLength(0);
-            expect(result.deletedCollections).toContain('users/ (profile doc)');
-            expect(result.pendingExternalActions.length).toBeGreaterThan(0);
+        mockCallableFn.mockResolvedValue({
+            data: {
+                success: true,
+                deletedDocs: 42,
+                errors: [],
+                deletedAt: new Date().toISOString(),
+            },
         });
 
-        it('writes an audit log before deletion', async () => {
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
-            });
+        Object.defineProperty(auth, 'currentUser', {
+            value: { uid: 'user-123', email: 'test@example.com' },
+            writable: true,
+            configurable: true,
+        });
 
+        auth.signOut = vi.fn().mockResolvedValue(undefined);
+    });
+
+    describe('successful deletion', () => {
+        it('calls requestAccountDeletion Cloud Function and cleans up local auth', async () => {
+            const result = await deleteUserAccount('user-123', 'test@example.com');
+
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'requestAccountDeletion');
+            expect(mockCallableFn).toHaveBeenCalledWith({});
+            expect(result.success).toBe(true);
+            expect(result.errors).toHaveLength(0);
+            expect(result.deletedCollections[0]).toContain('users/ (42 docs');
+            expect(auth.signOut).toHaveBeenCalled();
+        });
+
+        it('writes a tamper-evident audit log before deletion', async () => {
             await deleteUserAccount('user-123', 'test@example.com');
 
             expect(writeAuditLog).toHaveBeenCalledWith(
@@ -84,56 +67,54 @@ describe('AccountDeletionService', () => {
         });
 
         it('lists expected pending external actions', async () => {
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
-            });
-
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
             expect(result.pendingExternalActions).toContain('Stripe customer deletion (stripe.customers.del)');
             expect(result.pendingExternalActions).toContain('Sentry user data removal');
+            expect(result.pendingExternalActions).toContain('Distribution partner data removal requests');
         });
     });
 
-    // ==========================================================================
-    // Partial failures
-    // ==========================================================================
-
-    describe('partial failures', () => {
+    describe('partial failures and safety guards', () => {
         it('continues deletion when audit log fails', async () => {
             vi.mocked(writeAuditLog).mockRejectedValueOnce(new Error('Audit log DB down'));
 
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
-            });
-
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
-            // Should still succeed — audit log failure is non-blocking
             expect(result.success).toBe(true);
+            expect(mockCallableFn).toHaveBeenCalled();
+            expect(auth.signOut).toHaveBeenCalled();
         });
 
-        it('records errors when subcollection deletion fails', async () => {
-            vi.mocked(getDocs).mockRejectedValue(new Error('Permission denied'));
-
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
+        it('records errors when Cloud Function reports backend erasure failure and preserves auth session', async () => {
+            mockCallableFn.mockResolvedValueOnce({
+                data: {
+                    success: false,
+                    deletedDocs: 0,
+                    errors: ['storage_bucket: Permission denied on GCS'],
+                    deletedAt: new Date().toISOString(),
+                },
             });
 
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
             expect(result.success).toBe(false);
-            expect(result.errors.length).toBeGreaterThan(0);
-            expect(result.errors[0]).toContain('Failed to delete');
+            expect(result.errors).toContain('storage_bucket: Permission denied on GCS');
+            // Auth session should NOT be deleted if backend failed
+            expect(auth.signOut).not.toHaveBeenCalled();
         });
 
-        it('reports error when user is not signed in for auth deletion', async () => {
+        it('records error when Cloud Function rejects with network or internal exception', async () => {
+            mockCallableFn.mockRejectedValueOnce(new Error('Cloud Function timeout'));
+
+            const result = await deleteUserAccount('user-123', 'test@example.com');
+
+            expect(result.success).toBe(false);
+            expect(result.errors[0]).toContain('Cloud Function requestAccountDeletion failed: Cloud Function timeout');
+            expect(auth.signOut).not.toHaveBeenCalled();
+        });
+
+        it('reports error when user is not signed in', async () => {
             Object.defineProperty(auth, 'currentUser', {
                 value: null,
                 writable: true,
@@ -142,34 +123,28 @@ describe('AccountDeletionService', () => {
 
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
+            expect(result.success).toBe(false);
             expect(result.errors).toContain('Cannot delete auth account: user not currently signed in');
+            expect(mockCallableFn).not.toHaveBeenCalled();
         });
 
-        it('reports error when signed-in user UID does not match', async () => {
+        it('reports error when signed-in user UID does not match requested userId', async () => {
             Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'different-user', delete: vi.fn() },
+                value: { uid: 'different-user', email: 'diff@example.com' },
                 writable: true,
                 configurable: true,
             });
 
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
+            expect(result.success).toBe(false);
             expect(result.errors).toContain('Cannot delete auth account: user not currently signed in');
+            expect(mockCallableFn).not.toHaveBeenCalled();
         });
     });
 
-    // ==========================================================================
-    // DeletionResult structure
-    // ==========================================================================
-
     describe('result structure', () => {
         it('returns proper DeletionResult interface', async () => {
-            Object.defineProperty(auth, 'currentUser', {
-                value: { uid: 'user-123', delete: vi.fn().mockResolvedValue(undefined) },
-                writable: true,
-                configurable: true,
-            });
-
             const result = await deleteUserAccount('user-123', 'test@example.com');
 
             expect(result).toHaveProperty('success');

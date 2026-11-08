@@ -6298,7 +6298,11 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Emulator and unit tests verify a signed-in user can follow/unfollow another user via `social_follows`, load the `"following"` feed, check `isFollowing`, and render another user's public profile header without `PERMISSION_DENIED`.
 
 ### ISSUE-1584: GDPR Article 17 `AccountDeletionService` & Tamper-Evident `auditLogChain` failures — `writeAuditLog`/`verifyAuditChain` target unruled `users/{userId}/auditLogs`, and `deleteUserAccount()` targets 11 non-existent/misnamed subcollections, leaves 35+ real user subcollections untouched, and calls `deleteDoc(doc(db, 'users', userId))` where `firestore.rules` explicitly sets `allow delete: if false`
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** 🟡 PARTIAL (2026-11-08)
+  - Added append-only owner security rule for `users/{userId}/auditLogs/{entryId}` in `packages/firebase/firestore.rules` with strict identity verification.
+  - Implemented unit test coverage in `auditLogChain.test.ts` (5 tests passing) verifying chain creation and tamper detection.
+  - Refactored `AccountDeletionService.deleteUserAccount` to delegate erasure to the authenticated `requestAccountDeletion` Cloud Function with recursive admin deletion across user tree and storage prefixes.
+  - Verified local auth session preservation on failure and termination on success via `AccountDeletionService.test.ts` (9 tests passing).
 - **Severity:** 🔴 CRITICAL
 - **Module:** GDPR Account Deletion & Tamper-Evident Audit Log Chain (`packages/renderer/src/services/account/AccountDeletionService.ts`, `packages/renderer/src/lib/auditLogChain.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Broken GDPR Right-to-Erasure Flow & Unruled Audit Log Hash Chain
