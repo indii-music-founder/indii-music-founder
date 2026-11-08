@@ -5,7 +5,7 @@
  * This is the PRIMARY UNLOCKER for Phase 2 agent orchestration features.
  *
  * Architecture:
- * - Client: POST /api/agents/stream with { userId, agentId, input, context }
+ * - Client: POST /api/agents/stream with { userId, agentId, input, context, costReservationId? }
  * - Auth: Firebase ID token + App Check (verified in HTTP headers)
  * - Backend: Uses Vertex AI via ADC (no API key in request)
  * - Response: SSE stream of tokens { token, index, timestamp } until completion
@@ -13,14 +13,16 @@
  * Credentials Flow:
  * 1. Client sends Firebase ID token in Authorization header
  * 2. Function verifies token (admin SDK)
- * 3. Function calls getVertexAIClient() to initialize Vertex AI
- * 4. Service account credentials are applied automatically (ADC)
- * 5. Response tokens streamed to client as they arrive
+ * 3. Function checks email_verified === true
+ * 4. Function enforces generation rate limits & claims cost reservation if present
+ * 5. Function calls getVertexAIClient() to initialize Vertex AI
+ * 6. Service account credentials are applied automatically (ADC)
+ * 7. Response tokens streamed to client as they arrive
+ * 8. On complete, reservation settled and usage recorded
  *
- * This design ensures:
- * - No API keys in frontend code or network traffic
- * - Streaming latency is minimized (direct backend-to-client SSE)
- * - Cost tracking can happen server-side before/after request
+ * Error Handling:
+ * - Pre-stream errors map HttpsError code to HTTP status (400, 401, 403, 429, 500)
+ * - Mid-stream errors emit SSE error frame without crashing via headersSent check
  *
  * NOTE: This function uses v2 API and coexists with v1 functions during migration.
  */
@@ -35,6 +37,9 @@ import { getVertexAIClient } from "../lib/vertexClient";
 import { validateAppCheckHttp } from "../middleware/appCheck";
 import { arcjetKey } from "../config/secrets";
 import { protectAuthenticatedApiRequest, protectAnonymousSignupRequest } from "../functions/security/arcjet";
+import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
+import { claimOperationReservation, finalizeOperationReservation } from "../functions/billing/enforceOperationCost";
+import { recordUsage } from "../functions/creative/gateway";
 
 interface StreamToken {
   token: string;
@@ -47,9 +52,29 @@ export const AgentStreamRequestSchema = z.object({
   agentId: z.string().min(1, "agentId is required"),
   input: z.string().min(1, "input is required"),
   context: z.record(z.unknown()).optional(),
+  costReservationId: z.string().optional(),
 });
 
 export type AgentStreamRequest = z.infer<typeof AgentStreamRequestSchema>;
+
+function mapHttpsErrorCodeToHttpStatus(code: string): number {
+  switch (code) {
+    case "invalid-argument":
+      return 400;
+    case "unauthenticated":
+      return 401;
+    case "permission-denied":
+      return 403;
+    case "not-found":
+      return 404;
+    case "resource-exhausted":
+      return 429;
+    case "failed-precondition":
+      return 412;
+    default:
+      return 500;
+  }
+}
 
 /**
  * Stream Agent Response
@@ -58,19 +83,6 @@ export type AgentStreamRequest = z.infer<typeof AgentStreamRequestSchema>;
  *
  * Streams agent response tokens in real-time using Server-Sent Events.
  * Enables UI to render tokens as they arrive (no waiting for full response).
- *
- * Request:
- * {
- *   userId: string
- *   agentId: string
- *   input: string
- *   context?: Record<string, unknown>
- * }
- *
- * Response (SSE stream):
- * data: {"token":"Hello","index":0,"timestamp":1234567890}
- * data: {"token":" ","index":1,"timestamp":1234567891}
- * data: {"token":"world","index":2,"timestamp":1234567892}
  */
 export const agentStreamResponse = onRequest(
   {
@@ -96,6 +108,10 @@ export const agentStreamResponse = onRequest(
       return;
     }
 
+    let activeReservationId: string | undefined;
+    let reservationUserId: string | undefined;
+    let reservationClaimed = false;
+
     try {
       // Parse request
       const body = req.body as unknown;
@@ -112,7 +128,9 @@ export const agentStreamResponse = onRequest(
         );
       }
 
-      const { userId, agentId, input } = validation.data;
+      const { userId, agentId, input, costReservationId } = validation.data;
+      activeReservationId = costReservationId;
+      reservationUserId = userId;
 
       // Verify user authentication (from Firebase ID token in Authorization header)
       const authToken = req.headers.authorization?.split("Bearer ")[1];
@@ -120,7 +138,7 @@ export const agentStreamResponse = onRequest(
         throw new HttpsError("unauthenticated", "Missing authorization header");
       }
 
-      let decodedToken;
+      let decodedToken: admin.auth.DecodedIdToken;
       try {
         decodedToken = await admin.auth().verifyIdToken(authToken);
       } catch (_error) {
@@ -132,6 +150,14 @@ export const agentStreamResponse = onRequest(
         throw new HttpsError(
           "permission-denied",
           "User ID does not match authorization token"
+        );
+      }
+
+      // Verify email verification status
+      if (decodedToken.email_verified !== true) {
+        throw new HttpsError(
+          "permission-denied",
+          "Forbidden: Verify your email before using AI generation."
         );
       }
 
@@ -151,6 +177,20 @@ export const agentStreamResponse = onRequest(
         }
         res.status(protection.status).json({ error: protection.message });
         return;
+      }
+
+      // Rate limit check
+      await enforceRateLimit(userId, "agentStreamResponse", RATE_LIMITS.generation);
+
+      // Claim cost reservation if provided
+      if (activeReservationId) {
+        await claimOperationReservation({
+          userId,
+          operationId: activeReservationId,
+          operationType: "agent_stream",
+          claimId: `stream-${userId}-${Date.now()}`,
+        });
+        reservationClaimed = true;
       }
 
       // Set SSE headers
@@ -177,7 +217,10 @@ export const agentStreamResponse = onRequest(
               role: "user",
               parts: [{ text: input }]
             }
-          ]
+          ],
+          config: {
+            temperature: 1.0,
+          },
         });
 
         // Stream tokens to client
@@ -200,6 +243,28 @@ export const agentStreamResponse = onRequest(
         // Send completion signal
         res.write(`data: ${JSON.stringify({ complete: true, totalTokens: tokenIndex })}\n\n`);
         res.end();
+
+        // Finalize cost reservation
+        if (activeReservationId && reservationClaimed) {
+          try {
+            await finalizeOperationReservation({
+              userId,
+              operationId: activeReservationId,
+              outcome: "SETTLED",
+              expectedType: "agent_stream",
+            });
+            reservationClaimed = false;
+          } catch (resErr) {
+            console.error("[AgentStream] Failed to settle reservation:", resErr);
+          }
+        }
+
+        // Record usage
+        try {
+          await recordUsage(userId, "chat_tokens", tokenIndex);
+        } catch (usageErr) {
+          console.error("[AgentStream] Failed to record usage:", usageErr);
+        }
       } catch (error) {
         console.error("[AgentStream] API error:", error);
         throw new HttpsError(
@@ -214,15 +279,34 @@ export const agentStreamResponse = onRequest(
     } catch (error) {
       console.error("[AgentStream] Error:", error);
 
-      if (error instanceof HttpsError) {
-        res.status(error.code === "invalid-argument" ? 400 : 401).json({
-          error: error.message
-        });
-      } else {
-        res.status(500).json({
-          error: error instanceof Error ? error.message : "Internal server error"
-        });
+      if (activeReservationId && reservationClaimed && reservationUserId) {
+        try {
+          await finalizeOperationReservation({
+            userId: reservationUserId,
+            operationId: activeReservationId,
+            outcome: "VOIDED",
+            expectedType: "agent_stream",
+          });
+          reservationClaimed = false;
+        } catch (resErr) {
+          console.error("[AgentStream] Failed to void reservation on error:", resErr);
+        }
       }
+
+      const errorMessage = error instanceof Error ? error.message : "Internal server error";
+      const errorCode = error instanceof HttpsError ? error.code : "internal";
+
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ error: errorMessage, code: errorCode })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const status = mapHttpsErrorCodeToHttpStatus(errorCode);
+      res.status(status).json({
+        error: errorMessage,
+        code: errorCode,
+      });
     }
   }
 );
