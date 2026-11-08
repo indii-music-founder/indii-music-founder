@@ -131,4 +131,48 @@ describe('Boardroom canonical department-head seating', () => {
         store.getState().toggleAgent('generalist');
         expect(store.getState().activeAgents).toEqual([]);
     });
+
+    it('manages Boardroom expandable split / tabbed workspace state and actions', () => {
+        const store = createBoardroomStore();
+
+        // Initial default state
+        expect(store.getState().boardroomWorkspaceLayout).toBe('closed');
+        expect(store.getState().boardroomWorkspaceTab).toBe('browser');
+        expect(store.getState().boardroomBrowserUrl).toBe('https://artists.spotify.com');
+        expect(store.getState().boardroomPreviewModuleId).toBe('creative');
+        expect(store.getState().boardroomWorkbenchTarget).toBeNull();
+
+        // Setting layout explicitly
+        store.getState().setBoardroomWorkspaceLayout('split');
+        expect(store.getState().boardroomWorkspaceLayout).toBe('split');
+
+        // Setting tab auto-opens split layout if closed
+        store.getState().setBoardroomWorkspaceLayout('closed');
+        store.getState().setBoardroomWorkspaceTab('module');
+        expect(store.getState().boardroomWorkspaceLayout).toBe('split');
+        expect(store.getState().boardroomWorkspaceTab).toBe('module');
+
+        // Open Boardroom browser with custom URL and stage layout
+        store.getState().openBoardroomBrowser('https://members.ascap.com', 'stage');
+        expect(store.getState().boardroomWorkspaceLayout).toBe('stage');
+        expect(store.getState().boardroomWorkspaceTab).toBe('browser');
+        expect(store.getState().boardroomBrowserUrl).toBe('https://members.ascap.com');
+        expect(store.getState().boardroomBrowserHistory).toContain('https://members.ascap.com');
+
+        // Open Studio module preview
+        store.getState().openBoardroomModulePreview('publishing', 'split');
+        expect(store.getState().boardroomWorkspaceLayout).toBe('split');
+        expect(store.getState().boardroomWorkspaceTab).toBe('module');
+        expect(store.getState().boardroomPreviewModuleId).toBe('publishing');
+
+        // Open Workbench targeting an asset
+        store.getState().openBoardroomWorkbench({ kind: 'asset', itemId: 'art-001' });
+        expect(store.getState().boardroomWorkspaceTab).toBe('workbench');
+        expect(store.getState().boardroomWorkbenchTarget).toEqual({ kind: 'asset', itemId: 'art-001' });
+
+        // Open Agent Feed
+        store.getState().openBoardroomAgentFeed('stage');
+        expect(store.getState().boardroomWorkspaceLayout).toBe('stage');
+        expect(store.getState().boardroomWorkspaceTab).toBe('agent-feed');
+    });
 });

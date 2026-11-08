@@ -435,5 +435,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
             return () => ipcRenderer.removeListener('rightsCopilot:session-status-changed', handler);
         },
     },
+
+    // Boardroom Native Browser (WebContentsView Workspace Engine)
+    boardroomBrowser: {
+        attach: (options?: { initialUrl?: string }) => ipcRenderer.invoke('boardroom-browser:attach', options),
+        setBounds: (bounds: { x: number; y: number; width: number; height: number; visible?: boolean }) =>
+            ipcRenderer.invoke('boardroom-browser:set-bounds', bounds),
+        navigate: (url: string) => ipcRenderer.invoke('boardroom-browser:navigate', { url }),
+        goBack: () => ipcRenderer.invoke('boardroom-browser:go-back'),
+        goForward: () => ipcRenderer.invoke('boardroom-browser:go-forward'),
+        reload: () => ipcRenderer.invoke('boardroom-browser:reload'),
+        captureContext: () => ipcRenderer.invoke('boardroom-browser:capture-context'),
+        detach: () => ipcRenderer.invoke('boardroom-browser:detach'),
+        openExternal: (url?: string) => ipcRenderer.invoke('boardroom-browser:open-external', url),
+        onStateChange: (callback: (state: { url: string; title: string; isLoading: boolean; canGoBack: boolean; canGoForward: boolean; error: string | null }) => void) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const handler = (_event: unknown, state: any) => callback(state);
+            ipcRenderer.on('boardroom-browser:state-changed', handler);
+            return () => ipcRenderer.removeListener('boardroom-browser:state-changed', handler);
+        },
+    },
 });
 

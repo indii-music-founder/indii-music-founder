@@ -9,11 +9,13 @@ import { BoardroomConversationPanel } from './components/BoardroomConversationPa
 import { useMobile } from '@/hooks/useMobile';
 import { BoardroomJourney } from './components/BoardroomJourney';
 
-import { ArrowLeft, Users, Layers, Bot, Network } from 'lucide-react';
+import { ArrowLeft, Users, Layers, Bot, Network, Globe, LayoutGrid, Radio } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
+import { BoardroomWorkspacePane } from './components/BoardroomWorkspacePane';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { cn } from '@/lib/utils';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
@@ -44,7 +46,11 @@ export function BoardroomModule() {
         userProfile,
         setConversationMode,
         consumeHandoff,
-        addReferencedAsset
+        addReferencedAsset,
+        boardroomWorkspaceLayout,
+        boardroomWorkspaceTab,
+        setBoardroomWorkspaceLayout,
+        setBoardroomWorkspaceTab,
     } = useStore(
         useShallow(state => ({
             conversationMode: state.conversationMode,
@@ -54,7 +60,11 @@ export function BoardroomModule() {
             setConversationMode: state.setConversationMode,
             consumeHandoff: state.consumeHandoff,
             addReferencedAsset: state.addReferencedAsset,
-            toggleAgent: state.toggleAgent
+            toggleAgent: state.toggleAgent,
+            boardroomWorkspaceLayout: state.boardroomWorkspaceLayout ?? 'closed',
+            boardroomWorkspaceTab: state.boardroomWorkspaceTab ?? 'browser',
+            setBoardroomWorkspaceLayout: state.setBoardroomWorkspaceLayout,
+            setBoardroomWorkspaceTab: state.setBoardroomWorkspaceTab,
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
@@ -160,6 +170,98 @@ export function BoardroomModule() {
 
                     {/* Right: Consolidated Utility Dock */}
                     <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                        {/* Boardroom Multi-Use Workspace Switchers */}
+                        <div className="hidden md:flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6" data-testid="boardroom-workspace-dock">
+                            <button
+                                onClick={() => {
+                                    if (boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'browser') {
+                                        setBoardroomWorkspaceLayout('closed');
+                                    } else {
+                                        setBoardroomWorkspaceTab('browser');
+                                        if (boardroomWorkspaceLayout === 'closed') setBoardroomWorkspaceLayout('split');
+                                    }
+                                }}
+                                data-testid="boardroom-workspace-toggle-browser"
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'browser'
+                                        ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
+                                        : "text-gray-300 hover:text-white hover:bg-white/10"
+                                )}
+                                title="Live Web Browser"
+                                aria-label="Toggle Live Browser"
+                            >
+                                <Globe size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'browser' ? "text-white" : "text-indigo-400"} />
+                                <span className="hidden lg:inline">Browser</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'module') {
+                                        setBoardroomWorkspaceLayout('closed');
+                                    } else {
+                                        setBoardroomWorkspaceTab('module');
+                                        if (boardroomWorkspaceLayout === 'closed') setBoardroomWorkspaceLayout('split');
+                                    }
+                                }}
+                                data-testid="boardroom-workspace-toggle-module"
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'module'
+                                        ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
+                                        : "text-gray-300 hover:text-white hover:bg-white/10"
+                                )}
+                                title="In-Place Studio Module Preview"
+                                aria-label="Toggle Studio Module"
+                            >
+                                <LayoutGrid size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'module' ? "text-white" : "text-emerald-400"} />
+                                <span className="hidden lg:inline">Studio</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'workbench') {
+                                        setBoardroomWorkspaceLayout('closed');
+                                    } else {
+                                        setBoardroomWorkspaceTab('workbench');
+                                        if (boardroomWorkspaceLayout === 'closed') setBoardroomWorkspaceLayout('split');
+                                    }
+                                }}
+                                data-testid="boardroom-workspace-toggle-workbench"
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'workbench'
+                                        ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
+                                        : "text-gray-300 hover:text-white hover:bg-white/10"
+                                )}
+                                title="Asset & Document Workbench"
+                                aria-label="Toggle Asset Workbench"
+                            >
+                                <Layers size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'workbench' ? "text-white" : "text-purple-400"} />
+                                <span className="hidden lg:inline">Workbench</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed') {
+                                        setBoardroomWorkspaceLayout('closed');
+                                    } else {
+                                        setBoardroomWorkspaceTab('agent-feed');
+                                        if (boardroomWorkspaceLayout === 'closed') setBoardroomWorkspaceLayout('split');
+                                    }
+                                }}
+                                data-testid="boardroom-workspace-toggle-feed"
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed'
+                                        ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
+                                        : "text-gray-300 hover:text-white hover:bg-white/10"
+                                )}
+                                title="Live Agent Computer Feed & Telemetry"
+                                aria-label="Toggle Live Agent Feed"
+                            >
+                                <Radio size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed' ? "text-white" : "text-cyan-400"} />
+                                <span className="hidden lg:inline">Feed</span>
+                            </button>
+                        </div>
+
                         <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
                             <button
                                 onClick={() => setIsSwarmFeedOpen(true)}
@@ -192,13 +294,17 @@ export function BoardroomModule() {
 
                 {/* Split-Panel Content */}
                 <div className="flex-1 flex min-h-0 overflow-hidden">
-                    {/* Left: Orbital Visualization — hidden on mobile */}
-                    {!isAnyPhone && (
+                    {/* Left: Orbital Visualization — rendered when not on mobile and not full-stage */}
+                    {!isAnyPhone && boardroomWorkspaceLayout !== 'stage' && (
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 200 }}
-                            className="relative w-[55%] shrink-0 flex items-center justify-center p-6"
+                            className={cn(
+                                "relative shrink-0 flex items-center justify-center p-6 transition-all duration-300",
+                                boardroomWorkspaceLayout === 'split' ? "w-[28%]" : "w-[55%]"
+                            )}
+                            data-testid="boardroom-orbital-panel"
                         >
                             <div className="relative w-full h-full max-w-2xl max-h-[70vh]">
                                 <BoardroomTable
@@ -211,12 +317,32 @@ export function BoardroomModule() {
                         </motion.div>
                     )}
 
-                    {/* Right: Persistent Conversation Panel (No stacked HarnessDecisionDigest row above it) */}
+                    {/* Middle: Boardroom Multi-Use Workspace Pane (Browser, Studio Module, Workbench, Agent Feed) */}
+                    {boardroomWorkspaceLayout !== 'closed' && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden"
+                            data-testid="boardroom-workspace-container"
+                        >
+                            <BoardroomWorkspacePane />
+                        </motion.div>
+                    )}
+
+                    {/* Right: Persistent Conversation Panel */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
-                        className={`flex flex-col min-h-0 min-w-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1 overflow-hidden`}
+                        className={cn(
+                            "flex flex-col min-h-0 min-w-0 bg-white/1 overflow-hidden transition-all duration-300",
+                            isAnyPhone ? "flex-1" :
+                            boardroomWorkspaceLayout === 'closed' ? "flex-1 border-l border-white/5" :
+                            boardroomWorkspaceLayout === 'stage' ? "w-[36%] shrink-0 border-l border-white/5" :
+                            "w-[32%] shrink-0 border-l border-white/5"
+                        )}
+                        data-testid="boardroom-conversation-container"
                     >
                         <BoardroomConversationPanel messages={boardroomMessages} />
                     </motion.div>

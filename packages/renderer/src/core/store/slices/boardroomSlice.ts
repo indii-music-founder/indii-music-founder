@@ -1,5 +1,14 @@
 import { StateCreator } from 'zustand';
 import { isValidHeadId, listHeadIds } from '@/services/agent/departments';
+import type { ModuleId } from '@/core/constants';
+
+export type BoardroomWorkspaceLayout = 'closed' | 'split' | 'stage';
+export type BoardroomWorkspaceTab = 'browser' | 'module' | 'workbench' | 'agent-feed';
+export type BoardroomWorkbenchTarget =
+    | { kind: 'asset'; itemId: string }
+    | { kind: 'artifact'; filename: string }
+    | { kind: 'canvas'; panelId: string }
+    | null;
 
 export interface SeatAllDepartmentHeadsResult {
     seatedCount: number;
@@ -36,12 +45,31 @@ export interface BoardroomSlice {
     a2aMessages: A2AMessage[];
     focusedHeadId: string | null;
 
+    // Expandable Split / Tabbed Workspace State
+    boardroomWorkspaceLayout: BoardroomWorkspaceLayout;
+    boardroomWorkspaceTab: BoardroomWorkspaceTab;
+    boardroomBrowserUrl: string;
+    boardroomBrowserHistory: string[];
+    boardroomPreviewModuleId: ModuleId;
+    boardroomWorkbenchTarget: BoardroomWorkbenchTarget;
+
     toggleAgent: (agentId: string) => void;
     soloAgent: (agentId: string) => void;
     addActiveAgent: (agentId: string) => void;
     removeActiveAgent: (agentId: string) => void;
     seatAllDepartmentHeads: () => SeatAllDepartmentHeadsResult;
     setFocusedHeadId: (headId: string | null) => void;
+
+    // Workspace Actions
+    setBoardroomWorkspaceLayout: (layout: BoardroomWorkspaceLayout) => void;
+    setBoardroomWorkspaceTab: (tab: BoardroomWorkspaceTab) => void;
+    setBoardroomBrowserUrl: (url: string) => void;
+    setBoardroomPreviewModuleId: (moduleId: ModuleId) => void;
+    setBoardroomWorkbenchTarget: (target: BoardroomWorkbenchTarget) => void;
+    openBoardroomBrowser: (url?: string, layout?: 'split' | 'stage') => void;
+    openBoardroomModulePreview: (moduleId: ModuleId, layout?: 'split' | 'stage') => void;
+    openBoardroomWorkbench: (target?: BoardroomWorkbenchTarget, layout?: 'split' | 'stage') => void;
+    openBoardroomAgentFeed: (layout?: 'split' | 'stage') => void;
 
     addReferencedAsset: (asset: ReferencedAsset) => void;
     removeReferencedAsset: (assetId: string) => void;
@@ -58,6 +86,14 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     referencedAssets: [],
     a2aMessages: [],
     focusedHeadId: null,
+
+    // Workspace Initial State
+    boardroomWorkspaceLayout: 'closed',
+    boardroomWorkspaceTab: 'browser',
+    boardroomBrowserUrl: 'https://artists.spotify.com',
+    boardroomBrowserHistory: ['https://artists.spotify.com'],
+    boardroomPreviewModuleId: 'creative',
+    boardroomWorkbenchTarget: null,
 
     toggleAgent: (agentId) => set((state) => {
         const isActive = state.activeAgents.includes(agentId);
@@ -128,6 +164,56 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
 
         return result;
     },
+
+    setBoardroomWorkspaceLayout: (layout) => set({ boardroomWorkspaceLayout: layout }),
+
+    setBoardroomWorkspaceTab: (tab) => set((state) => ({
+        boardroomWorkspaceTab: tab,
+        boardroomWorkspaceLayout: state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout,
+    })),
+
+    setBoardroomBrowserUrl: (url) => set((state) => {
+        const trimmed = url.trim();
+        if (!trimmed) return state;
+        const exists = state.boardroomBrowserHistory[state.boardroomBrowserHistory.length - 1] === trimmed;
+        return {
+            boardroomBrowserUrl: trimmed,
+            boardroomBrowserHistory: exists ? state.boardroomBrowserHistory : [...state.boardroomBrowserHistory.slice(-20), trimmed],
+        };
+    }),
+
+    setBoardroomPreviewModuleId: (moduleId) => set({ boardroomPreviewModuleId: moduleId }),
+
+    setBoardroomWorkbenchTarget: (target) => set({ boardroomWorkbenchTarget: target }),
+
+    openBoardroomBrowser: (url, layout) => set((state) => {
+        const targetUrl = url?.trim() || state.boardroomBrowserUrl;
+        const nextLayout = layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout);
+        const exists = state.boardroomBrowserHistory[state.boardroomBrowserHistory.length - 1] === targetUrl;
+        return {
+            boardroomWorkspaceLayout: nextLayout,
+            boardroomWorkspaceTab: 'browser',
+            boardroomBrowserUrl: targetUrl,
+            boardroomBrowserHistory: exists ? state.boardroomBrowserHistory : [...state.boardroomBrowserHistory.slice(-20), targetUrl],
+        };
+    }),
+
+    openBoardroomModulePreview: (moduleId, layout) => set((state) => ({
+        boardroomWorkspaceLayout: layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout),
+        boardroomWorkspaceTab: 'module',
+        boardroomPreviewModuleId: moduleId,
+    })),
+
+    openBoardroomWorkbench: (target, layout) => set((state) => ({
+        boardroomWorkspaceLayout: layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout),
+        boardroomWorkspaceTab: 'workbench',
+        ...(target !== undefined ? { boardroomWorkbenchTarget: target } : {}),
+    })),
+
+    openBoardroomAgentFeed: (layout) => set((state) => ({
+        boardroomWorkspaceLayout: layout || (state.boardroomWorkspaceLayout === 'closed' ? 'split' : state.boardroomWorkspaceLayout),
+        boardroomWorkspaceTab: 'agent-feed',
+    })),
 
     addReferencedAsset: (asset) => set((state) => ({
         referencedAssets: [...state.referencedAssets, asset]

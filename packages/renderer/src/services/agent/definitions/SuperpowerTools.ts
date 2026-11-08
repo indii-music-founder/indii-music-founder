@@ -522,7 +522,11 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         parameters: {
             type: 'OBJECT',
             properties: {
-                rawRows: { type: 'ARRAY', description: 'Array of parsed row records.' },
+                rawRows: {
+                    type: 'ARRAY',
+                    description: 'Array of parsed row records.',
+                    items: { type: 'OBJECT', description: 'Parsed row record object.' }
+                },
                 formatFamily: { type: 'STRING', description: 'The detected distributor format family.' }
             },
             required: ['rawRows', 'formatFamily']

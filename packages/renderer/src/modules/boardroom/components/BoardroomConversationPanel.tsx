@@ -95,10 +95,11 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
     const [visibleMessageCount, setVisibleMessageCount] = React.useState(BOARDROOM_MESSAGE_BATCH_SIZE);
-    const { showCognitiveLogicByDefault, activeAgents } = useStore(
+    const { showCognitiveLogicByDefault, activeAgents, openBoardroomBrowser } = useStore(
         useShallow(state => ({
             showCognitiveLogicByDefault: state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
             activeAgents: state.activeAgents,
+            openBoardroomBrowser: state.openBoardroomBrowser,
         }))
     );
     const { isAnyPhone } = useMobile();
@@ -311,7 +312,25 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
-                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline break-all" />,
+                                                a: ({ node: _node, href, children, ...props }: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) => (
+                                                    <a
+                                                        {...props}
+                                                        href={href}
+                                                        onClick={(e) => {
+                                                            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                                                                if (!e.metaKey && !e.ctrlKey && openBoardroomBrowser) {
+                                                                    e.preventDefault();
+                                                                    openBoardroomBrowser(href, 'split');
+                                                                }
+                                                            }
+                                                        }}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-indigo-400 hover:text-indigo-300 underline break-all cursor-pointer"
+                                                    >
+                                                        {children}
+                                                    </a>
+                                                ),
                                                 p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
                                                 ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
                                                 ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,

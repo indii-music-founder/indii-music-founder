@@ -1503,13 +1503,34 @@ app.post('/api/messaging/approve-draft', requireAdminAuth, async (req, res) => {
   }
 });
 
-// Live deliveries list
+// Live deliveries list (canonical ddexReleases with deliveries fallback)
 app.get('/api/deliveries/list', requireAdminAuth, async (_req, res) => {
   try {
-    const snapshot = await admin.firestore().collection('deliveries').orderBy('time', 'desc').limit(20).get();
+    let snapshot = await admin.firestore().collection('ddexReleases').limit(20).get();
+    if (snapshot.empty) {
+      snapshot = await admin.firestore().collection('deliveries').limit(20).get();
+    }
     const deliveries: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
-      deliveries.push({ id: doc.id, ...doc.data() });
+      const data = doc.data() || {};
+      const createdAt = data.createdAt;
+      const formattedTime = createdAt && typeof createdAt.toDate === 'function'
+        ? createdAt.toDate().toISOString()
+        : (typeof data.time === 'string' ? data.time : new Date().toISOString());
+      const dst = Array.isArray(data.distributors)
+        ? data.distributors.join(', ')
+        : (typeof data.dst === 'string' ? data.dst : 'DSP Delivery Network');
+
+      deliveries.push({
+        id: doc.id,
+        releaseId: String(data.releaseId || doc.id),
+        title: String(data.title || data.albumTitle || 'Untitled Release'),
+        dst,
+        status: String(data.status || 'pending'),
+        time: formattedTime,
+        type: String(data.type || 'DDEX ERN'),
+        ...data,
+      });
     });
     res.json({ deliveries });
   } catch (error) {
@@ -1518,13 +1539,28 @@ app.get('/api/deliveries/list', requireAdminAuth, async (_req, res) => {
   }
 });
 
-// Nexus/System monitoring logs
+// Nexus/System monitoring logs (canonical agent_traces with system_events fallback)
 app.get('/api/nexus/logs', requireAdminAuth, async (_req, res) => {
   try {
-    const snapshot = await admin.firestore().collection('system_events').orderBy('time', 'desc').limit(25).get();
+    let snapshot = await admin.firestore().collection('agent_traces').limit(25).get();
+    if (snapshot.empty) {
+      snapshot = await admin.firestore().collection('system_events').limit(25).get();
+    }
     const logs: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
-      logs.push({ id: doc.id, ...doc.data() });
+      const data = doc.data() || {};
+      const timestamp = data.timestamp || data.createdAt;
+      const formattedTime = timestamp && typeof timestamp.toDate === 'function'
+        ? timestamp.toDate().toISOString()
+        : (typeof data.time === 'string' ? data.time : new Date().toISOString());
+
+      logs.push({
+        id: doc.id,
+        msg: String(data.msg || data.message || data.action || data.event || 'System Event'),
+        status: String(data.status || data.level || 'info'),
+        time: formattedTime,
+        ...data,
+      });
     });
     res.json({ logs });
   } catch (error) {
