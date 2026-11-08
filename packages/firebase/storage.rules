@@ -358,6 +358,64 @@ service firebase.storage {
     }
 
     // ========================================
+    // VIDEO RENDER RELAY (Desktop Jobs — ISSUE-1588)
+    // ========================================
+
+    match /video-render-jobs/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(500) &&
+                      isVideoType();
+    }
+
+    // ========================================
+    // CEO SYNC ENCRYPTED BACKUP (ISSUE-1588)
+    // ========================================
+
+    match /ceo_sync/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(100);
+    }
+
+    // ========================================
+    // WHITE-GLOVE INGESTION (ISSUE-1588)
+    // ========================================
+
+    match /ingest/white-glove/{artistId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == artistId;
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == artistId &&
+                      isUnderSizeLimit(500) &&
+                      isAllowedMediaType();
+    }
+
+    // ========================================
+    // DISTRIBUTION DELIVERY RECEIPTS (ISSUE-1588)
+    // ========================================
+
+    match /distribution/receipts/{releaseId}/{allPaths=**} {
+      allow read: if isAuthenticated() &&
+        firestore.exists(/databases/(default)/documents/releases/$(releaseId)) &&
+        (('userId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.userId == request.auth.uid) ||
+         ('ownerId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.ownerId == request.auth.uid));
+      allow create: if isAuthenticated() &&
+        resource == null &&
+        isUnderSizeLimit(10) &&
+        request.resource.contentType == 'application/json' &&
+        firestore.exists(/databases/(default)/documents/releases/$(releaseId)) &&
+        (('userId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.userId == request.auth.uid) ||
+         ('ownerId' in firestore.get(/databases/(default)/documents/releases/$(releaseId)).data &&
+          firestore.get(/databases/(default)/documents/releases/$(releaseId)).data.ownerId == request.auth.uid));
+      allow update, delete: if false;
+    }
+
+    // ========================================
     // APP RELEASES (Founders)
     // ========================================
 

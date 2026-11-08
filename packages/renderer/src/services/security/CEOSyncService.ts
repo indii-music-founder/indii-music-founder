@@ -44,12 +44,6 @@ import { PrivateVaultService, EncryptedPayload } from '@/services/security/Priva
 /** Collections included in a CEO Sync backup */
 const BACKUP_COLLECTIONS = [
     'releases',
-    'split_sheets',
-    'contracts',
-    'financial_summaries',
-    'brand_kits',
-    'iswc_works',
-    'career_events',
 ] as const;
 
 /** Backup manifest stored alongside the encrypted data */
@@ -103,16 +97,20 @@ export class CEOSyncService {
         let totalDocs = 0;
 
         for (const collectionName of BACKUP_COLLECTIONS) {
-            const q = query(
-                collection(db, collectionName),
-                where('userId', '==', user.uid),
-            );
-            const snap = await getDocs(q);
-            backupData[collectionName] = snap.docs.map(d => ({
-                _docId: d.id,
-                ...d.data(),
-            }));
-            totalDocs += snap.size;
+            try {
+                const q = query(
+                    collection(db, collectionName),
+                    where('userId', '==', user.uid),
+                );
+                const snap = await getDocs(q);
+                backupData[collectionName] = snap.docs.map(d => ({
+                    _docId: d.id,
+                    ...d.data(),
+                }));
+                totalDocs += snap.size;
+            } catch (err) {
+                console.warn(`CEOSyncService: Failed to query ${collectionName}:`, err);
+            }
         }
 
         // 2. Serialize to JSON
@@ -196,13 +194,9 @@ export class CEOSyncService {
             const batch = writeBatch(db);
             for (const docData of documents) {
                 const docId = docData._docId as string;
-                const { _docId, ...cleanData } = docData;
+                const { _docId, restoredAt, restoredFromBackup, ...cleanData } = docData;
                 const docRef = doc(db, collectionName, docId);
-                batch.set(docRef, {
-                    ...cleanData,
-                    restoredAt: serverTimestamp(),
-                    restoredFromBackup: backupId,
-                }, { merge: true });
+                batch.set(docRef, cleanData, { merge: true });
                 documentsRestored++;
             }
             await batch.commit();
