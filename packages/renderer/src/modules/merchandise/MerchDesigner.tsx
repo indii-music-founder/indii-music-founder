@@ -64,7 +64,7 @@ export default function MerchDesigner() {
     const [workMode, setWorkMode] = useState<WorkMode>('user');
     const [designName, setDesignName] = useState('Untitled Design');
     const [isEditingName, setIsEditingName] = useState(false);
-    const [designId] = useState(() => generateDesignId());
+    const [designId, setDesignId] = useState(() => generateDesignId());
 
     // Canvas State
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -430,6 +430,7 @@ export default function MerchDesigner() {
             // Establish this loaded design as the new undo baseline
             saveState();
 
+            setDesignId(version.id);
             setDesignName(version.name);
             toast.success(`Restored "${version.name}"`);
         } catch (error: unknown) {
