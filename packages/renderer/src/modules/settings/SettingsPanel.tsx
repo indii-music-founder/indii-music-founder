@@ -57,19 +57,58 @@ import { logger } from '@/utils/logger';
 // Types & Navigation Config
 // ---------------------------------------------------------------------------
 
-const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; description: string }> = [
-    { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
-    { id: 'wallet', label: 'Credit Wallet', icon: Coins, description: 'Balance, top-up packs, and transaction history' },
-    { id: 'personas', label: 'Agent Personas', icon: Sliders, description: 'Personality sliders and posture for each agent' },
-    { id: 'playbook', label: 'Master Directive', icon: BookOpen, description: 'Living Artist Playbook and Supreme Directives' },
-    { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
-    { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
-    { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
-    { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
-    { id: 'automation', label: 'Automation', icon: Bot, description: 'Artist Operating Profile — autonomy permissions and boundaries' },
-    { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
-    { id: 'security', label: 'Account & Security', icon: Shield, description: 'Sign out, data export, delete' },
+interface SettingsSectionConfig {
+    id: SettingsSectionId;
+    label: string;
+    icon: LucideIcon;
+    description: string;
+}
+
+interface SettingsCategoryConfig {
+    id: string;
+    label: string;
+    sections: SettingsSectionConfig[];
+}
+
+const SETTING_CATEGORIES: SettingsCategoryConfig[] = [
+    {
+        id: 'account',
+        label: 'Account & Credits',
+        sections: [
+            { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
+            { id: 'wallet', label: 'Credit Wallet', icon: Coins, description: 'Balance, top-up packs, and transaction history' },
+        ],
+    },
+    {
+        id: 'intelligence',
+        label: 'AI & Directives',
+        sections: [
+            { id: 'playbook', label: 'Master Directive', icon: BookOpen, description: 'Living Artist Playbook and Supreme Directives' },
+            { id: 'personas', label: 'Agent Personas', icon: Sliders, description: 'Personality sliders and posture for each agent' },
+            { id: 'automation', label: 'Automation', icon: Bot, description: 'Artist Operating Profile — autonomy permissions and boundaries' },
+        ],
+    },
+    {
+        id: 'studio',
+        label: 'Studio & Devices',
+        sections: [
+            { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
+            { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
+            { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
+        ],
+    },
+    {
+        id: 'system',
+        label: 'System & Security',
+        sections: [
+            { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
+            { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
+            { id: 'security', label: 'Account & Security', icon: Shield, description: 'Sign out, data export, delete' },
+        ],
+    },
 ];
+
+const SECTIONS: SettingsSectionConfig[] = SETTING_CATEGORIES.flatMap((c) => c.sections);
 
 // ---------------------------------------------------------------------------
 // Main Settings Panel (Thin Shell)
@@ -116,28 +155,35 @@ const SettingsPanel: React.FC = () => {
     return (
         <div className="h-full flex bg-[--bg]">
             {/* Sidebar Nav */}
-            <div className="w-56 flex-shrink-0 border-r border-slate-800 p-4 space-y-1 hidden md:block">
-                <h1 className="text-sm font-bold text-white mb-4 px-3">{t('settings.title')}</h1>
-                {SECTIONS.map((section) => {
-                    const Icon = section.icon;
-                    const isActive = activeSection === section.id;
-                    return (
-                        <button
-                            key={section.id}
-                            data-tab={section.id}
-                            data-testid={`settings-tab-${section.id}`}
-                            onClick={() => selectSection(section.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
-                                isActive
-                                    ? `${moduleColor.bg} ${moduleColor.text} border ${moduleColor.border}`
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
-                            }`}
-                        >
-                            <Icon size={16} />
-                            <span className="text-sm font-medium">{t(`settings.sections.${section.id}.label`)}</span>
-                        </button>
-                    );
-                })}
+            <div className="w-60 flex-shrink-0 border-r border-slate-800 p-4 space-y-5 hidden md:block overflow-y-auto custom-scrollbar">
+                <h1 className="text-sm font-bold text-white px-2 tracking-wide uppercase text-xs text-slate-400">{t('settings.title')}</h1>
+                {SETTING_CATEGORIES.map((category) => (
+                    <div key={category.id} className="space-y-1">
+                        <div className="text-[10px] font-semibold tracking-wider text-slate-500 uppercase px-2 mb-1.5">
+                            {category.label}
+                        </div>
+                        {category.sections.map((section) => {
+                            const Icon = section.icon;
+                            const isActive = activeSection === section.id;
+                            return (
+                                <button
+                                    key={section.id}
+                                    data-tab={section.id}
+                                    data-testid={`settings-tab-${section.id}`}
+                                    onClick={() => selectSection(section.id)}
+                                    className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all ${
+                                        isActive
+                                            ? `${moduleColor.bg} ${moduleColor.text} border ${moduleColor.border}`
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+                                    }`}
+                                >
+                                    <Icon size={15} />
+                                    <span className="text-xs font-medium">{t(`settings.sections.${section.id}.label`, { defaultValue: section.label })}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                ))}
             </div>
 
             {/* Mobile Nav */}
@@ -157,7 +203,7 @@ const SettingsPanel: React.FC = () => {
                             }`}
                         >
                             <Icon size={14} />
-                            {t(`settings.sections.${section.id}.label`)}
+                            {t(`settings.sections.${section.id}.label`, { defaultValue: section.label })}
                         </button>
                     );
                 })}

@@ -276,8 +276,20 @@
   "settings": {
     "title": "Settings",
     "sections": {
+      "wallet": {
+        "label": "Credit Wallet",
+        "title": "Credit Wallet & Micro-Transactions",
+        "description": "Balance, top-up packs, and transaction history"
+      },
+      "personas": {
+        "label": "Agent Personas",
+        "title": "Agent Personas",
+        "description": "Personality sliders and posture for each agent"
+      },
       "desktop": {
-        "label": "Desktop & Updates"
+        "label": "Desktop & Updates",
+        "title": "Desktop & Updates",
+        "description": "App version, update controls, and release channel"
       },
       "profile": {
         "label": "Profile",
