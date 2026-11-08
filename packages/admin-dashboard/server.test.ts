@@ -870,4 +870,66 @@ describe('admin-dashboard server.ts', () => {
             expect(res.status).toBe(403);
         });
     });
+
+    describe('GET /api/deliveries/list — live deliveries from ddexReleases', () => {
+        it('returns mapped deliveries from ddexReleases with releaseId, title, dst, status, time, and type', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((colName: string) => {
+                    if (colName === 'ddexReleases') {
+                        return makeQuery(makeSnapshot([
+                            { id: 'ddex-1', data: { title: 'Neon Nights', distributors: ['Spotify', 'Apple Music'], status: 'delivered', createdAt: { toDate: () => new Date('2026-11-08T10:00:00Z') } } },
+                        ]));
+                    }
+                    return makeQuery(makeSnapshot([]));
+                }),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/deliveries/list', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                deliveries: [
+                    { id: 'ddex-1', releaseId: 'ddex-1', title: 'Neon Nights', dst: 'Spotify, Apple Music', status: 'delivered', type: 'DDEX ERN' },
+                ],
+            });
+        });
+
+        it('rejects unauthenticated requests', async () => {
+            const res = await request('GET', '/api/deliveries/list');
+            expect(res.status).toBe(401);
+        });
+    });
+
+    describe('GET /api/nexus/logs — system logs from agent_traces', () => {
+        it('returns mapped system logs from agent_traces with msg, status, and time', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((colName: string) => {
+                    if (colName === 'agent_traces') {
+                        return makeQuery(makeSnapshot([
+                            { id: 'trace-1', data: { action: 'Automated release deployment', status: 'success', timestamp: { toDate: () => new Date('2026-11-08T10:30:00Z') } } },
+                        ]));
+                    }
+                    return makeQuery(makeSnapshot([]));
+                }),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/nexus/logs', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                logs: [
+                    { id: 'trace-1', msg: 'Automated release deployment', status: 'success' },
+                ],
+            });
+        });
+
+        it('rejects unauthenticated requests', async () => {
+            const res = await request('GET', '/api/nexus/logs');
+            expect(res.status).toBe(401);
+        });
+    });
 });
