@@ -4379,6 +4379,17 @@ describe('Firestore Security Rules', () => {
                 await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'mechanical_license_checks', 'check-1')));
             });
 
+            it('users/{userId}/mechanical_licenses: owner can read/write, cross-user denied', async () => {
+                if (requireEmulator()) return;
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const docRef = doc(aliceDb, 'users', ALICE_UID, 'mechanical_licenses', 'lic-1');
+
+                await assertSucceeds(setDoc(docRef, { releaseId: 'rel-1', trackTitle: 'Cover Song' }));
+                await assertSucceeds(getDoc(docRef));
+                await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'mechanical_licenses', 'lic-1')));
+            });
+
             it('users/{userId}/campaign_metrics: owner can read/write, cross-user denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();

@@ -1274,6 +1274,10 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      match /mechanical_licenses/{licenseId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /campaign_metrics/{metricId} {
         allow read, write: if isOwner(userId);
       }

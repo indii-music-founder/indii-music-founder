@@ -183,7 +183,7 @@ export { exportSplitSheet } from './legal/exportSplitSheet';
 export { analyzeContract } from './legal/analyzeContract';
 
 export { sendForDigitalSignature } from './legal/digitalSignature';
-export { verifyMechanicalLicense } from './legal/mechanicalLicense';
+export { verifyMechanicalLicense, searchSongfile, requestMechanicalLicense } from './legal/mechanicalLicense';
 
 // Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
 export {

@@ -23,7 +23,11 @@ const mocks = vi.hoisted(() => {
     type MockSnapshot = { exists: () => boolean; data: () => Record<string, unknown> | undefined };
     const getDoc = vi.fn(async (): Promise<MockSnapshot> => ({ exists: () => false, data: () => undefined }));
     const doc = vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') }));
-    return { callableHandlers, httpsCallable, getDoc, doc };
+    const collection = vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') }));
+    const getDocs = vi.fn(async () => ({ docs: [] as Array<{ data: () => Record<string, unknown> }> }));
+    const query = vi.fn((col: unknown) => col);
+    const where = vi.fn();
+    return { callableHandlers, httpsCallable, getDoc, doc, collection, getDocs, query, where };
 });
 
 vi.mock('@/services/firebase', () => ({
@@ -46,6 +50,10 @@ vi.mock('firebase/functions', () => ({
 vi.mock('firebase/firestore', () => ({
     doc: mocks.doc,
     getDoc: mocks.getDoc,
+    collection: mocks.collection,
+    getDocs: mocks.getDocs,
+    query: mocks.query,
+    where: mocks.where,
 }));
 
 const queuedResponse = (provider: string, organization: string) => ({
@@ -182,7 +190,7 @@ describe('PRORightsService — cover song verification (ISSUE-655 / ISSUE-419)',
         expect(mocks.getDoc).not.toHaveBeenCalled();
     });
 
-    it("a manually confirmed license in the user's own coverLicenses doc verifies the cover", async () => {
+    it("a manually confirmed license in the user's own mechanical_licenses doc verifies the cover", async () => {
         mocks.getDoc.mockImplementation(async () => ({
             exists: () => true,
             data: () => ({ status: 'confirmed', licenseNumber: 'LIC-42' }),
@@ -190,7 +198,7 @@ describe('PRORightsService — cover song verification (ISSUE-655 / ISSUE-419)',
 
         const result = await verifyCoverSongLicense('user-1', coverMetadata);
 
-        expect(mocks.doc.mock.calls[0].slice(1)).toEqual(['users', 'user-1', 'coverLicenses', 'US-RC1-23-00001']);
+        expect(mocks.doc.mock.calls[0].slice(1)).toEqual(['users', 'user-1', 'mechanical_licenses', 'US-RC1-23-00001']);
         expect(result).toMatchObject({ isVerified: true, licenseNumber: 'LIC-42', licenseType: 'direct', requiresLicense: true });
         expect(mocks.callableHandlers.has('verifyMechanicalLicense')).toBe(false);
     });
