@@ -154,7 +154,8 @@ describe('AccountDeletionService', () => {
             expect(result).toHaveProperty('pendingExternalActions');
             expect(Array.isArray(result.deletedCollections)).toBe(true);
             expect(Array.isArray(result.errors)).toBe(true);
-            expect(typeof result.deletedStorageFiles).toBe('number');
+            // Structural-only: the mocked response does not establish deletion.
+            expect(result.deletedStorageFiles).toBeNull();
         });
     });
 });
