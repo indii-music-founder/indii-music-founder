@@ -1,4 +1,5 @@
 import { isVerifiedOwnerContinuityCaller } from './functions/security/ownerQuotaContinuity';
+import { deleteSocialData } from './account/deleteSocialData';
 // indii.music Cloud Functions - V1.1 (all triggers on Gen2 as of ISSUE-1243)
 import { onCall, onRequest, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
@@ -2797,6 +2798,14 @@ export const requestAccountDeletion = onCall(
                 logger.error(`[GDPR] Failed deleting root collection ${colName} for ${userId}:`, err);
                 errors.push(`root_${colName}: ${err}`);
             }
+        }
+
+        // Social records use author/follower fields rather than userId/ownerId.
+        try {
+            deletedDocs += await deleteSocialData(db, userId);
+        } catch (err) {
+            logger.error(`[GDPR] Failed deleting social data for ${userId}:`, err);
+            errors.push(`social_data: ${err}`);
         }
 
         // Step 4 — Delete Cloud Storage objects under user prefixes
