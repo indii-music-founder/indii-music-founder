@@ -10954,6 +10954,10 @@ export async function judgeBoardroomWebpageSemantics(
                     type: 'score' as const,
                     instructions:
                         'On a scale from 0.0 to 1.0, how relevant is this webpage to an independent artist or music business founder?',
+                    criteria: [
+                        'The webpage has no useful connection to an independent artist or music business founder.',
+                        'The webpage directly supports an independent artist or music business founder in their work.',
+                    ],
                 },
             },
         });
