@@ -212,11 +212,11 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `streaming/agentStream.ts:321` | `agentStreamHealth` | `onRequest` | Present | Present |
 | `stripe/connect.ts:13` | `createStripeConnectAccount` | `onCall` | Present | Present |
 | `stripe/connect.ts:123` | `createTransfer` | `onCall` | Present | Present |
-| `stripe/escrow.ts:17` | `handleEscrowWebhook` | `onRequest` | Present | Present |
+| `stripe/escrow.ts:10` | `handleEscrowWebhook` | `onRequest` | Present | Present |
 | `stripe/paymentLinks.ts:226` | `createStripePaymentLinks` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:46` | `initiateSplitEscrow` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:236` | `signEscrow` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:334` | `releaseEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:47` | `initiateSplitEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:237` | `signEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:335` | `releaseEscrow` | `onCall` | Present | Present |
 | `stripe/taxForms.ts:14` | `requestTaxForms` | `onCall` | Present | Present |
 | `stripe/webhookHandler.ts:1284` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |

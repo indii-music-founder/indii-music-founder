@@ -7,6 +7,7 @@
  * and the FinanceTools client can call createTransfer() for each split.
  */
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { isCompleteSplit } from './escrowSplitMath';
 import * as admin from 'firebase-admin';
 import { randomUUID } from 'node:crypto';
 import { stripe } from './config';
@@ -397,17 +398,10 @@ export const releaseEscrow = onCall(
                 throw new HttpsError('failed-precondition', 'Escrow has no held amount to release.');
             }
 
-            const totalPct = escrowParties.reduce((sum, p) => sum + (escrowSplits[p] || 0), 0);
-            if (totalPct <= 0) {
+            if (!isCompleteSplit(escrowParties.map(p => escrowSplits[p])) || new Set(escrowParties).size !== escrowParties.length) {
                 throw new HttpsError(
                     'failed-precondition',
-                    'No split percentages are defined. Releasing would capture funds without paying any party.'
-                );
-            }
-            if (totalPct > 100) {
-                throw new HttpsError(
-                    'failed-precondition',
-                    `Split percentages total ${totalPct}% — payouts would exceed the held amount.`
+                    'Each party needs a positive split and splits must total 100% before funds can be captured.'
                 );
             }
 
