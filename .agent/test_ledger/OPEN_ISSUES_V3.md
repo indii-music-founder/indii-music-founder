@@ -7158,7 +7158,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1616: Workflow context panel removes access to node inspector and library without explaining how to restore them
 
-- **Status:** 🟡 PARTIAL — compact node-tools panel prepared; deployed responsive acceptance pending.
+- **Status:** 🟡 PARTIAL — compact Node Library verified in production with Context open; selected-node editing and narrower viewports pending.
 - **Severity:** 🟡 MEDIUM — confusing obstruction of configuration; collapse workaround exists.
 - **Location:** Workflow Lab, open global Context panel; `packages/renderer/src/modules/workflow/WorkflowLab.tsx:496-505` uses `hidden @6xl:flex` for node library/inspector.
 - **Reproduction:** At 1920×907 desktop viewport, enter Workflow Lab with global context panel expanded, load Simple Concept Art, select Concept Art. Inspector and node library are absent from visible UI and accessibility tree. Collapse global panel using Collapse Panel; both immediately appear, including prompt configuration and Save Changes.
@@ -7169,6 +7169,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 - **Source progress:** Workflow Lab exposes a compact Node library & inspector control below the wide layout breakpoint, opens it when a node is selected, and provides a close control. Responsive rendering and selected-node editing on a real deployed session remain unverified.
 
 **Mainline reconciliation — 2026-10-31:** Fetched and fast-forwarded this audit worktree to `6bd81df8b`, preserving the remote ISSUE-1602 SDK updates and reapplying only the local audit additions. Audit findings remain local/unpublished at this point.
+- **Production verification (2026-11-11):** In signed-in Chrome at a 1920×907 viewport, Workflow Builder opened Workflow Lab with the global Context panel expanded. **Node library & inspector** opened **NODE LIBRARY** while the global panel stayed open. No existing workflow was modified. Selected-node configuration, saving an edit, and narrower viewports remain unverified.
 
 ### ISSUE-1617: Workflow Growth Protocol executor fails before media work while UI remains Running
 
