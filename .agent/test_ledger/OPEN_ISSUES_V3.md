@@ -2974,7 +2974,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1426: Homepage lifecycle timeline needs real capture and deployment proof
 
-- **Status:** 🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and domain alignment (ISSUE-1419) pending
+- **Status:** 🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and visitor acceptance pending; domain alignment verified under ISSUE-1419
 - **Severity:** 🟠 HIGH
 - **Module:** Landing capabilities
 - **Source of truth:** Marketing decision § Product explanation
@@ -3409,11 +3409,13 @@ PRs. Full phase/product acceptance is not established by those facts. See
 - **Status:** 🟡 PARTIAL (2026-10-01)
 - **Severity:** 🔴 HIGH
 - **Module:** Post-mastering admin engine P4/P5 / semantic catalog / SDK
-- **Evidence:** `projectSemanticNode` in `functions/catalog/semanticProjection.ts` has no production callers. `masterIngestionRunbook.ts` does not project catalog nodes and explicitly defers `DISTRIBUTION_READY` to a later phase. The endpoint supports a single `entityId` query, without the planned artist feed; `packages/sdk/src/client.ts` exposes no semantic catalog consumer. P1–P5 commits deliver primitives without these connections.
+- **Historical evidence:** `projectSemanticNode` in `functions/catalog/semanticProjection.ts` has no production callers. `masterIngestionRunbook.ts` does not project catalog nodes and explicitly defers `DISTRIBUTION_READY` to a later phase. The endpoint supports a single `entityId` query, without the planned artist feed; `packages/sdk/src/client.ts` exposes no semantic catalog consumer. P1–P5 commits deliver primitives without these connections.
 - **Impact:** The planned receipt-to-semantic-catalog consumer path cannot be established from current wiring.
 - **Expected (acceptance):** Idempotent receipt/runbook projection from verified canonical inputs; authenticated owner visibility control with private default; public-only entity/feed reads; SDK consumer; approved distribution path advances the FSM only after its deterministic prerequisites. Demonstrate reload/downstream retrieval with a genuine owner and no synthetic rights or signatures.
 - **Honest fallback:** Keep private/no-public-result and non-ready lifecycle states explicit until authoritative inputs and authorized opt-in exist.
 - **DO NOT:** Publish private data, infer signature execution from an empty task list, create assumed clearance, or jump to DISTRIBUTION_READY to satisfy the plan.
+
+- **Source reconciliation (2026-11-11):** `masterIngestionRunbook.ts` now projects locked receipts through `projectLockedReceipt` and `projectSemanticNode`, with private fallback when clearance is incomplete. `semanticProjection.ts` provides authenticated owner visibility changes and a public artist feed. The SDK exposes public entity and artist-feed consumers. These are source observations; genuine owner reload, downstream retrieval, and approved distribution lifecycle acceptance remain pending.
 
 ### ISSUE-1450 progress update — 2026-10-01
 
