@@ -84,8 +84,12 @@ describe('EnhancedShowroom (ISSUE-1605)', () => {
         });
         const original = 'data:image/png;base64,AAAA';
         const enlarged = 'data:image/png;base64,BBBB';
-        const upscale = Promise.withResolvers<Awaited<ReturnType<typeof browserUpscale>>>();
-        vi.mocked(browserUpscale).mockReturnValueOnce(upscale.promise);
+        type UpscaleResult = Awaited<ReturnType<typeof browserUpscale>>;
+        let resolveUpscale!: (result: UpscaleResult) => void;
+        const upscalePromise = new Promise<UpscaleResult>(resolve => {
+            resolveUpscale = resolve;
+        });
+        vi.mocked(browserUpscale).mockReturnValueOnce(upscalePromise);
         vi.mocked(Editing.generateComposite).mockResolvedValueOnce({
             id: 'mockup-asset',
             url: 'https://storage.googleapis.com/test-bucket/mockup.png',
@@ -108,7 +112,7 @@ describe('EnhancedShowroom (ISSUE-1605)', () => {
             fireEvent.click(generate);
             expect(Editing.generateComposite).not.toHaveBeenCalled();
 
-            upscale.resolve({ url: enlarged, width: 4, height: 4 });
+            resolveUpscale({ url: enlarged, width: 4, height: 4 });
             await waitFor(() => expect(generate).toBeEnabled());
             expect(screen.getByAltText('Asset')).toHaveAttribute('src', enlarged);
 
