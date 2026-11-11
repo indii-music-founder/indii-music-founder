@@ -265,7 +265,7 @@ export default function WorkflowLab() {
                 if (!protocol) throw new Error("Protocol not found");
 
                 // Dynamic import to avoid circular dependency
-                const { agentGraphService } = await import('@/services/agent/orchestration/AgentGraphService');
+                const { agentGraphService, GraphLeaseConflictError } = await import('@/services/agent/orchestration/AgentGraphService');
                 const { agentGraphStateService } = await import('@/services/agent/orchestration/AgentGraphStateService');
                 const { useStore } = await import('@/core/store');
                 const user = useStore.getState().user;
@@ -304,9 +304,11 @@ export default function WorkflowLab() {
                     clearInterval(interval);
                     setIsRunning(false);
                     toastError(`Workflow failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
-                    await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
-                        logger.error('Failed to persist workflow failure', stateError);
-                    });
+                    if (!(e instanceof GraphLeaseConflictError)) {
+                        await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
+                            logger.error('Failed to persist workflow failure', stateError);
+                        });
+                    }
                 });
 
                 // Start polling state to update UI nodes
