@@ -44,7 +44,8 @@ export const useMerchandise = () => {
     const [isProductsLoading, setIsProductsLoading] = useState(true);
     const [isCatalogLoading, setIsCatalogLoading] = useState(true);
     const [isStatsLoading, setIsStatsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [productError, setProductError] = useState<string | null>(null);
 
     // Load catalog on mount
     useEffect(() => {
@@ -62,7 +63,7 @@ export const useMerchandise = () => {
                 if (mounted) {
                     logger.error("[Merchandise] Failed to load catalog:", err);
                     setCatalog([]);
-                    setError("Could not load merchandise catalog.");
+                    setCatalogError("Could not load merchandise catalog.");
                     setIsCatalogLoading(false);
                 }
             });
@@ -89,6 +90,7 @@ export const useMerchandise = () => {
 
     // Subscribe to user's products
     useEffect(() => {
+        setProductError(null);
         if (!authenticatedUserId) {
             setProducts([]);
             setIsProductsLoading(false);
@@ -96,19 +98,19 @@ export const useMerchandise = () => {
         }
 
         setIsProductsLoading(true);
-        setError(null);
 
         let initialLoadComplete = false;
 
         const unsubscribe = MerchandiseService.subscribeToProducts(authenticatedUserId, (data) => {
             initialLoadComplete = true;
+            setProductError(null);
             setProducts(data);
             setIsProductsLoading(false);
         }, (err) => {
             initialLoadComplete = true;
             logger.error("Product subscription failed, likely auth or permissions:", err);
             setProducts([]);
-            setError("Could not load products.");
+            setProductError("Could not load products.");
             setIsProductsLoading(false);
         });
 
@@ -117,7 +119,7 @@ export const useMerchandise = () => {
             if (!initialLoadComplete) {
                 logger.warn("[Merchandise] Product subscription timed out.");
                 setProducts([]);
-                setError("Product subscription timed out.");
+                setProductError("Product subscription timed out.");
                 setIsProductsLoading(false);
             }
         }, 5000);
@@ -210,7 +212,7 @@ export const useMerchandise = () => {
         stats,
         topSellingProducts,
         loading,
-        error,
+        error: productError ?? catalogError,
         addProduct: MerchandiseService.addProduct,
         deleteProduct: MerchandiseService.deleteProduct,
         createFromCatalog

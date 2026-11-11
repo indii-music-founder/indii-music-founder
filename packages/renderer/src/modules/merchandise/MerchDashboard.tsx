@@ -93,6 +93,7 @@ export default function MerchDashboard() {
             <div className="absolute inset-0 flex items-center justify-center bg-[#050505] flex-col gap-4" data-testid="merch-dashboard-error">
                 <p className="text-red-500 font-bold" data-testid="merch-error-message">Failed to load dashboard data.</p>
                 <p className="text-neutral-400">{error}</p>
+                <MerchNavItem to="/merch/design" icon={<PenTool size={18} />}>Open Designer</MerchNavItem>
             </div>
         );
     }
