@@ -21,7 +21,7 @@ const breakthroughPillars: BreakthroughPillar[] = [
   {
     number: '01',
     title: 'Your Living Master Directive',
-    tagline: 'Your studio rules. Enforced by default.',
+    tagline: 'Keep your creative direction close.',
     hex: '#FFB800',
     Icon: BookOpen,
     genericLabel: 'Generic software',
@@ -29,8 +29,8 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'Most tools forget who you are between sessions. You re-explain your sound, your contract red lines, and your aesthetic to every tool, every time.',
     indiiLabel: 'Your Master Directive',
     indii:
-      'Set your minimum royalty splits, target loudness, and visual style once in your Living Playbook. Your dedicated team never deviates from your standards—and updates itself automatically as you work.',
-    proof: 'Learns your preferences automatically as you work',
+      'Keep your preferences and creative direction in your workspace so your team has context for the work ahead.',
+    proof: 'Your direction in one workspace',
   },
   {
     number: '02',
@@ -43,13 +43,13 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'A general-purpose chatbot guessing at copyright law, aesthetic direction, and campaign strategy simultaneously—producing generic results that can harm your brand.',
     indiiLabel: 'Your dedicated specialists',
     indii:
-      'When you ask a legal question, a legal specialist answers. When you need a campaign, a marketing specialist handles it. 23 domain-isolated members of your team—each trained only on their area of expertise.',
+      'Ask specialists for help with legal questions, campaign planning, and other areas of your music business.',
     proof: 'Domain expertise, not general guessing',
   },
   {
     number: '03',
-    title: 'Instant Brand Sync',
-    tagline: 'Update once. Everything updates.',
+    title: 'Connected Brand Direction',
+    tagline: 'Keep your visual direction connected.',
     hex: '#00FF66',
     Icon: Palette,
     genericLabel: 'Manual updates across every tool',
@@ -57,8 +57,8 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'Change your brand palette and spend hours updating your studio interface, campaign visuals, merchandise concepts, and social templates across a dozen separate apps.',
     indiiLabel: 'Unified Visual Identity',
     indii:
-      'Update your colors once in your Master Directive and your entire studio, social teasers, and merchandise concepts update automatically in seconds. Your design specialists get the new brief instantly.',
-    proof: 'One change. Full studio. Instant cascade.',
+      'Organize your visual direction in your workspace and use it to guide campaigns, social concepts, and merchandise.',
+    proof: 'A shared place for visual direction',
   },
   {
     number: '04',
@@ -71,8 +71,8 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'Traditional tools glue a chatbot to the corner of an old website. You wait for generic paragraphs while your actual splits, statements, and releases stay stuck in slow web forms.',
     indiiLabel: 'Built-In Common Sense',
     indii:
-      'Common sense is woven directly into your tools. Statement audits, split contracts, and release packaging happen in milliseconds without slowing down your session.',
-    proof: 'Everything in one room. Zero waiting.',
+      'Use connected tools to prepare statement reviews, split information, and release materials in your workspace.',
+    proof: 'Connected tools for your music business',
   },
 ];
 
