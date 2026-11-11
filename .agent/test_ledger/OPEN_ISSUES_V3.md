@@ -2974,7 +2974,7 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1426: Homepage lifecycle timeline needs real capture and deployment proof
 
-- **Status:** 🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and domain alignment (ISSUE-1419) pending
+- **Status:** 🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and visitor acceptance pending; domain alignment verified under ISSUE-1419
 - **Severity:** 🟠 HIGH
 - **Module:** Landing capabilities
 - **Source of truth:** Marketing decision § Product explanation
