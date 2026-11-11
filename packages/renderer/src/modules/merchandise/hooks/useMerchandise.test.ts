@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useMerchandise } from './useMerchandise';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { revenueService } from '@/services/RevenueService';
@@ -86,6 +86,32 @@ describe('useMerchandise', () => {
 
         expect(MerchandiseService.subscribeToProducts).toHaveBeenCalledWith('test-user-id', expect.any(Function), expect.any(Function));
     });
+
+    it.each([null, 'Could not load merchandise catalog.'])(
+        'clears the product timeout on a late snapshot while retaining catalog error %s',
+        async (catalogError) => {
+            vi.useFakeTimers();
+            try {
+                if (catalogError) {
+                    vi.mocked(MerchandiseService.getCatalog).mockRejectedValue(new Error('Catalog unavailable'));
+                } else {
+                    vi.mocked(MerchandiseService.getCatalog).mockResolvedValue([]);
+                }
+                vi.mocked(MerchandiseService.subscribeToProducts).mockReturnValue(() => {});
+
+                const { result } = renderHook(() => useMerchandise());
+                await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+                expect(result.current.error).toBe('Product subscription timed out.');
+
+                const [, receiveProducts] = vi.mocked(MerchandiseService.subscribeToProducts).mock.calls[0]!;
+                await act(async () => { receiveProducts([]); });
+                expect(result.current.error).toBe(catalogError);
+                expect(result.current.loading).toBe(false);
+            } finally {
+                vi.useRealTimers();
+            }
+        },
+    );
 
     it('should surface catalog loading errors', async () => {
         const error = new Error('Failed to fetch');
