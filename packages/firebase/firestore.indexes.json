@@ -96,6 +96,20 @@
   ],
   "indexes": [
     {
+      "collectionGroup": "designs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastModified",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "tool_approvals",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, History, Clock, RotateCcw, Eye, Trash2, ChevronDown, ChevronUp, Calendar, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { X, History, Clock, RotateCcw, Eye, Trash2, ChevronDown, ChevronUp, Calendar, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { collection, query, where, orderBy, getDocs, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
@@ -39,60 +39,64 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     })));
     const [versions, setVersions] = useState<DesignVersion[]>([]);
     const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState<string | null>(null);
     const [selectedVersion, setSelectedVersion] = useState<DesignVersion | null>(null);
     const [previewVersion, setPreviewVersion] = useState<DesignVersion | null>(null);
     const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
+    const fetchVersions = useCallback(async () => {
+        if (!userProfile?.id) return;
+        setLoading(true);
+        setFetchError(null);
+        try {
+            const q = query(
+                collection(db, 'designs'),
+                where('userId', '==', userProfile.id),
+                orderBy('lastModified', 'desc')
+            );
+
+            const snapshot = await getDocs(q);
+            const fetchedVersions: DesignVersion[] = [];
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                fetchedVersions.push({
+                    id: docSnap.id,
+                    name: data.name || 'Untitled Design',
+                    canvasJSON: data.canvasJSON || '{}',
+                    thumbnail: data.thumbnail || '',
+                    lastModified: data.lastModified instanceof Timestamp
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        ? (typeof data.lastModified.toDate === 'function' ? data.lastModified.toDate() : new Date(data.lastModified as any))
+                        : new Date(data.lastModified),
+                    createdAt: data.createdAt instanceof Timestamp
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : new Date(data.createdAt as any))
+                        : new Date(data.createdAt || data.lastModified)
+                });
+            });
+
+            setVersions(fetchedVersions);
+
+            // Auto-expand the most recent date
+            if (fetchedVersions.length > 0) {
+                const firstDate = formatDateKey(fetchedVersions[0]!.lastModified);
+                setExpandedDates(new Set([firstDate]));
+            }
+        } catch (error: unknown) {
+            logger.error('Failed to fetch design versions:', error);
+            const msg = error instanceof Error ? error.message : 'Could not fetch saved design versions';
+            setFetchError(msg);
+        } finally {
+            setLoading(false);
+        }
+    }, [userProfile?.id]);
+
     // Fetch versions from Firestore
     useEffect(() => {
         if (!isOpen || !userProfile?.id) return;
-
-        const fetchVersions = async () => {
-            setLoading(true);
-            try {
-                const q = query(
-                    collection(db, 'designs'),
-                    where('userId', '==', userProfile.id),
-                    orderBy('lastModified', 'desc')
-                );
-
-                const snapshot = await getDocs(q);
-                const fetchedVersions: DesignVersion[] = [];
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    fetchedVersions.push({
-                        id: docSnap.id,
-                        name: data.name || 'Untitled Design',
-                        canvasJSON: data.canvasJSON || '{}',
-                        thumbnail: data.thumbnail || '',
-                        lastModified: data.lastModified instanceof Timestamp
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            ? (typeof data.lastModified.toDate === 'function' ? data.lastModified.toDate() : new Date(data.lastModified as any))
-                            : new Date(data.lastModified),
-                        createdAt: data.createdAt instanceof Timestamp
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate() : new Date(data.createdAt as any))
-                            : new Date(data.createdAt || data.lastModified)
-                    });
-                });
-
-                setVersions(fetchedVersions);
-
-                // Auto-expand the most recent date
-                if (fetchedVersions.length > 0) {
-                    const firstDate = formatDateKey(fetchedVersions[0]!.lastModified);
-                    setExpandedDates(new Set([firstDate]));
-                }
-            } catch (error: unknown) {
-                logger.error('Failed to fetch design versions:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchVersions();
-    }, [isOpen, userProfile?.id]);
+    }, [isOpen, userProfile?.id, fetchVersions]);
 
     // Group versions by date
     const groupedVersions = useMemo(() => {
@@ -167,6 +171,24 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             <div className="flex flex-col items-center justify-center h-full gap-3">
                                 <Loader2 size={24} className="text-blue-400 animate-spin" />
                                 <p className="text-sm text-neutral-500">Loading versions...</p>
+                            </div>
+                        ) : fetchError ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center p-6 gap-3" data-testid="version-history-error">
+                                <div className="p-3 bg-red-500/20 text-red-400 rounded-full">
+                                    <AlertCircle size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-white">Failed to load versions</p>
+                                    <p className="text-xs text-neutral-400 mt-1 max-w-[220px] mx-auto break-words">{fetchError}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => fetchVersions()}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-xs font-medium text-white rounded-lg border border-white/10 transition-colors"
+                                >
+                                    <RefreshCw size={12} />
+                                    <span>Retry</span>
+                                </button>
                             </div>
                         ) : versions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center p-6">

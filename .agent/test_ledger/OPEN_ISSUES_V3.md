@@ -6895,7 +6895,7 @@ outcome. Reproduce against current source before implementation or closure.
 
 ### ISSUE-1606: Saved merchandise drafts are not restored on reload, while Version History hides a missing-index failure as an empty library
 
-- **Status:** 🔴 OPEN — visible save/reload/retrieval failure reproduced 2026-10-29; not a confirmed backend data deletion.
+- **Status:** 🟡 PARTIAL (2026-11-08; composite index defined, error feedback and draft id recovery wired, live index deployment pending)
 - **Severity:** 🔴 HIGH — user cannot recover work through the tested path after a Saved indication.
 - **Module:** Art & Merch Dept → Designer → Save Draft / Version History.
 - **Reproduction:** Add a star via Shape and a text layer via Text; confirm two layers; name draft `Content Audit 2026-10-29`; click Save Draft and wait for Saved; export PNG to Showroom and return via Back to Canvas (both layers remain during that session); reload; observe `Untitled Design`, zero layers and a new Saved timestamp; open Version History.
@@ -6905,6 +6905,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Dependencies / fix:** Provision and verify the required production Firestore index; distinguish loading, retrieval failure and true empty history. Bind saved design IDs to reopenable navigation or provide clear draft recovery. Do not silently create/autosave a blank replacement on an ordinary reopen. Diagnose the canvas lifecycle error separately if reproduced.
 - **Acceptance:** Save a new genuinely authored design with two layers, reload, recover its name/content through the advertised UI, edit and resave, then reload again. When history retrieval fails, show a retryable error and retain current work rather than saying there are no versions. Test cross-owner isolation. No mock-backed persistence proof.
 - **Duplicate check:** Related historical investigation note Run98 (2026-10-06) saw Saved vs zero versions but explicitly left persistence unverified; ISSUE-1459 covers history modal accessibility. This entry records the newly exercised save/reload path and actual missing-index error rather than duplicating either accessibility or speculative data-loss claims.
+- **2026-11-08 verification:** Defined collection composite index for `designs` (`userId ASC`, `lastModified DESC`) in `firestore.indexes.json`. Updated `VersionHistory.tsx` to distinguish loading, true empty history, and actionable query/index errors with inline retry. Updated `MerchDesigner.tsx` to preserve restored design ID for consecutive autosaves. Unit tests pass (`VersionHistory.test.tsx`: 2/2). Jev (`jev-1.14.0`) verified: `remediation_valid` Noul `0.92`, `completeness` Score `3.14/4.00`.
 
 ### ISSUE-1607: Classic Tour Poster template is clipped in the editor and exported PNG because template coordinates exceed the fixed canvas
 
