@@ -96,6 +96,16 @@ describe('useURLSync', () => {
         expect(mocks.navigate).toHaveBeenCalledWith('/finance');
     });
 
+    it('preserves a settings section requested before router state catches up', () => {
+        // Structural-only: real browser navigation still requires acceptance.
+        window.history.replaceState({}, '', '/?section=remote');
+        const { rerender } = renderHook(() => useURLSync());
+        mocks.currentModule.value = 'settings';
+        rerender();
+        expect(mocks.navigate).toHaveBeenCalledWith('/settings?section=remote');
+        window.history.replaceState({}, '', '/');
+    });
+
     it('carries a non-default store-backed tab on a module navigation (ISSUE-1439)', () => {
         const { rerender } = renderHook(() => useURLSync());
 
