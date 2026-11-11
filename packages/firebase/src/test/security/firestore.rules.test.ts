@@ -42,6 +42,7 @@ import {
     getDocs,
     limit,
     query,
+    where,
 } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -2077,6 +2078,21 @@ describe('Firestore Security Rules', () => {
                 id: 'spoofed',
                 userId: ALICE_UID,
             }));
+        });
+
+        it('allows only the owner-filtered library query and owner deletion', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            const aliceAssets = collection(aliceDb, 'audio_assets');
+            const bobAssets = collection(bobDb, 'audio_assets');
+
+            const owned = await assertSucceeds(getDocs(query(aliceAssets, where('userId', '==', ALICE_UID))));
+            expect(owned.docs.map(asset => asset.id)).toContain(audioId);
+            await assertFails(getDocs(aliceAssets));
+            await assertFails(getDocs(query(bobAssets, where('userId', '==', ALICE_UID))));
+            await assertFails(deleteDoc(doc(bobDb, 'audio_assets', audioId)));
+            await assertSucceeds(deleteDoc(doc(aliceDb, 'audio_assets', audioId)));
         });
 
         it('rejects malformed assets and immutable-owner spoofing on update', async () => {
