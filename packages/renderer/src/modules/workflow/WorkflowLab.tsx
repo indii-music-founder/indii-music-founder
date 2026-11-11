@@ -55,8 +55,13 @@ export default function WorkflowLab() {
     })));
     const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
+    const [showCompactInspector, setShowCompactInspector] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (selectedNodeId) setShowCompactInspector(true);
+    }, [selectedNodeId]);
 
     // Alias user for compatibility
     const currentUser = user;
@@ -632,10 +637,20 @@ export default function WorkflowLab() {
                 {/* ── CENTER — Node Editor Canvas ────────────────────── */}
                 <div id="tour-workflow-canvas" className="flex-1 relative min-w-0">
                     <WorkflowEditor onInit={(instance) => { rfInstanceRef.current = instance; }} />
+                    <button
+                        type="button"
+                        className="absolute top-3 right-3 z-10 @6xl:hidden rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-xs font-semibold text-white"
+                        aria-controls="workflow-tools-panel"
+                        aria-expanded={showCompactInspector}
+                        onClick={() => setShowCompactInspector(value => !value)}
+                    >
+                        {showCompactInspector ? 'Hide node tools' : 'Node library & inspector'}
+                    </button>
                 </div>
 
                 {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
+                <aside id="workflow-tools-panel" aria-label="Node library and inspector" className={`${showCompactInspector ? 'flex' : 'hidden'} absolute inset-y-0 right-0 z-20 w-[min(20rem,90%)] @6xl:static @6xl:flex @6xl:w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]`}>
+                    <button type="button" className="@6xl:hidden self-end rounded border border-gray-600 px-3 py-1 text-xs text-white" onClick={() => setShowCompactInspector(false)}>Close node tools</button>
                     <NodeLibraryPanel />
                     {selectedNodeId ? (
                         <WorkflowNodeInspector />

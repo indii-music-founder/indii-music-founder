@@ -7154,7 +7154,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1616: Workflow context panel removes access to node inspector and library without explaining how to restore them
 
-- **Status:** 🔴 OPEN — production UI reproduced 2026-10-31.
+- **Status:** 🟡 PARTIAL — compact node-tools panel prepared; deployed responsive acceptance pending.
 - **Severity:** 🟡 MEDIUM — confusing obstruction of configuration; collapse workaround exists.
 - **Location:** Workflow Lab, open global Context panel; `packages/renderer/src/modules/workflow/WorkflowLab.tsx:496-505` uses `hidden @6xl:flex` for node library/inspector.
 - **Reproduction:** At 1920×907 desktop viewport, enter Workflow Lab with global context panel expanded, load Simple Concept Art, select Concept Art. Inspector and node library are absent from visible UI and accessibility tree. Collapse global panel using Collapse Panel; both immediately appear, including prompt configuration and Save Changes.
@@ -7162,6 +7162,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 - **Actual:** Context panel occupies roughly 730px and largely shows empty space beneath a second Run Workflow button; inspector disappears below container breakpoint. Clicking a node gives no visible configuration response. Primary left Run Workflow and the large context Run Workflow compete for attention. This observation concerns discoverability and screen space, not a claim that execution is broken by the panel.
 - **Evidence:** Live screenshot inspected before collapse; accessibility tree before/after collapse exposes NODE LIBRARY and NODE INSPECTOR only afterwards. No duplicate specific Workflow inspector visibility entry found.
 - **Dependencies:** Responsive layout/container sizing and selected-node navigation; mobile/narrower viewport variants still unverified. No UI change made.
+- **Source progress:** Workflow Lab exposes a compact Node library & inspector control below the wide layout breakpoint, opens it when a node is selected, and provides a close control. Responsive rendering and selected-node editing on a real deployed session remain unverified.
 
 **Mainline reconciliation — 2026-10-31:** Fetched and fast-forwarded this audit worktree to `6bd81df8b`, preserving the remote ISSUE-1602 SDK updates and reapplying only the local audit additions. Audit findings remain local/unpublished at this point.
 
