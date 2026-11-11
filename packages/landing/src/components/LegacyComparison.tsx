@@ -43,12 +43,12 @@ const breakthroughPillars: BreakthroughPillar[] = [
       'A general-purpose chatbot guessing at copyright law, aesthetic direction, and campaign strategy simultaneously—producing generic results that can harm your brand.',
     indiiLabel: 'Your dedicated specialists',
     indii:
-      'When you ask a legal question, a legal specialist answers. When you need a campaign, a marketing specialist handles it. Specialists focus on different areas of your music business.',
+      'Ask specialists for help with legal questions, campaign planning, and other areas of your music business.',
     proof: 'Domain expertise, not general guessing',
   },
   {
     number: '03',
-    title: 'Instant Brand Sync',
+    title: 'Connected Brand Direction',
     tagline: 'Keep your visual direction connected.',
     hex: '#00FF66',
     Icon: Palette,
