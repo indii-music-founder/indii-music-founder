@@ -56,7 +56,8 @@ export const catalogAdminSweep = onSchedule(
     {
         // Mondays 06:17 UTC — deliberately off the hour to avoid contention
         // with the hourly delivery-status pollers.
-        schedule: 'TZ=UTC 17 6 * * 1',
+        schedule: '17 6 * * 1',
+        timeZone: 'UTC',
         secrets: [inngestEventKey],
         memory: '512MiB',
     },
