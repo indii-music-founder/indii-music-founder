@@ -7076,13 +7076,14 @@ Loaded stock Song → Performance Video, inspected Analyze Song / Beat-Sync Asse
 
 ### ISSUE-1613: Regional Tour Booking workflow treats an unsupported department fallback as a processed result
 
-- **Status:** 🔴 OPEN (2026-11-02; unsupported branch still returns a success-shaped fallback)
+- **Status:** 🟡 PARTIAL (unsupported branch now fails explicitly in source; deployed workflow acceptance pending)
 - **Historical status / severity:** CONFIRMED OPEN / MEDIUM; production UI plus source correlation, 2026-10-30.
 - **Location:** Workflow Lab → Templates → Regional Tour Booking Playbook → Run Workflow; Live & Booking Department node.
 - **Reproduction:** Load the stock template; enter a fictional tour/flyer QA brief explicitly prohibiting contacts/bookings/publication; run. The booking node immediately displays `Processed by Live & Booking De...`.
 - **Expected / actual:** Expected a real supported preparation operation or an explicit unsupported/unavailable error. Actual node receives a generic processed string while no booking capability runs. This can make a multi-part flyer/tour workflow appear to have fulfilled a branch it did not execute.
 - **Evidence / cause:** WorkflowEngine.ts:375-376 default returns `Processed by ${data.departmentName}: ${prompt}`; the template's Live & Booking Department has no specific case. Visible node result matches that literal. No claim of actual external booking, venue contact or delivery; none requested or observed.
 - **Dependencies / acceptance:** Implement a real supported preparation contract or report the branch unavailable and prevent success aggregation from implying completion. Verify actual outputs for booking preparation and flyer generation independently. The marketing/flyer branches of this run remain pending at this observation.
+- **Source progress:** The department fallback now raises an unavailable error, preventing downstream success for that node. Structural tests cover the unsupported department and unimplemented audio-QC and rights micro-workflows; genuine deployed execution remains unverified. The same repair removes fabricated media URLs and fabricated QC/rights results from the affected micro-workflows.
 - **Duplicate check:** Current ledger search for the fallback literal, Live & Booking and Regional Tour Booking returned no matching issue.
 
 **Regional Tour Booking terminal media result:** The same run returned Run Workflow to enabled, Ad Copy produced an INTERNAL QA DRAFT, Concept Art failed with `Image generation failed: The generation request wa...`, and Final Output said Report generated. No flyer image was returned. This extends the existing Workflow Lab image failure across the tour template; report wording does not prove a completed tour/flyer package.

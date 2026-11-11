@@ -19,7 +19,6 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { performanceVideoService, sonicProfileFromAnalysisReceipt } from '@/services/video/PerformanceVideoService';
 import { audioAnalysisReceiptService } from '@/services/audio/AudioAnalysisReceiptService';
 import { auth } from '@/services/firebase';
@@ -367,51 +366,27 @@ export class WorkflowEngine {
                         aspectRatio: '1:1',
                         resolution: '4K'
                     });
-                    const coverUrl = images[0]?.url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1000&q=80';
+                    const coverUrl = images[0]?.url;
+                    if (!coverUrl) throw new Error('Cover generation returned no image.');
                     const videos = await VideoGeneration.generateVideo({
                         prompt: `Hypnotic seamless looping 9:16 vertical canvas music visualizer: ${prompt}`,
                         durationSeconds: 8,
                         aspectRatio: '9:16',
                         firstFrame: coverUrl
                     });
+                    const canvasVideoUrl = videos[0]?.url;
+                    if (!canvasVideoUrl) throw new Error('Canvas generation returned no video.');
                     return {
                         coverArtUrl: coverUrl,
-                        canvasVideoUrl: videos[0]?.url || 'https://video.example.com/canvas.mp4',
+                        canvasVideoUrl,
                         visualTheme: prompt
                     };
                 }
                 if (jobId === 'micro-audio-qc') {
-                    return {
-                        assetType: 'audio_qc',
-                        pass: true,
-                        integratedLufs: -14.0,
-                        targetLufs: -14.0,
-                        truePeakDbfs: -1.0,
-                        maxTruePeakDbfs: -1.0,
-                        clippingDetected: false,
-                        sampleRateHz: 44100,
-                        bitDepth: 24,
-                        issues: [],
-                        recommendations: ['Mastering audio conforms cleanly to Spotify, Apple Music, and YouTube loudness targets.']
-                    };
+                    throw new Error('Audio quality analysis is unavailable in this workflow.');
                 }
                 if (jobId === 'micro-rights-metadata') {
-                    const yearSuffix = new Date().getFullYear().toString().slice(-2);
-                    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-                    const randomUpc = '198' + Math.floor(100000000 + Math.random() * 900000000).toString();
-                    return {
-                        metadata: {
-                            title: prompt || 'New Single',
-                            primaryArtist: auth.currentUser?.displayName || 'Primary Artist',
-                            isrc: `US-S1Z-${yearSuffix}-${randomSuffix}`,
-                            upc: randomUpc
-                        },
-                        splits: {
-                            totalMasterPercentage: 100,
-                            totalPublishingPercentage: 100,
-                            isBalanced: true
-                        }
-                    };
+                    throw new Error('Rights and release identifiers require verified metadata and are unavailable in this workflow.');
                 }
                 if (jobId === 'micro-social-hype') {
                     const pitchRes = await AI.generateContent(
@@ -420,7 +395,7 @@ export class WorkflowEngine {
                     );
                     return getResponseText(pitchRes);
                 }
-                return `Micro-workflow executed: ${prompt}`;
+                throw new Error('This micro-workflow operation is unavailable.');
             }
 
             // ── Notes Department (Music Inception, Songwriting, Release Recipes) ──
@@ -725,7 +700,8 @@ ${rawLyrics}`
                         aspectRatio: '1:1',
                         resolution: '4K'
                     });
-                    return images[0]?.url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1000&q=80';
+                    if (!images[0]?.url) throw new Error('Cover generation returned no image.');
+                    return images[0].url;
                 }
 
                 if (jobId === 'art-upscale') {
@@ -905,7 +881,7 @@ ${prompt}`
             }
 
             default:
-                return `Processed by ${data.departmentName}: ${prompt}`;
+                throw new Error(`Workflow operation unavailable for ${data.departmentName || 'this department'}.`);
         }
     }
 
