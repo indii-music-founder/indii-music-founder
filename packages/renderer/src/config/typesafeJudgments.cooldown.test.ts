@@ -60,6 +60,18 @@ describe('judgment failure cooldown', () => {
         }
     });
 
+    it.each(['invalid-argument', 'internal', 'deadline-exceeded'])(
+        'keeps other judgments available after a callable %s failure',
+        async code => {
+            mocks.httpsCallable.mockReturnValueOnce(async () => {
+                throw Object.assign(new Error('Judgment failed'), { code: `functions/${code}` });
+            });
+            expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
+            mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { transient: 0.9 } } }));
+            expect(await judgeTransientError(new Error('timeout'), true)).toBe(true);
+        },
+    );
+
     it('resumes judgment calls after the cooldown expires', async () => {
         vi.useFakeTimers();
         try {

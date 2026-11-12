@@ -173,7 +173,7 @@ export function TourRouteOptimizer() {
                     <div>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 cursor-help flex items-center gap-1 hover:text-neutral-300 transition-colors">
+                                <h4 tabIndex={0} className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 cursor-help flex items-center gap-1 hover:text-neutral-300 transition-colors">
                                     Add Cities <Info size={10} className="opacity-60" />
                                 </h4>
                             </TooltipTrigger>
@@ -234,7 +234,11 @@ export function TourRouteOptimizer() {
                     </div>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div>
+                            <div
+                                tabIndex={selected.length < 2 ? 0 : undefined}
+                                aria-label={selected.length < 2 ? "Route optimization information. Add at least two cities to optimize." : undefined}
+                                className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-300"
+                            >
                                 <button
                                     onClick={() => setOptimized(true)}
                                     disabled={selected.length < 2}

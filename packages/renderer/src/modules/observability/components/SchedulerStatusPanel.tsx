@@ -275,7 +275,7 @@ export function SchedulerStatusPanel() {
                         <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1 px-1">
                             Registered Tasks
                         </p>
-                        <ScrollArea className="h-[160px]">
+                        <ScrollArea role="region" aria-label="Scheduler activity" tabIndex={0} className="h-[160px]">
                             <div className="space-y-0.5">
                                 {tasks
                                     .slice()

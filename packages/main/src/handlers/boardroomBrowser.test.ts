@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     ipcMainHandlers: new Map<string, (...args: unknown[]) => unknown>(),
+    onBeforeRequest: vi.fn(),
+    safeUrl: vi.fn(async (url: string) => {
+        if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes('169.254.169.254')) throw new Error('Security Violation: Access to private network or metadata is denied.');
+    }),
     shellOpenExternal: vi.fn(),
     mockWebContents: {
         loadURL: vi.fn().mockResolvedValue(undefined),
@@ -48,6 +52,7 @@ vi.mock('electron', () => ({
         fromPartition: vi.fn(() => ({
             setPermissionRequestHandler: vi.fn(),
             setPermissionCheckHandler: vi.fn(),
+            webRequest: { onBeforeRequest: mocks.onBeforeRequest },
         })),
     },
     BrowserWindow: {
@@ -69,14 +74,12 @@ vi.mock('../utils/ipc-security', () => ({
 }));
 
 vi.mock('../utils/network-security', () => ({
-    validateSafeUrlAsync: vi.fn(async (url: string) => {
-        if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes('169.254.169.254')) {
-            throw new Error('Security Violation: Access to private network or metadata is denied.');
-        }
-    }),
+    validateSafeUrlAsync: mocks.safeUrl,
 }));
 
 import { registerBoardroomBrowserHandlers } from './boardroomBrowser';
+
+const frameRequestHandler = mocks.onBeforeRequest.mock.calls[0]?.[0] as (details: { url: string; resourceType: string }, callback: (result: { cancel: boolean }) => void) => void;
 
 describe('BoardroomBrowser IPC Handlers', () => {
     beforeEach(() => {
@@ -164,6 +167,107 @@ describe('BoardroomBrowser IPC Handlers', () => {
         expect(result.success).toBe(true);
         expect(result.data.title).toBe('Spotify for Artists');
         expect(result.data.text).toContain('streaming performance');
+    });
+
+    it('rejects capture during loading and after a main-frame load failure', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        const listener = (name: string) => mocks.mockWebContents.on.mock.calls.find(([channel]) => channel === name)?.[1] as (...args: unknown[]) => void;
+        const capture = mocks.ipcMainHandlers.get('boardroom-browser:capture-context')!;
+        listener('did-start-loading')();
+        expect(await capture(event)).toMatchObject({ success: false, error: expect.stringContaining('loading or failed') });
+        listener('did-fail-load')({}, -105, 'NAME_NOT_RESOLVED', 'https://bad.example', true);
+        expect(await capture(event)).toMatchObject({ success: false, error: expect.stringContaining('loading or failed') });
+        expect(mocks.mockWebContents.executeJavaScript).not.toHaveBeenCalled();
+        listener('did-start-loading')();
+        listener('did-fail-load')({}, -105, 'subframe failed', 'https://frame.example', false);
+        listener('did-stop-loading')();
+        expect(await capture(event)).toMatchObject({ success: true });
+    });
+
+    it('rejects a capture if navigation starts before extraction completes', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        const listener = (name: string) => mocks.mockWebContents.on.mock.calls.find(([channel]) => channel === name)?.[1] as (...args: unknown[]) => void;
+        listener('did-stop-loading')();
+        let complete!: (value: { title: string; url: string; text: string }) => void;
+        mocks.mockWebContents.executeJavaScript.mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+        const result = mocks.ipcMainHandlers.get('boardroom-browser:capture-context')!(event) as Promise<unknown>;
+        listener('did-start-loading')();
+        complete({ title: 'Old', url: 'https://artists.spotify.com', text: 'Old content' });
+        expect(await result).toMatchObject({ success: false, error: expect.stringContaining('changed') });
+        listener('did-stop-loading')();
+    });
+
+    it('validates frame requests including redirect destinations', async () => {
+        const blocked = vi.fn();
+        frameRequestHandler({ url: 'http://127.0.0.1/private', resourceType: 'mainFrame' }, blocked);
+        await vi.waitFor(() => expect(blocked).toHaveBeenCalledWith({ cancel: true }));
+        const allowed = vi.fn();
+        frameRequestHandler({ url: 'https://ascap.com', resourceType: 'subFrame' }, allowed);
+        await vi.waitFor(() => expect(allowed).toHaveBeenCalledWith({ cancel: false }));
+        const blockedFetch = vi.fn();
+        frameRequestHandler({ url: 'http://169.254.169.254/metadata', resourceType: 'xhr' }, blockedFetch);
+        await vi.waitFor(() => expect(blockedFetch).toHaveBeenCalledWith({ cancel: true }));
+        const socket = vi.fn();
+        frameRequestHandler({ url: 'ws://127.0.0.1:8080/', resourceType: 'webSocket' }, socket);
+        await vi.waitFor(() => expect(socket).toHaveBeenCalledWith({ cancel: true }));
+        const localAsset = vi.fn();
+        frameRequestHandler({ url: 'data:image/png;base64,AA==', resourceType: 'image' }, localAsset);
+        expect(localAsset).toHaveBeenCalledWith({ cancel: false });
+        const image = vi.fn();
+        frameRequestHandler({ url: 'https://ascap.com/image.png', resourceType: 'image' }, image);
+        await vi.waitFor(() => expect(image).toHaveBeenCalledWith({ cancel: false }));
+    });
+
+    it('cancels stalled validation once and ignores a late DNS result', async () => {
+        vi.useFakeTimers();
+        try {
+            let finish!: () => void;
+            mocks.safeUrl.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+            const callback = vi.fn();
+            frameRequestHandler({ url: 'https://slow.example/', resourceType: 'mainFrame' }, callback);
+            await vi.advanceTimersByTimeAsync(5_000);
+            expect(callback).toHaveBeenCalledOnce();
+            expect(callback).toHaveBeenCalledWith({ cancel: true });
+            finish();
+            await Promise.resolve();
+            expect(callback).toHaveBeenCalledOnce();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('validates popup destinations before navigating the existing view', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        const handler = mocks.mockWebContents.setWindowOpenHandler.mock.calls.at(-1)?.[0] as (details: { url: string }) => { action: string };
+        mocks.mockWebContents.loadURL.mockClear();
+        expect(handler({ url: 'http://127.0.0.1/private' })).toEqual({ action: 'deny' });
+        await vi.waitFor(() => expect(mocks.mockWebContents.loadURL).not.toHaveBeenCalled());
+        expect(handler({ url: 'https://ascap.com' })).toEqual({ action: 'deny' });
+        await vi.waitFor(() => expect(mocks.mockWebContents.loadURL).toHaveBeenCalledWith('https://ascap.com'));
+        expect(mocks.mockWebContents.loadURL).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not navigate to a popup after a newer page navigation starts', async () => {
+        const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+        await mocks.ipcMainHandlers.get('boardroom-browser:detach')!(event);
+        await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+        const handler = mocks.mockWebContents.setWindowOpenHandler.mock.calls.at(-1)?.[0] as (details: { url: string }) => { action: string };
+        const start = mocks.mockWebContents.on.mock.calls.find(([channel]) => channel === 'did-start-loading')?.[1] as () => void;
+        let finish!: () => void;
+        mocks.safeUrl.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+        mocks.mockWebContents.loadURL.mockClear();
+        handler({ url: 'https://ascap.com' });
+        start();
+        finish();
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(mocks.mockWebContents.loadURL).not.toHaveBeenCalled();
     });
 
     it('opens URL in external OS browser', async () => {

@@ -62,6 +62,19 @@ describe('TourRouteOptimizer', () => {
         mockSaveItinerary.mockResolvedValue(undefined);
     });
 
+    it('keeps disabled optimization help focusable without adding an extra stop after enabling', () => {
+        render(<TourRouteOptimizer />);
+        const help = screen.getByLabelText('Route optimization information. Add at least two cities to optimize.');
+        expect(help).toHaveAttribute('tabindex', '0');
+        help.focus();
+        expect(help).toHaveFocus();
+        expect(screen.getByRole('button', { name: /optimize route/i })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: /new york ny/i }));
+        fireEvent.click(screen.getByRole('button', { name: /chicago il/i }));
+        expect(help).not.toHaveAttribute('tabindex');
+        expect(screen.getByRole('button', { name: /optimize route/i })).toBeEnabled();
+    });
+
     it('saves a geography-only route draft without invented business data', async () => {
         render(<TourRouteOptimizer />);
 

@@ -77,4 +77,21 @@ describe('TraceViewer Interaction (🖱️ Click)', () => {
         expect(listTrigger).toHaveAttribute('data-state', 'inactive');
         expect(graphTrigger).toHaveAttribute('data-state', 'active');
     });
+    it('exposes a named, keyboard-focusable trace scroll region', () => {
+        render(<TraceViewer />);
+        const region = screen.getByRole('region', { name: 'Trace details' });
+        expect(region).toHaveAttribute('tabindex', '0');
+        region.focus();
+        expect(region).toHaveFocus();
+    });
+    it('links each selected tab to its rendered panel', () => {
+        render(<TraceViewer />);
+        for (const name of ['List View', 'Swarm Graph']) {
+            const tab = screen.getByRole('tab', { name });
+            fireEvent.click(tab);
+            const panel = screen.getByRole('tabpanel');
+            expect(tab).toHaveAttribute('aria-controls', panel.id);
+            expect(panel).toHaveAttribute('aria-labelledby', tab.id);
+        }
+    });
 });

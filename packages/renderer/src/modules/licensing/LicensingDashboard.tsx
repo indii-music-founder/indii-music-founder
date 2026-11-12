@@ -89,7 +89,7 @@ export default function LicensingDashboard() {
     if (isLoading) {
         return (
             <ModuleErrorBoundary moduleName="Licensing">
-                <div className="absolute inset-0 flex p-4 gap-4" data-testid="loading-spinner" aria-busy="true" aria-label="Loading licensing data">
+                <div className="absolute inset-0 flex p-4 gap-4" data-testid="loading-spinner" role="status"><span className="sr-only">Loading licensing data</span>
                     <div className="w-64 xl:w-72 space-y-3">
                         <SkeletonStat />
                         <SkeletonStat />

@@ -172,8 +172,14 @@ export function judgmentsAvailable(): boolean {
 }
 
 function noteJudgmentFailure(err: unknown, context: string): void {
+    const code = err !== null && typeof err === 'object' && 'code' in err ? err.code : undefined;
+    // A bad request, malformed response, or individual timeout is not a proxy outage.
+    if (code === 'functions/invalid-argument' || code === 'functions/internal' || code === 'functions/deadline-exceeded') {
+        logger.warn(`[typesafeJudgments] ${context} failed (${code}); using the deterministic baseline.`);
+        return;
+    }
     lastJudgmentFailureAt = Date.now();
-    logger.warn(`[typesafeJudgments] ${context} unavailable — determinstic baseline in use for ${JUDGMENT_FAILURE_COOLDOWN_MS / 1000}s:`,
+    logger.warn(`[typesafeJudgments] ${context} unavailable — deterministic baseline in use for ${JUDGMENT_FAILURE_COOLDOWN_MS / 1000}s:`,
         err instanceof Error ? err.message : err);
 }
 
@@ -461,15 +467,13 @@ export async function judgeMemoryImportance(text: string, category: string): Pro
         });
 
         const answers = result.data.answers;
-        const scoreOf = (q: string): number => {
-            const a = answers?.[q];
-            return typeof a === 'number' ? a : Number((a as { score?: unknown })?.score);
-        };
+        const scoreOf = (q: string): number | null =>
+            boundedJudgmentNumber(answers?.[q], 'score', IMPORTANCE_LEVELS.length - 1);
         const actionability = scoreOf('actionability');
         const business = scoreOf('business_criticality');
         const permanence = scoreOf('permanence');
-        if (![actionability, business, permanence].every(Number.isFinite)) {
-            logger.warn('[typesafeJudgments] memory importance returned non-numeric scores — keeping heuristic.');
+        if (actionability === null || business === null || permanence === null) {
+            logger.warn('[typesafeJudgments] memory importance returned invalid scores — keeping heuristic.');
             return null;
         }
 
@@ -10970,11 +10974,11 @@ export async function judgeBoardroomWebpageSemantics(
         const deptChoice = (typeof deptAns === 'string' ? deptAns : (deptAns as { choice?: unknown } | null)?.choice) as BoardroomDepartment;
 
         const rawRelevance = answers?.relevance;
-        const relevanceScore = typeof rawRelevance === 'number'
-            ? Math.max(0, Math.min(1, rawRelevance))
-            : (typeof rawRelevance === 'object' && rawRelevance !== null && 'score' in rawRelevance && typeof (rawRelevance as { score?: unknown }).score === 'number')
-                ? Math.max(0, Math.min(1, (rawRelevance as { score: number }).score))
-                : fallback.relevanceScore;
+        const relevanceValue = typeof rawRelevance === 'number' ? rawRelevance
+            : typeof rawRelevance === 'object' && rawRelevance !== null && 'score' in rawRelevance
+                ? (rawRelevance as { score?: unknown }).score : undefined;
+        const relevanceScore = typeof relevanceValue === 'number' && Number.isFinite(relevanceValue)
+            ? Math.max(0, Math.min(1, relevanceValue)) : fallback.relevanceScore;
 
         const validCategories: BoardroomWebpageCategory[] = [
             'dsp', 'pro_rights', 'legal_compliance', 'marketing_social', 'press_pr', 'distribution', 'general_research'
@@ -10983,8 +10987,14 @@ export async function judgeBoardroomWebpageSemantics(
             'marketing', 'finance', 'legal', 'distribution', 'publishing', 'creative', 'social'
         ];
 
-        const finalCategory = validCategories.includes(categoryChoice) ? categoryChoice : fallback.category;
-        const finalDept = validDepts.includes(deptChoice) ? deptChoice : fallback.recommendedDepartment;
+        // Treat the response as one judgment: partial or malformed answers must
+        // not be presented as a wholly Jev-derived classification.
+        if (!validCategories.includes(categoryChoice) || !validDepts.includes(deptChoice) ||
+            typeof relevanceValue !== 'number' || !Number.isFinite(relevanceValue) || relevanceValue < 0 || relevanceValue > 1) {
+            return fallback;
+        }
+        const finalCategory = categoryChoice;
+        const finalDept = deptChoice;
 
         return {
             category: finalCategory,

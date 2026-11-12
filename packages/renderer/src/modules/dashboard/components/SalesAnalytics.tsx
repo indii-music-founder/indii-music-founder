@@ -107,7 +107,8 @@ export default function SalesAnalytics() {
 
     if (loading) {
         return (
-            <div className="space-y-4">
+            <div role="status" className="space-y-4">
+                <span className="sr-only">Loading sales analytics</span>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[0, 1, 2, 3].map((i) => <SkeletonStat key={i} />)}
                 </div>

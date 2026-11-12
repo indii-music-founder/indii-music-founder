@@ -21,7 +21,7 @@ interface FormFieldProps {
     error?: string;
     required?: boolean;
     className?: string;
-    children: React.ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean | 'true' | 'false' }>;
+    children: React.ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-required'?: boolean | 'true' | 'false'; 'aria-invalid'?: boolean | 'true' | 'false' | 'grammar' | 'spelling' }>;
 }
 
 export function FormField({ label, hint, error, required, className, children }: FormFieldProps) {
@@ -35,12 +35,13 @@ export function FormField({ label, hint, error, required, className, children }:
         hintId,
         errorId,
     ].filter((id): id is string => Boolean(id)))).join(' ') || undefined;
-    const invalid = Boolean(error) || children.props['aria-invalid'] === true || children.props['aria-invalid'] === 'true';
+    const invalid = error ? true : children.props['aria-invalid'];
 
     const enhancedChild = React.cloneElement(children, {
         id: inputId,
         'aria-describedby': describedBy,
-        'aria-invalid': invalid || undefined,
+        'aria-invalid': invalid,
+        'aria-required': required || children.props['aria-required'],
     });
 
     return (

@@ -24,6 +24,13 @@ describe('FormField relationships', () => {
         expect(screen.getByText('Email is required')).toHaveAttribute('id', 'artist-email-error');
     });
 
+    it('announces a required field and preserves its spelling validation state', () => {
+        render(<FormField label="Artist name" required><input aria-invalid="spelling" /></FormField>);
+        const input = screen.getByRole('textbox', { name: 'Artist name' });
+        expect(input).toHaveAttribute('aria-required', 'true');
+        expect(input).toHaveAttribute('aria-invalid', 'spelling');
+    });
+
     it('preserves an existing invalid state when no wrapper error is present', () => {
         render(<FormField label="Artist name"><input aria-invalid="true" /></FormField>);
         expect(screen.getByRole('textbox', { name: 'Artist name' })).toHaveAttribute('aria-invalid', 'true');

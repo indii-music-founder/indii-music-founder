@@ -17,7 +17,25 @@ vi.mock('../truthOverclaimReporter', () => ({
   reportOverclaimIfNeeded: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { JevGuardrailService } from './JevGuardrailService';
+import { JevGuardrailService, parseGuardrailProbability } from './JevGuardrailService';
+
+describe('guardrail probability contract (pure parser)', () => {
+  it.each([0, 0.3, 0.5, 0.7, 1])('preserves valid probability %s in both supported shapes', probability => {
+    expect(parseGuardrailProbability(probability)).toBe(probability);
+    expect(parseGuardrailProbability({ noul: probability })).toBe(probability);
+  });
+
+  it.each([null, undefined, true, false, '0.9', NaN, Infinity, -0.1, 1.1])('abstains on invalid probability %s', probability => {
+    expect(parseGuardrailProbability(probability)).toBeNull();
+    expect(parseGuardrailProbability({ noul: probability })).toBeNull();
+  });
+
+  it('rejects arrays, unrelated answer fields and missing values', () => {
+    expect(parseGuardrailProbability([])).toBeNull();
+    expect(parseGuardrailProbability({ score: 1 })).toBeNull();
+    expect(parseGuardrailProbability({})).toBeNull();
+  });
+});
 
 describe('JevGuardrailService', () => {
   let service: JevGuardrailService;

@@ -31,6 +31,7 @@ const AttachSchema = z.object({
 
 class BoardroomBrowserController {
     private view: WebContentsView | null = null;
+    private pageRevision = 0;
     private ownerWindow: BrowserWindow | null = null;
     private partitionSession = session.fromPartition('persist:boardroom-browser');
 
@@ -47,6 +48,30 @@ class BoardroomBrowserController {
         // Harden the partition session
         this.partitionSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
         this.partitionSession.setPermissionCheckHandler(() => false);
+        // Validate page requests as well as frame navigations and redirects:
+        // scripts and fetches can otherwise reach private network destinations.
+        this.partitionSession.webRequest.onBeforeRequest(
+            (details, callback) => {
+                // WebSocket URLs use the same network hosts as HTTP(S).
+                const checkUrl = details.url.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:');
+                if (!/^https?:/i.test(checkUrl)) {
+                    callback({ cancel: false });
+                    return;
+                }
+                let settled = false;
+                const finish = (cancel: boolean) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timeout);
+                    callback({ cancel });
+                };
+                const timeout = setTimeout(() => finish(true), 5_000);
+                void validateSafeUrlAsync(checkUrl).then(
+                    () => finish(false),
+                    () => finish(true),
+                );
+            },
+        );
     }
 
     private emitState() {
@@ -102,6 +127,7 @@ class BoardroomBrowserController {
             const wc = this.view.webContents;
 
             wc.on('did-start-loading', () => {
+                this.pageRevision += 1;
                 this.updateState({ isLoading: true, error: null });
             });
 
@@ -123,6 +149,7 @@ class BoardroomBrowserController {
             });
 
             wc.on('did-navigate-in-page', (_e, url) => {
+                this.pageRevision += 1;
                 this.updateState({
                     url,
                     canGoBack: wc.canGoBack(),
@@ -134,9 +161,9 @@ class BoardroomBrowserController {
                 this.updateState({ title });
             });
 
-            wc.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
-                // Ignore aborted requests (-3)
-                if (errorCode === -3) return;
+            wc.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL, isMainFrame) => {
+                // Subframe failures and superseded navigations do not invalidate the page.
+                if (errorCode === -3 || !isMainFrame) return;
                 this.updateState({
                     isLoading: false,
                     error: `${errorDescription} (${errorCode}) for ${validatedURL}`,
@@ -145,14 +172,14 @@ class BoardroomBrowserController {
 
             // Prevent opening unexpected popups; load in same view or open in external OS browser
             wc.setWindowOpenHandler(({ url }) => {
-                try {
-                    const parsed = new URL(url);
-                    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-                        void wc.loadURL(url);
-                    }
-                } catch {
-                    // ignore invalid URL
-                }
+                // Always deny a new window, then validate before navigating the
+                // existing view. HTTP scheme alone does not exclude private hosts.
+                const revision = this.pageRevision;
+                void validateSafeUrlAsync(url)
+                    .then(() => {
+                        if (this.view?.webContents === wc && this.pageRevision === revision) return wc.loadURL(url);
+                    })
+                    .catch(() => log.warn('[BoardroomBrowser] Blocked unsafe popup navigation.'));
                 return { action: 'deny' };
             });
 
@@ -243,7 +270,13 @@ class BoardroomBrowserController {
             throw new Error('Boardroom browser view is not active.');
         }
 
-        const data = await this.view.webContents.executeJavaScript(`(() => {
+        if (this.currentState.isLoading || this.currentState.error) {
+            throw new Error('Page is loading or failed to load; its content cannot be captured.');
+        }
+
+        const revision = this.pageRevision;
+        const view = this.view;
+        const data = await view.webContents.executeJavaScript(`(() => {
             return {
                 title: document.title || '',
                 url: window.location.href || '',
@@ -251,6 +284,9 @@ class BoardroomBrowserController {
             };
         })()`) as { url: string; title: string; text: string };
 
+        if (this.view !== view || this.pageRevision !== revision || this.currentState.isLoading || this.currentState.error) {
+            throw new Error('Page changed while its content was being captured.');
+        }
         return { success: true, data };
     }
 
@@ -263,6 +299,7 @@ class BoardroomBrowserController {
                 log.warn('[BoardroomBrowser] Error removing child view:', err);
             }
         }
+        this.pageRevision += 1;
         this.view = null;
         this.ownerWindow = null;
         return { success: true };

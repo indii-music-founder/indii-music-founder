@@ -46,10 +46,10 @@ export const TraceViewer = React.memo(() => {
     const [activeTab, setActiveTab] = useState('list');
 
     return (
-        <div className="flex flex-col h-full w-full p-4 space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full w-full p-4 space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-[400px]">
+                <div className="w-full max-w-[400px]">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger
                             value="list"
@@ -68,10 +68,10 @@ export const TraceViewer = React.memo(() => {
                             Swarm Graph
                         </TabsTrigger>
                     </TabsList>
-                </Tabs>
+                </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0">
                 <TabsContent value="list" className="flex-1 min-h-0 mt-0" data-testid="list-content">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
                         {/* Trace List */}
@@ -80,7 +80,7 @@ export const TraceViewer = React.memo(() => {
                                 <CardTitle className="text-sm font-medium">Recent Traces</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 overflow-hidden p-0 border-t border-white/5">
-                                <ScrollArea className="h-full">
+                                <ScrollArea role="region" aria-label="Trace details" tabIndex={0} className="h-full">
                                     <div className="space-y-1 p-2">
                                         {traces.map((trace) => (
                                             <button
@@ -153,7 +153,7 @@ export const TraceViewer = React.memo(() => {
                         </div>
                     </Card>
                 </TabsContent>
-            </Tabs>
-        </div>
+            </div>
+        </Tabs>
     );
 });

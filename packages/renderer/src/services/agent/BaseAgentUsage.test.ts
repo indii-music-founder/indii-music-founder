@@ -104,10 +104,13 @@ describe('BaseAgent Usage Defenses', () => {
                 }
             } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
 
-        const response = await agent.execute('Task');
+        const onProgress = vi.fn();
+        const response = await agent.execute('Task', undefined, onProgress);
         expect(response.text).toContain('Response content');
-        expect(response.usage).toBeDefined();
-        expect(response.usage?.promptTokens).toBe(10);
+        const usage = { promptTokens: 10, completionTokens: 20, totalTokens: 30 };
+        expect(response.usage).toEqual(usage);
+        expect(onProgress.mock.calls.map(([event]) => event).filter(event => event.type === 'usage'))
+            .toEqual([expect.objectContaining({ type: 'usage', usage })]);
     });
 });
 

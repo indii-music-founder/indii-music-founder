@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
@@ -63,6 +63,35 @@ describe('shared ChatMessage canonical identity', () => {
         expect(screen.getByAltText('attachment')).toHaveAttribute('src', source);
     });
 
+    it('offers the original attachment for download when its message failed to save', () => {
+        render(<MessageItem msg={{ id: 'unsaved-file', role: 'user', text: 'Reference', saveStatus: 'failed',
+            attachments: [{ mimeType: 'image/png', base64: 'aGVsbG8=' }] } as never} />);
+        expect(screen.getByRole('link', { name: 'Download attachment 1' }))
+            .toHaveAttribute('href', 'data:image/png;base64,aGVsbG8=');
+        expect(screen.getByRole('alert')).toHaveTextContent('download any attachments');
+    });
+
+    it('offers a saved non-image attachment for download', () => {
+        render(<MessageItem msg={{ id: 'saved-file', role: 'user', text: 'Reference',
+            attachments: [{ mimeType: 'application/pdf', base64: 'aGVsbG8=' }] } as never} />);
+        expect(screen.getByRole('link', { name: 'Download attachment 1' }))
+            .toHaveAttribute('href', 'data:application/pdf;base64,aGVsbG8=');
+        expect(screen.getByRole('link', { name: 'Download attachment 1' })).toHaveAttribute('download', 'attachment-1.pdf');
+    });
+
+    it('preserves a safe original filename for a saved attachment', () => {
+        render(<MessageItem msg={{ id: 'named-file', role: 'user', text: 'Reference',
+            attachments: [{ mimeType: 'application/pdf', base64: 'aGVsbG8=', filename: 'folder/contract.pdf' }] } as never} />);
+        expect(screen.getByRole('link', { name: 'Download attachment 1' })).toHaveAttribute('download', 'folder_contract.pdf');
+    });
+
+    it('shows a warning when a stored attachment is unavailable', () => {
+        render(<MessageItem msg={{ id: 'missing-file', role: 'user', text: 'Reference',
+            attachments: [{ mimeType: 'image/png', base64: '', loadFailed: true }] } as never} />);
+        expect(screen.getByRole('alert')).toHaveTextContent('Attachment could not be loaded');
+        expect(screen.queryByAltText('attachment')).not.toBeInTheDocument();
+    });
+
     it('shows when a locally appended message could not be saved', () => {
         render(
             <MessageItem
@@ -70,6 +99,35 @@ describe('shared ChatMessage canonical identity', () => {
             />,
         );
         expect(screen.getByRole('alert')).toHaveTextContent('could not be saved');
+    });
+
+    it('copies an unsaved message and confirms the result', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+        try {
+            render(<MessageItem msg={{ id: 'unsaved-copy', role: 'user', text: 'Keep this', saveStatus: 'failed' } as never} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+            expect(writeText).toHaveBeenCalledWith('Keep this');
+            expect(await screen.findByRole('status')).toHaveTextContent('Message copied');
+        } finally {
+            if (original) Object.defineProperty(navigator, 'clipboard', original);
+            else Reflect.deleteProperty(navigator, 'clipboard');
+        }
+    });
+
+    it('tells the user when copying an unsaved message fails', async () => {
+        const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
+        try {
+            render(<MessageItem msg={{ id: 'unsaved-copy-failure', role: 'user', text: 'Keep this', saveStatus: 'failed' } as never} />);
+            fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+            expect(await screen.findByRole('status')).toHaveTextContent('Copy failed');
+            expect(screen.getByText('Keep this')).toBeInTheDocument();
+        } finally {
+            if (original) Object.defineProperty(navigator, 'clipboard', original);
+            else Reflect.deleteProperty(navigator, 'clipboard');
+        }
     });
 
     it('renders the same Social identity used by Boardroom seats and discussion', () => {

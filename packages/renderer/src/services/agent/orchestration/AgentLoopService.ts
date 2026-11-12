@@ -518,15 +518,20 @@ Respond in JSON format only:
             const estimate = TokenEstimator.estimate(prompt, judgeInstruction, [], 1_500_000, 300);
             const reservation = estimate.willExceed ? null : tokenBudget.reserve(estimate.totalProjected);
             if (reservation === null) throw new ExecutionTokenBudgetExceeded();
-            await checkpointBudget();
-            const result = await FirebaseIntelligenceService.getInstance().generateContent(
-                prompt,
-                INTELLIGENCE_MODELS.TEXT.FAST,
-                { temperature: 1.0, maxOutputTokens: 300 },
-                judgeInstruction
-            );
-            tokenBudget.settle(reservation, result?.response?.usageMetadata?.totalTokenCount);
-            return result;
+            let actualTokens: number | undefined;
+            try {
+                await checkpointBudget();
+                const result = await FirebaseIntelligenceService.getInstance().generateContent(
+                    prompt,
+                    INTELLIGENCE_MODELS.TEXT.FAST,
+                    { temperature: 1.0, maxOutputTokens: 300 },
+                    judgeInstruction
+                );
+                actualTokens = result?.response?.usageMetadata?.totalTokenCount;
+                return result;
+            } finally {
+                tokenBudget.settle(reservation, actualTokens);
+            }
         };
 
         try {

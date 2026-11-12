@@ -63,7 +63,7 @@ describe('Button Interaction', () => {
 
     // Check for spinner (Loader2 from lucide-react)
     // We look for the class 'animate-spin' which Loader2 should have
-    const spinner = button.querySelector('.animate-spin')
+    const spinner = button.querySelector('svg[aria-hidden=true]')
     expect(spinner).toBeInTheDocument()
 
     fireEvent.click(button)

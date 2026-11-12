@@ -43,7 +43,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
                 </Badge>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea role="region" aria-label="X-Ray events" tabIndex={0} className="flex-1">
                 <div className="p-4">
                     {trace.steps.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">No steps recorded yet...</p>

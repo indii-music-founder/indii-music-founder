@@ -32,6 +32,13 @@ describe('ModelPricing', () => {
             expect(estimateCostUsd('gemini-3.1-flash-lite', {})).toBe(0);
         });
 
+        it.each([NaN, Infinity, -Infinity])('preserves valid input cost when output usage is %s', outputTokens => {
+            const model = 'gemini-3.1-pro-preview';
+            const inputTokens = 1000;
+            expect(estimateCostUsd(model, { inputTokens, outputTokens }))
+                .toBe(estimateCostUsd(model, { inputTokens }));
+        });
+
         it('clamps negative token counts to zero', () => {
             expect(estimateCostUsd('gemini-3.1-flash-lite', { inputTokens: -500, outputTokens: -500 })).toBe(0);
         });
@@ -85,6 +92,10 @@ describe('ModelPricing', () => {
     });
 
     describe('getModelPricing — unknown models', () => {
+        it.each(['constructor', 'toString', '__proto__'])('uses fallback for inherited property %s', model => {
+            expect(getModelPricing(model)).toEqual(getModelPricing('unrecognized-model'));
+        });
+
         it('falls back conservatively (non-zero) rather than hiding cost', () => {
             const pricing = getModelPricing('some-unreleased-model-9000');
             expect(pricing.kind).toBe('token');

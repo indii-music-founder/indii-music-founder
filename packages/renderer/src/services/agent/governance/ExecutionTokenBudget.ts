@@ -1,7 +1,9 @@
 /** A synchronous reservation ledger shared by the agents in one execution. */
 export class ExecutionTokenBudget {
     private consumed = 0;
+    private restoredThroughReservation = 0;
     private nextReservation = 0;
+    private spendOverflowed = false;
     private readonly reservations = new Map<number, number>();
 
     constructor(readonly limit: number) {
@@ -24,6 +26,7 @@ export class ExecutionTokenBudget {
             throw new Error('Saved execution token usage is invalid');
         }
         this.consumed = Math.max(this.consumed, tokens);
+        this.restoredThroughReservation = this.nextReservation;
     }
 
     reserve(tokens: number): number | null {
@@ -39,28 +42,43 @@ export class ExecutionTokenBudget {
         const reserved = this.reservations.get(id);
         if (reserved === undefined) throw new Error('Unknown token reservation');
         this.reservations.delete(id);
-        if (actualTokens !== undefined && Number.isSafeInteger(actualTokens) && actualTokens > 0) {
-            this.consumed += actualTokens - reserved;
+        if (!this.spendOverflowed && actualTokens !== undefined && Number.isSafeInteger(actualTokens) && actualTokens > 0) {
+            // An older in-flight call cannot refund usage restored from a
+            // durable checkpoint whose accounting may include other calls.
+            const adjustment = actualTokens - reserved;
+            const charge = id <= this.restoredThroughReservation ? Math.max(0, adjustment) : adjustment;
+            if (charge > Number.MAX_SAFE_INTEGER - this.consumed) {
+                this.spendOverflowed = true;
+                this.consumed = Number.MAX_SAFE_INTEGER;
+            } else {
+                this.consumed += charge;
+            }
         }
     }
 }
 
-const budgets = new WeakMap<object, ExecutionTokenBudget>();
+interface BudgetBinding {
+    budget?: ExecutionTokenBudget;
+}
+
+const budgets = new WeakMap<object, BudgetBinding>();
+
+function bindingFor(context: object): BudgetBinding {
+    let binding = budgets.get(context);
+    if (!binding) {
+        binding = {};
+        budgets.set(context, binding);
+    }
+    return binding;
+}
 
 export function executionTokenBudget(context: object | undefined, limit: number): ExecutionTokenBudget {
     if (!context) return new ExecutionTokenBudget(limit);
-    let budget = budgets.get(context);
-    if (!budget) {
-        budget = new ExecutionTokenBudget(limit);
-        budgets.set(context, budget);
-    }
-    return budget;
+    const binding = bindingFor(context);
+    return binding.budget ??= new ExecutionTokenBudget(limit);
 }
 
-/** Context clones must retain the same ledger, never a cloned balance. */
+/** Share the binding even when neither context has requested its budget yet. */
 export function inheritExecutionTokenBudget(parent: object | undefined, child: object): void {
-    if (parent) {
-        const budget = budgets.get(parent);
-        if (budget) budgets.set(child, budget);
-    }
+    if (parent) budgets.set(child, bindingFor(parent));
 }

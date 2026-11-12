@@ -131,6 +131,11 @@ export default function AgentChat({
 }: AgentChatProps) {
     const [input, setInput] = useState('');
     const [stagedAttachments, setStagedAttachments] = useState<Array<{ url: string; mimeType: string; name: string }>>([]);
+    const stagedAttachmentsRef = useRef(stagedAttachments);
+    stagedAttachmentsRef.current = stagedAttachments;
+    const [attachmentError, setAttachmentError] = useState<string | null>(null);
+    const [pendingUploads, setPendingUploads] = useState(0);
+    const pendingUploadsRef = useRef(0);
     const [rawCommands, setRawCommands] = useState<RemoteCommand[]>([]);
     const [rawResponses, setRawResponses] = useState<RemoteResponse[]>([]);
     const [isWaiting, setIsWaiting] = useState(false);
@@ -392,7 +397,7 @@ export default function AgentChat({
 
     const handleSend = useCallback(async () => {
         const hasContent = input.trim() || stagedAttachments.length > 0;
-        if (!hasContent || isWaiting || !isAuthenticated || !isPaired) return;
+        if (!hasContent || isWaiting || pendingUploadsRef.current > 0 || !isAuthenticated || !isPaired) return;
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         const currentAttachments = [...stagedAttachments];
@@ -450,13 +455,17 @@ export default function AgentChat({
     }, [input, stagedAttachments, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, watchCommandResponse, isListening, toggleListening]);
 
     const handleAddAttachmentFile = async (file: File) => {
+        setAttachmentError(null);
+        pendingUploadsRef.current += 1;
+        setPendingUploads(pendingUploadsRef.current);
         try {
             const { auth: firebaseAuth } = await import('@/services/firebase');
             const userId = firebaseAuth.currentUser?.uid;
             if (!userId) throw new Error('User not authenticated');
 
             const { StorageService } = await import('@/services/StorageService');
-            const filename = `chat_attachment_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
+            const extension = file.name.split('.').pop()?.toLowerCase();
+            const filename = `chat_attachment_${crypto.randomUUID()}.${extension && /^[a-z0-9]{1,10}$/.test(extension) ? extension : 'jpg'}`;
             const path = `users/${userId}/assets/boardroom_attachments/${filename}`;
             const downloadUrl = await StorageService.uploadFile(file, path);
 
@@ -470,6 +479,10 @@ export default function AgentChat({
             ]);
         } catch (err) {
             logger.error('[AgentChat] Failed to upload chat attachment:', err);
+            setAttachmentError('Attachment could not be uploaded. Please try adding it again.');
+        } finally {
+            pendingUploadsRef.current -= 1;
+            setPendingUploads(pendingUploadsRef.current);
         }
     };
 
@@ -482,6 +495,12 @@ export default function AgentChat({
         onCommitTurn: async (text: string) => {
             const clean = text.trim();
             if (!clean || !isAuthenticated || !isPaired) return;
+            if (pendingUploadsRef.current > 0) {
+                setInput(clean);
+                setAttachmentError('Wait for the attachment to finish uploading, then send your message.');
+                return;
+            }
+            const currentAttachments = [...stagedAttachmentsRef.current];
             setInput('');
             setIsWaiting(true);
 
@@ -495,6 +514,7 @@ export default function AgentChat({
             const commandMetadata = {
                 conversationMode: selectedMode,
                 source: 'mobile-remote',
+                ...(currentAttachments.length ? { attachments: currentAttachments } : {}),
             };
 
             try {
@@ -502,15 +522,19 @@ export default function AgentChat({
                     clean,
                     targetAgentId,
                     commandMetadata,
-                    'studio'
+                    'studio',
+                    currentAttachments.length ? currentAttachments : undefined
                 );
                 if (commandId) {
+                    setStagedAttachments(previous => previous.filter(item => !currentAttachments.some(sent => sent.url === item.url)));
                     watchCommandResponse(commandId);
                 } else {
+                    setInput(clean);
                     setIsWaiting(false);
                 }
             } catch (err) {
                 logger.error('[AgentChat] Live turn relay failed:', err);
+                setInput(clean);
                 setIsWaiting(false);
             }
         },
@@ -701,6 +725,8 @@ export default function AgentChat({
 
             {/* Input Bar & Live Viewing Stage */}
             <div className="mt-auto pt-3 relative z-40 bg-transparent">
+                {attachmentError && <p role="alert" className="mb-2 text-sm text-amber-300">{attachmentError}</p>}
+                {pendingUploads > 0 && <p role="status" className="mb-2 text-sm text-stone-300">Uploading attachment…</p>}
                 <VoiceTextViewingStage
                     value={input}
                     onChange={setInput}
@@ -712,6 +738,7 @@ export default function AgentChat({
                         `Direct message ${selectedAgent || 'Agent'}…`
                     }
                     isWaiting={isWaiting}
+                    isUploading={pendingUploads > 0}
                     isPaired={isPaired}
                     isListening={isListening}
                     onToggleListening={toggleListening}

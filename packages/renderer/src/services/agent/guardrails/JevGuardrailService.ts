@@ -40,6 +40,18 @@ const FIRE_THRESHOLD = 0.7;
 /** Threshold below which a response is considered un-actionable. */
 const ACTIONABLE_THRESHOLD = 0.3;
 
+/** Invalid probabilities abstain; coercion must never manufacture a flag. */
+export function parseGuardrailProbability(answer: unknown): number | null {
+  const probability = typeof answer === 'number'
+    ? answer
+    : answer !== null && typeof answer === 'object' && !Array.isArray(answer)
+      ? (answer as Record<string, unknown>).noul
+      : undefined;
+  return typeof probability === 'number' && Number.isFinite(probability) && probability >= 0 && probability <= 1
+    ? probability
+    : null;
+}
+
 // ---------------------------------------------------------------------------
 // Correction prefixes injected when flags fire
 // ---------------------------------------------------------------------------
@@ -87,10 +99,13 @@ export class JevGuardrailService {
 
     const toolNames = (input.tool_calls ?? []).map((t) => t.name).join(', ') || 'none';
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const result = await Promise.race([
         this.runEvaluation(input.text, toolNames),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS)),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS);
+        }),
       ]);
 
       if (!result) {
@@ -115,6 +130,8 @@ export class JevGuardrailService {
     } catch (err) {
       logger.warn('[JevGuardrail] Evaluation failed — passing through unmodified:', err);
       return passthrough;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
@@ -193,13 +210,9 @@ export class JevGuardrailService {
     const flags: string[] = [];
     let prefix = '';
 
-    for (const key of Object.keys(rawAnswers)) {
-      const ans = rawAnswers[key];
-      if (typeof ans === 'number') {
-        confidence[key] = ans;
-      } else if (typeof ans === 'object' && ans !== null && 'noul' in ans) {
-        confidence[key] = Number((ans as { noul: unknown }).noul);
-      }
+    for (const key of Object.keys(questionsDef)) {
+      const probability = parseGuardrailProbability(rawAnswers[key]);
+      if (probability !== null) confidence[key] = probability;
     }
 
     for (const [flag, correction] of Object.entries(CORRECTIONS)) {
