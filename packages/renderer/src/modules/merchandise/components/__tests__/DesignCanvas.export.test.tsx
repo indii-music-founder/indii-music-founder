@@ -57,24 +57,21 @@ describe('DesignCanvas Export Logic', () => {
         const { result } = renderHook(() => useCanvasControls(mockCanvas));
 
         // Simulate a zoomed/responsive state
-        mockCanvas.getZoom.mockReturnValue(0.5);
+        mockCanvas.viewportTransform = [0.5, 0, 0, 0.5, 12, 24];
         mockCanvas.width = 400;
         mockCanvas.height = 500;
 
         await result.current.exportToImage('png');
 
-        // Verify state was saved
-        expect(mockCanvas.getZoom).toHaveBeenCalled();
-
         // Verify reset occurred before export
-        expect(mockCanvas.setZoom).toHaveBeenNthCalledWith(1, 1);
+        expect(mockCanvas.setViewportTransform).toHaveBeenNthCalledWith(1, [1, 0, 0, 1, 0, 0]);
         expect(mockCanvas.setDimensions).toHaveBeenNthCalledWith(1, { width: 800, height: 1000 });
 
         // Verify toDataURL was called
         expect(mockCanvas.toDataURL).toHaveBeenCalled();
 
         // Verify state was restored AFTER export
-        expect(mockCanvas.setZoom).toHaveBeenNthCalledWith(2, 0.5);
+        expect(mockCanvas.setViewportTransform).toHaveBeenNthCalledWith(2, [0.5, 0, 0, 0.5, 12, 24]);
         expect(mockCanvas.setDimensions).toHaveBeenNthCalledWith(2, { width: 400, height: 500 });
     });
 
@@ -87,16 +84,15 @@ describe('DesignCanvas Export Logic', () => {
 
         await result.current.exportToImage('png');
 
-        // Restore logic: canvas.setDimensions({ width: currentWidth || 800 * currentZoom, height: currentHeight || 1000 * currentZoom });
         expect(mockCanvas.setDimensions).toHaveBeenNthCalledWith(2, { width: 400, height: 500 });
     });
 
-    it('should not reset zoom for SVG export', async () => {
+    it('should use document dimensions for SVG export', async () => {
         const { result } = renderHook(() => useCanvasControls(mockCanvas));
 
         await result.current.exportToImage('svg');
 
         expect(mockCanvas.toSVG).toHaveBeenCalled();
-        expect(mockCanvas.setZoom).not.toHaveBeenCalled();
+        expect(mockCanvas.setDimensions).toHaveBeenNthCalledWith(1, { width: 800, height: 1000 });
     });
 });

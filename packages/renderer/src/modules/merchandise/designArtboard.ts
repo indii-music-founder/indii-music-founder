@@ -43,8 +43,8 @@ export async function restoreDesignCanvas(canvas: Canvas, data: Record<string, u
 export function renderDesignCanvas(canvas: Canvas, format: 'png' | 'jpeg' | 'svg'): string {
     const artboard = getDesignArtboard(canvas);
     const viewport = [...canvas.viewportTransform];
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = canvas.width || artboard.width * canvas.getZoom();
+    const height = canvas.height || artboard.height * canvas.getZoom();
     try {
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         canvas.setDimensions(artboard);
