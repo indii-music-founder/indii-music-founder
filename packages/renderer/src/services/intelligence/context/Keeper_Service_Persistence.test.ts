@@ -96,6 +96,11 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'doc-id', path: args.join('/') })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         getDoc: vi.fn(),
+        // Structural-only transaction fixture for the session deletion fence.
+        runTransaction: vi.fn(async (_db, operation) => operation({
+            get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
+            update: vi.fn(),
+        })),
         collection: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'col-id', path: args.join('/') })),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({

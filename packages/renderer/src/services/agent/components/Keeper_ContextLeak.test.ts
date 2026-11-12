@@ -134,6 +134,6 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         expect(useStore.getState().agentHistory).toHaveLength(0);
 
         // Assert: Persistence Cleared
-        expect(mockClearMessages).toHaveBeenCalledWith(sessionId);
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId));
     });
 });
