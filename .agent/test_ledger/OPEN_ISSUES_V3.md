@@ -7251,14 +7251,16 @@ Selected it in the normal creations UI. DOM-backed real video element loaded wit
 
 ### ISSUE-1620: Expanded Your Creations hides selected video player below a non-scrolling panel
 
-- **Status:** 🔴 OPEN — actual generated video preview reproduced2026-10-31.
+- **Status:** 🟡 PARTIAL — bounded gallery scrolling repaired on main; genuine selected-video playback and control reachability pending.
 - **Severity:** 🟡 MEDIUM — impedes playback and Studio/Discuss handoff despite working media bytes.
 - **Location:** Omni Agent right panel → Your Creations → select new video. `modules/dashboard/components/AssetSpotlight.tsx:122,195-206`; `core/components/RightPanel.tsx:243,293-328`.
 - **Reproduction:** In a1920×907 viewport with existing44-item history (spotlight shows12), expand Your Creations and select the newest golden-leaf video. Try normal scrolling downward in right panel.
 - **Expected:** Selected media player and its controls are visible/reachable in a bounded scrolling preview or above/alongside the grid.
 - **Actual:** Gallery grows below chat/composer. Its selected detail player is after all12 grid items and at viewport y≈2992.5, height≈362.8, outside visible907px viewport; top video thumbnail at y≈724.5. Scrolling right panel downward3 pages does not bring player into view; screenshot still shows top two grid rows. Both video elements load actual bytes, but normal visible controls remain offscreen. Accessibility Play could start the underlying native player and complete playback, so media generation itself is not the defect. Discuss/Studio controls share the offscreen detail.
 - **Evidence:** `artifacts/content-audit-2026-10-29/direct-video-generated-gallery-2026-10-31.png`; read-only video bounding rectangles and native playback state above. Source grid precedes detail; parent creations section shrink-0 within overflow-hidden column, without a bounded scrolling gallery.
-- **Dependencies/limits:** Right-panel sizing/scrolling and selected-asset layout. Narrow screen variants and no-history state unverified. No prior specific AssetSpotlight/creations overflow issue found in V3. No layout fix made.
+- **Dependencies/limits:** Right-panel sizing/scrolling and selected-asset layout. Narrow screen variants and no-history state unverified. No prior specific AssetSpotlight/creations overflow issue found in V3. Source repair is present in main; deployed acceptance remains pending.
+
+- **Source reconciliation (2026-11-12):** Commit `2823a6345653096388107c9af814cdf7e98cc66d` adds `max-h-[40vh] overflow-y-auto overscroll-contain` to the RightPanel container wrapping AssetSpotlight. Confirmed present in current `origin/main` (`0860e8f50`). This bounds the gallery and permits scrolling to the detail player after the grid. Source inspection alone does not establish production reachability, playback, Discuss/Studio handoff, or narrow-screen behavior. Browser control is unavailable in the current chat, so those checks remain unverified.
 
 ### Scope/delivery reconciliation — 2026-10-31
 
