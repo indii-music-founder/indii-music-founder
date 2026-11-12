@@ -577,7 +577,7 @@ Reproduce counts with `node scripts/issue-ledger-inventory.mjs`. See
 
 - **Re-ticketed from:** ISSUE-1043 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)`)
 - **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Apple Developer ID / macOS Notarization". Do not block this ticket on it.
-- **Status:** ⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)
+- **Status:** 🟡 PARTIAL — stable macOS manifest and installer checksum verified. The macOS update ZIP, Windows and Linux manifests, and installed desktop updater acceptance remain pending.
 - **Severity:** 🔴 CRITICAL (installers cannot check for updates)
 - **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again." (produced by `packages/main/src/updater.ts:49` when electron-updater 404s on a manifest)
 - **Root Cause (investigated 2026-07-13, supersedes the original guess of "published manually or by workflow failure"):** This error is the direct, predictable consequence of the ISSUE-992 mitigation plus an empty fallback release. Chain of events, all verified against the live GitHub Releases API:
@@ -600,6 +600,8 @@ Reproduce counts with `node scripts/issue-ledger-inventory.mjs`. See
 - **DO NOT:** Do not upload manifests to `v1.50.0` — its manifests would reference installer assets that don't exist there (or unverified ones), pointing every client at a dead or untrusted download. Do not rebuild locally and upload unsigned artifacts — that recreates ISSUE-992. Do not un-prerelease `v1.64.5`/`v1.64.6` — they are confirmed ad-hoc signed and ShipIt rejects them.
 - **Verification:** A stable-channel desktop client (source: github, channel: stable) completes `checkForUpdates()` with no error; `releases/latest/download/latest-mac.yml` returns 200 with the new version; new release is non-prerelease with ≥10 assets including all three manifests.
 - **Related:** ISSUE-992 (root incident — ad-hoc signed macOS builds; its mitigation created this state)
+
+- **Stable feed verification (2026-11-12):** GitHub resolves the stable release to [v1.83.0](https://github.com/indii-music-founder/indii-music-founder/releases/tag/v1.83.0). The stable download URL returned HTTP 200 for `latest-mac.yml` and HTTP 404 for `latest.yml` and `latest-linux.yml`. The Apple Silicon DMG matches the manifest SHA-512. The manifest lists only the DMG, while the installed `electron-updater` MacUpdater selects a ZIP and excludes DMG and PKG files. The published feed can return metadata, but it cannot supply the archive needed to download an update. The release matrix currently schedules macOS only. The unsigned Linux directory package check verifies packaging resources. The installed client update path, signing and the Windows/Linux release artifacts still need verification.
 
 ### ISSUE-1163 engineering prevention IMPLEMENTED (2026-08-23 session) — sequenced steps 1–3 remain founder-gated
 
