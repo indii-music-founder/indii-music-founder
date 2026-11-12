@@ -368,6 +368,8 @@ export default function MerchDesigner() {
             try {
                 if (objData.type === 'textbox') {
                     const text = new fabric.Textbox(objData.text ?? '', {
+                        originX: 'left',
+                        originY: 'top',
                         left: objData.left,
                         top: objData.top,
                         width: objData.width,
@@ -384,6 +386,8 @@ export default function MerchDesigner() {
                     canvas.add(text);
                 } else if (objData.type === 'rect') {
                     const rect = new fabric.Rect({
+                        originX: 'left',
+                        originY: 'top',
                         left: objData.left,
                         top: objData.top,
                         width: objData.width,
