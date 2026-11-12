@@ -25,7 +25,8 @@ concurrency:
 jobs:
   audit:
     name: Hours 1, 2, 4 (Hour 3 is human-only)
-    runs-on: ubuntu-latest
+    # The pinned Playwright version supports Chromium on Ubuntu 24.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     defaults:
