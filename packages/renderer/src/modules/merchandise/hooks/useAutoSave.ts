@@ -1,3 +1,4 @@
+import { getDesignArtboard, serializeDesignCanvas } from '../designArtboard';
 import { logger } from '@/utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
@@ -75,7 +76,7 @@ export const useAutoSave = (
 
         try {
             // Serialize canvas state
-            const canvasJSON = JSON.stringify(canvas.toObject(['name', 'thumbnail']));
+            const canvasJSON = JSON.stringify(serializeDesignCanvas(canvas, ['name', 'thumbnail']));
 
             // Generate thumbnail (low quality for storage efficiency)
             // ⚡ indii.music FIX: Reset zoom and viewport temporarily for consistent thumbnails
@@ -91,11 +92,11 @@ export const useAutoSave = (
                 thumbnail = canvas.toDataURL({
                     format: 'png',
                     quality: 0.6,
-                    multiplier: 0.3, // Fixed 30x scale of 800x1000 = 240x300 thumbnail
+                    multiplier: 0.3, // Preserve the document aspect ratio in the saved preview
                     left: 0,
                     top: 0,
-                    width: 800,
-                    height: 1000
+                    width: getDesignArtboard(canvas).width,
+                    height: getDesignArtboard(canvas).height
                 });
             } finally {
                 // Restore even when toDataURL throws (tainted canvas, memory

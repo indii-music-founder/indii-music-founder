@@ -1,3 +1,4 @@
+import { setDesignArtboard, restoreDesignCanvas } from './designArtboard';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import * as fabric from 'fabric';
@@ -355,6 +356,8 @@ export default function MerchDesigner() {
             clear();
         }
 
+        setDesignArtboard(canvas, { width: template.canvasWidth, height: template.canvasHeight });
+
         // Set canvas background
         setBackgroundColor(template.backgroundColor);
 
@@ -424,7 +427,7 @@ export default function MerchDesigner() {
             clearHistory();
 
             // Load the saved state
-            await canvas.loadFromJSON(canvasData);
+            await restoreDesignCanvas(canvas, canvasData);
             canvas.renderAll();
 
             // Establish this loaded design as the new undo baseline
