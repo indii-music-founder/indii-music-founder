@@ -7149,7 +7149,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1615: Workflow Architect cannot create a requested media-only video graph
 
-- **Status:** 🔴 OPEN — genuine production reproduction 2026-10-31; not repaired.
+- **Status:** 🟡 PARTIAL — generated-graph validation repaired on main; genuine requested video graph/error acceptance pending.
 - **Severity:** 🟠 HIGH — blocks a user-facing route to video generation.
 - **Location:** Workflow Lab → Generate with AI → Autonomous Workflow Architect. Source: `packages/renderer/src/modules/workflow/services/workflowGenerator.ts:150-159`; `services/intelligence/generators/HighLevelAPI.ts:378`; `WorkflowLab.tsx:254-275`.
 - **Reproduction:** In existing signed-in production session, load Simple Concept Art, open Generate with AI, request Start Trigger → Video Department text-to-video → Final Output, one eight-second 16:9 golden leaf video, explicitly excluding image prerequisites and all social, marketing, email, commerce and publication nodes. Click Generate Workflow and wait for Designing to end.
@@ -7157,6 +7157,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 - **Actual:** Modal remains with Generate Workflow enabled again; previous graph remains. No new video graph or media output. Console at `2026-10-31T08:39:44.115Z`: `[HighLevelAPI] Failed to parse structured JSON from intelligence response` (response excerpt begins with workflow-video-qa-leaf JSON), followed by `Failed to generate workflow: TypeError: Cannot read properties of undefined (reading 'nodes')`. Source dereferences `generated.nodes` without checking the structured generator returned a value. Full malformed response/provider cause unverified.
 - **Evidence:** `artifacts/content-audit-2026-10-29/workflow-architect-failure-2026-10-31.png`, live browser console and terminal enabled Generate Workflow control. No Run Workflow, Save, or publication performed in this attempt.
 - **Dependencies/limits:** Structured generation/parsing must return a valid graph; source guard alone would improve failure handling without proving generation works. Video provider not reached. Actual account plan unverified. No existing Workflow Architect/parsing entry found in V3 before adding this issue.
+
+- **Source reconciliation (2026-11-12):** Commit `2823a6345653096388107c9af814cdf7e98cc66d` added graph validation before node dereference. Current main retains it in `validateGeneratedGraph`: missing graph/arrays, invalid or duplicate nodes, unavailable department jobs and missing edge references produce actionable errors. This covers the recorded undefined.nodes crash. It does not prove successful generation of the requested media-only video graph. Genuine signed-in generation and useful-error display remain unverified.
 
 ### ISSUE-1616: Workflow context panel removes access to node inspector and library without explaining how to restore them
 
@@ -7305,7 +7307,7 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1622: Manual Workflow input connection handle is covered/clipped, preventing wiring a media node
 
-- **Status:** 🔴 OPEN — genuine manual creation and pointer failure reproduced2026-10-31.
+- **Status:** 🟡 PARTIAL — handle overflow/stacking repaired on main; genuine pointer wiring acceptance pending.
 - **Severity:** 🟠 HIGH — manual media workflow cannot be wired from its input through the advertised controls.
 - **Location:** Workflow Lab → Node Library (collapse global context panel to expose it) → Webhook input/Autonomous Generate. Source `components/CustomNodes.tsx:14-59`; `components/UniversalNode.tsx` outer overflow-hidden wrapper/handle columns.
 - **Reproduction:** Start empty graph. Drag Webhook onto canvas (creates START TRIGGER), drag Autonomous Generate (creates Autonomous Department), enter golden-leaf image QA prompt through normal fields, separate nodes/Fit View, then drag the actual rendered input output handle to the generation input handle. Two separated-node attempts moved the input body instead of making an edge. No generation request was run.
@@ -7315,6 +7317,8 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 - **Dependencies:** Node overflow/stacking and handle placement. No synthetic drag events, injected graph state, fake connection or generation output used. No save, posting, social node or webhook endpoint call performed. Manual Webhook palette entry maps to local inputNode; no network webhook was registered.
 
 **Additional manual-node source concern, NOT a reproduced runtime defect:** Autonomous Generate creates departmentName Autonomous Department, absent from NODE_REGISTRY; WorkflowEngine's unknown-department branch returns Processed by… generic text (related to ISSUE-1613). Because this manual graph could not be connected, no false-success outcome for that node was observed. Generate Image palette creation and independent manually wired video/upscale paths remain UNVERIFIED. Fetched main before this entry; HEAD and origin/main have zero divergence and no remote ISSUE-1621/1622 collision.
+
+- **Source reconciliation (2026-11-12):** Commit `2823a6345653096388107c9af814cdf7e98cc66d` changed CustomNodes NodeWrapper and UniversalNode outer wrappers to `overflow-visible`, and raised the InputNode source handle with `!z-20`; UniversalNode handles retain `z-20`. Confirmed these changes in current main. They address the recorded clipping and content overlap. A genuine pointer drag creating an edge, persistence/reload and zoom variants remain unverified; no runtime connection success is claimed.
 
 ### ISSUE-1623: Saved-artwork mockup route returns gateway payload-validation rejection
 
