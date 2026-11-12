@@ -10,6 +10,8 @@ import {
 } from '../types';
 import { AutonomousIntelligence as AI, getResponseText } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
+import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { TokenEstimator } from '../governance/TokenEstimator';
 import { getFineTunedModel } from '../fine-tuned-models';
 import { stepsFromBoardroomGraph } from './BoardroomActionPlan';
 
@@ -90,14 +92,27 @@ Bug/feature intake ownership: GitHub issue filing and report_bug/request_feature
         `;
 
         try {
-            const response = await AI.generateContent(
-                [{ role: 'user', parts: [{ text: prompt }] }],
-                getFineTunedModel('generalist'),
-                {
-                    ...INTELLIGENCE_CONFIG.THINKING.HIGH,
-                    responseMimeType: 'application/json'
-                }
-            );
+            const maxOutputTokens = INTELLIGENCE_CONFIG.TEXT.MAX_OUTPUT_TOKENS_AGENT;
+            const estimate = TokenEstimator.estimate(prompt, undefined, [], 1_500_000, maxOutputTokens);
+            const budget = executionTokenBudget(context, 1_500_000);
+            const reservation = estimate.willExceed ? null : budget.reserve(estimate.totalProjected);
+            if (reservation === null) throw new Error('The execution token allowance cannot cover graph planning.');
+            let actualTokens: number | undefined;
+            let response: Awaited<ReturnType<typeof AI.generateContent>>;
+            try {
+                response = await AI.generateContent(
+                    [{ role: 'user', parts: [{ text: prompt }] }],
+                    getFineTunedModel('generalist'),
+                    {
+                        ...INTELLIGENCE_CONFIG.THINKING.HIGH,
+                        responseMimeType: 'application/json',
+                        maxOutputTokens,
+                    }
+                );
+                actualTokens = response.response.usageMetadata?.totalTokenCount;
+            } finally {
+                budget.settle(reservation, actualTokens);
+            }
 
             const jsonText = getResponseText(response) || '{}';
             const rawGraph = JSON.parse(jsonText);

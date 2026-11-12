@@ -111,6 +111,7 @@ import {
     deterministicPlpVariantAdFallback,
     judgeCreativeJourneyIntent,
     deterministicCreativeJourneyFallback,
+    judgeBoardroomWebpageSemantics,
     judgeBoardroomExecutiveIntent,
     deterministicBoardroomExecutiveFallback,
     judgeDepartmentJourneyIntent,
@@ -133,6 +134,47 @@ const SKILLS = [
     { id: 'digital_distribution', name: 'Digital Distribution', description: 'DSP ingestion, DDEX, ISRC allocation.' },
     { id: 'legal_affairs', name: 'Legal Affairs', description: 'Contracts, DMCA takedowns, rights.' },
 ];
+
+
+describe('Boardroom webpage relevance contract', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReturnValue(true);
+    });
+
+    it.each([NaN, Infinity, -Infinity])('uses the deterministic relevance when Jev returns invalid score %s', async score => {
+        const callable = vi.fn().mockResolvedValue({ data: { answers: {
+            industry_category: { choice: 'general_research' },
+            recommended_department: { choice: 'marketing' },
+            relevance: { score },
+        } } });
+        mocks.httpsCallable.mockReturnValue(callable);
+        const result = await judgeBoardroomWebpageSemantics('https://example.org', 'Research');
+        expect(result.source).toBe('deterministic');
+        expect(Number.isFinite(result.relevanceScore)).toBe(true);
+        expect(result.relevanceScore).toBeGreaterThanOrEqual(0);
+        expect(result.relevanceScore).toBeLessThanOrEqual(1);
+    });
+
+    it('sends ordered relevance criteria and preserves the returned score', async () => {
+        const callable = vi.fn().mockResolvedValue({ data: { answers: {
+            industry_category: { choice: 'pro_rights' },
+            recommended_department: { choice: 'publishing' },
+            relevance: { score: 0.72 },
+        } } });
+        mocks.httpsCallable.mockReturnValue(callable);
+        const result = await judgeBoardroomWebpageSemantics('https://example.org/royalties', 'Royalties');
+        expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+            questions: expect.objectContaining({ relevance: expect.objectContaining({
+                type: 'score', criteria: expect.arrayContaining([
+                    expect.stringContaining('no useful connection'), expect.stringContaining('directly supports'),
+                ]),
+            }) }),
+        }));
+        expect(result).toMatchObject({ source: 'jev', category: 'pro_rights', recommendedDepartment: 'publishing', relevanceScore: 0.72 });
+    });
+});
 
 describe('TypeSafe HTTP question contract', () => {
     it('defines ordered criteria for every Score and criteria for every Choice', () => {
@@ -506,6 +548,26 @@ describe('judgeMemoryImportance (composite scoring)', () => {
         }));
 
         expect(await judgeMemoryImportance('x', 'fact')).toBeNull();
+    });
+
+    // Structural answer-contract checks; no live memory persistence is exercised.
+    it.each([null, true, '4', -0.1, 4.1, NaN, Infinity, undefined])('abstains on malformed or out-of-range memory scores (%s)', async score => {
+        mocks.enabled.mockReturnValue(true);
+        for (const dimension of ['actionability', 'business_criticality', 'permanence']) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+                actionability: { score: 3 }, business_criticality: { score: 3 }, permanence: { score: 3 },
+                [dimension]: { score },
+            } } }));
+            expect(await judgeMemoryImportance('literal parser input', 'fact')).toBeNull();
+        }
+    });
+
+    it('preserves fractional scores and valid endpoints', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            actionability: { score: 0 }, business_criticality: { score: 2.5 }, permanence: { score: 4 },
+        } } }));
+        expect(await judgeMemoryImportance('literal parser input', 'fact')).toBeCloseTo(0.45, 5);
     });
 });
 

@@ -190,75 +190,80 @@ export async function judgeSpokenConversationIntent(
             },
         });
 
-        const answers = result.data.answers || {};
-
-        // Parse Noul barge-in probability
-        const bargeInRaw = answers.bargeInStop;
-        const bargeInProb = typeof bargeInRaw === 'number'
-            ? bargeInRaw
-            : (typeof bargeInRaw === 'object' && bargeInRaw !== null && 'probability' in bargeInRaw)
-                ? Number((bargeInRaw as { probability?: unknown }).probability)
-                : 0;
-
-        if (Number.isFinite(bargeInProb) && bargeInProb >= 0.75) {
-            return {
-                action: 'barge_in_stop',
-                confidence: bargeInProb,
-                explanation: 'Jev System One Noul detected stop command with high probability',
-            };
-        }
-
-        // Parse Choice intent
-        const intentAnswer = answers.intent;
-        const choice = typeof intentAnswer === 'string'
-            ? intentAnswer
-            : (intentAnswer as { choice?: unknown } | null)?.choice;
-
-        const rawConfidence =
-            typeof intentAnswer === 'object' && intentAnswer !== null
-                ? (intentAnswer as { confidence?: unknown }).confidence
-                : undefined;
-
-        const confidence =
-            typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                ? rawConfidence
-                : 0.85;
-
-        // Parse Speculative Specialist Choice
-        const specAnswer = answers.targetSpecialist;
-        const specChoice = typeof specAnswer === 'string'
-            ? specAnswer
-            : (specAnswer as { choice?: unknown } | null)?.choice;
-
-        const targetSpecialist = typeof specChoice === 'string' && specChoice !== 'none'
-            ? specChoice
-            : fallback.targetAgentId;
-
-        if (choice === 'barge_in_stop') {
-            return { action: 'barge_in_stop', confidence };
-        }
-
-        if (choice === 'agent_reassignment' || (targetSpecialist && targetSpecialist !== currentAgentId && targetSpecialist !== 'generalist')) {
-            return {
-                action: 'agent_reassignment',
-                confidence,
-                targetAgentId: targetSpecialist || fallback.targetAgentId,
-                explanation: `Jev routed to specialist: ${targetSpecialist}`,
-            };
-        }
-
-        if (choice === 'product_skill') {
-            return { action: 'product_skill', confidence, targetAgentId: targetSpecialist };
-        }
-
-        return {
-            action: 'general_conversation',
-            confidence,
-            targetAgentId: targetSpecialist,
-        };
+        return parseSpokenIntentAnswers(result.data.answers, fallback, currentAgentId);
     } catch {
         // Safe fallback on network or service error
     }
 
     return fallback;
+}
+
+/** Pure answer composition; does not execute or authorize any action. */
+export function parseSpokenIntentAnswers(
+    rawAnswers: unknown,
+    fallback: SpokenConversationIntentVerdict,
+    currentAgentId?: string,
+): SpokenConversationIntentVerdict {
+    if (!rawAnswers || typeof rawAnswers !== 'object' || Array.isArray(rawAnswers)) return fallback;
+    const answers = rawAnswers as Record<string, unknown>;
+    // Only documented bounded Noul values can trigger semantic interruption.
+    const bargeInRaw = answers.bargeInStop;
+    const bargeInProb = typeof bargeInRaw === 'number'
+        ? bargeInRaw
+        : bargeInRaw !== null && typeof bargeInRaw === 'object' && !Array.isArray(bargeInRaw)
+            ? (bargeInRaw as Record<string, unknown>).noul
+            : undefined;
+
+    if (typeof bargeInProb === 'number' && Number.isFinite(bargeInProb) && bargeInProb >= 0.75 && bargeInProb <= 1) {
+        return {
+            action: 'barge_in_stop',
+            confidence: bargeInProb,
+            explanation: 'Jev System One Noul detected stop command with high probability',
+        };
+    }
+
+    const intentAnswer = answers.intent;
+    const intent = intentAnswer !== null && typeof intentAnswer === 'object' && !Array.isArray(intentAnswer)
+        ? intentAnswer as Record<string, unknown>
+        : undefined;
+    const choice = intent?.choice;
+    const confidence = intent?.confidence;
+    if (typeof choice !== 'string' || !['barge_in_stop', 'agent_reassignment', 'product_skill', 'general_conversation'].includes(choice) ||
+        typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return fallback;
+
+    const specAnswer = answers.targetSpecialist;
+    const specialist = specAnswer !== null && typeof specAnswer === 'object' && !Array.isArray(specAnswer)
+        ? specAnswer as Record<string, unknown>
+        : undefined;
+    const specChoice = specialist?.choice;
+    const specConfidence = specialist?.confidence;
+    const validSpecialist = typeof specChoice === 'string' &&
+        ['legal', 'finance', 'creative', 'video', 'music', 'marketing', 'social', 'distribution', 'publishing', 'licensing', 'publicist', 'road', 'brand', 'none'].includes(specChoice) &&
+        typeof specConfidence === 'number' && Number.isFinite(specConfidence) && specConfidence >= 0 && specConfidence <= 1;
+    const targetSpecialist = validSpecialist && specChoice !== 'none' ? specChoice as string : fallback.targetAgentId;
+
+    if (choice === 'barge_in_stop') {
+        return { action: 'barge_in_stop', confidence };
+    }
+
+    if (choice === 'agent_reassignment' && !targetSpecialist) return fallback;
+
+    if (choice === 'agent_reassignment' || (targetSpecialist && targetSpecialist !== currentAgentId && targetSpecialist !== 'generalist')) {
+        return {
+            action: 'agent_reassignment',
+            confidence,
+            targetAgentId: targetSpecialist || fallback.targetAgentId,
+            explanation: `Jev routed to specialist: ${targetSpecialist}`,
+        };
+    }
+
+    if (choice === 'product_skill') {
+        return { action: 'product_skill', confidence, targetAgentId: targetSpecialist };
+    }
+
+    return {
+        action: 'general_conversation',
+        confidence,
+        targetAgentId: targetSpecialist,
+    };
 }

@@ -32,6 +32,54 @@ function EmptyFocusHarness() {
     return <div ref={ref} data-testid="empty-dialog">Loading</div>;
 }
 
+function EditorFocusHarness() {
+    const ref = useFocusTrap(true);
+    return <div ref={ref}>
+        <div contentEditable tabIndex={-1} aria-label="Excluded editor" />
+        <div contentEditable role="textbox" aria-label="Draft editor" />
+        <button>Save draft</button>
+    </div>;
+}
+
+function LoadingFocusHarness({ loaded }: { loaded: boolean }) {
+    const ref = useFocusTrap(true);
+    return <div ref={ref} data-testid="loading-dialog">
+        {loaded ? <><button>Loaded first</button><button>Loaded last</button></> : 'Loading'}
+    </div>;
+}
+
+function HiddenFocusHarness() {
+    const ref = useFocusTrap(true);
+    return <div ref={ref}>
+        <button tabIndex={-1}>Excluded</button>
+        <div hidden><button>Hidden</button></div>
+        <div style={{ display: 'none' }}><button>CSS hidden</button></div>
+        <fieldset disabled><button>Disabled by fieldset</button></fieldset>
+        <button>Available first</button>
+        <button>Available last</button>
+    </div>;
+}
+
+function RestoredStackHarness({ upper, hideLower }: { upper: boolean; hideLower: boolean }) {
+    const lowerRef = useFocusTrap(true);
+    const upperRef = useFocusTrap(upper);
+    return <>
+        <div ref={lowerRef} data-testid="lower-dialog">
+            <button hidden={hideLower}>Lower trigger</button>
+        </div>
+        {upper && <div ref={upperRef}><button>Upper control</button></div>}
+    </>;
+}
+
+function RemovableLowerHarness({ lower }: { lower: boolean }) {
+    const lowerRef = useFocusTrap(lower);
+    const upperRef = useFocusTrap(true);
+    return <>
+        {lower && <div ref={lowerRef}><button>Background control</button></div>}
+        <div ref={upperRef}><button>Top first</button><button>Top last</button></div>
+    </>;
+}
+
 describe('useFocusTrap', () => {
     afterEach(() => globalKeyboardOrchestrator.dispose());
 
@@ -87,5 +135,49 @@ describe('useFocusTrap', () => {
         const tab = fireEvent.keyDown(dialog, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
         expect(tab).toBe(false);
         expect(dialog).toHaveFocus();
+    });
+    it('includes editable regions without overriding explicit negative tabindex', () => {
+        render(<EditorFocusHarness />);
+        const editor = screen.getByRole('textbox', { name: 'Draft editor' });
+        expect(editor).toHaveFocus();
+        screen.getByRole('button', { name: 'Save draft' }).focus();
+        fireEvent.keyDown(window, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(editor).toHaveFocus();
+    });
+    it('enters the current tab order after an empty dialog finishes loading', () => {
+        const view = render(<LoadingFocusHarness loaded={false} />);
+        const dialog = screen.getByTestId('loading-dialog');
+        expect(dialog).toHaveFocus();
+        view.rerender(<LoadingFocusHarness loaded />);
+        fireEvent.keyDown(window, { key: 'Tab', code: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+        expect(screen.getByRole('button', { name: 'Loaded last' })).toHaveFocus();
+        dialog.focus();
+        fireEvent.keyDown(window, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(screen.getByRole('button', { name: 'Loaded first' })).toHaveFocus();
+    });
+    it('skips excluded controls when opening and wrapping focus', () => {
+        render(<HiddenFocusHarness />);
+        const first = screen.getByRole('button', { name: 'Available first' });
+        const last = screen.getByRole('button', { name: 'Available last' });
+        expect(first).toHaveFocus();
+        last.focus();
+        fireEvent.keyDown(window, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(first).toHaveFocus();
+    });
+    it('restores focus to the remaining container when its trigger became hidden', () => {
+        const view = render(<RestoredStackHarness upper={false} hideLower={false} />);
+        expect(screen.getByRole('button', { name: 'Lower trigger' })).toHaveFocus();
+        view.rerender(<RestoredStackHarness upper hideLower={false} />);
+        expect(screen.getByRole('button', { name: 'Upper control' })).toHaveFocus();
+        view.rerender(<RestoredStackHarness upper hideLower />);
+        view.rerender(<RestoredStackHarness upper={false} hideLower />);
+        expect(screen.getByTestId('lower-dialog')).toHaveFocus();
+    });
+    it('keeps focus in place when a lower dialog closes', () => {
+        const view = render(<RemovableLowerHarness lower />);
+        const last = screen.getByRole('button', { name: 'Top last' });
+        last.focus();
+        view.rerender(<RemovableLowerHarness lower={false} />);
+        expect(last).toHaveFocus();
     });
 });

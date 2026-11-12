@@ -25,10 +25,33 @@ describe('AgentEventBus', () => {
         const received: AgentActionEvent[] = [];
         const off = events.on<AgentActionEvent>('AGENT_ACTION', event => received.push(event));
         try {
-            AgentEventBus.emitSessionEvent('AGENT_SESSION_COMPLETED', { agentId: 'agent-1', sessionId: 'session-1', durationMs: 0 });
+            AgentEventBus.emitSessionEvent('AGENT_SESSION_FAILED', { agentId: 'agent-1', sessionId: 'session-1', durationMs: 0, reason: 'cancelled' });
             AgentEventBus.emitNodeEvent('GRAPH_NODE_COMPLETED', 'graph-1', 'node-1', 'execution-1');
-            expect(received[0]).toMatchObject({ sessionId: 'session-1', durationMs: 0 });
+            expect(received[0]).toMatchObject({ sessionId: 'session-1', durationMs: 0, timestamp: expect.any(Number), errorMessage: 'cancelled' });
             expect(received[1]).toMatchObject({ graphId: 'graph-1', nodeId: 'node-1', executionId: 'execution-1' });
+        } finally {
+            off();
+        }
+    });
+
+    it('keeps overlapping calls to the same tool distinguishable through settlement', () => {
+        const received: AgentActionEvent[] = [];
+        const off = events.on<AgentActionEvent>('AGENT_ACTION', event => received.push(event));
+        try {
+            const timestamp = Date.now();
+            for (const toolCallId of ['first', 'second']) {
+                AgentEventBus.emitToolEvent('TOOL_EXECUTION_START', {
+                    agentId: 'agent-1', toolName: 'lookup', timestamp, toolCallId,
+                });
+            }
+            AgentEventBus.emitToolResult('agent-1', 'lookup', timestamp, { success: true }, 'second');
+            AgentEventBus.emitToolResult('agent-1', 'lookup', timestamp, { success: false, error: 'Lookup failed' }, 'first');
+            expect(received.map(({ action, toolCallId }) => [action, toolCallId])).toEqual([
+                ['TOOL_EXECUTION_START', 'first'],
+                ['TOOL_EXECUTION_START', 'second'],
+                ['TOOL_EXECUTION_COMPLETE', 'second'],
+                ['TOOL_EXECUTION_FAILED', 'first'],
+            ]);
         } finally {
             off();
         }

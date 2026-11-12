@@ -38,7 +38,7 @@ export const AgentLoopMonitor: React.FC = () => {
                             <span>Iteration: <strong>{loop.currentIteration}</strong></span>
                             <span>Updated: {new Date(loop.updatedAt).toLocaleTimeString()}</span>
                         </div>
-                        <ScrollArea className="h-48 border border-indii-surface-3 rounded-md p-3 bg-black/20">
+                        <ScrollArea role="region" aria-label="Agent loop activity" tabIndex={0} className="h-48 border border-indii-surface-3 rounded-md p-3 bg-black/20">
                             {loop.history.length === 0 && (
                                 <div className="text-xs text-zinc-500 italic">Waiting for first action...</div>
                             )}

@@ -18,6 +18,7 @@ export interface AgentActionEvent {
     timestamp?: number;
     durationMs?: number;
     toolName?: string;
+    toolCallId?: string;
     targetContext?: string;
     errorMessage?: string;
     sessionId?: string;

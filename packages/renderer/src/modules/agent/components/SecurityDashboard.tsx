@@ -73,7 +73,7 @@ export const SecurityDashboard: React.FC = () => {
                             <Card key={suggestion.id} className="border-l-4 border-l-blue-500">
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center justify-between">
-                                        <CardTitle className="text-base">
+                                        <CardTitle as="h4" className="text-base">
                                             {suggestion.agentId.toUpperCase()}
                                         </CardTitle>
                                         <Badge variant="secondary">

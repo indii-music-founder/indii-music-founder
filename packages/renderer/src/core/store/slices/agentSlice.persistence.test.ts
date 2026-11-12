@@ -37,6 +37,8 @@ vi.mock('@/services/agent/SessionService', () => ({
     }
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({ toast: { error: vi.fn() } }));
+
 import { createAgentSlice, AgentSlice } from './agent';
 import { sessionService } from '@/services/agent/SessionService';
 
@@ -47,6 +49,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         vi.clearAllMocks();
         mockAppendMessage.mockResolvedValue(undefined);
         mockUpdateMessage.mockResolvedValue(undefined);
+        mockDeleteSession.mockResolvedValue(undefined);
         messageSubscribers.length = 0;
         sessionSubscribers.length = 0;
         // Create a fresh store for each test
@@ -84,6 +87,44 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
             sessionId,
             expect.objectContaining({ id: 'msg-1', text: 'Hello, Keeper!' })
         );
+    });
+
+    it('does not recreate an implicit session when only message append needs a retry', async () => {
+        useStore.setState({ activeSessionId: null, sessions: {}, agentHistory: [] });
+        mockAppendMessage.mockRejectedValueOnce(new Error('temporary append failure'));
+        useStore.getState().addAgentMessage({ id: 'implicit-retry', role: 'user', text: 'Hello', timestamp: 1 });
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledTimes(2), { timeout: 2500 });
+        expect(mockCreateSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not switch message subscriptions back when a backgrounded conversation finishes saving', async () => {
+        const originalId = useStore.getState().activeSessionId;
+        let finish!: (value: string) => void;
+        mockCreateSession.mockReturnValueOnce(new Promise<string>(resolve => { finish = resolve; }));
+        const newId = useStore.getState().createSession('New conversation', ['indii']);
+        await vi.waitFor(() => expect(mockCreateSession).toHaveBeenCalledTimes(1));
+        useStore.getState().setActiveSession(originalId);
+        await vi.waitFor(() => expect(mockSubscribeToMessages).toHaveBeenCalledWith(originalId, expect.any(Function), expect.any(Function)));
+        mockSubscribeToMessages.mockClear();
+        finish(newId);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        expect(mockSubscribeToMessages).not.toHaveBeenCalledWith(newId, expect.any(Function), expect.any(Function));
+    });
+
+    it('ignores a queued snapshot from a conversation after switching away', async () => {
+        const firstId = useStore.getState().activeSessionId;
+        useStore.getState().setActiveSession(firstId);
+        await vi.waitFor(() => expect(messageSubscribers.length).toBeGreaterThan(0));
+        const staleSnapshot = messageSubscribers.at(-1)!;
+        const nextId = 'other-session';
+        useStore.setState((state: AgentSlice) => ({ sessions: {
+            ...state.sessions,
+            [nextId]: { id: nextId, title: 'Other', createdAt: 1, updatedAt: 1, messages: [], participants: ['indii'] },
+        } }));
+        useStore.getState().setActiveSession(nextId);
+        staleSnapshot([{ id: 'stale', role: 'user', text: 'Old callback', timestamp: 1 }]);
+        expect(useStore.getState().sessions[firstId].messages).not.toContainEqual(expect.objectContaining({ id: 'stale' }));
+        expect(useStore.getState().agentHistory).toEqual([]);
     });
 
     it('marks an optimistic message unsaved after append retries fail', async () => {
@@ -236,6 +277,43 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         ]);
     });
 
+    it('keeps a conversation visible when deletion fails and allows a retry', async () => {
+        const sessionId = useStore.getState().activeSessionId;
+        mockDeleteSession.mockRejectedValueOnce(new Error('offline'));
+        useStore.getState().deleteSession(sessionId);
+        await vi.waitFor(() => expect(mockDeleteSession).toHaveBeenCalledTimes(1));
+        await vi.waitFor(() => expect(useStore.getState().sessions[sessionId]).toBeDefined());
+        // Let the rejection handler release the in-flight lock before retrying.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        useStore.getState().deleteSession(sessionId);
+        await vi.waitFor(() => expect(useStore.getState().sessions[sessionId]).toBeUndefined());
+        expect(mockDeleteSession).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps a conversation visible while deletion is pending and deduplicates requests', async () => {
+        const sessionId = useStore.getState().activeSessionId;
+        let finish!: () => void;
+        mockDeleteSession.mockReturnValueOnce(new Promise<void>(resolve => { finish = resolve; }));
+        useStore.getState().deleteSession(sessionId);
+        useStore.getState().deleteSession(sessionId);
+        await vi.waitFor(() => expect(mockDeleteSession).toHaveBeenCalledTimes(1));
+        expect(useStore.getState().sessions[sessionId]).toBeDefined();
+        finish();
+        await vi.waitFor(() => expect(useStore.getState().sessions[sessionId]).toBeUndefined());
+    });
+
+    it('subscribes to the next conversation after deleting the active one', async () => {
+        const firstId = useStore.getState().activeSessionId;
+        const nextId = 'remaining-session';
+        useStore.setState((state: AgentSlice) => ({ sessions: {
+            ...state.sessions,
+            [nextId]: { id: nextId, title: 'Remaining', createdAt: 1, updatedAt: 1, messages: [], participants: ['indii'] },
+        } }));
+        useStore.getState().deleteSession(firstId);
+        await vi.waitFor(() => expect(useStore.getState().activeSessionId).toBe(nextId));
+        await vi.waitFor(() => expect(mockSubscribeToMessages).toHaveBeenCalledWith(nextId, expect.any(Function), expect.any(Function)));
+    });
+
     it('should persist cleared history to SessionService', async () => {
         const store = useStore.getState();
         const sessionId = store.activeSessionId;
@@ -307,8 +385,9 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
     it('keeps messages from concurrent surfaces when the append-only stream updates', async () => {
         const sessionId = useStore.getState().activeSessionId!;
+        const previousSubscriptions = messageSubscribers.length;
         useStore.getState().setActiveSession(sessionId);
-        await vi.waitFor(() => expect(messageSubscribers.length).toBeGreaterThan(0));
+        await vi.waitFor(() => expect(messageSubscribers.length).toBeGreaterThan(previousSubscriptions));
         const receive = messageSubscribers.at(-1)!;
 
         receive([
@@ -416,6 +495,18 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
                 },
             }),
         ]);
+    });
+
+    it('does not rewrite stale inline history for a migrated conversation', async () => {
+        const store = useStore.getState();
+        await store.loadSessions();
+        sessionSubscribers[0]!([{
+            id: store.activeSessionId!, title: 'Migrated', createdAt: 1, updatedAt: 2,
+            participants: ['agent-1'], messageStorage: 'subcollection',
+            messages: [{ id: 'stale-inline', role: 'model', text: 'Old', timestamp: 1, isStreaming: true }],
+        }]);
+        await Promise.resolve();
+        expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 
     it('recovers and persists a streaming child message left by a previous page runtime', async () => {

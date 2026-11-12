@@ -138,7 +138,7 @@ export interface UsageUnits {
 
 /** Look up the pricing entry for a model, falling back conservatively (and loudly) if unknown. */
 export function getModelPricing(model: string): ModelPricing {
-    const pricing = MODEL_PRICING[model];
+    const pricing = Object.hasOwn(MODEL_PRICING, model) ? MODEL_PRICING[model] : undefined;
     if (!pricing) {
         logger.warn(
             `[ModelPricing] No pricing entry for model "${model}". ` +
@@ -148,6 +148,10 @@ export function getModelPricing(model: string): ModelPricing {
         return UNKNOWN_MODEL_FALLBACK;
     }
     return pricing;
+}
+
+function billableQuantity(value: number | undefined): number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 /**
@@ -168,8 +172,8 @@ export function getModelPricing(model: string): ModelPricing {
  */
 export function estimateCostUsd(model: string, units: UsageUnits): number {
     const pricing = getModelPricing(model);
-    const inputTokens = Math.max(0, units.inputTokens ?? 0);
-    const outputTokens = Math.max(0, units.outputTokens ?? 0);
+    const inputTokens = billableQuantity(units.inputTokens);
+    const outputTokens = billableQuantity(units.outputTokens);
 
     switch (pricing.kind) {
         case 'token': {
@@ -178,7 +182,7 @@ export function estimateCostUsd(model: string, units: UsageUnits): number {
             return inputCost + outputCost;
         }
         case 'image': {
-            const images = Math.max(0, units.images ?? 0);
+            const images = billableQuantity(units.images);
             const imageCost = images * pricing.perImage;
             const promptCost = pricing.inputPerMillion
                 ? (inputTokens / 1_000_000) * pricing.inputPerMillion
@@ -186,11 +190,11 @@ export function estimateCostUsd(model: string, units: UsageUnits): number {
             return imageCost + promptCost;
         }
         case 'video': {
-            const seconds = Math.max(0, units.seconds ?? 0);
+            const seconds = billableQuantity(units.seconds);
             return seconds * pricing.perSecond;
         }
         case 'tts': {
-            const seconds = Math.max(0, units.seconds ?? 0);
+            const seconds = billableQuantity(units.seconds);
             const inputCost = (inputTokens / 1_000_000) * pricing.inputPerMillion;
             const outputAudioTokens = seconds * pricing.audioTokensPerSecond;
             const outputCost = (outputAudioTokens / 1_000_000) * pricing.outputPerMillionAudioTokens;

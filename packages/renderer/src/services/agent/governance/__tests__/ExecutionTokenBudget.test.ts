@@ -32,6 +32,17 @@ describe('ExecutionTokenBudget', () => {
         expect(executionTokenBudget(child, 100).reserve(30)).toBeNull();
     });
 
+    it('shares a budget across descendants created before the first reservation', () => {
+        const root = {};
+        const child = {};
+        const grandchild = {};
+        inheritExecutionTokenBudget(root, child);
+        inheritExecutionTokenBudget(child, grandchild);
+        executionTokenBudget(grandchild, 100).reserve(90);
+        expect(executionTokenBudget(root, 100).reserve(11)).toBeNull();
+        expect(executionTokenBudget(child, 100).remaining).toBe(10);
+    });
+
     it('restores a durable high-water mark without replenishing an active context', () => {
         const budget = new ExecutionTokenBudget(100);
         budget.reserve(30);
@@ -41,6 +52,45 @@ describe('ExecutionTokenBudget', () => {
         budget.ensureSpentAtLeast(50);
         expect(budget.spent).toBe(80);
         expect(() => budget.ensureSpentAtLeast(NaN)).toThrow(/invalid/);
+    });
+
+    it('cannot refund restored durable spend by settling an older reservation', () => {
+        const budget = new ExecutionTokenBudget(100);
+        const older = budget.reserve(30)!;
+        budget.ensureSpentAtLeast(80);
+        budget.settle(older, 10);
+        expect(budget.spent).toBe(80);
+        expect(budget.reserve(21)).toBeNull();
+
+        const fresh = budget.reserve(20)!;
+        budget.settle(fresh, 5);
+        expect(budget.spent).toBe(85);
+        expect(budget.remaining).toBe(15);
+    });
+
+    it('preserves new pending reservations while an older restored call settles', () => {
+        const budget = new ExecutionTokenBudget(100);
+        const older = budget.reserve(30)!;
+        budget.ensureSpentAtLeast(80);
+        const fresh = budget.reserve(20)!;
+        budget.settle(older, 10);
+        expect(budget.remaining).toBe(0);
+        budget.settle(fresh, 5);
+        expect(budget.spent).toBe(85);
+    });
+
+    it('keeps overflowed spend checkpointable and prevents later refunds from reopening the budget', () => {
+        const limit = Number.MAX_SAFE_INTEGER;
+        const budget = new ExecutionTokenBudget(limit);
+        const first = budget.reserve(1)!;
+        const second = budget.reserve(10)!;
+        budget.settle(first, limit);
+        budget.settle(second, 1);
+        expect(budget.spent).toBe(limit);
+        expect(budget.remaining).toBe(0);
+        const restored = new ExecutionTokenBudget(limit);
+        restored.ensureSpentAtLeast(budget.spent);
+        expect(restored.reserve(1)).toBeNull();
     });
 
     it.each([NaN, Infinity, -1, 1.5])('rejects an invalid reservation (%s)', amount => {

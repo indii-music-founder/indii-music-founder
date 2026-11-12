@@ -63,7 +63,7 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
         </button>
       </div>
 
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea role="region" aria-label="Agent capabilities" tabIndex={0} className="flex-1 p-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
             <Activity className="text-indigo-500 animate-pulse" size={32} />

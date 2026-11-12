@@ -28,6 +28,7 @@ export interface VoiceTextViewingStageProps {
     placeholder?: string;
     /** Whether an operation is in-flight / waiting */
     isWaiting?: boolean;
+    isUploading?: boolean;
     /** Whether the remote controller is paired with the studio */
     isPaired?: boolean;
     /** Voice dictation state from useVoice */
@@ -62,6 +63,7 @@ export default function VoiceTextViewingStage({
     onSubmit,
     placeholder = 'Broadcast to Boardroom…',
     isWaiting = false,
+    isUploading = false,
     isPaired = true,
     isListening = false,
     onToggleListening,
@@ -104,7 +106,7 @@ export default function VoiceTextViewingStage({
 
     const handleSend = () => {
         const hasContent = value.trim() || (attachments && attachments.length > 0);
-        if (!hasContent || isWaiting || !isPaired) return;
+        if (!hasContent || isWaiting || isUploading || !isPaired) return;
         triggerHaptic(40);
         setIsEditingInViewingStage(false);
         setIsManualExpanded(false);
@@ -267,10 +269,10 @@ export default function VoiceTextViewingStage({
                                     type="button"
                                     whileTap={{ scale: 0.96 }}
                                     onClick={handleSend}
-                                    disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || !isPaired}
+                                    disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || isUploading || !isPaired}
                                     className={cn(
                                         'flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg',
-                                        (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && isPaired
+                                        (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && !isUploading && isPaired
                                             ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/20 hover:bg-[#36D96F]'
                                             : 'bg-white/5 text-stone-500 cursor-not-allowed border border-white/5'
                                     )}
@@ -433,11 +435,11 @@ export default function VoiceTextViewingStage({
                             type="button"
                             whileTap={{ scale: 0.9 }}
                             onClick={handleSend}
-                            disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || !isPaired}
+                            disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || isUploading || !isPaired}
                             aria-label="Send message"
                             className={cn(
                                 'w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer',
-                                (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && isPaired
+                                (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && !isUploading && isPaired
                                     ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/25 hover:bg-[#36D96F]'
                                     : 'bg-white/5 text-stone-600 border border-white/5 cursor-not-allowed'
                             )}

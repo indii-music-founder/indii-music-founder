@@ -21,8 +21,40 @@ const request: EvidenceJudgmentRequest = {
 };
 
 describe('TypeSafeEvidenceProvider', () => {
+  // Isolated adapter contract with literal HTTP responses.
+  it.each([200, 503])('completes HTTP %s handling while telemetry is pending', async status => {
+    const telemetry = vi.fn(() => new Promise<void>(() => {}));
+    const provider = new TypeSafeEvidenceProvider({
+      apiKey: 'synthetic-test-key',
+      fetchImpl: async () => new Response(JSON.stringify({
+        answers: { candidate_0: { type: 'noul', noul: 0.8 } },
+      }), { status }),
+      telemetry,
+    });
+
+    const judgment = provider.judgeRelevance({ ...request, candidates: request.candidates.slice(0, 1) });
+    if (status === 200) {
+      await expect(judgment).resolves.toEqual([{ candidateId: 'candidate-a', relevance: 0.8 }]);
+    } else {
+      await expect(judgment).rejects.toThrow('HTTP 503');
+    }
+    expect(telemetry).toHaveBeenCalledWith(expect.objectContaining({
+      status: status === 200 ? 'success' : 'error',
+    }));
+  }, 1000);
+
+  it('rejects oversized candidate text before making an HTTP request', async () => {
+    const fetchImpl = vi.fn();
+    const provider = new TypeSafeEvidenceProvider({ apiKey: 'synthetic-test-key', fetchImpl });
+    await expect(provider.judgeRelevance({
+      ...request,
+      candidates: [{ ...request.candidates[0]!, text: 'x'.repeat(64_000) }],
+    })).rejects.toThrow('character budget');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('maps Noul probabilities onto indii-owned evidence judgments', async () => {
-    const fetchImpl = vi.fn(async (_input: string, _init?: RequestInit) => new Response(JSON.stringify({
+    const fetchImpl = vi.fn(async (_input: Parameters<typeof fetch>[0], _init?: RequestInit) => new Response(JSON.stringify({
       model: 'jev-latest',
       answers: {
         candidate_0: { type: 'noul', noul: 0.96 },

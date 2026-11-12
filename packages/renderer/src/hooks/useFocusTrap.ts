@@ -31,6 +31,21 @@ const FOCUSABLE_SELECTORS = [
     '[contenteditable="true"]',
 ].join(', ');
 
+function focusableElementsIn(container: HTMLElement): HTMLElement[] {
+    return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(element => {
+        // Editable regions are focusable without an explicit tabindex even
+        // though their tabIndex property defaults to -1.
+        const implicitEditor = element.matches('[contenteditable="true"]') && !element.hasAttribute('tabindex');
+        if ((element.tabIndex < 0 && !implicitEditor) || element.matches(':disabled') || element.closest('[hidden], [inert]')) return false;
+        const view = element.ownerDocument.defaultView;
+        for (let current: HTMLElement | null = element; current; current = current.parentElement) {
+            const style = view?.getComputedStyle(current);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
+        }
+        return true;
+    });
+}
+
 const activeTrapContainers: HTMLElement[] = [];
 
 export function isTopFocusTrap(container: HTMLElement | null): boolean {
@@ -49,7 +64,7 @@ export function useFocusTrap(isActive: boolean = true) {
 
     const getFocusableElements = useCallback((): HTMLElement[] => {
         if (!containerRef.current) return [];
-        return Array.from(containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
+        return focusableElementsIn(containerRef.current);
     }, []);
 
     useGlobalShortcut({
@@ -72,7 +87,9 @@ export function useFocusTrap(isActive: boolean = true) {
             const firstElement = elements[0]!;
             const lastElement = elements[elements.length - 1]!;
 
-            if (!containerRef.current?.contains(document.activeElement)) {
+            // Focus can remain on the container while loading, or on a
+            // control removed from the tab order. Neither is a tab boundary.
+            if (!elements.includes(document.activeElement as HTMLElement)) {
                 e.preventDefault();
                 (e.shiftKey ? lastElement : firstElement).focus();
                 return;
@@ -120,16 +137,20 @@ export function useFocusTrap(isActive: boolean = true) {
         }
 
         return () => {
+            const wasTopTrap = isTopFocusTrap(container);
             const index = activeTrapContainers.lastIndexOf(container);
             if (index !== -1) activeTrapContainers.splice(index, 1);
             if (originalTabIndex === null && container.tabIndex === -1) container.removeAttribute('tabindex');
+            if (!wasTopTrap) return;
             const nextTrap = activeTrapContainers.at(-1);
             if (nextTrap?.isConnected) {
                 const previousFocus = previousFocusRef.current;
-                const target = previousFocus?.isConnected && nextTrap.contains(previousFocus)
+                const remainingControls = focusableElementsIn(nextTrap);
+                const target = previousFocus?.isConnected && remainingControls.includes(previousFocus)
                     ? previousFocus
-                    : nextTrap.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
-                target?.focus();
+                    : remainingControls[0] ?? nextTrap;
+                if (target === nextTrap && !nextTrap.hasAttribute('tabindex')) nextTrap.tabIndex = -1;
+                target.focus();
             } else if (previousFocusRef.current?.isConnected) {
                 previousFocusRef.current.focus();
             }

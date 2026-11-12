@@ -222,6 +222,10 @@ export function TextEffect({
   style,
 }: TextEffectProps) {
   const reducedMotion = useReducedMotion();
+  if (reducedMotion) {
+    return trigger ? React.createElement(as, { className, style }, children) : null;
+  }
+
   const segments = splitText(children, per);
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
 
@@ -229,9 +233,9 @@ export function TextEffect({
     ? presetVariants[preset]
     : { container: defaultContainerVariants, item: defaultItemVariants };
 
-  const stagger = defaultStaggerTimes[per] / speedReveal;
+  const stagger = defaultStaggerTimes[per] / (Number.isFinite(speedReveal) && speedReveal > 0 ? speedReveal : 1);
 
-  const baseDuration = 0.3 / speedSegment;
+  const baseDuration = 0.3 / (Number.isFinite(speedSegment) && speedSegment > 0 ? speedSegment : 1);
 
   const customStagger = hasTransition(variants?.container?.visible ?? {})
     ? (variants?.container?.visible as TargetAndTransition).transition
@@ -248,7 +252,7 @@ export function TextEffect({
       variants?.container || baseVariants.container,
       {
         staggerChildren: customStagger ?? stagger,
-        delayChildren: customDelay ?? delay,
+        delayChildren: customDelay ?? (Number.isFinite(delay) ? delay : 0),
         ...containerTransition,
         exit: {
           staggerChildren: customStagger ?? stagger,
@@ -261,10 +265,6 @@ export function TextEffect({
       ...segmentTransition,
     }),
   };
-
-  if (reducedMotion) {
-    return trigger ? React.createElement(as, { className, style }, children) : null;
-  }
 
   return (
     <AnimatePresence mode='popLayout'>

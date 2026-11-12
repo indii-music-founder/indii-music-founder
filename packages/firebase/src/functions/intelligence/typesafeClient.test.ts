@@ -67,6 +67,18 @@ describe('typesafeClient (server-side System One transport)', () => {
             .rejects.toMatchObject({ kind: 'upstream' });
     });
 
+    it('keeps upstream error bodies out of diagnostic messages', async () => {
+        const client = createTypesafeClient({
+            apiKey: 'synthetic-key',
+            fetchImpl: async () => new Response('private request text', { status: 500 }),
+        });
+        await expect(client.judge({ state: {}, questions: { check: {} } })).rejects.toMatchObject({
+            kind: 'upstream',
+            status: 500,
+            message: 'TypeSafe judgment upstream error (HTTP 500).',
+        });
+    });
+
     it('maps network failures to unreachable and aborts to timeout', async () => {
         const unreachable = createTypesafeClient({
             apiKey: 'k',

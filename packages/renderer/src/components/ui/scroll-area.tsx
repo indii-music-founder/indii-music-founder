@@ -6,7 +6,7 @@ const ScrollArea = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
     <div
         ref={ref}
-        className={`relative overflow-auto ${className || ''}`}
+        className={`relative min-w-0 min-h-0 overflow-auto focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring ${className || ''}`}
         {...props}
     >
         {children}

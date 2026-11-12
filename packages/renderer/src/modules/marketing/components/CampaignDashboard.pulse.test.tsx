@@ -48,7 +48,7 @@ describe('CampaignDashboard Pulse (Loading States)', () => {
         expect(screen.getByTestId('marketing-dashboard-loader')).toBeInTheDocument();
 
         // The loader uses aria-label instead of visible text
-        expect(screen.getByLabelText('Loading campaigns')).toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent('Loading campaigns');
     });
 
     it('shows the campaign list when loading completes', () => {

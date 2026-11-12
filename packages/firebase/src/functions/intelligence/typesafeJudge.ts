@@ -120,14 +120,18 @@ export const typesafeJudge = onCall(
             if (totalTokens > 0) {
                 void recordUsage(request.auth.uid, 'chat_tokens', totalTokens, 'typesafe-judge');
             }
-            return { answers: result.answers };
+            return {
+                answers: result.answers,
+                ...(result.requestId !== undefined ? { requestId: result.requestId } : {}),
+            };
         } catch (err: unknown) {
             if (err instanceof TypesafeClientError) {
                 if (err.kind === 'input') throw new HttpsError('invalid-argument', err.message);
                 console.error(`[typesafeJudge] upstream ${err.kind}${err.status ? ` ${err.status}` : ''}: ${err.message}`);
                 switch (err.kind) {
-                    case 'unreachable':
                     case 'timeout':
+                        throw new HttpsError('deadline-exceeded', 'TypeSafe judgment timed out.');
+                    case 'unreachable':
                         throw new HttpsError('unavailable', 'TypeSafe judgment upstream is unreachable.');
                     case 'rate_limited':
                         throw new HttpsError('resource-exhausted', 'TypeSafe judgment rate limited.');

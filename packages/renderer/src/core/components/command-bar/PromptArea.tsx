@@ -283,10 +283,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const processAttachments = useCallback(async (files: File[]) => {
         return Promise.all(files.map(file =>
-            new Promise<{ mimeType: string; base64: string }>((resolve, reject) => {
+            new Promise<{ mimeType: string; base64: string; filename?: string }>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve({
                     mimeType: file.type,
+                    filename: file.name,
                     base64: (reader.result as string).split(',')[1]!
                 });
                 reader.onerror = reject;
