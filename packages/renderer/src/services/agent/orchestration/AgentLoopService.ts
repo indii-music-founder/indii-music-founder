@@ -151,6 +151,9 @@ export class AgentLoopService {
      */
     async startLoop(definition: AgentLoopDefinition, context: AgentContext): Promise<string> {
         requireConfiguredJudge(definition);
+        if (!Number.isSafeInteger(definition.maxIterations) || definition.maxIterations < 1) {
+            throw new Error('Loop iteration limit must be a positive safe integer.');
+        }
         const executionId = uuidv4();
         
         const execution: AgentLoopExecution = {

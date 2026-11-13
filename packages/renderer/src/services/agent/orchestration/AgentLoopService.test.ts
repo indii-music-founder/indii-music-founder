@@ -71,6 +71,17 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it.each([0, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1])('rejects an invalid start iteration limit (%s)', async maxIterations => {
+        const definition: AgentLoopDefinition = {
+            id: 'invalid-limit', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations, createdAt: 1, updatedAt: 1,
+        };
+        await expect(agentLoopService.startLoop(definition, { userId: 'user1' }))
+            .rejects.toThrow('positive safe integer');
+        expect(FirestoreService.prototype.setIfRevision).not.toHaveBeenCalled();
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
     it('rejects direct resume of an exhausted loop before writing a checkpoint', async () => {
         const definition: AgentLoopDefinition = {
             id: 'exhausted-loop', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
