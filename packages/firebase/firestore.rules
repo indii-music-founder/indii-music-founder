@@ -1271,7 +1271,19 @@ service cloud.firestore {
       }
 
       match /agentLoopExecutions/{executionId} {
-        allow read, create, update: if isOwner(userId);
+        function validRevision() {
+          return request.resource.data.id == executionId &&
+            request.resource.data.checkpointRevision is int &&
+            request.resource.data.checkpointRevision > 0 &&
+            request.resource.data.checkpointRevision <= 9007199254740991;
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validRevision() &&
+          request.resource.data.checkpointRevision == 1;
+        // Legacy records can be claimed once at revision 1. Stale clients
+        // cannot overwrite a newer dispatch claim, even with an unconditional set.
+        allow update: if isOwner(userId) && validRevision() &&
+          request.resource.data.checkpointRevision == resource.data.get('checkpointRevision', 0) + 1;
         allow delete: if isOwner(userId);
       }
 
