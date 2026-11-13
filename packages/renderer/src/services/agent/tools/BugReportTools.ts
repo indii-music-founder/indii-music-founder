@@ -91,7 +91,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let githubStatus: 'ok' | 'failed' | 'skipped' | 'merged_as_comment' = 'skipped';
         let issueUrl: string | undefined;
         let persistedBugId: string | undefined;
-        let callableError: string | undefined;
+        let saveUnconfirmed = false;
 
         try {
             const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
@@ -130,17 +130,22 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             persistedBugId = result.data.bugId;
             logger.info(`[BugReportTools] Cloud Function response: github=${githubStatus} firestore=${firestoreOk}`, result.data);
         } catch (cfErr: unknown) {
-            callableError = cfErr instanceof Error ? cfErr.message : String(cfErr);
+            saveUnconfirmed = true;
             logger.warn('[BugReportTools] Cloud Function call failed:', cfErr);
         }
 
         // 2. Honesty gate — the agent must NEVER tell the user a report was
         // filed when nothing durable happened. Durable = the callable's
         // Admin-SDK Firestore write succeeded.
+        if (saveUnconfirmed) {
+            const message = 'Bug report save could not be confirmed. Check the bug tracker before retrying to avoid a duplicate.';
+            toast.warning(message);
+            return toolError(message, 'SAVE_UNCONFIRMED');
+        }
         if (!firestoreOk) {
             toast.error('Bug report could NOT be filed — nothing was saved. The report pipeline is unreachable. DevOps: check reportBugFn deployment.');
             return toolError(
-                `Bug report was NOT filed. Pipeline error: ${callableError || 'reportBugFn could not persist the report'}. Tell the user their bug report failed to save; do not claim it was documented.`,
+                `Bug report was NOT filed. Pipeline error: reportBugFn could not persist the report. Tell the user their bug report failed to save; do not claim it was documented.`,
                 'PIPELINE_UNAVAILABLE',
             );
         }

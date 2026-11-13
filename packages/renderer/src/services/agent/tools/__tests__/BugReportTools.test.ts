@@ -77,14 +77,14 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.warning).not.toHaveBeenCalled();
   });
 
-  it('returns toolError when the pipeline is unreachable — never fake success', async () => {
+  it('reports an unconfirmed save when the callable response is lost', async () => {
     judgeInvoke.mockRejectedValue(new Error('unavailable'));
 
     const result = await BugReportTools.report_bug!(args);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('NOT filed');
-    expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('could NOT be filed'));
+    expect(result.error).toContain('save could not be confirmed');
+    expect(toastMock.warning).toHaveBeenCalledWith(expect.stringContaining('Check the bug tracker before retrying'));
   });
 
   it('returns toolError when the server cannot persist, even with a structured response', async () => {
