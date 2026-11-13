@@ -168,11 +168,14 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             logger.warn('[BugReportTools] Failed to save bug to memory:', e);
         }
 
-        const finalMessage = githubStatus === 'merged_as_comment'
-            ? `Bug report merged as comment on existing issue: ${issueUrl}`
+        const reportReference = persistedBugId ? ` Report ID: ${persistedBugId}.` : '';
+        const issueReference = issueUrl ? ` ${issueUrl}` : '';
+        const syncMessage = githubStatus === 'merged_as_comment'
+            ? `Added as a comment to an existing GitHub issue.${issueReference}`
             : githubStatus === 'ok'
-            ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
-            : `Bug report saved to the project bug tracker: "${bugReport.title}" (${bugReport.severity}).${persistedBugId ? ` Report ID: ${persistedBugId}.` : ""} GitHub sync failed.`;
+                ? `Created a GitHub issue.${issueReference}`
+                : 'GitHub sync did not complete.';
+        const finalMessage = `Bug report saved to the project bug tracker: "${bugReport.title}" (${bugReport.severity}).${reportReference} ${syncMessage}`;
 
         return toolSuccess({
             bugId: persistedBugId,
