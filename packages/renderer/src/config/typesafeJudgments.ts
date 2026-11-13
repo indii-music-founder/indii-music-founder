@@ -9073,16 +9073,29 @@ export async function judgeWorkflowCondition(
 
 export type CreativeStudioTargetMode = 'image' | 'video' | 'omni';
 
-export interface CreativePromptModeVerdict {
-    suggestedMode: CreativeStudioTargetMode;
-    confidence: number;
-    reason: string;
+type AmbientCreativeEvidence =
+    | { source: 'jev'; confidence: number }
+    | { source: 'heuristic'; confidence: null };
+
+export const GALLERY_PROMPT_FIT_MIN_CONFIDENCE = 0.65;
+export const PLP_FORMAT_MIN_CONFIDENCE = 0.65;
+
+function ambientJudgmentConfidence(answer: unknown, kind: 'choice' | 'score', minimum: number): number | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; confidence?: unknown };
+    return value.type === kind && typeof value.confidence === 'number' && Number.isFinite(value.confidence) &&
+        value.confidence >= minimum && value.confidence <= 1 ? value.confidence : null;
 }
+
+export type CreativePromptModeVerdict = {
+    suggestedMode: CreativeStudioTargetMode;
+    reason: string;
+} & AmbientCreativeEvidence;
 
 export const CREATIVE_PROMPT_MODE_MIN_CONFIDENCE = 0.70;
 
 const VIDEO_KEYWORD_PATTERNS = [
-    /\b(video|clip|footage|motion|cinematic|camera|orbit|pan\s+(?:left|right|up|down)|tilt|zoom\s+(?:in|out)|tracking\s+shot|drone\s+shot|fps|slow\s+motion|timelapse|hyperlapse|b-roll|transition|animate[d]?|looping|veo)\b/i,
+    /\b(video|clip|footage|motion|camera\s+(?:pan|orbit|movement|move)|orbit|pan\s+(?:left|right|up|down)|tilt|zoom\s+(?:in|out)|tracking\s+shot|drone\s+shot|fps|slow\s+motion|timelapse|hyperlapse|b-roll|transition|animate[d]?|looping|veo)\b/i,
 ];
 
 const OMNI_KEYWORD_PATTERNS = [
@@ -9097,7 +9110,8 @@ export function deterministicCreativePromptModeFallback(
     if (!text) {
         return {
             suggestedMode: currentMode,
-            confidence: 1.0,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Empty prompt defaults to current mode.',
         };
     }
@@ -9105,7 +9119,8 @@ export function deterministicCreativePromptModeFallback(
     if (OMNI_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
         return {
             suggestedMode: 'omni',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt mentions remixing, style transfer, or multimodal blending.',
         };
     }
@@ -9113,14 +9128,16 @@ export function deterministicCreativePromptModeFallback(
     if (VIDEO_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
         return {
             suggestedMode: 'video',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt contains motion, camera direction, or video keywords.',
         };
     }
 
     return {
         suggestedMode: 'image',
-        confidence: 0.80,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Prompt is focused on static illustration, album art, or photograph.',
     };
 }
@@ -9173,17 +9190,13 @@ export async function judgeCreativePromptModeIntent(
 
         const ans = result.data.answers?.target_mode;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
-        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
-            ? (ans as { confidence?: unknown }).confidence
-            : undefined;
-        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-            ? rawConfidence
-            : fallback.confidence;
+        const confidence = ambientJudgmentConfidence(ans, 'choice', CREATIVE_PROMPT_MODE_MIN_CONFIDENCE);
 
-        if (choice === 'image' || choice === 'video' || choice === 'omni') {
+        if (confidence !== null && (choice === 'image' || choice === 'video' || choice === 'omni')) {
             return {
                 suggestedMode: choice as CreativeStudioTargetMode,
-                confidence: confidence ?? fallback.confidence,
+                source: 'jev',
+                confidence,
                 reason: `Jev resolved target mode as ${choice}.`,
             };
         }
@@ -9205,12 +9218,11 @@ export async function judgeCreativePromptModeIntent(
 
 export type GalleryBrandFitLabel = 'perfect_match' | 'strong_fit' | 'neutral' | 'drift' | 'mismatch';
 
-export interface GalleryBrandFitVerdict {
+export type GalleryBrandFitVerdict = {
     score: number; // 1 to 5 integer
     label: GalleryBrandFitLabel;
-    confidence: number;
     reason: string;
-}
+} & AmbientCreativeEvidence;
 
 export interface GalleryAssetBrandContext {
     promptUsed: string;
@@ -9229,7 +9241,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 3,
             label: 'neutral',
-            confidence: 0.5,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Empty prompt defaults to neutral brand alignment.',
         };
     }
@@ -9244,7 +9257,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 5,
             label: 'perfect_match',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt strongly incorporates project brand vibe and aesthetic tags.',
         };
     }
@@ -9253,7 +9267,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 4,
             label: 'strong_fit',
-            confidence: 0.75,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt aligns with project brand direction.',
         };
     }
@@ -9264,7 +9279,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 1,
             label: 'mismatch',
-            confidence: 0.80,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt contains quality defects or anti-brand keywords.',
         };
     }
@@ -9272,7 +9288,8 @@ export function deterministicGalleryBrandFitFallback(
     return {
         score: 3,
         label: 'neutral',
-        confidence: 0.60,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Asset exhibits standard stylistic coherence.',
     };
 }
@@ -9325,34 +9342,19 @@ export async function judgeGalleryAssetBrandFit(
         });
 
         const ans = result.data.answers?.brand_fit;
-        let rawScore: number | undefined;
-        let rawConfidence: number | undefined;
-
-        if (typeof ans === 'number') {
-            rawScore = ans;
-        } else if (typeof ans === 'object' && ans !== null) {
-            if ('score' in ans && typeof (ans as { score?: unknown }).score === 'number') {
-                rawScore = (ans as { score: number }).score;
-            }
-            if ('confidence' in ans && typeof (ans as { confidence?: unknown }).confidence === 'number') {
-                rawConfidence = (ans as { confidence: number }).confidence;
-            }
-        }
-
-        if (typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
+        const confidence = ambientJudgmentConfidence(ans, 'score', GALLERY_PROMPT_FIT_MIN_CONFIDENCE);
+        const rawScore = ans && typeof ans === 'object' ? (ans as { score?: unknown }).score : undefined;
+        if (confidence !== null && typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
             // Map 0-4 scale to 1-5
             const score = Math.round(rawScore) + 1;
             const labels: GalleryBrandFitLabel[] = ['mismatch', 'drift', 'neutral', 'strong_fit', 'perfect_match'];
             const label = labels[score - 1] ?? 'neutral';
-            const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                ? rawConfidence
-                : fallback.confidence;
-
             return {
                 score,
                 label,
+                source: 'jev',
                 confidence,
-                reason: `Jev scored brand aesthetic fit at ${score}/5.`,
+                reason: `Jev scored prompt-to-brand alignment at ${score}/5.`,
             };
         }
 
@@ -9384,12 +9386,11 @@ export interface PlpVariantAdContext {
     kind?: 'image' | 'video';
 }
 
-export interface PlpVariantAdVerdict {
+export type PlpVariantAdVerdict = {
     formatTag: PlpVariantFormatTag;
     retryRecommended: boolean;
-    confidence: number;
     reason: string;
-}
+} & AmbientCreativeEvidence;
 
 export function deterministicPlpVariantAdFallback(
     context: PlpVariantAdContext,
@@ -9398,22 +9399,15 @@ export function deterministicPlpVariantAdFallback(
     const ratio = (context.aspectRatio || '').trim();
     const isVideo = context.kind === 'video' || context.slotIndex >= 10;
 
-    // Check for obvious defects or anti-patterns
-    if (/glitch|broken|distorted|unusable/i.test(prompt)) {
-        return {
-            formatTag: 'STANDARD',
-            retryRecommended: true,
-            confidence: 0.85,
-            reason: 'Defect detected in prompt semantics; recommend retry.',
-        };
-    }
+    // Prompt wording does not establish a rendered defect or justify a paid retry.
 
     // Video vertical slots
     if (ratio === '9:16' || isVideo) {
         return {
             formatTag: 'STORY_REEL',
             retryRecommended: false,
-            confidence: 0.90,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Vertical / video motion format suited for Story and Reels placements.',
         };
     }
@@ -9423,7 +9417,8 @@ export function deterministicPlpVariantAdFallback(
         return {
             formatTag: 'HIGH_CONVERTING_HERO',
             retryRecommended: false,
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Widescreen cinematic composition suited for top hero placements.',
         };
     }
@@ -9433,7 +9428,8 @@ export function deterministicPlpVariantAdFallback(
         return {
             formatTag: 'THUMBNAIL_SAFE',
             retryRecommended: false,
-            confidence: 0.80,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Square or focused subject framing suited for grid and thumbnail cards.',
         };
     }
@@ -9441,7 +9437,8 @@ export function deterministicPlpVariantAdFallback(
     return {
         formatTag: 'STANDARD',
         retryRecommended: false,
-        confidence: 0.70,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Standard ad variant placement.',
     };
 }
@@ -9497,22 +9494,18 @@ export async function judgePlpVariantAdFormat(
 
         const ans = result.data.answers?.ad_format;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
-        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
-            ? (ans as { confidence?: unknown }).confidence
-            : undefined;
-        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-            ? rawConfidence
-            : fallback.confidence;
+        const confidence = ambientJudgmentConfidence(ans, 'choice', PLP_FORMAT_MIN_CONFIDENCE);
 
-        if (
+        if (confidence !== null && (
             choice === 'HIGH_CONVERTING_HERO' ||
             choice === 'STORY_REEL' ||
             choice === 'THUMBNAIL_SAFE' ||
             choice === 'STANDARD'
-        ) {
+        )) {
             return {
                 formatTag: choice as PlpVariantFormatTag,
                 retryRecommended: false,
+                source: 'jev',
                 confidence,
                 reason: `Jev classified variant format as ${choice}.`,
             };

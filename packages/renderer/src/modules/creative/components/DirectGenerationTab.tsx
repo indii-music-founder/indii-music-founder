@@ -190,7 +190,7 @@ export default function DirectGenerationTab() {
             void judgeCreativePromptModeIntent(text, mode as 'image' | 'video' | 'omni').then((verdict) => {
                 if (!isCurrent) return;
                 // Only suggest if different from current mode and high confidence
-                if (verdict.suggestedMode !== mode && verdict.confidence >= 0.70) {
+                if (verdict.suggestedMode !== mode && (verdict.source === 'heuristic' || verdict.confidence >= 0.70)) {
                     setPromptModeVerdict(verdict);
                 } else {
                     setPromptModeVerdict(null);
@@ -832,7 +832,7 @@ export default function DirectGenerationTab() {
                                 <div className="flex items-center gap-2 min-w-0">
                                     <Wand2 size={12} className="text-dept-creative shrink-0 animate-pulse" />
                                     <span className="text-[11px] text-gray-200 truncate">
-                                        Prompt matches <strong className="text-white">{promptModeVerdict.suggestedMode.charAt(0).toUpperCase() + promptModeVerdict.suggestedMode.slice(1)} Studio</strong> ({Math.round(promptModeVerdict.confidence * 100)}% match)
+                                        Prompt matches <strong className="text-white">{promptModeVerdict.suggestedMode.charAt(0).toUpperCase() + promptModeVerdict.suggestedMode.slice(1)} Studio</strong> ({promptModeVerdict.source === 'jev' ? `${Math.round(promptModeVerdict.confidence * 100)}% Jev confidence` : 'prompt keyword suggestion'})
                                     </span>
                                 </div>
                                 <button

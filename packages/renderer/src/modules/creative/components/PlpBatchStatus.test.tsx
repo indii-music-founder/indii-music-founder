@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { completePlpSlot, createPlpBatch, failPlpSlot, setPlpLaunchStatus } from '../plpBatch';
 import PlpBatchStatus from './PlpBatchStatus';
+import * as judgments from '@/config/typesafeJudgments';
 
 describe('PlpBatchStatus', () => {
     it('shows queued and failed slots and targets retry to the selected slot', () => {
@@ -74,7 +75,17 @@ describe('PlpBatchStatus', () => {
         expect(screen.getByRole('button', { name: 'Retry failed variants before launch' })).toBeDisabled();
     });
 
-    it('displays Jev System One format tag and highlights top picks', async () => {
+    it('labels provider confidence without claiming measured fit or conversion', async () => {
+        const spy = vi.spyOn(judgments, 'judgePlpVariantAdFormat').mockResolvedValue({ source: 'jev', confidence: 0.9, formatTag: 'HIGH_CONVERTING_HERO', retryRecommended: false, reason: 'Layout classification' });
+        try {
+            render(<PlpBatchStatus batch={createPlpBatch('provider-format', 'project-1', 'wide banner')} isProjectActive onRetry={vi.fn()} onLaunch={vi.fn()} />);
+            expect((await screen.findAllByText('90% Jev confidence')).length).toBeGreaterThan(0);
+            expect(screen.queryByText('Top Pick')).not.toBeInTheDocument();
+            expect(screen.queryByText(/HIGH CONVERTING HERO/)).not.toBeInTheDocument();
+        } finally { spy.mockRestore(); }
+    });
+
+    it('shows format heuristics without unearned quality awards or fit percentages', async () => {
         let batch = createPlpBatch('batch-1', 'project-1', 'cinematic wide album launch banner');
         batch = completePlpSlot(batch, 0, {
             id: 'asset-0',
@@ -84,13 +95,13 @@ describe('PlpBatchStatus', () => {
 
         render(<PlpBatchStatus batch={batch} isProjectActive onRetry={vi.fn()} onLaunch={vi.fn()} />);
 
-        // Top pick should be tagged for slot 0
-        expect(screen.getByTestId('jev-plp-top-pick-0')).toBeInTheDocument();
-        expect(screen.getAllByText('Top Pick').length).toBe(3);
+        expect(screen.queryByText('Top Pick')).not.toBeInTheDocument();
 
         // Format tag rendered ambiently
         const formatTag = await screen.findByTestId('jev-plp-format-tag-0');
         expect(formatTag).toBeInTheDocument();
-        expect(formatTag).toHaveTextContent(/HIGH CONVERTING HERO/i);
+        expect(formatTag).toHaveTextContent(/HERO LAYOUT/i);
+        expect(screen.getAllByText('Format heuristic').length).toBeGreaterThan(0);
+        expect(screen.queryByText(/% fit/)).not.toBeInTheDocument();
     });
 });

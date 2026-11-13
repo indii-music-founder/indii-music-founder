@@ -18,6 +18,7 @@ const {
     mockWorkspaceLayout: { mode: 'wide' as 'wide' | 'standard' | 'focused', width: 1440 },
     mockJudgeCreativePromptModeIntent: vi.fn().mockResolvedValue({
         suggestedMode: 'video',
+        source: 'jev',
         confidence: 0.95,
         reason: 'Jev resolved target mode as video.',
     }),
@@ -640,6 +641,16 @@ describe('DirectGenerationTab structural regressions', () => {
     it('places saved artwork inside the visible image workspace so a closed document can reopen', () => {
         render(<DirectGenerationTab />);
         expect(screen.getByTestId('direct-generation-workspace')).toContainElement(screen.getByText('Saved artwork'));
+    });
+
+    it('keeps heuristic mode guidance available without inventing a match percentage', async () => {
+        mockJudgeCreativePromptModeIntent.mockResolvedValueOnce({ suggestedMode: 'video', source: 'heuristic', confidence: null, reason: 'Motion keyword' });
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'camera orbit around the singer' } });
+        const suggestion = await screen.findByTestId('jev-prompt-mode-suggestion');
+        expect(suggestion).toHaveTextContent('prompt keyword suggestion');
+        expect(suggestion).not.toHaveTextContent('%');
+        expect(screen.getByTestId('jev-switch-mode-btn')).toBeEnabled();
     });
 
     it('displays Jev System One prompt mode suggestion and allows 1-click switch', async () => {
