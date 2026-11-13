@@ -73,6 +73,7 @@ export const AgentLoopExecutionSchema = z.object({
     checkpointRevision: z.number().int().nonnegative().safe().optional(),
     tokenBudgetSpent: z.number().int().nonnegative().safe().optional(),
     actionCheckpoint: AgentLoopActionCheckpointSchema.optional(),
+    evaluationFailure: z.string().optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
 });

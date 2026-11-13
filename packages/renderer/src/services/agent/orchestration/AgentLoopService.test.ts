@@ -71,6 +71,87 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it.each([0, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1])('rejects an invalid start iteration limit (%s)', async maxIterations => {
+        const definition: AgentLoopDefinition = {
+            id: 'invalid-limit', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations, createdAt: 1, updatedAt: 1,
+        };
+        await expect(agentLoopService.startLoop(definition, { userId: 'user1' }))
+            .rejects.toThrow('positive safe integer');
+        expect(FirestoreService.prototype.setIfRevision).not.toHaveBeenCalled();
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
+    it('keeps the saved action recoverable when the verdict cannot be persisted', async () => {
+        const definition: AgentLoopDefinition = {
+            id: 'judge-save-failure', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations: 2, createdAt: 1, updatedAt: 1,
+        };
+        let rejectVerdictWrite: ((reason: Error) => void) | undefined;
+        vi.mocked(FirestoreService.prototype.setIfRevision)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(() => new Promise<number>((_resolve, reject) => { rejectVerdictWrite = reject; }));
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Saved action', data: { taskId: 'task-1' } },
+        ]);
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'Complete' }) },
+        });
+        const id = await agentLoopService.startLoop(definition, { userId: 'user1' });
+        await vi.waitFor(() => expect(rejectVerdictWrite).toBeDefined());
+        try {
+            expect(agentLoopService.getExecution('user1', id)).toMatchObject({
+                status: 'EVALUATING', history: [], actionCheckpoint: { phase: 'RESULT_RECORDED', iteration: 1 },
+            });
+        } finally {
+            rejectVerdictWrite?.(new Error('offline'));
+        }
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', id)?.status).toBe('FAILED'));
+        expect(agentLoopService.getExecution('user1', id)?.actionCheckpoint).toMatchObject({
+            phase: 'RESULT_RECORDED', iteration: 1, output: 'Saved action',
+        });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+    });
+
+    it('rejects direct resume of an exhausted loop before writing a checkpoint', async () => {
+        const definition: AgentLoopDefinition = {
+            id: 'exhausted-loop', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations: 1, createdAt: 1, updatedAt: 1,
+        };
+        seedExecution({
+            id: 'exhausted-execution', loopId: definition.id, definitionSnapshot: snapshotOf(definition),
+            status: 'FAILED', currentIteration: 2, history: [], tokenBudgetSpent: 0,
+            actionCheckpoint: { phase: 'READY', iteration: 2 }, createdAt: 1, updatedAt: 1,
+        });
+        await expect(agentLoopService.resumeLoop(definition, 'exhausted-execution', { userId: 'user1' }))
+            .rejects.toThrow('no iterations left');
+        expect(FirestoreService.prototype.setIfRevision).not.toHaveBeenCalled();
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
+    it('lists only checkpoints eligible for recovery', async () => {
+        const ready = {
+            id: 'ready', loopId: 'loop', status: 'IDLE' as const, currentIteration: 1,
+            history: [], createdAt: 1, updatedAt: 1, tokenBudgetSpent: 0,
+            definitionSnapshot: {
+                id: 'loop', trigger: 'SCHEDULE' as const, goal: 'Review', verifiabilityCriteria: 'Complete',
+                judgeMode: 'LLM_EVALUATION' as const, maxIterations: 1,
+            },
+            actionCheckpoint: { phase: 'READY' as const, iteration: 1 },
+        };
+        vi.spyOn(FirestoreService.prototype, 'list').mockResolvedValue([
+            ready,
+            { ...ready, id: 'legacy', definitionSnapshot: undefined },
+            { ...ready, id: 'no-budget', tokenBudgetSpent: undefined },
+            { ...ready, id: 'claimed', actionCheckpoint: { phase: 'DISPATCHING', iteration: 1, prompt: 'Review' } },
+            { ...ready, id: 'exhausted', currentIteration: 2, actionCheckpoint: { phase: 'READY', iteration: 2 } },
+        ]);
+        expect(await agentLoopService.getResumableLoops('user1')).toEqual([ready]);
+    });
+
     it('allows only one dispatch when independent clients resume the same revision', async () => {
         const definition: AgentLoopDefinition = {
             id: 'cross-client-loop', trigger: AgentLoopTriggerEnum.enum.MANUAL,
@@ -505,6 +586,7 @@ describe('AgentLoopService', () => {
     });
 
     it.each([
+        [{ passed: true, feedback: 'An array is not a verdict' }],
         { passed: 'false', feedback: 'No' },
         { passed: 1, feedback: 'Yes' },
         { feedback: 'Missing verdict' },
@@ -516,7 +598,7 @@ describe('AgentLoopService', () => {
             goal: 'Review action',
             verifiabilityCriteria: 'Must be complete',
             judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
-            maxIterations: 1,
+            maxIterations: 2,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
@@ -526,22 +608,23 @@ describe('AgentLoopService', () => {
         mockGenerateContent.mockResolvedValueOnce({ response: { text: () => JSON.stringify(verdict) } });
 
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
-        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.history).toHaveLength(1));
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status).toBe('FAILED'));
 
         const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
-        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
     });
 
-    it('rejects a malformed verdict after a transient judge retry', async () => {
+    it('resumes evaluation of the saved action after a malformed retry verdict', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-invalid-retry-verdict',
             trigger: AgentLoopTriggerEnum.enum.MANUAL,
             goal: 'Review action',
             verifiabilityCriteria: 'Must be complete',
             judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
-            maxIterations: 1,
+            maxIterations: 2,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
@@ -553,12 +636,31 @@ describe('AgentLoopService', () => {
             .mockResolvedValueOnce({ response: { text: () => JSON.stringify({ passed: 'true', feedback: 'PASS' }) } });
 
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
-        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.history).toHaveLength(1), { timeout: 3000 });
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status).toBe('FAILED'), { timeout: 3000 });
 
         const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
-        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+        expect(execution?.evaluationFailure).toBe('Evaluation returned an invalid verdict.');
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { candidates: [{ content: { parts: [
+                { thought: true, text: 'Internal reasoning' },
+                { text: '{"passed":true,' },
+                { text: '"feedback":"Saved result verified"}' },
+            ] } }] },
+        });
+        const recovered = new AgentLoopService();
+        await recovered.resumeLoop(def, executionId, { userId: 'user1', projectId: 'proj1' });
+        await vi.waitFor(() => expect(recovered.getExecution('user1', executionId)?.status).toBe('COMPLETED'));
+        expect(recovered.getExecution('user1', executionId)?.evaluationFailure).toBeUndefined();
+        expect(recovered.getExecution('user1', executionId)?.history).toMatchObject([
+            { iteration: 1, output: 'Action result', passed: true, feedback: 'Saved result verified' },
+        ]);
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+        expect(mockGenerateContent).toHaveBeenCalledTimes(3);
     });
 
     it('halts before a judge call when the shared execution allowance is exhausted', async () => {
