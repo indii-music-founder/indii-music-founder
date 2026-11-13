@@ -14,7 +14,7 @@ vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingest: vi.fn(),
         ingestWithReceipt: vi.fn(),
-        query: vi.fn(),
+        queryFromServer: vi.fn(),
         getStatus: vi.fn(),
         getAllMemories: vi.fn(),
         deleteMemory: vi.fn(),
@@ -90,15 +90,23 @@ describe('MemoryTools', () => {
         });
     });
 
+    it('reports an unavailable list separately from an empty list', async () => {
+        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockRejectedValueOnce(new Error('offline'));
+        expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: false, metadata: { errorCode: 'LIST_ERROR' } });
+        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockResolvedValueOnce([]);
+        expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: true, data: { memories: [] } });
+        expect(alwaysOnMemoryEngine.getAllMemories).toHaveBeenCalledWith(20, { category: undefined }, true);
+    });
+
     describe('recall_memories', () => {
         it('should recall memories via AlwaysOnMemoryEngine', async () => {
-            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Answer based on memory');
+            vi.mocked(alwaysOnMemoryEngine.queryFromServer).mockResolvedValue('Answer based on memory');
 
             const result = await MemoryTools.recall_memories({ query: 'user preferences' });
 
             expect(result.success).toBe(true);
             expect(result.data.answer).toBe('Answer based on memory');
-            expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('user preferences');
+            expect(alwaysOnMemoryEngine.queryFromServer).toHaveBeenCalledWith('user preferences');
         });
     });
 
@@ -123,20 +131,20 @@ describe('MemoryTools', () => {
 
     describe('search_user_memory', () => {
         it('should query user memory', async () => {
-            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Search results');
+            vi.mocked(alwaysOnMemoryEngine.queryFromServer).mockResolvedValue('Search results');
 
             const result = await MemoryTools.search_user_memory({ query: 'search query' });
 
             expect(result.success).toBe(true);
             expect(result.data.answer).toBe('Search results');
-            expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('search query');
+            expect(alwaysOnMemoryEngine.queryFromServer).toHaveBeenCalledWith('search query');
         });
     });
 
     describe('get_user_context', () => {
         it('should return context and status', async () => {
             vi.mocked(alwaysOnMemoryEngine.getStatus).mockResolvedValue({ totalMemories: 10 } as any);
-            vi.mocked(alwaysOnMemoryEngine.query).mockResolvedValue('Context summary');
+            vi.mocked(alwaysOnMemoryEngine.queryFromServer).mockResolvedValue('Context summary');
 
             const result = await MemoryTools.get_user_context({});
 
