@@ -76,7 +76,13 @@ class MemoryBankService {
                 { results: MemoryBankResult[]; hasMore: boolean }
             >(functions, 'manageSemanticMemory');
             const result = await callable({ action: 'search', query: redactedQuery, limit });
-            return { results: result.data.results || [], hasMore: result.data.hasMore ?? false };
+            const page = result.data;
+            if (!Array.isArray(page?.results) || typeof page.hasMore !== 'boolean' ||
+                page.results.some(item => !item || typeof item.id !== 'string' || !item.id.trim() ||
+                    typeof item.memory !== 'string' || !item.memory.trim())) {
+                throw new Error('Semantic memory search returned an invalid page.');
+            }
+            return { results: page.results, hasMore: page.hasMore };
         } catch (error) {
             logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
             return { results: [], hasMore: false, unavailable: true };
