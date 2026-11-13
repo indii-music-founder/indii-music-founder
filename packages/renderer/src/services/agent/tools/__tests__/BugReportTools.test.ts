@@ -107,6 +107,20 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.error).toHaveBeenCalled();
   });
 
+  it.each(['failed', undefined])('preserves save status %s when the notification throws', async firestore => {
+    judgeInvoke.mockResolvedValue({ data: { firestore, github: 'skipped' } });
+    const notification = firestore === 'failed' ? toastMock.error : toastMock.warning;
+    notification.mockImplementationOnce(() => { throw new Error('Notification unavailable'); });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(firestore === 'failed'
+      ? 'The bug tracker could not save your report.'
+      : 'save could not be confirmed');
+    expect(result.metadata?.durableReceipt).toBeUndefined();
+  });
+
   it('stays loud when GitHub sync fails after a durable save', async () => {
     judgeInvoke.mockResolvedValue({
       data: { firestore: 'ok', github: 'skipped', message: 'saved locally' },
