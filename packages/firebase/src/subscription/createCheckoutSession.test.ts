@@ -9,6 +9,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => {
+  const mockPricesRetrieve = vi.fn();
+  const mockCouponsRetrieve = vi.fn();
   const mockCustomersCreate = vi.fn();
   const mockSessionsCreate = vi.fn();
   const mockDocGet = vi.fn();
@@ -17,7 +19,7 @@ const mocks = vi.hoisted(() => {
   const mockCollection = vi.fn(() => ({ doc: mockDoc }));
   const mockDb = { collection: mockCollection };
 
-  return { mockCustomersCreate, mockSessionsCreate, mockDocGet, mockDocUpdate, mockDoc, mockCollection, mockDb };
+  return { mockPricesRetrieve, mockCouponsRetrieve, mockCustomersCreate, mockSessionsCreate, mockDocGet, mockDocUpdate, mockDoc, mockCollection, mockDb };
 });
 
 vi.mock('firebase-admin/firestore', () => ({
@@ -37,6 +39,8 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('../stripe/config', () => ({
   stripe: {
+    prices: { retrieve: mocks.mockPricesRetrieve },
+    coupons: { retrieve: mocks.mockCouponsRetrieve },
     customers: { create: mocks.mockCustomersCreate },
     checkout: { sessions: { create: mocks.mockSessionsCreate } },
   },
@@ -72,6 +76,9 @@ describe('createCheckoutSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.mockDocGet.mockResolvedValue({ exists: false });
+    for (const cadence of ['START_QUARTERLY', 'BUILD_SIX_MONTH', 'SCALE_ANNUAL']) {
+      vi.stubEnv(`STRIPE_COUPON_${cadence}_INTRO`, `coupon_${cadence}`);
+    }
   });
 
   it('rejects a request whose userId does not match the authenticated caller', async () => {
@@ -167,6 +174,8 @@ describe('createCheckoutSession', () => {
   });
 
   it('creates checkout session for Start tier with quarterly billing and passes billingPeriod in metadata', async () => {
+    mocks.mockPricesRetrieve.mockResolvedValue({ active: true, currency: 'usd', unit_amount: 6600, product: 'prod_plan', billing_scheme: 'per_unit', livemode: false, recurring: { interval: 'month', interval_count: 3, usage_type: 'licensed' } });
+    mocks.mockCouponsRetrieve.mockResolvedValue({ valid: true, duration: 'once', currency: 'usd', amount_off: 1000, percent_off: null, livemode: false });
     mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_quarterly_customer' });
     mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_qtr_123', url: 'https://checkout.stripe.com/cs_qtr_123' });
 
@@ -184,6 +193,8 @@ describe('createCheckoutSession', () => {
   });
 
   it('creates checkout session for Build tier with six-month billing', async () => {
+    mocks.mockPricesRetrieve.mockResolvedValue({ active: true, currency: 'usd', unit_amount: 33000, product: 'prod_plan', billing_scheme: 'per_unit', livemode: false, recurring: { interval: 'month', interval_count: 6, usage_type: 'licensed' } });
+    mocks.mockCouponsRetrieve.mockResolvedValue({ valid: true, duration: 'once', currency: 'usd', amount_off: 9900, percent_off: null, livemode: false });
     mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_six_mo_customer' });
     mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_6mo_123', url: 'https://checkout.stripe.com/cs_6mo_123' });
 
@@ -200,6 +211,8 @@ describe('createCheckoutSession', () => {
   });
 
   it('creates checkout session for Scale tier with annual billing', async () => {
+    mocks.mockPricesRetrieve.mockResolvedValue({ active: true, currency: 'usd', unit_amount: 132000, product: 'prod_plan', billing_scheme: 'per_unit', livemode: false, recurring: { interval: 'month', interval_count: 12, usage_type: 'licensed' } });
+    mocks.mockCouponsRetrieve.mockResolvedValue({ valid: true, duration: 'once', currency: 'usd', amount_off: 66000, percent_off: null, livemode: false });
     mocks.mockCustomersCreate.mockResolvedValue({ id: 'cus_annual_customer' });
     mocks.mockSessionsCreate.mockResolvedValue({ id: 'cs_ann_123', url: 'https://checkout.stripe.com/cs_ann_123' });
 
@@ -211,8 +224,32 @@ describe('createCheckoutSession', () => {
     expect(mocks.mockSessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: { userId: 'user-123', tier: 'scale', billingPeriod: 'annual' },
+        discounts: [{ coupon: 'coupon_SCALE_ANNUAL' }],
+        subscription_data: { metadata: expect.objectContaining({ introductoryOffer: 'first_prepaid_term_v1' }) },
       })
     );
+    expect(mocks.mockSessionsCreate.mock.calls.at(-1)?.[0]).not.toHaveProperty('allow_promotion_codes');
+  });
+
+  it('refuses checkout before customer creation when the configured offer is missing', async () => {
+    vi.stubEnv('STRIPE_COUPON_SCALE_ANNUAL_INTRO', '');
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    await expect((createCheckoutSession as unknown as (req: unknown) => Promise<unknown>)(
+      makeRequest({ tier: 'scale', billingPeriod: 'annual' })
+    )).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(mocks.mockSessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.mockCustomersCreate).not.toHaveBeenCalled();
+  });
+
+  it('refuses a stale Stripe price rather than charging more than the advertised first term', async () => {
+    mocks.mockPricesRetrieve.mockResolvedValue({ active: true, currency: 'usd', unit_amount: 105600 });
+    mocks.mockCouponsRetrieve.mockResolvedValue({ valid: true, duration: 'forever', percent_off: 20 });
+    const { createCheckoutSession } = await import('./createCheckoutSession');
+    await expect((createCheckoutSession as unknown as (req: unknown) => Promise<unknown>)(
+      makeRequest({ tier: 'scale', billingPeriod: 'annual' })
+    )).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(mocks.mockSessionsCreate).not.toHaveBeenCalled();
+    expect(mocks.mockCustomersCreate).not.toHaveBeenCalled();
   });
 
   it('rejects an anonymous or unverified user', async () => {
