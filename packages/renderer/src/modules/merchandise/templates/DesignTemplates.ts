@@ -894,15 +894,22 @@ export class TemplateService {
     }
 
     /**
-     * Convert template elements to Fabric.js compatible objects
+     * Convert template elements to Fabric.js compatible objects.
+     * Optionally scale coordinates and font sizes into a target canvas dimension (e.g. 800x1000 artboard).
      */
-    toFabricObjects(template: DesignTemplate): TemplateFabricObject[] {
+    toFabricObjects(template: DesignTemplate, targetDimensions?: { width: number; height: number }): TemplateFabricObject[] {
+        const targetWidth = targetDimensions?.width ?? template.canvasWidth;
+        const targetHeight = targetDimensions?.height ?? template.canvasHeight;
+        const scaleFactor = targetDimensions
+            ? Math.min(targetWidth / template.canvasWidth, targetHeight / template.canvasHeight)
+            : 1;
+
         return template.elements.map(element => {
             const baseProps = {
-                left: (element.x / 100) * template.canvasWidth,
-                top: (element.y / 100) * template.canvasHeight,
-                width: (element.width / 100) * template.canvasWidth,
-                height: (element.height / 100) * template.canvasHeight,
+                left: (element.x / 100) * targetWidth,
+                top: (element.y / 100) * targetHeight,
+                width: (element.width / 100) * targetWidth,
+                height: (element.height / 100) * targetHeight,
                 angle: element.angle,
                 opacity: element.opacity,
                 selectable: element.editable,
@@ -917,7 +924,7 @@ export class TemplateService {
                         ...baseProps,
                         text: element.content || '',
                         fontFamily: element.fontFamily || 'Inter',
-                        fontSize: element.fontSize || 24,
+                        fontSize: Math.round((element.fontSize || 24) * scaleFactor),
                         fontWeight: element.fontWeight || '400',
                         textAlign: (element.textAlign || 'left') as "left" | "center" | "right",
                         fill: element.fill || '#ffffff'
