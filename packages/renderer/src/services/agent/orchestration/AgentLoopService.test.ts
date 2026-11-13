@@ -607,6 +607,7 @@ describe('AgentLoopService', () => {
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
         expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+        expect(execution?.evaluationFailure).toBe('Evaluation returned an invalid verdict.');
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
 
         mockGenerateContent.mockResolvedValueOnce({
@@ -615,6 +616,7 @@ describe('AgentLoopService', () => {
         const recovered = new AgentLoopService();
         await recovered.resumeLoop(def, executionId, { userId: 'user1', projectId: 'proj1' });
         await vi.waitFor(() => expect(recovered.getExecution('user1', executionId)?.status).toBe('COMPLETED'));
+        expect(recovered.getExecution('user1', executionId)?.evaluationFailure).toBeUndefined();
         expect(recovered.getExecution('user1', executionId)?.history).toMatchObject([
             { iteration: 1, output: 'Action result', passed: true, feedback: 'Saved result verified' },
         ]);

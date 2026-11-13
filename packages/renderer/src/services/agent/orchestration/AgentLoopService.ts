@@ -265,6 +265,7 @@ export class AgentLoopService {
             logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
             executionTokenBudget(context, 1_500_000).ensureSpentAtLeast(execution.tokenBudgetSpent);
             const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
+            delete resumedExecution.evaluationFailure;
             await this.persistExecution(userId, resumedExecution, 'before-dispatch', executionTokenBudget(context, 1_500_000));
 
             void this.runLoop(definition, resumedExecution, context).catch(err => {
@@ -419,6 +420,7 @@ export class AgentLoopService {
             } catch (error) {
                 if (!(error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed || error instanceof EvaluationUnavailable)) throw error;
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
+                execution.evaluationFailure = error.message;
                 execution.updatedAt = Date.now();
                 await this.persistExecution(context.userId, execution, undefined, tokenBudget);
                 logger.warn(`[AgentLoop] Execution ${execution.id} halted: ${error.message}`);
