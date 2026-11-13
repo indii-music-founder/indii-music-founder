@@ -87,19 +87,28 @@ describe('AgentLoopService', () => {
             id: 'judge-save-failure', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
             judgeMode: 'LLM_EVALUATION', maxIterations: 2, createdAt: 1, updatedAt: 1,
         };
+        let rejectVerdictWrite: ((reason: Error) => void) | undefined;
         vi.mocked(FirestoreService.prototype.setIfRevision)
             .mockImplementationOnce(saveCheckpoint)
             .mockImplementationOnce(saveCheckpoint)
             .mockImplementationOnce(saveCheckpoint)
             .mockImplementationOnce(saveCheckpoint)
-            .mockRejectedValueOnce(new Error('offline'));
+            .mockImplementationOnce(() => new Promise<number>((_resolve, reject) => { rejectVerdictWrite = reject; }));
         vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
             { success: true, message: 'Saved action', data: { taskId: 'task-1' } },
         ]);
         mockGenerateContent.mockResolvedValueOnce({
-            response: { text: () => JSON.stringify({ passed: false, feedback: 'Try again' }) },
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'Complete' }) },
         });
         const id = await agentLoopService.startLoop(definition, { userId: 'user1' });
+        await vi.waitFor(() => expect(rejectVerdictWrite).toBeDefined());
+        try {
+            expect(agentLoopService.getExecution('user1', id)).toMatchObject({
+                status: 'EVALUATING', history: [], actionCheckpoint: { phase: 'RESULT_RECORDED', iteration: 1 },
+            });
+        } finally {
+            rejectVerdictWrite?.(new Error('offline'));
+        }
         await vi.waitFor(() => expect(agentLoopService.getExecution('user1', id)?.status).toBe('FAILED'));
         expect(agentLoopService.getExecution('user1', id)?.actionCheckpoint).toMatchObject({
             phase: 'RESULT_RECORDED', iteration: 1, output: 'Saved action',
