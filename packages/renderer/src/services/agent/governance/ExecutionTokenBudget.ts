@@ -1,6 +1,7 @@
 /** A synchronous reservation ledger shared by the agents in one execution. */
 export class ExecutionTokenBudget {
     private consumed = 0;
+    private restoredSpend = 0;
     private restoredThroughReservation = 0;
     private nextReservation = 0;
     private spendOverflowed = false;
@@ -25,6 +26,10 @@ export class ExecutionTokenBudget {
         if (!Number.isSafeInteger(tokens) || tokens < 0) {
             throw new Error('Saved execution token usage is invalid');
         }
+        // A repeated or older checkpoint cannot absorb reservations made
+        // after the highest checkpoint was restored.
+        if (tokens <= this.restoredSpend) return;
+        this.restoredSpend = tokens;
         this.consumed = Math.max(this.consumed, tokens);
         this.restoredThroughReservation = this.nextReservation;
     }
