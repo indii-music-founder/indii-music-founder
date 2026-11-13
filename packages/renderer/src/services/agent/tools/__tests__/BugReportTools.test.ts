@@ -87,6 +87,14 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.warning).toHaveBeenCalledWith(expect.stringContaining('Check the bug tracker before retrying'));
   });
 
+  it('leaves save status unconfirmed when the response omits it', async () => {
+    judgeInvoke.mockResolvedValue({ data: { github: 'skipped' } });
+    const result = await BugReportTools.report_bug!(args);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('save could not be confirmed');
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it('returns toolError when the server cannot persist, even with a structured response', async () => {
     judgeInvoke.mockResolvedValue({
       data: { firestore: 'failed', github: 'skipped', message: 'firestore down' },

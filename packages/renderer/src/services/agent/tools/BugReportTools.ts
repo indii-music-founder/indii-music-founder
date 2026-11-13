@@ -124,6 +124,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
                 errorMessage: bugReport.errorMessage,
             });
 
+            saveUnconfirmed = result.data.firestore !== 'ok' && result.data.firestore !== 'failed';
             firestoreOk = result.data.firestore === 'ok';
             githubStatus = result.data.github;
             issueUrl = result.data.issueUrl;
