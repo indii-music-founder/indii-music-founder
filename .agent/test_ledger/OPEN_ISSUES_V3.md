@@ -7312,7 +7312,8 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1622: Manual Workflow input connection handle is covered/clipped, preventing wiring a media node
 
-- **Status:** 🟡 PARTIAL — handle overflow/stacking repaired on main; genuine pointer wiring acceptance pending.
+- **Status:** 🟢 FIXED — production pointer wiring and saved workflow reload verified on 2026-11-13.
+- **Closure evidence:** Source fix commit 2823a6345653096388107c9af814cdf7e98cc66d is included in the successful production deployment, CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/43497934576 . On app.indii.music, an existing genuine account displayed the active indii Founder plan. From an empty graph, dragged in Webhook and Autonomous Generate, saved the node prompt, and connected the output to the input by pointer. Saved as “V3 acceptance – node wiring”. Opened the saved workflow from Load in a fresh app session and verified both the connection and edited prompt returned.
 - **Severity:** 🟠 HIGH — manual media workflow cannot be wired from its input through the advertised controls.
 - **Location:** Workflow Lab → Node Library (collapse global context panel to expose it) → Webhook input/Autonomous Generate. Source `components/CustomNodes.tsx:14-59`; `components/UniversalNode.tsx` outer overflow-hidden wrapper/handle columns.
 - **Reproduction:** Start empty graph. Drag Webhook onto canvas (creates START TRIGGER), drag Autonomous Generate (creates Autonomous Department), enter golden-leaf image QA prompt through normal fields, separate nodes/Fit View, then drag the actual rendered input output handle to the generation input handle. Two separated-node attempts moved the input body instead of making an edge. No generation request was run.
@@ -7395,3 +7396,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - Manual identifier entry and completion controls now explicitly say self-reported. The existing verified boolean is preserved for compatibility; this copy change does not prove provenance-aware persistence, backend readiness isolation, external acknowledgement, ownership or registration acceptance. Those remain implementation/acceptance work.
 - Existing component suites passed 10/10; scoped ESLint passed. These are structural UI checks with legacy callback/test doubles; no genuine account, displayed plan, external filing, payment or live provider acceptance was exercised. Current official sources and remaining acceptance are documented in docs/research/rights-guidance-review-2026-11-13.md.
 - Status accounting: moving the already-authorized ISSUE-1182 out of the decision bucket yields 108 unresolved unique IDs (the original 107 plus 1182), zero decision entries, 266 terminal labels and zero ambiguous statuses. No new issue was created and no issue was closed.
+
+## Production workflow acceptance — 2026-11-13
+
+- **ISSUE-1622:** On app.indii.music, an existing genuine account displayed the active indii Founder plan. From an empty graph, dragged in Webhook and Autonomous Generate, saved the node prompt, and connected the output to the input by pointer. Saved as “V3 acceptance – node wiring”. Opened the saved workflow from Load in a fresh app session and verified both the connection and edited prompt returned.

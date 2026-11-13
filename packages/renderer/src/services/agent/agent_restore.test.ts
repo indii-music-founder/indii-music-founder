@@ -30,7 +30,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingestWithReceipt: vi.fn().mockResolvedValue({ status: 'stored', memoryId: 'registry-memory', summary: 'Memory processed' }),
-        query: vi.fn().mockResolvedValue('Retrieved synthesized answer')
+        queryFromServer: vi.fn().mockResolvedValue('Retrieved synthesized answer')
     }
 }));
 
@@ -59,7 +59,7 @@ describe('indii Conductor Restoration', () => {
 
     it('recall_memories tool should call AlwaysOnMemoryEngine', async () => {
         const result = (await TOOL_REGISTRY['recall_memories']!({ query: 'test' })) as any;
-        expect(alwaysOnMemoryEngine.query).toHaveBeenCalledWith('test');
+        expect(alwaysOnMemoryEngine.queryFromServer).toHaveBeenCalledWith('test');
         expect(result.data.message).toContain('Retrieved');
     });
 

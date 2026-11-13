@@ -28,6 +28,7 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     addDoc: (...args: any[]) => mockAddDoc(...args),
     getDocs: (...args: any[]) => mockGetDocs(...args),
+    getDocsFromServer: (...args: any[]) => mockGetDocs(...args),
     getCountFromServer: (...args: any[]) => mockGetCountFromServer(...args),
     updateDoc: (...args: any[]) => mockUpdateDoc(...args),
     deleteDoc: (...args: any[]) => mockDeleteDoc(...args),
@@ -211,7 +212,7 @@ describe('AlwaysOnMemoryEngine', () => {
             await expect(engine.query('After stop?')).rejects.toThrow('Engine not started');
             await expect(engine.deleteMemory('old-memory')).rejects.toThrow('Engine not started');
             await expect(engine.clearAll()).rejects.toThrow('Engine not started');
-            expect(await engine.consolidateNow()).toBe('Engine not started');
+            await expect(engine.consolidateNow()).rejects.toThrow('Engine not started');
             expect(await engine.getAllMemories()).toEqual([]);
             expect(await engine.getInsights()).toEqual([]);
             expect((await engine.getStatus()).startedAt).toBeUndefined();
@@ -242,6 +243,13 @@ describe('AlwaysOnMemoryEngine', () => {
             await engine.start('user-2');
             expect(engine.running).toBe(true);
         });
+    });
+
+    it('rejects a failed consolidation read and leaves the completion timestamp unset', async () => {
+        await engine.start('test-user-123');
+        mockGetDocs.mockRejectedValueOnce(new Error('memory read unavailable'));
+        await expect(engine.consolidateNow()).rejects.toThrow('memory read unavailable');
+        expect(await engine.getStatus()).toMatchObject({ isConsolidating: false, lastConsolidatedAt: undefined });
     });
 
     describe('Ingest (IngestAgent)', () => {
@@ -372,6 +380,13 @@ describe('AlwaysOnMemoryEngine', () => {
             );
 
             await engine.start('test-user-123');
+        });
+
+        it('does not turn a failed database read into an empty search and general answer', async () => {
+            mockGenerateText.mockClear();
+            mockGetDocs.mockRejectedValueOnce(new Error('database unavailable'));
+            await expect(engine.queryFromServer('What did I save?')).rejects.toThrow('database unavailable');
+            expect(mockGenerateText).not.toHaveBeenCalled();
         });
 
         it('should answer questions with memory citations', async () => {

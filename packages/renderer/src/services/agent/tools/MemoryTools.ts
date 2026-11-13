@@ -63,7 +63,7 @@ export const MemoryTools = {
         const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
         try {
-            const result = await alwaysOnMemoryEngine.query(args.query);
+            const result = await alwaysOnMemoryEngine.queryFromServer(args.query);
             return {
                 answer: result,
                 projectId,
@@ -122,11 +122,10 @@ export const MemoryTools = {
         limit?: number 
     }) => {
         try {
-            const answer = await alwaysOnMemoryEngine.query(args.query);
-            return toolSuccess({ answer }, `Memory search complete.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to search user memory: ${error.message}`, 'QUERY_ERROR');
+            const answer = await alwaysOnMemoryEngine.queryFromServer(args.query);
+            return toolSuccess({ answer }, `Searched up to 500 recent active memories and 10 recent insights.`);
+        } catch {
+            return toolError('Memory recall is currently unavailable.', 'QUERY_ERROR');
         }
     }),
 
@@ -134,26 +133,30 @@ export const MemoryTools = {
         try {
             const status = await alwaysOnMemoryEngine.getStatus();
             // We synthesize a context summary for the agent
-            const answer = await alwaysOnMemoryEngine.query("Summarize the user's primary goals, preferences, and current creative focus based on all memories.");
+            const answer = await alwaysOnMemoryEngine.queryFromServer("Summarize the user's primary goals, preferences, and current creative focus based on recent memories and insights.");
             return toolSuccess({ context: answer, engineStatus: status }, `User context retrieved.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to get user context: ${error.message}`, 'CONTEXT_ERROR');
+        } catch {
+            return toolError('Memory recall is currently unavailable.', 'CONTEXT_ERROR');
         }
     }),
 
-    list_user_memories: wrapTool('list_user_memories', async (args: { 
-        categories?: AlwaysOnMemoryCategory[]; 
-        limit?: number 
+    list_user_memories: wrapTool('list_user_memories', async (args: {
+        categories?: AlwaysOnMemoryCategory[];
+        limit?: number;
     }) => {
+        const pageSize = args.limit ?? 20;
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+            return toolError('Memory list limit must be an integer from 1 to 500.', 'INVALID_ARGUMENT');
+        }
         try {
-            const memories = await alwaysOnMemoryEngine.getAllMemories(args.limit || 20, { 
-                category: args.categories?.[0] 
-            });
-            return toolSuccess({ memories }, `Found ${memories.length} memories.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to list memories: ${error.message}`, 'LIST_ERROR');
+            const categories = [...new Set(args.categories ?? [])];
+            const pages = await Promise.all((categories.length ? categories : [undefined]).map(category =>
+                alwaysOnMemoryEngine.getAllMemories(pageSize, { category }, true)
+            ));
+            const memories = pages.flat().sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, pageSize);
+            return toolSuccess({ memories, limit: pageSize, categories }, `Returned ${memories.length} recent active memories.`);
+        } catch {
+            return toolError('Memory listing is currently unavailable.', 'LIST_ERROR');
         }
     }),
 
@@ -161,9 +164,8 @@ export const MemoryTools = {
         try {
             const result = await alwaysOnMemoryEngine.consolidateNow();
             return toolSuccess({ result }, `Consolidation complete.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Consolidation failed: ${error.message}`, 'CONSOLIDATE_ERROR');
+        } catch {
+            return toolError('Memory consolidation did not complete. Review memory status before trying again.', 'CONSOLIDATE_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;
