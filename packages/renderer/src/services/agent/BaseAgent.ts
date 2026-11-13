@@ -1,7 +1,6 @@
 import { delegatedAgentResult, unauthorizedToolFailure } from './executionFailure';
 import { logger } from '@/utils/logger';
-import { functions, auth } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { auth } from '@/services/firebase';
 import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
@@ -36,6 +35,7 @@ import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
+import { recordToolOutcome } from './governance/ToolOutcomeAudit';
 import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
 import { cancelledPrintResponse, finishedPrintResponse } from '@/services/upscale/PrintPreparationControl';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
@@ -1717,6 +1717,18 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             }
                         }
 
+                        // Record every completed invocation before any terminal-result return.
+                        // Audit uncertainty must never turn a completed external action into a retry.
+                        const audit = await recordToolOutcome({
+                            userId: enrichedContext.userId,
+                            agentId: this.id,
+                            toolName: name,
+                            toolCallId,
+                            success: result.success === true,
+                            fingerprint: this.identityCard?.fingerprint,
+                        });
+                        result = { ...result, metadata: { ...result.metadata, audit } };
+
                         AgentEventBus.emitToolResult(this.id, name, startTime, result, toolCallId);
 
                         // Store tool call and result
@@ -1746,35 +1758,6 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 error: result.error || result.failure.code,
                                 failure: result.failure, data: result.data, toolCalls,
                             };
-                        }
-
-                        // Item 406: Write an immutable, server-timestamped tool audit
-                        // record. The callable binds the event to the authenticated
-                        // user; the browser cannot write global audit documents.
-                        if (enrichedContext.userId) {
-                            const succeeded = typeof result === 'object' && result !== null
-                                ? (result as unknown as Record<string, unknown>).success !== false
-                                : true;
-                            try {
-                                const recordAuditEvent = httpsCallable(functions, 'logAuditEvent');
-                                void recordAuditEvent({
-                                    action: `agent.tool.${name}`,
-                                    resourceId: `agent/${this.id}`,
-                                    severity: succeeded ? 'low' : 'medium',
-                                    agentId: this.id,
-                                    status: succeeded ? 'success' : 'failure',
-                                    ...(this.identityCard?.fingerprint
-                                        ? { details: `agentFingerprint=${this.identityCard.fingerprint}` }
-                                        : {}),
-                                }).catch((err: unknown) => {
-                                    // ISSUE-1365: audit records must not vanish silently —
-                                    // log so missing audits are discoverable.
-                                    logger.warn('[BaseAgent] Audit event write failed (best-effort):', err);
-                                });
-                            } catch {
-                                // Audit availability must not replace the authoritative
-                                // tool result or break an artist workflow.
-                            }
                         }
 
                         // Elide base64 payloads: image tools return generated

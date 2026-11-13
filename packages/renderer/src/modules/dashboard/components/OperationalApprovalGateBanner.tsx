@@ -1,3 +1,4 @@
+import { approvalRecordingWarning } from '@/services/agent/governance/ApprovalResultReceipt';
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ShieldAlert, Check, X, CheckCheck } from 'lucide-react';
@@ -32,7 +33,10 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         setApprovalBusyId(id);
         try {
             const res = await toolApprovalService.approve(id);
-            if (res?.success) {
+            const warning = approvalRecordingWarning(res);
+            if (warning) {
+                toast.warning(warning);
+            } else if (res?.success) {
                 if (toast?.success) {
                     toast.success('Gate approved & executed');
                 }
@@ -84,7 +88,11 @@ export function OperationalApprovalGateBanner({ className = 'w-full px-4 mb-6' }
         for (const item of pendingApprovals.filter(item => toolApprovalService.canApproveInThisSession(item))) {
             try {
                 const res = await toolApprovalService.approve(item.id);
-                if (res?.success) {
+                const warning = approvalRecordingWarning(res);
+                if (warning) {
+                    toast.warning(warning);
+                    break;
+                } else if (res?.success) {
                     successCount += 1;
                 } else {
                     failCount += 1;

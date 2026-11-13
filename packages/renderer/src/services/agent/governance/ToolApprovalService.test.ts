@@ -321,17 +321,21 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(execute).toHaveBeenCalledOnce();
         });
 
-        it('reports an ambiguous outcome when final result recording fails after dispatch', async () => {
-            const execute = vi.fn().mockResolvedValue({ success: true });
+        it.each([true, false])('preserves the actual tool result (%s) when completion recording fails', async success => {
+            const receipt = { success, message: 'Actual action receipt', data: { artifactId: 'saved-asset' },
+                ...(!success ? { error: 'Provider rejected action' } : {}), metadata: { durableReceipt: true, receiptText: 'Saved asset' } };
+            const execute = vi.fn().mockResolvedValue(receipt);
             await bindApproval('execute_code', {}, execute);
             mocks.updateDoc.mockImplementationOnce(() => undefined)
                 .mockImplementationOnce(() => undefined)
                 .mockRejectedValueOnce(new Error('database unavailable'));
             const result = await toolApprovalService.approve('approval-1');
             expect(execute).toHaveBeenCalledOnce();
-            expect(result.success).toBe(false);
-            expect(result.error).toMatch(/reconciliation/);
-            expect(result.error).toMatch(/do not retry automatically/i);
+            expect(result).toEqual({ ...receipt, metadata: { ...receipt.metadata,
+                approvalPersistence: { status: 'unconfirmed', approvalId: 'approval-1' } } });
+            // A later approval cannot dispatch the already-consumed session binding.
+            expect((await toolApprovalService.approve('approval-1')).success).toBe(false);
+            expect(execute).toHaveBeenCalledOnce();
         });
 
         it('refuses changed arguments before claiming or dispatching the approval', async () => {
@@ -379,7 +383,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(localTool).toHaveBeenCalledTimes(1);
         });
 
-        it('leaves computer approval transitions to main and the trusted backend', async () => {
+        it.each([false, true])('leaves computer transitions to trusted backend (completion lost: %s)', async completionLost => {
             const computerClick = vi.fn().mockResolvedValue({ success: true });
             mocks.toolRegistry = { computer_click: computerClick };
             mocks.getDoc.mockResolvedValue({
@@ -388,9 +392,11 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             });
             Object.defineProperty(window, 'electronAPI', { configurable: true, value: { computer: { authorizeApproval: vi.fn().mockResolvedValue({ success: true, data: { token: 't'.repeat(43), expiresAt: Date.now() + 60_000 } }) } } });
 
+            if (completionLost) mocks.httpsCallable.mockReturnValue(vi.fn().mockRejectedValue(new Error('response lost')));
             const result = await toolApprovalService.approve('approval-1');
 
             expect(result.success).toBe(true);
+            if (completionLost) expect(result.metadata).toMatchObject({ approvalPersistence: { status: 'unconfirmed', approvalId: 'approval-1' } });
             expect(computerClick).toHaveBeenCalledWith(expect.objectContaining({ __computerAuthorizationToken: 't'.repeat(43), __computerAgentId: 'agent-1' }));
             expect(mocks.runTransaction).not.toHaveBeenCalled();
             expect(mocks.updateDoc).not.toHaveBeenCalled();
