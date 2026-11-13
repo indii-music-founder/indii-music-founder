@@ -1,14 +1,11 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listHeadIds } from '@/services/agent/departments';
+import { describe, expect, it, vi } from 'vitest';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
-const toggleAgent = vi.fn();
 const storeState = {
-    activeAgents: ['generalist', 'social', 'finance'],
+    activeAgents: ['finance.tax', 'generalist', 'social', 'finance', 'unknown-agent'],
     activeGraphExecution: null,
-    toggleAgent,
 };
 
 vi.mock('@/core/store', () => ({
@@ -58,18 +55,14 @@ function minimumSeatDistance(layout: ParticipantSeatLayout): number {
 }
 
 describe('ParticipantSelector canonical visual identities', () => {
-    beforeEach(() => {
-        toggleAgent.mockClear();
-    });
-
-    it('renders every canonical ISSUE-1291 head without a hardcoded eight-seat map', () => {
+    it('renders only managers Indii has seated and never exposes workers or the full roster', () => {
         render(<ParticipantSelector />);
 
-        const canonicalHeads = listHeadIds();
-        expect(canonicalHeads).toHaveLength(23);
-        for (const headId of canonicalHeads) {
-            expect(screen.getByTestId(`boardroom-seat-${headId}`)).toBeInTheDocument();
-        }
+        expect(screen.getByTestId('boardroom-seat-social')).toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-seat-finance')).toBeInTheDocument();
+        expect(screen.queryByTestId('boardroom-seat-marketing')).not.toBeInTheDocument();
+        expect(document.querySelector('[data-agent-id="finance.tax"]')).not.toBeInTheDocument();
+        expect(document.querySelector('[data-agent-id="unknown-agent"]')).not.toBeInTheDocument();
     });
 
     it.each([
@@ -124,23 +117,12 @@ describe('ParticipantSelector canonical visual identities', () => {
         expect(social.querySelector('.opacity-0')).toHaveTextContent('Social Media Director');
     });
 
-    it('shows Finance workers with their stable lower-emphasis department variant', () => {
+    it('does not expose Finance workers when the manager is inspected', () => {
         render(<ParticipantSelector />);
+
         fireEvent.click(screen.getByTestId('boardroom-seat-finance'));
 
-        const worker = document.querySelector('[data-agent-id="finance.tax"]');
-        const workerIdentity = resolveAgentVisualIdentity('finance.tax');
-        const headIdentity = resolveAgentVisualIdentity('finance');
-        expect(worker).toBeInTheDocument();
-        expect(worker).toHaveAttribute('data-agent-role', 'worker');
-        expect(worker).toHaveAttribute('data-agent-icon', 'calculator');
-        expect(worker).toHaveStyle({
-            backgroundColor: workerIdentity.surface,
-            borderColor: workerIdentity.border,
-        });
-        expect(workerIdentity.cssProperties['--agent-source-accent']).toBe(
-            headIdentity.cssProperties['--agent-source-accent'],
-        );
-        expect(workerIdentity.accent).not.toBe(headIdentity.accent);
+        expect(document.querySelector('[data-agent-role="worker"]')).not.toBeInTheDocument();
+        expect(document.querySelector('[data-agent-id="finance.tax"]')).not.toBeInTheDocument();
     });
 });

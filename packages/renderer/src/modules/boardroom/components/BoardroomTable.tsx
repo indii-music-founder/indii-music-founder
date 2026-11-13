@@ -12,7 +12,7 @@ interface BoardroomTableProps {
  * BoardroomTable — Pure visual ornament: the glassmorphic oval with core glow.
  *
  * No longer renders messages inside the oval (that caused the clipping bug).
- * Instead, it shows a status indicator and active agent count.
+ * Instead, it shows a status indicator and participant count.
  * Messages are now rendered in the adjacent BoardroomConversationPanel.
  */
 export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
@@ -42,7 +42,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                 {activeCount > 0 ? (
                     <>
                         <p className="text-sm font-medium text-white/40">
-                            {activeCount} Agent{activeCount !== 1 ? 's' : ''} Seated
+                            {activeCount} Participant{activeCount !== 1 ? 's' : ''} Active
                         </p>
                         <div className="flex items-center gap-1.5 text-[10px] text-white/20">
                             <Users size={10} />
@@ -51,7 +51,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                     </>
                 ) : (
                     <p className="text-sm text-white/30 max-w-[200px]">
-                        Drag agents to the table to begin
+                        Talk to Indii to begin
                     </p>
                 )}
             </div>

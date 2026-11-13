@@ -51,6 +51,11 @@ export interface ImageGenerationOptions {
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
 
+    /** Internal Boardroom admission receipt. Never supplied from user prompt data. */
+    boardroomDispatchLeaseId?: string;
+    /** Agent executing the Boardroom image action. */
+    boardroomAgentId?: string;
+
     // Gemini 3 advanced parameters
     model?: NanoBananaTier | 'imagen-4.0-ultra-generate-001' | 'imagen-4.0-generate-001' | 'imagen-4.0-fast-generate-001' | string;
 
@@ -153,6 +158,8 @@ export class ImageGenerationService {
             sourceImages: options.sourceImages,
             referenceUris: options.referenceUris,
             referenceImages: options.referenceImages,
+            boardroomDispatchLeaseId: options.boardroomDispatchLeaseId,
+            boardroomAgentId: options.boardroomAgentId,
         });
     }
 
@@ -340,6 +347,10 @@ export class ImageGenerationService {
                 imageCount: count,
                 prompt: options.prompt.substring(0, 100),
                 style: options.style,
+                ...(options.boardroomDispatchLeaseId && options.boardroomAgentId ? {
+                    boardroomDispatchLeaseId: options.boardroomDispatchLeaseId,
+                    boardroomAgentId: options.boardroomAgentId,
+                } : {}),
             },
         });
 

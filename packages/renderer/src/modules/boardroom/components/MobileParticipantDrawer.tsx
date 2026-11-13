@@ -2,13 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { listHeadIds } from '@/services/agent/departments';
+import { listSeatedManagerIds } from '@/services/agent/departments';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { X } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-
-const AVAILABLE_AGENTS = listHeadIds().map(agentId => resolveAgentVisualIdentity(agentId));
 
 interface MobileParticipantDrawerProps {
     isOpen: boolean;
@@ -16,11 +14,9 @@ interface MobileParticipantDrawerProps {
 }
 
 export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDrawerProps) {
-    const { activeAgents, toggleAgent } = useStore(
-        useShallow(state => ({
-            activeAgents: state.activeAgents,
-            toggleAgent: state.toggleAgent,
-        }))
+    const activeAgents = useStore(useShallow(state => state.activeAgents));
+    const seatedManagers = listSeatedManagerIds(activeAgents).map(
+        agentId => resolveAgentVisualIdentity(agentId)
     );
 
     const trapRef = useFocusTrap(isOpen);
@@ -59,8 +55,8 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                     >
                         <div className="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
                             <div>
-                                <h2 id="mobile-drawer-title" className="text-lg font-bold text-white">Boardroom Agents</h2>
-                                <p className="text-xs text-white/50 mt-0.5">Select agents to seat at the table</p>
+                                <h2 id="mobile-drawer-title" className="text-lg font-bold text-white">Seated Managers</h2>
+                                <p className="text-xs text-white/50 mt-0.5">Indii brings in managers as needed</p>
                             </div>
                             <button
                                 onClick={onClose}
@@ -72,27 +68,25 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                         </div>
 
                         <div className="overflow-y-auto p-2 space-y-1 overscroll-contain">
-                            {AVAILABLE_AGENTS.map((identity) => {
-                                const isActive = activeAgents.includes(identity.agentId);
-                                
+                            {seatedManagers.length === 0 && (
+                                <p className="px-4 py-8 text-center text-sm text-white/40">
+                                    No department managers are seated right now. Talk to Indii to begin.
+                                </p>
+                            )}
+                            {seatedManagers.map((identity) => {
                                 return (
-                                    <button
+                                    <div
                                         key={identity.agentId}
-                                        onClick={() => toggleAgent(identity.agentId)}
-                                        className={`w-full flex items-center gap-4 p-3 rounded-xl transition-colors border ${
-                                            isActive 
-                                                ? 'bg-white/5 border-white/10' 
-                                                : 'bg-transparent border-transparent hover:bg-white/2'
-                                        }`}
-                                        aria-pressed={isActive}
+                                        data-testid={`mobile-seated-manager-${identity.agentId}`}
+                                        className="w-full flex items-center gap-4 p-3 rounded-xl border bg-white/5 border-white/10"
                                     >
                                         <div
                                             className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center border"
                                             style={{
                                                 backgroundColor: identity.surface,
-                                                borderColor: isActive ? identity.accent : identity.border,
+                                                borderColor: identity.accent,
                                                 color: identity.accent,
-                                                boxShadow: isActive ? `0 0 15px ${identity.glow}` : 'none',
+                                                boxShadow: `0 0 15px ${identity.glow}`,
                                             }}
                                         >
                                             <span className="text-xs font-black" style={{ color: identity.foreground }}>
@@ -100,7 +94,7 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                                             </span>
                                         </div>
                                         <div className="flex-1 text-left">
-                                            <div className="text-sm font-bold" style={{ color: isActive ? identity.accent : '#fff' }}>
+                                            <div className="text-sm font-bold" style={{ color: identity.accent }}>
                                                 {identity.displayName}
                                             </div>
                                             <div className="text-[10px] text-white/50 truncate pr-4">
@@ -109,11 +103,9 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
                                         </div>
                                         
                                         <div className="shrink-0 w-5 h-5 rounded-full border border-white/20 flex items-center justify-center mr-2">
-                                            {isActive && (
-                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: identity.accent }} />
-                                            )}
+                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: identity.accent }} />
                                         </div>
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>

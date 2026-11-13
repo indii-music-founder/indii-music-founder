@@ -108,6 +108,112 @@ describe('CostControlService', () => {
     });
   });
 
+  it.each(['image', 'video'] as const)('keeps %s reservations on the existing enforceOperationCost contract', async (operationType) => {
+    await CostControlService.checkAndReserve({
+      operationType,
+      estimatedCost: operationType === 'image' ? 0.04 : 0.5,
+      userId: 'auth-user-1',
+      metadata: { source: 'regression' },
+    });
+
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'enforceOperationCost',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({
+      operationType,
+      metadata: expect.objectContaining({ source: 'regression' }),
+    }));
+  });
+
+  it('uses the authenticated billing transport for a typed Boardroom dispatch plan', async () => {
+    const plan = {
+      type: 'BOARDROOM_DISPATCH_PLAN' as const,
+      code: 'BOARDROOM_DISPATCH_READY' as const,
+      executedAgentIds: ['generalist', 'marketing'],
+      deferredAgentIds: ['legal'],
+      maxIterationsPerAgent: 2,
+      nextContinuationAgentId: 'legal',
+      leaseId: '11111111-1111-4111-8111-111111111111',
+      leaseExpiresAtMs: Date.now() + 60_000,
+      sideEffectOwnerAgentId: 'generalist',
+    };
+    mocks.callable.mockResolvedValueOnce({ data: plan });
+
+    await expect(CostControlService.getBoardroomDispatchPlan([
+      'generalist', 'marketing', 'legal',
+    ])).resolves.toEqual(plan);
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'planBoardroomAgentStreamDispatch',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith({ agentIds: ['generalist', 'marketing', 'legal'] });
+  });
+
+  it('rejects a malformed Boardroom plan instead of allowing client fan-out', async () => {
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        type: 'BOARDROOM_DISPATCH_PLAN',
+        code: 'BOARDROOM_DISPATCH_READY',
+        executedAgentIds: ['generalist'],
+        deferredAgentIds: [],
+        maxIterationsPerAgent: 8,
+        nextContinuationAgentId: null,
+        leaseId: '11111111-1111-4111-8111-111111111111',
+        leaseExpiresAtMs: Date.now() + 60_000,
+        sideEffectOwnerAgentId: 'generalist',
+      },
+    });
+
+    await expect(CostControlService.getBoardroomDispatchPlan(['generalist', 'marketing']))
+      .rejects.toThrow('invalid plan');
+  });
+
+  it('accepts a typed active-turn deferral and transports explicit lease completion', async () => {
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        type: 'BOARDROOM_DISPATCH_PLAN',
+        code: 'BOARDROOM_DISPATCH_ACTIVE_TURN',
+        executedAgentIds: [],
+        deferredAgentIds: ['generalist', 'marketing'],
+        maxIterationsPerAgent: 2,
+        nextContinuationAgentId: 'generalist',
+        leaseId: null,
+        leaseExpiresAtMs: Date.now() + 60_000,
+        sideEffectOwnerAgentId: null,
+      },
+    });
+    await expect(CostControlService.getBoardroomDispatchPlan(['generalist', 'marketing']))
+      .resolves.toMatchObject({ code: 'BOARDROOM_DISPATCH_ACTIVE_TURN', leaseId: null });
+
+    mocks.callable.mockResolvedValueOnce({ data: { completed: true } });
+    await CostControlService.completeBoardroomDispatchLease('11111111-1111-4111-8111-111111111111');
+    expect(mocks.httpsCallable).toHaveBeenLastCalledWith(
+      { region: 'us-central1' },
+      'completeBoardroomAgentStreamDispatch',
+    );
+    expect(mocks.callable).toHaveBeenLastCalledWith({ leaseId: '11111111-1111-4111-8111-111111111111' });
+  });
+
+  it('rejects a READY plan whose advertised lease is not an opaque UUID', async () => {
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        type: 'BOARDROOM_DISPATCH_PLAN',
+        code: 'BOARDROOM_DISPATCH_READY',
+        executedAgentIds: ['generalist'],
+        deferredAgentIds: [],
+        maxIterationsPerAgent: 2,
+        nextContinuationAgentId: null,
+        leaseId: '------------------------------------',
+        leaseExpiresAtMs: Date.now() + 60_000,
+        sideEffectOwnerAgentId: 'generalist',
+      },
+    });
+
+    await expect(CostControlService.getBoardroomDispatchPlan(['generalist']))
+      .rejects.toThrow('invalid plan');
+  });
+
   it('requires a durable server reservation for founder and admin accounts', async () => {
     mocks.getIdTokenResult.mockResolvedValue({
       claims: { god_mode: true, founder: true, admin: true, tier: 'founder' },

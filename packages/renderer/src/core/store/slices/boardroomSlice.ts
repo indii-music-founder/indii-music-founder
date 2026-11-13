@@ -1,5 +1,10 @@
 import { StateCreator } from 'zustand';
-import { isValidHeadId, listHeadIds } from '@/services/agent/departments';
+import {
+    BOARDROOM_CONDUCTOR_ID,
+    isValidHeadId,
+    listHeadIds,
+    normalizeBoardroomAgentIds,
+} from '@/services/agent/departments';
 
 export interface SeatAllDepartmentHeadsResult {
     seatedCount: number;
@@ -51,29 +56,43 @@ export interface BoardroomSlice {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => ({
-    activeAgents: ['generalist'], // indii Conductor (hub agent) always present initially
+    activeAgents: [BOARDROOM_CONDUCTOR_ID],
     referencedAssets: [],
     a2aMessages: [],
 
     toggleAgent: (agentId) => set((state) => {
-        const isActive = state.activeAgents.includes(agentId);
-        if (isActive) {
-            return { activeAgents: state.activeAgents.filter(id => id !== agentId) };
-        } else {
-            return { activeAgents: [...state.activeAgents, agentId] };
+        const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
+        if (!isValidHeadId(agentId)) {
+            return arraysEqual(currentAgents, state.activeAgents)
+                ? state
+                : { activeAgents: currentAgents };
         }
+
+        const nextAgents = currentAgents.includes(agentId)
+            ? currentAgents.filter(id => id !== agentId)
+            : [...currentAgents, agentId];
+        return { activeAgents: nextAgents };
     }),
 
     addActiveAgent: (agentId) => set((state) => {
-        if (!state.activeAgents.includes(agentId)) {
-            return { activeAgents: [...state.activeAgents, agentId] };
+        const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
+        if (!isValidHeadId(agentId) || currentAgents.includes(agentId)) {
+            return arraysEqual(currentAgents, state.activeAgents)
+                ? state
+                : { activeAgents: currentAgents };
         }
-        return state;
+        return { activeAgents: [...currentAgents, agentId] };
     }),
 
-    removeActiveAgent: (agentId) => set((state) => ({
-        activeAgents: state.activeAgents.filter(id => id !== agentId)
-    })),
+    removeActiveAgent: (agentId) => set((state) => {
+        const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
+        if (!isValidHeadId(agentId) || !currentAgents.includes(agentId)) {
+            return arraysEqual(currentAgents, state.activeAgents)
+                ? state
+                : { activeAgents: currentAgents };
+        }
+        return { activeAgents: currentAgents.filter(id => id !== agentId) };
+    }),
 
     seatAllDepartmentHeads: () => {
         const headIds = listHeadIds();
@@ -86,14 +105,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
 
         set((state) => {
             const existingHeads = new Set(state.activeAgents.filter(isValidHeadId));
-            const retainedAgents = state.activeAgents.filter(
-                (agentId, index) =>
-                    (agentId === 'generalist' || isValidHeadId(agentId)) &&
-                    state.activeAgents.indexOf(agentId) === index
-            );
-            if (!retainedAgents.includes('generalist')) {
-                retainedAgents.unshift('generalist');
-            }
+            const retainedAgents = normalizeBoardroomAgentIds(state.activeAgents);
             const nextActiveAgents = [
                 ...retainedAgents,
                 ...headIds.filter(agentId => !existingHeads.has(agentId)),
@@ -135,3 +147,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
 
     clearA2AMessages: () => set({ a2aMessages: [] }),
 });
+
+function arraysEqual(left: readonly string[], right: readonly string[]): boolean {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+}

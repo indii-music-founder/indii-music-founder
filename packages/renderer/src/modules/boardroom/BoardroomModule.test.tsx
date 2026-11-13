@@ -122,8 +122,7 @@ describe('BoardroomModule', () => {
         render(<BoardroomModule />);
         // BoardroomConversationPanel renders "Awaiting discussion..." when empty
         expect(screen.getByText('Awaiting discussion...')).toBeInTheDocument();
-        // BoardroomTable renders "Drag agents to the table to begin" when activeCount is 0
-        expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
+        expect(screen.getByText('1 Participant Active')).toBeInTheDocument();
         // Top bar renders "Boardroom HQ"
         expect(screen.getByText('Boardroom HQ')).toBeInTheDocument();
     });
@@ -148,7 +147,7 @@ describe('BoardroomEmptyState', () => {
         render(<BoardroomEmptyState />);
         expect(screen.getByText('Boardroom Active')).toBeInTheDocument();
         expect(screen.getByText('Awaiting your brief...')).toBeInTheDocument();
-        expect(screen.getByText('Select participants to join the discussion.')).toBeInTheDocument();
+        expect(screen.getByText('Talk to Indii. Indii will bring in the right managers as needed.')).toBeInTheDocument();
     });
 });
 
@@ -172,9 +171,9 @@ describe('MessageFeed', () => {
 });
 
 describe('BoardroomTable', () => {
-    it('shows "Drag agents" prompt when no agents are active', () => {
+    it('shows the Indii command path when no participant count is supplied', () => {
         render(<BoardroomTable messages={[]} activeCount={0} />);
-        expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
+        expect(screen.getByText('Talk to Indii to begin')).toBeInTheDocument();
     });
 
     it('shows agent count when agents are seated', () => {
@@ -183,7 +182,7 @@ describe('BoardroomTable', () => {
         ];
         render(<BoardroomTable messages={messages} activeCount={2} />);
         // BoardroomTable is now a pure visual ornament — it shows the status indicator
-        expect(screen.getByText('2 Agents Seated')).toBeInTheDocument();
+        expect(screen.getByText('2 Participants Active')).toBeInTheDocument();
         expect(screen.getByText(/1 exchange/)).toBeInTheDocument();
     });
 });

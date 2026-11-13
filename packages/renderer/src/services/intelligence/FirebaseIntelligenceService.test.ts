@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from './FirebaseIntelligenceService';
+import { CostControlService } from '@/services/billing/CostControlService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
@@ -177,6 +178,36 @@ describe('FirebaseIntelligenceService', () => {
 
         expect(fetchAndActivate).toHaveBeenCalled();
         expect(service.model).toMatchObject({ model: 'gemini-3-mock-v1' });
+    });
+
+    it('binds Boardroom lease and agent identity into the agent-stream reservation metadata', async () => {
+        const reserve = vi.spyOn(CostControlService, 'checkAndReserve').mockResolvedValueOnce({
+            allowed: true,
+            operationId: 'agent-stream-op-1',
+            remainingBudget: 5,
+            dailyUsed: 0,
+            monthlyUsed: 0,
+        });
+
+        await (service as unknown as {
+            reserveAgentStream: (
+                userId: string,
+                model: string,
+                streaming: boolean,
+                options: { boardroomDispatchLeaseId: string; boardroomAgentId: string },
+            ) => Promise<string>;
+        }).reserveAgentStream('user-1', 'gemini-3.1-pro-preview', true, {
+            boardroomDispatchLeaseId: '99999999-9999-4999-8999-999999999999',
+            boardroomAgentId: 'generalist',
+        });
+
+        expect(reserve).toHaveBeenCalledWith(expect.objectContaining({
+            operationType: 'agent_stream',
+            metadata: expect.objectContaining({
+                boardroomDispatchLeaseId: '99999999-9999-4999-8999-999999999999',
+                boardroomAgentId: 'generalist',
+            }),
+        }));
     });
 
     it('should send safety settings to the backend gateway', async () => {

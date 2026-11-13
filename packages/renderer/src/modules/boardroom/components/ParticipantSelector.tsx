@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, PanInfo } from 'motion/react';
+import { motion } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -30,8 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AnimatePresence } from 'motion/react';
-import { DEPARTMENTS, listHeadIds } from '@/services/agent/departments';
+import { listSeatedManagerIds } from '@/services/agent/departments';
 import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
@@ -63,8 +62,6 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
     video: Video,
 });
 
-const AVAILABLE_AGENTS = listHeadIds().map(agentId => resolveAgentVisualIdentity(agentId));
-
 export type ParticipantLayoutMode = 'compact' | 'wide';
 
 export interface ParticipantSeatPosition {
@@ -73,7 +70,6 @@ export interface ParticipantSeatPosition {
     readonly x: number;
     readonly y: number;
 }
-
 export interface ParticipantSeatLayout {
     readonly mode: ParticipantLayoutMode;
     readonly width: number;
@@ -166,12 +162,18 @@ export function calculateParticipantSeatLayout(
 }
 
 export default function ParticipantSelector() {
-    const { activeAgents, toggleAgent, activeGraphExecution } = useStore(
+    const { activeAgents, activeGraphExecution } = useStore(
         useShallow(state => ({
             activeAgents: state.activeAgents,
-            toggleAgent: state.toggleAgent,
             activeGraphExecution: state.activeGraphExecution
         }))
+    );
+
+    const seatedManagers = React.useMemo(
+        () => listSeatedManagerIds(activeAgents).map(
+            agentId => resolveAgentVisualIdentity(agentId)
+        ),
+        [activeAgents],
     );
 
     const [focusedHead, setFocusedHead] = React.useState<string | null>(null);
@@ -207,11 +209,11 @@ export default function ParticipantSelector() {
 
     const participantLayout = React.useMemo(
         () => calculateParticipantSeatLayout(
-            AVAILABLE_AGENTS.length,
+            seatedManagers.length,
             containerSize.width,
             containerSize.height,
         ),
-        [containerSize.height, containerSize.width],
+        [containerSize.height, containerSize.width, seatedManagers.length],
     );
 
     const executingAgentIds = React.useMemo(() => {
@@ -238,24 +240,6 @@ export default function ParticipantSelector() {
         );
     }, [executingAgentIds]);
 
-    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo, agentId: string, isActive: boolean) => {
-        // Center of viewport
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
-
-        // Distance from drop point to center
-        const dist = Math.hypot(info.point.x - cx, info.point.y - cy);
-
-        // Threshold (roughly the edge of the oval)
-        const THRESHOLD = 350;
-
-        if (dist < THRESHOLD && !isActive) {
-            toggleAgent(agentId); // Dragged in
-        } else if (dist > THRESHOLD && isActive) {
-            toggleAgent(agentId); // Dragged out
-        }
-    };
-
     return (
         <div
             ref={containerRef}
@@ -264,8 +248,7 @@ export default function ParticipantSelector() {
             data-layout-rings={participantLayout.ringCounts.length}
         >
             <TooltipProvider delayDuration={50}>
-                {AVAILABLE_AGENTS.map((identity, index) => {
-                    const isActive = activeAgents.includes(identity.agentId);
+                {seatedManagers.map((identity, index) => {
                     const isExecuting = isAgentExecuting(identity.agentId);
                     const seat = participantLayout.seats[index]!;
                     const isFocused = focusedHead === identity.agentId;
@@ -284,29 +267,18 @@ export default function ParticipantSelector() {
                                     data-agent-accent={identity.accent}
                                     data-agent-icon={identity.iconKey}
                                     data-seat-ring={seat.ring}
-                                    aria-label={`${identity.ariaLabel}, ${isExecuting ? 'executing workflow' : isActive ? 'active' : 'inactive'}`}
-                                    aria-pressed={isActive}
+                                    aria-label={`${identity.ariaLabel}, ${isExecuting ? 'executing workflow' : 'seated manager'}`}
+                                    aria-pressed="true"
                                     type="button"
-                                    onClick={() => {
-                                        if (isActive) {
-                                            setFocusedHead(prev => prev === identity.agentId ? null : identity.agentId);
-                                        } else {
-                                            toggleAgent(identity.agentId);
-                                        }
-                                    }}
-                                    drag
-                                    dragSnapToOrigin
-                                    onDragEnd={(e, info) => handleDragEnd(e, info, identity.agentId, isActive)}
+                                    onClick={() => setFocusedHead(prev => prev === identity.agentId ? null : identity.agentId)}
                                     initial={{ left: seat.x, top: seat.y }}
                                     animate={{ left: seat.x, top: seat.y }}
                                     transition={{ type: 'spring', stiffness: 150, damping: 20 }}
                                     className={cn(
-                                        "group absolute rounded-full flex flex-col items-center justify-center border transition-all duration-500 pointer-events-auto cursor-grab active:cursor-grabbing focus-visible:outline-2 focus-visible:outline-offset-2",
+                                        "group absolute rounded-full flex flex-col items-center justify-center border transition-all duration-500 pointer-events-auto cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2",
                                         isExecuting
                                             ? "animate-pulse scale-105 z-20"
-                                            : isActive
-                                                ? "z-20"
-                                                : "hover:scale-105 z-10"
+                                            : "hover:scale-105 z-20"
                                     )}
                                     style={{
                                         ...identity.cssProperties,
@@ -318,9 +290,9 @@ export default function ParticipantSelector() {
                                         borderColor: identity.border,
                                         color: identity.foreground,
                                         outlineColor: identity.accent,
-                                        boxShadow: isActive || isExecuting ? `0 0 ${isExecuting ? 35 : 25}px ${identity.glow}` : 'none',
+                                        boxShadow: `0 0 ${isExecuting ? 35 : 25}px ${identity.glow}`,
                                     } as React.CSSProperties}
-                                    whileHover={{ scale: isExecuting ? 1.05 : isActive ? 1.05 : 1.15 }}
+                                    whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                 >
                                     <AgentIcon
@@ -334,7 +306,7 @@ export default function ParticipantSelector() {
                                     </span>
 
                                     {/* Active "speaking" or "listening" ripple indicator */}
-                                    {isActive && !isExecuting && (
+                                    {!isExecuting && (
                                         <div
                                             className="absolute inset-0 rounded-full animate-ping opacity-30 pointer-events-none border"
                                             style={{ borderColor: identity.accent }}
@@ -374,9 +346,7 @@ export default function ParticipantSelector() {
                                     <span className="opacity-70 ml-1">
                                         {isExecuting
                                             ? "(Executing workflow...)"
-                                            : isActive
-                                                ? "(Active)"
-                                                : "(Drag into table to activate)"}
+                                            : "(Seated manager)"}
                                     </span>
                                 </p>
                             </TooltipContent>
@@ -386,72 +356,6 @@ export default function ParticipantSelector() {
                 })}
             </TooltipProvider>
 
-            {/* Inner Orbit for Workers */}
-            <AnimatePresence>
-                {focusedHead && (DEPARTMENTS[focusedHead]?.workerIds?.length ?? 0) > 0 && (
-                    <>
-                        {DEPARTMENTS[focusedHead]!.workerIds!.map((workerId, index) => {
-                            const total = DEPARTMENTS[focusedHead]!.workerIds!.length;
-                            const angle = (index / Math.max(total, 1)) * Math.PI * 2;
-                            const radiusX = participantLayout.mode === 'compact' ? 16 : 18;
-                            const radiusY = participantLayout.mode === 'compact' ? 10 : 12;
-                            const left = 50 + radiusX * Math.cos(angle);
-                            const top = 50 + radiusY * Math.sin(angle);
-                            
-                            const identity = resolveAgentVisualIdentity(workerId);
-                            const WorkerIcon = AGENT_ICONS[identity.iconKey];
-                            const isWorkerExecuting = executingAgentIds.includes(workerId);
-                            const workerDiameter = participantLayout.mode === 'compact' ? 38 : 44;
-
-                            return (
-                                <motion.div
-                                    key={workerId}
-                                    initial={{ opacity: 0, scale: 0.5, left: '50%', top: '50%' }}
-                                    animate={{ opacity: 1, scale: 1, left: `${left}%`, top: `${top}%` }}
-                                    exit={{ opacity: 0, scale: 0.5, left: '50%', top: '50%' }}
-                                    transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                                    className={cn(
-                                        "absolute rounded-full flex flex-col items-center justify-center border transition-all duration-500 z-30 pointer-events-auto",
-                                        isWorkerExecuting && "scale-105 animate-pulse",
-                                        "backdrop-blur-md"
-                                    )}
-                                    style={{
-                                        ...identity.cssProperties,
-                                        width: workerDiameter,
-                                        height: workerDiameter,
-                                        marginLeft: -workerDiameter / 2,
-                                        marginTop: -workerDiameter / 2,
-                                        backgroundColor: identity.surface,
-                                        borderColor: identity.border,
-                                        boxShadow: `0 0 ${isWorkerExecuting ? 25 : 15}px ${identity.glow}`,
-                                        color: identity.foreground,
-                                    } as React.CSSProperties}
-                                    title={identity.ariaLabel}
-                                    aria-label={identity.ariaLabel}
-                                    data-agent-id={identity.agentId}
-                                    data-agent-role={identity.role}
-                                    data-agent-accent={identity.accent}
-                                    data-agent-icon={identity.iconKey}
-                                >
-                                    <WorkerIcon size={13} aria-hidden="true" style={{ color: identity.accent }} />
-                                    <span className="text-[8px] font-black leading-none mt-0.5">
-                                        {identity.initials}
-                                    </span>
-                                    <span className="sr-only">{identity.displayName}</span>
-                                    
-                                    {/* Executing sub-worker double ripple / ping effects */}
-                                    {isWorkerExecuting && (
-                                        <>
-                                            <div className="absolute inset-0 rounded-full animate-ping opacity-50 border pointer-events-none scale-110" style={{ borderColor: identity.accent }} />
-                                            <div className="absolute inset-0 rounded-full animate-ping opacity-25 border pointer-events-none scale-125 [animation-delay:0.3s]" style={{ borderColor: identity.accent }} />
-                                        </>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-                    </>
-                )}
-            </AnimatePresence>
         </div>
     );
 }

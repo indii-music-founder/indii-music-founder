@@ -3,7 +3,7 @@ import { DirectorTools } from '../DirectorTools';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
-import { QuotaExceededError } from '@/shared/types/errors';
+import { AppErrorCode, AppException, QuotaExceededError } from '@/shared/types/errors';
 
 // Mock dependencies
 vi.mock('@/services/image/ImageGenerationService', () => ({
@@ -128,6 +128,38 @@ describe('DirectorTools', () => {
             expect(result.success).toBe(false);
             expect(result.error).toContain('Quota exceeded');
             expect(result.metadata?.errorCode).toBe('QUOTA_EXCEEDED');
+        });
+
+        it('preserves typed application capacity metadata without claiming provider submission', async () => {
+            vi.mocked(ImageGeneration.generateImages).mockRejectedValue(new AppException(
+                AppErrorCode.GENERATION_CAPACITY_LIMITED,
+                'internal limiter detail',
+                {
+                    retryable: true,
+                    retryAfterMs: 60_000,
+                    reason: 'application_rate_limit',
+                    context: {
+                        nextActions: ['retry_after_wait'],
+                        providerSubmitted: false,
+                    },
+                },
+            ));
+
+            const result = await DirectorTools.generate_image!({ prompt: 'test' });
+
+            expect(result).toMatchObject({
+                success: false,
+                error: 'Image generation is temporarily at capacity. Your request was not sent for generation. Please wait and try again.',
+                metadata: {
+                    errorCode: AppErrorCode.GENERATION_CAPACITY_LIMITED,
+                    retryable: true,
+                    retryAfterMs: 60_000,
+                    reason: 'application_rate_limit',
+                    nextActions: ['retry_after_wait'],
+                    providerSubmitted: false,
+                },
+            });
+            expect(result.error).not.toContain('internal limiter detail');
         });
     });
 

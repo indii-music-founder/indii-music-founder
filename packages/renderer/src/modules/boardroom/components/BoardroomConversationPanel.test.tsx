@@ -68,7 +68,7 @@ describe('BoardroomConversationPanel', () => {
 
     it('shows guidance text in empty state', () => {
         render(<BoardroomConversationPanel messages={[]} />);
-        expect(screen.getByText(/Select agents and submit a brief/)).toBeInTheDocument();
+        expect(screen.getByText(/Talk to Indii.*right managers as needed/)).toBeInTheDocument();
     });
 
     it('shows prompt area in empty state', () => {

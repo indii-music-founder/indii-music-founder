@@ -47,6 +47,12 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
+vi.mock('./registry', () => ({
+    agentRegistry: {
+        get: vi.fn((agentId: string) => ({ id: agentId, name: agentId })),
+    },
+}));
+
 
 describe('BaseAgent Usage Defenses', () => {
     let agent: BaseAgent;
@@ -198,6 +204,47 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
         expect(lastText).toContain('[SYSTEM — FINAL STEP]');
     });
 
+    it('caps a Boardroom specialist at the server-owned per-agent iteration budget', async () => {
+        const agent = new BaseAgent({ ...baseConfig, maxIterations: 8 });
+        const agentWithFunctions = agent as unknown as { functions: Record<string, () => Promise<{ success: boolean; message: string }>> };
+        agentWithFunctions.functions.noop_test_tool = async () => ({ success: true, message: 'ok' });
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        let callCount = 0;
+        vi.mocked(aiMock.AutonomousIntelligence.generateContent).mockImplementation(async () => {
+            callCount++;
+            return {
+                response: {
+                    text: () => '',
+                    candidates: [{ content: { parts: [{ functionCall: { name: 'noop_test_tool', args: { n: callCount } } }] } }],
+                    usageMetadata: undefined,
+                },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>;
+        });
+
+        await agent.execute('Task', {
+            conversationMode: 'boardroom',
+            boardroomDispatchPlan: {
+                type: 'BOARDROOM_DISPATCH_PLAN',
+                code: 'BOARDROOM_DISPATCH_READY',
+                executedAgentIds: ['generalist'],
+                deferredAgentIds: [],
+                maxIterationsPerAgent: 2,
+                nextContinuationAgentId: null,
+                leaseId: '33333333-3333-4333-8333-333333333333',
+                leaseExpiresAtMs: Date.now() + 60_000,
+                sideEffectOwnerAgentId: 'generalist',
+            },
+        });
+
+        expect(aiMock.AutonomousIntelligence.generateContent).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(aiMock.AutonomousIntelligence.generateContent).mock.calls[0]?.[5]).toMatchObject({
+            boardroomDispatchLeaseId: '33333333-3333-4333-8333-333333333333',
+            boardroomAgentId: 'generalist',
+        });
+        expect(JSON.stringify(vi.mocked(aiMock.AutonomousIntelligence.generateContent).mock.calls[1]?.[0]))
+            .toContain('[SYSTEM — FINAL STEP]');
+    });
+
     it('preserves a completed image tool result when only the typed capacity summary turn is rejected', async () => {
         const agent = new BaseAgent(baseConfig);
         const agentWithFunctions = agent as unknown as {
@@ -232,6 +279,69 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
         expect(response.toolCalls?.[0]?.result).toMatchObject({ success: true });
         expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
         expect(aiMock.AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('preserves a completed image tool result when the later summary turn loses the network', async () => {
+        const agent = new BaseAgent(baseConfig);
+        const imageTool = vi.fn(async () => ({
+            success: true,
+            message: 'Successfully generated 1 image. It is now in the Gallery.',
+            data: { urls: ['https://storage.example/generated-dog.png'] },
+        }));
+        (agent as unknown as { functions: Record<string, typeof imageTool> }).functions.generate_image = imageTool;
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(aiMock.AutonomousIntelligence.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'generate_image', args: { prompt: 'a happy dog' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockRejectedValueOnce(new AppException(AppErrorCode.NETWORK_ERROR, 'Summary connection lost.'));
+
+        const response = await agent.execute('Make an image of a happy dog');
+
+        expect(response.text).toBe('Successfully generated 1 image. It is now in the Gallery.');
+        expect(response.error).toBeUndefined();
+        expect(imageTool).toHaveBeenCalledTimes(1);
+        expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps a non-owner Boardroom participant advisory and never invokes the image tool', async () => {
+        const advisoryAgent = new BaseAgent({ ...baseConfig, id: 'creative' });
+        const imageTool = vi.fn(async () => ({ success: true, message: 'must not run' }));
+        (advisoryAgent as unknown as { functions: Record<string, typeof imageTool> }).functions.generate_image = imageTool;
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(aiMock.AutonomousIntelligence.generateContentStream).mockResolvedValueOnce({
+            stream: new ReadableStream({ start(controller) { controller.close(); } }),
+            response: Promise.resolve({
+                text: () => '',
+                functionCalls: () => [{ name: 'generate_image', args: { prompt: 'a happy dog' } }],
+            }),
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+        const response = await advisoryAgent.execute('Make an image of a happy dog', {
+            conversationMode: 'boardroom',
+            boardroomDispatchPlan: {
+                type: 'BOARDROOM_DISPATCH_PLAN',
+                code: 'BOARDROOM_DISPATCH_READY',
+                executedAgentIds: ['generalist', 'creative'],
+                deferredAgentIds: [],
+                maxIterationsPerAgent: 2,
+                nextContinuationAgentId: null,
+                leaseId: '45454545-4545-4454-8454-454545454545',
+                leaseExpiresAtMs: Date.now() + 60_000,
+                sideEffectOwnerAgentId: 'generalist',
+            },
+        });
+
+        expect(response).toMatchObject({
+            error: 'BOARDROOM_SIDE_EFFECT_OWNER_MISMATCH',
+            text: 'This participant remained advisory. No generation request was submitted.',
+        });
+        expect(imageTool).not.toHaveBeenCalled();
+        expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(1);
     });
 
     it('preserves a typed image-tool failure when the summary turn hits the legacy limiter response', async () => {

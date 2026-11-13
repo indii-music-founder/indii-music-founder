@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 
 /**
  * BoardroomEmptyState — Displayed when no boardroom messages exist.
- * Shows a centered indigo status badge with instruction to select participants.
+ * Shows a centered indigo status badge with the Boardroom command path.
  */
 export function BoardroomEmptyState() {
     return (
@@ -15,7 +15,7 @@ export function BoardroomEmptyState() {
         >
             <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Boardroom Active</span>
             <h1 className="text-2xl font-light text-white/80">Awaiting your brief...</h1>
-            <p className="text-sm text-white/40">Select participants to join the discussion.</p>
+            <p className="text-sm text-white/40">Talk to Indii. Indii will bring in the right managers as needed.</p>
         </motion.div>
     );
 }

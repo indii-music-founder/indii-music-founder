@@ -17,6 +17,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
+import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -53,14 +54,13 @@ export function BoardroomModule() {
             setConversationMode: state.setConversationMode,
             consumeHandoff: state.consumeHandoff,
             addReferencedAsset: state.addReferencedAsset,
-            toggleAgent: state.toggleAgent
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
 
     const { isAnyPhone } = useMobile();
 
-    const activeCount = activeAgents?.length || 0;
+    const activeCount = normalizeBoardroomAgentIds(activeAgents ?? []).length;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
     const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
@@ -128,14 +128,14 @@ export function BoardroomModule() {
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
                             Boardroom HQ
                         </span>
-                        {(activeCount > 0 || isAnyPhone) && (
+                        {activeCount > 0 && (
                             <button
                                 onClick={() => isAnyPhone && setIsMobileSeatingOpen(true)}
-                                className={`flex items-center gap-1 text-[10px] ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-white/30 bg-white/5 hover:bg-white/10 border-white/5'} px-2 py-0.5 rounded-full border transition-colors ${!isAnyPhone && 'cursor-default hover:bg-white/5'}`}
-                                aria-label="Seat agents"
+                                className={`flex items-center gap-1 text-[10px] text-white/30 bg-white/5 hover:bg-white/10 border-white/5 px-2 py-0.5 rounded-full border transition-colors ${!isAnyPhone && 'cursor-default hover:bg-white/5'}`}
+                                aria-label={isAnyPhone ? 'View seated managers' : 'Active Boardroom participants'}
                             >
                                 <Users size={10} />
-                                {activeCount > 0 ? `${activeCount} active` : 'Seat Agents'}
+                                {`${activeCount} active`}
                             </button>
                         )}
                     </div>

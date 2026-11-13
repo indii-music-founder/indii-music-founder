@@ -52,6 +52,8 @@ import { getAgentStreamingService } from './AgentStreamingService';
 import { getReflectionLoop } from './ReflectionLoop';
 import { importWithRetry } from '@/utils/dynamicImport';
 
+const BOARDROOM_SINGLE_OWNER_TOOL_NAMES = new Set(['generate_image', 'indii_image_gen']);
+
 export class BaseAgent implements SpecializedAgent {
     public id: string;
     public name: string;
@@ -88,7 +90,7 @@ export class BaseAgent implements SpecializedAgent {
      * tool outcome instead of replacing it with a misleading generation error.
      * The limiter remains enforced; this method never makes another model call.
      */
-    private recoverRateLimitedPostToolTurn(
+    private recoverAuthoritativeImageToolOutcome(
         error: unknown,
         lastToolResult: ToolFunctionResult | undefined,
         toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }>
@@ -98,6 +100,17 @@ export class BaseAgent implements SpecializedAgent {
         const lastToolCall = toolCalls[toolCalls.length - 1];
         const isImageTool = lastToolCall?.name === 'generate_image' || lastToolCall?.name === 'indii_image_gen';
         if (!isImageTool) return null;
+
+        // The image tool result is the authoritative effect receipt. Once it
+        // completed, a later summary-only timeout/network/5xx/capacity failure
+        // must not turn that completed action into a false failure or retry.
+        if (lastToolResult.success) {
+            return {
+                text: lastToolResult.message?.trim() || 'The requested image completed successfully.',
+                data: lastToolResult.data,
+                toolCalls,
+            };
+        }
 
         const record = error && typeof error === 'object'
             ? error as { code?: unknown; status?: unknown; message?: unknown }
@@ -116,14 +129,6 @@ export class BaseAgent implements SpecializedAgent {
             || message.trim() === 'Too many AI generation requests. Please retry shortly.'
         );
         if (!isRateLimited) return null;
-
-        if (lastToolResult.success) {
-            return {
-                text: lastToolResult.message?.trim() || 'The requested action completed successfully.',
-                data: lastToolResult.data,
-                toolCalls,
-            };
-        }
 
         const toolErrorCode = typeof lastToolResult.metadata?.errorCode === 'string'
             ? lastToolResult.metadata.errorCode
@@ -721,6 +726,7 @@ export class BaseAgent implements SpecializedAgent {
             ...leanContext,
             orgId: context?.orgId,
             projectId: context?.projectId,
+            executingAgentId: this.id,
             // GEAP: Inject agent identity into context for provenance tracking
             agentIdentity: this.identityCard,
         };
@@ -838,7 +844,7 @@ export class BaseAgent implements SpecializedAgent {
                 || 'unknown';
         }
 
-        const allFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
+        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
             specialistTools,
             {
                 agentId: this.id,
@@ -847,6 +853,12 @@ export class BaseAgent implements SpecializedAgent {
                 conversationMode: context?.conversationMode,
             }
         );
+        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
+        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
+            || boardroomSideEffectOwner === this.id;
+        const allFunctions = mayExecuteBoardroomSideEffects
+            ? assembledFunctions
+            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
 
         // IMPORTANT: Tools must be deep-cloned on EACH iteration because model gateways may
         // freeze (Object.freeze) tool declaration objects while normalizing requests.
@@ -871,7 +883,15 @@ export class BaseAgent implements SpecializedAgent {
         const _accumulatedResponse = '';
         let iterations = 0;
         const DEFAULT_MAX_ITERATIONS = 8; // Lowered from 15 for safety against runaway costs
-        const MAX_ITERATIONS = this.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+        const configuredMaxIterations = this.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+        const boardroomMaxIterations = context?.conversationMode === 'boardroom'
+            ? context.boardroomDispatchPlan?.maxIterationsPerAgent
+            : undefined;
+        const MAX_ITERATIONS = typeof boardroomMaxIterations === 'number'
+            && Number.isInteger(boardroomMaxIterations)
+            && boardroomMaxIterations > 0
+            ? Math.min(configuredMaxIterations, boardroomMaxIterations)
+            : configuredMaxIterations;
         // Judgment layer: verbosity/cost backstop applied to every generateContent(Stream) call below
         const generationConfig = {
             ...INTELLIGENCE_CONFIG.THINKING.LOW,
@@ -1031,7 +1051,12 @@ export class BaseAgent implements SpecializedAgent {
                             generationConfig, // config — includes judgment-layer maxOutputTokens
                             undefined, // systemInstruction
                             iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContentStream']>[4], // tools — bridges internal ToolDefinition to SDK type
-                            { thoughtSignature: currentThoughtSignature, signal } as any // options
+                            {
+                                thoughtSignature: currentThoughtSignature,
+                                signal,
+                                boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
+                                boardroomAgentId: context?.boardroomDispatchPlan?.leaseId ? this.id : undefined,
+                            } as any // options
                         );
                     } catch (err: unknown) {
                         // If it's a real rate limit or model error, propagate it. If it's a mock destructure error, let fallback handle it.
@@ -1039,7 +1064,7 @@ export class BaseAgent implements SpecializedAgent {
                         if (msg.includes('destructure') || msg.includes('undefined')) {
                             logger.debug(`[BaseAgent] generateContentStream threw mock/destructure error. Trying generateContent fallback.`);
                         } else {
-                            const recovered = this.recoverRateLimitedPostToolTurn(err, lastToolResult, toolCalls);
+                            const recovered = this.recoverAuthoritativeImageToolOutcome(err, lastToolResult, toolCalls);
                             if (recovered) {
                                 if (lastToolResult?.success && executionContext.hasUncommittedChanges()) {
                                     await executionContext.commit();
@@ -1061,7 +1086,12 @@ export class BaseAgent implements SpecializedAgent {
                         generationConfig,
                         undefined,
                         iterationTools as any,
-                        { thoughtSignature: currentThoughtSignature, signal }
+                        {
+                            thoughtSignature: currentThoughtSignature,
+                            signal,
+                            boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
+                            boardroomAgentId: context?.boardroomDispatchPlan?.leaseId ? this.id : undefined,
+                        }
                     );
                     streamResult = {
                         stream: {
@@ -1246,6 +1276,27 @@ export class BaseAgent implements SpecializedAgent {
                             // Inject block notice into conversation and continue loop
                             fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
                             continue;
+                        }
+
+                        if (
+                            context?.boardroomDispatchPlan?.leaseId
+                            && BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(name)
+                            && context.boardroomDispatchPlan.sideEffectOwnerAgentId !== this.id
+                        ) {
+                            logger.warn(`[BaseAgent] Boardroom side-effect tool '${name}' blocked for advisory agent '${this.id}'.`);
+                            const blockedResult: ToolFunctionResult = {
+                                success: false,
+                                error: 'This Boardroom participant is advisory for the current action. No generation request was submitted.',
+                                metadata: { errorCode: 'BOARDROOM_SIDE_EFFECT_OWNER_MISMATCH' },
+                            };
+                            toolCalls.push({ name, args, result: blockedResult });
+                            lastToolResult = blockedResult;
+                            await executionContext.rollback();
+                            return {
+                                text: 'This participant remained advisory. No generation request was submitted.',
+                                error: 'BOARDROOM_SIDE_EFFECT_OWNER_MISMATCH',
+                                toolCalls,
+                            };
                         }
 
                         // ISSUE-1172 fix (re-ticketed from ISSUE-1115): Artist Operating Profile gate.

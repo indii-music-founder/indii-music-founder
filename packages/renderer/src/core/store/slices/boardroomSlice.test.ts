@@ -1,6 +1,10 @@
 import { createStore } from 'zustand/vanilla';
 import { describe, expect, it } from 'vitest';
-import { listHeadIds, listWorkerIds } from '@/services/agent/departments';
+import {
+    listHeadIds,
+    listWorkerIds,
+    normalizeBoardroomAgentIds,
+} from '@/services/agent/departments';
 import { BoardroomSlice, createBoardroomSlice } from './boardroomSlice';
 
 function createBoardroomStore() {
@@ -8,6 +12,51 @@ function createBoardroomStore() {
 }
 
 describe('Boardroom canonical department-head seating', () => {
+    it.each([
+        ['URL-restored state', ['finance.tax', 'legal']],
+        ['persisted state', ['legal.contracts', 'finance', 'unknown-agent']],
+        ['tool payload', ['finance.accounting', 'social', 'social']],
+    ])('rejects worker IDs received through %s', (_source, agentIds) => {
+        const normalized = normalizeBoardroomAgentIds(agentIds);
+
+        expect(normalized[0]).toBe('generalist');
+        expect(normalized).not.toContain('finance.tax');
+        expect(normalized).not.toContain('legal.contracts');
+        expect(normalized).not.toContain('finance.accounting');
+        expect(normalized).not.toContain('unknown-agent');
+        expect(new Set(normalized).size).toBe(normalized.length);
+    });
+
+    it('rejects worker and unknown identifiers while preserving the conductor', () => {
+        const store = createBoardroomStore();
+
+        store.getState().addActiveAgent('finance.tax');
+        store.getState().addActiveAgent('unknown-agent');
+        store.getState().toggleAgent('legal.contracts');
+        store.getState().removeActiveAgent('generalist');
+
+        expect(store.getState().activeAgents).toEqual(['generalist']);
+    });
+
+    it('adds and removes managers idempotently and sanitizes restored state', () => {
+        const store = createBoardroomStore();
+        store.setState({ activeAgents: ['finance.tax', 'generalist', 'legal', 'legal', 'unknown-agent'] });
+
+        store.getState().addActiveAgent('legal');
+        expect(store.getState().activeAgents).toEqual(['generalist', 'legal']);
+
+        const afterSanitize = store.getState();
+        store.getState().addActiveAgent('legal');
+        expect(store.getState()).toBe(afterSanitize);
+
+        store.getState().removeActiveAgent('legal');
+        expect(store.getState().activeAgents).toEqual(['generalist']);
+
+        const afterRemove = store.getState();
+        store.getState().removeActiveAgent('legal');
+        expect(store.getState()).toBe(afterRemove);
+    });
+
     it('atomically retains the conductor and seats each of the 23 canonical heads once', () => {
         const store = createBoardroomStore();
         store.setState({
@@ -43,7 +92,7 @@ describe('Boardroom canonical department-head seating', () => {
 
         store.getState().seatAllDepartmentHeads();
 
-        expect(store.getState().activeAgents.slice(0, 3)).toEqual(['legal', 'generalist', 'finance']);
+        expect(store.getState().activeAgents.slice(0, 3)).toEqual(['generalist', 'legal', 'finance']);
         expect(store.getState().activeAgents).toHaveLength(24);
     });
 
