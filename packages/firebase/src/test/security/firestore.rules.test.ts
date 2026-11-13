@@ -3892,6 +3892,21 @@ describe('Firestore Security Rules', () => {
                 goals: ['Improve royalty registration', 'Grow audience'],
             };
 
+            // Structural policy regression: the intake SDK reads an exact ID before creating it.
+            it('get: permits the missing assessment preflight before create and contact update', async () => {
+                if (requireEmulator()) return;
+                const db = unauthCtx().firestore();
+                const ref = doc(db, 'prospect_assessments', 'missing-assessment-preflight');
+                const before = await assertSucceeds(getDoc(ref));
+                expect(before.exists()).toBe(false);
+                await assertSucceeds(setDoc(ref, { ...validAssessment, id: ref.id }));
+                await assertSucceeds(updateDoc(ref, {
+                    email: 'policy-check@example.com', assessmentConsent: true,
+                    marketingConsent: false, updatedAt: Timestamp.now(),
+                }));
+                expect((await assertSucceeds(getDoc(ref))).data()?.assessmentConsent).toBe(true);
+            });
+
             it('create: allows unauthenticated visitor to create valid assessment', async () => {
                 if (requireEmulator()) return;
                 const unauthDb = unauthCtx().firestore();
