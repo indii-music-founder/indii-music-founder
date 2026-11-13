@@ -71,6 +71,22 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it('rejects direct resume of an exhausted loop before writing a checkpoint', async () => {
+        const definition: AgentLoopDefinition = {
+            id: 'exhausted-loop', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations: 1, createdAt: 1, updatedAt: 1,
+        };
+        seedExecution({
+            id: 'exhausted-execution', loopId: definition.id, definitionSnapshot: snapshotOf(definition),
+            status: 'FAILED', currentIteration: 2, history: [], tokenBudgetSpent: 0,
+            actionCheckpoint: { phase: 'READY', iteration: 2 }, createdAt: 1, updatedAt: 1,
+        });
+        await expect(agentLoopService.resumeLoop(definition, 'exhausted-execution', { userId: 'user1' }))
+            .rejects.toThrow('no iterations left');
+        expect(FirestoreService.prototype.setIfRevision).not.toHaveBeenCalled();
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+    });
+
     it('lists only checkpoints eligible for recovery', async () => {
         const ready = {
             id: 'ready', loopId: 'loop', status: 'IDLE' as const, currentIteration: 1,

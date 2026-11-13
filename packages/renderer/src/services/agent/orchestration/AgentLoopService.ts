@@ -248,6 +248,9 @@ export class AgentLoopService {
             if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
                 throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
+            if (!Number.isSafeInteger(definition.maxIterations) || execution.currentIteration > definition.maxIterations) {
+                throw new Error(`Execution ${executionId} has no iterations left to resume.`);
+            }
             if (!resumableCheckpoint(execution)) {
                 throw new Error(`Execution ${executionId} may have dispatched an action without a recorded result; reconcile its outcome before resuming.`);
             }
