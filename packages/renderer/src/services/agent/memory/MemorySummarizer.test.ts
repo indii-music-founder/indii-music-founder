@@ -30,6 +30,12 @@ describe('MemorySummarizer parse diagnostics', () => {
         await expect(MemorySummarizer.generateInsight('user-1', memories)).resolves.toBeNull();
     });
 
+    it.each([[42], [' '], ['Valid pattern', null]])('rejects malformed insight entries %j', async (...insights) => {
+        generateText.mockResolvedValueOnce(JSON.stringify({ insights, connections: [], confidence: 0.9 }));
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('invalid insight');
+    });
+
     it('keeps only links between distinct memories in the synthesis input', async () => {
         generateText.mockResolvedValueOnce(JSON.stringify({
             insights: ['Related preferences'],

@@ -134,7 +134,10 @@ export class MemorySummarizer {
                 throw new Error('Memory synthesis returned an invalid response.');
             }
 
-            const rawInsights = parsed.insights.filter(text => typeof text === 'string' && text.trim().length > 0);
+            if (parsed.insights.some(text => typeof text !== 'string' || !text.trim())) {
+                throw new Error('Memory synthesis returned an invalid insight.');
+            }
+            const rawInsights = parsed.insights.map(text => text.trim());
             if (!rawInsights.length) return null;
 
             const isConfidence = (value: unknown): value is number =>
