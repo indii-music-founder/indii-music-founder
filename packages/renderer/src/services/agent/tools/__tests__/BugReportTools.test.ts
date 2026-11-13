@@ -111,6 +111,26 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it('returns the receipt while memory ingestion is pending', async () => {
+    const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+    let finishMemory: (() => void) | undefined;
+    vi.mocked(alwaysOnMemoryEngine.ingest).mockImplementationOnce(
+      () => new Promise(resolve => { finishMemory = () => resolve(undefined); }),
+    );
+    judgeInvoke.mockResolvedValue({
+      data: { firestore: 'ok', github: 'ok', bugId: 'report-42' },
+    });
+    const operation = BugReportTools.report_bug!(args);
+    try {
+      await vi.waitFor(() => expect(finishMemory).toBeDefined());
+      const receipt = await Promise.race([operation, Promise.resolve('pending')]);
+      expect(receipt).toMatchObject({ success: true, metadata: { durableReceipt: true } });
+    } finally {
+      finishMemory?.();
+      await operation;
+    }
+  });
+
   it('keeps the saved report ID when GitHub confirms a comment without a URL', async () => {
     judgeInvoke.mockResolvedValue({
       data: { firestore: 'ok', github: 'merged_as_comment', bugId: 'report-42' },

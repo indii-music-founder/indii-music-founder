@@ -156,17 +156,14 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             toast.warning('Bug report saved, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
         }
 
-        // 3. Save to Agent Memory for context continuity
-        try {
-            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
-            await alwaysOnMemoryEngine.ingest(
+        // Memory ingestion is best effort. The report is already saved.
+        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
+            .then(({ alwaysOnMemoryEngine }) => alwaysOnMemoryEngine.ingest(
                 `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
                 'system',
                 'context'
-            );
-        } catch (e: unknown) {
-            logger.warn('[BugReportTools] Failed to save bug to memory:', e);
-        }
+            ))
+            .catch(error => logger.warn('[BugReportTools] Failed to save bug to memory:', error));
 
         const reportReference = persistedBugId ? ` Report ID: ${persistedBugId}.` : '';
         const issueReference = issueUrl ? ` ${issueUrl}` : '';
