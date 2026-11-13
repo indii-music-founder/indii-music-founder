@@ -552,6 +552,7 @@ describe('AgentLoopService', () => {
     });
 
     it.each([
+        [{ passed: true, feedback: 'An array is not a verdict' }],
         { passed: 'false', feedback: 'No' },
         { passed: 1, feedback: 'Yes' },
         { feedback: 'Missing verdict' },

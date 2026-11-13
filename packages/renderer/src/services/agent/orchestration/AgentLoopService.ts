@@ -65,10 +65,10 @@ function parseEvaluationResponse(result: {
     const text = typeof response?.text === 'function'
         ? response.text()
         : response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const fencedJson = text.trim().match(/^```(?:json)?[^\S\r\n]*\r?\n([\s\S]*?)\r?\n```$/i);
     let parsed: unknown;
     try {
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+        parsed = JSON.parse(fencedJson?.[1] ?? text);
     } catch {
         throw new InvalidEvaluationResponse('Agent loop judge returned invalid JSON.');
     }
