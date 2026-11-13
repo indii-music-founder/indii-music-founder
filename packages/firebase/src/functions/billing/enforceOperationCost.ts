@@ -2,6 +2,7 @@ import { isVerifiedOwnerContinuityCaller } from '../security/ownerQuotaContinuit
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement, type BudgetTier } from '../auth/entitlements';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
@@ -9,6 +10,35 @@ import { arcjetKey } from '../../config/secrets';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
 
 type OperationType = 'video' | 'image' | 'audio' | 'agent_stream';
+
+export type AgentStreamLifecycleState =
+  | 'CLAIMED_NOT_SUBMITTED'
+  | 'PROVIDER_SUBMITTING'
+  | 'PRE_SUBMISSION_FAILED'
+  | 'PRE_SUBMISSION_CANCELLED'
+  | 'PROVIDER_FAILED'
+  | 'PROVIDER_CANCELLED'
+  | 'COMPLETED';
+
+export type AgentStreamTerminalState = Exclude<
+  AgentStreamLifecycleState,
+  'CLAIMED_NOT_SUBMITTED' | 'PROVIDER_SUBMITTING'
+>;
+
+export interface BoardroomDispatchPlan {
+  type: 'BOARDROOM_DISPATCH_PLAN';
+  code: 'BOARDROOM_DISPATCH_READY' | 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED' | 'BOARDROOM_DISPATCH_ACTIVE_TURN';
+  executedAgentIds: string[];
+  deferredAgentIds: string[];
+  maxIterationsPerAgent: number;
+  hourlyOperationsUsed: number;
+  hourlyOperationLimit: number | null;
+  continuationReserve: number;
+  nextContinuationAgentId: string | null;
+  leaseId: string | null;
+  leaseExpiresAtMs: number | null;
+  sideEffectOwnerAgentId: string | null;
+}
 
 interface CostEnforcementRequest {
   operationType: OperationType;
@@ -183,12 +213,55 @@ const TEST_MODE_DAILY_LIMIT = 5; // Testing should never cost more than $5/day t
 const USER_CONFIRMATION_THRESHOLD = 20; // $20
 const TEST_CONFIRMATION_THRESHOLD = 2; // $2
 const RESERVATION_TTL_MS = 15 * 60 * 1000;
+const BOARDROOM_DISPATCH_LEASE_TTL_MS = 15 * 60 * 1000;
+const MAX_BOARDROOM_AGENTS_PER_TURN = 9;
+const BOARDROOM_MAX_ITERATIONS_PER_AGENT = 2;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const BUDGET_LIMITS: Record<string, { daily: number; monthly: number; hourly: number }> = {
   free: { daily: 5, monthly: 50, hourly: 1 },
   pro: { daily: 25, monthly: 250, hourly: 5 },
   enterprise: { daily: 100, monthly: 1000, hourly: 20 },
   founder: { daily: 1000, monthly: 10000, hourly: Number.POSITIVE_INFINITY },
 };
+
+function hourlyOperationLimitForTier(tier: BudgetTier): number {
+  return tier === 'free' ? 5 : tier === 'pro' ? 20 : Number.POSITIVE_INFINITY;
+}
+
+function boardroomContinuationReserveForTier(tier: BudgetTier): number {
+  return tier === 'free' ? 1 : tier === 'pro' ? 2 : 0;
+}
+
+function parseBoardroomDispatchAgentIds(value: unknown): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new HttpsError('invalid-argument', 'A Boardroom dispatch payload is required.');
+  }
+  const agentIds = (value as Record<string, unknown>).agentIds;
+  if (!Array.isArray(agentIds) || agentIds.length === 0 || agentIds.length > 64) {
+    throw new HttpsError('invalid-argument', 'agentIds must contain between 1 and 64 agents.');
+  }
+  const normalized = agentIds.map((agentId) => {
+    if (typeof agentId !== 'string' || !/^[a-z][a-z0-9_-]{0,63}$/.test(agentId)) {
+      throw new HttpsError('invalid-argument', 'agentIds contains an invalid agent id.');
+    }
+    return agentId;
+  });
+  if (new Set(normalized).size !== normalized.length) {
+    throw new HttpsError('invalid-argument', 'agentIds must be unique.');
+  }
+  return normalized;
+}
+
+function parseBoardroomDispatchLeaseId(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new HttpsError('invalid-argument', 'A Boardroom lease payload is required.');
+  }
+  const leaseId = (value as Record<string, unknown>).leaseId;
+  if (typeof leaseId !== 'string' || !UUID_PATTERN.test(leaseId)) {
+    throw new HttpsError('invalid-argument', 'leaseId is invalid.');
+  }
+  return leaseId;
+}
 
 function timestampMillis(value: unknown): number | null {
   let millis: number | null = null;
@@ -333,6 +406,24 @@ export async function checkOperationBudget(
     const monthlyRef = db.doc(userLedgerDocument(userId, `monthly-${month}`));
     const hourlyRef = db.doc(userLedgerDocument(userId, `hourly-${hour}`));
     const testLedgerRef = db.doc(userLedgerDocument(userId, `test-${today}`));
+    const boardroomLeaseId = typeof metadata?.boardroomDispatchLeaseId === 'string'
+      ? metadata.boardroomDispatchLeaseId
+      : undefined;
+    const boardroomAgentId = typeof metadata?.boardroomAgentId === 'string'
+      ? metadata.boardroomAgentId
+      : undefined;
+    if ((boardroomLeaseId && !boardroomAgentId) || (!boardroomLeaseId && boardroomAgentId)) {
+      return {
+        allowed: false,
+        reason: 'Boardroom reservations require both lease and agent identity.',
+        remainingBudget: 0,
+        dailyUsed: 0,
+        monthlyUsed: 0,
+      };
+    }
+    const boardroomStateRef = boardroomLeaseId
+      ? db.doc(`users/${userId}/boardroomDispatchState/current`)
+      : undefined;
     const requestedOperationId = params.operationId?.trim();
     if (params.operationId !== undefined && !requestedOperationId) {
       return {
@@ -348,12 +439,13 @@ export async function checkOperationBudget(
     const operationRef = db.doc(`costLedger/${operationId}`);
 
     return await db.runTransaction(async (tx) => {
-      const [dailySnap, monthlySnap, hourlySnap, testSnap, operationSnap] = await Promise.all([
+      const [dailySnap, monthlySnap, hourlySnap, testSnap, operationSnap, boardroomStateSnap] = await Promise.all([
         tx.get(dailyRef),
         tx.get(monthlyRef),
         tx.get(hourlyRef),
         isTestMode ? tx.get(testLedgerRef) : Promise.resolve(undefined),
         tx.get(operationRef),
+        boardroomStateRef ? tx.get(boardroomStateRef) : Promise.resolve(undefined),
       ]);
 
       const dailyUsed = dailySnap.exists ? (dailySnap.data()?.totalCost || 0) : 0;
@@ -367,6 +459,45 @@ export async function checkOperationBudget(
       // under the flat $500 guard. (A founder tripping the flat cap at $500
       // while entitled to $10k/month was a live reservation-denial bug.)
       const runawayLimit = Math.max(RUNAWAY_LIMIT, limits.monthly);
+
+      const boardroomState = boardroomStateSnap?.exists ? boardroomStateSnap.data() || {} : {};
+      const activeLease = boardroomState.activeLease && typeof boardroomState.activeLease === 'object'
+        ? boardroomState.activeLease as Record<string, unknown>
+        : undefined;
+      const activeLeaseSlots = activeLease?.remainingSlotsByAgent
+        && typeof activeLease.remainingSlotsByAgent === 'object'
+        ? activeLease.remainingSlotsByAgent as Record<string, unknown>
+        : undefined;
+      if (boardroomLeaseId) {
+        const leaseExpiresAtMs = Number(activeLease?.expiresAtMs);
+        const remainingForAgent = Number(activeLeaseSlots?.[boardroomAgentId as string]);
+        const sideEffectOwnerAgentId = typeof activeLease?.sideEffectOwnerAgentId === 'string'
+          ? activeLease.sideEffectOwnerAgentId
+          : undefined;
+        const sideEffectReservationId = typeof activeLease?.sideEffectReservationId === 'string'
+          ? activeLease.sideEffectReservationId
+          : undefined;
+        const isBoardroomAgentStream = operationType === 'agent_stream';
+        const isBoardroomImage = operationType === 'image';
+        if (
+          activeLease?.id !== boardroomLeaseId
+          || activeLease?.hour !== hour
+          || !Number.isFinite(leaseExpiresAtMs)
+          || leaseExpiresAtMs <= timestamp.getTime()
+          || (!isBoardroomAgentStream && !isBoardroomImage)
+          || (isBoardroomAgentStream && (!Number.isInteger(remainingForAgent) || remainingForAgent <= 0))
+          || (isBoardroomImage && sideEffectOwnerAgentId !== boardroomAgentId)
+          || (isBoardroomImage && sideEffectReservationId && sideEffectReservationId !== operationId)
+        ) {
+          return {
+            allowed: false,
+            reason: 'Boardroom dispatch lease is missing, expired, or has no slot for this agent.',
+            remainingBudget: Math.max(0, limits.daily - dailyUsed),
+            dailyUsed,
+            monthlyUsed,
+          };
+        }
+      }
 
       if (operationSnap.exists) {
         const existing = operationSnap.data() || {};
@@ -485,7 +616,7 @@ export async function checkOperationBudget(
         };
       }
 
-      const hourlyLimit = userTier === 'free' ? 5 : userTier === 'pro' ? 20 : Number.POSITIVE_INFINITY;
+      const hourlyLimit = hourlyOperationLimitForTier(userTier);
       if (hourlyOps >= hourlyLimit) {
         console.warn('[CostControl] Hourly rate limit exceeded', {
           userId,
@@ -587,6 +718,27 @@ export async function checkOperationBudget(
         },
       });
 
+      if (boardroomLeaseId && boardroomStateRef && activeLease && activeLeaseSlots && boardroomAgentId) {
+        const reservationIds = Array.isArray(activeLease.reservationIds)
+          ? activeLease.reservationIds.filter((id): id is string => typeof id === 'string')
+          : [];
+        const isBoardroomImage = operationType === 'image';
+        const remainingSlotsByAgent = { ...activeLeaseSlots };
+        if (!isBoardroomImage) {
+          remainingSlotsByAgent[boardroomAgentId] = Number(remainingSlotsByAgent[boardroomAgentId]) - 1;
+        }
+        tx.set(boardroomStateRef, {
+          activeLease: {
+            ...activeLease,
+            remainingSlotsByAgent,
+            reservationIds: isBoardroomImage ? reservationIds : [...reservationIds, operationId],
+            ...(isBoardroomImage ? { sideEffectReservationId: operationId } : {}),
+            expiresAtMs: timestamp.getTime() + BOARDROOM_DISPATCH_LEASE_TTL_MS,
+          },
+          updatedAt: now,
+        }, { merge: true });
+      }
+
       console.info('[CostControl] Operation approved and reserved (server-side)', {
         operationId,
         userId,
@@ -645,28 +797,67 @@ export async function finalizeOperationReservation(params: {
       }
     }
 
+    const metadata = data.metadata && typeof data.metadata === 'object'
+      ? data.metadata as Record<string, unknown>
+      : undefined;
+    const leaseId = typeof metadata?.boardroomDispatchLeaseId === 'string'
+      ? metadata.boardroomDispatchLeaseId
+      : undefined;
+    const boardroomAgentId = typeof metadata?.boardroomAgentId === 'string'
+      ? metadata.boardroomAgentId
+      : undefined;
+    const boardroomStateRef = leaseId && boardroomAgentId
+      ? db.doc(`users/${params.userId}/boardroomDispatchState/current`)
+      : undefined;
+    const boardroomStateSnapshot = boardroomStateRef ? await tx.get(boardroomStateRef) : undefined;
+
     tx.update(operationRef, {
       status: params.outcome,
       finalizedAt: FieldValue.serverTimestamp(),
       ...(params.jobId ? { finalizedJobId: params.jobId } : {}),
     });
-    if (params.outcome !== 'VOIDED') return;
-
-    const cost = Number(data.estimatedCost);
-    const ledgerPaths = data.ledgerDocumentPaths as Record<string, string> | undefined;
-    const legacyLedgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
-    const paths = ledgerPaths
-      ? Object.values(ledgerPaths)
-      : legacyLedgerIds ? Object.values(legacyLedgerIds).map(id => `costLedger/${id}`) : [];
-    if (!Number.isFinite(cost) || cost < 0 || paths.length === 0) {
-      throw new Error('Cost reservation cannot be safely released');
+    if (params.outcome === 'VOIDED') {
+      const cost = Number(data.estimatedCost);
+      const ledgerPaths = data.ledgerDocumentPaths as Record<string, string> | undefined;
+      const legacyLedgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
+      const paths = ledgerPaths
+        ? Object.values(ledgerPaths)
+        : legacyLedgerIds ? Object.values(legacyLedgerIds).map(id => `costLedger/${id}`) : [];
+      if (!Number.isFinite(cost) || cost < 0 || paths.length === 0) {
+        throw new Error('Cost reservation cannot be safely released');
+      }
+      for (const path of paths) {
+        tx.set(db.doc(path), {
+          totalCost: FieldValue.increment(-cost),
+          operationCount: FieldValue.increment(-1),
+          lastUpdated: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
     }
-    for (const path of paths) {
-      tx.set(db.doc(path), {
-        totalCost: FieldValue.increment(-cost),
-        operationCount: FieldValue.increment(-1),
-        lastUpdated: FieldValue.serverTimestamp(),
-      }, { merge: true });
+    if (boardroomStateRef && boardroomStateSnapshot?.exists && leaseId && boardroomAgentId) {
+      const state = boardroomStateSnapshot.data() || {};
+      const activeLease = state.activeLease && typeof state.activeLease === 'object'
+        ? state.activeLease as Record<string, unknown>
+        : undefined;
+      const slots = activeLease?.remainingSlotsByAgent && typeof activeLease.remainingSlotsByAgent === 'object'
+        ? activeLease.remainingSlotsByAgent as Record<string, unknown>
+        : undefined;
+      const reservationIds = Array.isArray(activeLease?.reservationIds)
+        ? activeLease.reservationIds.filter((id): id is string => typeof id === 'string')
+        : [];
+      if (activeLease?.id === leaseId && slots && reservationIds.includes(params.operationId)) {
+        tx.set(boardroomStateRef, {
+          activeLease: {
+            ...activeLease,
+            remainingSlotsByAgent: {
+              ...slots,
+              [boardroomAgentId]: Number(slots[boardroomAgentId] || 0) + (params.outcome === 'VOIDED' ? 1 : 0),
+            },
+            reservationIds: reservationIds.filter(id => id !== params.operationId),
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
     }
   });
 }
@@ -693,7 +884,159 @@ export async function claimOperationReservation(params: {
       status: 'CLAIMED',
       claimedJobId: params.claimId,
       claimedAt: FieldValue.serverTimestamp(),
+      ...(params.operationType === 'agent_stream' ? {
+        agentStreamLifecycleState: 'CLAIMED_NOT_SUBMITTED' satisfies AgentStreamLifecycleState,
+        agentStreamLifecycleUpdatedAt: FieldValue.serverTimestamp(),
+      } : {}),
     });
+  });
+}
+
+const AGENT_STREAM_TRANSITIONS: Record<AgentStreamLifecycleState, ReadonlySet<AgentStreamLifecycleState>> = {
+  CLAIMED_NOT_SUBMITTED: new Set(['PROVIDER_SUBMITTING', 'PRE_SUBMISSION_FAILED', 'PRE_SUBMISSION_CANCELLED']),
+  PROVIDER_SUBMITTING: new Set(['COMPLETED', 'PROVIDER_FAILED', 'PROVIDER_CANCELLED', 'PRE_SUBMISSION_FAILED', 'PRE_SUBMISSION_CANCELLED']),
+  PRE_SUBMISSION_FAILED: new Set(),
+  PRE_SUBMISSION_CANCELLED: new Set(),
+  PROVIDER_FAILED: new Set(),
+  PROVIDER_CANCELLED: new Set(),
+  COMPLETED: new Set(),
+};
+
+/**
+ * Records only the durable provider-submission intent. Terminal lifecycle
+ * states are deliberately unavailable here; they must use the atomic terminal
+ * helper that couples lifecycle evidence to its financial outcome.
+ */
+export async function recordAgentStreamReservationLifecycle(params: {
+  userId: string;
+  operationId: string;
+  claimId: string;
+  state: 'PROVIDER_SUBMITTING';
+}): Promise<void> {
+  const db = admin.firestore();
+  const operationRef = db.doc(`costLedger/${params.operationId}`);
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(operationRef);
+    if (!snapshot.exists) throw new Error(`Missing cost reservation ${params.operationId}`);
+    const data = snapshot.data() || {};
+    if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
+    if (data.type !== 'agent_stream') throw new Error('Cost reservation type mismatch: expected agent_stream');
+    if (data.status !== 'CLAIMED') throw new Error(`Cost reservation is already ${String(data.status || 'invalid')}`);
+    if (data.claimedJobId !== params.claimId) throw new Error('Cost reservation claim does not match the lifecycle writer');
+
+    const current = data.agentStreamLifecycleState as AgentStreamLifecycleState | undefined;
+    if (current === params.state) return;
+    if (!current || !AGENT_STREAM_TRANSITIONS[current]?.has(params.state)) {
+      throw new Error(`Invalid agent-stream lifecycle transition ${String(current || 'missing')} -> ${params.state}`);
+    }
+
+    tx.update(operationRef, {
+      agentStreamLifecycleState: params.state,
+      agentStreamLifecycleUpdatedAt: FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+function agentStreamFinancialOutcome(state: AgentStreamTerminalState): 'SETTLED' | 'VOIDED' {
+  return state === 'PRE_SUBMISSION_FAILED' || state === 'PRE_SUBMISSION_CANCELLED'
+    ? 'VOIDED'
+    : 'SETTLED';
+}
+
+/**
+ * Atomically persists the authoritative terminal provider state and its only
+ * valid financial outcome. Callers cannot independently choose SETTLED versus
+ * VOIDED, so a submitted/possibly-billed request can never be refunded by a
+ * generic error path.
+ */
+export async function finalizeAgentStreamReservationTerminal(params: {
+  userId: string;
+  operationId: string;
+  claimId: string;
+  state: AgentStreamTerminalState;
+}): Promise<void> {
+  const outcome = agentStreamFinancialOutcome(params.state);
+  const db = admin.firestore();
+  const operationRef = db.doc(`costLedger/${params.operationId}`);
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(operationRef);
+    if (!snapshot.exists) throw new Error(`Missing cost reservation ${params.operationId}`);
+    const data = snapshot.data() || {};
+    if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
+    if (data.type !== 'agent_stream') throw new Error('Cost reservation type mismatch: expected agent_stream');
+    if (data.claimedJobId !== params.claimId) throw new Error('Cost reservation claim does not match the finalizing job');
+    if (data.status === outcome && data.agentStreamLifecycleState === params.state) return;
+    if (data.status !== 'CLAIMED') throw new Error(`Cost reservation is already ${String(data.status || 'invalid')}`);
+
+    const current = data.agentStreamLifecycleState as AgentStreamLifecycleState | undefined;
+    if (current !== params.state && (!current || !AGENT_STREAM_TRANSITIONS[current]?.has(params.state))) {
+      throw new Error(`Invalid agent-stream lifecycle transition ${String(current || 'missing')} -> ${params.state}`);
+    }
+
+    const metadata = data.metadata && typeof data.metadata === 'object'
+      ? data.metadata as Record<string, unknown>
+      : undefined;
+    const leaseId = typeof metadata?.boardroomDispatchLeaseId === 'string'
+      ? metadata.boardroomDispatchLeaseId
+      : undefined;
+    const boardroomAgentId = typeof metadata?.boardroomAgentId === 'string'
+      ? metadata.boardroomAgentId
+      : undefined;
+    const boardroomStateRef = leaseId && boardroomAgentId
+      ? db.doc(`users/${params.userId}/boardroomDispatchState/current`)
+      : undefined;
+    const boardroomStateSnapshot = boardroomStateRef ? await tx.get(boardroomStateRef) : undefined;
+
+    tx.update(operationRef, {
+      status: outcome,
+      agentStreamLifecycleState: params.state,
+      agentStreamLifecycleUpdatedAt: FieldValue.serverTimestamp(),
+      finalizedAt: FieldValue.serverTimestamp(),
+      finalizedJobId: params.claimId,
+    });
+    if (outcome === 'VOIDED') {
+      const cost = Number(data.estimatedCost);
+      const ledgerPaths = data.ledgerDocumentPaths as Record<string, string> | undefined;
+      const legacyLedgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
+      const paths = ledgerPaths
+        ? Object.values(ledgerPaths)
+        : legacyLedgerIds ? Object.values(legacyLedgerIds).map(id => `costLedger/${id}`) : [];
+      if (!Number.isFinite(cost) || cost < 0 || paths.length === 0) {
+        throw new Error('Cost reservation cannot be safely released');
+      }
+      for (const path of paths) {
+        tx.set(db.doc(path), {
+          totalCost: FieldValue.increment(-cost),
+          operationCount: FieldValue.increment(-1),
+          lastUpdated: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+    }
+    if (boardroomStateRef && boardroomStateSnapshot?.exists && leaseId && boardroomAgentId) {
+      const state = boardroomStateSnapshot.data() || {};
+      const activeLease = state.activeLease && typeof state.activeLease === 'object'
+        ? state.activeLease as Record<string, unknown>
+        : undefined;
+      const slots = activeLease?.remainingSlotsByAgent && typeof activeLease.remainingSlotsByAgent === 'object'
+        ? activeLease.remainingSlotsByAgent as Record<string, unknown>
+        : undefined;
+      const reservationIds = Array.isArray(activeLease?.reservationIds)
+        ? activeLease.reservationIds.filter((id): id is string => typeof id === 'string')
+        : [];
+      if (activeLease?.id === leaseId && slots && reservationIds.includes(params.operationId)) {
+        tx.set(boardroomStateRef, {
+          activeLease: {
+            ...activeLease,
+            remainingSlotsByAgent: {
+              ...slots,
+              [boardroomAgentId]: Number(slots[boardroomAgentId] || 0) + (outcome === 'VOIDED' ? 1 : 0),
+            },
+            reservationIds: reservationIds.filter(id => id !== params.operationId),
+          },
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+    }
   });
 }
 
@@ -876,8 +1219,8 @@ export async function reconcileStaleClaimedAgentStreamReservations(
   const stale = await db.collection('costLedger')
     .where('status', '==', 'CLAIMED')
     .where('type', '==', 'agent_stream')
-    .where('timestamp', '<=', cutoff)
-    .orderBy('timestamp', 'asc')
+    .where('claimedAt', '<=', cutoff)
+    .orderBy('claimedAt', 'asc')
     .limit(100)
     .get();
   let reconciled = 0;
@@ -890,13 +1233,221 @@ export async function reconcileStaleClaimedAgentStreamReservations(
       continue;
     }
     try {
-      await finalize({ userId, operationId: operation.id, outcome: 'VOIDED', jobId: claimId, expectedType: 'agent_stream' });
-      reconciled += 1;
+      const lifecycleState = data.agentStreamLifecycleState as AgentStreamLifecycleState | undefined;
+      if (
+        lifecycleState === 'COMPLETED'
+        || lifecycleState === 'PROVIDER_FAILED'
+        || lifecycleState === 'PROVIDER_CANCELLED'
+      ) {
+        await finalize({ userId, operationId: operation.id, outcome: 'SETTLED', jobId: claimId, expectedType: 'agent_stream' });
+        reconciled += 1;
+      } else if (
+        lifecycleState === 'CLAIMED_NOT_SUBMITTED'
+        || lifecycleState === 'PRE_SUBMISSION_FAILED'
+        || lifecycleState === 'PRE_SUBMISSION_CANCELLED'
+      ) {
+        await finalize({ userId, operationId: operation.id, outcome: 'VOIDED', jobId: claimId, expectedType: 'agent_stream' });
+        reconciled += 1;
+      } else if (lifecycleState !== 'PROVIDER_SUBMITTING') {
+        console.error('[CostControl] Claimed agent-stream reservation lacks authoritative lifecycle evidence', operation.id);
+      }
+      // PROVIDER_SUBMITTING may represent paid work. Age alone is never
+      // evidence for a refund. CLAIMED_NOT_SUBMITTED is safe only because the
+      // gateway records it transactionally before any provider call and this
+      // query's 15-minute cutoff exceeds the gateway's five-minute lifetime.
     } catch (error) {
       console.warn('[CostControl] Claimed agent-stream reconciliation skipped', operation.id, error);
     }
   }
   return reconciled;
+}
+
+export async function buildBoardroomDispatchPlan(params: {
+  userId: string;
+  entitlementTier: BudgetTier;
+  agentIds: string[];
+  now?: Date;
+  leaseId?: string;
+}): Promise<BoardroomDispatchPlan> {
+  const timestamp = params.now ?? new Date();
+  const leaseId = params.leaseId ?? randomUUID();
+  const hour = timestamp.toISOString().slice(0, 13);
+  const hourlyLimit = hourlyOperationLimitForTier(params.entitlementTier);
+  const continuationReserve = boardroomContinuationReserveForTier(params.entitlementTier);
+  const db = admin.firestore();
+  const hourlyRef = db.doc(userLedgerDocument(params.userId, `hourly-${hour}`));
+  const continuationRef = db.doc(`users/${params.userId}/boardroomDispatchState/current`);
+  return db.runTransaction(async (tx) => {
+    const [hourlySnapshot, continuationSnapshot] = await Promise.all([
+      tx.get(hourlyRef),
+      tx.get(continuationRef),
+    ]);
+    const hourlyOperationsUsed = hourlySnapshot.exists
+      ? Math.max(0, Number(hourlySnapshot.data()?.operationCount) || 0)
+      : 0;
+    const continuationData = continuationSnapshot.exists ? continuationSnapshot.data() || {} : {};
+    const activeLease = continuationData.activeLease && typeof continuationData.activeLease === 'object'
+      ? continuationData.activeLease as Record<string, unknown>
+      : undefined;
+    const activeLeaseExpiresAtMs = Number(activeLease?.expiresAtMs);
+    const activeLeaseSlots = activeLease?.remainingSlotsByAgent
+      && typeof activeLease.remainingSlotsByAgent === 'object'
+      ? activeLease.remainingSlotsByAgent as Record<string, unknown>
+      : {};
+    const activeLeaseStillOwnsCapacity = typeof activeLease?.id === 'string'
+      && Number.isFinite(activeLeaseExpiresAtMs)
+      && activeLeaseExpiresAtMs > timestamp.getTime();
+    if (activeLeaseStillOwnsCapacity) {
+      const activeContinuationId = typeof continuationData.nextContinuationAgentId === 'string'
+        ? continuationData.nextContinuationAgentId
+        : undefined;
+      const activeContinuationIndex = activeContinuationId
+        ? params.agentIds.indexOf(activeContinuationId)
+        : -1;
+      const deferredAgentIds = activeContinuationIndex > 0
+        ? [...params.agentIds.slice(activeContinuationIndex), ...params.agentIds.slice(0, activeContinuationIndex)]
+        : [...params.agentIds];
+      const nextContinuationAgentId = deferredAgentIds[0] ?? null;
+      return {
+        type: 'BOARDROOM_DISPATCH_PLAN',
+        code: 'BOARDROOM_DISPATCH_ACTIVE_TURN',
+        executedAgentIds: [],
+        deferredAgentIds,
+        maxIterationsPerAgent: BOARDROOM_MAX_ITERATIONS_PER_AGENT,
+        hourlyOperationsUsed,
+        hourlyOperationLimit: Number.isFinite(hourlyLimit) ? hourlyLimit : null,
+        continuationReserve,
+        nextContinuationAgentId,
+        leaseId: null,
+        leaseExpiresAtMs: activeLeaseExpiresAtMs,
+        sideEffectOwnerAgentId: null,
+      };
+    }
+
+    const expiredLeaseAgentId = Array.isArray(activeLease?.executedAgentIds)
+      ? activeLease.executedAgentIds.find(agentId => (
+        typeof agentId === 'string'
+        && params.agentIds.includes(agentId)
+        && Number(activeLeaseSlots[agentId]) > 0
+      ))
+      : undefined;
+    const continuationAgentId = expiredLeaseAgentId
+      || continuationData.nextContinuationAgentId;
+    const continuationIndex = typeof continuationAgentId === 'string'
+      ? params.agentIds.indexOf(continuationAgentId)
+      : -1;
+    const continuationOrderedAgentIds = continuationIndex > 0
+      ? [...params.agentIds.slice(continuationIndex), ...params.agentIds.slice(0, continuationIndex)]
+      : [...params.agentIds];
+    const preferredOwnerAgentId = params.agentIds.includes('generalist')
+      ? 'generalist'
+      : continuationOrderedAgentIds[0];
+    const orderedAgentIds = preferredOwnerAgentId
+      ? [preferredOwnerAgentId, ...continuationOrderedAgentIds.filter(agentId => agentId !== preferredOwnerAgentId)]
+      : continuationOrderedAgentIds;
+    const availableCalls = Number.isFinite(hourlyLimit)
+      ? Math.max(0, hourlyLimit - hourlyOperationsUsed - continuationReserve)
+      : Number.POSITIVE_INFINITY;
+    const affordableAgents = Number.isFinite(availableCalls)
+      ? Math.floor(availableCalls / BOARDROOM_MAX_ITERATIONS_PER_AGENT)
+      : MAX_BOARDROOM_AGENTS_PER_TURN;
+    const executeCount = Math.min(
+      orderedAgentIds.length,
+      MAX_BOARDROOM_AGENTS_PER_TURN,
+      affordableAgents,
+    );
+    const executedAgentIds = orderedAgentIds.slice(0, executeCount);
+    const deferredAgentIds = orderedAgentIds.slice(executeCount);
+    const nextContinuationAgentId = deferredAgentIds[0] ?? null;
+    const leaseExpiresAtMs = executedAgentIds.length > 0
+      ? timestamp.getTime() + BOARDROOM_DISPATCH_LEASE_TTL_MS
+      : null;
+    tx.set(continuationRef, {
+      userId: params.userId,
+      nextContinuationAgentId,
+      lastPlannedHour: hour,
+      activeLease: executedAgentIds.length > 0 ? {
+        id: leaseId,
+        hour,
+        executedAgentIds,
+        remainingSlotsByAgent: Object.fromEntries(
+          executedAgentIds.map(agentId => [agentId, BOARDROOM_MAX_ITERATIONS_PER_AGENT]),
+        ),
+        reservationIds: [],
+        sideEffectOwnerAgentId: executedAgentIds[0] ?? null,
+        sideEffectReservationId: null,
+        createdAtMs: timestamp.getTime(),
+        expiresAtMs: leaseExpiresAtMs,
+      } : null,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return {
+      type: 'BOARDROOM_DISPATCH_PLAN',
+      code: executedAgentIds.length > 0
+        ? 'BOARDROOM_DISPATCH_READY'
+        : 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED',
+      executedAgentIds,
+      deferredAgentIds,
+      maxIterationsPerAgent: BOARDROOM_MAX_ITERATIONS_PER_AGENT,
+      hourlyOperationsUsed,
+      hourlyOperationLimit: Number.isFinite(hourlyLimit) ? hourlyLimit : null,
+      continuationReserve,
+      nextContinuationAgentId,
+      leaseId: executedAgentIds.length > 0 ? leaseId : null,
+      leaseExpiresAtMs,
+      sideEffectOwnerAgentId: executedAgentIds[0] ?? null,
+    };
+  });
+}
+
+export async function completeBoardroomDispatchLease(params: {
+  userId: string;
+  leaseId: string;
+}): Promise<void> {
+  const db = admin.firestore();
+  const stateRef = db.doc(`users/${params.userId}/boardroomDispatchState/current`);
+  await db.runTransaction(async tx => {
+    const snapshot = await tx.get(stateRef);
+    if (!snapshot.exists) return;
+    const data = snapshot.data() || {};
+    const activeLease = data.activeLease && typeof data.activeLease === 'object'
+      ? data.activeLease as Record<string, unknown>
+      : undefined;
+    if (!activeLease) return;
+    if (activeLease.id !== params.leaseId) {
+      throw new Error('Boardroom dispatch lease does not match the active owner lease.');
+    }
+    const reservationIds = Array.isArray(activeLease.reservationIds)
+      ? activeLease.reservationIds.filter((id): id is string => typeof id === 'string')
+      : [];
+    if (reservationIds.length > 0) {
+      throw new Error('Boardroom dispatch still has active model work.');
+    }
+    const executedAgentIds = Array.isArray(activeLease.executedAgentIds)
+      ? activeLease.executedAgentIds.filter((id): id is string => typeof id === 'string')
+      : [];
+    const remainingSlotsByAgent = activeLease.remainingSlotsByAgent
+      && typeof activeLease.remainingSlotsByAgent === 'object'
+      ? activeLease.remainingSlotsByAgent as Record<string, unknown>
+      : {};
+    if (executedAgentIds.some(agentId => Number(remainingSlotsByAgent[agentId]) >= BOARDROOM_MAX_ITERATIONS_PER_AGENT)) {
+      throw new Error('Boardroom dispatch cannot complete before every planned agent starts.');
+    }
+    const sideEffectReservationId = typeof activeLease.sideEffectReservationId === 'string'
+      ? activeLease.sideEffectReservationId
+      : undefined;
+    if (sideEffectReservationId) {
+      const sideEffectReservation = await tx.get(db.doc(`costLedger/${sideEffectReservationId}`));
+      const status = sideEffectReservation.exists ? sideEffectReservation.data()?.status : undefined;
+      if (status !== 'SETTLED' && status !== 'VOIDED') {
+        throw new Error('Boardroom generation work is not terminal.');
+      }
+    }
+    tx.set(stateRef, {
+      activeLease: null,
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+  });
 }
 
 export const expireStaleOperationCostReservations = onSchedule(
@@ -936,6 +1487,37 @@ export const enforceOperationCost = onCall(
       operationType: req.operationType,
       metadata: req.metadata,
     });
+  },
+);
+
+/**
+ * Returns the server-owned execution/defer plan for one Boardroom turn.
+ * Aggregate operationCount includes active holds and settled work; VOIDED
+ * reservations decrement it. The per-call reservation transaction remains the
+ * hard boundary if another turn races this advisory allocation.
+ */
+export const planBoardroomAgentStreamDispatch = onCall(
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
+  async (request: CallableRequest<unknown>): Promise<BoardroomDispatchPlan> => {
+    const { userId, entitlement } = await requireCostCallableAdmission(request, 'plan-boardroom-agent-stream');
+    const agentIds = parseBoardroomDispatchAgentIds(request.data);
+    return buildBoardroomDispatchPlan({
+      userId,
+      entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+      agentIds,
+    });
+  },
+);
+
+export const completeBoardroomAgentStreamDispatch = onCall(
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
+  async (request: CallableRequest<unknown>): Promise<{ completed: true }> => {
+    const { userId } = await requireCostCallableAdmission(request, 'complete-boardroom-agent-stream');
+    await completeBoardroomDispatchLease({
+      userId,
+      leaseId: parseBoardroomDispatchLeaseId(request.data),
+    });
+    return { completed: true };
   },
 );
 

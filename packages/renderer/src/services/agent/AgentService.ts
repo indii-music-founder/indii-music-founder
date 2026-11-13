@@ -6,11 +6,17 @@ import { boardroomConversationIsReadOnly } from '@/config/boardroomIntentPolicy'
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 import { auth } from '@/services/firebase';
+import { CostControlService } from '@/services/billing/CostControlService';
 import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
-import { AgentContext, type AgentResponse, type BoardroomDispatchTask } from './types';
+import {
+    AgentContext,
+    type AgentResponse,
+    type BoardroomDispatchPlanContext,
+    type BoardroomDispatchTask,
+} from './types';
 import { agentRegistry } from './registry';
 import { livingPlanService } from './LivingPlanService';
 
@@ -1308,12 +1314,11 @@ export class AgentService {
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
-        const activeAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
-        context.seatedAgents = activeAgents;
+        const seatedAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
         const referencedAssets = state.referencedAssets || [];
-        logger.debug('[AgentService] Boardroom swarm dispatch:', { agentCount: activeAgents.length, agents: activeAgents });
+        logger.debug('[AgentService] Boardroom swarm dispatch requested:', { agentCount: seatedAgents.length, agents: seatedAgents });
 
-        if (activeAgents.length === 0) {
+        if (seatedAgents.length === 0) {
             logger.warn('[AgentService] Boardroom: No active agents seated');
             useStore.getState().updateAgentMessage(initialResponseId, {
                 agentId: 'system',
@@ -1323,32 +1328,54 @@ export class AgentService {
             return;
         }
 
-        // Trivial Input Fast-Path in Boardroom:
-        // Zero-latency: return a pre-built template instantly with NO LLM call.
-        // The previous implementation still called executor.execute() causing 15-45s delays.
-        if (!isCapabilityQuestion(task.rawUserUtterance) && AgentService.isTrivialInput(task.rawUserUtterance)) {
-            const leadAgentId = activeAgents.includes('generalist') ? 'generalist' : activeAgents[0]!;
-            const seatedAgentNames = activeAgents
-                .map(id => agentRegistry.get(id)?.name || id)
-                .join(', ');
-
-            const history = state.agentHistory || [];
-            const lastMsg = history[history.length - 1];
-            const instantReply = AgentService.buildInstantGreeting(
-                leadAgentId,
-                seatedAgentNames,
-                'boardroom',
-                lastMsg?.timestamp
-            );
-            logger.debug(`[AgentService] Boardroom greeting instant-reply (0ms, no API call)`);
+        let dispatchPlan: Readonly<BoardroomDispatchPlanContext>;
+        try {
+            const serverPlan = await CostControlService.getBoardroomDispatchPlan(seatedAgents);
+            dispatchPlan = Object.freeze({
+                ...serverPlan,
+                executedAgentIds: Object.freeze([...serverPlan.executedAgentIds]),
+                deferredAgentIds: Object.freeze([...serverPlan.deferredAgentIds]),
+            });
+        } catch (error) {
+            logger.error('[AgentService] Boardroom dispatch admission failed closed:', error);
             useStore.getState().updateAgentMessage(initialResponseId, {
-                agentId: leadAgentId,
-                text: instantReply,
+                agentId: 'system',
+                text: 'Boardroom is temporarily unavailable. Your request was not submitted. Please wait a moment and try again.',
                 isStreaming: false,
             });
-            this.notifyLiveConversationIfActive(leadAgentId, instantReply, initialResponseId);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.flushSyncMessage(initialResponseId, () => useStore.getState().agentHistory.find((m: any) => m.id === initialResponseId));
+            return;
+        }
+
+        const activeAgents = [...dispatchPlan.executedAgentIds];
+        context = {
+            ...context,
+            seatedAgents: activeAgents,
+            boardroomDispatchPlan: dispatchPlan,
+        };
+        const planMessage = {
+            id: uuidv4(),
+            role: 'model' as const,
+            text: dispatchPlan.deferredAgentIds.length > 0
+                ? `Indii is coordinating ${activeAgents.length} participant${activeAgents.length === 1 ? '' : 's'} now; ${dispatchPlan.deferredAgentIds.length} will remain available for a later turn.`
+                : `Indii is coordinating ${activeAgents.length} participant${activeAgents.length === 1 ? '' : 's'} for this turn.`,
+            timestamp: Date.now() - 1,
+            isStreaming: false,
+            thoughts: [],
+            agentId: 'system',
+        };
+        useStore.getState().addAgentMessage(planMessage);
+        agentFirebaseConnector.syncMessage(planMessage).catch(err =>
+            logger.error('[AgentService] Boardroom dispatch plan sync failed:', err)
+        );
+
+        if (activeAgents.length === 0) {
+            useStore.getState().updateAgentMessage(initialResponseId, {
+                agentId: 'system',
+                text: dispatchPlan.code === 'BOARDROOM_DISPATCH_ACTIVE_TURN'
+                    ? 'Boardroom is still finishing your previous request. No new request was submitted. Please wait before trying again.'
+                    : 'Boardroom is temporarily at capacity. No generation request was submitted. Please wait before trying again.',
+                isStreaming: false,
+            });
             return;
         }
 
@@ -1372,7 +1399,8 @@ export class AgentService {
         let accumulatedContext = '';
 
         const CHUNK_SIZE = 3;
-        for (let i = 0; i < activeAgents.length; i += CHUNK_SIZE) {
+        try {
+          for (let i = 0; i < activeAgents.length; i += CHUNK_SIZE) {
             const chunkAgents = activeAgents.slice(i, i + CHUNK_SIZE);
             const chunkPromises = chunkAgents.map(async (agentId, chunkIdx) => {
                 const index = i + chunkIdx;
@@ -1411,9 +1439,7 @@ export class AgentService {
                 let currentStreamedText = '';
 
                 // Build the seated-agents manifest so the Conductor knows who is in the room
-                const freshState = useStore.getState();
-                const currentActiveAgents = freshState.activeAgents && freshState.activeAgents.length > 0 ? freshState.activeAgents : [];
-                const seatedAgentNames = currentActiveAgents
+                const seatedAgentNames = activeAgents
                     .map(id => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`)
                     .join(', ');
 
@@ -1585,6 +1611,13 @@ export class AgentService {
                         : result.text;
                     accumulatedContext += `\n[${agentId.toUpperCase()}]: ${clippedText}`;
                 }
+            }
+          }
+        } finally {
+            if (dispatchPlan.leaseId) {
+                CostControlService.completeBoardroomDispatchLease(dispatchPlan.leaseId).catch(error =>
+                    logger.warn('[AgentService] Boardroom dispatch lease release deferred to server expiry:', error)
+                );
             }
         }
     }

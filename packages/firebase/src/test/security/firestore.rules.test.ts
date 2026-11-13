@@ -3651,6 +3651,149 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/screenwriterDrafts/{draftId}', () => {
+        const projectId = 'proj-screenplay-1';
+        const validDraft = {
+            ownerId: ALICE_UID,
+            projectId,
+            payload: {
+                activeTab: 'scriptwriter',
+                songConcept: 'A music video concept',
+                selectedTone: 'cinematic',
+                scenes: [],
+                selectedSceneId: 'scene-1',
+            },
+            revision: 1,
+        };
+
+        it('allows owner to create, read, update, and delete drafts with valid revision', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const draftRef = doc(aliceDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+
+            // Create valid draft
+            await assertSucceeds(setDoc(draftRef, validDraft));
+
+            // Read valid draft
+            await assertSucceeds(getDoc(draftRef));
+
+            // Update with incremented revision
+            await assertSucceeds(setDoc(draftRef, { ...validDraft, revision: 2 }));
+
+            // Delete draft
+            await assertSucceeds(deleteDoc(draftRef));
+        });
+
+        it('denies unauthenticated and cross-owner access', async () => {
+            if (requireEmulator()) return;
+            const aliceDraftRef = doc(unauthCtx().firestore(), 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+            await assertFails(getDoc(aliceDraftRef));
+            await assertFails(setDoc(aliceDraftRef, validDraft));
+
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            const bobDraftRef = doc(bobDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+            await assertFails(getDoc(bobDraftRef));
+            await assertFails(setDoc(bobDraftRef, validDraft));
+            await assertFails(deleteDoc(bobDraftRef));
+        });
+
+        it('denies creation and update with invalid revision or mismatched identifiers', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const draftRef = doc(aliceDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+
+            // Mismatched ownerId
+            await assertFails(setDoc(draftRef, { ...validDraft, ownerId: BOB_UID }));
+
+            // Mismatched projectId
+            await assertFails(setDoc(draftRef, { ...validDraft, projectId: 'different-project' }));
+
+            // Missing or non-int revision
+            await assertFails(setDoc(draftRef, { ownerId: ALICE_UID, projectId }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: '1' }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: 1.5 }));
+
+            // Non-positive revision (< 1)
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: 0 }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: -1 }));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // KNOWLEDGE BASE RECEIPTS & TOMBSTONES (ISSUE-1252)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('actor-owned immutable legal audit receipts', () => {
+        it('permits actor receipts and denies cross-owner access, mutation and conflicting identities', async () => {
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            const path = 'legal_audit_ledger';
+            const ref = doc(alice, path, 'actor-owned-receipt');
+            await assertSucceeds(setDoc(ref, { actorUid: ALICE_UID, actionType: 'CONTRACT_DRAFTED', timestamp: Timestamp.now() }));
+            await assertSucceeds(getDoc(ref));
+            await assertSucceeds(getDocs(query(collection(alice, path), where('actorUid', '==', ALICE_UID))));
+            await assertFails(getDoc(doc(bob, path, ref.id)));
+            await assertFails(updateDoc(ref, { actionType: 'CHANGED' }));
+            await assertFails(deleteDoc(ref));
+            await assertFails(setDoc(doc(alice, path, 'conflicting-receipt'), { userId: BOB_UID, actorUid: ALICE_UID }));
+            await assertFails(setDoc(doc(alice, path, 'conflicting-actor'), { userId: ALICE_UID, actorUid: BOB_UID }));
+        });
+    });
+
+    describe('knowledge receipts, tombstones, chunks, and indexing jobs (ISSUE-1252)', () => {
+        const collections = [
+            'knowledge_query_receipts',
+            'knowledge_tombstones',
+            'knowledge_chunks',
+            'knowledge_indexing_jobs',
+        ];
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                for (const coll of collections) {
+                    await setDoc(doc(ctx.firestore(), coll, 'item-1'), {
+                        userId: ALICE_UID,
+                        status: 'completed',
+                    });
+                }
+            });
+        });
+
+        it('allows owner to read records', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            for (const coll of collections) {
+                await assertSucceeds(getDoc(doc(aliceDb, coll, 'item-1')));
+            }
+        });
+
+        it('denies unauthenticated and cross-owner read access', async () => {
+            if (requireEmulator()) return;
+            const unauthDb = unauthCtx().firestore();
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            for (const coll of collections) {
+                await assertFails(getDoc(doc(unauthDb, coll, 'item-1')));
+                await assertFails(getDoc(doc(bobDb, coll, 'item-1')));
+            }
+        });
+
+        it('denies all client writes (create, update, delete)', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            for (const coll of collections) {
+                await assertFails(setDoc(doc(aliceDb, coll, 'item-new'), {
+                    userId: ALICE_UID,
+                    data: 'forged',
+                }));
+                await assertFails(updateDoc(doc(aliceDb, coll, 'item-1'), {
+                    status: 'mutated',
+                }));
+                await assertFails(deleteDoc(doc(aliceDb, coll, 'item-1')));
+            }
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
@@ -4039,6 +4182,17 @@ describe('Firestore Security Rules', () => {
                 releaseStatus: 'Writing songs',
                 goals: ['Improve royalty registration', 'Grow audience'],
             };
+
+            it('permits a missing-record preflight and preserves PII protection after contact update', async () => {
+                const ref = doc(unauthCtx().firestore(), 'prospect_assessments', 'missing-assessment-preflight');
+                expect((await assertSucceeds(getDoc(ref))).exists()).toBe(false);
+                await assertSucceeds(setDoc(ref, { ...validAssessment, id: ref.id }));
+                await assertSucceeds(updateDoc(ref, {
+                    email: 'policy-check@example.com', assessmentConsent: true,
+                    marketingConsent: false, updatedAt: Timestamp.now(),
+                }));
+                await assertFails(getDoc(ref));
+            });
 
             it('create: allows unauthenticated visitor to create valid assessment', async () => {
                 if (requireEmulator()) return;

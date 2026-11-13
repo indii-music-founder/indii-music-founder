@@ -13,6 +13,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
 import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
 import { PrintCropCancelledError, printGalleryReference } from '@/services/upscale/PrintPreparationControl';
+import { AppErrorCode } from '@/shared/types/errors';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -104,7 +105,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 }
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
-    generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
+    generate_image: wrapTool('generate_image', async (args: GenerateImageArgs, context) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
@@ -188,7 +189,11 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 seed: args.seed,
                 personGeneration: { 'allow_adult': 'ALLOW_ADULT', 'dont_allow': 'ALLOW_NONE', 'allow_all': 'ALLOW_ALL' }[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                 sourceImages,
-                userProfile
+                userProfile,
+                boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
+                boardroomAgentId: context?.boardroomDispatchPlan?.leaseId
+                    ? context.executingAgentId
+                    : undefined,
             });
 
             if (results.length > 0) {
@@ -1045,6 +1050,26 @@ function handleGenerationError(err: unknown, toolName: string) {
     const error = err as any;
     const message = error.message || String(err);
     const lowerMessage = message.toLowerCase();
+
+    if (error.code === AppErrorCode.GENERATION_CAPACITY_LIMITED) {
+        const details = error.details && typeof error.details === 'object'
+            ? error.details as Record<string, unknown>
+            : {};
+        const context = details.context && typeof details.context === 'object'
+            ? details.context as Record<string, unknown>
+            : {};
+        return toolError(
+            'Image generation is temporarily at capacity. Your request was not sent for generation. Please wait and try again.',
+            AppErrorCode.GENERATION_CAPACITY_LIMITED,
+            {
+                retryable: details.retryable === true,
+                retryAfterMs: typeof details.retryAfterMs === 'number' ? details.retryAfterMs : undefined,
+                reason: typeof details.reason === 'string' ? details.reason : 'application_rate_limit',
+                nextActions: Array.isArray(context.nextActions) ? context.nextActions : ['retry_after_wait'],
+                providerSubmitted: context.providerSubmitted === true,
+            }
+        );
+    }
 
     if (error.name === 'QuotaExceededError' || error.code === 'QUOTA_EXCEEDED' || message.includes('429') || lowerMessage.includes('quota') || lowerMessage.includes('rate limit')) {
         return toolError(

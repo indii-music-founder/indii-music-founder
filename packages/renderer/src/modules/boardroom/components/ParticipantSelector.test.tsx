@@ -8,7 +8,7 @@ const soloAgent = vi.fn();
 const setFocusedHeadId = vi.fn();
 
 const storeState = {
-    activeAgents: ['generalist', 'social', 'finance'],
+    activeAgents: ['finance.tax', 'generalist', 'social', 'finance', 'unknown-agent'],
     activeGraphExecution: null,
     focusedHeadId: null,
     toggleAgent,

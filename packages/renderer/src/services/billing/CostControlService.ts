@@ -37,6 +37,20 @@ export interface CostCheckResponse {
   operationId?: string;
 }
 
+export interface ServerBoardroomDispatchPlan {
+  type: 'BOARDROOM_DISPATCH_PLAN';
+  code: 'BOARDROOM_DISPATCH_READY' | 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED' | 'BOARDROOM_DISPATCH_ACTIVE_TURN';
+  executedAgentIds: string[];
+  deferredAgentIds: string[];
+  maxIterationsPerAgent: number;
+  nextContinuationAgentId: string | null;
+  leaseId: string | null;
+  leaseExpiresAtMs: number | null;
+  sideEffectOwnerAgentId: string | null;
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export interface CostOperationHistoryCursor {
   timestampMs: number;
   operationId: string;
@@ -251,6 +265,75 @@ export class CostControlService {
         dailyUsed: 0,
         monthlyUsed: 0,
       };
+    }
+  }
+
+  static async getBoardroomDispatchPlan(agentIds: string[]): Promise<ServerBoardroomDispatchPlan> {
+    if (!functions) throw new Error('Boardroom dispatch admission is unavailable.');
+    const callable = httpsCallable<
+      { agentIds: string[] },
+      unknown
+    >(functions, 'planBoardroomAgentStreamDispatch');
+    const result = await callable({ agentIds });
+    if (!result.data || typeof result.data !== 'object' || Array.isArray(result.data)) {
+      throw new Error('Boardroom dispatch admission returned an invalid plan.');
+    }
+    const data = result.data as Record<string, unknown>;
+    const executedAgentIds = data.executedAgentIds;
+    const deferredAgentIds = data.deferredAgentIds;
+    const combined = Array.isArray(executedAgentIds) && Array.isArray(deferredAgentIds)
+      ? [...executedAgentIds, ...deferredAgentIds]
+      : [];
+    const requestedAgents = new Set(agentIds);
+    const code = data.code;
+    const maxIterationsPerAgent = data.maxIterationsPerAgent;
+    const nextContinuationAgentId = data.nextContinuationAgentId;
+    const sideEffectOwnerAgentId = data.sideEffectOwnerAgentId;
+    const leaseShapeValid = code === 'BOARDROOM_DISPATCH_READY'
+      ? typeof data.leaseId === 'string' && UUID_PATTERN.test(data.leaseId) && Number.isFinite(data.leaseExpiresAtMs)
+      : code === 'BOARDROOM_DISPATCH_ACTIVE_TURN'
+        ? data.leaseId === null && Number.isFinite(data.leaseExpiresAtMs)
+        : data.leaseId === null && data.leaseExpiresAtMs === null;
+    const valid = data.type === 'BOARDROOM_DISPATCH_PLAN'
+      && (code === 'BOARDROOM_DISPATCH_READY' || code === 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED' || code === 'BOARDROOM_DISPATCH_ACTIVE_TURN')
+      && Array.isArray(executedAgentIds)
+      && Array.isArray(deferredAgentIds)
+      && executedAgentIds.length <= 9
+      && combined.length === agentIds.length
+      && combined.every(agentId => typeof agentId === 'string')
+      && new Set(combined).size === combined.length
+      && combined.every(agentId => requestedAgents.has(agentId as string))
+      && Number.isInteger(maxIterationsPerAgent)
+      && Number(maxIterationsPerAgent) > 0
+      && Number(maxIterationsPerAgent) <= 2
+      && nextContinuationAgentId === (deferredAgentIds[0] ?? null)
+      && sideEffectOwnerAgentId === (code === 'BOARDROOM_DISPATCH_READY' ? executedAgentIds[0] : null)
+      && (code === 'BOARDROOM_DISPATCH_READY') === (executedAgentIds.length > 0)
+      && leaseShapeValid;
+    if (!valid) throw new Error('Boardroom dispatch admission returned an invalid plan.');
+    return {
+      type: 'BOARDROOM_DISPATCH_PLAN',
+      code,
+      executedAgentIds: executedAgentIds as string[],
+      deferredAgentIds: deferredAgentIds as string[],
+      maxIterationsPerAgent: Number(maxIterationsPerAgent),
+      nextContinuationAgentId: nextContinuationAgentId as string | null,
+      leaseId: data.leaseId as string | null,
+      leaseExpiresAtMs: data.leaseExpiresAtMs === null ? null : Number(data.leaseExpiresAtMs),
+      sideEffectOwnerAgentId: sideEffectOwnerAgentId as string | null,
+    };
+  }
+
+  static async completeBoardroomDispatchLease(leaseId: string): Promise<void> {
+    if (!functions) throw new Error('Boardroom dispatch admission is unavailable.');
+    try {
+      const completion = httpsCallable<{ leaseId: string }, { completed: true }>(
+        functions,
+        'completeBoardroomAgentStreamDispatch',
+      )({ leaseId });
+      await completion;
+    } catch (error) {
+      throw new Error('Boardroom dispatch lease completion failed.', { cause: error });
     }
   }
 

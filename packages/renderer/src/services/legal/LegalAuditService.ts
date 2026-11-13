@@ -1,5 +1,5 @@
-import { db } from '@/services/firebase';
-import { collection, addDoc, serverTimestamp, Timestamp, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/services/firebase';
+import { collection, addDoc, serverTimestamp, Timestamp, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 // Item 258: SHA-256 hash using Web Crypto API (Node 22 / browser compatible)
@@ -60,7 +60,7 @@ export class LegalAuditService {
             const auditRef = collection(db, 'legal_audit_ledger');
 
             // Item 258: Get the hash of the most recent entry to form the chain
-            const lastEntryQuery = query(auditRef, orderBy('timestamp', 'desc'), limit(1));
+            const lastEntryQuery = query(auditRef, where('actorUid', '==', actorUid), orderBy('timestamp', 'desc'), limit(1));
             const lastSnapshot = await getDocs(lastEntryQuery);
             const prevHash = lastSnapshot.empty
                 ? '0'.repeat(64)  // Genesis hash (no previous entry)
@@ -96,9 +96,12 @@ export class LegalAuditService {
      */
     static async getHistoryForTarget(targetId: string, targetType: LegalAuditRecord['targetType'], maxResults = 50): Promise<LegalAuditRecord[]> {
         // Note: Requires a composite index on (targetId, targetType, timestamp DESC)
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in to read legal audit history.');
         const auditRef = collection(db, 'legal_audit_ledger');
         const q = query(
             auditRef,
+            where('actorUid', '==', userId),
             orderBy('timestamp', 'desc'),
             limit(maxResults)
         );
