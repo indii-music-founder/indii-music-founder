@@ -11,6 +11,7 @@ import {
     updateDoc,
     doc as firestoreDoc,
     writeBatch,
+    runTransaction,
     Timestamp,
 } from 'firebase/firestore';
 import { MemorySummarizer } from './MemorySummarizer';
@@ -18,7 +19,6 @@ import type {
     AlwaysOnMemory,
     ConsolidationInsight,
     ConsolidationConfig,
-    MemoryConnection,
     MemoryTier,
     MemoryTierConfig,
 } from '@/types/AlwaysOnMemory';
@@ -183,16 +183,12 @@ export class MemoryConsolidator {
                     if (group.length < 2) continue;
 
                     const insight = await MemorySummarizer.generateInsight(userId, group);
+                    const committed = await this.commitInsightGroup(userId, group.map(memory => memory.id), insight);
+                    if (!committed) continue;
                     if (insight) {
-                        // Store the insight
-                        await this.storeInsight(userId, insight);
                         result.insightsGenerated++;
                         result.insightConnectionCount += insight.connections.length;
-
                     }
-
-                    // Step 5: Mark memories as consolidated
-                    await this.markAsConsolidated(userId, group.map(m => m.id));
                     result.memoriesProcessed += group.length;
                 }
 
@@ -323,30 +319,28 @@ export class MemoryConsolidator {
     // PRIVATE - STORAGE
     // ========================================================================
 
-    /**
-     * Store a consolidation insight.
-     */
-    private static async storeInsight(
+    private static async commitInsightGroup(
         userId: string,
-        insight: Omit<ConsolidationInsight, 'id'>
-    ): Promise<string> {
-        const insightRef = collection(db, 'users', userId, 'consolidationInsights');
-        // ISSUE-1380 class: the LLM-parsed insight may carry undefined fields
-        // ('Unsupported field value: undefined' observed live). Strip them so
-        // the write can never be rejected.
-        const cleanInsight = JSON.parse(JSON.stringify({
-            ...insight,
-            connections: insight.connections.map(c => ({
-                fromMemoryId: c.fromMemoryId,
-                toMemoryId: c.toMemoryId,
-                relationship: c.relationship,
-                confidence: c.confidence,
-                discoveredAt: c.discoveredAt,
-            })),
-        }));
-        const docRef = await addDoc(insightRef, cleanInsight);
-        logger.info(`[MemoryConsolidator] 💡 New insight: ${insight.insight.slice(0, 80)}...`);
-        return docRef.id;
+        memoryIds: string[],
+        insight: Omit<ConsolidationInsight, 'id'> | null,
+    ): Promise<boolean> {
+        const refs = memoryIds.map(id => firestoreDoc(db, 'users', userId, 'alwaysOnMemories', id));
+        const insightRef = firestoreDoc(collection(db, 'users', userId, 'consolidationInsights'));
+        const payload = insight ? JSON.parse(JSON.stringify(insight)) : null;
+
+        return runTransaction(db, async transaction => {
+            const memories = await Promise.all(refs.map(ref => transaction.get(ref)));
+            if (memories.some(memory => !memory.exists() ||
+                memory.data().isActive !== true || memory.data().consolidated !== false)) {
+                return false;
+            }
+            if (payload) transaction.set(insightRef, payload);
+            const now = Timestamp.now();
+            for (const ref of refs) {
+                transaction.update(ref, { consolidated: true, updatedAt: now });
+            }
+            return true;
+        });
     }
 
     /**
