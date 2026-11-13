@@ -9,6 +9,7 @@ import {
 import { agentGraphStateService } from './AgentGraphStateService';
 import { agentService } from '../AgentService';
 import { AgentEventBus } from '../governance/AgentEventBus';
+import { inheritExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { memoryBankService } from '../memory/MemoryBankService';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
@@ -587,12 +588,12 @@ export class AgentGraphService {
                     nodeId: node.id,
                     agentId: node.agentId,
                     prompt,
-                    context: {
+                    context: inheritExecutionTokenBudget(context, {
                         ...context,
                         ...node.contextOverrides,
                         memoryContext,
                         traceId: `${traceId}/${node.id}`
-                    },
+                    }),
                 };
             }));
 

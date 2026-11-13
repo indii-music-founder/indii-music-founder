@@ -1,4 +1,5 @@
 import { delegatedAgentResult } from '../executionFailure';
+import { inheritExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
@@ -57,6 +58,7 @@ export const CoreTools = {
             ...context,
             ...(args.sharedContext ? { sharedContext: args.sharedContext } : {})
         };
+        inheritExecutionTokenBudget(context, delegatedContext);
 
         const result = await agentService.runAgent(args.targetAgentId, args.task, delegatedContext, context?.traceId, context?.attachments);
         return delegatedAgentResult(args.targetAgentId, result);

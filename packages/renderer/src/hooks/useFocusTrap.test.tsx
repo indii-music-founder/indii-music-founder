@@ -16,6 +16,15 @@ function FocusHarness({ active = true }: { active?: boolean }) {
     );
 }
 
+function PersistentAutoFocusHarness({ active }: { active: boolean }) {
+    const ref = useFocusTrap(active);
+    return <>
+        <button>Open editor</button>
+        <button>Open from toolbar</button>
+        {active && <div ref={ref}><input aria-label="Dialog editor" autoFocus /></div>}
+    </>;
+}
+
 function StackedFocusHarness() {
     const lowerRef = useFocusTrap(true);
     const upperRef = useFocusTrap(true);
@@ -82,6 +91,41 @@ function RemovableLowerHarness({ lower }: { lower: boolean }) {
 
 describe('useFocusTrap', () => {
     afterEach(() => globalKeyboardOrchestrator.dispose());
+
+    it('wraps according to browser tab order when controls have positive tabindex', () => {
+        function OrderedDialog() {
+            const ref = useFocusTrap();
+            return <div ref={ref}>
+                <button>Default order</button>
+                <button tabIndex={2}>Second priority</button>
+                <button tabIndex={1}>First priority</button>
+            </div>;
+        }
+        render(<OrderedDialog />);
+        const first = screen.getByRole('button', { name: 'First priority' });
+        const last = screen.getByRole('button', { name: 'Default order' });
+        expect(first).toHaveFocus();
+        fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+        expect(last).toHaveFocus();
+        fireEvent.keyDown(last, { key: 'Tab' });
+        expect(first).toHaveFocus();
+    });
+
+    it('restores the opening trigger after a persistent dialog autofocuses its editor', () => {
+        const view = render(<PersistentAutoFocusHarness active={false} />);
+        const trigger = screen.getByRole('button', { name: 'Open editor' });
+        trigger.focus();
+        view.rerender(<PersistentAutoFocusHarness active />);
+        expect(screen.getByRole('textbox', { name: 'Dialog editor' })).toHaveFocus();
+        view.rerender(<PersistentAutoFocusHarness active={false} />);
+        expect(trigger).toHaveFocus();
+        const secondTrigger = screen.getByRole('button', { name: 'Open from toolbar' });
+        secondTrigger.focus();
+        view.rerender(<PersistentAutoFocusHarness active />);
+        expect(screen.getByRole('textbox', { name: 'Dialog editor' })).toHaveFocus();
+        view.rerender(<PersistentAutoFocusHarness active={false} />);
+        expect(secondTrigger).toHaveFocus();
+    });
 
     it('returns Tab and Shift+Tab to the active trap when focus moved outside', () => {
         render(<FocusHarness />);

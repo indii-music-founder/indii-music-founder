@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
+import { WorkspaceBackground } from '@/components/ui/WorkspaceBackground';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -443,6 +444,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
         setSettingsOpen,
         isQuickNotesOpen,
         setQuickNotesOpen,
+        conversationMode,
     } = useStore(
         useShallow(s => ({
             isAgentOpen: s.isAgentOpen,
@@ -451,6 +453,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
             setSettingsOpen: s.setSettingsOpen,
             isQuickNotesOpen: s.isQuickNotesOpen,
             setQuickNotesOpen: s.setQuickNotesOpen,
+            conversationMode: s.conversationMode,
         }))
     );
     const userId = useStore(s => s.user?.uid);
@@ -536,7 +539,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
             <GlobalDropZone>
                 <ShareTargetHandler />
                 <BiometricGate>
-                    <div className="flex w-full h-full">
+                    <WorkspaceBackground inactive={conversationMode === 'boardroom'} className="flex w-full h-full">
                         {showChrome && (
                             <div className="hidden md:block h-full">
                                 <ErrorBoundary>
@@ -610,12 +613,14 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                                 <RightPanel />
                             </ErrorBoundary>
                         )}
-                    </div>
+                    </WorkspaceBackground>
                 </BiometricGate>
 
                 {showChrome && (
                     <ErrorBoundary>
-                        <MobileTabBar />
+                        <WorkspaceBackground inactive={conversationMode === 'boardroom'} className="contents">
+                            <MobileTabBar />
+                        </WorkspaceBackground>
                     </ErrorBoundary>
                 )}
 

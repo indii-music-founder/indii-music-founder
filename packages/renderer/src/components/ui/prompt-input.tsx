@@ -139,12 +139,15 @@ export type PromptInputTextareaProps = {
 const PromptInputTextarea = memo(function PromptInputTextarea({
   className,
   onKeyDown,
+  onChange,
+  disabled: inputDisabled,
   disableAutosize = false,
   ...props
 }: PromptInputTextareaProps) {
   // Needs both contexts
   const { value, setValue, textareaRef } = usePromptValue()
-  const { maxHeight, onSubmit, disabled } = usePromptState()
+  const { maxHeight, onSubmit, disabled: contextDisabled } = usePromptState()
+  const disabled = contextDisabled || inputDisabled
 
   const adjustHeight = useCallback((el: HTMLTextAreaElement | null) => {
     if (!el || disableAutosize) return
@@ -187,15 +190,17 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustHeight(e.target)
     setValue(e.target.value)
+    onChange?.(e)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (disabled) return
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
-      e.preventDefault()
-      onSubmit?.()
-    }
     onKeyDown?.(e)
+    if (e.defaultPrevented) return
+    if (onSubmit && e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
+      e.preventDefault()
+      onSubmit()
+    }
   }
 
   return (

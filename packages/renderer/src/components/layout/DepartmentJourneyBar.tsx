@@ -116,7 +116,7 @@ export function DepartmentJourneyBar({
             className="relative flex items-center gap-1.5 shrink-0"
         >
             {/* Jev System One Inline Recommendation Chip */}
-            {verdict.confidence >= 0.5 && (
+            {(verdict.source === 'heuristic' || (verdict.confidence ?? 0) >= 0.5) && (
                 <button
                     type="button"
                     onClick={handleTriggerVerdict}
