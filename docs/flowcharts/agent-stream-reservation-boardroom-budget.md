@@ -29,6 +29,8 @@ flowchart TD
     RECON -->|"PROVIDER_SUBMITTING or missing evidence"| HOLD["Remain CLAIMED for operator/later evidence"]
 ```
 
+## Transition Breakdown
+
 The billing ledger is the authority. Claims and lifecycle transitions validate
 the authenticated owner, `agent_stream` type, server claim ID, and current
 status transactionally. Terminal lifecycle and financial status are written by
