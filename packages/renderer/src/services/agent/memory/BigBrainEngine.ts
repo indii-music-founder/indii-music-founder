@@ -326,7 +326,8 @@ class BigBrainEngine {
         maxChars: number
     ): Promise<string[]> {
         // Query preferences and feedback categories specifically
-        const { results } = await memoryBankService.searchMemories(userId, userMessage || 'general preferences', 100);
+        const { results, unavailable } = await memoryBankService.searchMemories(userId, userMessage || 'general preferences', 100);
+        if (unavailable) throw new Error('Semantic memory search was unavailable.');
 
         const result: string[] = [];
         let currentChars = 0;
