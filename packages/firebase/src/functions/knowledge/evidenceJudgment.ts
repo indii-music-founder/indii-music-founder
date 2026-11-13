@@ -33,7 +33,11 @@ export type EvidenceFixtureFamily =
   | 'paraphrase'
   | 'no-answer'
   | 'conflicting-evidence'
-  | 'multi-source';
+  | 'multi-source'
+  | 'partial-evidence'
+  | 'provenance-conflict'
+  | 'stale-evidence'
+  | 'ambiguous-query';
 
 export interface EvidenceEvaluationFixture {
   id: string;
@@ -47,11 +51,23 @@ export interface EvidenceEvaluationFixture {
 
 export interface EvidenceEvaluationResult {
   fixtureId: string;
+  minimumRelevance: number;
   precisionAtK: number;
   recallAtK: number;
   reciprocalRank: number;
   noAnswerFalsePositive: boolean;
+  candidateTruePositiveCount: number;
+  candidateFalsePositiveCount: number;
+  candidateFalseNegativeCount: number;
+  candidateTrueNegativeCount: number;
+  candidateFalsePositiveRate: number;
+  candidateFalseNegativeRate: number;
 }
+
+export const EVIDENCE_SHADOW_THRESHOLDS = [0.5, 0.6, 0.7, 0.75, 0.9] as const;
+
+/** Evaluation-only starting point. This does not enable TypeSafe on a production path. */
+export const PROVISIONAL_TYPESAFE_SHADOW_THRESHOLD = 0.75;
 
 /**
  * Computes the same semantic quantity used by COSINE nearest-neighbor search,
@@ -98,6 +114,8 @@ export class VectorScoreEvidenceProvider implements EvidenceJudgmentProvider {
 export function evaluateEvidenceRanking(
   fixture: EvidenceEvaluationFixture,
   rankedCandidateIds: string[],
+  minimumRelevance = 0.5,
+  selectedCandidateIds: string[] = rankedCandidateIds,
 ): EvidenceEvaluationResult {
   const relevant = new Set(fixture.expectedRelevantCandidateIds);
   const selected = rankedCandidateIds.slice(0, fixture.topK);
@@ -105,14 +123,63 @@ export function evaluateEvidenceRanking(
   const precisionAtK = selected.length === 0 ? 0 : truePositiveCount / selected.length;
   const recallAtK = relevant.size === 0 ? 1 : truePositiveCount / relevant.size;
   const firstRelevantIndex = rankedCandidateIds.findIndex(candidateId => relevant.has(candidateId));
+  const selectedAtThreshold = new Set(selectedCandidateIds);
+  const candidateTruePositiveCount = fixture.candidates.filter(candidate => (
+    relevant.has(candidate.id) && selectedAtThreshold.has(candidate.id)
+  )).length;
+  const candidateFalsePositiveCount = fixture.candidates.filter(candidate => (
+    !relevant.has(candidate.id) && selectedAtThreshold.has(candidate.id)
+  )).length;
+  const candidateFalseNegativeCount = fixture.candidates.filter(candidate => (
+    relevant.has(candidate.id) && !selectedAtThreshold.has(candidate.id)
+  )).length;
+  const candidateTrueNegativeCount = fixture.candidates.filter(candidate => (
+    !relevant.has(candidate.id) && !selectedAtThreshold.has(candidate.id)
+  )).length;
+  const negativeCount = candidateFalsePositiveCount + candidateTrueNegativeCount;
+  const positiveCount = candidateTruePositiveCount + candidateFalseNegativeCount;
 
   return {
     fixtureId: fixture.id,
+    minimumRelevance,
     precisionAtK,
     recallAtK,
     reciprocalRank: firstRelevantIndex === -1 ? 0 : 1 / (firstRelevantIndex + 1),
     noAnswerFalsePositive: !fixture.answerable && selected.length > 0,
+    candidateTruePositiveCount,
+    candidateFalsePositiveCount,
+    candidateFalseNegativeCount,
+    candidateTrueNegativeCount,
+    candidateFalsePositiveRate: negativeCount === 0 ? 0 : candidateFalsePositiveCount / negativeCount,
+    candidateFalseNegativeRate: positiveCount === 0 ? 0 : candidateFalseNegativeCount / positiveCount,
   };
+}
+
+export function evaluateEvidenceJudgments(
+  fixture: EvidenceEvaluationFixture,
+  judgments: EvidenceJudgment[],
+  minimumRelevance = 0.5,
+): EvidenceEvaluationResult {
+  const knownCandidateIds = new Set(fixture.candidates.map(candidate => candidate.id));
+  const selectedJudgments = judgments
+    .filter(judgment => knownCandidateIds.has(judgment.candidateId))
+    .filter(judgment => Number.isFinite(judgment.relevance) && judgment.relevance >= minimumRelevance)
+    .sort((a, b) => b.relevance - a.relevance);
+
+  return evaluateEvidenceRanking(
+    fixture,
+    selectedJudgments.map(judgment => judgment.candidateId),
+    minimumRelevance,
+    selectedJudgments.map(judgment => judgment.candidateId),
+  );
+}
+
+export function evaluateEvidenceThresholdSweep(
+  fixture: EvidenceEvaluationFixture,
+  judgments: EvidenceJudgment[],
+  thresholds: readonly number[] = EVIDENCE_SHADOW_THRESHOLDS,
+): EvidenceEvaluationResult[] {
+  return thresholds.map(threshold => evaluateEvidenceJudgments(fixture, judgments, threshold));
 }
 
 export async function evaluateEvidenceProvider(
@@ -124,14 +191,7 @@ export async function evaluateEvidenceProvider(
     query: fixture.query,
     candidates: fixture.candidates,
   });
-  const knownCandidateIds = new Set(fixture.candidates.map(candidate => candidate.id));
-  const rankedCandidateIds = judgments
-    .filter(judgment => knownCandidateIds.has(judgment.candidateId))
-    .filter(judgment => Number.isFinite(judgment.relevance) && judgment.relevance >= minimumRelevance)
-    .sort((a, b) => b.relevance - a.relevance)
-    .map(judgment => judgment.candidateId);
-
-  return evaluateEvidenceRanking(fixture, rankedCandidateIds);
+  return evaluateEvidenceJudgments(fixture, judgments, minimumRelevance);
 }
 
 function clamp01(value: number): number {
