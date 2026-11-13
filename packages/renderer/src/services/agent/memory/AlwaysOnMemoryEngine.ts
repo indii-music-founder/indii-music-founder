@@ -589,7 +589,10 @@ If appropriate, suggest that the user can ingest relevant information to build a
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory },
         requireServer = false
     ): Promise<AlwaysOnMemory[]> {
-        if (!this.userId || this.isE2EMode) return [];
+        if (!this.userId || this.isE2EMode) {
+            if (requireServer) throw new Error('Server memory is unavailable.');
+            return [];
+        }
         const userId = this.userId;
         const ownerVersion = this.ownerVersion;
 
@@ -614,7 +617,8 @@ If appropriate, suggest that the user can ingest relevant information to build a
             // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
             // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
             const snapshot = await (requireServer ? getDocsFromServer : getDocs)(query(q, limit(maxCount)));
-            if (!this.isCurrentOwner(userId, ownerVersion)) return [];
+            if (requireServer) this.requireCurrentOwner(userId, ownerVersion);
+            else if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             if (snapshot.docs.length === maxCount) {
                 logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
             }
@@ -664,7 +668,10 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get consolidation insights for the current user.
      */
     public async getInsights(maxCount: number = 10, requireServer = false): Promise<ConsolidationInsight[]> {
-        if (!this.userId || this.isE2EMode) return [];
+        if (!this.userId || this.isE2EMode) {
+            if (requireServer) throw new Error('Server memory is unavailable.');
+            return [];
+        }
         const userId = this.userId;
         const ownerVersion = this.ownerVersion;
 
@@ -677,7 +684,8 @@ If appropriate, suggest that the user can ingest relevant information to build a
             );
 
             const snapshot = await (requireServer ? getDocsFromServer : getDocs)(q);
-            if (!this.isCurrentOwner(userId, ownerVersion)) return [];
+            if (requireServer) this.requireCurrentOwner(userId, ownerVersion);
+            else if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),

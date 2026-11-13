@@ -90,6 +90,14 @@ describe('MemoryTools', () => {
         });
     });
 
+    it('reports an unavailable list separately from an empty list', async () => {
+        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockRejectedValueOnce(new Error('offline'));
+        expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: false, metadata: { errorCode: 'LIST_ERROR' } });
+        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockResolvedValueOnce([]);
+        expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: true, data: { memories: [] } });
+        expect(alwaysOnMemoryEngine.getAllMemories).toHaveBeenCalledWith(20, { category: undefined }, true);
+    });
+
     describe('recall_memories', () => {
         it('should recall memories via AlwaysOnMemoryEngine', async () => {
             vi.mocked(alwaysOnMemoryEngine.queryFromServer).mockResolvedValue('Answer based on memory');

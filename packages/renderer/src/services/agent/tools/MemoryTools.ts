@@ -140,18 +140,23 @@ export const MemoryTools = {
         }
     }),
 
-    list_user_memories: wrapTool('list_user_memories', async (args: { 
-        categories?: AlwaysOnMemoryCategory[]; 
-        limit?: number 
+    list_user_memories: wrapTool('list_user_memories', async (args: {
+        categories?: AlwaysOnMemoryCategory[];
+        limit?: number;
     }) => {
+        const pageSize = args.limit ?? 20;
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+            return toolError('Memory list limit must be an integer from 1 to 500.', 'INVALID_ARGUMENT');
+        }
         try {
-            const memories = await alwaysOnMemoryEngine.getAllMemories(args.limit || 20, { 
-                category: args.categories?.[0] 
-            });
-            return toolSuccess({ memories }, `Found ${memories.length} memories.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to list memories: ${error.message}`, 'LIST_ERROR');
+            const categories = [...new Set(args.categories ?? [])];
+            const pages = await Promise.all((categories.length ? categories : [undefined]).map(category =>
+                alwaysOnMemoryEngine.getAllMemories(pageSize, { category }, true)
+            ));
+            const memories = pages.flat().sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, pageSize);
+            return toolSuccess({ memories, limit: pageSize, categories }, `Returned ${memories.length} recent active memories.`);
+        } catch {
+            return toolError('Memory listing is currently unavailable.', 'LIST_ERROR');
         }
     }),
 
