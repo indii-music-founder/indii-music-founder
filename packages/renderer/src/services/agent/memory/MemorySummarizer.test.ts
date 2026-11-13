@@ -30,6 +30,23 @@ describe('MemorySummarizer parse diagnostics', () => {
         await expect(MemorySummarizer.generateInsight('user-1', memories)).resolves.toBeNull();
     });
 
+    it('keeps only links between distinct memories in the synthesis input', async () => {
+        generateText.mockResolvedValueOnce(JSON.stringify({
+            insights: ['Related preferences'],
+            confidence: 0.8,
+            connections: [
+                null,
+                { fromId: 'first', toId: 'outside', relationship: 'related' },
+                { fromId: 'first', toId: 'first', relationship: 'related' },
+                { fromId: 'first', toId: 'second', relationship: ' ' },
+                { fromId: 'first', toId: 'second', relationship: 'related' },
+            ],
+        }));
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        const result = await MemorySummarizer.generateInsight('user-1', memories);
+        expect(result?.connections).toMatchObject([{ fromMemoryId: 'first', toMemoryId: 'second', relationship: 'related' }]);
+    });
+
     it('ISSUE-1587: generateInsight derives numeric top-level confidence when omitted by model and uses temperature 1.0', async () => {
         generateText.mockResolvedValueOnce(JSON.stringify({
             connections: [

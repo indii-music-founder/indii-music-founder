@@ -135,7 +135,13 @@ export class MemorySummarizer {
             }
 
             const rawInsights = Array.isArray(parsed.insights) ? parsed.insights.filter((i): i is string => typeof i === 'string' && i.trim().length > 0) : [];
-            const rawConnections = Array.isArray(parsed.connections) ? parsed.connections : [];
+            const sourceIds = new Set(memories.map(memory => memory.id));
+            const rawConnections = parsed.connections.filter(connection =>
+                typeof connection?.fromId === 'string' && sourceIds.has(connection.fromId) &&
+                typeof connection.toId === 'string' && sourceIds.has(connection.toId) &&
+                connection.fromId !== connection.toId &&
+                typeof connection.relationship === 'string' && connection.relationship.trim().length > 0
+            );
             const connectionConfidences = rawConnections
                 .map(c => (typeof c?.confidence === 'number' && Number.isFinite(c.confidence) ? c.confidence : null))
                 .filter((n): n is number => n !== null);
