@@ -141,7 +141,11 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         // Admin-SDK Firestore write succeeded.
         if (saveUnconfirmed) {
             const message = 'Bug report save could not be confirmed. Check the bug tracker before retrying to avoid a duplicate.';
-            toast.warning(message);
+            try {
+                toast.warning(message);
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the unconfirmed save warning:', error);
+            }
             return toolError(message, 'SAVE_UNCONFIRMED');
         }
         if (!firestoreOk) {
