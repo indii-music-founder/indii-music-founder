@@ -360,7 +360,7 @@ describe('judgeSkillIntent (Choice routing)', () => {
 
     it('returns the chosen candidate id', async () => {
         mocks.enabled.mockReturnValue(true);
-        const call = vi.fn(async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } }));
+        const call = vi.fn(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'digital_distribution', confidence: 0.9 } } } }));
         mocks.httpsCallable.mockImplementation((name: unknown) => {
             expect(name).toBe('typesafeJudge');
             return call;
@@ -376,14 +376,14 @@ describe('judgeSkillIntent (Choice routing)', () => {
 
     it('maps a none choice to null', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'none' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'none', confidence: 0.9 } } } }));
 
         expect(await judgeSkillIntent('what is the weather', SKILLS)).toBeNull();
     });
 
     it('maps an unknown choice id to null', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'not_a_skill' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'not_a_skill', confidence: 0.9 } } } }));
 
         expect(await judgeSkillIntent('anything', SKILLS)).toBeNull();
     });
@@ -584,27 +584,27 @@ describe('judgePreviewErrorGuidance (video pop-out unit)', () => {
 
     it('maps a timing error to the trim_timeline action', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'trim_timeline' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'trim_timeline', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('compiler: clip c1 exceeds the project duration')).toBe('trim_timeline');
     });
 
     it('maps an unreadable media error to fix_media', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'fix_media' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'fix_media', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('compiler: media source missing for clip v2')).toBe('fix_media');
     });
 
     it('maps transient phrasing to retry', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'retry' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'retry', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('typesafeJudge: service unavailable')).toBe('retry');
     });
 
     it('returns null for the none option and unknown choices (consumer keeps raw error)', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'none' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'none', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('something unfathomable')).toBeNull();
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'delete_everything' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'delete_everything', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('something unfathomable')).toBeNull();
     });
 
@@ -5950,7 +5950,7 @@ describe('judgeCreativeStudioConfigPreset (Judgment 84)', () => {
     it('uses Jev Choice to resolve a unified Creative Hub config preset online', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: { preset: { choice: 'grounded_editorial', confidence: 0.92 } } },
+            data: { answers: { preset: { type: 'choice', choice: 'grounded_editorial', confidence: 0.92 } } },
         }));
 
         const result = await judgeCreativeStudioConfigPreset({
@@ -6001,7 +6001,7 @@ describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions 
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    archetype: { choice: 'cinematic_film', confidence: 0.94 },
+                    archetype: { type: 'choice', choice: 'cinematic_film', confidence: 0.94 },
                 },
             },
         }));
@@ -6016,7 +6016,7 @@ describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions 
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    bestFit: { choice: 'cand_1' },
+                    bestFit: { type: 'choice', choice: 'cand_1', confidence: 0.9 },
                 },
             },
         }));

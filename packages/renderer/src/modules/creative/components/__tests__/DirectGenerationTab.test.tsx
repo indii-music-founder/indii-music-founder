@@ -25,6 +25,7 @@ const {
         presetId: 'cover_art_master',
         label: 'Cover Art Master (1:1 · Pro 2K)',
         summary: 'High-detail square master tuned for album artwork & DSP thumbnails',
+        source: 'jev',
         confidence: 0.91,
         controlsPatch: {
             aspectRatio: '1:1',
@@ -43,7 +44,8 @@ vi.mock('@/config/typesafeJudgments', () => ({
         presetId: ctx.mode === 'video' ? 'cinematic_widescreen' : 'cover_art_master',
         label: ctx.mode === 'video' ? 'Cinematic Widescreen (16:9 · Pro)' : 'Cover Art Master (1:1 · Pro 2K)',
         summary: 'High-detail square master tuned for album artwork & DSP thumbnails',
-        confidence: 0.88,
+        source: 'heuristic',
+        confidence: null,
         controlsPatch: ctx.mode === 'video'
             ? { aspectRatio: '16:9', model: 'pro', resolution: '1080p', duration: 8 }
             : { aspectRatio: '1:1', model: 'pro', imageSize: '2K', thinkingLevel: 'high', batchCount: 1, useGrounding: false },
@@ -664,6 +666,12 @@ describe('DirectGenerationTab structural regressions', () => {
         await waitFor(() => {
             expect(screen.queryByTestId('jev-prompt-mode-suggestion')).not.toBeInTheDocument();
         });
+    });
+
+    it('distinguishes the initial prompt suggestion from the later Jev suggestion', async () => {
+        render(<DirectGenerationTab />);
+        expect(screen.getByText('Prompt suggestion')).toBeInTheDocument();
+        expect(await screen.findByText('Jev suggestion')).toBeInTheDocument();
     });
 
     it('renders Basics and Advanced Config simultaneously on a single unified page with Jev preset control', () => {

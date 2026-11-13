@@ -17,6 +17,20 @@ import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
 import type { MaskedTextCandidate } from '@/services/image/maskedTextEdit';
 
+/** Explicit adoption policies; semantic calibration remains a separate acceptance task. */
+export const SKILL_INTENT_MIN_CONFIDENCE = 0.65;
+export const PREVIEW_GUIDANCE_MIN_CONFIDENCE = 0.65;
+export const UPSCALE_MODEL_MIN_CONFIDENCE = 0.65;
+
+function confidentDeclaredChoice(answer: unknown, allowed: readonly string[], minimumConfidence: number): string | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
+    if (value.type !== 'choice' || typeof value.choice !== 'string' || !allowed.includes(value.choice) ||
+        typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) ||
+        value.confidence < minimumConfidence || value.confidence > 1) return null;
+    return value.choice;
+}
+
 // ---------------------------------------------------------------------------
 // Judgment 2: skill intent routing (consumer: ProductSkillRegistry)
 // ---------------------------------------------------------------------------
@@ -67,12 +81,8 @@ export async function judgeSkillIntent(
             },
         });
 
-        const answer = result.data.answers?.skill;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
-        if (typeof choice !== 'string' || choice === SKILL_INTENT_NONE || !candidates.some(c => c.id === choice)) {
-            return null;
-        }
-        return choice;
+        return confidentDeclaredChoice(result.data.answers?.skill,
+            candidates.map(candidate => candidate.id).filter(id => id !== SKILL_INTENT_NONE), SKILL_INTENT_MIN_CONFIDENCE);
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'skill intent judgment', "judgeSkillIntent");
         return null;
@@ -521,7 +531,7 @@ const previewErrorQuestion = {
 /**
  * Choice-judge which artist action best unblocks a failed preview compilation.
  * Returns the chosen action, or null when judgments are unavailable / the
- * answer is 'none' / the choice is not a known action. The consumer falls back
+ * answer is 'none' / the choice is not a known action / confidence is insufficient. The consumer falls back
  * to showing the raw error text — the judgment only ever ADDS guidance.
  */
 export async function judgePreviewErrorGuidance(error: string): Promise<PreviewErrorAction | null> {
@@ -539,13 +549,8 @@ export async function judgePreviewErrorGuidance(error: string): Promise<PreviewE
             questions: { guidance: previewErrorQuestion },
         });
 
-        const answer = result.data.answers?.guidance;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
         const known: PreviewErrorAction[] = ['trim_timeline', 'fix_media', 'retry'];
-        if (typeof choice !== 'string' || !known.includes(choice as PreviewErrorAction)) {
-            return null;
-        }
-        return choice as PreviewErrorAction;
+        return confidentDeclaredChoice(result.data.answers?.guidance, known, PREVIEW_GUIDANCE_MIN_CONFIDENCE) as PreviewErrorAction | null;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'preview error guidance judgment', "judgePreviewErrorGuidance");
         return null;
@@ -8218,10 +8223,8 @@ export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelCho
             },
         });
 
-        const answer = result.data.answers?.model;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
-        if (choice === 'realesrgan-x4plus' || choice === 'realesrgan-x4plus-anime') return choice;
-        return null;
+        return confidentDeclaredChoice(result.data.answers?.model,
+            ['realesrgan-x4plus', 'realesrgan-x4plus-anime'], UPSCALE_MODEL_MIN_CONFIDENCE) as UpscaleModelChoice | null;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'upscale model judgment', "judgeUpscaleModel");
         return null;
@@ -10388,12 +10391,26 @@ export interface CreativeStudioConfigPresetPatch {
     useGrounding?: boolean;
 }
 
-export interface CreativeStudioConfigPresetVerdict {
+type CreativeJudgmentEvidence =
+    | { source: 'jev'; confidence: number }
+    | { source: 'heuristic'; confidence: null };
+
+export type CreativeStudioConfigPresetVerdict = {
     presetId: CreativeConfigPresetId;
     label: string;
     summary: string;
-    confidence: number;
     controlsPatch: CreativeStudioConfigPresetPatch;
+} & CreativeJudgmentEvidence;
+
+export const CREATIVE_CONFIG_PRESET_MIN_CONFIDENCE = 0.65;
+export const PROMPT_IMPROVEMENT_MIN_CONFIDENCE = 0.65;
+
+function creativeChoiceConfidence(answer: unknown, minimum: number): number | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; confidence?: unknown };
+    return value.type === 'choice' && typeof value.confidence === 'number' &&
+        Number.isFinite(value.confidence) && value.confidence >= minimum && value.confidence <= 1
+        ? value.confidence : null;
 }
 
 export interface CreativeStudioConfigContext {
@@ -10528,7 +10545,8 @@ export function deterministicCreativeStudioConfigFallback(
         presetId,
         label: preset.label,
         summary: preset.summary,
-        confidence: 0.88,
+        source: 'heuristic',
+        confidence: null,
         controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
     };
 }
@@ -10576,22 +10594,16 @@ export async function judgeCreativeStudioConfigPreset(
 
         const answer = result.data.answers?.preset;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
 
-        if (typeof choice === 'string' && choice in CREATIVE_CONFIG_PRESETS) {
+        const confidence = creativeChoiceConfidence(answer, CREATIVE_CONFIG_PRESET_MIN_CONFIDENCE);
+        if (confidence !== null && typeof choice === 'string' && Object.hasOwn(CREATIVE_CONFIG_PRESETS, choice)) {
             const presetId = choice as CreativeConfigPresetId;
             const preset = CREATIVE_CONFIG_PRESETS[presetId];
-            const confidence =
-                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                    ? rawConfidence
-                    : 0.89;
             return {
                 presetId,
                 label: preset.label,
                 summary: preset.summary,
+                source: 'jev',
                 confidence,
                 controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
             };
@@ -10619,11 +10631,21 @@ export type PromptVisualArchetype =
     | 'graphic_cover_typography'
     | 'moody_editorial';
 
-export interface PromptImprovementIntentVerdict {
+export type PromptImprovementIntentVerdict = {
     archetype: PromptVisualArchetype;
-    confidence: number;
     brandColorWeight: 'foreground' | 'subtle' | 'neutral';
     focusTechnical: string[];
+} & CreativeJudgmentEvidence;
+
+function technicalFocusForArchetype(archetype: PromptVisualArchetype): string[] {
+    const focus: Record<PromptVisualArchetype, string[]> = {
+        photorealistic: ['depth of field', 'studio lighting', 'fine texture'],
+        cinematic_film: ['anamorphic lens', 'cinematic lighting', 'film stock grain'],
+        digital_3d_surreal: ['3D materials', 'render lighting', 'spatial depth'],
+        graphic_cover_typography: ['typographic hierarchy', 'layout balance', 'graphic contrast'],
+        moody_editorial: ['editorial composition', 'directional lighting', 'tonal contrast'],
+    };
+    return [...focus[archetype]];
 }
 
 export function promptImprovementQuestion() {
@@ -10659,11 +10681,10 @@ export function deterministicPromptImprovementFallback(
 
     return {
         archetype,
-        confidence: 0.85,
+        source: 'heuristic',
+        confidence: null,
         brandColorWeight: p.includes('brand') || p.includes('color') ? 'foreground' : 'subtle',
-        focusTechnical: archetype === 'cinematic_film'
-            ? ['anamorphic lens', 'cinematic lighting', 'film stock grain']
-            : ['depth of field', 'studio lighting', 'fine texture'],
+        focusTechnical: technicalFocusForArchetype(archetype),
     };
 }
 
@@ -10692,10 +10713,6 @@ export async function judgePromptImprovementIntent(
 
         const answer = result.data.answers?.archetype;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
 
         const validArchetypes: PromptVisualArchetype[] = [
             'photorealistic',
@@ -10705,16 +10722,14 @@ export async function judgePromptImprovementIntent(
             'moody_editorial',
         ];
 
-        if (typeof choice === 'string' && validArchetypes.includes(choice as PromptVisualArchetype)) {
-            const confidence =
-                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                    ? rawConfidence
-                    : 0.88;
+        const confidence = creativeChoiceConfidence(answer, PROMPT_IMPROVEMENT_MIN_CONFIDENCE);
+        if (confidence !== null && typeof choice === 'string' && validArchetypes.includes(choice as PromptVisualArchetype)) {
             return {
                 archetype: choice as PromptVisualArchetype,
+                source: 'jev',
                 confidence,
                 brandColorWeight: fallback.brandColorWeight,
-                focusTechnical: fallback.focusTechnical,
+                focusTechnical: technicalFocusForArchetype(choice as PromptVisualArchetype),
             };
         }
 
@@ -10733,7 +10748,7 @@ export interface CandidateAdditiveItem {
 
 export function rankAdditivesDeterministically(
     prompt: string,
-    candidates: CandidateAdditiveItem[],
+    candidates: readonly CandidateAdditiveItem[],
 ): CandidateAdditiveItem[] {
     const p = prompt.toLowerCase();
     return [...candidates].sort((a, b) => {
@@ -10746,17 +10761,20 @@ export function rankAdditivesDeterministically(
     });
 }
 
+export const PROMPT_ADDITIVE_MIN_CONFIDENCE = 0.65;
+
 export async function judgeCreativePromptAdditiveSuggestions(
     prompt: string,
-    candidates: CandidateAdditiveItem[],
+    candidates: readonly CandidateAdditiveItem[],
 ): Promise<CandidateAdditiveItem[]> {
-    if (candidates.length === 0) return [];
+    const baseline = rankAdditivesDeterministically(prompt, candidates);
+    if (baseline.length === 0) return [];
     if (!prompt.trim() || !judgmentsAvailable("judgeCreativePromptAdditiveSuggestions") || candidates.length < 2) {
-        return rankAdditivesDeterministically(prompt, candidates);
+        return baseline;
     }
 
     try {
-        const topCandidates = candidates.slice(0, 8);
+        const topCandidates = baseline.slice(0, 8);
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
             { answers: Record<string, unknown> }
@@ -10784,21 +10802,24 @@ export async function judgeCreativePromptAdditiveSuggestions(
         });
 
         const answer = result.data.answers?.bestFit;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return baseline;
+        const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
+        if (value.type !== 'choice' || typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) ||
+            value.confidence < PROMPT_ADDITIVE_MIN_CONFIDENCE || value.confidence > 1) return baseline;
 
-        if (typeof choice === 'string' && choice.startsWith('cand_')) {
-            const chosenIndex = parseInt(choice.replace('cand_', ''), 10);
-            if (!isNaN(chosenIndex) && topCandidates[chosenIndex]) {
-                const picked = topCandidates[chosenIndex];
-                const rest = topCandidates.filter((_, i) => i !== chosenIndex);
-                return [picked, ...rest];
-            }
+        // Exact offered ID membership: parsing numeric prefixes accepted names
+        // the provider was never offered (for example cand_1junk or cand_01).
+        const chosenIndex = topCandidates.findIndex((_, index) => value.choice === `cand_${index}`);
+        if (chosenIndex >= 0) {
+            // Promotion is a permutation of the full baseline, including entries
+            // outside the bounded provider shortlist and duplicate references.
+            return [baseline[chosenIndex]!, ...baseline.filter((_, index) => index !== chosenIndex)];
         }
 
-        return rankAdditivesDeterministically(prompt, candidates);
+        return baseline;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'prompt additive suggestion judgment', "judgeCreativePromptAdditiveSuggestions");
-        return rankAdditivesDeterministically(prompt, candidates);
+        return baseline;
     }
 }
 

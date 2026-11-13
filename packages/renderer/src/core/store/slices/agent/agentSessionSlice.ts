@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';
 import type { SessionPageCursor } from '@/services/agent/SessionService';
@@ -41,6 +42,11 @@ async function persistMessageWrite(
             onSuccess?.();
             return;
         } catch (error) {
+            if (error instanceof SessionPersistenceConflict) {
+                logger.warn(`[AgentSlice] ${label} stopped because the conversation changed:`, error);
+                onFailure?.();
+                return;
+            }
             if (attempt === 3) {
                 logger.error(`[AgentSlice] ${label} failed after 3 attempts:`, error);
                 onFailure?.();
@@ -648,6 +654,7 @@ export function buildAgentSessionState(
 
             // Finish writes already queued for this session, then clear. New
             // appends wait for this barrier so they cannot enter the delete snapshot.
+            const clearOperation = { id: crypto.randomUUID() };
             const previousClear = sessionClearChains.get(targetSessionId) ?? Promise.resolve();
             const outstandingWrites = [...messageWriteChains]
                 .filter(([key]) => key.startsWith(`${targetSessionId}:`))
@@ -655,7 +662,7 @@ export function buildAgentSessionState(
             const clear = Promise.all([previousClear.catch(() => undefined), ...outstandingWrites])
                 .then(() => persistMessageWrite(async () => {
                     const { sessionService } = await import('@/services/agent/SessionService');
-                    await sessionService.clearMessages(targetSessionId);
+                    await sessionService.clearMessages(targetSessionId, clearOperation);
                 }, 'Clear history', () => {
                     toast.error('Chat history could not be cleared. Try Clear chat again.');
                 }))

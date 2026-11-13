@@ -356,7 +356,7 @@ export default function DirectGenerationTab() {
                     >
                         <div className="flex items-center gap-2 min-w-0">
                             <span className="inline-flex items-center gap-1 rounded-md bg-dept-creative/20 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-dept-creative">
-                                <Wand2 size={10} /> Recommended
+                                <Wand2 size={10} /> {configPresetVerdict.source === 'jev' ? 'Jev suggestion' : 'Prompt suggestion'}
                             </span>
                             <span className="text-[11px] font-bold text-white truncate">
                                 {configPresetVerdict.label}
