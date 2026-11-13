@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AlwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
+import { memoryIngestionPipeline } from './MemoryIngestionPipeline';
 
 // ============================================================================
 // MOCKS
@@ -134,6 +135,51 @@ describe('AlwaysOnMemoryEngine', () => {
 
     afterEach(() => {
         engine.stop();
+    });
+
+    it('exposes stored, skipped and unconfirmed pipeline receipts without parsing status text', async () => {
+        await engine.start('test-user-123');
+        const spy = vi.spyOn(memoryIngestionPipeline, 'ingestText');
+        try {
+            spy.mockResolvedValueOnce({ success: true, memoryId: 'saved-memory', summary: 'Artist preference' });
+            expect(await engine.ingestWithReceipt('preference')).toEqual({ status: 'stored', memoryId: 'saved-memory', summary: 'Artist preference' });
+            spy.mockResolvedValueOnce({ success: true, skipped: true, skipReason: 'duplicate' });
+            expect(await engine.ingestWithReceipt('duplicate')).toEqual({ status: 'skipped', reason: 'duplicate' });
+            spy.mockResolvedValueOnce({ success: false, error: 'private details' });
+            expect(await engine.ingestWithReceipt('failed')).toMatchObject({ status: 'unconfirmed' });
+            spy.mockResolvedValueOnce({ success: true });
+            expect(await engine.ingestWithReceipt('missing id')).toMatchObject({ status: 'unconfirmed' });
+        } finally { spy.mockRestore(); }
+    });
+
+    it('keeps ingestion status active until concurrent text and file writes have settled', async () => {
+        await engine.start('test-user-123');
+        let finishText!: (value: { success: boolean; memoryId: string }) => void;
+        let finishFile!: (value: { success: boolean; memoryId: string }) => void;
+        const textSpy = vi.spyOn(memoryIngestionPipeline, 'ingestText').mockImplementationOnce(() => new Promise(resolve => { finishText = resolve; }));
+        const fileSpy = vi.spyOn(memoryIngestionPipeline, 'ingestFile').mockImplementationOnce(() => new Promise(resolve => { finishFile = resolve; }));
+        try {
+            const text = engine.ingestWithReceipt('Artist rule');
+            const file = engine.ingestFile(new Uint8Array([1]), 'notes.txt', 'text/plain');
+            finishText({ success: true, memoryId: 'text-memory' });
+            await text;
+            expect((await engine.getStatus()).isIngesting).toBe(true);
+            finishFile({ success: true, memoryId: 'file-memory' });
+            await file;
+            expect((await engine.getStatus()).isIngesting).toBe(false);
+        } finally { textSpy.mockRestore(); fileSpy.mockRestore(); }
+    });
+
+    it('does not acknowledge a memory to a new owner after an in-flight owner change', async () => {
+        await engine.start('test-user-123');
+        let complete!: (value: { success: boolean; memoryId: string }) => void;
+        const spy = vi.spyOn(memoryIngestionPipeline, 'ingestText').mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+        try {
+            const pending = engine.ingestWithReceipt('old owner preference');
+            await engine.start('another-owner');
+            complete({ success: true, memoryId: 'old-owner-memory' });
+            expect(await pending).toMatchObject({ status: 'unconfirmed' });
+        } finally { spy.mockRestore(); }
     });
 
     it('does not report skipped feedback as a stored memory', async () => {

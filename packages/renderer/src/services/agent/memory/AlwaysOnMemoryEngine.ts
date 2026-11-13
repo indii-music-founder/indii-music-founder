@@ -71,6 +71,11 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
  * engine.stop();
  * ```
  */
+export type MemoryIngestReceipt =
+    | { status: 'stored'; memoryId: string; summary?: string }
+    | { status: 'skipped'; reason: string }
+    | { status: 'unconfirmed'; reason: string };
+
 export class AlwaysOnMemoryEngine {
     private static instance: AlwaysOnMemoryEngine | null = null;
 
@@ -81,6 +86,7 @@ export class AlwaysOnMemoryEngine {
     private ownerVersion = 0;
     private isConsolidating = false;
     private isIngesting = false;
+    private activeIngestions = 0;
     private startedAt: Date | null = null;
     private lastConsolidatedAt: Date | null = null;
     private lastIngestedAt: Date | null = null;
@@ -131,6 +137,8 @@ export class AlwaysOnMemoryEngine {
 
         this.userId = userId;
         this.ownerVersion++;
+        this.activeIngestions = 0;
+        this.isIngesting = false;
         this.config = {
             userId,
             ...DEFAULT_ENGINE_CONFIG,
@@ -162,6 +170,8 @@ export class AlwaysOnMemoryEngine {
         }
         this.isRunning = false;
         this.ownerVersion++;
+        this.activeIngestions = 0;
+        this.isIngesting = false;
         this.userId = '';
         this.config = null;
         this.startedAt = null;
@@ -205,21 +215,38 @@ export class AlwaysOnMemoryEngine {
         category?: AlwaysOnMemoryCategory
     ): Promise<string> {
         if (this.isE2EMode) return 'Mock Success';
-        if (!this.userId) throw new Error('Engine not started. Call start() first.');
+        const receipt = await this.ingestWithReceipt(text, source, category);
+        if (receipt.status === 'stored') return `📥 Stored: ${receipt.summary ?? ''}`;
+        if (receipt.status === 'skipped') return `Skipped: ${receipt.reason}`;
+        return `❌ Failed: ${receipt.reason}`;
+    }
 
+    /** A save claim requires a primary storage acknowledgement with a document ID. */
+    public async ingestWithReceipt(
+        text: string,
+        source: string = 'user_input',
+        category?: AlwaysOnMemoryCategory
+    ): Promise<MemoryIngestReceipt> {
+        if (this.isE2EMode) return { status: 'unconfirmed', reason: 'Simulated ingestion is not a durable memory receipt.' };
+        if (!this.userId) throw new Error('Engine not started. Call start() first.');
+        const userId = this.userId;
+        const version = this.ownerVersion;
+        this.activeIngestions++;
         this.isIngesting = true;
         try {
-            const result = await this.pipeline.ingestText(this.userId, { text, source, category });
-            this.lastIngestedAt = new Date();
-
-            if (result.skipped) {
-                return `Skipped: ${result.skipReason}`;
+            const result = await this.pipeline.ingestText(userId, { text, source, category });
+            if (!this.isCurrentOwner(userId, version)) return { status: 'unconfirmed', reason: 'Memory owner changed during ingestion. Check memory before retrying.' };
+            if (result.skipped) return { status: 'skipped', reason: result.skipReason || 'No new memory was written.' };
+            if (result.success && typeof result.memoryId === 'string' && result.memoryId.trim()) {
+                this.lastIngestedAt = new Date();
+                return { status: 'stored', memoryId: result.memoryId, ...(result.summary ? { summary: result.summary } : {}) };
             }
-            return result.success
-                ? `📥 Stored: ${result.summary}`
-                : `❌ Failed: ${result.error}`;
+            return { status: 'unconfirmed', reason: 'Memory storage did not return a durable receipt. Check memory before retrying.' };
         } finally {
-            this.isIngesting = false;
+            if (this.ownerVersion === version) {
+                this.activeIngestions--;
+                this.isIngesting = this.activeIngestions > 0;
+            }
         }
     }
 
@@ -261,21 +288,29 @@ export class AlwaysOnMemoryEngine {
         if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
+        const userId = this.userId;
+        const version = this.ownerVersion;
+        this.activeIngestions++;
         this.isIngesting = true;
         try {
-            const result = await this.pipeline.ingestFile(this.userId, {
+            const result = await this.pipeline.ingestFile(userId, {
                 fileBytes,
                 fileName,
                 mimeType,
                 sizeBytes: fileBytes.length,
             });
-            this.lastIngestedAt = new Date();
-
-            return result.success
-                ? `🔮 Ingested ${fileName}: ${result.summary}`
-                : `❌ Failed: ${result.error}`;
+            if (!this.isCurrentOwner(userId, version)) throw new Error('Memory owner changed during ingestion.');
+            if (result.skipped) return `Skipped: ${result.skipReason}`;
+            if (result.success && typeof result.memoryId === 'string' && result.memoryId.trim()) {
+                this.lastIngestedAt = new Date();
+                return `🔮 Ingested ${fileName}: ${result.summary}. Reference: ${result.memoryId}`;
+            }
+            return '❌ Failed: Memory save could not be confirmed.';
         } finally {
-            this.isIngesting = false;
+            if (this.ownerVersion === version) {
+                this.activeIngestions--;
+                this.isIngesting = this.activeIngestions > 0;
+            }
         }
     }
 
@@ -293,13 +328,21 @@ export class AlwaysOnMemoryEngine {
         if (this.isE2EMode) return 1;
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
 
+        const userId = this.userId;
+        const version = this.ownerVersion;
+        this.activeIngestions++;
         this.isIngesting = true;
         try {
-            const results = await this.pipeline.ingestFromSession(this.userId, messages, sessionId);
-            this.lastIngestedAt = new Date();
-            return results.filter(r => r.success && !r.skipped).length;
+            const results = await this.pipeline.ingestFromSession(userId, messages, sessionId);
+            if (!this.isCurrentOwner(userId, version)) throw new Error('Memory owner changed during ingestion.');
+            const stored = results.filter(r => r.success && !r.skipped && typeof r.memoryId === 'string' && r.memoryId.trim()).length;
+            if (stored > 0) this.lastIngestedAt = new Date();
+            return stored;
         } finally {
-            this.isIngesting = false;
+            if (this.ownerVersion === version) {
+                this.activeIngestions--;
+                this.isIngesting = this.activeIngestions > 0;
+            }
         }
     }
 

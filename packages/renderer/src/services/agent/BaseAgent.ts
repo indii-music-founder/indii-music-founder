@@ -1785,10 +1785,9 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         // Store tool call and result
                         lastToolResult = result;
                         toolCalls.push({ name, args, result });
-                        // A missing credential bridge is an environment capability, not a
-                        // transient model error. Re-prompting the agent cannot make the
-                        // bridge appear and previously repeated the same failure eight times.
-                        if (!result.success && result.metadata?.errorCode === 'CREDENTIAL_STORAGE_UNAVAILABLE') {
+                        // Missing credential storage and uncertain memory writes require
+                        // review, not another model attempt that could repeat an effect.
+                        if (!result.success && (result.metadata?.errorCode === 'CREDENTIAL_STORAGE_UNAVAILABLE' || result.metadata?.errorCode === 'MEMORY_SAVE_UNCONFIRMED' || result.metadata?.errorCode === 'MEMORY_NOT_SAVED')) {
                             const message = result.error || 'Secure credential storage is unavailable in this environment.';
                             const failure = {
                                 code: 'AGENT_EXECUTION_FAILED' as const,

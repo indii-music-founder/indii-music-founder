@@ -1,80 +1,69 @@
-# BigBrain Memory Engine Architecture Flowchart
+# BigBrain memory assembly and write receipts
 
-This flowchart maps the `BigBrainEngine`, the sophisticated 5-layer persistent state and memory architecture that powers the Gemini Enterprise Agent Platform (GEAP) integration. It illustrates how ephemeral conversation state is distilled into long-term, authoritative facts.
+This map describes the inspected context-assembly and explicit memory-write paths.
+Stored content is not automatically verified truth. Local structural tests do not
+establish deployed persistence, future recall, or full memory continuity.
 
 ```mermaid
-graph TD
-    %% Entry Layer
-    subgraph Conversation ["Conversation Runtime"]
-        Interaction["User Interaction / Agent Dialogue"]
-        Orchestrator["BigBrainEngine (Memory Orchestrator)"]
-    end
+flowchart TD
+    Input["BigBrainEngine.assembleContext: user, agent and message"] --> Parallel["Four bounded fetches through Promise.allSettled"]
+    Parallel --> Daily["Captain's Log daily summary"]
+    Parallel --> Vault["Core Vault facts for this agent"]
+    Parallel --> Recall["Semantic ranked page plus recent Always-On memories"]
+    Parallel --> Rules["Semantic page filtered for preference/rule wording"]
+    Daily --> Bundle["Context bundle, character counts and layer errors"]
+    Vault --> Bundle
+    Recall --> Bundle
+    Rules --> Bundle
+    Bundle --> Format["formatForPrompt: daily context, authoritative-facts tag and cross-session recall"]
+    Bundle --> Alignment["ContextPipeline forwards alignmentRules as userAlignmentRules"]
+    Alignment --> PromptRules["AgentPromptBuilder adds the user alignment section"]
+    Recall -. "Unavailable search reports its limited scope" .-> Bundle
+```
 
-    %% The 5 Memory Layers
-    subgraph MemoryLayers ["The 5-Layer Architecture"]
-        Layer1["1. Ephemeral / Background<br/>(`AlwaysOnMemoryEngine`)"]
-        Layer2["2. Episodic / Session<br/>(`CaptainsLogService`)"]
-        Layer3["3. Semantic / Somatic<br/>(`MemoryBankService`)"]
-        Layer4["4. User Alignment<br/>(`UserMemoryService`)"]
-        Layer5["5. Authoritative Moat<br/>(`CoreVaultService`)"]
-    end
-
-    %% Storage Backends
-    subgraph Storage ["Storage / Integration Layer"]
-        SessionState["Local Session State"]
-        FirebaseCallable["manageSemanticMemory (Cloud Function proxy)"]
-        VertexEmbeddings["Vertex AI text-embedding-004"]
-        FirestoreVector["Firestore Vector Search (Agent Memories, SDK-dependent)"]
-        Hybrid["Hybrid / Memory Profiles"]
-        Firestore["Firestore (Authoritative Facts)"]
-    end
-
-    %% Transitions
-    Interaction --> Orchestrator
-    
-    Orchestrator -->|"Manages Short-term context"| Layer1
-    Orchestrator -->|"Catalogs Conversations"| Layer2
-    Orchestrator -->|"Semantic Search Queries"| Layer3
-    Orchestrator -->|"Extracts explicit preferences"| Layer4
-    Orchestrator -->|"Commits unquestionable truth"| Layer5
-
-    Layer1 -.->|"Distills into"| SessionState
-    Layer2 -.->|"Migrated to"| FirebaseCallable
-    Layer3 -.->|"Queries via"| FirebaseCallable
-    FirebaseCallable -.->|"Generates Vectors"| VertexEmbeddings
-    VertexEmbeddings -.->|"Stores/Searches"| FirestoreVector
-    Layer4 -.->|"Persisted as"| Hybrid
-    Layer5 -.->|"Locked in"| Firestore
-
-    %% Strict Rules
-    subgraph Hierarchy ["Memory Resolution Hierarchy"]
-        Resolution["Layer 5 (CoreVault) ALWAYS overrides lower layers during synthesis"]
-    end
-    Layer5 -.-> Hierarchy
-
-    %% Styling
-    style Interaction fill:#00D4FF,color:#000
-    style Orchestrator fill:#FF00FF,color:#FFF
-    
-    style Layer1 fill:#8A2BE2,color:#FFF
-    style Layer2 fill:#8A2BE2,color:#FFF
-    style Layer3 fill:#8A2BE2,color:#FFF
-    style Layer4 fill:#8A2BE2,color:#FFF
-    style Layer5 fill:#39FF14,color:#000
-    
-    style FirebaseCallable fill:#FF8C00,color:#000
-    style VertexEmbeddings fill:#FF8C00,color:#000
-    style FirestoreVector fill:#FF8C00,color:#000
-    style Firestore fill:#39FF14,color:#000
-    
-    style Hierarchy fill:#FF3333,color:#FFF,stroke-dasharray: 5 5
+```mermaid
+flowchart TD
+    Tool["Explicit memory-write tool"] --> Kind{"Primary engine save or semantic index?"}
+    Kind -->|"save_memory / save_user_memory"| Engine["AlwaysOnMemoryEngine.ingestWithReceipt"]
+    Engine --> Pipeline["MemoryIngestionPipeline: extract and persist primary memory"]
+    Pipeline --> Check["Validate stored ID and unchanged engine owner"]
+    Pipeline -. "Secondary index sync is best effort" .-> Proxy["manageSemanticMemory authenticated backend"]
+    Kind -->|"index_memory"| Bank["MemoryBankService.addMemory"]
+    Bank --> Proxy
+    Proxy --> Ack["Validate nonempty persisted IDs and memory records"]
+    Check --> Status{"Stored, skipped or unconfirmed?"}
+    Ack --> Status
+    Status -->|"Stored receipt"| Saved["Return actual memory reference; claim saved"]
+    Status -->|"Skipped"| Skipped["No new memory saved; do not report success"]
+    Status -->|"Unconfirmed / lost response"| Unknown["Check memory before retrying; do not claim failed write certainty"]
+    Skipped --> Halt["BaseAgent stops this write instead of requesting another model attempt"]
+    Unknown --> Halt
 ```
 
 ## Transition Breakdown
 
-1. **Orchestration:** Every interaction runs through the `BigBrainEngine`. Rather than forcing an agent to query multiple databases, the engine aggregates memory from 5 distinct layers to build the `memoryContext` injected into the agent's prompt.
-2. **Layer 1 (Always-On):** Handles the immediate, ephemeral context of the current background tasks and active window states.
-3. **Layer 2 (Captain's Log):** Handles episodic memory. The system catalogs summaries of past sessions. Highly valuable episodic insights are actively indexed into semantic memory.
-4. **Layer 3 (Semantic/Somatic):** Handles long-term cross-agent knowledge. The `MemoryBankService` securely calls the `manageSemanticMemory` Firebase backend proxy. The proxy uses Vertex AI `text-embedding-004` to generate vectors and attempts native Firestore vector search (`FieldValue.vector` + `findNearest`) to retrieve semantic chunks (e.g. "purchased 6 gold strings") and pull them into the prompt. Treat this as an SDK-dependent capability that should be verified against the current `firebase-admin` release before relying on it as a hard contract.
-5. **Layer 4 (User Alignment):** Explicitly tracks user preferences, risk tolerance, and creative style constraints. It combines implicit auto-extraction with explicit user-defined memory profiles.
-6. **Layer 5 (Core Vault):** The most critical layer. This stores authoritative facts—financial numbers, legal obligations, and confirmed metadata. The `CoreVaultService` is strictly deterministic, backed by Firestore, and its contents **always** override conflicting memories surfaced by the semantic or episodic layers.
+- `BigBrainEngine.assembleContext` fetches four sources with independent character
+  budgets and collects rejected layer errors. Its formatter includes three text
+  sections; alignment rules remain a separate field forwarded by ContextPipeline to
+  AgentPromptBuilder. This diagram does not claim that every application entry
+  point consumes every field.
+- Semantic recall uses one ranked page and reports its scope, then supplements it
+  with recent Always-On memories. A successful empty page differs from an
+  unavailable search; neither proves every historical memory was checked.
+- The primary ingestion pipeline returns a stored ID, a skip, or failure data.
+  Explicit save tools consume the engine's structured receipt rather than parsing
+  presentation strings. A changed engine owner invalidates the active receipt.
+- Semantic indexing uses the authenticated callable; client-side user IDs are
+  not forwarded as backend ownership authority. Missing/malformed save receipts
+  and rejected requests are not converted into successful empty writes.
+- A primary save receipt does not prove secondary indexing or later retrieval.
+  Unknown outcomes are not automatically repeated because a lost response may
+  follow a successful write. Cross-restart reconciliation and indexing backfill
+  remain open.
+
+Sources: `packages/renderer/src/services/agent/memory/BigBrainEngine.ts`,
+`AlwaysOnMemoryEngine.ts`, `MemoryIngestionPipeline.ts`, `MemoryBankService.ts`,
+`packages/renderer/src/services/agent/tools/MemoryTools.ts`, and
+`packages/firebase/src/functions/agent/manageSemanticMemory.ts`,
+`packages/renderer/src/services/agent/components/ContextPipeline.ts`, and
+`packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts`.

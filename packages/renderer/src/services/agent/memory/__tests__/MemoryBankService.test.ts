@@ -2,6 +2,9 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+const { write } = vi.hoisted(() => ({ write: vi.fn() }));
+vi.mock('firebase/functions', () => ({ httpsCallable: () => write }));
+vi.mock('@/services/firebase', () => ({ functions: {} }));
 import { memoryBankService } from '../MemoryBankService';
 
 // Mock logger
@@ -17,48 +20,32 @@ vi.mock('@/utils/logger', () => ({
 describe('MemoryBankService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        write.mockReset();
     });
 
-    it('should fail closed without calling Mem0 from the browser in addMemory', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve([{ id: 'm1', memory: 'Redacted text' }]),
-        });
-        global.fetch = fetchMock;
-
-        const rawContent = 'My card is 1234-5678-9012-3456 and password: "superSecretPassword123"';
-        const result = await memoryBankService.addMemory('user-1', rawContent);
-
-        expect(result).toEqual([]);
-        expect(fetchMock).not.toHaveBeenCalled();
+    it('returns only acknowledged document receipts and redacts before the callable', async () => {
+        write.mockResolvedValueOnce({ data: { results: [{ id: 'memory-1', memory: 'Redacted content' }] } });
+        expect(await memoryBankService.addMemory('user-1', 'password: superSecretPassword123')).toEqual([{ id: 'memory-1', memory: 'Redacted content' }]);
+        expect(write).toHaveBeenCalledWith({ action: 'add', memory: 'password:[REDACTED_SECRET]' });
     });
 
-    it('should fail closed without calling Mem0 for secret-like content', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve([]),
-        });
-        global.fetch = fetchMock;
-
-        const rawContent = 'API key is apiKey=myAwesomeApiKey123';
-        const result = await memoryBankService.addMemory('user-1', rawContent);
-
-        expect(result).toEqual([]);
-        expect(fetchMock).not.toHaveBeenCalled();
+    it.each([undefined, [], [{}], [{ id: '', memory: 'saved' }], [{ id: 'id', memory: '' }]])('rejects an incomplete save acknowledgement %j', async results => {
+        write.mockResolvedValueOnce({ data: { results } });
+        await expect(memoryBankService.addMemory('user-1', 'Remember this')).rejects.toThrow('acknowledgement is incomplete');
     });
 
-    it('should fail closed without calling Mem0 in searchMemories', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve([]),
-        });
-        global.fetch = fetchMock;
+    it('propagates a lost response without retrying or claiming an empty successful write', async () => {
+        const failure = new Error('response lost');
+        write.mockRejectedValueOnce(failure);
+        await expect(memoryBankService.addMemory('user-1', 'Remember this')).rejects.toBe(failure);
+        expect(write).toHaveBeenCalledTimes(1);
+    });
 
-        const query = 'Find info for secret: "topSecretToken" and credit card 4111 1111 1111 1111';
-        const result = await memoryBankService.searchMemories('user-1', query);
-
-        expect(result).toEqual({ results: [], hasMore: false });
-        expect(fetchMock).not.toHaveBeenCalled();
+    it('continues to distinguish an unavailable search from an empty successful search', async () => {
+        write.mockResolvedValueOnce({ data: { results: [], hasMore: false } });
+        expect(await memoryBankService.searchMemories('user-1', 'album')).toEqual({ results: [], hasMore: false });
+        write.mockRejectedValueOnce(new Error('unavailable'));
+        expect(await memoryBankService.searchMemories('user-1', 'album')).toEqual({ results: [], hasMore: false, unavailable: true });
     });
 
     it('reports one ranked page without repeating a cursorless search', async () => {

@@ -1,11 +1,25 @@
 
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
+import type { AnyToolFunction, AgentContext, ToolFunctionResult } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine, type MemoryIngestReceipt } from '../memory/AlwaysOnMemoryEngine';
 import type { AlwaysOnMemoryCategory } from '@/types/AlwaysOnMemory';
 import { importWithRetry } from '@/utils/dynamicImport';
+
+function memoryWriteFailure(toolName: string, message: string, code: 'MEMORY_SAVE_UNCONFIRMED' | 'MEMORY_NOT_SAVED' = 'MEMORY_SAVE_UNCONFIRMED'): ToolFunctionResult {
+    return toolError(message, code, { retryable: false, toolName });
+}
+
+function memoryReceiptResult(toolName: string, receipt: MemoryIngestReceipt, data: Record<string, unknown> = {}): ToolFunctionResult {
+    if (receipt.status !== 'stored') {
+        return memoryWriteFailure(toolName, receipt.status === 'skipped'
+            ? `No new memory was saved: ${receipt.reason}.`
+            : 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.', receipt.status === 'skipped' ? 'MEMORY_NOT_SAVED' : 'MEMORY_SAVE_UNCONFIRMED');
+    }
+    const message = `Memory saved. Reference: ${receipt.memoryId}.`;
+    return toolSuccess({ ...data, ...receipt }, message, { durableReceipt: true, receiptText: message });
+}
 
 /**
  * MemoryTools - Unified tools for interacting with the Always-On Memory system.
@@ -31,21 +45,16 @@ export const MemoryTools = {
                 'preference': 'preference'
             };
 
-            const result = await alwaysOnMemoryEngine.ingest(
+            const result = await alwaysOnMemoryEngine.ingestWithReceipt(
                 args.content,
                 'agent_extraction',
                 categoryMap[args.type || 'fact'] || 'fact'
             );
 
-            return {
-                content: args.content,
-                projectId,
-                engineResponse: result,
-                message: `Memory stored via AlwaysOnMemoryEngine.`
-            };
+            return memoryReceiptResult('save_memory', result, { content: args.content, projectId });
         } catch (e: unknown) {
             logger.error('[MemoryTools] save_memory failed:', e);
-            return toolError("Failed to save memory to engine.", "ENGINE_ERROR");
+            return memoryWriteFailure('save_memory', 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 
@@ -71,16 +80,17 @@ export const MemoryTools = {
         const userId = useStore.getState().user?.uid;
         
         if (!userId) {
-            return toolError("User is not authenticated.", "AUTH_ERROR");
+            return memoryWriteFailure('index_memory', 'Sign in before saving semantic memory. No memory was saved.', 'MEMORY_NOT_SAVED');
         }
 
         try {
             const { memoryBankService } = await importWithRetry(() => import('../memory/MemoryBankService'));
             const result = await memoryBankService.addMemory(userId, args.content);
-            return toolSuccess({ results: result }, "Successfully indexed memory to semantic memory bank.");
+            if (!result.length) return memoryWriteFailure('index_memory', 'Semantic memory save could not be confirmed. Check memory before retrying.');
+            return toolSuccess({ results: result }, `Semantic memory saved. Reference: ${result.map(item => item.id).join(', ')}.`);
         } catch (e: unknown) {
             logger.error('[MemoryTools] index_memory failed:', e);
-            return toolError("Failed to index memory.", "INDEX_ERROR");
+            return memoryWriteFailure('index_memory', 'Semantic memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 
@@ -95,15 +105,14 @@ export const MemoryTools = {
         tags?: string[] 
     }) => {
         try {
-            const summary = await alwaysOnMemoryEngine.ingest(
+            const receipt = await alwaysOnMemoryEngine.ingestWithReceipt(
                 args.content,
                 'user_input',
                 args.category
             );
-            return toolSuccess({ summary }, `Successfully saved to persistent memory.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to save user memory: ${error.message}`, 'STORAGE_ERROR');
+            return memoryReceiptResult('save_user_memory', receipt);
+        } catch {
+            return memoryWriteFailure('save_user_memory', 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 

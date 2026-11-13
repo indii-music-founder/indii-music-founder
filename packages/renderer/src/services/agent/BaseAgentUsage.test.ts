@@ -447,8 +447,10 @@ describe('BaseAgent completion audit ordering', () => {
         vi.mocked(recordToolOutcome).mockResolvedValue({ status: 'unavailable' });
     });
 
-    it.each(['credential', 'terminal'] as const)('audits a %s failure before returning its original outcome', async kind => {
-        const toolResult: ToolFunctionResult = kind === 'credential'
+    it.each(['credential', 'memory', 'terminal'] as const)('audits a %s failure before returning its original outcome', async kind => {
+        const toolResult: ToolFunctionResult = kind === 'memory'
+            ? { success: false, error: 'Memory save could not be confirmed', metadata: { errorCode: 'MEMORY_SAVE_UNCONFIRMED' } }
+            : kind === 'credential'
             ? { success: false, error: 'Credential bridge unavailable', metadata: { errorCode: 'CREDENTIAL_STORAGE_UNAVAILABLE' } }
             : { success: false, error: 'Delegation stopped', failure: { code: 'AGENT_EXECUTION_FAILED', retryable: false, agentId: 'generalist', recovery: 'review_failure' } };
         const agent = new BaseAgent({ id: 'generalist', name: 'Test', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'test', tools: [], authorizedTools: ['generate_image'] });

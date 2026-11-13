@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { TOOL_REGISTRY } from './tools';
 import { alwaysOnMemoryEngine } from './memory/AlwaysOnMemoryEngine';
+import type { ToolFunctionResult } from './types';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -28,7 +29,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 
 vi.mock('./memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
-        ingest: vi.fn().mockResolvedValue('Memory processed'),
+        ingestWithReceipt: vi.fn().mockResolvedValue({ status: 'stored', memoryId: 'registry-memory', summary: 'Memory processed' }),
         query: vi.fn().mockResolvedValue('Retrieved synthesized answer')
     }
 }));
@@ -41,10 +42,19 @@ describe('indii Conductor Restoration', () => {
         expect(TOOL_REGISTRY).toHaveProperty('request_approval');
     });
 
-    it('save_memory tool should call AlwaysOnMemoryEngine', async () => {
-        const result = (await TOOL_REGISTRY['save_memory']!({ content: 'Test memory', type: 'fact' })) as any;
-        expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalled();
-        expect(result.data.message).toContain('Memory stored');
+    it('save_memory registry entry preserves the acknowledged memory receipt', async () => {
+        const result = await TOOL_REGISTRY.save_memory!({ content: 'Test memory', type: 'fact' }) as ToolFunctionResult;
+        expect(alwaysOnMemoryEngine.ingestWithReceipt).toHaveBeenCalledWith('Test memory', 'agent_extraction', 'fact');
+        expect(result.success).toBe(true);
+        expect(result.data).toMatchObject({ status: 'stored', memoryId: 'registry-memory' });
+        expect(result.message).toContain('Reference: registry-memory');
+    });
+
+    it('save_memory registry entry does not convert an uncertain write to success', async () => {
+        vi.mocked(alwaysOnMemoryEngine.ingestWithReceipt).mockResolvedValueOnce({ status: 'unconfirmed', reason: 'response lost' });
+        const result = await TOOL_REGISTRY.save_memory!({ content: 'Test memory' }) as ToolFunctionResult;
+        expect(result.success).toBe(false);
+        expect(result.metadata).toMatchObject({ errorCode: 'MEMORY_SAVE_UNCONFIRMED', retryable: false });
     });
 
     it('recall_memories tool should call AlwaysOnMemoryEngine', async () => {
