@@ -124,7 +124,7 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         id: 'mlc_membership',
         title: 'The Mechanical Licensing Collective',
         organization: 'The MLC',
-        tagline: 'Collect 100% of US interactive digital streaming mechanical royalties directly under the Music Modernization Act.',
+        tagline: 'Manage U.S. digital audio mechanical royalties for musical-work shares you are entitled to administer.',
         category: 'royalties',
         difficulty: 'Easy (5 min)',
         feeDescription: 'Free membership (100% royalty payout with 0% commission)',
@@ -135,7 +135,7 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         whyItMatters: [
             'Interactive DSPs (Spotify, Apple Music, Amazon Music, Tidal) pay mechanical royalties directly to The MLC',
             'PROs (BMI/ASCAP) DO NOT collect mechanical royalties — only performance royalties',
-            'Unclaimed mechanical royalties become permanent "black box" money distributed to major publishers after 3 years',
+            'Check your works and any existing administrator mandate before registering or claiming shares',
             'Zero administrative fee — operations are funded 100% by digital service providers by law'
         ],
         prerequisites: [
@@ -147,10 +147,10 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
             {
                 stepNumber: 1,
                 title: 'Create Member Profile on The MLC Portal',
-                instruction: 'Open The MLC online portal and select "Create Account". Register as a "Self-Administered Writer" if you do not have a separate publishing entity, or as a "Publisher" if you run your own label LLC.',
+                instruction: 'Use The MLC Get Started flow to identify the right Hub. Join as a Member for shares you self-administer; owning a record label alone does not establish musical-work administration rights.',
                 portalUrl: 'https://portal.themlc.com/',
                 portalLabel: 'Open The MLC Portal',
-                tip: 'If you have an admin deal like Songtrust or TuneCore Publishing, they collect on your behalf; otherwise, register directly to avoid commission deductions.'
+                tip: 'If a publisher or administrator already represents these shares, check your agreement and contact them before creating a duplicate claim.'
             },
             {
                 stepNumber: 2,
@@ -182,7 +182,7 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         tagline: 'Public performance royalties across streaming, radio, television, live performances, and international societies.',
         category: 'royalties',
         difficulty: 'Easy (5 min)',
-        feeDescription: 'BMI: Free for Writers | ASCAP: $50 one-time | SESAC: By Invitation',
+        feeDescription: 'Review current writer/publisher fees and eligibility on each provider’s official application',
         accentColor: 'text-emerald-400',
         badgeBg: 'bg-emerald-500/10',
         borderColor: 'border-emerald-500/30',
@@ -190,41 +190,41 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         whyItMatters: [
             'Collects performance royalties whenever your composition is streamed, broadcast, or performed live',
             'Issues your authoritative 9 to 11-digit IPI (Interested Party Information) number, the global backbone of songwriter identity',
-            'Mandatory prerequisite before executing publishing sync licensing or co-writing agreements',
+            'PRO affiliation concerns composition performance royalties; it does not establish ownership or authorize sync licensing',
             'Reciprocal agreements with international PROs (PRS, SACEM, GEMA, SOCAN) protect global earnings'
         ],
         prerequisites: [
             'Legal name, date of birth, and US SSN or international passport',
-            'Selection between BMI and ASCAP (songwriters can only affiliate with one PRO as a writer)'
+            'Your existing affiliations, territory and representation agreements; review any transfer restrictions before changing societies'
         ],
         steps: [
             {
                 stepNumber: 1,
                 title: 'Select Your PRO & Apply as Songwriter',
-                instruction: 'Choose between BMI and ASCAP. BMI songwriter affiliation is 100% free; ASCAP charges a $50 application fee. Submit your application online.',
+                instruction: 'Compare eligible societies and choose for yourself. Check current writer and publisher application terms separately, including fees and any existing affiliation restrictions.',
                 portalUrl: 'https://online.bmi.com/',
                 portalLabel: 'Open BMI Application',
-                tip: 'Both PROs offer identical statutory protections. BMI pays quarterly; ASCAP pays quarterly. You can apply as ASCAP at members.ascap.com.'
+                tip: 'BMI is one option, not an indii recommendation. ASCAP applications are available at ascap.com/join; consult other societies for their eligibility and invitation requirements.'
             },
             {
                 stepNumber: 2,
-                title: 'Establish a Companion Publisher Entity (Recommended)',
-                instruction: 'To collect 100% of performance royalties, establish an affiliated publishing company. Otherwise, the 50% publisher share is either paid to your writer account or held in escrow.',
+                title: 'Review Publisher Representation',
+                instruction: 'Check how your chosen society handles publisher shares and whether an existing publisher or administrator already represents yours. A separate company or publisher affiliation is not a universal requirement.',
                 portalUrl: 'https://members.ascap.com/',
                 portalLabel: 'Open ASCAP Members Portal',
-                tip: 'Name your publisher entity uniquely (e.g. [YourLastName] Sound Publishing LLC) and search the PRO repertoire to avoid naming conflicts.'
+                tip: 'Use your chosen society’s publisher guidance. Do not affiliate with a different society solely because its portal is linked here.'
             },
             {
                 stepNumber: 3,
                 title: 'Record Your Official IPI / CAE Number',
-                instruction: 'Once approved by CISAC (typically 2-4 business days), your PRO dashboard will display your official 9-11 digit IPI number. Save it in indii Studio.',
-                tip: 'Never invent an IPI number. IPI numbers are cryptographically verified against the CISAC global registry.'
+                instruction: 'After your society confirms affiliation, copy the IPI / CAE identifier it provides. Keep leading zeros and distinguish it from your account number.',
+                tip: 'Never invent an IPI number. Saving a number in indii does not verify it with your society or CISAC.'
             }
         ],
         identifierLabel: 'Authoritative Writer / Publisher IPI Number',
         identifierPlaceholder: 'e.g. 00123456789',
         identifierHelp: 'The 9 to 11 digit number listed on your BMI or ASCAP member card / online profile.',
-        troubleshooting: 'If your IPI number is pending issuance, PRO registration can take 48-72 hours after initial approval before the global CISAC directory syncs.',
+        troubleshooting: 'If your identifier is pending or unclear, contact your society. Processing times vary; retain the provider’s acknowledgement.',
         officialUrl: 'https://www.cisac.org/services/information-services/ipi'
     },
     soundexchange: {
@@ -240,10 +240,10 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         borderColor: 'border-cyan-500/30',
         icon: <Share2 className="w-5 h-5 text-cyan-400" />,
         whyItMatters: [
-            'Collects non-interactive digital streaming royalties that PROs (BMI/ASCAP) and DSPs are legally barred from collecting',
+            'Collects eligible sound-recording performance royalties, distinct from the composition royalties handled by PROs',
             'Splits payouts directly: 50% to Master Rights Owner / Label, 45% to Featured Artist, and 5% to backing session musicians',
-            'Over $1 Billion collected annually; unclaimed independent royalties sit indefinitely in the SoundExchange repertoire',
-            'Statutory royalties are immune to distributor recoupment or publisher splits'
+            'Unclaimed royalties can expire; consult SoundExchange about applicable periods and claims',
+            'Payment depends on eligible uses, accepted claims, account requirements and applicable agreements'
         ],
         prerequisites: [
             'Featured recording artist name and Master sound recording copyright owner name',
@@ -252,11 +252,11 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
         steps: [
             {
                 stepNumber: 1,
-                title: 'Register as Both Featured Artist & Sound Recording Owner',
+                title: 'Register for the Roles You Actually Hold',
                 instruction: 'Open the SoundExchange portal and register. If you own your master recordings, select BOTH "Featured Artist" and "Sound Recording Copyright Owner (SRCO)".',
                 portalUrl: 'https://sportal.soundexchange.com/',
                 portalLabel: 'Open SoundExchange Portal',
-                tip: 'Selecting both roles ensures you receive 95% of total non-interactive royalties (50% master + 45% artist).'
+                tip: 'Select both roles only if you are the featured artist and control the relevant recording rights. Role selection does not guarantee a payout or ownership share.'
             },
             {
                 stepNumber: 2,
@@ -264,7 +264,7 @@ export const RIGHTS_GUIDES: Record<FounderPrerequisiteId, RightsWalkthroughGuide
                 instruction: 'In SoundExchange, search for your released song titles and matching ISRCs. Claim your recordings so royalties route to your account.',
                 portalUrl: 'https://www.soundexchange.com/repertoire-search/',
                 portalLabel: 'Search SoundExchange Repertoire',
-                tip: 'SoundExchange holds historical royalties for up to 3 years; claiming existing tracks triggers retroactive payouts.'
+                tip: 'SoundExchange says unclaimed royalties can expire after three years. A claim does not guarantee retroactive payment.'
             },
             {
                 stepNumber: 3,
@@ -530,7 +530,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                                 </span>
                             </h2>
                             <p className="text-xs text-gray-400 mt-0.5">
-                                Step-by-step verification assistant for PRO affiliation, The MLC, US Copyright Office, SoundExchange, and metadata standards.
+                                Guidance and progress tracking for rights registrations. You choose your providers and complete their applications.
                             </p>
                         </div>
                     </div>
@@ -731,7 +731,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                             <div>
                                 <h4 className="text-xs font-bold text-white flex items-center gap-2">
                                     <FileCheck2 size={14} className="text-[#FFD700]" />
-                                    Official Credential Verification
+                                    Provider Identifier — Self-Reported
                                 </h4>
                                 <p className="text-[11px] text-gray-400 mt-0.5">
                                     {currentGuide.identifierHelp}
@@ -761,7 +761,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFD700] to-[#FFB800] text-black text-xs font-bold hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_0_12px_rgba(255,184,0,0.25)]"
                             >
                                 <Save size={13} />
-                                <span>Save & Verify</span>
+                                <span>Save as Completed</span>
                             </button>
                         </div>
                     </div>
@@ -776,7 +776,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                 {/* Footer Controls */}
                 <div className="px-6 py-4 border-t border-white/10 bg-[#000000]/60 backdrop-blur-md flex flex-wrap items-center justify-between gap-3">
                     <p className="text-[11px] text-gray-500">
-                        Zero-Credential Isolation: Agency logins and statutory payments stay strictly on official government and society domains.
+                        Educational guidance only. You handle provider sign-in, terms, sensitive information and final submission. Saved completion is self-reported, not provider verification or legal/tax advice.
                     </p>
 
                     <div className="flex items-center gap-3">

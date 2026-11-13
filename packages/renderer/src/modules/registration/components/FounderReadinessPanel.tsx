@@ -61,7 +61,7 @@ const PREREQUISITES: FounderPrerequisite[] = [
     category: 'royalties',
     feeDescription: 'Free to nominal application fee',
     officialUrl: 'https://www.cisac.org/services/information-services/ipi',
-    guidance: 'Join as writer and consider separate publishing entity. IPI numbers are authoritative system data—never app-generated.',
+    guidance: 'Choose your society and review its writer and publisher requirements. A separate publishing company is not always required. Use only provider-issued IPI numbers.',
     identifierLabel: 'Authoritative Writer / Publisher IPI Number',
     identifierPlaceholder: 'e.g. 00123456789',
   },
@@ -83,7 +83,7 @@ const PREREQUISITES: FounderPrerequisite[] = [
     category: 'royalties',
     feeDescription: 'Free registration',
     officialUrl: 'https://www.soundexchange.com/register/',
-    guidance: 'Register both featured performer and sound-recording copyright-owner roles to collect non-interactive digital performance royalties.',
+    guidance: 'Register for the featured performer and/or sound-recording copyright-owner roles you actually hold. Review existing representation before claiming recordings.',
     identifierLabel: 'SoundExchange Account Number',
     identifierPlaceholder: 'e.g. SX-XXXXXX',
   },
@@ -191,7 +191,7 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-xs font-mono text-neutral-400">Readiness Score</div>
+            <div className="text-xs font-mono text-neutral-400">Self-Reported Progress</div>
             <div className="text-xl font-black text-white">{progressPct}%</div>
           </div>
           <button
@@ -217,7 +217,7 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
         <ShieldAlert size={18} className="text-amber-400 shrink-0 mt-0.5" />
         <div>
           <strong className="font-semibold block mb-0.5">Authoritative Registration Standard:</strong>
-          indii assists in preparing DDEX packages and metadata, but never self-mints official ISRCs, UPCs, or IPIs without your verified organization prefixes. Registering directly with these official bodies ensures your ownership and royalties remain unencumbered.
+          indii helps prepare metadata and track your progress. Use official identifiers and only allocate ISRCs within an authorized registrant range. Your checkmarks record your own report of completion; they do not verify provider acceptance, ownership, eligibility or royalty payments.
         </div>
       </div>
 
@@ -240,9 +240,9 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                     <button
                       onClick={() => handleToggleVerified(item.id)}
                       className="text-neutral-400 hover:text-white transition-colors"
-                      aria-label={`${state.verified ? 'Mark pending' : 'Mark verified'}: ${item.title}`}
+                      aria-label={`${state.verified ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
                       aria-pressed={state.verified}
-                      title={`${state.verified ? 'Mark pending' : 'Mark verified'}: ${item.title}`}
+                      title={`${state.verified ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
                     >
                       {state.verified ? (
                         <CheckCircle2 size={18} className="text-emerald-400" />

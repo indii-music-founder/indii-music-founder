@@ -80,7 +80,8 @@ describe('RightsRegistrationWalkthroughModal', () => {
         expect(screen.getByLabelText('Mark step 1 as incomplete')).toBeInTheDocument();
     });
 
-    it('allows entering identifier and saving prerequisite verification', () => {
+    // Structural-only: the callback below is a test double, not provider verification.
+    it('allows entering an identifier and saving self-reported completion', () => {
         render(
             <RightsRegistrationWalkthroughModal
                 isOpen={true}
@@ -94,7 +95,7 @@ describe('RightsRegistrationWalkthroughModal', () => {
         const input = screen.getByLabelText('Authoritative Writer / Publisher IPI Number');
         fireEvent.change(input, { target: { value: '00987654321' } });
 
-        const saveBtn = screen.getByRole('button', { name: /Save & Verify/i });
+        const saveBtn = screen.getByRole('button', { name: /Save as Completed/i });
         fireEvent.click(saveBtn);
 
         expect(mockOnUpdate).toHaveBeenCalledWith('pro_affiliation', '00987654321', true);

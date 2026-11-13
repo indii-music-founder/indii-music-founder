@@ -79,7 +79,7 @@ const PORTAL_METADATA: Record<
     name: 'ASCAP Performing Rights Organization',
     organization: 'ASCAP',
     officialUrl: 'https://members.ascap.com/',
-    fee: '$50 one-time application fee',
+    fee: 'Review current writer/publisher application fees at ascap.com/join',
     description: 'Collects public performance royalties worldwide for songwriters, composers, and music publishers.',
   },
   soundexchange: {
