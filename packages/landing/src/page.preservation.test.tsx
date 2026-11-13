@@ -340,9 +340,9 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('$55');
     expect(text).toContain('$110');
     expect(text).toContain('Monthly, quarterly, six-month, or annual.');
-    expect(text).toContain('About 5% less');
-    expect(text).toContain('About 10% less');
-    expect(text).toContain('About 20% less');
+    expect(text).toContain('About 15% off the first 3 months');
+    expect(text).toContain('About 30% off the first 6 months');
+    expect(text).toContain('50% off the first year');
     expect(text).toContain('checkout remains closed until plan entitlements are verified');
     expect(text).toContain('Purchased extra capacity will not expire');
     expect(container.querySelector('[role="group"][aria-label="Billing schedule"]')).not.toBeNull();
@@ -351,10 +351,16 @@ describe('home page preservation (founder mode)', () => {
     await act(async () => {
       quarterlyButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('$63');
-    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('about $21/month');
-    expect(container.querySelector('[data-plan="build"]')?.textContent).toContain('$157');
-    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('$314');
+    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('$56');
+    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('about $19/month');
+    expect(container.querySelector('[data-plan="build"]')?.textContent).toContain('$140');
+    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('$281');
+    expect(container.querySelector('[data-plan="start"]')?.textContent).toContain('Then $66 every 3 months.');
+    const annualButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('Annual')) as HTMLButtonElement;
+    await act(async () => annualButton.click());
+    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('$660');
+    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('for the first 12 months');
+    expect(container.querySelector('[data-plan="scale"]')?.textContent).toContain('Then $1320 every 12 months.');
     expect(container.querySelector('a[href*="founders-checkout"]')).toBeNull();
     const founderOwnerLink = Array.from(container.querySelectorAll('a')).find((link) => link.textContent?.includes('Get Founding Owner access'));
     expect(founderOwnerLink?.getAttribute('href')).toBe('#waitlist');

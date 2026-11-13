@@ -9,6 +9,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
 import { stripe, getPriceId } from '../stripe/config';
+import { prepaidOffer, assertPrepaidCatalog } from '../stripe/prepaidPricing';
 import { assertAllowedStripeRedirectUrl } from '../stripe/redirectAllowlist';
 import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
@@ -61,6 +62,28 @@ export const createCheckoutSession = onCall({
   const validatedCancelUrl = assertAllowedStripeRedirectUrl(cancelUrl, 'cancelUrl');
 
   try {
+    // Determine price ID and cadence
+    const cadence = billingPeriod ?? (tier === SubscriptionTier.PRO_YEARLY ? 'annual' : 'monthly');
+    const priceId = getPriceId(tier, cadence);
+
+    if (!priceId) {
+      throw new HttpsError('failed-precondition', `No Stripe price configured for tier: ${tier} (${cadence})`);
+    }
+
+    const offer = prepaidOffer(tier, cadence);
+    let introductoryCoupon: string | undefined;
+    if (offer) {
+      introductoryCoupon = process.env[offer.couponEnv];
+      if (!introductoryCoupon) {
+        throw new HttpsError('failed-precondition', 'Introductory prepaid billing is not configured yet.');
+      }
+      const [price, coupon] = await Promise.all([
+        stripe.prices.retrieve(priceId),
+        stripe.coupons.retrieve(introductoryCoupon, { expand: ['applies_to'] }),
+      ]);
+      assertPrepaidCatalog(price, coupon, offer);
+    }
+
     const db = getFirestore();
 
     // Get or create Stripe customer
@@ -91,14 +114,6 @@ export const createCheckoutSession = onCall({
       stripeCustomerId = customer.id;
     }
 
-    // Determine price ID and cadence
-    const cadence = billingPeriod ?? (tier === SubscriptionTier.PRO_YEARLY ? 'annual' : 'monthly');
-    const priceId = getPriceId(tier, cadence);
-
-    if (!priceId) {
-      throw new HttpsError('failed-precondition', `No Stripe price configured for tier: ${tier} (${cadence})`);
-    }
-
     // Build checkout session parameters
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'subscription',
@@ -113,7 +128,12 @@ export const createCheckoutSession = onCall({
       success_url: validatedSuccessUrl,
       cancel_url: validatedCancelUrl,
       metadata: { userId, tier, billingPeriod: cadence },
-      allow_promotion_codes: true,
+      // A once-only fixed discount preserves whole-dollar first-term prices.
+      // Do not stack customer promotion codes onto the introductory offer.
+      ...(introductoryCoupon ? {
+        discounts: [{ coupon: introductoryCoupon }],
+        subscription_data: { metadata: { userId, tier, billingPeriod: cadence, introductoryOffer: 'first_prepaid_term_v1' } },
+      } : { allow_promotion_codes: true }),
       automatic_tax: { enabled: true },
       client_reference_id: userId
     };
@@ -125,8 +145,9 @@ export const createCheckoutSession = onCall({
     const SERVER_MAX_TRIAL_DAYS = 14;
     if (trialDays && trialDays > 0) {
       sessionParams.subscription_data = {
+        ...sessionParams.subscription_data,
         trial_period_days: Math.min(Math.floor(trialDays), SERVER_MAX_TRIAL_DAYS),
-        metadata: { userId, tier, billingPeriod: cadence }
+        metadata: { ...sessionParams.subscription_data?.metadata, userId, tier, billingPeriod: cadence }
       };
     }
 

@@ -76,6 +76,7 @@ export const AgentLoopExecutionSchema = z.object({
     // Keep scheduled provenance when queue entries pass through schema parsing.
     sourceDefinitionPath: z.string().min(1).optional(),
     scheduledFor: z.number().int().nonnegative().safe().optional(),
+    evaluationFailure: z.string().optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
 });

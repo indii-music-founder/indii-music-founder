@@ -68,6 +68,16 @@ describe('ExecutionTokenBudget', () => {
         expect(budget.remaining).toBe(15);
     });
 
+    it.each([0, 70, 80])('still refunds a fresh call after restoring stale spend (%s)', staleSpend => {
+        const budget = new ExecutionTokenBudget(100);
+        budget.ensureSpentAtLeast(80);
+        const fresh = budget.reserve(20)!;
+        budget.ensureSpentAtLeast(staleSpend);
+        budget.settle(fresh, 5);
+        expect(budget.spent).toBe(85);
+        expect(budget.remaining).toBe(15);
+    });
+
     it('preserves new pending reservations while an older restored call settles', () => {
         const budget = new ExecutionTokenBudget(100);
         const older = budget.reserve(30)!;

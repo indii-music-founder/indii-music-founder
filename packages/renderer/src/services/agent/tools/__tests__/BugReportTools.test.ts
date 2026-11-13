@@ -77,14 +77,22 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.warning).not.toHaveBeenCalled();
   });
 
-  it('returns toolError when the pipeline is unreachable — never fake success', async () => {
+  it('reports an unconfirmed save when the callable response is lost', async () => {
     judgeInvoke.mockRejectedValue(new Error('unavailable'));
 
     const result = await BugReportTools.report_bug!(args);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('NOT filed');
-    expect(toastMock.error).toHaveBeenCalledWith(expect.stringContaining('could NOT be filed'));
+    expect(result.error).toContain('save could not be confirmed');
+    expect(toastMock.warning).toHaveBeenCalledWith(expect.stringContaining('Check the bug tracker before retrying'));
+  });
+
+  it('leaves save status unconfirmed when the response omits it', async () => {
+    judgeInvoke.mockResolvedValue({ data: { github: 'skipped' } });
+    const result = await BugReportTools.report_bug!(args);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('save could not be confirmed');
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 
   it('returns toolError when the server cannot persist, even with a structured response', async () => {
@@ -95,8 +103,22 @@ describe('BugReportTools.report_bug honesty gate', () => {
     const result = await BugReportTools.report_bug!(args);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('NOT filed');
+    expect(result.error).toBe('The bug tracker could not save your report.');
     expect(toastMock.error).toHaveBeenCalled();
+  });
+
+  it.each(['failed', undefined])('preserves save status %s when the notification throws', async firestore => {
+    judgeInvoke.mockResolvedValue({ data: { firestore, github: 'skipped' } });
+    const notification = firestore === 'failed' ? toastMock.error : toastMock.warning;
+    notification.mockImplementationOnce(() => { throw new Error('Notification unavailable'); });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(firestore === 'failed'
+      ? 'The bug tracker could not save your report.'
+      : 'save could not be confirmed');
+    expect(result.metadata?.durableReceipt).toBeUndefined();
   });
 
   it('stays loud when GitHub sync fails after a durable save', async () => {
@@ -109,6 +131,58 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(result.success).toBe(true);
     expect(toastMock.warning).toHaveBeenCalledWith(expect.stringContaining('GitHub issue sync failed'));
     expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it('returns the saved receipt even when the sync notification throws', async () => {
+    judgeInvoke.mockResolvedValue({ data: { firestore: 'ok', github: 'failed', bugId: 'report-42' } });
+    toastMock.warning.mockImplementationOnce(() => { throw new Error('Notification unavailable'); });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.success).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+  });
+
+  it('preserves a confirmed save when GitHub status is missing', async () => {
+    judgeInvoke.mockResolvedValue({ data: { firestore: 'ok', bugId: 'report-42' } });
+    const result = await BugReportTools.report_bug!(args);
+    expect(result.success).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+    expect(result.metadata?.receiptText).toContain('GitHub sync did not complete.');
+    expect(toastMock.warning).toHaveBeenCalled();
+  });
+
+  it('returns the receipt while memory ingestion is pending', async () => {
+    const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+    let finishMemory: (() => void) | undefined;
+    vi.mocked(alwaysOnMemoryEngine.ingest).mockImplementationOnce(
+      () => new Promise(resolve => { finishMemory = () => resolve(undefined); }),
+    );
+    judgeInvoke.mockResolvedValue({
+      data: { firestore: 'ok', github: 'ok', bugId: 'report-42' },
+    });
+    const operation = BugReportTools.report_bug!(args);
+    try {
+      await vi.waitFor(() => expect(finishMemory).toBeDefined());
+      const receipt = await Promise.race([operation, Promise.resolve('pending')]);
+      expect(receipt).toMatchObject({ success: true, metadata: { durableReceipt: true } });
+    } finally {
+      finishMemory?.();
+      await operation;
+    }
+  });
+
+  it('keeps the saved report ID when GitHub confirms a comment without a URL', async () => {
+    judgeInvoke.mockResolvedValue({
+      data: { firestore: 'ok', github: 'merged_as_comment', bugId: 'report-42' },
+    });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.metadata?.durableReceipt).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+    expect(result.metadata?.receiptText).toContain('Added as a comment to an existing GitHub issue.');
+    expect(result.metadata?.receiptText).not.toContain('undefined');
   });
 
   it('rejects reports missing title or description', async () => {
@@ -137,6 +211,7 @@ describe('BugReportTools.request_feature honesty gate', () => {
     const result = await BugReportTools.request_feature!(featureArgs);
 
     expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({ featureId: 'feat-doc-1' });
     expect(result.message).toContain('Saved to your feedback tracker');
     expect(mockFirestoreAdd).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Batch stems export',
