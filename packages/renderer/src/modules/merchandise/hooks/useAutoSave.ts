@@ -56,6 +56,11 @@ export const useAutoSave = (
     const [error, setError] = useState<string | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const saveDesign = useCallback(async (): Promise<SaveResult> => {
+        // Showroom unmounts the editor before all pending save callbacks finish.
+        // Fabric keeps the object reference but releases its rendering contexts.
+        if (canvas?.disposed || canvas?.destroyed) {
+            return { success: false, reason: 'Auto-save skipped: canvas has been disposed.' };
+        }
         if (!canvas || !user || !currentProjectId) {
             const reason = `Auto-save skipped: missing ${[
                 !canvas && 'canvas',

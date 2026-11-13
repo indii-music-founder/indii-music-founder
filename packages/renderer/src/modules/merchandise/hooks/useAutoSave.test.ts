@@ -4,6 +4,8 @@ import * as fabric from 'fabric';
 import { useAutoSave } from './useAutoSave';
 import { useStore } from '@/core/store';
 
+// Structural regression coverage only: Firebase and account context below are
+// legacy test doubles, not evidence of genuine save or account acceptance.
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
     db: {},
@@ -75,6 +77,23 @@ describe('useAutoSave', () => {
         expect(result.current.lastSaved).toBeNull();
         expect(result.current.isSaving).toBe(false);
         expect(result.current.error).toBeNull();
+    });
+
+    it('does not render a disposed Fabric canvas from a retained save callback', async () => {
+        const { result } = renderHook(() =>
+            useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
+        );
+        const retainedSave = result.current.saveDesign;
+        await mockCanvas.dispose();
+        const viewportChanges = vi.spyOn(mockCanvas, 'setViewportTransform');
+
+        await act(async () => {
+            expect((await retainedSave()).success).toBe(false);
+        });
+
+        expect(viewportChanges).not.toHaveBeenCalled();
+        expect(result.current.lastSaved).toBeNull();
+        viewportChanges.mockRestore();
     });
 
     it('should derive activeOrg from organizations array', async () => {

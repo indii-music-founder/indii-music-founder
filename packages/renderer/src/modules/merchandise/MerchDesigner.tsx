@@ -114,7 +114,7 @@ export default function MerchDesigner() {
         fabricCanvas,
         designName,
         designId,
-        { interval: 30000, enabled: true }
+        { interval: 30000, enabled: viewMode === 'design' }
     );
 
     // Staged Handoff Hook Interceptor
