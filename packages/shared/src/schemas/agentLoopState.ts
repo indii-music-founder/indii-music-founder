@@ -72,6 +72,9 @@ export const AgentLoopExecutionSchema = z.object({
     // Durable high-water mark; checkpoints without it cannot prove remaining allowance.
     tokenBudgetSpent: z.number().int().nonnegative().safe().optional(),
     actionCheckpoint: AgentLoopActionCheckpointSchema.optional(),
+    // Keep scheduled provenance when queue entries pass through schema parsing.
+    sourceDefinitionPath: z.string().min(1).optional(),
+    scheduledFor: z.number().int().nonnegative().safe().optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
 });
