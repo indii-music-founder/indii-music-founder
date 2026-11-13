@@ -14,14 +14,14 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     expect(screen.getByText(/PRO Writer & Publisher Affiliation/i)).toBeInTheDocument();
   });
 
-  it('allows updating an identifier value and toggling verified status', () => {
+  it('allows updating an identifier and self-reported completion', () => {
     render(<FounderReadinessPanel userId="test-user-2" />);
 
     const isrcInput = screen.getByPlaceholderText('e.g. QZ-XXX');
     fireEvent.change(isrcInput, { target: { value: 'QZ-123' } });
     expect(isrcInput).toHaveValue('QZ-123');
 
-    const isrcToggle = screen.getByRole('button', { name: 'Mark verified: US ISRC Rights Owner Prefix' });
+    const isrcToggle = screen.getByRole('button', { name: 'Mark completed (self-reported): US ISRC Rights Owner Prefix' });
     expect(isrcToggle).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(isrcToggle);
     expect(screen.getByRole('button', { name: 'Mark pending: US ISRC Rights Owner Prefix' }))
