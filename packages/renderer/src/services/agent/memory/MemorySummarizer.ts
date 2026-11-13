@@ -129,7 +129,10 @@ export class MemorySummarizer {
                 insights?: string[];
                 connections?: Array<{ fromId?: unknown; toId?: unknown; relationship?: unknown; confidence?: unknown }>;
                 confidence?: unknown;
-            }>(response, { insights: [], connections: [], confidence: 0 });
+            } | null>(response, null);
+            if (!parsed || !Array.isArray(parsed.insights) || !Array.isArray(parsed.connections)) {
+                throw new Error('Memory synthesis returned an invalid response.');
+            }
 
             const rawInsights = Array.isArray(parsed.insights) ? parsed.insights.filter((i): i is string => typeof i === 'string' && i.trim().length > 0) : [];
             const rawConnections = Array.isArray(parsed.connections) ? parsed.connections : [];
@@ -169,7 +172,7 @@ export class MemorySummarizer {
             };
         } catch (error: unknown) {
             logger.error('[MemorySummarizer] Insight generation failed:', error);
-            return null;
+            throw error;
         }
     }
 

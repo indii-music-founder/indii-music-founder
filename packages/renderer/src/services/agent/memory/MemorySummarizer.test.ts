@@ -20,6 +20,16 @@ describe('MemorySummarizer parse diagnostics', () => {
         }
     });
 
+    it('distinguishes synthesis failures from a valid empty insight', async () => {
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        generateText.mockRejectedValueOnce(new Error('Provider unavailable'));
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('Provider unavailable');
+        generateText.mockResolvedValueOnce('Invalid response');
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('invalid response');
+        generateText.mockResolvedValueOnce('{"insights":[],"connections":[]}');
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).resolves.toBeNull();
+    });
+
     it('ISSUE-1587: generateInsight derives numeric top-level confidence when omitted by model and uses temperature 1.0', async () => {
         generateText.mockResolvedValueOnce(JSON.stringify({
             connections: [
