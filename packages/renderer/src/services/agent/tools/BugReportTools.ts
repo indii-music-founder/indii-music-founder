@@ -149,11 +149,13 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             return toolError(message, 'SAVE_UNCONFIRMED');
         }
         if (!firestoreOk) {
-            toast.error('Bug report could NOT be filed — nothing was saved. The report pipeline is unreachable. DevOps: check reportBugFn deployment.');
-            return toolError(
-                `Bug report was NOT filed. Pipeline error: reportBugFn could not persist the report. Tell the user their bug report failed to save; do not claim it was documented.`,
-                'PIPELINE_UNAVAILABLE',
-            );
+            const message = 'The bug tracker could not save your report.';
+            try {
+                toast.error(message);
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the save failure:', error);
+            }
+            return toolError(message, 'REPORT_SAVE_FAILED');
         }
 
         // 3. GitHub sync failure stays loud (silent-strand regression 2026-09-26:

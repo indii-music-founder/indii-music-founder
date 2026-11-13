@@ -103,7 +103,7 @@ describe('BugReportTools.report_bug honesty gate', () => {
     const result = await BugReportTools.report_bug!(args);
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('NOT filed');
+    expect(result.error).toBe('The bug tracker could not save your report.');
     expect(toastMock.error).toHaveBeenCalled();
   });
 
