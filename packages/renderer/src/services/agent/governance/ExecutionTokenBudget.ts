@@ -47,7 +47,7 @@ export class ExecutionTokenBudget {
         const reserved = this.reservations.get(id);
         if (reserved === undefined) throw new Error('Unknown token reservation');
         this.reservations.delete(id);
-        if (!this.spendOverflowed && actualTokens !== undefined && Number.isSafeInteger(actualTokens) && actualTokens > 0) {
+        if (!this.spendOverflowed && actualTokens !== undefined && Number.isSafeInteger(actualTokens) && actualTokens >= 0) {
             // An older in-flight call cannot refund usage restored from a
             // durable checkpoint whose accounting may include other calls.
             const adjustment = actualTokens - reserved;

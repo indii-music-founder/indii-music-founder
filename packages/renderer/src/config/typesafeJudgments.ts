@@ -1,3 +1,4 @@
+import { runBudgetedSemanticCall, SemanticCallCheckpointError, type SemanticCallAdmission } from '@/services/agent/governance/SemanticCallBudget';
 /**
  * TypeSafe judgment constants — the single reviewable place for every
  * question, option set, and threshold used with the typesafeJudge callable
@@ -263,6 +264,7 @@ export const TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC = true;
 
 /** Optional execution context for transient error refinement. */
 export interface TransientJudgmentContext {
+    admission?: SemanticCallAdmission;
     statusCode?: number;
     retryAttempt?: number;
     action?: string;
@@ -300,12 +302,12 @@ export async function judgeTransientError(
         const functions = getFunctions();
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
+            { answers: Record<string, unknown>; usage?: unknown }
         >(functions, 'typesafeJudge');
 
         const detectedStatusCode = context?.statusCode ?? extractStatusCode(error);
 
-        const result = await judgeFn({
+        const invoke = async () => (await judgeFn({
             state: {
                 errorMessage: error instanceof Error ? error.message : String(error),
                 errorName: error instanceof Error ? error.name : typeof error,
@@ -315,9 +317,13 @@ export async function judgeTransientError(
                 heuristicVerdict,
             },
             questions: { transient: TRANSIENT_FAILURE_QUESTION },
-        });
+        })).data;
+        const result = context?.admission
+            ? await runBudgetedSemanticCall(context.admission, invoke)
+            : await invoke();
+        if (!result) return null;
 
-        const answer = result.data.answers?.transient;
+        const answer = result.answers?.transient;
         const probability = boundedJudgmentNumber(answer, 'noul', 1);
         if (probability === null) {
             logger.warn('[typesafeJudgments] transient judgment returned an invalid probability — keeping heuristic.');
@@ -328,6 +334,10 @@ export async function judgeTransientError(
         if (probability <= TRANSIENT_REJECT_MAX) return false;
         return TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC ? heuristicVerdict : null;
     } catch (err: unknown) {
+        if (err instanceof SemanticCallCheckpointError) {
+            logger.warn('[typesafeJudgments] Retry judgment skipped because its execution checkpoint failed.');
+            return null;
+        }
         noteJudgmentFailure(err, 'transient judgment', "judgeTransientError");
         return null;
     }

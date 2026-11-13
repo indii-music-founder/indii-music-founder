@@ -15,7 +15,7 @@ describe('ExecutionTokenBudget', () => {
         budget.settle(first, 25);
         expect(budget.remaining).toBe(75);
         const second = budget.reserve(40)!;
-        budget.settle(second, 0);
+        budget.settle(second, undefined);
         expect(budget.remaining).toBe(35);
         const third = budget.reserve(30)!;
         budget.settle(third, 45);
