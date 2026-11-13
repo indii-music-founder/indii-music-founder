@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedCommandMenu } from './UnifiedCommandMenu';
+import { Modal } from '@/components/ui/Modal';
 import { useStore } from '@/core/store';
 import { judgeCommandIntent } from '@/config/typesafeJudgments';
 
@@ -53,6 +54,23 @@ describe('UnifiedCommandMenu', () => {
         mockCanAccessModule.mockReturnValue(true);
         mockGatedModules.mockReturnValue(new Set());
         mockFlatStore();
+    });
+
+    it('keeps the underlying dialog from redirecting focus while the command menu owns it', () => {
+        const lowerFocus = vi.fn();
+        render(<>
+            <Modal isOpen onClose={vi.fn()} titleId="underlying-dialog-title">
+                <h2 id="underlying-dialog-title">Underlying dialog</h2>
+                <button onFocus={lowerFocus}>Underlying control</button>
+            </Modal>
+            <UnifiedCommandMenu />
+        </>);
+        const input = screen.getByRole('combobox');
+        input.focus();
+        lowerFocus.mockClear();
+        fireEvent.keyDown(input, { key: 'Tab', code: 'Tab', bubbles: true, cancelable: true });
+        expect(lowerFocus).not.toHaveBeenCalled();
+        expect(input).toHaveFocus();
     });
 
     it('opens with the global shortcut while closed', () => {

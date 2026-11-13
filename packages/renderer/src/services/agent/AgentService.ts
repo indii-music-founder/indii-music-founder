@@ -680,7 +680,7 @@ export class AgentService {
             await this.handleBoardroomRequestFlow(
                 boardroomTask,
                 attachments,
-                { ...context, boardroomTask },
+                inheritExecutionTokenBudget(context, { ...context, boardroomTask }),
                 responseId,
                 signal,
             );
@@ -802,6 +802,7 @@ export class AgentService {
         const agentId = orchestration.agentId || 'generalist';
         updateAgentMessage(responseId, { agentId, isStreaming: true });
         const singleAgentContext: AgentContext = { ...context, conversationMode: 'direct' };
+        inheritExecutionTokenBudget(context, singleAgentContext);
 
         let currentStreamedText = '';
         const result = await this.executor.execute(agentId, text, singleAgentContext as PipelineContext, (event) => {
@@ -1166,7 +1167,7 @@ export class AgentService {
         }
         if (!isCapabilityQuestion(task.rawUserUtterance) && AgentService.isTrivialInput(task.rawUserUtterance) &&
             !/^(?:yes|yep|yeah|sure|go ahead|continue|start)[.!?]*$/i.test(task.rawUserUtterance.trim())) {
-            return this.handleBoardroomSwarmFlow(task, attachments, { ...context, isReadOnly: true }, responseId, signal);
+            return this.handleBoardroomSwarmFlow(task, attachments, inheritExecutionTokenBudget(context, { ...context, isReadOnly: true }), responseId, signal);
         }
         store.getState().updateAgentMessage(responseId, {
             agentId: 'generalist', text: '*(Understanding your request…)*', isStreaming: true,
@@ -1177,7 +1178,7 @@ export class AgentService {
         if (boardroomConversationIsReadOnly(intent)) {
             // An unavailable/uncertain classifier cannot authorize tools, but must
             // not replace ordinary conversation with a canned execution refusal.
-            return this.handleBoardroomSwarmFlow(task, attachments, { ...context, isReadOnly: true }, responseId, signal);
+            return this.handleBoardroomSwarmFlow(task, attachments, inheritExecutionTokenBudget(context, { ...context, isReadOnly: true }), responseId, signal);
         }
 
         const assetReferences = Object.freeze([

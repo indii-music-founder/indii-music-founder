@@ -11,6 +11,7 @@ const { mockJudgeDepartmentJourneyIntent } = vi.hoisted(() => ({
         actionLabel: 'Open Content Calendar',
         targetTab: 'calendar',
         confidence: 0.91,
+        source: 'jev',
     }),
 }));
 

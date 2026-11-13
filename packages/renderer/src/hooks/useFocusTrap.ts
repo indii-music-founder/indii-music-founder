@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useCallback, useId } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback, useId } from 'react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 /**
@@ -43,6 +43,13 @@ function focusableElementsIn(container: HTMLElement): HTMLElement[] {
             if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
         }
         return true;
+    }).sort((left, right) => {
+        // Native tab navigation visits positive tabindex values first, in
+        // ascending order, then the ordinary DOM order. Stable sorting keeps
+        // controls with equal priority in their original document order.
+        const leftOrder = left.tabIndex > 0 ? left.tabIndex : Infinity;
+        const rightOrder = right.tabIndex > 0 ? right.tabIndex : Infinity;
+        return leftOrder === rightOrder ? 0 : leftOrder - rightOrder;
     });
 }
 
@@ -60,6 +67,16 @@ export function useFocusTrap(isActive: boolean = true) {
     const previousFocusRef = useRef<HTMLElement | null>(
         typeof document !== 'undefined' ? document.activeElement as HTMLElement : null,
     );
+    const latestFocusChange = useRef<{ target: EventTarget | null; previous: EventTarget | null } | null>(null);
+    // Persistent dialogs can autofocus before their opening layout effect.
+    // Retain the native focus transition so its relatedTarget remains available.
+    useEffect(() => {
+        const recordFocusChange = (event: FocusEvent) => {
+            latestFocusChange.current = { target: event.target, previous: event.relatedTarget };
+        };
+        document.addEventListener('focusin', recordFocusChange);
+        return () => document.removeEventListener('focusin', recordFocusChange);
+    }, []);
     const trapId = useId();
 
     const getFocusableElements = useCallback((): HTMLElement[] => {
@@ -124,6 +141,11 @@ export function useFocusTrap(isActive: boolean = true) {
         // trigger and should be restored on close.
         if (!alreadyFocusedInside) {
             previousFocusRef.current = activeElement;
+        } else {
+            const entry = latestFocusChange.current;
+            if (entry?.target === activeElement && entry.previous instanceof HTMLElement && !container.contains(entry.previous)) {
+                previousFocusRef.current = entry.previous;
+            }
         }
 
         // Focus the first focusable element inside the trap

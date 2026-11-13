@@ -5,6 +5,38 @@ import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 
 describe('PromptInput Interaction', () => {
+  it('lets a caller consume Enter before the shared submit action', () => {
+    const onSubmit = vi.fn()
+    render(<PromptInput onSubmit={onSubmit}>
+      <PromptInputTextarea onKeyDown={event => event.preventDefault()} />
+    </PromptInput>)
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('preserves native Enter behavior when there is no submit callback', () => {
+    render(<PromptInput><PromptInputTextarea /></PromptInput>)
+    expect(fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })).toBe(true)
+  })
+
+  it('updates shared prompt state alongside a textarea change listener', () => {
+    const onValueChange = vi.fn()
+    const onChange = vi.fn()
+    render(<PromptInput onValueChange={onValueChange}>
+      <PromptInputTextarea onChange={onChange} />
+    </PromptInput>)
+    const input = screen.getByRole('textbox')
+    fireEvent.change(input, { target: { value: 'A draft worth keeping' } })
+    expect(input).toHaveValue('A draft worth keeping')
+    expect(onValueChange).toHaveBeenCalledWith('A draft worth keeping')
+    expect(onChange).toHaveBeenCalledOnce()
+  })
+
+  it('keeps loading prompts disabled even when a child requests enabled input', () => {
+    render(<PromptInput isLoading><PromptInputTextarea disabled={false} /></PromptInput>)
+    expect(screen.getByRole('textbox')).toBeDisabled()
+  })
+
   it('waits for IME composition to finish before submitting Enter', () => {
     const onSubmit = vi.fn()
     render(<PromptInput onSubmit={onSubmit}><PromptInputTextarea /></PromptInput>)

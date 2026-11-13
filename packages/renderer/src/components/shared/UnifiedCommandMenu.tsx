@@ -7,6 +7,7 @@ import {
     AudioWaveform, Settings, StickyNote, PanelRight, Activity, AlertCircle, Lightbulb, HelpCircle, Sparkles,
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useBugReport } from '@/modules/debug';
 import { useGodMode } from '@/hooks/useGodMode';
 import { getCommandMenuModules, HIDDEN_MODULE_REASONS, type ModuleRegistryEntry } from '@/core/moduleRegistry';
@@ -14,6 +15,12 @@ import { type ModuleId } from '@/core/constants';
 import { useGatedModules } from '@/config/featureFlags';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 import { judgeCommandIntent, type CommandIntentJudgment } from '@/config/typesafeJudgments';
+
+function CommandMenuFocusScope({ children }: { children: React.ReactNode }) {
+    // cmdk mounts its portal after the parent dialog's layout effects.
+    const focusTrapRef = useFocusTrap();
+    return <div ref={focusTrapRef} className="contents">{children}</div>;
+}
 
 /**
  * UnifiedCommandMenu — the global ⌘K palette.
@@ -165,9 +172,10 @@ export function UnifiedCommandMenu() {
             open={isCommandMenuOpen}
             onOpenChange={setCommandMenuOpen}
             label="Global Command Menu"
-            className="fixed inset-0 z-[1000] flex items-start justify-center pt-[15vh] pb-[20vh] px-4 backdrop-blur-sm bg-black/50"
+            className="fixed inset-0 z-[100005] flex items-start justify-center pt-[15vh] pb-[20vh] px-4 backdrop-blur-sm bg-black/50"
             onClick={() => setCommandMenuOpen(false)}
         >
+            <CommandMenuFocusScope>
             <div
                 className="w-full max-w-2xl border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden transition-all flex flex-col"
                 style={{
@@ -336,6 +344,7 @@ export function UnifiedCommandMenu() {
                 </div>
 
             </div>
+            </CommandMenuFocusScope>
         </Command.Dialog>
     );
 }

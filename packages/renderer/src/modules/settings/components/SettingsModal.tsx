@@ -14,6 +14,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             isOpen={isOpen}
             onClose={onClose}
             titleId="settings-modal-title"
+            portal
+            overlayZIndex={100000}
             maxWidth="max-w-5xl"
             className="h-[85vh] bg-[#0c1015] border-white/10 p-0 overflow-hidden flex flex-col relative"
         >
