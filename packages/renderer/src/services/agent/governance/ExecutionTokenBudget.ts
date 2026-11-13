@@ -79,6 +79,7 @@ export function executionTokenBudget(context: object | undefined, limit: number)
 }
 
 /** Share the binding even when neither context has requested its budget yet. */
-export function inheritExecutionTokenBudget(parent: object | undefined, child: object): void {
+export function inheritExecutionTokenBudget<T extends object>(parent: object | undefined, child: T): T {
     if (parent) budgets.set(child, bindingFor(parent));
+    return child;
 }

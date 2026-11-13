@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { Modal } from '@/components/ui/Modal';
 import { QuickNotesDrawer } from '../QuickNotesDrawer';
 import type { Note } from '@/core/store/slices/notesSlice';
 
@@ -52,6 +53,32 @@ describe('QuickNotesDrawer', () => {
         mockUseStore.mockImplementation((selector: (state: ReturnType<typeof buildState>) => unknown) =>
             selector(buildState())
         );
+    });
+
+    it('keeps keyboard navigation inside the open drawer', () => {
+        render(<><button>Outside notes</button><QuickNotesDrawer isOpen onClose={vi.fn()} /></>);
+        const drawer = screen.getByRole('dialog', { name: /quick notes drawer/i });
+        expect(drawer).toContainElement(document.activeElement as HTMLElement);
+        const outside = screen.getByRole('button', { name: 'Outside notes' });
+        outside.focus();
+        fireEvent.keyDown(outside, { key: 'Tab' });
+        expect(drawer).toContainElement(document.activeElement as HTMLElement);
+    });
+
+    it('does not close beneath another dialog when its shortcut registers again', () => {
+        const closeUpper = vi.fn();
+        const closeDrawer = vi.fn();
+        const view = (onClose: () => void) => <>
+            <QuickNotesDrawer isOpen onClose={onClose} />
+            <Modal isOpen onClose={closeUpper} titleId="upper-title">
+                <h2 id="upper-title">Upper dialog</h2><button>Upper action</button>
+            </Modal>
+        </>;
+        const { rerender } = render(view(vi.fn()));
+        rerender(view(closeDrawer));
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Upper action' }), { key: 'Escape' });
+        expect(closeUpper).toHaveBeenCalledOnce();
+        expect(closeDrawer).not.toHaveBeenCalled();
     });
 
     it('does not render when isOpen is false', () => {
