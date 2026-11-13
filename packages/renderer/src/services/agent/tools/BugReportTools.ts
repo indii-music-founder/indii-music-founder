@@ -126,9 +126,10 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 
             saveUnconfirmed = result.data.firestore !== 'ok' && result.data.firestore !== 'failed';
             firestoreOk = result.data.firestore === 'ok';
-            githubStatus = result.data.github;
-            issueUrl = result.data.issueUrl;
-            persistedBugId = result.data.bugId;
+            const sync = result.data.github;
+            githubStatus = sync === 'ok' || sync === 'merged_as_comment' || sync === 'failed' ? sync : 'skipped';
+            issueUrl = typeof result.data.issueUrl === 'string' ? result.data.issueUrl.trim() || undefined : undefined;
+            persistedBugId = typeof result.data.bugId === 'string' ? result.data.bugId.trim() || undefined : undefined;
             logger.info(`[BugReportTools] Cloud Function response: github=${githubStatus} firestore=${firestoreOk}`, result.data);
         } catch (cfErr: unknown) {
             saveUnconfirmed = true;

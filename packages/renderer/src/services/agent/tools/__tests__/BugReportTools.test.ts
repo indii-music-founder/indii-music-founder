@@ -119,6 +119,15 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it('preserves a confirmed save when GitHub status is missing', async () => {
+    judgeInvoke.mockResolvedValue({ data: { firestore: 'ok', bugId: 'report-42' } });
+    const result = await BugReportTools.report_bug!(args);
+    expect(result.success).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+    expect(result.metadata?.receiptText).toContain('GitHub sync did not complete.');
+    expect(toastMock.warning).toHaveBeenCalled();
+  });
+
   it('returns the receipt while memory ingestion is pending', async () => {
     const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
     let finishMemory: (() => void) | undefined;
