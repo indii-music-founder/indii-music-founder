@@ -221,7 +221,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `stripe/webhookHandler.ts:1284` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |
 | `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
-| `subscription/createCheckoutSession.ts:20` | `createCheckoutSession` | `onCall` | Present | Present |
+| `subscription/createCheckoutSession.ts:21` | `createCheckoutSession` | `onCall` | Present | Present |
 | `subscription/createMicroTransaction.ts:13` | `createMicroTransaction` | `onCall` | Present | Present |
 | `subscription/createOneTimeCheckout.ts:40` | `createOneTimeCheckout` | `onCall` | Present | Present |
 | `subscription/deductCredits.ts:22` | `deductCredits` | `onCall` | Present | Present |
