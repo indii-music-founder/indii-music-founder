@@ -582,7 +582,7 @@ describe('AgentLoopService', () => {
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
     });
 
-    it('rejects a malformed verdict after a transient judge retry', async () => {
+    it('resumes evaluation of the saved action after a malformed retry verdict', async () => {
         const def: AgentLoopDefinition = {
             id: 'loop-invalid-retry-verdict',
             trigger: AgentLoopTriggerEnum.enum.MANUAL,
@@ -608,6 +608,18 @@ describe('AgentLoopService', () => {
         expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: true, feedback: 'Saved result verified' }) },
+        });
+        const recovered = new AgentLoopService();
+        await recovered.resumeLoop(def, executionId, { userId: 'user1', projectId: 'proj1' });
+        await vi.waitFor(() => expect(recovered.getExecution('user1', executionId)?.status).toBe('COMPLETED'));
+        expect(recovered.getExecution('user1', executionId)?.history).toMatchObject([
+            { iteration: 1, output: 'Action result', passed: true, feedback: 'Saved result verified' },
+        ]);
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+        expect(mockGenerateContent).toHaveBeenCalledTimes(3);
     });
 
     it('halts before a judge call when the shared execution allowance is exhausted', async () => {
