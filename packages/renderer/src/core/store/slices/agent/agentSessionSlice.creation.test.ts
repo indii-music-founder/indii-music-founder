@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
+import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
 import { buildAgentSessionState, type AgentSessionSlice } from './agentSessionSlice';
 
 describe('new session persistence ordering', () => {
@@ -22,6 +23,21 @@ describe('new session persistence ordering', () => {
         await vi.waitFor(() => expect(service.deleteSession).toHaveBeenCalledWith(id));
         expect(service.appendMessage).toHaveBeenCalledWith(id, expect.objectContaining({ id: 'first' }));
         expect(service.appendMessage.mock.invocationCallOrder[0]).toBeLessThan(service.deleteSession.mock.invocationCallOrder[0]!);
+    });
+
+    it('does not automatically resubmit an append invalidated by a conversation clear', async () => {
+        const service = {
+            createSession: vi.fn().mockResolvedValue('created'),
+            appendMessage: vi.fn().mockRejectedValue(new SessionPersistenceConflict('Conversation was cleared')),
+            deleteSession: vi.fn().mockResolvedValue(undefined),
+            subscribeToMessages: vi.fn(() => () => {}),
+        };
+        const store = createStore<AgentSessionSlice>()((set, get) => buildAgentSessionState(set, get, async () => service));
+        const id = store.getState().createSession('New', ['indii']);
+        store.getState().addAgentMessage({ id: 'stale-append', role: 'user', text: 'Keep locally', timestamp: 1 });
+        await vi.waitFor(() => expect(store.getState().sessions[id]?.messages[0]?.saveStatus).toBe('failed'));
+        expect(service.appendMessage).toHaveBeenCalledTimes(1);
+        expect(store.getState().sessions[id]?.messages[0]?.text).toBe('Keep locally');
     });
 
     it('keeps the first message visible and marks it unsaved when creation fails', async () => {

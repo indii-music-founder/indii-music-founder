@@ -72,7 +72,7 @@ describe('judgment failure cooldown', () => {
                 expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
                 expect(mocks.httpsCallable.mock.calls.length).toBe(callsAfterFailure);
 
-                mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { skill: { choice: 's' } } } }));
+                mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { skill: { type: 'choice', choice: 's', confidence: 0.9 } } } }));
                 expect(await judgeSkillIntentShim()).toBe('s');
                 vi.advanceTimersByTime(JUDGMENT_FAILURE_COOLDOWN_MS + 1);
                 mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { transient: 0.9 } } }));

@@ -2695,18 +2695,42 @@ service cloud.firestore {
     // Boardroom & Session Synced Messages
     // =========================================================================
     match /sessions/{sessionId} {
+      function validMessageGeneration(data) {
+        return data.get('messageEpoch', 0) is int && data.get('messageEpoch', 0) >= 0 &&
+          data.get('messageEpoch', 0) <= 9007199254740991 &&
+          (data.get('clearingOperation', null) == null ||
+            (data.clearingOperation is string && data.clearingOperation.size() >= 1 && data.clearingOperation.size() <= 128)) &&
+          (data.get('lastClearedOperation', null) == null ||
+            (data.lastClearedOperation is string && data.lastClearedOperation.size() >= 1 && data.lastClearedOperation.size() <= 128)) &&
+          (data.get('messageEpoch', 0) == 0 ||
+            (data.get('messageStorage', null) == 'subcollection' && data.get('messages', []) == []));
+      }
+      function validGenerationTransition() {
+        let oldEpoch = resource.data.get('messageEpoch', 0);
+        let newEpoch = request.resource.data.get('messageEpoch', 0);
+        let oldClear = resource.data.get('clearingOperation', null);
+        let newClear = request.resource.data.get('clearingOperation', null);
+        let oldLast = resource.data.get('lastClearedOperation', null);
+        let newLast = request.resource.data.get('lastClearedOperation', null);
+        return (newEpoch == oldEpoch &&
+            ((newClear == oldClear && newLast == oldLast) || (oldClear != null && newClear == null && newLast == oldClear))) ||
+          (newEpoch == oldEpoch + 1 && newClear is string && newClear != oldClear && newClear != oldLast && newLast == oldLast && resource.data.get('deletingAt', null) == null);
+      }
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId') &&
+      allow create: if isVerifiedUser() && ownerCreateIsValid('userId') && validMessageGeneration(request.resource.data) &&
+        request.resource.data.get('messageEpoch', 0) == 0 && request.resource.data.get('clearingOperation', null) == null && request.resource.data.get('lastClearedOperation', null) == null;
+      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId') && validMessageGeneration(request.resource.data) && validGenerationTransition() &&
         (resource.data.get('deletingAt', null) == null || request.resource.data.get('deletingAt', null) == resource.data.get('deletingAt', null));
     }
     match /sessions/{sessionId}/messages/{messageId} {
       function parentSession() { return get(/databases/$(database)/documents/sessions/$(sessionId)).data; }
       function canAccessSession() { return (isAuthenticated() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid'); }
-      function sessionIsActive() { return parentSession().get('deletingAt', null) == null; }
+      function sessionAfterWrite() { return getAfter(/databases/$(database)/documents/sessions/$(sessionId)).data; }
+      function sessionIsActive() { return sessionAfterWrite().get('deletingAt', null) == null && sessionAfterWrite().get('clearingOperation', null) == null; }
+      function currentGeneration(data) { return data.get('messageEpoch', 0) == sessionAfterWrite().get('messageEpoch', 0); }
       allow read, delete: if canAccessSession();
-      allow update: if canAccessSession() && sessionIsActive();
-      allow create: if ((isVerifiedUser() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid')) && sessionIsActive();
+      allow update: if canAccessSession() && sessionIsActive() && currentGeneration(resource.data) && currentGeneration(request.resource.data);
+      allow create: if ((isVerifiedUser() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid')) && sessionIsActive() && currentGeneration(request.resource.data);
     }
     match /boardroom_messages/{msgId} {
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;

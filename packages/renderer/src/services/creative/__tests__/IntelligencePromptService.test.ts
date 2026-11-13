@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IntelligencePromptService, ImprovedPromptResult } from '../IntelligencePromptService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import * as judgments from '@/config/typesafeJudgments';
 
 // Mock AutonomousIntelligence
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -48,6 +49,27 @@ vi.mock('@/utils/logger', () => ({
 describe('IntelligencePromptService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it.each(['heuristic', 'jev'] as const)('preserves %s evidence in the rewrite prompt', async source => {
+        const base = { archetype: 'graphic_cover_typography' as const, brandColorWeight: 'subtle' as const, focusTechnical: ['typographic hierarchy'] };
+        const verdict: judgments.PromptImprovementIntentVerdict = source === 'jev'
+            ? { ...base, source: 'jev', confidence: 0.8 }
+            : { ...base, source: 'heuristic', confidence: null };
+        const spy = vi.spyOn(judgments, 'judgePromptImprovementIntent').mockResolvedValueOnce(verdict);
+        try {
+            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValueOnce({ improved: 'Cover design', reasoning: 'Preserved intent' });
+            await IntelligencePromptService.improve({ rawPrompt: 'album artwork', mode: 'image' });
+            const prompt = vi.mocked(AutonomousIntelligence.generateStructuredData).mock.calls[0]![0] as string;
+            expect(prompt).toContain('graphic_cover_typography');
+            expect(prompt).toContain('typographic hierarchy');
+            if (source === 'jev') expect(prompt).toContain('Jev classification; confidence: 80%');
+            else {
+                expect(prompt).toContain('deterministic prompt heuristic; model confidence unavailable');
+                expect(prompt).not.toContain('confidence: 0%');
+                expect(prompt).not.toContain('confidence: 85%');
+            }
+        } finally { spy.mockRestore(); }
     });
 
     it('should throw if prompt is empty', async () => {

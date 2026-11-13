@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const firestoreMocks = vi.hoisted(() => ({
     transactionSet: vi.fn(),
+    transactionDelete: vi.fn(),
+    serverGet: vi.fn(),
     transactionUpdate: vi.fn(),
     transactionGet: vi.fn(),
     runTransaction: vi.fn(),
@@ -33,6 +35,8 @@ vi.mock('firebase/firestore', () => ({
     query: vi.fn((ref: unknown) => ref),
     writeBatch: vi.fn(() => ({ delete: firestoreMocks.batchDelete, update: firestoreMocks.batchUpdate, commit: firestoreMocks.batchCommit })),
     getDocs: vi.fn(),
+    getDocsFromServer: vi.fn(),
+    getDocFromServer: firestoreMocks.serverGet,
 }));
 
 // 2. Mock FirestoreService Base Class
@@ -79,7 +83,7 @@ vi.mock('./SessionAttachmentStorage', () => ({
 }));
 
 // 4. Import System Under Test
-import { getDocs, writeBatch } from 'firebase/firestore';
+import { getDocs, getDocsFromServer, writeBatch } from 'firebase/firestore';
 import { sessionService } from './SessionService';
 import { ConversationSession } from '@/core/store/slices/agent';
 
@@ -90,12 +94,16 @@ describe('SessionService Persistence (Dual Write)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(getDocs).mockResolvedValue({ empty: true, docs: [] } as Awaited<ReturnType<typeof getDocs>>);
+        vi.mocked(getDocsFromServer).mockResolvedValue({ empty: true, docs: [] } as unknown as Awaited<ReturnType<typeof getDocsFromServer>>);
+        firestoreMocks.transactionUpdate.mockReset();
+        firestoreMocks.serverGet.mockResolvedValue({ exists: () => true, data: () => ({ messageStorage: 'array', messages: [] }) });
         firestoreMocks.transactionGet.mockImplementation(async (ref: { path: string }) => ref.path.includes('/messages/')
             ? { exists: () => false }
             : { exists: () => true, data: () => ({ messageStorage: 'array', messages: [{ id: 'legacy', role: 'user', text: 'Earlier', timestamp: 1 }] }) });
         firestoreMocks.runTransaction.mockImplementation(async (_db: unknown, callback: (transaction: unknown) => Promise<void>) => callback({
             get: firestoreMocks.transactionGet,
             set: firestoreMocks.transactionSet,
+            delete: firestoreMocks.transactionDelete,
             update: firestoreMocks.transactionUpdate,
         }));
 
@@ -152,11 +160,11 @@ describe('SessionService Persistence (Dual Write)', () => {
         const attachment = { mimeType: 'image/png', base64: 'AAEC' };
         const reference = { mimeType: 'image/png', storagePath: 'owner/path' };
         firestoreMocks.storeAttachments.mockResolvedValueOnce([reference]);
+        firestoreMocks.transactionGet.mockResolvedValue({ exists: () => true, data: () => ({}) });
         await sessionService.updateMessage('session-123', 'message-1', { attachments: [attachment], text: 'Updated' });
         expect(firestoreMocks.storeAttachments).toHaveBeenCalledWith('test-user-id', 'session-123', 'message-1', [attachment]);
-        expect(firestoreMocks.batchUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123/messages/message-1' }, { attachments: [reference], text: 'Updated' });
-        expect(firestoreMocks.batchUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ messageStorage: 'subcollection' }));
-        expect(firestoreMocks.batchCommit).toHaveBeenCalledTimes(1);
+        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123/messages/message-1' }, { attachments: [reference], text: 'Updated', messageEpoch: 0 });
+        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ messageStorage: 'subcollection' }));
     });
 
     it('does not replace a saved attachment with an unavailable placeholder', async () => {
@@ -507,39 +515,120 @@ describe('SessionService Persistence (Dual Write)', () => {
         expect(firestoreMocks.transactionUpdate).not.toHaveBeenCalled();
     });
 
-    it('clears an inline-only history even when there are no child messages', async () => {
+    function clearingState(initial: Record<string, unknown> = {}) {
+        const data: Record<string, unknown> = { messages: [{ id: 'legacy' }], ...initial };
+        firestoreMocks.transactionGet.mockImplementation(async () => ({ exists: () => true, data: () => ({ ...data }) }));
+        firestoreMocks.transactionUpdate.mockImplementation((_ref, changes) => Object.assign(data, changes));
+        return data;
+    }
+
+    it('clears inline history under a durable generation fence', async () => {
+        const state = clearingState();
         await sessionService.clearMessages('session-123');
-        expect(firestoreMocks.batchUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ messages: [], messageStorage: 'subcollection' }));
-        expect(firestoreMocks.batchCommit).toHaveBeenCalledTimes(1);
+        expect(state).toMatchObject({ messages: [], messageEpoch: 1, messageStorage: 'subcollection', clearingOperation: null });
+        expect(firestoreMocks.transactionUpdate.mock.calls[0]?.[1]).toMatchObject({ messageEpoch: 1, clearingOperation: expect.any(String), messages: [] });
+        expect(firestoreMocks.transactionDelete).not.toHaveBeenCalled();
     });
 
-    it('clears long histories in bounded batches before updating the session', async () => {
-        const deleteMessage = vi.fn();
-        const updateParent = vi.fn();
-        const commit = vi.fn().mockResolvedValue(undefined);
-        vi.mocked(getDocs).mockResolvedValueOnce({
-            docs: Array.from({ length: 801 }, (_, i) => ({ ref: { path: `messages/${i}` } })),
-        } as unknown as Awaited<ReturnType<typeof getDocs>>);
-        vi.mocked(writeBatch).mockImplementation(() => ({ delete: deleteMessage, update: updateParent, commit }) as unknown as ReturnType<typeof writeBatch>);
-
+    it('drains server-backed bounded pages while holding the clear token', async () => {
+        const state = clearingState();
+        for (const size of [400, 400, 1]) vi.mocked(getDocsFromServer).mockResolvedValueOnce({
+            empty: false, docs: Array.from({ length: size }, (_, i) => ({ ref: { path: `messages/${size}-${i}` } })),
+        } as unknown as Awaited<ReturnType<typeof getDocsFromServer>>);
         await sessionService.clearMessages('session-123');
-
-        expect(writeBatch).toHaveBeenCalledTimes(3);
-        expect(deleteMessage).toHaveBeenCalledTimes(801);
-        expect(commit).toHaveBeenCalledTimes(3);
-        expect(updateParent).toHaveBeenCalledTimes(1);
-        expect(updateParent).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ messages: [], messageStorage: 'subcollection' }));
+        expect(getDocsFromServer).toHaveBeenCalledTimes(4);
+        expect(firestoreMocks.transactionDelete).toHaveBeenCalledTimes(801);
+        expect(state.clearingOperation).toBeNull();
     });
 
-    it('does not mark the session cleared when a delete batch fails', async () => {
-        vi.mocked(getDocs).mockResolvedValueOnce({
-            docs: [{ ref: { path: 'messages/1' } }],
-        } as unknown as Awaited<ReturnType<typeof getDocs>>);
-        vi.mocked(writeBatch).mockReturnValueOnce({
-            delete: vi.fn(), update: vi.fn(), commit: vi.fn().mockRejectedValue(new Error('write unavailable')),
-        } as unknown as ReturnType<typeof writeBatch>);
+    it('keeps a failed clear fenced and permits a new explicit clear to take over', async () => {
+        const state = clearingState();
+        vi.mocked(getDocsFromServer).mockRejectedValueOnce(new Error('server unavailable'));
+        await expect(sessionService.clearMessages('session-123')).rejects.toThrow('server unavailable');
+        const firstToken = state.clearingOperation;
+        expect(firstToken).toEqual(expect.any(String));
+        expect(state.messageEpoch).toBe(1);
+        await sessionService.clearMessages('session-123');
+        expect(state).toMatchObject({ messageEpoch: 2, clearingOperation: null });
+        expect(firestoreMocks.transactionUpdate.mock.calls[1]?.[1].clearingOperation).not.toBe(firstToken);
+    });
 
-        await expect(sessionService.clearMessages('session-123')).rejects.toThrow('write unavailable');
-        expect(mockUpdate).not.toHaveBeenCalled();
+    it('resumes the same interrupted operation without advancing generation again', async () => {
+        const state = clearingState();
+        const operation = { id: 'same-clear' };
+        vi.mocked(getDocsFromServer).mockRejectedValueOnce(new Error('offline'));
+        await expect(sessionService.clearMessages('session-123', operation)).rejects.toThrow('offline');
+        await sessionService.clearMessages('session-123', operation);
+        expect(state).toMatchObject({ messageEpoch: 1, clearingOperation: null, lastClearedOperation: 'same-clear' });
+    });
+
+    it('does not repeat a completed clear after its final acknowledgement was lost', async () => {
+        const state = clearingState();
+        const operation = { id: 'completed-clear' };
+        let transactions = 0;
+        firestoreMocks.runTransaction.mockImplementation(async (_db, callback) => {
+            const result = await callback({ get: firestoreMocks.transactionGet, update: firestoreMocks.transactionUpdate, delete: firestoreMocks.transactionDelete });
+            if (++transactions === 2) throw new Error('final acknowledgement lost');
+            return result;
+        });
+        await expect(sessionService.clearMessages('session-123', operation)).rejects.toThrow('final acknowledgement lost');
+        expect(state.lastClearedOperation).toBe('completed-clear');
+        vi.mocked(getDocsFromServer).mockClear();
+        await sessionService.clearMessages('session-123', operation);
+        expect(getDocsFromServer).not.toHaveBeenCalled();
+        expect(firestoreMocks.transactionDelete).not.toHaveBeenCalled();
+        expect(state.messageEpoch).toBe(1);
+    });
+
+    it('rejects an old retry after a newer clear has replaced its completion receipt', async () => {
+        const state = clearingState();
+        const operation = { id: 'older-clear' };
+        await sessionService.clearMessages('session-123', operation);
+        await sessionService.clearMessages('session-123', { id: 'newer-clear' });
+        vi.mocked(getDocsFromServer).mockClear();
+        await expect(sessionService.clearMessages('session-123', operation)).rejects.toThrow('superseded');
+        expect(getDocsFromServer).not.toHaveBeenCalled();
+        expect(state).toMatchObject({ messageEpoch: 2, lastClearedOperation: 'newer-clear' });
+    });
+
+    it('rejects a superseded clear before deleting its stale page', async () => {
+        const state = clearingState();
+        vi.mocked(getDocsFromServer).mockImplementationOnce(async () => {
+            Object.assign(state, { messageEpoch: 2, clearingOperation: null });
+            return { empty: false, docs: [{ ref: { path: 'messages/new' } }] } as unknown as Awaited<ReturnType<typeof getDocsFromServer>>;
+        });
+        await expect(sessionService.clearMessages('session-123')).rejects.toThrow('superseded');
+        expect(firestoreMocks.transactionDelete).not.toHaveBeenCalled();
+        expect(state.messageEpoch).toBe(2);
+    });
+
+    it('rejects an append started before a completed cross-device clear', async () => {
+        firestoreMocks.serverGet.mockResolvedValue({ exists: () => true, data: () => ({ messageEpoch: 0 }) });
+        firestoreMocks.transactionGet.mockResolvedValue({ exists: () => true, data: () => ({ messageEpoch: 1, messages: [], messageStorage: 'subcollection' }) });
+        await expect(sessionService.appendMessage('session-123', { id: 'late', role: 'user', text: 'late', timestamp: 2 })).rejects.toThrow('cleared');
+        expect(firestoreMocks.transactionSet).not.toHaveBeenCalled();
+    });
+
+    it('keeps a retried append bound to its original generation after a lost write acknowledgement', async () => {
+        const message = { id: 'retry', role: 'user' as const, text: 'Do not resurrect', timestamp: 2 };
+        firestoreMocks.runTransaction.mockRejectedValueOnce(new Error('acknowledgement lost'));
+        await expect(sessionService.appendMessage('session-123', message)).rejects.toThrow('acknowledgement lost');
+        firestoreMocks.serverGet.mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 1 }) });
+        await expect(sessionService.appendMessage('session-123', message)).rejects.toThrow('cleared before');
+        expect(firestoreMocks.runTransaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects uploads before starting when the parent is already clearing', async () => {
+        firestoreMocks.serverGet.mockResolvedValue({ exists: () => true, data: () => ({ messageEpoch: 1, clearingOperation: 'active' }) });
+        await expect(sessionService.appendMessage('session-123', { id: 'late', role: 'user', text: 'late', timestamp: 2, attachments: [{ mimeType: 'image/png', base64: 'AAEC' }] })).rejects.toThrow('being cleared');
+        expect(firestoreMocks.storeAttachments).not.toHaveBeenCalled();
+    });
+
+    it('does not edit a stale message from a prior generation', async () => {
+        firestoreMocks.serverGet.mockResolvedValue({ exists: () => true, data: () => ({ messageEpoch: 1 }) });
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 1 }) })
+            .mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 0 }) });
+        await expect(sessionService.updateMessage('session-123', 'old', { text: 'late edit' })).rejects.toThrow('current conversation generation');
+        expect(firestoreMocks.transactionUpdate).not.toHaveBeenCalled();
     });
 });

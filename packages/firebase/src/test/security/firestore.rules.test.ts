@@ -38,6 +38,7 @@ import {
     deleteDoc,
     serverTimestamp,
     runTransaction,
+    writeBatch,
     Timestamp,
     collection,
     getDocs,
@@ -2523,6 +2524,41 @@ describe('Firestore Security Rules', () => {
         await assertFails(updateDoc(session, { deletingAt: null }));
         await assertSucceeds(deleteDoc(existing));
         await assertSucceeds(deleteDoc(session));
+    });
+
+    it('fences clearing writes, requires the current generation, and prevents generation rollback', async () => {
+        if (requireEmulator()) return;
+        const path = 'sessions/clear-generation';
+        await testEnv.withSecurityRulesDisabled(async context => {
+            await setDoc(doc(context.firestore(), path), { userId: ALICE_UID, orgId: ORG_ID });
+        });
+        const db = verifiedCtx(ALICE_UID).firestore();
+        const parent = doc(db, path);
+        const old = doc(db, `${path}/messages/old`);
+        await assertSucceeds(setDoc(old, { text: 'Before clear' }));
+        const atomicRace = writeBatch(db);
+        atomicRace.update(parent, { messageEpoch: 1, clearingOperation: 'atomic-race', messages: [], messageStorage: 'subcollection' });
+        atomicRace.set(doc(db, `${path}/messages/racing`), { text: 'Stale same-batch append' });
+        await assertFails(atomicRace.commit());
+        await assertFails(updateDoc(parent, { messageEpoch: -1 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 0.5 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 2, clearingOperation: 'skip', messages: [], messageStorage: 'subcollection' }));
+        await assertFails(updateDoc(parent, { messageEpoch: 1, messages: [], messageStorage: 'subcollection' }));
+        await assertFails(updateDoc(doc(verifiedCtx(BOB_UID).firestore(), path), { messageEpoch: 1, clearingOperation: 'foreign', messages: [], messageStorage: 'subcollection' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 1, clearingOperation: 'clear-one', messages: [], messageStorage: 'subcollection' }));
+        await assertFails(setDoc(doc(db, `${path}/messages/during`), { text: 'During clear', messageEpoch: 1 }));
+        await assertFails(updateDoc(old, { text: 'During clear' }));
+        await assertSucceeds(deleteDoc(old));
+        await assertFails(updateDoc(parent, { clearingOperation: null }));
+        await assertSucceeds(updateDoc(parent, { clearingOperation: null, lastClearedOperation: 'clear-one' }));
+        await assertFails(setDoc(doc(db, `${path}/messages/stale`), { text: 'Old client' }));
+        await assertSucceeds(setDoc(doc(db, `${path}/messages/current`), { text: 'Current client', messageEpoch: 1 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 0 }));
+        await assertFails(updateDoc(parent, { messages: [{ id: 'resurrected' }] }));
+        await assertFails(updateDoc(parent, { clearingOperation: 'no-generation-increment' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 2, clearingOperation: 'clear-two' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 3, clearingOperation: 'takeover' }));
+        await assertFails(updateDoc(parent, { messageEpoch: 4, clearingOperation: 'takeover' }));
     });
 
     describe('root owner-scoped collections pin every authority field', () => {
