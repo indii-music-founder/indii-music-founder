@@ -822,11 +822,12 @@ service cloud.firestore {
       }
 
       match /screenwriterDrafts/{draftId} {
-        allow read: if isOwner(userId);
+        allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) &&
           request.resource.data.get('ownerId', userId) == userId &&
-          request.resource.data.get('projectId', draftId) == draftId;
-        allow delete: if isOwner(userId);
+          request.resource.data.get('projectId', draftId) == draftId &&
+          request.resource.data.revision is int &&
+          request.resource.data.revision >= 1;
       }
 
       // Browser push registration. The document ID and payload token must
@@ -1579,6 +1580,26 @@ service cloud.firestore {
         resource.data.get('userId', null) == request.auth.uid;
     }
 
+    match /knowledge_query_receipts/{receiptId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_tombstones/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_chunks/{chunkId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_indexing_jobs/{jobId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
     // =========================================================================
     // Publishing Registrations (verified users only — PRO/MLC filings)
     // =========================================================================
@@ -1589,11 +1610,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Registration Center stores per-user, per-track org status under:
+    // =========================================================================
+    // Registration Center (per-user, per-track org filing records)
     // /registrations/{userId}/tracks/{trackId}/orgs/{orgId}
+    // Authenticated users can read and write if request.auth.uid == userId.
+    // Artists can delete/reset their own registration records if needed.
+    // =========================================================================
     match /registrations/{userId}/tracks/{trackId}/orgs/{orgId} {
       allow read, create, update: if isOwner(userId);
-      allow delete: if false;
+      allow delete: if isOwner(userId);
     }
 
     // =========================================================================
@@ -2149,8 +2174,11 @@ service cloud.firestore {
       allow delete: if isVerifiedUser() && resource.data.authorId == request.auth.uid;
     }
     match /legal_audit_ledger/{auditId} {
-      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (
+        ('actorUid' in request.resource.data && request.resource.data.actorUid == request.auth.uid) ||
+        ('userId' in request.resource.data && request.resource.data.userId == request.auth.uid)
+      );
       allow update, delete: if false;
     }
     match /legal_templates/{templateId}/{allPaths=**} {
