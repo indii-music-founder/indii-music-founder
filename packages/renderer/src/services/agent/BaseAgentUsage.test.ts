@@ -4,6 +4,12 @@ import { AgentConfig } from './types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { recordToolOutcome } from './governance/ToolOutcomeAudit';
+import type { ToolFunctionResult } from './types';
+
+vi.mock('./governance/ToolOutcomeAudit', () => ({
+    recordToolOutcome: vi.fn(async () => ({ status: 'unavailable' })),
+}));
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -312,4 +318,65 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
         expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
         expect(aiMock.AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
     });
+});
+
+
+// Structural orchestration checks: no provider calls or live audit writes.
+describe('BaseAgent completion audit ordering', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(recordToolOutcome).mockResolvedValue({ status: 'unavailable' });
+    });
+
+    it.each(['credential', 'terminal'] as const)('audits a %s failure before returning its original outcome', async kind => {
+        const toolResult: ToolFunctionResult = kind === 'credential'
+            ? { success: false, error: 'Credential bridge unavailable', metadata: { errorCode: 'CREDENTIAL_STORAGE_UNAVAILABLE' } }
+            : { success: false, error: 'Delegation stopped', failure: { code: 'AGENT_EXECUTION_FAILED', retryable: false, agentId: 'generalist', recovery: 'review_failure' } };
+        const agent = new BaseAgent({ id: 'generalist', name: 'Test', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'test', tools: [], authorizedTools: ['generate_image'] });
+        const tool = vi.fn(async () => toolResult);
+        (agent as unknown as { functions: Record<string, typeof tool> }).functions.generate_image = tool;
+        vi.mocked(AI.generateContentStream).mockResolvedValueOnce({
+            stream: new ReadableStream({ start(controller) { controller.close(); } }),
+            response: Promise.resolve({ text: () => '', functionCalls: () => [{ name: 'generate_image', args: { prompt: 'test' } }] }),
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+        let acknowledge!: (receipt: { status: 'confirmed'; logId: string }) => void;
+        const auditStarted = new Promise<void>(resolve => {
+            vi.mocked(recordToolOutcome).mockImplementationOnce(() => {
+                resolve();
+                return new Promise(complete => { acknowledge = complete; });
+            });
+        });
+        const finished = vi.fn();
+        const pending = agent.execute('Make an image').then(response => { finished(response); return response; });
+        await auditStarted;
+        expect(finished).not.toHaveBeenCalled();
+        expect(tool).toHaveBeenCalledTimes(1);
+        expect(recordToolOutcome).toHaveBeenCalledWith(expect.objectContaining({ agentId: 'generalist', toolName: 'generate_image', success: false, toolCallId: expect.any(String) }));
+        acknowledge({ status: 'confirmed', logId: 'audit-id' });
+        const response = await pending;
+        expect(response.toolCalls?.[0]?.result).toMatchObject({ ...toolResult, metadata: { ...toolResult.metadata, audit: { status: 'confirmed', logId: 'audit-id' } } });
+        expect(response.error).toBe(toolResult.error);
+        expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
+    });
+    it('keeps a successful action receipt when audit persistence is unconfirmed', async () => {
+        const agent = new BaseAgent({ id: 'generalist', name: 'Test', description: 'Test', color: '#fff', category: 'specialist', systemPrompt: 'test', tools: [], authorizedTools: ['generate_image'] });
+        const tool = vi.fn(async () => ({ success: true, message: 'Generated image saved.', data: { urls: ['https://example.test/image.png'] } }));
+        (agent as unknown as { functions: Record<string, typeof tool> }).functions.generate_image = tool;
+        vi.mocked(recordToolOutcome).mockResolvedValueOnce({ status: 'unconfirmed' });
+        vi.mocked(AI.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({ text: () => '', functionCalls: () => [{ name: 'generate_image', args: { prompt: 'test' } }] }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({ text: () => 'Generated image saved.', functionCalls: () => [] }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+        const response = await agent.execute('Make an image');
+        expect(response.error).toBeUndefined();
+        expect(response.toolCalls?.[0]?.result).toMatchObject({ success: true, message: 'Generated image saved.', data: { urls: ['https://example.test/image.png'] }, metadata: { audit: { status: 'unconfirmed' } } });
+        expect(tool).toHaveBeenCalledTimes(1);
+        expect(recordToolOutcome).toHaveBeenCalledTimes(1);
+    });
+
 });

@@ -41,6 +41,7 @@ import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import type { ToolFunctionResult, ToolFunctionArgs } from '../types';
 import type { ToolRiskTier } from '../types';
+import { unconfirmedApprovalResult } from './ApprovalResultReceipt';
 
 export interface PendingToolApproval {
     id?: string;
@@ -356,10 +357,7 @@ class ToolApprovalService {
                 });
             } catch {
                 logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`);
-                return {
-                    success: false,
-                    error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,
-                };
+                return unconfirmedApprovalResult(result, approvalId);
             }
         } else {
             try {
@@ -371,6 +369,7 @@ class ToolApprovalService {
                 });
             } catch (completeErr) {
                 logger.warn(`[ToolApprovalService] Failed to complete computer approval ${approvalId}:`, completeErr);
+                return unconfirmedApprovalResult(result, approvalId);
             }
         }
 

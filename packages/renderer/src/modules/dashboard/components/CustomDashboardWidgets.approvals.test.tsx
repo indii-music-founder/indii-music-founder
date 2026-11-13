@@ -2,14 +2,14 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    approve: vi.fn(), deny: vi.fn(), canApprove: vi.fn(),
+    approve: vi.fn(), deny: vi.fn(), canApprove: vi.fn(), warning: vi.fn(), success: vi.fn(), error: vi.fn(),
     items: [] as Array<Record<string, unknown>>,
 }));
 vi.mock('@/services/agent/governance/ToolApprovalService', () => ({ toolApprovalService: {
     onPendingApprovals: (callback: (items: unknown[]) => void) => { callback(mocks.items); return vi.fn(); },
     approve: mocks.approve, deny: mocks.deny, canApproveInThisSession: mocks.canApprove,
 } }));
-vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
+vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: mocks.success, error: mocks.error, warning: mocks.warning }) }));
 import { WIDGET_RENDERERS } from './CustomDashboardWidgets';
 
 describe('dashboard approval widget', () => {
@@ -24,6 +24,15 @@ describe('dashboard approval widget', () => {
         expect(screen.getByTestId('gate-approve-first')).toBeDisabled();
         expect(screen.getByTestId('gate-deny-first')).toBeEnabled();
         expect(screen.getAllByText(/Requested in another session/)).toHaveLength(2);
+    });
+    it('shows an approval-record warning without claiming ordinary success', async () => {
+        mocks.approve.mockResolvedValueOnce({ success: true, metadata: { approvalPersistence: { status: 'unconfirmed', approvalId: 'first' } } });
+        render(WIDGET_RENDERERS.approval_gates());
+        fireEvent.click(screen.getByTestId('gate-approve-first'));
+        await waitFor(() => expect(mocks.warning).toHaveBeenCalledWith(expect.stringMatching(/tool reported success.*do not retry automatically/i)));
+        expect(mocks.success).not.toHaveBeenCalled();
+        expect(mocks.error).not.toHaveBeenCalled();
+        expect(mocks.approve).toHaveBeenCalledTimes(1);
     });
     it('locks all cards during execution and recovers after failure', async () => {
         let finish!: (result: { success: boolean }) => void;

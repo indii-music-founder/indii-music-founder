@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
     canApproveInThisSession: vi.fn((_approval?: { toolName: string }) => true),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
+    toastWarning: vi.fn(),
 }));
 
 vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
@@ -26,7 +27,7 @@ vi.mock('@/core/context/ToastContext', () => ({
         success: mocks.toastSuccess,
         error: mocks.toastError,
         info: vi.fn(),
-        warning: vi.fn(),
+        warning: mocks.toastWarning,
     }),
 }));
 
@@ -63,6 +64,20 @@ describe('OperationalApprovalGateBanner', () => {
         mocks.approve.mockResolvedValue({ success: true });
         mocks.deny.mockResolvedValue(undefined);
         mocks.canApproveInThisSession.mockReturnValue(true);
+    });
+
+    it.each([false, true])('warns on unconfirmed recording and stops bulk execution (bulk: %s)', async bulk => {
+        mocks.onPendingApprovals.mockImplementation(callback => {
+            callback((bulk ? ['first', 'second'] : ['first']).map(id => ({ id, toolName: 'report_bug', description: id, status: 'pending', riskTier: 'write' })));
+            return vi.fn();
+        });
+        mocks.approve.mockResolvedValueOnce({ success: true, metadata: { approvalPersistence: { status: 'unconfirmed', approvalId: 'first' } } });
+        render(<OperationalApprovalGateBanner />);
+        fireEvent.click(screen.getByTestId(bulk ? 'banner-approve-all-btn' : 'banner-approve-btn'));
+        await waitFor(() => expect(mocks.toastWarning).toHaveBeenCalledWith(expect.stringMatching(/tool reported success.*do not retry automatically/i)));
+        expect(mocks.approve).toHaveBeenCalledTimes(1);
+        expect(mocks.toastSuccess).not.toHaveBeenCalled();
+        expect(mocks.toastError).not.toHaveBeenCalled();
     });
 
     it('renders null when there are no pending approvals', () => {

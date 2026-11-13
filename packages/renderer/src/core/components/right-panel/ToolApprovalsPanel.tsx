@@ -1,3 +1,4 @@
+import { approvalRecordingWarning } from '@/services/agent/governance/ApprovalResultReceipt';
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronRight, ShieldAlert, Check, X, Monitor } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -91,7 +92,10 @@ export default function ToolApprovalsPanel({ toggleRightPanel }: ToolApprovalsPa
         setBusyId(id);
         try {
             const result = await toolApprovalService.approve(id);
-            if (result.success) {
+            const warning = approvalRecordingWarning(result);
+            if (warning) {
+                toast.warning(warning);
+            } else if (result.success) {
                 toast.success('Action approved and executed');
             } else {
                 toast.error(result.error || 'Action failed');

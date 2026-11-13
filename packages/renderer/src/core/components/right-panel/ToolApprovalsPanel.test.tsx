@@ -4,8 +4,8 @@ import React from 'react';
 import ToolApprovalsPanel from './ToolApprovalsPanel';
 import { toolApprovalService } from '@/services/agent/governance/ToolApprovalService';
 
-const approvalItems = vi.hoisted(() => ({ current: [] as unknown[] }));
-vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
+const approvalItems = vi.hoisted(() => ({ current: [] as unknown[], warning: vi.fn(), success: vi.fn(), error: vi.fn() }));
+vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: approvalItems.success, error: approvalItems.error, warning: approvalItems.warning }) }));
 vi.mock('@/services/agent/governance/ToolApprovalService', () => ({
     toolApprovalService: { onUnresolvedApprovals: (callback: (items: unknown[]) => void) => { callback(approvalItems.current); return () => {}; }, approve: vi.fn(), deny: vi.fn(), canApproveInThisSession: vi.fn(() => true) },
 }));
@@ -42,6 +42,17 @@ describe('ToolApprovalsPanel computer allowlist boundary', () => {
         await waitFor(() => expect(denies()[1]).toBeEnabled());
         fireEvent.click(denies()[1]!);
         await waitFor(() => expect(toolApprovalService.deny).toHaveBeenCalledWith('second', 'Denied by user'));
+    });
+
+    it('warns separately when a successful action receipt was not recorded', async () => {
+        approvalItems.current = [{ id: 'first', agentId: 'generalist', toolName: 'report_bug', args: {}, riskTier: 'write', description: 'Report', status: 'pending', createdAt: new Date() }];
+        vi.mocked(toolApprovalService.approve).mockResolvedValueOnce({ success: true, data: { bugId: 'saved-bug' }, metadata: { approvalPersistence: { status: 'unconfirmed', approvalId: 'first' } } });
+        render(<ToolApprovalsPanel toggleRightPanel={vi.fn()} />);
+        fireEvent.click(screen.getByRole('button', { name: /^approve$/i }));
+        await waitFor(() => expect(approvalItems.warning).toHaveBeenCalledWith(expect.stringMatching(/tool reported success.*do not retry automatically/i)));
+        expect(approvalItems.success).not.toHaveBeenCalled();
+        expect(approvalItems.error).not.toHaveBeenCalled();
+        expect(toolApprovalService.approve).toHaveBeenCalledTimes(1);
     });
 
     it('shows the fail-closed empty policy as read-only', async () => {
