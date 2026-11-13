@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, LoaderCircle, RefreshCw, Rocket, Sparkles, Award } from 'lucide-react';
+import { AlertCircle, CheckCircle2, LoaderCircle, RefreshCw, Rocket, Sparkles } from 'lucide-react';
 import { getEligiblePlpSlots, getPlpBatchCounts, type PlpBatch } from '../plpBatch';
 import { judgePlpVariantAdFormat, type PlpVariantAdVerdict } from '@/config/typesafeJudgments';
 
@@ -74,17 +74,11 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
                     {batch.slots.map(slot => {
                         const label = `${slot.kind === 'image' ? 'Image' : 'Video'} ${slot.kind === 'image' ? slot.index + 1 : slot.index - 9}`;
                         const verdict = verdicts[slot.index];
-                        const isTopPick = slot.index < 3;
 
                         return (
                             <li
                                 key={slot.index}
-                                className={`flex flex-col gap-1.5 rounded-lg border px-2.5 py-2 text-xs transition-colors ${
-                                    isTopPick
-                                        ? 'border-emerald-500/40 bg-emerald-950/20 shadow-sm'
-                                        : 'border-white/5 bg-white/[0.03]'
-                                }`}
-                                data-testid={isTopPick ? `jev-plp-top-pick-${slot.index}` : undefined}
+                                className="flex flex-col gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-2 text-xs transition-colors"
                             >
                                 <div className="flex items-center gap-2">
                                     {slot.status === 'completed' && <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0 text-emerald-400" />}
@@ -94,11 +88,7 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
                                         <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-1.5 min-w-0">
                                                 <span className="font-semibold">{label}</span>
-                                                {isTopPick && (
-                                                    <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.2 text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                        <Award className="h-2.5 w-2.5" /> Top Pick
-                                                    </span>
-                                                )}
+
                                             </div>
                                             <span className="capitalize text-white/55">{slot.status}</span>
                                         </div>
@@ -128,10 +118,10 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
                                             className="inline-flex items-center gap-1 font-mono text-[9px] font-medium text-indigo-300"
                                         >
                                             <Sparkles className="h-2.5 w-2.5 text-indigo-400" />
-                                            {verdict.formatTag.replace(/_/g, ' ')}
+                                            {verdict.formatTag === 'HIGH_CONVERTING_HERO' ? 'HERO LAYOUT' : verdict.formatTag === 'THUMBNAIL_SAFE' ? 'THUMBNAIL LAYOUT' : verdict.formatTag.replace(/_/g, ' ')}
                                         </span>
                                         <span className="text-[9px] text-white/40">
-                                            {Math.round(verdict.confidence * 100)}% fit
+                                            {verdict.source === 'jev' ? `${Math.round(verdict.confidence * 100)}% Jev confidence` : 'Format heuristic'}
                                         </span>
                                     </div>
                                 )}

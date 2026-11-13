@@ -5530,7 +5530,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
         mocks.enabled.mockReturnValue(false);
         const verdict = await judgeCreativePromptModeIntent('drone shot orbiting a mountain sunset', 'image');
         expect(verdict.suggestedMode).toBe('video');
-        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+        expect(verdict).toMatchObject({ source: 'heuristic', confidence: null });
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
@@ -5550,6 +5550,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
             data: {
                 answers: {
                     target_mode: {
+                        type: 'choice',
                         choice: 'video',
                         confidence: 0.95,
                     },
@@ -5571,7 +5572,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
 
         const verdict = await judgeCreativePromptModeIntent('cinematic tracking camera pan', 'image');
         expect(verdict.suggestedMode).toBe('video');
-        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+        expect(verdict).toMatchObject({ source: 'heuristic', confidence: null });
     });
 });
 
@@ -5617,6 +5618,7 @@ describe('judgeGalleryAssetBrandFit (Judgment 79)', () => {
             data: {
                 answers: {
                     brand_fit: {
+                        type: 'score',
                         score: 3, // mapped to 4 (strong_fit)
                         confidence: 0.92,
                     },
@@ -5692,12 +5694,12 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
         expect(verdict.formatTag).toBe('THUMBNAIL_SAFE');
     });
 
-    it('detects defect semantics in prompt and recommends retry offline', () => {
+    it('does not infer an output defect from prompt wording alone', () => {
         const verdict = deterministicPlpVariantAdFallback({
             prompt: 'glitch broken render with distorted artifacts',
             slotIndex: 4,
         });
-        expect(verdict.retryRecommended).toBe(true);
+        expect(verdict.retryRecommended).toBe(false);
     });
 
     it('calls Jev online and returns the resolved format classification', async () => {
@@ -5706,6 +5708,7 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
             data: {
                 answers: {
                     ad_format: {
+                        type: 'choice',
                         choice: 'HIGH_CONVERTING_HERO',
                         confidence: 0.94,
                     },
