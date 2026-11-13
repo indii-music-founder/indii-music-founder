@@ -119,6 +119,16 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it('returns the saved receipt even when the sync notification throws', async () => {
+    judgeInvoke.mockResolvedValue({ data: { firestore: 'ok', github: 'failed', bugId: 'report-42' } });
+    toastMock.warning.mockImplementationOnce(() => { throw new Error('Notification unavailable'); });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.success).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+  });
+
   it('preserves a confirmed save when GitHub status is missing', async () => {
     judgeInvoke.mockResolvedValue({ data: { firestore: 'ok', bugId: 'report-42' } });
     const result = await BugReportTools.report_bug!(args);

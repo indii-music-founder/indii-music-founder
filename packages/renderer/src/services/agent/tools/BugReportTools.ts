@@ -155,7 +155,11 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         // 3. GitHub sync failure stays loud (silent-strand regression 2026-09-26:
         // a log line nobody read is not observability).
         if (githubStatus === 'failed' || githubStatus === 'skipped') {
-            toast.warning('Bug report saved, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
+            try {
+                toast.warning('Bug report saved, but GitHub issue sync failed.');
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the GitHub sync warning:', error);
+            }
         }
 
         // Memory ingestion is best effort. The report is already saved.
