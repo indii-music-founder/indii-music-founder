@@ -10,7 +10,7 @@ The following Mermaid flowchart visualizes the high-level domains of the Cloud F
 graph LR
     subgraph Clients
         Studio["indii Studio (React/Electron)"]
-        Landing["Landing Page (Next.js)"]
+        Landing["Landing Page (React/Vite)"]
     end
 
     subgraph Firebase Cloud Functions
@@ -91,7 +91,7 @@ graph LR
 
 2. **Internal trigger lifecycle** — the 24 internal triggers fire on state changes rather than client calls:
    1. Firestore triggers (`onDocumentCreated/Updated/Deleted` — e.g. `sendWebhookOnEvent`, `videoJobFirestoreOrchestrator`) react to document transitions and write idempotent receipts (event IDs / job IDs) so replays do not double-process.
-   2. Scheduled triggers (`retentionDaemon` 72h, `processWebhookQueue` 30s, `pulseTick` 1m, `agentLoopCron`) run composite-index-backed queries (`status` + timestamp ranges) and batch-process due work.
+   2. Scheduled triggers (`retentionDaemon` 72h, `processWebhookQueue` 30s, `pulseTick` 1m) query and process due work. `agentLoopCron` runs at UTC quarter-hours, queries the existing collection-group index on `agentLoopDefinitions.trigger`, and atomically creates one initialized queue entry per definition path and original scheduled occurrence. It does not execute agent actions.
    3. Storage triggers (`onObjectFinalized` — e.g. `verifyMasterAudio`) validate content hashes and metadata before downstream consumers trust the object.
    4. External webhooks (`stripeWebhook`, `pandadocWebhook`, `shopifyWebhook`, `telegramWebhook`) verify provider signatures (Stripe signature / HMAC) before mutating state; failures retry with backoff and dead-letter.
 
@@ -119,3 +119,27 @@ graph LR
 ### Internal-only triggers (not client-callable)
 - `agentLoopCron`, `batchEventsScheduled`, `cleanupExpiredVideoSessions`, `cleanupExpiredVideoTemps`, `cleanupOrphanedVideos`, `deliverScheduledPosts`, `executeVideoJob`, `expireStaleOperationCostReservations`, `finalizeVideoSessionUpload`, `flagVideosForArchival`, `flushConversionEvents`, `indexKnowledgeDocumentWorker`, `onAgentTaskUpdate`, `onMilestoneScheduled`, `pollDeliveryStatus`, `pollTimelineMilestones`, `processDDEXAck`, `processISWCMappingV2`, `processRelayCommand`, `pulseTick`, `settleVideoSessionCost`, `streamEventOnCreate`, `trackStorageQuotas`, `videoJobFirestoreOrchestrator`, `workflowOrchestrator`
 
+
+
+## Scheduled agent-loop admission — 2026-11-13
+
+```mermaid
+flowchart LR
+    Tick["Scheduler occurrence time"] --> Discover["Collection-group SCHEDULE definitions"]
+    Discover --> Validate["Validate canonical tenant, goal and verifier"]
+    Validate --> Key["Stable ID from definition path and occurrence time"]
+    Key --> Create["Create-only initialized IDLE / READY checkpoint"]
+    Create --> Queue["User-owned execution queue"]
+    Create --> Duplicate["Already exists: preserve current result and state"]
+    Discover --> Retry["Discovery/write failure: retry original occurrence"]
+    Retry --> Discover
+```
+
+Definitions with the same document ID in different tenants remain distinct. The
+user path controls scoped ownership; a conflicting payload `userId` is rejected.
+Owned legacy root definitions are supported, while ownerless and unsupported paths
+are skipped. Entries include the definition snapshot, iteration 1, READY checkpoint,
+zero token spend and initial checkpoint revision. Partial retry creates only missing
+entries. This is queue admission; no automatic queue-to-agent worker is claimed by
+this chart. Structural and isolated-emulator verification does not prove production
+autonomous execution.
