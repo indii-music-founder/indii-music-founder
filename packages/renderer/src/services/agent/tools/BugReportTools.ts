@@ -266,17 +266,14 @@ ${featureRequest.useCase}
             );
         }
 
-        // 2. Save to Agent Memory
-        try {
-            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
-            await alwaysOnMemoryEngine.ingest(
+        // The tracker write is confirmed. Memory is a best-effort follow-up.
+        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
+            .then(({ alwaysOnMemoryEngine }) => alwaysOnMemoryEngine.ingest(
                 `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
                 'system',
                 'context'
-            );
-        } catch (e: unknown) {
-            logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
-        }
+            ))
+            .catch(error => logger.warn('[BugReportTools] Failed to save feature request to memory:', error));
 
         return toolSuccess({
             featureId: savedFeatureId,
