@@ -129,34 +129,39 @@ export class MemorySummarizer {
                 insights?: string[];
                 connections?: Array<{ fromId?: unknown; toId?: unknown; relationship?: unknown; confidence?: unknown }>;
                 confidence?: unknown;
-            }>(response, { insights: [], connections: [], confidence: 0 });
-
-            const rawInsights = Array.isArray(parsed.insights) ? parsed.insights.filter((i): i is string => typeof i === 'string' && i.trim().length > 0) : [];
-            const rawConnections = Array.isArray(parsed.connections) ? parsed.connections : [];
-            const connectionConfidences = rawConnections
-                .map(c => (typeof c?.confidence === 'number' && Number.isFinite(c.confidence) ? c.confidence : null))
-                .filter((n): n is number => n !== null);
-            const fallbackConfidence = connectionConfidences.length > 0
-                ? connectionConfidences.reduce((sum, val) => sum + val, 0) / connectionConfidences.length
-                : (rawInsights.length > 0 ? 0.8 : 0);
-            const topConfidence = typeof parsed.confidence === 'number' && Number.isFinite(parsed.confidence)
-                ? Math.max(0, Math.min(1, parsed.confidence))
-                : Math.max(0, Math.min(1, fallbackConfidence));
-
-            if (rawInsights.length === 0 || topConfidence < 0.3) {
-                return null;
+            } | null>(response, null);
+            if (!parsed || !Array.isArray(parsed.insights) || !Array.isArray(parsed.connections)) {
+                throw new Error('Memory synthesis returned an invalid response.');
             }
 
+            const rawInsights = parsed.insights.filter(text => typeof text === 'string' && text.trim().length > 0);
+            if (!rawInsights.length) return null;
+
+            const isConfidence = (value: unknown): value is number =>
+                typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+            const sourceIds = new Set(memories.map(memory => memory.id));
             const now = Timestamp.now();
-            const connections: MemoryConnection[] = rawConnections.map((c: any) => ({
-                fromMemoryId: String(c.fromId),
-                toMemoryId: String(c.toId),
-                relationship: String(c.relationship),
-                confidence: typeof c.confidence === 'number' && Number.isFinite(c.confidence)
-                    ? Math.max(0, Math.min(1, c.confidence))
-                    : topConfidence,
-                discoveredAt: now,
-            }));
+            const connections: MemoryConnection[] = [];
+            for (const connection of parsed.connections) {
+                if (typeof connection?.fromId !== 'string' || !sourceIds.has(connection.fromId) ||
+                    typeof connection.toId !== 'string' || !sourceIds.has(connection.toId) ||
+                    connection.fromId === connection.toId || typeof connection.relationship !== 'string' ||
+                    !connection.relationship.trim() || !isConfidence(connection.confidence)) continue;
+                connections.push({
+                    fromMemoryId: connection.fromId,
+                    toMemoryId: connection.toId,
+                    relationship: connection.relationship.trim(),
+                    confidence: connection.confidence,
+                    discoveredAt: now,
+                });
+            }
+
+            let topConfidence = parsed.confidence;
+            if (topConfidence === undefined && connections.length) {
+                topConfidence = connections.reduce((sum, link) => sum + link.confidence, 0) / connections.length;
+            }
+            if (!isConfidence(topConfidence)) throw new Error('Memory synthesis confidence is unavailable or invalid.');
+            if (topConfidence < 0.3) return null;
 
             return {
                 userId,
@@ -169,7 +174,7 @@ export class MemorySummarizer {
             };
         } catch (error: unknown) {
             logger.error('[MemorySummarizer] Insight generation failed:', error);
-            return null;
+            throw error;
         }
     }
 

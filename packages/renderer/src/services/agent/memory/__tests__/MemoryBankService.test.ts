@@ -48,6 +48,18 @@ describe('MemoryBankService', () => {
         expect(await memoryBankService.searchMemories('user-1', 'album')).toEqual({ results: [], hasMore: false, unavailable: true });
     });
 
+    it.each([
+        {},
+        { results: [], hasMore: 'false' },
+        { results: [null], hasMore: false },
+        { results: [{ id: 'memory-1' }], hasMore: false },
+    ])('reports malformed search pages as unavailable', async data => {
+        write.mockResolvedValueOnce({ data });
+        await expect(memoryBankService.searchMemories('user-1', 'album')).resolves.toEqual({
+            results: [], hasMore: false, unavailable: true,
+        });
+    });
+
     it('reports one ranked page without repeating a cursorless search', async () => {
         const search = vi.spyOn(memoryBankService, 'searchMemories').mockResolvedValueOnce({
             results: [

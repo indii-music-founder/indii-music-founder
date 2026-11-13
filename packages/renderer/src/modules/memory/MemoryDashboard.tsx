@@ -1,3 +1,4 @@
+import { toMillisSafe } from '@/utils/timestamps';
 /**
  * Memory Dashboard (Always-On Memory Agent)
  *
@@ -248,9 +249,9 @@ export default function MemoryDashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
-    const formatDate = (timestamp: number | { toMillis: () => number } | null | undefined) => {
-        if (!timestamp) return '—';
-        const ms = typeof timestamp === 'object' && 'toMillis' in timestamp ? timestamp.toMillis() : timestamp;
+    const formatDate = (timestamp: unknown) => {
+        const ms = toMillisSafe(timestamp, NaN);
+        if (!Number.isFinite(ms)) return '—';
         return new Date(ms).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',

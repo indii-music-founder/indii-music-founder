@@ -121,9 +121,14 @@ export const MemoryTools = {
         categories?: AlwaysOnMemoryCategory[]; 
         limit?: number 
     }) => {
+        const pageSize = args.limit ?? 500;
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+            return toolError('Memory search limit must be an integer from 1 to 500.', 'INVALID_ARGUMENT');
+        }
+        const categories = args.categories ?? [];
         try {
-            const answer = await alwaysOnMemoryEngine.queryFromServer(args.query);
-            return toolSuccess({ answer }, `Searched up to 500 recent active memories and 10 recent insights.`);
+            const answer = await alwaysOnMemoryEngine.queryFromServer(args.query, pageSize, categories);
+            return toolSuccess({ answer }, `Searched up to ${pageSize} recent active memories${categories.length ? ' in the requested categories' : ' and 10 recent insights'}.`);
         } catch {
             return toolError('Memory recall is currently unavailable.', 'QUERY_ERROR');
         }
@@ -150,10 +155,7 @@ export const MemoryTools = {
         }
         try {
             const categories = [...new Set(args.categories ?? [])];
-            const pages = await Promise.all((categories.length ? categories : [undefined]).map(category =>
-                alwaysOnMemoryEngine.getAllMemories(pageSize, { category }, true)
-            ));
-            const memories = pages.flat().sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, pageSize);
+            const memories = await alwaysOnMemoryEngine.listRecentFromServer(pageSize, categories);
             return toolSuccess({ memories, limit: pageSize, categories }, `Returned ${memories.length} recent active memories.`);
         } catch {
             return toolError('Memory listing is currently unavailable.', 'LIST_ERROR');

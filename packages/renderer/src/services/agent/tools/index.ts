@@ -167,7 +167,7 @@ AVAILABLE TOOLS:
 16. get_studio_assets(query?: string, limit?: number, type?: 'image'|'video') - Search and retrieve specific assets from the Creative Studio history.
 16. analyze_contract(file_data: string, mime_type: string) - Analyze contract.
 17. generate_social_post(platform: string, topic: string, tone: string) - Generate social post.
-18. save_memory(content: string, type: string, confidence: number) - Save a fact or rule to long-term memory.
+18. save_memory(content: string, type?: 'fact' | 'summary' | 'rule' | 'preference') - Save to long-term memory and return its reference.
 19. recall_memories(query: string) - Search long-term memory.
 20. verify_output(goal: string, content: string) - Critique generated content.
 21. request_approval(content: string) - Pause and ask user for approval.
@@ -212,13 +212,10 @@ AVAILABLE TOOLS:
 48. scan_content(text: string) - Scan content for sensitive data.
 49. rotate_credentials(service_name: string) - Rotate credentials.
 50. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
-51. save_user_memory(content: string, category?: string, importance?: string, tags?: string[]) - Save to user's persistent memory across all sessions.
-52. search_user_memory(query: string, categories?: string[], importance?: string[], tags?: string[], limit?: number) - Search user's persistent memory semantically.
+51. save_user_memory(content: string, category?: string) - Save to user's persistent memory across all sessions.
+52. search_user_memory(query: string, categories?: string[], limit?: number) - Answer from recent active memories. Limit 1–500, default 500. Recent insights are included only without a category filter.
 53. get_user_context() - Get aggregated user context summary (preferences, goals, key facts).
-54. list_user_memories(categories?: string[], isActive?: boolean, limit?: number) - List user memories with filtering.
-55. update_user_memory(memoryId: string, content?: string, category?: string, importance?: string, tags?: string[], isActive?: boolean) - Update existing user memory.
-56. deactivate_user_memory(memoryId: string) - Deactivate a user memory (soft delete).
-57. get_user_memory_analytics(days?: number) - Get analytics about user memories.
+54. list_user_memories(categories?: string[], limit?: number) - List recent active memories. Limit 1–500, default 20.
 58. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
 59. create_timeline(goal, domain, durationWeeks, startDate, templateId?, platforms?, assetStrategy?) - Create a progressive multi-phase campaign timeline.
 60. list_timelines(status?) - List all progressive campaign timelines.

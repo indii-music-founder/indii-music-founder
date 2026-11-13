@@ -1,3 +1,4 @@
+import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
 import { db } from '../../firebase';
 import {
@@ -326,7 +327,7 @@ export class MemoryConsolidator {
     ): Promise<boolean> {
         const refs = memoryIds.map(id => firestoreDoc(db, 'users', userId, 'alwaysOnMemories', id));
         const insightRef = firestoreDoc(collection(db, 'users', userId, 'consolidationInsights'));
-        const payload = insight ? JSON.parse(JSON.stringify(insight)) : null;
+        const payload = insight ? cleanFirestoreData(insight) : null;
 
         return runTransaction(db, async transaction => {
             const memories = await Promise.all(refs.map(ref => transaction.get(ref)));

@@ -568,7 +568,8 @@ export class AgentGraphService {
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution (capped to top 5 / 3,000 chars)
                 let memoryContext = '';
                 try {
-                    const { results } = await memoryBankService.searchMemories(userId, prompt, 5);
+                    const { results, unavailable } = await memoryBankService.searchMemories(userId, prompt, 5);
+                    if (unavailable) throw new Error('Semantic memory search was unavailable.');
                     const memoryLines: string[] = [];
                     let totalChars = 0;
                     for (const m of results) {
