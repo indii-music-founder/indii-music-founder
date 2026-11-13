@@ -111,6 +111,19 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it('keeps the saved report ID when GitHub confirms a comment without a URL', async () => {
+    judgeInvoke.mockResolvedValue({
+      data: { firestore: 'ok', github: 'merged_as_comment', bugId: 'report-42' },
+    });
+
+    const result = await BugReportTools.report_bug!(args);
+
+    expect(result.metadata?.durableReceipt).toBe(true);
+    expect(result.metadata?.receiptText).toContain('Report ID: report-42.');
+    expect(result.metadata?.receiptText).toContain('Added as a comment to an existing GitHub issue.');
+    expect(result.metadata?.receiptText).not.toContain('undefined');
+  });
+
   it('rejects reports missing title or description', async () => {
     const result = await BugReportTools.report_bug!({ title: '', description: '' });
 
