@@ -970,7 +970,8 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) &&
           request.resource.data.get('ownerId', userId) == userId &&
-          request.resource.data.get('projectId', draftId) == draftId;
+          request.resource.data.get('projectId', draftId) == draftId &&
+          request.resource.data.revision is int && request.resource.data.revision >= 1;
         allow delete: if isOwner(userId);
       }
 
@@ -1972,6 +1973,26 @@ service cloud.firestore {
         resource.data.get('userId', null) == request.auth.uid;
     }
 
+    match /knowledge_query_receipts/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_tombstones/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_chunks/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_indexing_jobs/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
     // =========================================================================
     // Publishing Registrations (verified users only — PRO/MLC filings)
     // =========================================================================
@@ -2598,8 +2619,14 @@ service cloud.firestore {
       allow delete: if isVerifiedUser() && resource.data.authorId == request.auth.uid;
     }
     match /legal_audit_ledger/{auditId} {
-      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
+      function auditOwner(data) {
+        return data.get('userId', data.get('actorUid', null));
+      }
+      allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid ||
+        resource.data.get('actorUid', null) == request.auth.uid)) ||
+        (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create: if isVerifiedUser() && auditOwner(request.resource.data) == request.auth.uid &&
+        request.resource.data.get('actorUid', request.auth.uid) == request.auth.uid;
       allow update, delete: if false;
     }
     match /legal_templates/{templateId} {
@@ -3212,7 +3239,7 @@ service cloud.firestore {
 
       // Single doc read: unclaimed assessments without PII can be read by session visitor;
       // reading assessment PII (email / artistName) or claimed docs strictly requires authentication (ISSUE-1559).
-      allow get: if (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null) && (!('artistName' in resource.data) || resource.data.artistName == null)) ||
+      allow get: if !exists(/databases/$(database)/documents/prospect_assessments/$(assessmentId)) || (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null) && (!('artistName' in resource.data) || resource.data.artistName == null)) ||
                     (isAuthenticated() && (
                       resource.data.get('claimedByUid', null) == request.auth.uid ||
                       (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null || (request.auth.token.email != null && request.auth.token.email == resource.data.email)))

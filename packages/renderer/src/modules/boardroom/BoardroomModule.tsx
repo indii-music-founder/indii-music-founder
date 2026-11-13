@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 import { BoardroomRightRail } from './components/BoardroomRightRail';
+import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -71,7 +72,7 @@ export function BoardroomModule() {
 
     const { isAnyPhone } = useMobile();
 
-    const activeCount = activeAgents?.length || 0;
+    const activeCount = normalizeBoardroomAgentIds(activeAgents ?? []).length;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
     const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
