@@ -211,6 +211,7 @@ describe('BugReportTools.request_feature honesty gate', () => {
     const result = await BugReportTools.request_feature!(featureArgs);
 
     expect(result.success).toBe(true);
+    expect(result.data).toMatchObject({ featureId: 'feat-doc-1' });
     expect(result.message).toContain('Saved to your feedback tracker');
     expect(mockFirestoreAdd).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Batch stems export',

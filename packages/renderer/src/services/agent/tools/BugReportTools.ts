@@ -252,11 +252,12 @@ ${featureRequest.useCase}
 *This feature request was captured by the indii agent from an in-app conversation.*`;
 
         // 1. Save to Firestore
+        let savedFeatureId: string;
         try {
             const { FirestoreService } = await importWithRetry(() => import('@/services/FirestoreService'));
             const featureService = new FirestoreService<typeof featureRequest>('feature_requests');
-            await featureService.add(featureRequest);
-            logger.info(`[BugReportTools] Feature request saved: ${featureRequest.id} — "${featureRequest.title}"`);
+            savedFeatureId = await featureService.add(featureRequest);
+            logger.info(`[BugReportTools] Feature request saved: ${savedFeatureId} — "${featureRequest.title}"`);
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to persist feature request to Firestore:', e);
             return toolError(
@@ -278,7 +279,7 @@ ${featureRequest.useCase}
         }
 
         return toolSuccess({
-            featureId: featureRequest.id,
+            featureId: savedFeatureId,
             title: featureRequest.title
         }, `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`);
     })
