@@ -399,18 +399,30 @@ export class AlwaysOnMemoryEngine {
         }
     }
 
-    public async queryFromServer(question: string): Promise<string> {
+    public async listRecentFromServer(pageSize: number, requestedCategories: AlwaysOnMemoryCategory[] = []): Promise<AlwaysOnMemory[]> {
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) throw new RangeError('Invalid memory page size.');
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
+        const categories = [...new Set(requestedCategories)];
+        const pages = await Promise.all((categories.length ? categories : [undefined]).map(category =>
+            this.getAllMemories(pageSize, { category }, true)
+        ));
+        this.requireCurrentOwner(userId, ownerVersion);
+        return pages.flat().sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, pageSize);
+    }
+
+    public async queryFromServer(question: string, pageSize = 500, categories: AlwaysOnMemoryCategory[] = []): Promise<string> {
         if (this.isE2EMode) throw new Error('Server memory recall is unavailable in simulated mode.');
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
         const userId = this.userId;
         const ownerVersion = this.ownerVersion;
 
         // Fetch recent active memories from the server.
-        const memories = await this.getAllMemories(500, undefined, true);
+        const memories = await this.listRecentFromServer(pageSize, categories);
         this.requireCurrentOwner(userId, ownerVersion);
 
         // Step 2: Fetch consolidation insights
-        const insights = await this.getInsights(10, true);
+        const insights = categories.length ? [] : await this.getInsights(10, true);
         this.requireCurrentOwner(userId, ownerVersion);
 
         // Step 4: Build a context block for the LLM (even if memories are empty)
@@ -442,7 +454,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
         const prompt = cleanPrompt(`
             You are a Memory Query Agent for a creative music/visual production platform called indii.
             ${memoryContext}
-            Search scope: up to 500 recent active memories and 10 recent insights. Avoid claiming exhaustive recall.
+            Search scope: up to ${pageSize} recent active memories${categories.length ? ' in the requested categories' : ' and 10 recent insights'}. Avoid claiming exhaustive recall.
             Be thorough but concise.
 
             MEMORIES:

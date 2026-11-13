@@ -17,6 +17,7 @@ vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
         queryFromServer: vi.fn(),
         getStatus: vi.fn(),
         getAllMemories: vi.fn(),
+        listRecentFromServer: vi.fn(),
         deleteMemory: vi.fn(),
         consolidateNow: vi.fn(),
         retrieve: vi.fn()
@@ -91,11 +92,11 @@ describe('MemoryTools', () => {
     });
 
     it('reports an unavailable list separately from an empty list', async () => {
-        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockRejectedValueOnce(new Error('offline'));
+        vi.mocked(alwaysOnMemoryEngine.listRecentFromServer).mockRejectedValueOnce(new Error('offline'));
         expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: false, metadata: { errorCode: 'LIST_ERROR' } });
-        vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockResolvedValueOnce([]);
+        vi.mocked(alwaysOnMemoryEngine.listRecentFromServer).mockResolvedValueOnce([]);
         expect(await MemoryTools.list_user_memories({})).toMatchObject({ success: true, data: { memories: [] } });
-        expect(alwaysOnMemoryEngine.getAllMemories).toHaveBeenCalledWith(20, { category: undefined }, true);
+        expect(alwaysOnMemoryEngine.listRecentFromServer).toHaveBeenCalledWith(20, []);
     });
 
     describe('recall_memories', () => {
@@ -133,11 +134,11 @@ describe('MemoryTools', () => {
         it('should query user memory', async () => {
             vi.mocked(alwaysOnMemoryEngine.queryFromServer).mockResolvedValue('Search results');
 
-            const result = await MemoryTools.search_user_memory({ query: 'search query' });
+            const result = await MemoryTools.search_user_memory({ query: 'search query', limit: 5, categories: ['goal'] });
 
             expect(result.success).toBe(true);
             expect(result.data.answer).toBe('Search results');
-            expect(alwaysOnMemoryEngine.queryFromServer).toHaveBeenCalledWith('search query');
+            expect(alwaysOnMemoryEngine.queryFromServer).toHaveBeenCalledWith('search query', 5, ['goal']);
         });
     });
 
