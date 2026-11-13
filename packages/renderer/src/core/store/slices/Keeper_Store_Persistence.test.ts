@@ -1,3 +1,4 @@
+// Structural-only persistence contract tests. Genuine-user production clearing remains unverified.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 
@@ -115,7 +116,7 @@ describe('📚 Keeper: Persistence', () => {
             expect(mockClearMessages).toHaveBeenCalled();
         }, { timeout: 3000, interval: 100 });
 
-        expect(mockClearMessages).toHaveBeenCalledWith(state.activeSessionId);
+        expect(mockClearMessages).toHaveBeenCalledWith(state.activeSessionId, { id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) });
     }, 15000);
 
     it('should persist message updates (e.g. streaming chunks) to SessionService', async () => {

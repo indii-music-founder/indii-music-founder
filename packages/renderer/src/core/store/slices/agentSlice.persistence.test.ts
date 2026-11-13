@@ -1,3 +1,4 @@
+// Structural-only persistence contract tests. Genuine-user production clearing remains unverified.
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 import type { AgentMessage, ConversationSession } from './agent';
@@ -331,7 +332,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The empty message list should be persisted
-        expect(sessionService.clearMessages).toHaveBeenCalledWith(sessionId);
+        expect(sessionService.clearMessages).toHaveBeenCalledWith(sessionId, { id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) });
     });
 
     it('does not persist a late update to a message cleared from the session', async () => {
@@ -358,7 +359,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         expect(mockClearMessages).not.toHaveBeenCalled();
 
         finishAppend();
-        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId));
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId, { id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) }));
     });
 
     it('waits for an in-flight clear before appending a new message', async () => {
@@ -370,7 +371,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         }));
 
         store.clearAgentHistory();
-        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId));
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId, { id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) }));
         store.addAgentMessage({ id: 'after-clear', role: 'user', text: 'New', timestamp: Date.now() });
         expect(useStore.getState().sessions[sessionId].messages.map((message: AgentMessage) => message.id))
             .toEqual(['after-clear']);
