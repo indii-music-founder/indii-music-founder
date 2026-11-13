@@ -37,6 +37,7 @@ import {
     updateDoc,
     deleteDoc,
     serverTimestamp,
+    runTransaction,
     Timestamp,
     collection,
     getDocs,
@@ -569,6 +570,45 @@ describe('Firestore Security Rules', () => {
                 doc(db, 'users', ALICE_UID, 'agent_queue', 'queue'),
                 { ...queue, tasks: Array.from({ length: 101 }, (_, id) => ({ id })) },
             ));
+        });
+    });
+
+    describe('agent loop checkpoint ownership (structural emulator tests)', () => {
+        const checkpoint = { id: 'loop-checkpoint', loopId: 'loop-definition', checkpointRevision: 1, status: 'EXECUTING' };
+        it('requires an initial revision and rejects stale or skipped updates', async () => {
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+            await assertFails(setDoc(ref, { id: checkpoint.id }));
+            await assertSucceeds(setDoc(ref, checkpoint));
+            await assertFails(updateDoc(ref, { status: 'FAILED' }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 3 }));
+            await assertSucceeds(updateDoc(ref, { checkpointRevision: 2, status: 'EVALUATING' }));
+            await assertFails(setDoc(ref, { ...checkpoint, status: 'FAILED' }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 3, id: 'different-execution' }));
+            await assertFails(updateDoc(doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), { checkpointRevision: 3 }));
+        });
+        it('upgrades a legacy checkpoint once without permitting a second stale claim', async () => {
+            await testEnv.withSecurityRulesDisabled(async context => {
+                await setDoc(doc(context.firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), { id: checkpoint.id, loopId: checkpoint.loopId });
+            });
+            const ref = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+            await assertSucceeds(updateDoc(ref, { checkpointRevision: 1 }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 1 }));
+        });
+        it('lets only one independent transaction claim a saved revision', async () => {
+            const firstDb = verifiedCtx(ALICE_UID).firestore();
+            const secondDb = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(firstDb, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), checkpoint);
+            const claim = (db: typeof firstDb) => runTransaction(db, async transaction => {
+                const ref = doc(db, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+                const saved = await transaction.get(ref);
+                if (saved.data()?.checkpointRevision !== 1) throw new Error('Stale checkpoint');
+                transaction.update(ref, { checkpointRevision: 2, status: 'DISPATCHING' });
+            });
+            const claims = await Promise.allSettled([claim(firstDb), claim(secondDb)]);
+            expect(claims.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+            expect(claims.filter(result => result.status === 'rejected')).toHaveLength(1);
+            expect((await getDoc(doc(firstDb, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id))).data()?.status).toBe('DISPATCHING');
         });
     });
 
@@ -4345,10 +4385,10 @@ describe('Firestore Security Rules', () => {
                 const bobDb = verifiedCtx(BOB_UID).firestore();
                 const docRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1');
 
-                await assertSucceeds(setDoc(docRef, { status: 'EXECUTING', loopId: 'loop-1' }));
+                await assertSucceeds(setDoc(docRef, { id: 'exec-1', checkpointRevision: 1, status: 'EXECUTING', loopId: 'loop-1' }));
                 await assertSucceeds(getDoc(docRef));
                 await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1')));
-                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { status: 'FAIL' }));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { id: 'exec-2', checkpointRevision: 1, status: 'FAIL' }));
             });
 
             it('users/{userId}/agentAuditTrails: owner can read/create, update/delete denied, cross-user denied', async () => {
@@ -4893,7 +4933,7 @@ describe('Firestore Security Rules', () => {
                 const bobDb = verifiedCtx(BOB_UID).firestore();
                 const execRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1');
 
-                await assertSucceeds(setDoc(execRef, { status: 'COMPLETED', loopId: 'loop-del' }));
+                await assertSucceeds(setDoc(execRef, { id: 'exec-del-1', checkpointRevision: 1, status: 'COMPLETED', loopId: 'loop-del' }));
                 await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1')));
                 await assertSucceeds(deleteDoc(execRef));
             });

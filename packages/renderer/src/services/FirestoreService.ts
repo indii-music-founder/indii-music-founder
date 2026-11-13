@@ -7,6 +7,7 @@ import {
     updateDoc,
     deleteDoc,
     getDoc,
+    getDocFromServer,
     getDocs,
     query,
     where,
@@ -19,7 +20,8 @@ import {
     orderBy,
     OrderByDirection,
     WhereFilterOp,
-    writeBatch
+    writeBatch,
+    runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -85,6 +87,35 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             ...data,
             updatedAt: Timestamp.now()
         }), { merge: true });
+    }
+
+    /** Atomically replace a document only if its durable revision still matches.
+     * null means create-only; an existing legacy document without the field is revision 0.
+     * Transaction retries recheck the same expected revision and cannot take over a newer writer.
+     */
+    async setIfRevision(id: string, data: T, revisionField: string, expectedRevision: number | null): Promise<number> {
+        if (expectedRevision !== null && (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || expectedRevision >= Number.MAX_SAFE_INTEGER)) {
+            throw new Error('Invalid expected document revision');
+        }
+        const nextRevision = (expectedRevision ?? 0) + 1;
+        const assertRevision = (current: DocumentData | undefined) => {
+            const revision = current === undefined ? null : current[revisionField] ?? 0;
+            if (revision !== expectedRevision) throw new Error('Document checkpoint revision changed; reload before continuing.');
+        };
+        const payload = this.pruneUndefined({ ...data, [revisionField]: nextRevision, updatedAt: Timestamp.now() });
+        if (this.isE2EMode) {
+            const key = this.getCacheKey(id);
+            assertRevision(FirestoreService.e2eCache[key]);
+            FirestoreService.e2eCache[key] = payload;
+            return nextRevision;
+        }
+        const reference = doc(db, this.collectionPath, id);
+        await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(reference);
+            assertRevision(snapshot.exists() ? snapshot.data() : undefined);
+            transaction.set(reference, payload);
+        });
+        return nextRevision;
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
@@ -189,14 +220,14 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
         }
     }
 
-    async get(id: string): Promise<T | null> {
+    async get(id: string, requireServer = false): Promise<T | null> {
         if (this.isE2EMode) {
             const cached = FirestoreService.e2eCache[this.getCacheKey(id)];
             if (cached) return cached as T;
             return null;
         }
         const docRef = doc(db, this.collectionPath, id);
-        const snapshot = await getDoc(docRef);
+        const snapshot = await (requireServer ? getDocFromServer(docRef) : getDoc(docRef));
         if (snapshot.exists()) {
             return { id: snapshot.id, ...snapshot.data() } as unknown as T;
         }

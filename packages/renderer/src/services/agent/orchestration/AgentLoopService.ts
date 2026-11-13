@@ -5,6 +5,7 @@ import {
     AgentLoopStatusEnum,
     AgentLoopIteration,
     AgentLoopDefinitionSnapshot,
+    AgentLoopActionCheckpointSchema,
 } from '@indii/shared';
 import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
@@ -95,12 +96,20 @@ export class AgentLoopService {
         execution: AgentLoopExecution,
         requiredPhase?: 'before-dispatch' | 'after-action' | 'before-judge',
         tokenBudget?: ExecutionTokenBudget,
+        createOnly = false,
     ): Promise<void> {
         if (tokenBudget) execution.tokenBudgetSpent = Math.max(execution.tokenBudgetSpent ?? 0, tokenBudget.spent);
+        const save = async () => {
+            if (!userId) throw new Error('A signed-in user is required to save a loop checkpoint.');
+            const revision = await this.getService(userId).setIfRevision(
+                execution.id, execution, 'checkpointRevision', createOnly ? null : execution.checkpointRevision ?? 0,
+            );
+            execution.checkpointRevision = revision;
+        };
         if (requiredPhase) {
             if (!userId) throw new Error('A signed-in user is required to save the loop checkpoint before execution.');
             try {
-                await this.getService(userId).set(execution.id, execution);
+                await save();
             } catch (error) {
                 logger.warn(`[AgentLoop] Required checkpoint could not be saved for ${execution.id}:`, error);
                 throw new Error(requiredPhase === 'before-dispatch'
@@ -122,8 +131,7 @@ export class AgentLoopService {
         if (!userId) return;
 
         try {
-            const service = this.getService(userId);
-            await service.set(execution.id, execution);
+            await save();
         } catch (error) {
             logger.warn(`[AgentLoop] Failed to persist execution ${execution.id} to Firestore:`, error);
         }
@@ -151,7 +159,7 @@ export class AgentLoopService {
 
         this.activeRuns.add(executionId);
         try {
-            await this.persistExecution(context.userId, execution, 'before-dispatch');
+            await this.persistExecution(context.userId, execution, 'before-dispatch', undefined, true);
         } catch (error) {
             this.activeRuns.delete(executionId);
             throw error;
@@ -178,14 +186,14 @@ export class AgentLoopService {
     /**
      * Fetch the current state of a loop execution asynchronously, falling back to Firestore.
      */
-    async getExecutionAsync(userId: string | undefined, executionId: string): Promise<AgentLoopExecution | null> {
+    async getExecutionAsync(userId: string | undefined, executionId: string, refresh = false): Promise<AgentLoopExecution | null> {
         if (!userId) return null;
         const cached = this.executionStore.get(executionId);
-        if (cached && this.executionOwners.get(executionId) === userId) return cached;
+        if (!refresh && cached && this.executionOwners.get(executionId) === userId) return cached;
 
         try {
             const service = this.getService(userId);
-            const doc = await service.get(executionId);
+            const doc = await service.get(executionId, refresh);
             if (doc) {
                 this.executionStore.set(executionId, doc);
                 this.executionOwners.set(executionId, userId);
@@ -212,9 +220,12 @@ export class AgentLoopService {
         this.activeRuns.add(executionId);
         try {
             const userId = context.userId;
-            const execution = await this.getExecutionAsync(userId, executionId);
+            const execution = await this.getExecutionAsync(userId, executionId, true);
             if (!execution) {
                 throw new Error(`Execution ${executionId} not found to resume`);
+            }
+            if (execution.id !== executionId) {
+                throw new Error(`Execution ${executionId} has a mismatched saved checkpoint identity.`);
             }
             if (execution.loopId !== definition.id) {
                 throw new Error(`Execution ${executionId} belongs to a different loop definition.`);
@@ -228,7 +239,8 @@ export class AgentLoopService {
             if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
                 throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
-            const checkpoint = execution.actionCheckpoint;
+            const parsedCheckpoint = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
+            const checkpoint = parsedCheckpoint.success ? parsedCheckpoint.data : undefined;
             if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
                 checkpoint.phase === 'DISPATCHING' ||
                 (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
@@ -300,7 +312,8 @@ export class AgentLoopService {
 
         while (execution.currentIteration <= definition.maxIterations && !isSatisfied) {
             logger.info(`[AgentLoop] Iteration ${execution.currentIteration}/${definition.maxIterations} starting.`);
-            const checkpoint = execution.actionCheckpoint;
+            const parsedCheckpoint = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
+            const checkpoint = parsedCheckpoint.success ? parsedCheckpoint.data : undefined;
             if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
                 checkpoint.phase === 'DISPATCHING' ||
                 (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
