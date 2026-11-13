@@ -225,7 +225,7 @@ export class MemoryConsolidator {
             return result;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Consolidation cycle failed:', error);
-            return result;
+            throw error;
         }
     }
 
@@ -458,7 +458,7 @@ export class MemoryConsolidator {
             return decayedCount;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Importance decay failed:', error);
-            return 0;
+            throw error;
         }
     }
 
@@ -536,7 +536,7 @@ export class MemoryConsolidator {
             return tiersChanged;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Tier update failed:', error);
-            return 0;
+            throw error;
         }
     }
 

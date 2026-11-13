@@ -164,9 +164,8 @@ export const MemoryTools = {
         try {
             const result = await alwaysOnMemoryEngine.consolidateNow();
             return toolSuccess({ result }, `Consolidation complete.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Consolidation failed: ${error.message}`, 'CONSOLIDATE_ERROR');
+        } catch {
+            return toolError('Memory consolidation did not complete. Review memory status before trying again.', 'CONSOLIDATE_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;

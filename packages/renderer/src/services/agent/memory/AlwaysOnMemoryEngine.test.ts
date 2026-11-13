@@ -212,7 +212,7 @@ describe('AlwaysOnMemoryEngine', () => {
             await expect(engine.query('After stop?')).rejects.toThrow('Engine not started');
             await expect(engine.deleteMemory('old-memory')).rejects.toThrow('Engine not started');
             await expect(engine.clearAll()).rejects.toThrow('Engine not started');
-            expect(await engine.consolidateNow()).toBe('Engine not started');
+            await expect(engine.consolidateNow()).rejects.toThrow('Engine not started');
             expect(await engine.getAllMemories()).toEqual([]);
             expect(await engine.getInsights()).toEqual([]);
             expect((await engine.getStatus()).startedAt).toBeUndefined();
@@ -243,6 +243,13 @@ describe('AlwaysOnMemoryEngine', () => {
             await engine.start('user-2');
             expect(engine.running).toBe(true);
         });
+    });
+
+    it('rejects a failed consolidation read and leaves the completion timestamp unset', async () => {
+        await engine.start('test-user-123');
+        mockGetDocs.mockRejectedValueOnce(new Error('memory read unavailable'));
+        await expect(engine.consolidateNow()).rejects.toThrow('memory read unavailable');
+        expect(await engine.getStatus()).toMatchObject({ isConsolidating: false, lastConsolidatedAt: undefined });
     });
 
     describe('Ingest (IngestAgent)', () => {

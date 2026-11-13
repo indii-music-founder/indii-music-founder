@@ -151,7 +151,11 @@ export class AlwaysOnMemoryEngine {
         // Start the consolidation timer
         const intervalMs = this.config.consolidation.intervalMs;
         this.consolidationTimer = setInterval(async () => {
-            await this.runConsolidationCycle();
+            try {
+                await this.consolidateNow();
+            } catch (error) {
+                logger.error('[AlwaysOnMemoryEngine] Scheduled consolidation failed:', error);
+            }
         }, intervalMs);
 
         logger.info(
@@ -356,31 +360,17 @@ export class AlwaysOnMemoryEngine {
      * Normally runs on a timer, but can be called manually.
      */
     public async consolidateNow(): Promise<string> {
-        return this.runConsolidationCycle();
-    }
-
-    /**
-     * Internal consolidation cycle runner.
-     */
-    private async runConsolidationCycle(): Promise<string> {
-        if (!this.userId) return 'Engine not started';
-        if (this.isConsolidating) return 'Consolidation already in progress';
-
+        if (!this.userId) throw new Error('Engine not started');
+        if (this.isConsolidating) throw new Error('Consolidation already in progress');
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
         this.isConsolidating = true;
         try {
             const config = this.config?.consolidation || DEFAULT_CONSOLIDATION_CONFIG;
-            const result = await MemoryConsolidator.runConsolidationCycle(this.userId, config);
+            const result = await MemoryConsolidator.runConsolidationCycle(userId, config);
+            this.requireCurrentOwner(userId, ownerVersion);
             this.lastConsolidatedAt = new Date();
-
-            return (
-                `🔄 Consolidation complete: ` +
-                `${result.memoriesProcessed} processed, ` +
-                `${result.insightsGenerated} insights, ` +
-                `${result.connectionsFound} connections`
-            );
-        } catch (error: unknown) {
-            logger.error('[AlwaysOnMemoryEngine] Consolidation failed:', error);
-            return `❌ Consolidation failed: ${error instanceof Error ? error.message : String(error)}`;
+            return `Consolidation complete. ${result.memoriesProcessed} memories processed, ${result.insightsGenerated} insights saved.`;
         } finally {
             this.isConsolidating = false;
         }
