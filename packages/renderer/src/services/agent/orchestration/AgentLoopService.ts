@@ -441,32 +441,33 @@ export class AgentLoopService {
                 passed: evaluation.passed,
                 timestamp: Date.now()
             };
-            const previousCheckpoint = execution.actionCheckpoint;
-            execution.history.push(iterationRecord);
-
-            if (evaluation.passed) {
-                isSatisfied = true;
-                execution.status = AgentLoopStatusEnum.enum.COMPLETED;
-                logger.info(`[AgentLoop] Execution ${execution.id} COMPLETED at iteration ${execution.currentIteration}.`);
-            } else {
-                logger.info(`[AgentLoop] Iteration ${execution.currentIteration} failed evaluation: ${evaluation.feedback}`);
-                execution.currentIteration++;
-                execution.actionCheckpoint = { phase: 'READY', iteration: execution.currentIteration };
-            }
-            if (!isSatisfied && execution.currentIteration > definition.maxIterations) {
-                execution.status = AgentLoopStatusEnum.enum.FAILED;
-            }
-            execution.updatedAt = Date.now();
+            const nextIteration = evaluation.passed ? execution.currentIteration : execution.currentIteration + 1;
+            const nextExecution: AgentLoopExecution = {
+                ...execution,
+                history: [...execution.history, iterationRecord],
+                currentIteration: nextIteration,
+                actionCheckpoint: evaluation.passed
+                    ? execution.actionCheckpoint
+                    : { phase: 'READY', iteration: nextIteration },
+                status: evaluation.passed
+                    ? AgentLoopStatusEnum.enum.COMPLETED
+                    : nextIteration > definition.maxIterations
+                        ? AgentLoopStatusEnum.enum.FAILED
+                        : AgentLoopStatusEnum.enum.EXECUTING,
+                updatedAt: Date.now(),
+            };
             try {
-                await this.persistExecution(context.userId, execution, 'after-judge', tokenBudget);
+                await this.persistExecution(context.userId, nextExecution, 'after-judge', tokenBudget);
             } catch (error) {
-                execution.history.pop();
-                execution.currentIteration = iterationRecord.iteration;
-                execution.actionCheckpoint = previousCheckpoint;
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
                 execution.evaluationFailure = 'Evaluation checkpoint could not be saved.';
                 logger.warn(`[AgentLoop] Execution ${execution.id} stopped before advancing:`, error);
                 return;
+            }
+            execution = nextExecution;
+            isSatisfied = evaluation.passed;
+            if (isSatisfied) {
+                logger.info(`[AgentLoop] Execution ${execution.id} COMPLETED at iteration ${execution.currentIteration}.`);
             }
         }
     }
