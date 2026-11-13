@@ -107,7 +107,7 @@ export class AgentLoopService {
     private async persistExecution(
         userId: string | undefined,
         execution: AgentLoopExecution,
-        requiredPhase?: 'before-dispatch' | 'after-action' | 'before-judge',
+        requiredPhase?: 'before-dispatch' | 'after-action' | 'before-judge' | 'after-judge',
         tokenBudget?: ExecutionTokenBudget,
         createOnly = false,
     ): Promise<void> {
@@ -129,7 +129,9 @@ export class AgentLoopService {
                     ? 'Loop checkpoint could not be saved; no action was dispatched.'
                     : requiredPhase === 'after-action'
                         ? 'Action result checkpoint could not be saved; the action outcome requires reconciliation.'
-                        : 'Token budget checkpoint could not be saved; no judge call was dispatched.');
+                        : requiredPhase === 'after-judge'
+                            ? 'Evaluation checkpoint could not be saved; resume to evaluate the recorded result.'
+                            : 'Token budget checkpoint could not be saved; no judge call was dispatched.');
             }
             this.executionStore.set(execution.id, execution);
             this.executionOwners.set(execution.id, userId);
@@ -439,6 +441,7 @@ export class AgentLoopService {
                 passed: evaluation.passed,
                 timestamp: Date.now()
             };
+            const previousCheckpoint = execution.actionCheckpoint;
             execution.history.push(iterationRecord);
 
             if (evaluation.passed) {
@@ -450,16 +453,22 @@ export class AgentLoopService {
                 execution.currentIteration++;
                 execution.actionCheckpoint = { phase: 'READY', iteration: execution.currentIteration };
             }
-            await this.persistExecution(context.userId, execution, undefined, tokenBudget);
+            if (!isSatisfied && execution.currentIteration > definition.maxIterations) {
+                execution.status = AgentLoopStatusEnum.enum.FAILED;
+            }
+            execution.updatedAt = Date.now();
+            try {
+                await this.persistExecution(context.userId, execution, 'after-judge', tokenBudget);
+            } catch (error) {
+                execution.history.pop();
+                execution.currentIteration = iterationRecord.iteration;
+                execution.actionCheckpoint = previousCheckpoint;
+                execution.status = AgentLoopStatusEnum.enum.FAILED;
+                execution.evaluationFailure = 'Evaluation checkpoint could not be saved.';
+                logger.warn(`[AgentLoop] Execution ${execution.id} stopped before advancing:`, error);
+                return;
+            }
         }
-
-        if (!isSatisfied) {
-            execution.status = AgentLoopStatusEnum.enum.FAILED;
-            logger.warn(`[AgentLoop] Execution ${execution.id} FAILED after reaching max iterations (${definition.maxIterations}).`);
-        }
-
-        execution.updatedAt = Date.now();
-        await this.persistExecution(context.userId, execution, undefined, tokenBudget);
     }
 
     private buildIterationPrompt(definition: AgentLoopDefinition, execution: AgentLoopExecution): string {

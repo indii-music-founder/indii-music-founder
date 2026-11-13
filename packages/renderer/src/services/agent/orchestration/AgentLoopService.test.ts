@@ -82,6 +82,31 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
+    it('keeps the saved action recoverable when the verdict cannot be persisted', async () => {
+        const definition: AgentLoopDefinition = {
+            id: 'judge-save-failure', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations: 2, createdAt: 1, updatedAt: 1,
+        };
+        vi.mocked(FirestoreService.prototype.setIfRevision)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockImplementationOnce(saveCheckpoint)
+            .mockRejectedValueOnce(new Error('offline'));
+        vi.mocked(maestroBatchingService.executeBatch).mockResolvedValueOnce([
+            { success: true, message: 'Saved action', data: { taskId: 'task-1' } },
+        ]);
+        mockGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify({ passed: false, feedback: 'Try again' }) },
+        });
+        const id = await agentLoopService.startLoop(definition, { userId: 'user1' });
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', id)?.status).toBe('FAILED'));
+        expect(agentLoopService.getExecution('user1', id)?.actionCheckpoint).toMatchObject({
+            phase: 'RESULT_RECORDED', iteration: 1, output: 'Saved action',
+        });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
+    });
+
     it('rejects direct resume of an exhausted loop before writing a checkpoint', async () => {
         const definition: AgentLoopDefinition = {
             id: 'exhausted-loop', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
