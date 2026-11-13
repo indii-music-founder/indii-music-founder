@@ -13,6 +13,7 @@ vi.mock('@/core/store', () => ({
 vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
     alwaysOnMemoryEngine: {
         ingest: vi.fn(),
+        ingestWithReceipt: vi.fn(),
         query: vi.fn(),
         getStatus: vi.fn(),
         getAllMemories: vi.fn(),
@@ -22,6 +23,8 @@ vi.mock('../../memory/AlwaysOnMemoryEngine', () => ({
     }
 }));
 
+const bank = vi.hoisted(() => ({ addMemory: vi.fn() }));
+vi.mock('../../memory/MemoryBankService', () => ({ memoryBankService: { addMemory: bank.addMemory } }));
 import { MemoryTools } from '../MemoryTools';
 import { useStore } from '@/core/store';
 import { alwaysOnMemoryEngine } from '../../memory/AlwaysOnMemoryEngine';
@@ -38,19 +41,52 @@ describe('MemoryTools', () => {
 
     describe('save_memory', () => {
         it('should save memory successfully via AlwaysOnMemoryEngine', async () => {
-            vi.mocked(alwaysOnMemoryEngine.ingest).mockResolvedValue('Stored: info');
+            vi.mocked(alwaysOnMemoryEngine.ingestWithReceipt).mockResolvedValue({ status: 'stored', memoryId: 'memory-1', summary: 'Stored info' });
 
             const result = await MemoryTools.save_memory({
                 content: 'User prefers dark themes'
             });
 
             expect(result.success).toBe(true);
-            expect(result.data.message).toContain('Memory stored');
-            expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalledWith(
+            expect(result.data.memoryId).toBe('memory-1');
+            expect(result.message).toContain('Reference: memory-1');
+            expect(alwaysOnMemoryEngine.ingestWithReceipt).toHaveBeenCalledWith(
                 'User prefers dark themes',
                 'agent_extraction',
                 'fact'
             );
+        });
+    });
+
+    describe('truthful write outcomes', () => {
+        it.each(['save_memory', 'save_user_memory'] as const)('does not claim a save for skipped/failed %s ingestion', async name => {
+            for (const receipt of [{ status: 'skipped' as const, reason: 'duplicate' }, { status: 'unconfirmed' as const, reason: 'write response lost' }]) {
+                vi.mocked(alwaysOnMemoryEngine.ingestWithReceipt).mockResolvedValueOnce(receipt);
+                const result = await MemoryTools[name]({ content: 'Remember this' });
+                expect(result.success).toBe(false);
+                expect(result.metadata).toMatchObject({ errorCode: receipt.status === 'skipped' ? 'MEMORY_NOT_SAVED' : 'MEMORY_SAVE_UNCONFIRMED', retryable: false });
+                expect(result.message).not.toContain('Memory saved.');
+            }
+        });
+        it('stops unauthenticated indexing before the service call', async () => {
+            const result = await MemoryTools.index_memory({ content: 'Remember this' });
+            expect(result.success).toBe(false);
+            expect(result.metadata).toMatchObject({ errorCode: 'MEMORY_NOT_SAVED', retryable: false });
+            expect(bank.addMemory).not.toHaveBeenCalled();
+        });
+        it('requires semantic index receipts and does not hide rejected writes', async () => {
+            vi.mocked(useStore.getState).mockReturnValue({ ...mockStoreState, user: { uid: 'user-1' } } as unknown as ReturnType<typeof useStore.getState>);
+            for (const outcome of ['empty', 'rejected', 'saved']) {
+                if (outcome === 'rejected') bank.addMemory.mockRejectedValueOnce(new Error('private provider details'));
+                else bank.addMemory.mockResolvedValueOnce(outcome === 'saved' ? [{ id: 'semantic-1', memory: 'Remember this' }] : []);
+                const result = await MemoryTools.index_memory({ content: 'Remember this' });
+                expect(result.success).toBe(outcome === 'saved');
+                if (outcome === 'saved') expect(result.message).toContain('Reference: semantic-1');
+                else {
+                    expect(result.metadata).toMatchObject({ retryable: false, errorCode: 'MEMORY_SAVE_UNCONFIRMED' });
+                    expect(result.message).not.toContain('private provider');
+                }
+            }
         });
     });
 
@@ -68,7 +104,7 @@ describe('MemoryTools', () => {
 
     describe('save_user_memory', () => {
         it('should ingest user memory', async () => {
-            vi.mocked(alwaysOnMemoryEngine.ingest).mockResolvedValue('Summary of memory');
+            vi.mocked(alwaysOnMemoryEngine.ingestWithReceipt).mockResolvedValue({ status: 'stored', memoryId: 'memory-2', summary: 'Summary of memory' });
 
             const result = await MemoryTools.save_user_memory({
                 content: 'Important feedback',
@@ -77,7 +113,7 @@ describe('MemoryTools', () => {
 
             expect(result.success).toBe(true);
             expect(result.data.summary).toBe('Summary of memory');
-            expect(alwaysOnMemoryEngine.ingest).toHaveBeenCalledWith(
+            expect(alwaysOnMemoryEngine.ingestWithReceipt).toHaveBeenCalledWith(
                 'Important feedback',
                 'user_input',
                 'feedback'
