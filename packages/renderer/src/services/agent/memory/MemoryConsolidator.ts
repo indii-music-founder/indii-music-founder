@@ -153,14 +153,14 @@ export class MemoryConsolidator {
     ): Promise<{
         memoriesProcessed: number;
         insightsGenerated: number;
-        connectionsFound: number;
+        insightConnectionCount: number;
         tiersUpdated: number;
         memoriesDecayed: number;
     }> {
         const result = {
             memoriesProcessed: 0,
             insightsGenerated: 0,
-            connectionsFound: 0,
+            insightConnectionCount: 0,
             tiersUpdated: 0,
             memoriesDecayed: 0,
         };
@@ -187,10 +187,8 @@ export class MemoryConsolidator {
                         // Store the insight
                         await this.storeInsight(userId, insight);
                         result.insightsGenerated++;
-                        result.connectionsFound += insight.connections.length;
+                        result.insightConnectionCount += insight.connections.length;
 
-                        // Step 4: Store connections on the memories themselves
-                        await this.storeConnections(userId, insight.connections);
                     }
 
                     // Step 5: Mark memories as consolidated
@@ -217,7 +215,7 @@ export class MemoryConsolidator {
                 `[MemoryConsolidator] 🔄 Consolidation complete: ` +
                 `${result.memoriesProcessed} processed, ` +
                 `${result.insightsGenerated} insights, ` +
-                `${result.connectionsFound} connections, ` +
+                `${result.insightConnectionCount} links in saved insights, ` +
                 `${result.tiersUpdated} tier changes, ` +
                 `${result.memoriesDecayed} decayed`
             );
@@ -349,35 +347,6 @@ export class MemoryConsolidator {
         const docRef = await addDoc(insightRef, cleanInsight);
         logger.info(`[MemoryConsolidator] 💡 New insight: ${insight.insight.slice(0, 80)}...`);
         return docRef.id;
-    }
-
-    /**
-     * Store connections on the memories themselves (bidirectional).
-     */
-    private static async storeConnections(
-        userId: string,
-        connections: MemoryConnection[]
-    ): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const batch = writeBatch(db);
-
-        for (const conn of connections) {
-            // We need to read the current connections, add the new one, and write back.
-            // Since writeBatch doesn't support reads, we'll use individual updates.
-            try {
-                // Update the "from" memory
-                const _fromRef = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', conn.fromMemoryId);
-                // Note: In production, you'd read the current connections first.
-                // For simplicity, we use arrayUnion-like behavior.
-                // Firestore arrayUnion requires exact match, so we store as a subcollection instead.
-                // For now, log and skip complex cross-referencing.
-                logger.debug(
-                    `[MemoryConsolidator] 🔗 Connection: ${conn.fromMemoryId} → ${conn.toMemoryId}: ${conn.relationship}`
-                );
-            } catch (error: unknown) {
-                logger.error('[MemoryConsolidator] Failed to store connection:', error);
-            }
-        }
     }
 
     /**
