@@ -612,7 +612,11 @@ describe('AgentLoopService', () => {
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
 
         mockGenerateContent.mockResolvedValueOnce({
-            response: { text: () => JSON.stringify({ passed: true, feedback: 'Saved result verified' }) },
+            response: { candidates: [{ content: { parts: [
+                { thought: true, text: 'Internal reasoning' },
+                { text: '{"passed":true,' },
+                { text: '"feedback":"Saved result verified"}' },
+            ] } }] },
         });
         const recovered = new AgentLoopService();
         await recovered.resumeLoop(def, executionId, { userId: 'user1', projectId: 'proj1' });

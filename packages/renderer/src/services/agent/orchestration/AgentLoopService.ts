@@ -59,12 +59,15 @@ function resumableCheckpoint(execution: AgentLoopExecution) {
 }
 
 function parseEvaluationResponse(result: {
-    response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }> };
 }): { passed: boolean; feedback: string } {
     const response = result?.response;
     const text = typeof response?.text === 'function'
         ? response.text()
-        : response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        : response?.candidates?.[0]?.content?.parts
+            ?.filter(part => !part.thought)
+            .map(part => part.text ?? '')
+            .join('') ?? '';
     const fencedJson = text.trim().match(/^```(?:json)?[^\S\r\n]*\r?\n([\s\S]*?)\r?\n```$/i);
     let parsed: unknown;
     try {
