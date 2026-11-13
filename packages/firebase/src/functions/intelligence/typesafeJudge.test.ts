@@ -150,7 +150,7 @@ describe('typesafeJudge', () => {
         );
 
         const result = await callJudge(validPayload());
-        expect(result).toEqual({ answers: { transient: 0.9 } });
+        expect(result).toEqual({ answers: { transient: 0.9 }, usage: { inputTokens: 120, outputTokens: 30, totalTokens: 150 } });
         expect(mocks.enforceRateLimit).toHaveBeenCalledWith(
             'artist-1',
             'typesafeJudge',

@@ -116,12 +116,18 @@ export const typesafeJudge = onCall(
 
         try {
             const result = await client.judge({ state: input.state, questions: input.questions });
-            const totalTokens = (result.inputTokens || 0) + (result.outputTokens || 0);
+            const { inputTokens, outputTokens } = result;
+            const reportedTotal = (inputTokens ?? 0) + (outputTokens ?? 0);
+            const totalTokens = Number.isSafeInteger(reportedTotal) ? reportedTotal : 0;
+            const usage = inputTokens !== undefined && outputTokens !== undefined && Number.isSafeInteger(reportedTotal)
+                ? { inputTokens, outputTokens, totalTokens }
+                : undefined;
             if (totalTokens > 0) {
                 void recordUsage(request.auth.uid, 'chat_tokens', totalTokens, 'typesafe-judge');
             }
             return {
                 answers: result.answers,
+                ...(usage ? { usage } : {}),
                 ...(result.requestId !== undefined ? { requestId: result.requestId } : {}),
             };
         } catch (err: unknown) {

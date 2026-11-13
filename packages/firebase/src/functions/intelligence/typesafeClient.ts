@@ -200,7 +200,7 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
 
                     const usage = isPlainObject(body.usage) ? body.usage : {};
                     const finite = (value: unknown): number | undefined =>
-                        typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+                        typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 
                     return {
                         answers: body.answers,
