@@ -174,6 +174,7 @@ export class AlwaysOnMemoryEngine {
             this.consolidationTimer = null;
         }
         this.isRunning = false;
+        this.isConsolidating = false;
         this.ownerVersion++;
         this.activeIngestions = 0;
         this.isIngesting = false;
@@ -372,7 +373,9 @@ export class AlwaysOnMemoryEngine {
             this.lastConsolidatedAt = new Date();
             return `Consolidation complete. ${result.memoriesProcessed} memories processed, ${result.insightsGenerated} insights saved.`;
         } finally {
-            this.isConsolidating = false;
+            if (this.ownerVersion === ownerVersion) {
+                this.isConsolidating = false;
+            }
         }
     }
 

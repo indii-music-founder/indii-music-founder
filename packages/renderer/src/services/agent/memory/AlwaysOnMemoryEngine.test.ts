@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AlwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
 import { memoryIngestionPipeline } from './MemoryIngestionPipeline';
+import { MemoryConsolidator } from './MemoryConsolidator';
 
 // ============================================================================
 // MOCKS
@@ -250,6 +251,31 @@ describe('AlwaysOnMemoryEngine', () => {
         mockGetDocs.mockRejectedValueOnce(new Error('memory read unavailable'));
         await expect(engine.consolidateNow()).rejects.toThrow('memory read unavailable');
         expect(await engine.getStatus()).toMatchObject({ isConsolidating: false, lastConsolidatedAt: undefined });
+    });
+
+    it('isolates overlapping consolidation status across account changes', async () => {
+        let finishOld!: (value: any) => void;
+        let finishCurrent!: (value: any) => void;
+        const cycle = vi.spyOn(MemoryConsolidator, 'runConsolidationCycle')
+            .mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve; }))
+            .mockImplementationOnce(() => new Promise(resolve => { finishCurrent = resolve; }));
+        const result = { memoriesProcessed: 0, insightsGenerated: 0, insightConnectionCount: 0 };
+        try {
+            await engine.start('old-owner');
+            const oldRun = engine.consolidateNow();
+            const oldFailure = expect(oldRun).rejects.toThrow('account changed');
+            await engine.start('current-owner');
+            const currentRun = engine.consolidateNow();
+            finishOld(result);
+            await oldFailure;
+            expect(await engine.getStatus()).toMatchObject({ isConsolidating: true, lastConsolidatedAt: undefined });
+            await expect(engine.consolidateNow()).rejects.toThrow('already in progress');
+            finishCurrent(result);
+            await expect(currentRun).resolves.toContain('Consolidation complete');
+            expect(await engine.getStatus()).toMatchObject({ isConsolidating: false });
+        } finally {
+            cycle.mockRestore();
+        }
     });
 
     describe('Ingest (IngestAgent)', () => {
