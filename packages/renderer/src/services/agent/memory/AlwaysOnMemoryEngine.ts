@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import {
     collection,
     getDocs,
+    getDocsFromServer,
     query,
     where,
     orderBy,
@@ -348,7 +349,7 @@ export class AlwaysOnMemoryEngine {
 
     /**
      * Query the memory system with a natural language question.
-     * Reads all memories and consolidation insights, then synthesizes an answer
+     * Reads recent active memories and consolidation insights, then synthesizes an answer
      * with source citations.
      *
      * @param question - The question to answer
@@ -357,75 +358,83 @@ export class AlwaysOnMemoryEngine {
     public async query(question: string): Promise<string> {
         if (this.isE2EMode) return 'Mock Success';
         if (!this.userId) throw new Error('Engine not started. Call start() first.');
+        try {
+            return await this.queryFromServer(question);
+        } catch (error) {
+            logger.error('[AlwaysOnMemoryEngine] Query failed:', error);
+            return '❌ Query failed: Memory recall was unavailable or the account changed.';
+        }
+    }
+
+    public async queryFromServer(question: string): Promise<string> {
+        if (this.isE2EMode) throw new Error('Server memory recall is unavailable in simulated mode.');
+        if (!this.userId) throw new Error('Engine not started. Call start() first.');
         const userId = this.userId;
         const ownerVersion = this.ownerVersion;
 
-        try {
-            // Step 1: Fetch all memories (most recent first)
-            const memories = await this.getAllMemories(500);
-            this.requireCurrentOwner(userId, ownerVersion);
+        // Fetch recent active memories from the server.
+        const memories = await this.getAllMemories(500, undefined, true);
+        this.requireCurrentOwner(userId, ownerVersion);
 
-            // Step 2: Fetch consolidation insights
-            const insights = await this.getInsights(10);
-            this.requireCurrentOwner(userId, ownerVersion);
+        // Step 2: Fetch consolidation insights
+        const insights = await this.getInsights(10, true);
+        this.requireCurrentOwner(userId, ownerVersion);
 
-            // Step 4: Build a context block for the LLM (even if memories are empty)
-            const memoryBlock = memories.length > 0
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                ? memories.map((m, i) =>
-                    `[Memory ${m.id}] (${m.category}, importance: ${m.importance.toFixed(2)}, ` +
-                    `tier: ${m.tier}):\n  ${m.summary || m.content}`
-                ).join('\n\n')
-                : '(No stored memories yet)';
+        // Step 4: Build a context block for the LLM (even if memories are empty)
+        const memoryBlock = memories.length > 0
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ? memories.map((m, i) =>
+                `[Memory ${m.id}] (${m.category}, importance: ${m.importance.toFixed(2)}, ` +
+                `tier: ${m.tier}):\n  ${m.summary || m.content}`
+            ).join('\n\n')
+            : '(No stored memories yet)';
 
-            const insightBlock = insights.length > 0
-                ? '\n\nCONSOLIDATION INSIGHTS:\n' + insights.map((ins, i) =>
-                    `[Insight ${i + 1}]: ${ins.insight} (from memories: ${ins.sourceMemoryIds.join(', ')})`
-                ).join('\n')
-                : '';
+        const insightBlock = insights.length > 0
+            ? '\n\nCONSOLIDATION INSIGHTS:\n' + insights.map((ins, i) =>
+                `[Insight ${i + 1}]: ${ins.insight} (from memories: ${ins.sourceMemoryIds.join(', ')})`
+            ).join('\n')
+            : '';
 
-            // Step 5: Synthesize answer using Gemini Pro for deep reasoning
-            // ISSUE-042 Fix: Always generate an answer, even with no memories.
-            // If no stored memories exist, the LLM falls back to general knowledge.
-            const memoryContext = memories.length > 0
-                ? `Answer based ONLY on the stored memories and insights below.
+        // Step 5: Synthesize answer using Gemini Pro for deep reasoning
+        // ISSUE-042 Fix: Always generate an answer, even with no memories.
+        // If no stored memories exist, the LLM falls back to general knowledge.
+        const memoryContext = memories.length > 0 || insights.length > 0
+            ? `Answer based ONLY on the stored memories and insights below.
 Reference memory IDs in your answer like [Memory abc123].
 Always cite your sources.`
-                : `You searched the indii memory engine, but no stored memories or insights were found.
+            : `The server returned no active memories or insights in the queried scope.
 You MUST explicitly state to the user that you searched their memory engine but found nothing relevant. Then, answer the question based on your general knowledge.
 If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
 
-            const prompt = cleanPrompt(`
-                You are a Memory Query Agent for a creative music/visual production platform called indii.
-                ${memoryContext}
-                Be thorough but concise.
+        const prompt = cleanPrompt(`
+            You are a Memory Query Agent for a creative music/visual production platform called indii.
+            ${memoryContext}
+            Search scope: up to 500 recent active memories and 10 recent insights. Avoid claiming exhaustive recall.
+            Be thorough but concise.
 
-                MEMORIES:
-                ${memoryBlock}
-                ${insightBlock}
+            MEMORIES:
+            ${memoryBlock}
+            ${insightBlock}
 
-                QUESTION: ${question}
+            QUESTION: ${question}
 
-                ANSWER:
-            `);
+            ANSWER:
+        `);
 
-            const answer = await AIService.getInstance().generateText(
-                prompt,
-                0,
-                { temperature: 1.0 } as Record<string, unknown>
-            );
-            this.requireCurrentOwner(userId, ownerVersion);
+        const answer = await AIService.getInstance().generateText(
+            prompt,
+            0,
+            { temperature: 1.0 } as Record<string, unknown>
+        );
+        this.requireCurrentOwner(userId, ownerVersion);
 
-            // Step 6: Reinforce accessed memories (boost importance of relevant ones)
-            this.reinforceAccessedMemories(userId, ownerVersion, memories, answer).catch(err => {
-                logger.error('[AlwaysOnMemoryEngine] Reinforcement failed:', err);
-            });
+        // Step 6: Reinforce accessed memories (boost importance of relevant ones)
+        this.reinforceAccessedMemories(userId, ownerVersion, memories, answer).catch(err => {
+            logger.error('[AlwaysOnMemoryEngine] Reinforcement failed:', err);
+        });
 
-            return answer;
-        } catch (error: unknown) {
-            logger.error('[AlwaysOnMemoryEngine] Query failed:', error);
-            return `❌ Query failed: ${error instanceof Error ? error.message : String(error)}`;
-        }
+        return answer;
+
     }
 
     // ========================================================================
@@ -534,7 +543,8 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async getAllMemories(
         maxCount: number = 10000,
-        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
+        filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory },
+        requireServer = false
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) return [];
         const userId = this.userId;
@@ -560,7 +570,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
 
             // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
             // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
-            const snapshot = await getDocs(query(q, limit(maxCount)));
+            const snapshot = await (requireServer ? getDocsFromServer : getDocs)(query(q, limit(maxCount)));
             if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             if (snapshot.docs.length === maxCount) {
                 logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
@@ -570,6 +580,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 ...doc.data(),
             })) as AlwaysOnMemory[];
         } catch (error) {
+            if (requireServer) throw error;
             logger.warn('[AlwaysOnMemoryEngine] getAllMemories failed:', error);
             return [];
         }
@@ -609,7 +620,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
     /**
      * Get consolidation insights for the current user.
      */
-    public async getInsights(maxCount: number = 10): Promise<ConsolidationInsight[]> {
+    public async getInsights(maxCount: number = 10, requireServer = false): Promise<ConsolidationInsight[]> {
         if (!this.userId || this.isE2EMode) return [];
         const userId = this.userId;
         const ownerVersion = this.ownerVersion;
@@ -622,13 +633,14 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 limit(maxCount)
             );
 
-            const snapshot = await getDocs(q);
+            const snapshot = await (requireServer ? getDocsFromServer : getDocs)(q);
             if (!this.isCurrentOwner(userId, ownerVersion)) return [];
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
             })) as ConsolidationInsight[];
         } catch (error) {
+            if (requireServer) throw error;
             logger.warn('[AlwaysOnMemoryEngine] getInsights failed:', error);
             return [];
         }

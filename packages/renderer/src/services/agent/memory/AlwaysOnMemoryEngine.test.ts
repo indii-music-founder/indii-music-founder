@@ -27,6 +27,7 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     addDoc: (...args: any[]) => mockAddDoc(...args),
     getDocs: (...args: any[]) => mockGetDocs(...args),
+    getDocsFromServer: (...args: any[]) => mockGetDocs(...args),
     getCountFromServer: (...args: any[]) => mockGetCountFromServer(...args),
     updateDoc: (...args: any[]) => mockUpdateDoc(...args),
     deleteDoc: (...args: any[]) => mockDeleteDoc(...args),
@@ -326,6 +327,13 @@ describe('AlwaysOnMemoryEngine', () => {
             );
 
             await engine.start('test-user-123');
+        });
+
+        it('does not turn a failed database read into an empty search and general answer', async () => {
+            mockGenerateText.mockClear();
+            mockGetDocs.mockRejectedValueOnce(new Error('database unavailable'));
+            await expect(engine.queryFromServer('What did I save?')).rejects.toThrow('database unavailable');
+            expect(mockGenerateText).not.toHaveBeenCalled();
         });
 
         it('should answer questions with memory citations', async () => {
