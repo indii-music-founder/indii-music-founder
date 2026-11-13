@@ -7313,6 +7313,7 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 ### ISSUE-1622: Manual Workflow input connection handle is covered/clipped, preventing wiring a media node
 
 - **Status:** 🟢 FIXED — production pointer wiring and saved workflow reload verified on 2026-11-13.
+- **Closure evidence:** On app.indii.music, an existing genuine account displayed the active indii Founder plan. From an empty graph, dragged in Webhook and Autonomous Generate, saved the node prompt, and connected the output to the input by pointer. Saved as “V3 acceptance – node wiring”. Opened the saved workflow from Load in a fresh app session and verified both the connection and edited prompt returned.
 - **Severity:** 🟠 HIGH — manual media workflow cannot be wired from its input through the advertised controls.
 - **Location:** Workflow Lab → Node Library (collapse global context panel to expose it) → Webhook input/Autonomous Generate. Source `components/CustomNodes.tsx:14-59`; `components/UniversalNode.tsx` outer overflow-hidden wrapper/handle columns.
 - **Reproduction:** Start empty graph. Drag Webhook onto canvas (creates START TRIGGER), drag Autonomous Generate (creates Autonomous Department), enter golden-leaf image QA prompt through normal fields, separate nodes/Fit View, then drag the actual rendered input output handle to the generation input handle. Two separated-node attempts moved the input body instead of making an edge. No generation request was run.
