@@ -275,9 +275,10 @@ ${featureRequest.useCase}
             ))
             .catch(error => logger.warn('[BugReportTools] Failed to save feature request to memory:', error));
 
+        const receiptText = `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. Request ID: ${savedFeatureId}.`;
         return toolSuccess({
             featureId: savedFeatureId,
             title: featureRequest.title
-        }, `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`);
+        }, `${receiptText}\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`, { durableReceipt: true, receiptText });
     })
 } satisfies Record<string, AnyToolFunction>;
