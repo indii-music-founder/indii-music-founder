@@ -191,7 +191,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             title: bugReport.title,
             issueUrl,
             githubStatus
-        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`, { durableReceipt: true, receiptText: finalMessage });
+        }, `${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`, { durableReceipt: true, receiptText: finalMessage });
     }),
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
