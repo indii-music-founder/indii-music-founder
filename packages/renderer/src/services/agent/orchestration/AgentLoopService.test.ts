@@ -71,6 +71,26 @@ describe('AgentLoopService', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it('lists only checkpoints eligible for recovery', async () => {
+        const ready = {
+            id: 'ready', loopId: 'loop', status: 'IDLE' as const, currentIteration: 1,
+            history: [], createdAt: 1, updatedAt: 1, tokenBudgetSpent: 0,
+            definitionSnapshot: {
+                id: 'loop', trigger: 'SCHEDULE' as const, goal: 'Review', verifiabilityCriteria: 'Complete',
+                judgeMode: 'LLM_EVALUATION' as const, maxIterations: 1,
+            },
+            actionCheckpoint: { phase: 'READY' as const, iteration: 1 },
+        };
+        vi.spyOn(FirestoreService.prototype, 'list').mockResolvedValue([
+            ready,
+            { ...ready, id: 'legacy', definitionSnapshot: undefined },
+            { ...ready, id: 'no-budget', tokenBudgetSpent: undefined },
+            { ...ready, id: 'claimed', actionCheckpoint: { phase: 'DISPATCHING', iteration: 1, prompt: 'Review' } },
+            { ...ready, id: 'exhausted', currentIteration: 2, actionCheckpoint: { phase: 'READY', iteration: 2 } },
+        ]);
+        expect(await agentLoopService.getResumableLoops('user1')).toEqual([ready]);
+    });
+
     it('allows only one dispatch when independent clients resume the same revision', async () => {
         const definition: AgentLoopDefinition = {
             id: 'cross-client-loop', trigger: AgentLoopTriggerEnum.enum.MANUAL,

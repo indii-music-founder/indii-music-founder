@@ -48,6 +48,15 @@ function definitionMatches(snapshot: AgentLoopDefinitionSnapshot, definition: Ag
         snapshot.maxIterations === definition.maxIterations;
 }
 
+function resumableCheckpoint(execution: AgentLoopExecution) {
+    const parsed = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
+    if (!parsed.success || parsed.data.iteration !== execution.currentIteration) return undefined;
+    const checkpoint = parsed.data;
+    if (checkpoint.phase === 'DISPATCHING') return undefined;
+    if (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim()) return undefined;
+    return checkpoint;
+}
+
 function parseEvaluationResponse(result: {
     response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
 }): { passed: boolean; feedback: string } {
@@ -239,11 +248,7 @@ export class AgentLoopService {
             if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
                 throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
-            const parsedCheckpoint = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
-            const checkpoint = parsedCheckpoint.success ? parsedCheckpoint.data : undefined;
-            if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
-                checkpoint.phase === 'DISPATCHING' ||
-                (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
+            if (!resumableCheckpoint(execution)) {
                 throw new Error(`Execution ${executionId} may have dispatched an action without a recorded result; reconcile its outcome before resuming.`);
             }
             if (execution.tokenBudgetSpent === undefined || !Number.isSafeInteger(execution.tokenBudgetSpent) || execution.tokenBudgetSpent < 0) {
@@ -273,12 +278,18 @@ export class AgentLoopService {
         try {
             const service = this.getService(userId);
             const executions = await service.list();
-            return executions.filter(e =>
-                e.status === AgentLoopStatusEnum.enum.IDLE ||
-                e.status === AgentLoopStatusEnum.enum.EXECUTING ||
-                e.status === AgentLoopStatusEnum.enum.EVALUATING ||
-                e.status === AgentLoopStatusEnum.enum.FAILED
-            );
+            return executions.filter(execution => {
+                const snapshot = execution.definitionSnapshot;
+                const spent = execution.tokenBudgetSpent;
+                return ['IDLE', 'EXECUTING', 'EVALUATING', 'FAILED'].includes(execution.status)
+                    && !this.activeRuns.has(execution.id)
+                    && snapshot !== undefined && snapshot.id === execution.loopId
+                    && snapshot.judgeMode === 'LLM_EVALUATION'
+                    && Number.isSafeInteger(snapshot.maxIterations)
+                    && execution.currentIteration <= snapshot.maxIterations
+                    && spent !== undefined && Number.isSafeInteger(spent) && spent >= 0
+                    && Boolean(resumableCheckpoint(execution));
+            });
         } catch (error) {
             logger.warn(`[AgentLoop] Error listing resumable loops for user ${userId}:`, error);
             return [];
