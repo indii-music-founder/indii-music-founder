@@ -20,7 +20,8 @@ import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/E
 
 class ExecutionTokenBudgetExceeded extends Error {}
 class ExecutionBudgetCheckpointFailed extends Error {}
-class InvalidEvaluationResponse extends Error {}
+class EvaluationUnavailable extends Error {}
+class InvalidEvaluationResponse extends EvaluationUnavailable {}
 
 function requireConfiguredJudge(definition: AgentLoopDefinition): void {
     if (definition.judgeMode === 'DETERMINISTIC_TEST') {
@@ -416,7 +417,7 @@ export class AgentLoopService {
                     }
                 });
             } catch (error) {
-                if (!(error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed)) throw error;
+                if (!(error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed || error instanceof EvaluationUnavailable)) throw error;
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
                 execution.updatedAt = Date.now();
                 await this.persistExecution(context.userId, execution, undefined, tokenBudget);
@@ -572,7 +573,7 @@ Respond in JSON format only:
             if (error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed) throw error;
             if (error instanceof InvalidEvaluationResponse) {
                 logger.warn('[AgentLoop] Judge returned an invalid verdict.');
-                return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+                throw new InvalidEvaluationResponse('Evaluation returned an invalid verdict.');
             }
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
@@ -585,12 +586,12 @@ Respond in JSON format only:
                     if (retryErr instanceof ExecutionTokenBudgetExceeded || retryErr instanceof ExecutionBudgetCheckpointFailed) throw retryErr;
                     if (retryErr instanceof InvalidEvaluationResponse) {
                         logger.warn('[AgentLoop] Judge retry returned an invalid verdict.');
-                        return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+                        throw new InvalidEvaluationResponse('Evaluation returned an invalid verdict.');
                     }
                     logger.error('[AgentLoop] Evaluation retry also failed:', retryErr);
                 }
             }
-            return { passed: false, feedback: 'Evaluation failed. Please try again.' };
+            throw new EvaluationUnavailable('Evaluation failed. Resume to evaluate the saved result.');
         }
     }
 }

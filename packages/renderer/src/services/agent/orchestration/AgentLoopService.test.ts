@@ -563,7 +563,7 @@ describe('AgentLoopService', () => {
             goal: 'Review action',
             verifiabilityCriteria: 'Must be complete',
             judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
-            maxIterations: 1,
+            maxIterations: 2,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
@@ -573,11 +573,12 @@ describe('AgentLoopService', () => {
         mockGenerateContent.mockResolvedValueOnce({ response: { text: () => JSON.stringify(verdict) } });
 
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
-        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.history).toHaveLength(1));
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status).toBe('FAILED'));
 
         const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
-        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
     });
 
@@ -588,7 +589,7 @@ describe('AgentLoopService', () => {
             goal: 'Review action',
             verifiabilityCriteria: 'Must be complete',
             judgeMode: AgentLoopJudgeModeEnum.enum.LLM_EVALUATION,
-            maxIterations: 1,
+            maxIterations: 2,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
@@ -600,11 +601,12 @@ describe('AgentLoopService', () => {
             .mockResolvedValueOnce({ response: { text: () => JSON.stringify({ passed: 'true', feedback: 'PASS' }) } });
 
         const executionId = await agentLoopService.startLoop(def, { userId: 'user1', projectId: 'proj1' });
-        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.history).toHaveLength(1), { timeout: 3000 });
+        await vi.waitFor(() => expect(agentLoopService.getExecution('user1', executionId)?.status).toBe('FAILED'), { timeout: 3000 });
 
         const execution = agentLoopService.getExecution('user1', executionId);
         expect(execution?.status).toBe(AgentLoopStatusEnum.enum.FAILED);
-        expect(execution?.history[0]).toMatchObject({ passed: false, feedback: 'Evaluation returned an invalid verdict.' });
+        expect(execution?.actionCheckpoint).toMatchObject({ phase: 'RESULT_RECORDED', iteration: 1, output: 'Action result' });
+        expect(maestroBatchingService.executeBatch).toHaveBeenCalledOnce();
         expect(mockGenerateContent).toHaveBeenCalledTimes(2);
     });
 
