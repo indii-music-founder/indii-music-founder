@@ -63,7 +63,9 @@ function requestApp(options: { method?: string; path: string; headers?: Record<s
     });
 }
 
-describe('mcpEndpoint auth gate', () => {
+// Structural-only checks of the internal Express app. They do not exercise
+// the deployed Firebase token, entitlement, or Arcjet admission boundary.
+describe('internal MCP app admission boundary', () => {
     beforeEach(() => {
         verifyIdTokenMock.mockReset();
     });
@@ -79,16 +81,16 @@ describe('mcpEndpoint auth gate', () => {
         expect(res.status).toBe(401);
     });
 
-    it('rejects GET /sse when verifyIdToken throws (expired/invalid token)', async () => {
+    it('rejects GET /sse with a bearer header but no admitted principal', async () => {
         verifyIdTokenMock.mockRejectedValue(new Error('Firebase ID token has expired'));
         const res = await requestApp({ path: '/sse', headers: { Authorization: 'Bearer bad-token' } });
         expect(res.status).toBe(401);
-        expect(verifyIdTokenMock).toHaveBeenCalledWith('bad-token');
+        expect(verifyIdTokenMock).not.toHaveBeenCalled();
     });
 
     it('rejects POST /message with no Authorization header, even for an unknown session', async () => {
         const res = await requestApp({ method: 'POST', path: '/message?sessionId=nonexistent' });
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
     });
 
     it('never dispatches to a tool without a verified session', async () => {
@@ -98,6 +100,6 @@ describe('mcpEndpoint auth gate', () => {
             headers: { Authorization: 'Bearer whatever', 'Content-Type': 'application/json' },
             body: JSON.stringify({ method: 'tools/call', params: { name: 'stage_stripe_payouts', arguments: {} } }),
         });
-        expect(res.status).toBe(404);
+        expect(res.status).toBe(401);
     });
 });

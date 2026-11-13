@@ -328,6 +328,10 @@ export interface ElectronVideoAPI {
     probeMedia?: (filePath: string) => Promise<ElectronVideoProbeResult>;
 }
 export interface ElectronDawAPI {
+    getConnectionInfo: () => Promise<{
+        url: string;
+        token: string;
+    } | null>;
     start: () => Promise<unknown>;
     stop: () => Promise<unknown>;
     getState: () => Promise<unknown>;
@@ -769,6 +773,7 @@ export interface ElectronAPI {
             outputPath: string;
             error?: string;
         }>;
+        pairSession: (token: string) => Promise<boolean>;
         sendLiveCommand: (action: string, params?: Record<string, unknown>) => Promise<unknown>;
         onProgress: (callback: (progress: any) => void) => () => void;
     };
