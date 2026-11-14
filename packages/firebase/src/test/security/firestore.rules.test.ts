@@ -5153,6 +5153,8 @@ describe('Firestore Security Rules', () => {
                 await assertSucceeds(setDoc(relUserRef, { userId: ALICE_UID, title: 'Release 1' }));
                 await assertSucceeds(getDoc(relUserRef));
                 await assertSucceeds(updateDoc(relUserRef, { status: 'distributed' }));
+                // Owner cannot reassign userId
+                await assertFails(updateDoc(relUserRef, { userId: BOB_UID }));
 
                 // Bob (cross-user) cannot read or update Alice's release
                 await assertFails(getDoc(doc(bobDb, 'releases', 'rel-user-1')));
@@ -5171,6 +5173,9 @@ describe('Firestore Security Rules', () => {
                 const relOwnerRef = doc(aliceDb, 'releases', 'rel-owner-1');
                 await assertSucceeds(getDoc(relOwnerRef));
                 await assertSucceeds(updateDoc(relOwnerRef, { title: 'Updated Owner Release' }));
+                // Owner cannot reassign ownerId or inject another userId
+                await assertFails(updateDoc(relOwnerRef, { ownerId: BOB_UID }));
+                await assertFails(updateDoc(relOwnerRef, { userId: BOB_UID }));
 
                 // Alice can read and update a release associated with her org
                 await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
@@ -5182,6 +5187,9 @@ describe('Firestore Security Rules', () => {
                 const relOrgRef = doc(aliceDb, 'releases', 'rel-org-1');
                 await assertSucceeds(getDoc(relOrgRef));
                 await assertSucceeds(updateDoc(relOrgRef, { title: 'Updated Org Release' }));
+                // Org member cannot reassign orgId or inject another userId
+                await assertFails(updateDoc(relOrgRef, { orgId: 'other-org' }));
+                await assertFails(updateDoc(relOrgRef, { userId: BOB_UID }));
 
                 // Bob (not a member of ORG_ID) cannot read or update the org release
                 await assertFails(getDoc(doc(bobDb, 'releases', 'rel-org-1')));
@@ -5196,7 +5204,7 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(unauthDb, 'releases', 'rel-unauth'), { userId: 'unauth', title: 'Unauth' }));
             });
 
-            it('registrations/{userId}/tracks/{trackId}/orgs/{orgId}: allows in_progress and submitted client writes', async () => {
+            it('registrations/{userId}/tracks/{trackId}/orgs/{orgId}: allows in_progress, submitted, and failed client writes; rejects registered, confirmationNumber on in_progress, and extra keys', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
@@ -5204,21 +5212,40 @@ describe('Firestore Security Rules', () => {
 
                 const regRef = doc(aliceDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi');
 
-                // Owner can create with in_progress
+                // Owner can create with in_progress (omitted or null confirmationNumber)
                 await assertSucceeds(setDoc(regRef, { status: 'in_progress' }));
                 await assertSucceeds(getDoc(regRef));
 
-                // Owner can update with submitted and confirmationNumber
+                // in_progress with non-null confirmationNumber is denied
+                await assertFails(setDoc(doc(aliceDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'ascap'), {
+                    status: 'in_progress',
+                    confirmationNumber: 'FORGED-123',
+                }));
+
+                // Extra unallowed keys are denied
+                await assertFails(updateDoc(regRef, { extraTamper: true }));
+
+                // Owner can update with submitted + confirmationNumber, or failed
                 await assertSucceeds(updateDoc(regRef, {
                     status: 'submitted',
                     confirmationNumber: 'BMI-2026-998877',
+                    submittedAt: serverTimestamp(),
+                    lastUpdated: serverTimestamp(),
                 }));
+                await assertSucceeds(updateDoc(regRef, { status: 'failed' }));
 
-                // Owner cannot set arbitrary unapproved status like approved or completed
+                // Owner cannot assert registered or arbitrary unapproved status
+                await assertFails(updateDoc(regRef, { status: 'registered' }));
                 await assertFails(updateDoc(regRef, { status: 'approved' }));
 
                 // Delete is hard-blocked
                 await assertFails(deleteDoc(regRef));
+
+                // Child filings subcollection remains server-only for writes
+                await assertFails(setDoc(
+                    doc(aliceDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi', 'filings', 'f-1'),
+                    { filingState: 'registered' },
+                ));
 
                 // Cross-user denied read and write
                 const crossRegRef = doc(bobDb, 'registrations', ALICE_UID, 'tracks', 'track-1', 'orgs', 'bmi');
@@ -5263,25 +5290,30 @@ describe('Firestore Security Rules', () => {
                 await assertSucceeds(deleteDoc(docRef));
             });
 
-            it('contract_snippets/{docId}: authenticated can read, verified can write, anon/unauth denied', async () => {
+            it('contract_snippets/{docId}: authenticated can read, admin-only write, non-admin/anon/unauth denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
+                const adminDb = testEnv.authenticatedContext('admin-uid', { admin: true }).firestore();
                 const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
                 const unauthDb = unauthCtx().firestore();
-                const snippetRef = doc(aliceDb, 'contract_snippets', 'snip-1');
+                const snippetRef = doc(adminDb, 'contract_snippets', 'snip-1');
 
-                // Verified user Alice creates snippet
+                // Non-admin verified users cannot create snippets
+                await assertFails(setDoc(doc(aliceDb, 'contract_snippets', 'snip-alice'), { title: 'Master Use Clause', clause: '...' }));
+
+                // Admin creates snippet
                 await assertSucceeds(setDoc(snippetRef, { title: 'Master Use Clause', clause: '...' }));
                 // Authenticated non-anonymous users can read
-                await assertSucceeds(getDoc(snippetRef));
+                await assertSucceeds(getDoc(doc(aliceDb, 'contract_snippets', 'snip-1')));
                 await assertSucceeds(getDoc(doc(bobDb, 'contract_snippets', 'snip-1')));
                 // Anonymous and unauthenticated cannot read
                 await assertFails(getDoc(doc(anonDb, 'contract_snippets', 'snip-1')));
                 await assertFails(getDoc(doc(unauthDb, 'contract_snippets', 'snip-1')));
 
-                // Verified user can update and delete
-                await assertSucceeds(updateDoc(snippetRef, { title: 'Updated Master Clause' }));
+                // Non-admin verified user cannot update or delete
+                await assertFails(updateDoc(doc(aliceDb, 'contract_snippets', 'snip-1'), { title: 'Updated Master Clause' }));
+                await assertFails(deleteDoc(doc(aliceDb, 'contract_snippets', 'snip-1')));
 
                 // Anonymous user cannot create, update, or delete
                 await assertFails(setDoc(doc(anonDb, 'contract_snippets', 'snip-anon'), { title: 'Anon Clause' }));
@@ -5291,29 +5323,35 @@ describe('Firestore Security Rules', () => {
                 // Unauthenticated cannot create or update
                 await assertFails(setDoc(doc(unauthDb, 'contract_snippets', 'snip-unauth'), { title: 'Unauth' }));
 
-                // Verified user can delete
+                // Admin can update and delete
+                await assertSucceeds(updateDoc(snippetRef, { title: 'Updated Master Clause' }));
                 await assertSucceeds(deleteDoc(snippetRef));
             });
 
-            it('legal_agreements/{docId}: authenticated can read, verified can write, anon/unauth denied', async () => {
+            it('legal_agreements/{docId}: authenticated can read, admin-only write, non-admin/anon/unauth denied', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
                 const bobDb = verifiedCtx(BOB_UID).firestore();
+                const adminDb = testEnv.authenticatedContext('admin-uid', { admin: true }).firestore();
                 const anonDb = testEnv.authenticatedContext(ANON_UID, ANON_TOKEN).firestore();
                 const unauthDb = unauthCtx().firestore();
-                const agreementRef = doc(aliceDb, 'legal_agreements', 'agree-1');
+                const agreementRef = doc(adminDb, 'legal_agreements', 'agree-1');
 
-                // Verified user Alice creates agreement
+                // Non-admin verified users cannot create agreements
+                await assertFails(setDoc(doc(aliceDb, 'legal_agreements', 'agree-alice'), { title: 'Distribution Agreement v1', terms: 'Standard' }));
+
+                // Admin creates agreement
                 await assertSucceeds(setDoc(agreementRef, { title: 'Distribution Agreement v1', terms: 'Standard' }));
                 // Authenticated non-anonymous users can read
-                await assertSucceeds(getDoc(agreementRef));
+                await assertSucceeds(getDoc(doc(aliceDb, 'legal_agreements', 'agree-1')));
                 await assertSucceeds(getDoc(doc(bobDb, 'legal_agreements', 'agree-1')));
                 // Anonymous and unauthenticated cannot read
                 await assertFails(getDoc(doc(anonDb, 'legal_agreements', 'agree-1')));
                 await assertFails(getDoc(doc(unauthDb, 'legal_agreements', 'agree-1')));
 
-                // Verified user can update and delete
-                await assertSucceeds(updateDoc(agreementRef, { title: 'Distribution Agreement v2' }));
+                // Non-admin verified user cannot update or delete
+                await assertFails(updateDoc(doc(aliceDb, 'legal_agreements', 'agree-1'), { title: 'Distribution Agreement v2' }));
+                await assertFails(deleteDoc(doc(aliceDb, 'legal_agreements', 'agree-1')));
 
                 // Anonymous user cannot create, update, or delete
                 await assertFails(setDoc(doc(anonDb, 'legal_agreements', 'agree-anon'), { title: 'Anon Agreement' }));
@@ -5323,7 +5361,8 @@ describe('Firestore Security Rules', () => {
                 // Unauthenticated cannot write
                 await assertFails(setDoc(doc(unauthDb, 'legal_agreements', 'agree-unauth'), { title: 'Unauth' }));
 
-                // Verified user can delete
+                // Admin can update and delete
+                await assertSucceeds(updateDoc(agreementRef, { title: 'Distribution Agreement v2' }));
                 await assertSucceeds(deleteDoc(agreementRef));
             });
 
@@ -5465,36 +5504,39 @@ describe('Firestore Security Rules', () => {
                 await assertFails(setDoc(doc(unauthDb, 'users', ALICE_UID, 'coverLicenses', 'US-RC1-76-00000'), { status: 'unauth' }));
             });
 
-            it('legal_templates/{templateId}/versions/{versionId}: verified user create version allowed, unauthenticated create denied (ISSUE-1585)', async () => {
+            it('legal_templates/{templateId}/versions/{versionId}: authenticated read, admin-only write, non-admin/unauth writes denied (ISSUE-1585)', async () => {
                 if (requireEmulator()) return;
                 const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                const adminDb = testEnv.authenticatedContext('admin-uid', { admin: true }).firestore();
                 const unauthDb = unauthCtx().firestore();
-                const versionDocWithCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v1');
-                const versionDocWithoutCreatedBy = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v2');
-                const versionDocSpoof = doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v3');
-                const unauthVersionDoc = doc(unauthDb, 'legal_templates', 'template-001', 'versions', 'v4');
 
-                // Verified user create version allowed (with matching createdBy)
-                await assertSucceeds(setDoc(versionDocWithCreatedBy, {
+                // Non-admin verified users cannot create versions
+                await assertFails(setDoc(doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v1'), {
                     content: 'Template text v1',
                     createdBy: ALICE_UID,
                 }));
-
-                // Verified user create version allowed (without createdBy field)
-                await assertSucceeds(setDoc(versionDocWithoutCreatedBy, {
+                await assertFails(setDoc(doc(bobDb, 'legal_templates', 'template-001', 'versions', 'v2'), {
                     content: 'Template text v2',
                 }));
 
-                // Verified user create denied if createdBy does not match auth uid
-                await assertFails(setDoc(versionDocSpoof, {
-                    content: 'Spoofed template text',
-                    createdBy: BOB_UID,
-                }));
-
-                // Unauthenticated create denied
-                await assertFails(setDoc(unauthVersionDoc, {
+                // Unauthenticated create and read denied
+                await assertFails(setDoc(doc(unauthDb, 'legal_templates', 'template-001', 'versions', 'v4'), {
                     content: 'Unauth text',
                 }));
+
+                // Admin can create, update, and delete; authenticated users can read
+                const adminVersionDoc = doc(adminDb, 'legal_templates', 'template-001', 'versions', 'v-admin');
+                await assertSucceeds(setDoc(adminVersionDoc, {
+                    content: 'Official Template v1',
+                    createdBy: 'admin-uid',
+                }));
+                await assertSucceeds(getDoc(doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v-admin')));
+                await assertFails(getDoc(doc(unauthDb, 'legal_templates', 'template-001', 'versions', 'v-admin')));
+                await assertFails(updateDoc(doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v-admin'), { content: 'Tampered' }));
+                await assertFails(deleteDoc(doc(aliceDb, 'legal_templates', 'template-001', 'versions', 'v-admin')));
+                await assertSucceeds(updateDoc(adminVersionDoc, { content: 'Official Template v1.1' }));
+                await assertSucceeds(deleteDoc(adminVersionDoc));
             });
 
             it('users/{userId}/stats/marketing: owner create/update allowed, non-owner denied, other statId denied (ISSUE-1586)', async () => {

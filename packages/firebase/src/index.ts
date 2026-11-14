@@ -2781,7 +2781,7 @@ export const requestAccountDeletion = onCall(
         concurrency: 1,
     },
     // Item 352: Explicit return type annotation
-    async (request): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
+    async (request): Promise<{ success: boolean; deletedDocs: number; deletedStorageFiles: number; errors: string[]; deletedAt: string }> => {
         validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError("unauthenticated", "Authentication required.");
@@ -2822,14 +2822,29 @@ export const requestAccountDeletion = onCall(
         const errors: string[] = [];
         let deletedDocs = 0;
 
-        // Step 2 — Recursively delete user document and all subcollections (including all >25 user subcollections)
-        const userRef = db.collection('users').doc(userId);
+        // Step 2 — Recursively delete user-keyed root documents & subcollections
+        for (const rootDocRef of [
+            db.collection('users').doc(userId),
+            db.collection('registrations').doc(userId),
+        ]) {
+            try {
+                await db.recursiveDelete(rootDocRef);
+                deletedDocs++;
+                logger.info(`[GDPR] Recursively deleted ${rootDocRef.path}`);
+            } catch (err) {
+                logger.error(`[GDPR] Failed to recursively delete ${rootDocRef.path}:`, err);
+                errors.push(`${rootDocRef.path}_recursive: ${err}`);
+            }
+        }
         try {
-            await db.recursiveDelete(userRef);
-            logger.info(`[GDPR] Recursively deleted users/${userId} and all subcollections`);
+            const merchConfigRef = db.collection('merch_config').doc(userId);
+            if ((await merchConfigRef.get()).exists) {
+                await merchConfigRef.delete();
+                deletedDocs++;
+            }
         } catch (err) {
-            logger.error(`[GDPR] Failed to recursively delete users/${userId}:`, err);
-            errors.push(`users_recursive: ${err}`);
+            logger.error(`[GDPR] Failed deleting merch_config/${userId}:`, err);
+            errors.push(`merch_config: ${err}`);
         }
 
         // Step 3 — Query and delete root collections owned by the user
@@ -2841,6 +2856,19 @@ export const requestAccountDeletion = onCall(
             'smartLinks',
             'subscriptions',
             'user_credits',
+            'split_sheets',
+            'workflows',
+            'bountyLinks',
+            'expenses',
+            'iswc_works',
+            'career_events',
+            'brand_kits',
+            'financial_summaries',
+            'campaign_metrics',
+            'publishing_registrations',
+            'manufacture_requests',
+            'agent_traces',
+            'legal_audit_ledger',
         ];
 
         for (const colName of rootCollections) {
@@ -2875,12 +2903,29 @@ export const requestAccountDeletion = onCall(
             }
         }
 
-        // Social records use author/follower fields rather than userId/ownerId.
+        // Social records use author/follower/initiator fields rather than userId/ownerId.
         try {
             deletedDocs += await deleteSocialData(db, userId);
         } catch (err) {
             logger.error(`[GDPR] Failed deleting social data for ${userId}:`, err);
             errors.push(`social_data: ${err}`);
+        }
+        for (const [colName, ownerField] of [
+            ['split_sheets', 'initiatorUid'],
+            ['scheduled_posts', 'authorId'],
+        ] as const) {
+            try {
+                const snap = await db.collection(colName).where(ownerField, '==', userId).get();
+                if (!snap.empty) {
+                    const batch = new ChunkedBatch(db);
+                    snap.docs.forEach((d) => batch.delete(d.ref));
+                    await batch.commit();
+                    deletedDocs += snap.size;
+                }
+            } catch (err) {
+                logger.error(`[GDPR] Failed deleting ${colName} (${ownerField}) for ${userId}:`, err);
+                errors.push(`root_${colName}_${ownerField}: ${err}`);
+            }
         }
 
         // Step 4 — Delete Cloud Storage objects under user prefixes
@@ -2888,12 +2933,23 @@ export const requestAccountDeletion = onCall(
             `users/${userId}/`,
             `tax_docs/${userId}/`,
             `masters/${userId}/`,
+            `video-render-jobs/${userId}/`,
+            `ceo_sync/${userId}/`,
+            `ingest/white-glove/${userId}/`,
         ];
+        let deletedStorageFiles = 0;
 
         try {
-            const bucket = admin.storage().bucket();
+            const bucket = admin.storage().bucket() as unknown as {
+                getFiles?: (opts: { prefix: string }) => Promise<[unknown[]]>;
+                deleteFiles: (opts: { prefix: string }) => Promise<unknown>;
+            };
             for (const prefix of storagePrefixes) {
                 try {
+                    if (typeof bucket.getFiles === 'function') {
+                        const [files] = await bucket.getFiles({ prefix });
+                        deletedStorageFiles += files.length;
+                    }
                     await bucket.deleteFiles({ prefix });
                     logger.info(`[GDPR] Deleted storage prefix ${prefix}`);
                 } catch (err) {
@@ -2930,13 +2986,15 @@ export const requestAccountDeletion = onCall(
             status: "completed",
             completedAt: admin.firestore.FieldValue.serverTimestamp(),
             deletedDocs,
+            deletedStorageFiles,
         }, { merge: true });
 
-        logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs}`);
+        logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs} storageFiles=${deletedStorageFiles}`);
 
         return {
             success: true,
             deletedDocs,
+            deletedStorageFiles,
             errors: [],
             deletedAt: new Date().toISOString(),
         };

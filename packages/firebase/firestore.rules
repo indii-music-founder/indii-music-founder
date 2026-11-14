@@ -2012,7 +2012,11 @@ service cloud.firestore {
       }
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
-        && request.resource.data.status in ['in_progress', 'submitted'];
+        && request.resource.data.keys().hasOnly([
+          'status', 'submittedAt', 'confirmationNumber', 'formSnapshot', 'lastUpdated'
+        ])
+        && request.resource.data.status in ['in_progress', 'submitted', 'failed']
+        && (request.resource.data.status != 'in_progress' || !('confirmationNumber' in request.resource.data) || request.resource.data.confirmationNumber == null);
       allow delete: if false;
     }
 
@@ -2571,12 +2575,12 @@ service cloud.firestore {
 
     match /contract_snippets/{docId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isVerifiedUser();
+      allow write: if isAdmin();
     }
 
     match /legal_agreements/{docId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isVerifiedUser();
+      allow write: if isAdmin();
     }
 
     match /api_inventory/{apiKey} {
@@ -2592,7 +2596,9 @@ service cloud.firestore {
     match /releases/{releaseId} {
       allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || resource.data.get('ownerId', null) == request.auth.uid || (('orgId' in resource.data) && (resource.data.orgId == request.auth.uid || (resource.data.orgId != null && isOrgMember(resource.data.orgId)))))) || (isGuest() && (resource.data.get('userId', null) == 'founder-demo-uid' || (('orgId' in resource.data) && resource.data.orgId == 'founder-demo-uid')));
       allow create: if isVerifiedUser() && ownerOrOrgCreateIsValid();
-      allow update: if isVerifiedUser() && (resource.data.get('userId', null) == request.auth.uid || resource.data.get('ownerId', null) == request.auth.uid || (('orgId' in resource.data) && isOrgMember(resource.data.orgId)));
+      allow update: if isVerifiedUser() &&
+        (resource.data.get('userId', null) == request.auth.uid || resource.data.get('ownerId', null) == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId is string && isOrgMember(resource.data.orgId))) &&
+        authorityFieldsUnchanged();
       allow delete: if false;
     }
     match /workflows/{flowId} {
@@ -2635,9 +2641,7 @@ service cloud.firestore {
 
       match /versions/{versionId} {
         allow read: if isAuthenticated() || isGuest();
-        allow create: if isVerifiedUser() &&
-          (!('createdBy' in request.resource.data) || request.resource.data.createdBy == request.auth.uid);
-        allow update, delete: if isAdmin();
+        allow write: if isAdmin();
       }
     }
     match /expenses/{expenseId} {

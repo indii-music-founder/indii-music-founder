@@ -11,6 +11,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   mockSessionsCreate: vi.fn(),
+  mockProductGet: vi.fn(),
+}));
+
+vi.mock('firebase-admin/firestore', () => ({
+  getFirestore: () => ({
+    collection: (col: string) => ({
+      doc: (id: string) => ({
+        get: () => mocks.mockProductGet(col, id),
+      }),
+    }),
+  }),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -51,7 +62,7 @@ function makeRequest(metadata: Record<string, string>, extraData: Record<string,
     auth: { uid: UID, token: { email: 'artist@example.com' } },
     data: {
       userId: UID,
-      items: [{ name: 'Custom beat license', amount: 1000, quantity: 1 }],
+      items: [{ productId: 'beat_license_1', name: 'Custom beat license', amount: 1000, quantity: 1 }],
       successUrl: 'https://indii.music/success',
       cancelUrl: 'https://indii.music/cancel',
       metadata,
@@ -65,6 +76,44 @@ describe('createOneTimeCheckout metadata authority', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.mockSessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/x', id: 'cs_test_1' });
+    mocks.mockProductGet.mockResolvedValue({
+      exists: true,
+      data: () => ({ title: 'Custom beat license', priceCents: 1000, currency: 'usd', isActive: true }),
+    });
+  });
+
+  it('ignores client-supplied amount and enforces server-side catalog price', async () => {
+    mocks.mockProductGet.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({ title: 'Founder Seat', priceCents: 250000, currency: 'usd', isActive: true }),
+    });
+    await callCallable({
+      auth: { uid: UID, token: { email: 'artist@example.com' } },
+      data: {
+        userId: UID,
+        items: [{ productId: 'founder_seat', name: 'Spoofed', amount: 50, quantity: 1 }],
+        successUrl: 'https://indii.music/success',
+        cancelUrl: 'https://indii.music/cancel',
+      },
+    } as any);
+
+    const params = mocks.mockSessionsCreate.mock.calls[0][0];
+    expect(params.line_items[0].price_data.unit_amount).toBe(250000);
+    expect(params.line_items[0].price_data.product_data.name).toBe('Founder Seat');
+  });
+
+  it('rejects items missing a valid productId', async () => {
+    await expect(
+      callCallable({
+        auth: { uid: UID, token: { email: 'artist@example.com' } },
+        data: {
+          userId: UID,
+          items: [{ name: 'Bypass item', amount: 50, quantity: 1 }],
+          successUrl: 'https://indii.music/success',
+          cancelUrl: 'https://indii.music/cancel',
+        },
+      } as any),
+    ).rejects.toThrow('Each item must include a valid catalog productId.');
   });
 
   it('locks the webhook routing discriminator: client cannot set type or userId', async () => {

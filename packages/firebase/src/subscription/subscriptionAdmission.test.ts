@@ -179,7 +179,7 @@ const callables: Array<{ name: string; handler: CallableHandler; defaultData: Re
   {
     name: 'createOneTimeCheckout',
     handler: createOneTimeCheckout as unknown as CallableHandler,
-    defaultData: { userId: 'user-123', items: [{ name: 'Item', amount: 1000, quantity: 1 }], successUrl: 'https://example.com/success', cancelUrl: 'https://example.com/cancel' },
+    defaultData: { userId: 'user-123', items: [{ productId: 'prod-123', name: 'Item', amount: 1000, quantity: 1 }], successUrl: 'https://indii.music/success', cancelUrl: 'https://indii.music/cancel' },
   },
   {
     name: 'deductCredits',
@@ -243,6 +243,7 @@ describe('Subscription & Billing Admission Gates (ISSUE-1543 Batch 10)', () => {
           status: 'active',
           cancelAtPeriodEnd: false,
           balanceCredits: 500,
+          price: 1000,
           autoTopUp: false,
           founders: [],
           count: 2,

@@ -151,9 +151,9 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `index.ts:2593` | `listBigQueryDatasets` | `onCall` | Present | Present |
 | `index.ts:2684` | `exportUserData` | `onCall` | Present | Present |
 | `index.ts:2776` | `requestAccountDeletion` | `onCall` | Present | Present |
-| `index.ts:2949` | `healthCheck` | `onRequest` | Present | Present |
-| `index.ts:2992` | `healthCheckWest1` | `onRequest` | Present | Present |
-| `index.ts:3034` | `enrichFanData` | `onCall` | Present | Present |
+| `index.ts:3007` | `healthCheck` | `onRequest` | Present | Present |
+| `index.ts:3050` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:3092` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/analyzeContract.ts:20` | `analyzeContract` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:11` | `sendForDigitalSignature` | `onCall` | Present | Present |
 | `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |
@@ -226,7 +226,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
 | `subscription/createCheckoutSession.ts:21` | `createCheckoutSession` | `onCall` | Present | Present |
 | `subscription/createMicroTransaction.ts:13` | `createMicroTransaction` | `onCall` | Present | Present |
-| `subscription/createOneTimeCheckout.ts:40` | `createOneTimeCheckout` | `onCall` | Present | Present |
+| `subscription/createOneTimeCheckout.ts:42` | `createOneTimeCheckout` | `onCall` | Present | Present |
 | `subscription/deductCredits.ts:22` | `deductCredits` | `onCall` | Present | Present |
 | `subscription/generateInvoice.ts:43` | `generateInvoice` | `onCall` | Present | Present |
 | `subscription/getCustomerPortal.ts:17` | `getCustomerPortal` | `onCall` | Present | Present |

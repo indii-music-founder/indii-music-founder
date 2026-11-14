@@ -67,14 +67,22 @@ export default function FoundersCheckout() {
         setErrorMsg(null);
 
         try {
+            if (!user?.uid) {
+                throw new Error('Authentication required before initiating Founder checkout.');
+            }
             logger.info('[FoundersCheckout] Attempting to create a live Stripe Checkout session...');
-            const successUrl = `${window.location.origin}/finance?payment=success&type=founder`;
-            const cancelUrl = window.location.href;
+            const origin = window.location.origin;
+            const safeOrigin = (origin === 'https://app.indii.music' || origin === 'https://indii.music')
+                ? origin
+                : 'https://app.indii.music';
+            const successUrl = `${safeOrigin}/finance?payment=success&type=founder`;
+            const cancelUrl = `${safeOrigin}/finance?payment=cancelled&type=founder`;
 
             const checkoutUrl = await createOneTimePayment({
-                userId: user?.uid || 'anonymous',
-                customerEmail: user?.email || undefined,
+                userId: user.uid,
+                customerEmail: user.email || undefined,
                 items: [{
+                    productId: 'founder_seat',
                     name: 'indii Studio Founder Seat',
                     description: 'Lifetime Founder membership seat & custom installer builds.',
                     amount: 250000, // $2,500.00

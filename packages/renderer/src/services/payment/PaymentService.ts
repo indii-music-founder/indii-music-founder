@@ -19,10 +19,11 @@ import type { PaymentTransaction } from './types';
 export type { PaymentTransaction };
 
 export interface OneTimePaymentItem {
+    productId: string;
     name: string;
     description?: string;
-    /** Amount in cents (e.g. 999 = $9.99) */
-    amount: number;
+    /** @deprecated Legacy price hint ignored server-side; resolved from Firestore catalog */
+    amount?: number;
     quantity: number;
     metadata?: Record<string, string>;
 }
@@ -37,6 +38,13 @@ export interface OneTimePaymentRequest {
     applySurcharge?: boolean;
 }
 
+const APPROVED_CHECKOUT_ORIGINS = new Set(['https://app.indii.music', 'https://indii.music']);
+
+function resolveDefaultCheckoutOrigin(): string {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return APPROVED_CHECKOUT_ORIGINS.has(origin) ? origin : 'https://app.indii.music';
+}
+
 /**
  * Create a Stripe Checkout session for one-off purchases and redirect the
  * user to Stripe's hosted payment page.
@@ -49,8 +57,9 @@ export async function createOneTimePayment(request: OneTimePaymentRequest): Prom
         'createOneTimeCheckout'
     );
 
-    const successUrl = request.successUrl || `${window.location.origin}/finance?payment=success`;
-    const cancelUrl = request.cancelUrl || `${window.location.origin}/finance?payment=cancelled`;
+    const safeOrigin = resolveDefaultCheckoutOrigin();
+    const successUrl = request.successUrl || `${safeOrigin}/finance?payment=success`;
+    const cancelUrl = request.cancelUrl || `${safeOrigin}/finance?payment=cancelled`;
 
     try {
         const result = await createOneTimeCheckout({

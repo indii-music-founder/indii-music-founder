@@ -21,7 +21,7 @@ import { writeAuditLog } from '@/lib/auditLogChain';
 export interface DeletionResult {
     success: boolean;
     deletedCollections: string[];
-    /** The server currently does not return an object count. */
+    /** Reported by the backend when GCS listing is available; null otherwise. */
     deletedStorageFiles: number | null;
     errors: string[];
     pendingExternalActions: string[];
@@ -30,6 +30,7 @@ export interface DeletionResult {
 interface BackendDeletionResponse {
     success: boolean;
     deletedDocs: number;
+    deletedStorageFiles?: number;
     errors: string[];
     deletedAt: string;
 }
@@ -87,6 +88,9 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
 
         if (data && data.success) {
             result.deletedCollections.push(`users/ (${data.deletedDocs || 0} docs across profile and subcollections)`);
+            result.deletedStorageFiles = typeof data.deletedStorageFiles === 'number'
+                ? data.deletedStorageFiles
+                : null;
             result.success = true;
             logger.info(`[AccountDeletion] Backend GDPR erasure succeeded for user ${userId}. docs=${data.deletedDocs}`);
         } else if (data && data.errors && data.errors.length > 0) {
