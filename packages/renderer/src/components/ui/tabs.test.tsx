@@ -40,6 +40,25 @@ describe('Tabs Component', () => {
         const tab1Id = tab1.getAttribute('id');
         expect(panel1LabelledBy).toBe(tab1Id);
     });
+    it('skips hidden triggers and triggers inside hidden wrappers', () => {
+        render(
+            <Tabs defaultValue="first">
+                <TabsList>
+                    <TabsTrigger value="first">First</TabsTrigger>
+                    <TabsTrigger hidden value="hidden">Hidden</TabsTrigger>
+                    <div hidden><TabsTrigger value="wrapped">Wrapped</TabsTrigger></div>
+                    <TabsTrigger value="last">Last</TabsTrigger>
+                </TabsList>
+            </Tabs>,
+        );
+        const first = screen.getByRole('tab', { name: 'First' });
+        first.focus();
+        fireEvent.keyDown(first, { key: 'ArrowRight' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(last).toHaveFocus();
+        expect(last).toHaveAttribute('aria-selected', 'true');
+    });
+
     it('skips nested tabs during keyboard navigation', () => {
         render(
             <Tabs defaultValue="first">

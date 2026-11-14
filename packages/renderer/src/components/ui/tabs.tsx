@@ -53,7 +53,7 @@ const TabsList = React.forwardRef<
 
         const list = e.currentTarget
         const tabs = Array.from(list.querySelectorAll('[role="tab"]:not([disabled]):not([aria-disabled="true"])')) as HTMLElement[]
-        const ownTabs = tabs.filter(tab => tab.closest('[role="tablist"]') === list)
+        const ownTabs = tabs.filter(tab => tab.closest('[role="tablist"]') === list && !tab.closest('[hidden], [inert]'))
         const index = ownTabs.indexOf(list.ownerDocument.activeElement as HTMLElement)
 
         if (index === -1) return
@@ -86,7 +86,7 @@ const TabsList = React.forwardRef<
         e.preventDefault()
         const nextTab = ownTabs[nextIndex]!
         nextTab.focus()
-        nextTab.click()
+        if (list.ownerDocument.activeElement === nextTab) nextTab.click()
     }
 
     return (
