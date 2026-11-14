@@ -7303,7 +7303,7 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1622: Manual Workflow input connection handle is covered/clipped, preventing wiring a media node
 
-- **Status:** 🔴 OPEN — genuine manual creation and pointer failure reproduced2026-10-31.
+- **Status:** 🟡 PARTIAL — Start Trigger handle layout repaired on main in `bbdb121b8`. Production pointer verification pending.
 - **Severity:** 🟠 HIGH — manual media workflow cannot be wired from its input through the advertised controls.
 - **Location:** Workflow Lab → Node Library (collapse global context panel to expose it) → Webhook input/Autonomous Generate. Source `components/CustomNodes.tsx:14-59`; `components/UniversalNode.tsx` outer overflow-hidden wrapper/handle columns.
 - **Reproduction:** Start empty graph. Drag Webhook onto canvas (creates START TRIGGER), drag Autonomous Generate (creates Autonomous Department), enter golden-leaf image QA prompt through normal fields, separate nodes/Fit View, then drag the actual rendered input output handle to the generation input handle. Two separated-node attempts moved the input body instead of making an edge. No generation request was run.
@@ -7313,6 +7313,8 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 - **Dependencies:** Node overflow/stacking and handle placement. No synthetic drag events, injected graph state, fake connection or generation output used. No save, posting, social node or webhook endpoint call performed. Manual Webhook palette entry maps to local inputNode; no network webhook was registered.
 
 **Additional manual-node source concern, NOT a reproduced runtime defect:** Autonomous Generate creates departmentName Autonomous Department, absent from NODE_REGISTRY; WorkflowEngine's unknown-department branch returns Processed by… generic text (related to ISSUE-1613). Because this manual graph could not be connected, no false-success outcome for that node was observed. Generate Image palette creation and independent manually wired video/upscale paths remain UNVERIFIED. Fetched main before this entry; HEAD and origin/main have zero divergence and no remote ISSUE-1621/1622 collision.
+
+- **Source follow-up:** The Start Trigger wrapper now permits overflow and renders the source handle above the node body with pointer events enabled. Verify that dragging from the Start Trigger handle to a compatible media input creates an edge without moving either node.
 
 ### ISSUE-1623: Saved-artwork mockup route returns gateway payload-validation rejection
 
