@@ -35,7 +35,7 @@ vi.mock('../../agent/WebSocketControlPlane', () => ({
 // deterministically.
 const streamChunk = (text: string): Uint8Array =>
     new TextEncoder().encode(`${JSON.stringify({ text })}\n${JSON.stringify({ complete: true })}\n`);
-const fetchMock = vi.fn(async () => ({
+const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => ({
     ok: true,
     status: 200,
     body: new ReadableStream<Uint8Array>({
@@ -46,11 +46,11 @@ const fetchMock = vi.fn(async () => ({
     }),
     text: async () => '',
 }));
-vi.stubGlobal('fetch', fetchMock);
 
 describe('ChaosVerification', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubGlobal('fetch', fetchMock);
         // The service's rate limiter is a singleton with ONE initial token and
         // a ~6s refill — requests after the first queue past the test timeout.
         AutonomousIntelligence.rateLimiter = new RateLimiter(10, 10);
@@ -96,9 +96,6 @@ describe('ChaosVerification', () => {
 
     describe('FirebaseIntelligenceService Race Conditions', () => {
         it('should NOT coalesce requests with different multimodal data', async () => {
-            // This test verifies if different binary payloads are correctly distinguished in the request coalescing map
-            const rawGenerateSpy = vi.spyOn(AutonomousIntelligence as unknown as { rawGenerateContent: any }, 'rawGenerateContent');
-
             const promptA: Content[] = [{
                 role: 'user',
                 parts: [{ text: 'Analyze this image' }, { inlineData: { mimeType: 'image/png', data: 'IMAGE_A_DATA' } }]
@@ -109,29 +106,15 @@ describe('ChaosVerification', () => {
                 parts: [{ text: 'Analyze this image' }, { inlineData: { mimeType: 'image/png', data: 'IMAGE_B_DATA' } }]
             }];
 
-            // We mock the internal execution to see if it's called twice
-            // Note: rawGenerateContent uses this.rateLimiter, this.contentBreaker etc.
-            // We need to mock the underlying model.generateContent or similar if possible
-            // but for a quick check, we can just see if the Map 'activeRequests' handles them as different keys.
+            await Promise.all([
+                AutonomousIntelligence.rawGenerateContent(promptA),
+                AutonomousIntelligence.rawGenerateContent(promptB),
+            ]);
 
-            const activeRequests = (AutonomousIntelligence as unknown as { activeRequests: Map<any, any> }).activeRequests;
-
-            // Start Request A (don't wait)
-            const promiseA = AutonomousIntelligence.rawGenerateContent(promptA, undefined, {}, undefined, [], { skipCache: true });
-            const keyA = Array.from(activeRequests.keys())[0];
-
-            // Start Request B
-            const promiseB = AutonomousIntelligence.rawGenerateContent(promptB, undefined, {}, undefined, [], { skipCache: true });
-            const keyB = Array.from(activeRequests.keys()).find(k => k !== keyA);
-
-            // If keyB is undefined or same as keyA, we have a collision
-            expect(keyB).toBeDefined();
-            expect(keyB).not.toBe(keyA);
-
-            // Cleanup
-            promiseA.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseA cleanup error:', err); });
-            promiseB.catch((err: unknown) => { console.debug('[ChaosVerificationTest] promiseB cleanup error:', err); });
-            void rawGenerateSpy;
+            const payloads = fetchMock.mock.calls.map(([, init]) =>
+                JSON.parse(String(init?.body)).contents[0].parts[1].inlineData.data
+            );
+            expect(payloads.sort()).toEqual(['IMAGE_A_DATA', 'IMAGE_B_DATA']);
         });
 
         it('should handle Autonomous Generation Timeout via AbortSignal', async () => {
