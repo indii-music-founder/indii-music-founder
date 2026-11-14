@@ -58,7 +58,7 @@ const UNVERIFIED_READINESS_FALLBACK =
   'I cannot verify that capability or connection status from the evidence in this response. A current check or receipt is needed before treating it as confirmed.';
 
 const UNACTIONABLE_FALLBACK =
-  "I'm not sure how to help with that yet. Try asking me to schedule a post, check your connections, or show your analytics.";
+  'I need a bit more detail to help with that. Please specify what you would like to create, check, or update.';
 
 // ---------------------------------------------------------------------------
 // Service
@@ -211,7 +211,7 @@ export class JevGuardrailService {
     }
 
     const isActionable = confidence['is_actionable_response'] ?? 1;
-    if (!prefix && isActionable < ACTIONABLE_THRESHOLD) {
+    if (!prefix && isActionable < ACTIONABLE_THRESHOLD && toolNames === 'none') {
       flags.push('unactionable_response');
       prefix = UNACTIONABLE_FALLBACK;
     }

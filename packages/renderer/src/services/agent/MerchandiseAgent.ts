@@ -275,16 +275,36 @@ export class MerchandiseAgent extends BaseAgent {
                     const { useStore } = await importWithRetry(() => import('@/core/store'));
 
                     // Extract image data from URL or data URL
+                    const trimmedAssetUrl = typeof assetUrl === 'string' ? assetUrl.trim() : '';
+                    if (!trimmedAssetUrl || !/^(https?:\/\/|data:image\/|gs:\/\/)/i.test(trimmedAssetUrl)) {
+                        throw new Error(
+                            'A valid artwork assetUrl (https://, gs://, or data:image/) is required to composite a product mockup. Provide an existing asset URL or generate artwork first.'
+                        );
+                    }
+
                     let imageData: { mimeType: string; data: string };
 
-                    if (assetUrl.startsWith('data:')) {
+                    if (trimmedAssetUrl.startsWith('data:')) {
                         // Parse data URL
-                        const match = assetUrl.match(/^data:(.+);base64,(.+)$/);
+                        const match = trimmedAssetUrl.match(/^data:(.+);base64,(.+)$/);
                         if (!match) throw new Error('Invalid data URL format');
                         imageData = { mimeType: match[1]!, data: match[2]! };
                     } else {
+                        const { resolveStorageUrl } = await importWithRetry(() => import('@/services/storage/resolveStorageUrl'));
+                        const fetchUrl = trimmedAssetUrl.startsWith('gs://')
+                            ? await resolveStorageUrl(trimmedAssetUrl)
+                            : trimmedAssetUrl;
                         // Fetch image from URL and convert to base64
-                        const response = await fetch(assetUrl);
+                        let response: Response;
+                        try {
+                            response = await fetch(fetchUrl);
+                        } catch (fetchErr: unknown) {
+                            const detail = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+                            throw new Error(`Unable to fetch artwork from ${trimmedAssetUrl}: ${detail}`);
+                        }
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch artwork from ${trimmedAssetUrl} (HTTP ${response.status}).`);
+                        }
                         const blob = await response.blob();
                         const base64 = await new Promise<string>((resolve) => {
                             const reader = new FileReader();
@@ -295,7 +315,7 @@ export class MerchandiseAgent extends BaseAgent {
                             };
                             reader.readAsDataURL(blob);
                         });
-                        imageData = { mimeType: blob.type, data: base64 };
+                        imageData = { mimeType: blob.type || 'image/png', data: base64 };
                     }
 
                     // Build purpose-aware prompt

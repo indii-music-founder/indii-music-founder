@@ -7219,7 +7219,8 @@ Opened command bar mode picker → Direct → Publicist Director; verified compo
 
 ### ISSUE-1619: Merchandise Specialist mockup request fails to fetch and returns unrelated social advice
 
-- **Status:** 🔴 OPEN — actual Direct-mode production test, 2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; `assetUrl` validation, `gs://` resolution, domain-neutral guardrail fallback, and tool-failure preservation verified in unit tests; live UI acceptance pending)
+- **2026-11-14 verification:** `MerchandiseAgent.ts` `create_product_mockup` now validates `assetUrl` (`https://`, `gs://`, or `data:image/`), resolves `gs://` URIs via `resolveStorageUrl`, and throws explicit HTTP/fetch errors. `JevGuardrailService.ts` replaces the hardcoded social/analytics `UNACTIONABLE_FALLBACK` with domain-neutral text and restricts `unactionable_response` replacement to `toolNames === 'none'` so tool-failure explanations are preserved. `JevGuardrailService.test.ts` (6/6 passing) verifies both behaviors. Jev (`jev-1.14.0`, `req_01a1d8d7ce9e741984684a71da11f561`) scored `fix_resolves_fetch_and_unrelated_fallback=0.97`, `readiness_score=2.95/4.00` (confidence `0.94`). Live Merchandise Specialist UI acceptance remains pending.
 - **Severity:** 🟡 MEDIUM — no requested visual preview; failure explanation is unhelpful.
 - **Location:** Command bar → Change Agent Mode → Direct → Merchandise Specialist. Source `services/agent/MerchandiseAgent.ts:63-102,265-389`.
 - **Reproduction:** Request one black t-shirt preview mockup with a golden-leaf chest graphic, no existing artwork required, one attempt only, no retry, orders, products, listings, POD uploads or publication. The test named generate_mockup; this specialist instead exposes create_product_mockup.
