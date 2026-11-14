@@ -45,6 +45,32 @@ const TabsList = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
 >(({ className, onKeyDown, ...props }, ref) => {
+    const listRef = React.useRef<HTMLDivElement>(null)
+    React.useImperativeHandle(ref, () => listRef.current!, [])
+
+    React.useLayoutEffect(() => {
+        const list = listRef.current
+        if (!list) return
+
+        const updateTabStop = () => {
+            const tabs = Array.from(list.querySelectorAll<HTMLElement>('[role="tab"]'))
+                .filter(tab => tab.closest('[role="tablist"]') === list)
+            const available = tabs.filter(tab => !tab.matches(':disabled, [aria-disabled="true"]') &&
+                !tab.closest('[hidden], [inert]'))
+            const fallback = available.find(tab => tab.getAttribute('aria-selected') === 'true') ?? available[0]
+            for (const tab of tabs) {
+                if (tab.hasAttribute('data-tab-index-override')) continue
+                const tabIndex = tab === fallback ? 0 : -1
+                if (tab.tabIndex !== tabIndex) tab.tabIndex = tabIndex
+            }
+        }
+        updateTabStop()
+        const observer = new MutationObserver(updateTabStop)
+        observer.observe(list, { subtree: true, childList: true, attributes: true,
+            attributeFilter: ['disabled', 'aria-disabled', 'aria-selected', 'hidden', 'inert', 'tabindex', 'data-tab-index-override'] })
+        return () => observer.disconnect()
+    }, [])
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (onKeyDown) {
             onKeyDown(e)
@@ -91,7 +117,7 @@ const TabsList = React.forwardRef<
 
     return (
         <div
-            ref={ref}
+            ref={listRef}
             role="tablist"
             onKeyDown={handleKeyDown}
             className={cn(
@@ -126,6 +152,7 @@ const TabsTrigger = React.forwardRef<
             aria-controls={contentId}
             id={triggerId}
             disabled={disabled}
+            data-tab-index-override={tabIndex === undefined ? undefined : ''}
             tabIndex={isBlocked ? -1 : tabIndex ?? (isActive ? 0 : -1)}
             className={cn(
                 "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
