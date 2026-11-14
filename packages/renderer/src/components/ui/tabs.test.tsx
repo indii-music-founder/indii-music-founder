@@ -1,9 +1,28 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 import { describe, it, expect } from 'vitest';
 
 describe('Tabs Component', () => {
+    it('keeps an available keyboard entry point when the controlled selection is disabled', async () => {
+        function group(disabled: boolean) {
+            return <Tabs value="first">
+                <TabsList>
+                    <TabsTrigger value="first" disabled={disabled}>First</TabsTrigger>
+                    <TabsTrigger value="last">Last</TabsTrigger>
+                </TabsList>
+            </Tabs>;
+        }
+        const { rerender } = render(group(true));
+        const first = screen.getByRole('tab', { name: 'First' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(last.tabIndex).toBe(0);
+        expect(first).toHaveAttribute('aria-selected', 'true');
+        rerender(group(false));
+        await waitFor(() => expect(last.tabIndex).toBe(-1));
+        expect(first.tabIndex).toBe(0);
+    });
+
     it('renders with correct accessibility roles', () => {
         render(
             <Tabs defaultValue="tab1">
