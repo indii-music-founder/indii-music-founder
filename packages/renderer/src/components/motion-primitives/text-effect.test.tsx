@@ -19,6 +19,15 @@ describe('TextEffect', () => {
     expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent('First lineSecond line');
   });
 
+  it('preserves blank lines and normalizes pasted carriage returns in animated line layout', () => {
+    const { container } = render(<TextEffect per='line'>{'First\r\n\r\n  Last'}</TextEffect>);
+    const lines = container.querySelectorAll('[aria-hidden="true"] > span');
+    expect(lines).toHaveLength(3);
+    expect(lines[1]?.querySelector('br')).toBeInTheDocument();
+    expect(lines[2]?.textContent).toBe('  Last');
+    expect(lines[2]).toHaveClass('whitespace-pre-wrap');
+  });
+
   it('keeps emoji and combining marks as whole animated characters', () => {
     const { container } = render(<TextEffect per='char'>A👩🏽‍🎤é</TextEffect>);
     const segments = Array.from(container.querySelectorAll('[aria-hidden="true"] > span'));
