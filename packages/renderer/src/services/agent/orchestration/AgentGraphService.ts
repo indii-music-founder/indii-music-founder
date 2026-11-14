@@ -178,24 +178,30 @@ export class AgentGraphService {
         this.activeLoops.add(executionId);
 
         const runnerId = uuidv4();
-        const acquired = await this.acquireGraphLease(userId, executionId, runnerId);
-        if (!acquired) {
-            this.activeLoops.delete(executionId);
-            throw new Error(`Graph execution ${executionId} is locked by another runner.`);
-        }
-
-        // Arm 5-second lease heartbeat
-        const heartbeatTimer = setInterval(() => {
-            this.acquireGraphLease(userId, executionId, runnerId, 20000).catch(err => {
-                logger.warn(`[AgentGraph] Heartbeat lease renewal failed for ${executionId}:`, err);
-            });
-        }, 5000);
+        let heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+        let leaseAcquired = false;
 
         try {
+            leaseAcquired = await this.acquireGraphLease(userId, executionId, runnerId);
+            if (!leaseAcquired) {
+                throw new Error(`Graph execution ${executionId} is locked by another runner.`);
+            }
+
+            // Arm 5-second lease heartbeat
+            heartbeatTimer = setInterval(() => {
+                this.acquireGraphLease(userId, executionId, runnerId, 20000).catch(err => {
+                    logger.warn(`[AgentGraph] Heartbeat lease renewal failed for ${executionId}:`, err);
+                });
+            }, 5000);
+
             return await this.runGraphLoopInternal(userId, graph, executionId, runnerId, context, traceId, initialInput);
         } finally {
-            clearInterval(heartbeatTimer);
-            await this.releaseGraphLease(userId, executionId, runnerId);
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+            }
+            if (leaseAcquired) {
+                await this.releaseGraphLease(userId, executionId, runnerId);
+            }
             this.activeLoops.delete(executionId);
         }
     }

@@ -301,21 +301,6 @@ export default function WorkflowLab() {
                 const executionState = await agentGraphStateService.createExecution(user.uid, agentGraph);
                 const executionId = executionState.executionId;
 
-                agentGraphService.executeGraph(
-                    agentGraph,
-                    { userId: user.uid, traceId: `manual-run-${crypto.randomUUID()}` },
-                    '', // initial input
-                    executionId
-                ).catch(async (e: unknown) => {
-                    logger.error("Background graph execution failed", e);
-                    clearInterval(interval);
-                    setIsRunning(false);
-                    toastError(`Workflow failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
-                    await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
-                        logger.error('Failed to persist workflow failure', stateError);
-                    });
-                });
-
                 // Start polling state to update UI nodes
                 const interval = setInterval(async () => {
                     const state = await agentGraphStateService.getExecution(user.uid, executionId);
@@ -339,6 +324,21 @@ export default function WorkflowLab() {
                         setIsRunning(false);
                     }
                 }, 1000);
+
+                agentGraphService.executeGraph(
+                    agentGraph,
+                    { userId: user.uid, traceId: `manual-run-${crypto.randomUUID()}` },
+                    '', // initial input
+                    executionId
+                ).catch(async (e: unknown) => {
+                    logger.error("Background graph execution failed", e);
+                    clearInterval(interval);
+                    setIsRunning(false);
+                    toastError(`Workflow failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                    await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
+                        logger.error('Failed to persist workflow failure', stateError);
+                    });
+                });
 
                 // Note: We don't await the interval here because the UI should show the "Running" state while polling
                 return;

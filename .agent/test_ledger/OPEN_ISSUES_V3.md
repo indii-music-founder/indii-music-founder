@@ -7172,7 +7172,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1617: Workflow Growth Protocol executor fails before media work while UI remains Running
 
-- **Status:** 🔴 OPEN — production UI and persisted state reproduced 2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; lease `metadata.lease`/`serverTimestamp()`, `activeLoops` cleanup, TDZ interval guard, and `maestroAdapter` department mapping verified in unit tests; live protocol acceptance pending)
+- **2026-11-14 verification:** Verified `AgentGraphService.ts` `acquireGraphLease` now writes `metadata.lease` + `serverTimestamp()` (compatible with `firestore.rules` `graphExecutions`) and re-throws errors; wrapped lease acquisition in `try/finally` so `activeLoops.delete(executionId)` always executes. `WorkflowLab.tsx` declares `interval` before `executeGraph().catch(...)` so fast rejections safely clear polling, stop `Running`, and persist `FAILED` status. `maestroAdapter.ts` adds `AGENT_DEPARTMENT_MAP` and `nodeType: 'department'` so protocol cards map to valid departments instead of falling back to `Router (Switch)`. `AgentGraphService` tests (18/18) and `WorkflowLab.test.tsx` (3/3) pass. Jev (`jev-1.14.0`, `req_01a1d8c0fe9e7311a8c6d1ae82f73156`) scored `fix_resolves_stuck_running_and_lease=0.91`, `readiness_score=2.96/4.00` (confidence `0.96`). Live protocol acceptance remains pending.
 - **Severity:** 🟠 HIGH — media preparation entry blocked with no usable completion/recovery state.
 - **Location:** Workflow Lab → System Protocols → indii Growth Protocol → Run Workflow. `WorkflowLab.tsx:206-239`; `AgentGraphService.ts:175-178,201-233`; `packages/firebase/firestore.rules:918-940`.
 - **Reproduction:** Existing genuine production session, collapse context panel, choose Growth Protocol and inspect two review-only steps (creative/video brief then marketing campaign package). Run once.
