@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useId } from 'react';
+import { reportPrerequisite, type PrerequisiteReports } from '../prerequisiteReports';
 import { motion } from 'motion/react';
 import {
     X,
@@ -425,8 +426,8 @@ export interface RightsRegistrationWalkthroughModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialPrerequisite?: FounderPrerequisiteId;
-    readinessData?: Record<string, { verified: boolean; value: string }>;
-    onUpdatePrerequisite?: (id: FounderPrerequisiteId, value: string, verified: boolean) => void;
+    readinessData?: PrerequisiteReports;
+    onUpdatePrerequisite?: (id: FounderPrerequisiteId, value: string, completed: boolean) => void;
 }
 
 export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalkthroughModalProps> = ({
@@ -469,7 +470,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
     if (!isOpen) return null;
 
     const currentGuide = RIGHTS_GUIDES[activePrereq] || RIGHTS_GUIDES.pro_affiliation;
-    const currentState = readinessData[activePrereq] || { verified: false, value: '' };
+    const currentState = readinessData[activePrereq] || reportPrerequisite('', false);
 
     const toggleStep = (stepNumber: number) => {
         const key = `${activePrereq}_step_${stepNumber}`;
@@ -494,9 +495,9 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
         }
     };
 
-    const handleSaveIdentifier = (markVerified: boolean) => {
+    const handleSaveIdentifier = (markCompleted: boolean) => {
         if (onUpdatePrerequisite) {
-            onUpdatePrerequisite(activePrereq, inputValue, markVerified);
+            onUpdatePrerequisite(activePrereq, inputValue, markCompleted);
         }
         setIsSavedRecently(true);
         setTimeout(() => setIsSavedRecently(false), 3000);
@@ -548,7 +549,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                     {(Object.keys(RIGHTS_GUIDES) as FounderPrerequisiteId[]).map(prereqId => {
                         const guide = RIGHTS_GUIDES[prereqId];
                         const isActive = activePrereq === prereqId;
-                        const isVerified = Boolean(readinessData[prereqId]?.verified);
+                        const isCompleted = Boolean(readinessData[prereqId]?.completed);
 
                         return (
                             <button
@@ -560,7 +561,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                                         : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white'
                                 }`}
                             >
-                                <span className={`w-1.5 h-1.5 rounded-full ${isVerified ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-400' : 'bg-gray-500'}`} />
                                 {guide.organization}
                             </button>
                         );
@@ -581,13 +582,13 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${currentGuide.badgeBg} ${currentGuide.accentColor} border ${currentGuide.borderColor}`}>
                                         {currentGuide.difficulty}
                                     </span>
-                                    {currentState.verified ? (
+                                    {currentState.completed ? (
                                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                                            <CheckCircle2 size={10} /> Verified
+                                            <CheckCircle2 size={10} /> Completed (self-reported)
                                         </span>
                                     ) : (
                                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                            Pending Verification
+                                            Not marked complete
                                         </span>
                                     )}
                                 </div>
@@ -758,6 +759,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                             <button
                                 type="button"
                                 onClick={() => handleSaveIdentifier(true)}
+                                disabled={!inputValue.trim()}
                                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFD700] to-[#FFB800] text-black text-xs font-bold hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_0_12px_rgba(255,184,0,0.25)]"
                             >
                                 <Save size={13} />

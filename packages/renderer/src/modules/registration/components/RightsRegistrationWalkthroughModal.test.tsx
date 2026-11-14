@@ -6,10 +6,10 @@ describe('RightsRegistrationWalkthroughModal', () => {
     const mockOnClose = vi.fn();
     const mockOnUpdate = vi.fn();
     const defaultData = {
-        pro_affiliation: { verified: false, value: '' },
-        mlc_membership: { verified: false, value: '' },
-        usco_org: { verified: false, value: '' },
-        soundexchange: { verified: false, value: '' },
+        pro_affiliation: { completed: false, value: '', provenance: 'user_reported' as const },
+        mlc_membership: { completed: false, value: '', provenance: 'user_reported' as const },
+        usco_org: { completed: false, value: '', provenance: 'user_reported' as const },
+        soundexchange: { completed: false, value: '', provenance: 'user_reported' as const },
     };
 
     it('does not render when isOpen is false', () => {
