@@ -698,7 +698,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             // agent misattributed it to the image engine (generateImageV3 never
             // received the request). 120s bounds runaway calls while fitting the
             // real server capability.
-            const requestTimeout = options?.timeout || 120_000;
+            const requestTimeout = options?.timeout ?? 120_000;
             if (requestTimeout > 0) {
                 timeoutId = setTimeout(() => {
                     timeoutController.abort('TIMEOUT');
@@ -911,7 +911,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         // ISSUE-1367: same 25s→120s raise as the non-stream path — this timer
         // covers the entire stream (queue + pre-flight + tokens), and the
         // generateContentStream callable allows 300s server-side.
-        const requestTimeout = options?.timeout || 120_000;
+        const requestTimeout = options?.timeout ?? 120_000;
         if (requestTimeout > 0) {
             timeoutId = setTimeout(() => {
                 timeoutController.abort('TIMEOUT');
@@ -1347,20 +1347,23 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                     logger.warn(`[FirebaseIntelligenceService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
 
-                    await new Promise((resolve, reject) => {
+                    await new Promise<void>((resolve, reject) => {
+                        let settled = false;
                         const handleAbort = () => {
+                            if (settled) return;
+                            settled = true;
                             clearTimeout(timer);
                             signal?.removeEventListener('abort', handleAbort);
                             reject(normalizeStreamInterruption(new Error('Request aborted during backoff'), signal));
-                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false }));
                         };
                         const timer = setTimeout(() => {
+                            if (settled) return;
+                            settled = true;
                             signal?.removeEventListener('abort', handleAbort);
-                            resolve(undefined);
+                            resolve();
                         }, waitTime);
                         if (signal) {
                             signal.addEventListener('abort', handleAbort, { once: true });
-                            // The signal may have aborted between the catch check and registration.
                             if (signal.aborted) handleAbort();
                         }
                     });
