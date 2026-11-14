@@ -313,7 +313,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * respecting any Remote Config overrides.
      */
     public getModelName(modelOrCapability?: string): string {
-        const candidate = modelOrCapability || this.model?.model || FALLBACK_MODEL;
+        const candidate = (modelOrCapability?.trim() || this.model?.model?.trim() || FALLBACK_MODEL);
 
         const CAPABILITY_TO_MODEL_KEY: Record<string, string> = {
             'text-conductor': 'TEXT_CONDUCTOR',

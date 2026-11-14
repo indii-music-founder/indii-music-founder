@@ -489,4 +489,71 @@ describe('FirebaseIntelligenceService', () => {
         });
         (import.meta.env as any).DEV = originalDev;
     });
+
+    it('forwards legacy config safetySettings and toolConfig without leaking when options omit them', async () => {
+        const legacySafetySettings = [{ category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_LOW_AND_ABOVE' }];
+        const legacyToolConfig = { functionCallingConfig: { mode: 'ANY' } };
+
+        await service.generateContent(
+            'Legacy config prompt',
+            undefined,
+            {
+                safetySettings: legacySafetySettings,
+                toolConfig: legacyToolConfig,
+            } as unknown as Parameters<typeof service.generateContent>[2],
+        );
+
+        expect(latestBackendRequest().config).toMatchObject({
+            safetySettings: legacySafetySettings,
+            toolConfig: legacyToolConfig,
+        });
+
+        const explicitToolConfig = { functionCallingConfig: { mode: 'NONE' as const } };
+        await service.generateContentStream(
+            'Explicit precedence stream',
+            undefined,
+            {
+                toolConfig: legacyToolConfig,
+            } as unknown as Parameters<typeof service.generateContentStream>[2],
+            undefined,
+            undefined,
+            {
+                toolConfig: explicitToolConfig as unknown as NonNullable<Parameters<typeof service.generateContentStream>[5]>['toolConfig'],
+                thoughtSignature: 'sig-123',
+                timeout: 0,
+            },
+        );
+
+        expect(latestBackendRequest().config).toMatchObject({
+            toolConfig: explicitToolConfig,
+        });
+    });
+
+    it('preserves content metadata and isolates requests with timeout=0 from coalescing', async () => {
+        const callStreamUrls = () => vi.mocked(fetch).mock.calls
+            .filter(([url]) => String(url).includes('generateContentStream')).length;
+
+        const [first, second] = await Promise.all([
+            service.generateContent('Timeout isolated', undefined, undefined, undefined, undefined, { timeout: 0 }),
+            service.generateContent('Timeout isolated', undefined, undefined, undefined, undefined, { timeout: 0 }),
+        ]);
+
+        expect(first.response.text()).toBe('Mock Autonomous Response');
+        expect(second.response.text()).toBe('Mock Autonomous Response');
+        expect(callStreamUrls()).toBe(2);
+
+        const multipartWithMeta = [
+            {
+                role: 'user',
+                thoughtSignature: 'meta-sig-1',
+                parts: [{ text: 'Check metadata retention' }],
+            },
+        ] as unknown as Parameters<typeof service.generateContent>[0];
+
+        await service.generateContent(multipartWithMeta);
+        expect(latestBackendRequest().contents[0]).toMatchObject({
+            role: 'user',
+            thoughtSignature: 'meta-sig-1',
+        });
+    });
 });

@@ -207,6 +207,29 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
         it('should fallback to candidate model if capability or model is unrecognized', () => {
             expect(service.getModelName('some-unknown-capability-or-model')).toBe('some-unknown-capability-or-model');
         });
+
+        it('should resolve text-conductor, trim whitespace, normalize key casing, and reject inherited keys', async () => {
+            expect(service.getModelName('text-conductor')).toBe(APPROVED_MODELS.TEXT_CONDUCTOR);
+            expect(service.getModelName('  text-conductor  ')).toBe(APPROVED_MODELS.TEXT_CONDUCTOR);
+            expect(service.getModelName('   ')).toBe(APPROVED_MODELS.TEXT_FAST);
+            expect(service.getModelName('text_agent')).toBe(APPROVED_MODELS.TEXT_AGENT);
+            expect(service.getModelName('constructor')).toBe('constructor');
+            expect(service.getModelName('toString')).toBe('toString');
+
+            mockRemoteConfigValue.mockImplementation((key) => {
+                if (key === 'ai_system_config') {
+                    return JSON.stringify({
+                        overrides: { TEXT_AGENT: '   ' },
+                        pricing: {},
+                        config: {},
+                    });
+                }
+                return '';
+            });
+
+            await service.bootstrap();
+            expect(service.getModelName('text-agent')).toBe(APPROVED_MODELS.TEXT_AGENT);
+        });
     });
 });
 
