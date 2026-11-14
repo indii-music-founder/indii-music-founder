@@ -179,6 +179,17 @@ export function useFocusTrap(isActive: boolean = true) {
             if (originalTabIndex === null && container.tabIndex === -1) container.removeAttribute('tabindex');
             if (!wasTopTrap) return;
             const nextTrap = activeTrapContainers.at(-1);
+            const restoreFocus = (target: HTMLElement) => {
+                target.focus();
+                // React can restore its pre-commit focus after layout cleanup.
+                queueMicrotask(() => {
+                    const active = target.ownerDocument.activeElement;
+                    if (target.isConnected && activeTrapContainers.at(-1) === nextTrap &&
+                        (active === target.ownerDocument.body || container.contains(active))) {
+                        target.focus();
+                    }
+                });
+            };
             if (nextTrap?.isConnected) {
                 const previousFocus = previousFocusRef.current;
                 const remainingControls = focusableElementsIn(nextTrap);
@@ -186,9 +197,9 @@ export function useFocusTrap(isActive: boolean = true) {
                     ? previousFocus
                     : remainingControls[0] ?? nextTrap;
                 if (target === nextTrap && !nextTrap.hasAttribute('tabindex')) nextTrap.tabIndex = -1;
-                target.focus();
+                restoreFocus(target);
             } else if (previousFocusRef.current?.isConnected) {
-                previousFocusRef.current.focus();
+                restoreFocus(previousFocusRef.current);
             }
         };
     }, [isActive, getFocusableElements]);
