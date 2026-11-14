@@ -133,12 +133,15 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
     const [isUpscalingAsset, setIsUpscalingAsset] = useState(false);
     const [assetUpscaledNote, setAssetUpscaledNote] = useState<string | null>(null);
+    const [assetUpscaleError, setAssetUpscaleError] = useState<string | null>(null);
 
     // Sync state with prop if it changes from outside
     useEffect(() => {
         if (initialAsset) {
             logger.debug("[EnhancedShowroom] Syncing initialAsset:", initialAsset.substring(0, 50) + "...");
             setProductAsset(initialAsset);
+            setAssetUpscaledNote(null);
+            setAssetUpscaleError(null);
         }
     }, [initialAsset]);
     const [productType, setProductType] = useState('t-shirt');
@@ -227,6 +230,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const handleUpscaleAsset = async (scale: 2 | 4) => {
         if (!productAsset || isUpscalingAsset) return;
         setIsUpscalingAsset(true);
+        setAssetUpscaleError(null);
         try {
             if (window.electronAPI?.upscale) {
                 const { upscalerService } = await import('@/services/upscale/UpscalerService');
@@ -234,32 +238,53 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 setProductAsset(outcome.outputDataUrl);
                 setAssetUpscaledNote(`${scale}× · ${outcome.model}`);
             } else {
-                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-                const { blob } = await safeStorageFetch(productAsset);
-                const dataUrl = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(String(reader.result));
-                    reader.onerror = () => reject(new Error('Could not read the design.'));
-                    reader.readAsDataURL(blob);
-                });
+                let dataUrl = productAsset;
+                if (!productAsset.startsWith('data:')) {
+                    const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                    const { blob } = await safeStorageFetch(productAsset);
+                    dataUrl = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(String(reader.result));
+                        reader.onerror = () => reject(new Error('Could not read the design.'));
+                        reader.readAsDataURL(blob);
+                    });
+                }
                 const image = new Image();
                 image.src = dataUrl;
                 await image.decode();
+                const targetWidth = image.naturalWidth * scale;
+                const targetHeight = image.naturalHeight * scale;
                 const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
-                const outcome = await browserUpscale({ dataUrl, required: { width: image.naturalWidth * scale, height: image.naturalHeight * scale } });
+                const outcome = await browserUpscale({
+                    dataUrl,
+                    required: { width: targetWidth, height: targetHeight },
+                });
+                if (outcome.width <= image.naturalWidth && outcome.height <= image.naturalHeight) {
+                    throw new Error('Upscale completed without enlarging the design dimensions.');
+                }
                 setProductAsset(outcome.url);
-                setAssetUpscaledNote(`${scale}× · on-device ESRGAN`);
+                setAssetUpscaledNote(`${scale}× (${outcome.width}×${outcome.height}) · on-device ESRGAN`);
             }
             toast.success(`Design upscaled ${scale}× — mockups will use the sharper source.`);
         } catch (err) {
+            logger.error('[EnhancedShowroom] Asset upscale failed:', err);
             const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+            let message = err instanceof Error ? err.message : 'Asset upscale failed.';
             if (err instanceof UpscaleUnavailableError) {
-                if (err.reason === 'gpu-not-ready') toast.error('Local engine cannot run on this machine (no usable GPU/Vulkan).');
-                else if (err.reason === 'no-electron') toast.info('Local upscaling runs in the indii desktop app.');
-                else toast.error(`Engine setup failed: ${err.message}`);
+                if (err.reason === 'gpu-not-ready') {
+                    message = 'Local engine cannot run on this machine (no usable GPU/Vulkan).';
+                    toast.error(message);
+                } else if (err.reason === 'no-electron') {
+                    message = 'Local upscaling runs in the indii desktop app.';
+                    toast.info(message);
+                } else {
+                    message = `Engine setup failed: ${err.message}`;
+                    toast.error(message);
+                }
             } else {
-                toast.error(err instanceof Error ? err.message : 'Asset upscale failed.');
+                toast.error(message);
             }
+            setAssetUpscaleError(message);
         } finally {
             setIsUpscalingAsset(false);
         }
@@ -649,6 +674,15 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                     {assetUpscaledNote && (
                                         <span className="px-2 py-0.5 rounded-md bg-emerald-600/30 border border-emerald-500/40 text-[10px] font-bold text-emerald-300">
                                             Upscaled {assetUpscaledNote}
+                                        </span>
+                                    )}
+                                    {assetUpscaleError && (
+                                        <span
+                                            data-testid="merch-upscale-error"
+                                            className="px-2 py-0.5 rounded-md bg-red-900/80 border border-red-500/50 text-[10px] font-medium text-red-200 max-w-[220px] truncate"
+                                            title={assetUpscaleError}
+                                        >
+                                            {assetUpscaleError}
                                         </span>
                                     )}
                                 </div>
