@@ -1513,15 +1513,13 @@ app.get('/api/deliveries/list', requireAdminAuth, async (_req, res) => {
     const deliveries: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
       const data = doc.data() || {};
-      const createdAt = data.createdAt;
-      const formattedTime = createdAt && typeof createdAt.toDate === 'function'
-        ? createdAt.toDate().toISOString()
-        : (typeof data.time === 'string' ? data.time : new Date().toISOString());
+      const formattedTime = toIso(data.createdAt) ?? toIso(data.time) ?? '';
       const dst = Array.isArray(data.distributors)
         ? data.distributors.join(', ')
         : (typeof data.dst === 'string' ? data.dst : 'DSP Delivery Network');
 
       deliveries.push({
+        ...data,
         id: doc.id,
         releaseId: String(data.releaseId || doc.id),
         title: String(data.title || data.albumTitle || 'Untitled Release'),
@@ -1529,7 +1527,6 @@ app.get('/api/deliveries/list', requireAdminAuth, async (_req, res) => {
         status: String(data.status || 'pending'),
         time: formattedTime,
         type: String(data.type || 'DDEX ERN'),
-        ...data,
       });
     });
     res.json({ deliveries });
@@ -1549,17 +1546,14 @@ app.get('/api/nexus/logs', requireAdminAuth, async (_req, res) => {
     const logs: Record<string, unknown>[] = [];
     snapshot.forEach((doc) => {
       const data = doc.data() || {};
-      const timestamp = data.timestamp || data.createdAt;
-      const formattedTime = timestamp && typeof timestamp.toDate === 'function'
-        ? timestamp.toDate().toISOString()
-        : (typeof data.time === 'string' ? data.time : new Date().toISOString());
+      const formattedTime = toIso(data.timestamp) ?? toIso(data.createdAt) ?? toIso(data.time) ?? '';
 
       logs.push({
+        ...data,
         id: doc.id,
         msg: String(data.msg || data.message || data.action || data.event || 'System Event'),
         status: String(data.status || data.level || 'info'),
         time: formattedTime,
-        ...data,
       });
     });
     res.json({ logs });

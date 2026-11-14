@@ -237,7 +237,7 @@ export const DDEXTracker: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-xs text-white/30">
-                      {delivery.time}
+                      {delivery.time || 'Time unavailable'}
                     </td>
                   </tr>
                 ))}

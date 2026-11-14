@@ -188,7 +188,7 @@ export const NexusMonitor: React.FC = () => {
           <div className="space-y-4">
             {logs.map((log, i) => (
               <div key={i} className="flex items-center gap-6 group p-4 hover:bg-white/5 rounded-2xl transition-colors border border-transparent hover:border-white/5">
-                <div className="w-24 text-xs text-white/20 font-mono shrink-0">{log.time}</div>
+                <div className="w-24 text-xs text-white/20 font-mono shrink-0">{log.time || 'Time unavailable'}</div>
                 <div className="flex-1 text-sm text-white/70 group-hover:text-white transition-colors truncate">{log.msg}</div>
                 <div className={`text-xs font-bold shrink-0 ${log.status === 'Success' ? 'text-emerald-400' : 'text-[#ffb800]'}`}>{log.status}</div>
               </div>

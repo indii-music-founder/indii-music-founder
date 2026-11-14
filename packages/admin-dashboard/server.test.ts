@@ -871,6 +871,32 @@ describe('admin-dashboard server.ts', () => {
         });
     });
 
+    describe('monitoring record timestamps', () => {
+        it.each([
+            ['/api/deliveries/list', 'ddexReleases', 'deliveries'],
+            ['/api/nexus/logs', 'agent_traces', 'logs'],
+        ])('%s preserves known timestamps and leaves unknown times empty', async (route, collection, key) => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', email_verified: true, uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => makeQuery(makeSnapshot(name === collection ? [
+                    { id: 'known', data: { id: 'stored-override', time: { toDate: () => new Date('2026-11-08T10:00:00Z') } } },
+                    { id: 'unknown', data: {} },
+                    { id: 'invalid', data: { time: 'invalid date' } },
+                ] : []))),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', route, { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(200);
+            expect(res.body[key]).toMatchObject([
+                { id: 'known', time: '2026-11-08T10:00:00.000Z' },
+                { id: 'unknown', time: '' },
+                { id: 'invalid', time: '' },
+            ]);
+        });
+    });
+
     describe('GET /api/deliveries/list — live deliveries from ddexReleases', () => {
         it('returns mapped deliveries from ddexReleases with releaseId, title, dst, status, time, and type', async () => {
             vi.mocked(admin.auth).mockReturnValue({
