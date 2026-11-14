@@ -105,4 +105,16 @@ describe('generateMockup (F1.2 — generation mocked)', () => {
         await expect(generateMockup({ artworkUrl: 'data:image/png;base64,QUJD', kind: 'tee' }))
             .rejects.toThrow(/returned no result/);
     });
+
+    it('forwards gs:// artworkUrl directly as referenceUris without fetching or passing base64 (ISSUE-1623)', async () => {
+        await generateMockup({
+            artworkUrl: 'gs://indii-os-bucket/users/u1/artworks/golden-leaf.png',
+            kind: 'poster',
+            scene: 'studio',
+        });
+
+        const call = generateImages.mock.calls[0]![0] as { referenceUris?: string[]; sourceImages?: unknown };
+        expect(call.referenceUris).toEqual(['gs://indii-os-bucket/users/u1/artworks/golden-leaf.png']);
+        expect(call.sourceImages).toBeUndefined();
+    });
 });

@@ -250,17 +250,26 @@ export class VideoGenerationService {
         if (groundingFirstFrame) {
             // groundingFirstFrame is a base64, data URI, or URL. Upload it to get a gs:// URI.
             firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, groundingFirstFrame, 'image');
+            if (!firstFrameUri || !firstFrameUri.startsWith('gs://')) {
+                throw new Error('First frame upload failed to return a valid gs:// URI.');
+            }
         } else if (options.image && options.image.imageBytes) {
             // handle the old imageBytes format just in case
             const b64 = options.image.imageBytes;
             const mime = options.image.mimeType || 'image/jpeg';
             firstFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, `data:${mime};base64,${b64}`, 'image');
+            if (!firstFrameUri || !firstFrameUri.startsWith('gs://')) {
+                throw new Error('Image frame upload failed to return a valid gs:// URI.');
+            }
         }
 
         // Upload last frame if present
         let lastFrameUri;
         if (options.lastFrame) {
             lastFrameUri = await CreativeStorageService.uploadReferenceMedia(userId, options.lastFrame, 'image');
+            if (!lastFrameUri || !lastFrameUri.startsWith('gs://')) {
+                throw new Error('Last frame upload failed to return a valid gs:// URI.');
+            }
         }
 
         // Upload reference images if present

@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import UniversalNode from './UniversalNode';
+import { InputNode, OutputNode } from './CustomNodes';
 import { Status } from '../types';
 
 // Mock dependencies
 vi.mock('reactflow', () => ({
-    Handle: ({ type, id }: any) => <div data-testid={`handle-${type}-${id}`} />,
+    Handle: ({ type, id, className, style }: any) => (
+        <div data-testid={`handle-${type}-${id}`} className={className} style={style} />
+    ),
     Position: { Left: 'left', Right: 'right' },
 }));
 
@@ -96,5 +99,59 @@ describe('UniversalNode', () => {
         };
         render(<UniversalNode {...errorProps} />);
         expect(screen.getByText('Something went wrong...')).toBeInTheDocument();
+    });
+
+    it('renders InputNode and OutputNode handles after content with pointer-events and z-30 (ISSUE-1622)', () => {
+        const { container } = render(
+            <>
+                <InputNode
+                    id="start-1"
+                    type="inputNode"
+                    data={{ nodeType: 'input', prompt: 'Brief', status: Status.PENDING }}
+                    selected={false}
+                    zIndex={1}
+                    isConnectable={true}
+                    xPos={0}
+                    yPos={0}
+                    dragging={false}
+                />
+                <OutputNode
+                    id="end-1"
+                    type="outputNode"
+                    data={{ nodeType: 'output', status: Status.PENDING }}
+                    selected={false}
+                    zIndex={1}
+                    isConnectable={true}
+                    xPos={300}
+                    yPos={0}
+                    dragging={false}
+                />
+            </>
+        );
+
+        const sourceHandle = screen.getByTestId('handle-source-output');
+        expect(sourceHandle.className).toContain('!z-30');
+        expect(sourceHandle.className).toContain('!pointer-events-auto');
+        expect(sourceHandle.className).toContain('!w-3.5');
+
+        const promptTextarea = container.querySelector('textarea')!;
+        // Source handle follows the body in DOM order so it is never covered by body divs
+        expect(Boolean(promptTextarea.compareDocumentPosition(sourceHandle) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+
+        const targetHandle = screen.getByTestId('handle-target-input');
+        expect(targetHandle.className).toContain('!z-30');
+        expect(targetHandle.className).toContain('!pointer-events-auto');
+    });
+
+    it('renders UniversalNode handles with 12x12 hit targets and z-30 stacking (ISSUE-1622)', () => {
+        render(<UniversalNode {...mockProps} />);
+        const targetHandle = screen.getByTestId('handle-target-in1');
+        const sourceHandle = screen.getByTestId('handle-source-out1');
+        expect(targetHandle.className).toContain('!z-30');
+        expect(targetHandle.className).toContain('!pointer-events-auto');
+        expect(targetHandle.style.width).toBe('12px');
+        expect(targetHandle.style.height).toBe('12px');
+        expect(sourceHandle.className).toContain('!z-30');
+        expect(sourceHandle.style.width).toBe('12px');
     });
 });

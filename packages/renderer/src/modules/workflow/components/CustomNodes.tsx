@@ -63,6 +63,13 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
                     />
                 </div>
             </div>
+            {/* Standard Output Handle for Trigger/Text — rendered after body so it is never covered */}
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="output"
+                className="!bg-slate-400 !w-3.5 !h-3.5 !border-2 !border-[#1e293b] !z-30 !pointer-events-auto"
+            />
         </NodeWrapper>
     );
 });
@@ -72,12 +79,6 @@ const formatTime = (seconds: number) => new Date(seconds * 1000).toISOString().s
 export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegmentNodeData>) => {
     return (
         <NodeWrapper selected={selected} className="w-[280px] border-green-500/30">
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="audio_out"
-                className="!bg-amber-400 !w-3 !h-3 !border-2 !border-[#1e293b]"
-            />
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="p-1 bg-green-900/30 rounded">
@@ -94,7 +95,7 @@ export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegment
                 type="source"
                 position={Position.Right}
                 id="audio_out"
-                className="!bg-amber-400 !w-3 !h-3 !border-2 !border-[#1e293b] !z-50"
+                className="!bg-amber-400 !w-3.5 !h-3.5 !border-2 !border-[#1e293b] !z-30 !pointer-events-auto"
             />
         </NodeWrapper>
     );
@@ -112,12 +113,6 @@ export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) =
 
     return (
         <NodeWrapper selected={selected} className="w-[280px] border-green-500/30">
-            <Handle
-                type="target"
-                position={Position.Left}
-                id="input"
-                className="!bg-slate-400 !w-3 !h-3 !border-2 !border-[#1e293b]"
-            />
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <div className="p-1 bg-green-900/30 rounded">
@@ -127,6 +122,12 @@ export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) =
                 </div>
                 <p className="text-xs text-gray-400 mt-1 p-2 bg-gray-900/50 rounded">{displayText}</p>
             </div>
+            <Handle
+                type="target"
+                position={Position.Left}
+                id="input"
+                className="!bg-slate-400 !w-3.5 !h-3.5 !border-2 !border-[#1e293b] !z-30 !pointer-events-auto"
+            />
         </NodeWrapper>
     );
 });

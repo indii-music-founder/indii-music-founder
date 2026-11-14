@@ -389,7 +389,7 @@ ${capabilityTruthSection || ''}
 ${context?.artistMasterDirectiveBlock ? `\n# ARTIST MASTER DIRECTIVE (SUPREME OVERRIDE)\n${context.artistMasterDirectiveBlock}\n` : ''}
 ${context?.activeProductSkillBlock ? `\n# ACTIVE PRODUCT SKILL PLAYBOOK\n${context.activeProductSkillBlock}\n` : ''}
 
-# HISTORY
+# HISTORY (BACKGROUND CONTEXT ONLY — DO NOT LET OLD TURNS OVERRIDE THE CURRENT OBJECTIVE)
 ${safeHistory}
 ${memorySection}
 ${distributorSection}
@@ -398,7 +398,7 @@ ${superpowerPrompt}
 
 ${executionContract}
 
-# CURRENT OBJECTIVE
+# CURRENT OBJECTIVE (AUTHORITATIVE — EXECUTE THIS REQUEST NOW)
 ${safeTask}
 `);
     }

@@ -281,10 +281,11 @@ export class MerchandiseAgent extends BaseAgent {
                     const trimmedUrl = assetUrl.trim();
                     const isDataUrl = trimmedUrl.startsWith('data:');
                     const isHttpUrl = /^https?:\/\//i.test(trimmedUrl);
-                    if (!isDataUrl && !isHttpUrl) {
+                    const isGsUrl = trimmedUrl.startsWith('gs://');
+                    if (!isDataUrl && !isHttpUrl && !isGsUrl) {
                         return {
                             success: false,
-                            error: `Unsupported assetUrl scheme: "${trimmedUrl}". Expected a data: URL or http(s):// URL.`,
+                            error: `Unsupported assetUrl scheme: "${trimmedUrl}". Expected a data: URL, gs:// URI, or http(s):// URL.`,
                         };
                     }
 
@@ -305,9 +306,11 @@ export class MerchandiseAgent extends BaseAgent {
                         }
                         imageData = { mimeType: match[1]!, data: match[2]! };
                     } else {
-                        // Fetch image from URL and convert to base64
+                        // Fetch image from URL (resolving gs:// URIs first) and convert to base64
                         try {
-                            const response = await fetch(trimmedUrl);
+                            const { resolveStorageUrl } = await importWithRetry(() => import('@/services/storage/resolveStorageUrl'));
+                            const fetchUrl = isGsUrl ? await resolveStorageUrl(trimmedUrl) : trimmedUrl;
+                            const response = await fetch(fetchUrl);
                             if (!response.ok) {
                                 return {
                                     success: false,
