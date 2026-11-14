@@ -17,7 +17,8 @@
  * </Modal>
  * ```
  */
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { isTopFocusTrap, useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
@@ -37,6 +38,18 @@ interface ModalProps {
     /** Stable callable dialogs must remain visible above full-screen workspaces. */
     portal?: boolean;
     overlayZIndex?: number;
+}
+
+/** Exit animation may outlive the open state and its keyboard focus trap. */
+function ModalOverlay({ children, ...props }: React.ComponentProps<typeof motion.div>) {
+    const isPresent = useIsPresent();
+    const overlayRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        if (overlayRef.current) overlayRef.current.inert = !isPresent;
+    }, [isPresent]);
+    return <motion.div {...props} ref={overlayRef} aria-hidden={isPresent ? undefined : true}>
+        {children}
+    </motion.div>;
 }
 
 export function Modal({ isOpen, onClose, titleId, descriptionId, children, maxWidth = 'max-w-2xl', className = '', portal = false, overlayZIndex }: ModalProps) {
@@ -59,7 +72,7 @@ export function Modal({ isOpen, onClose, titleId, descriptionId, children, maxWi
     const content = (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
+                <ModalOverlay
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby={titleId}
@@ -81,7 +94,7 @@ export function Modal({ isOpen, onClose, titleId, descriptionId, children, maxWi
                     >
                         {children}
                     </motion.div>
-                </motion.div>
+                </ModalOverlay>
             )}
         </AnimatePresence>
     );
