@@ -170,6 +170,18 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     expect(result.current.isPlaying).toBe(false);
   });
 
+  it('looks up decoded frames in microseconds at the requested source position', () => {
+    const lookup = vi.spyOn(VideoTrackDecoder.prototype, 'getFrameForPts');
+    const { result, unmount } = renderHook(() => useNLEPlayback({ project: sampleProject, canvasRef }));
+    try {
+      act(() => result.current.seekToSeconds(1));
+      expect(lookup).toHaveBeenCalledWith(1000000n);
+    } finally {
+      unmount();
+      lookup.mockRestore();
+    }
+  });
+
   it('cleans up RAF and resources when unmounted', () => {
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
     const closeSpy = vi.spyOn(VideoTrackDecoder.prototype, 'close');

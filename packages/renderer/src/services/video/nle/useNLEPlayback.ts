@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { IndiiVideoProject } from '@indii/shared';
-import { projectToTimelineAST, isClipActive, getSourceOffsetPts } from '@indii/video-compiler';
+import { projectToTimelineAST, isClipActive, getSourceOffsetPts, rescaleTime } from '@indii/video-compiler';
 import { MasterAudioClock } from './MasterAudioClock';
 import { VideoTrackDecoder } from './VideoTrackDecoder';
 import { WebGL2Compositor, computeTransformMatrix, type RenderLayer } from './WebGL2Compositor';
@@ -129,7 +129,8 @@ export function useNLEPlayback({
           }
 
           const offsetPts = getSourceOffsetPts(playheadPts, clip, 60000);
-          const frame = decoder.getFrameForPts(offsetPts);
+          const offsetUs = rescaleTime({ pts: offsetPts, timescale: 60000 }, 1000000).pts;
+          const frame = decoder.getFrameForPts(offsetUs);
 
           if (frame) {
             const transform = computeTransformMatrix(clip.transform);
