@@ -1,8 +1,9 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import EnhancedShowroom from './EnhancedShowroom';
 import { Editing } from '@/services/image/EditingService';
+import { browserUpscale } from '@/services/upscale/BrowserUpscale';
 
 const mockToast = {
     loading: vi.fn(() => 'loading-toast-id'),
@@ -21,6 +22,10 @@ vi.mock('@/services/image/EditingService', () => ({
     Editing: {
         generateComposite: vi.fn(),
     },
+}));
+
+vi.mock('@/services/upscale/BrowserUpscale', () => ({
+    browserUpscale: vi.fn(),
 }));
 
 vi.mock('@/core/store', () => ({
@@ -91,5 +96,86 @@ describe('EnhancedShowroom (ISSUE-1605)', () => {
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith('Failed to generate mockup: Invalid or unauthorized model ID.');
         });
+    });
+});
+
+describe('EnhancedShowroom browser AI Upscale (ISSUE-1612)', () => {
+    const originalImage = globalThis.Image;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        class MockImage {
+            naturalWidth = 1600;
+            naturalHeight = 2000;
+            width = 1600;
+            height = 2000;
+            onload: (() => void) | null = null;
+            onerror: (() => void) | null = null;
+            decode = vi.fn().mockResolvedValue(undefined);
+            set src(_value: string) {
+                queueMicrotask(() => {
+                    this.onload?.();
+                });
+            }
+        }
+        vi.stubGlobal('Image', MockImage);
+    });
+
+    afterEach(() => {
+        vi.stubGlobal('Image', originalImage);
+    });
+
+    it('enlarges asset dimensions at 4x and displays the upscaled badge', async () => {
+        vi.mocked(browserUpscale).mockResolvedValueOnce({
+            url: 'data:image/png;base64,UPSCALED_6400X8000',
+            width: 6400,
+            height: 8000,
+        });
+
+        render(
+            <EnhancedShowroom initialAsset="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" />
+        );
+
+        const upscale4xBtn = screen.getByTestId('merch-upscale-4x');
+        fireEvent.click(upscale4xBtn);
+
+        await waitFor(() => {
+            expect(browserUpscale).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    required: { width: 6400, height: 8000 },
+                })
+            );
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/Upscaled 4× · 6400×8000/i)).toBeInTheDocument();
+        });
+        expect(screen.queryByTestId('showroom-upscale-error')).not.toBeInTheDocument();
+        expect(mockToast.success).toHaveBeenCalledWith(
+            expect.stringContaining('Design upscaled 4×')
+        );
+    });
+
+    it('surfaces persistent inline error when browserUpscale fails to enlarge dimensions', async () => {
+        vi.mocked(browserUpscale).mockResolvedValueOnce({
+            url: 'data:image/png;base64,SAME_SIZE',
+            width: 1600,
+            height: 2000,
+        });
+
+        render(
+            <EnhancedShowroom initialAsset="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" />
+        );
+
+        fireEvent.click(screen.getByTestId('merch-upscale-4x'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('showroom-upscale-error')).toHaveTextContent(
+                'Upscale completed without enlarging the design asset.'
+            );
+        });
+        expect(mockToast.error).toHaveBeenCalledWith(
+            expect.stringContaining('Upscale completed without enlarging the design asset.')
+        );
     });
 });

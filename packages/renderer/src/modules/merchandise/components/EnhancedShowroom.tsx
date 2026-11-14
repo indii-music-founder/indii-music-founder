@@ -133,6 +133,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
     const [isUpscalingAsset, setIsUpscalingAsset] = useState(false);
     const [assetUpscaledNote, setAssetUpscaledNote] = useState<string | null>(null);
+    const [upscaleError, setUpscaleError] = useState<string | null>(null);
 
     // Sync state with prop if it changes from outside
     useEffect(() => {
@@ -227,6 +228,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const handleUpscaleAsset = async (scale: 2 | 4) => {
         if (!productAsset || isUpscalingAsset) return;
         setIsUpscalingAsset(true);
+        setUpscaleError(null);
         try {
             if (window.electronAPI?.upscale) {
                 const { upscalerService } = await import('@/services/upscale/UpscalerService');
@@ -245,21 +247,39 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 const image = new Image();
                 image.src = dataUrl;
                 await image.decode();
+                if (!image.naturalWidth || !image.naturalHeight) {
+                    throw new Error('Could not determine source design dimensions for enlargement.');
+                }
+                const targetWidth = image.naturalWidth * scale;
+                const targetHeight = image.naturalHeight * scale;
                 const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
-                const outcome = await browserUpscale({ dataUrl, required: { width: image.naturalWidth * scale, height: image.naturalHeight * scale } });
+                const outcome = await browserUpscale({ dataUrl, required: { width: targetWidth, height: targetHeight } });
+                if (!outcome.url || outcome.width <= image.naturalWidth || outcome.height <= image.naturalHeight) {
+                    throw new Error('Upscale completed without enlarging the design asset.');
+                }
                 setProductAsset(outcome.url);
-                setAssetUpscaledNote(`${scale}× · on-device ESRGAN`);
+                setAssetUpscaledNote(`${scale}× · ${outcome.width}×${outcome.height}`);
             }
             toast.success(`Design upscaled ${scale}× — mockups will use the sharper source.`);
         } catch (err) {
+            logger.error('[EnhancedShowroom] Asset upscale failed:', err);
             const { UpscaleUnavailableError } = await import('@/services/upscale/UpscalerService');
+            let message = err instanceof Error ? err.message : 'Asset upscale failed.';
             if (err instanceof UpscaleUnavailableError) {
-                if (err.reason === 'gpu-not-ready') toast.error('Local engine cannot run on this machine (no usable GPU/Vulkan).');
-                else if (err.reason === 'no-electron') toast.info('Local upscaling runs in the indii desktop app.');
-                else toast.error(`Engine setup failed: ${err.message}`);
+                if (err.reason === 'gpu-not-ready') {
+                    message = 'Local engine cannot run on this machine (no usable GPU/Vulkan).';
+                    toast.error(message);
+                } else if (err.reason === 'no-electron') {
+                    message = 'Local upscaling runs in the indii desktop app.';
+                    toast.info(message);
+                } else {
+                    message = `Engine setup failed: ${err.message}`;
+                    toast.error(message);
+                }
             } else {
-                toast.error(err instanceof Error ? err.message : 'Asset upscale failed.');
+                toast.error(message);
             }
+            setUpscaleError(message);
         } finally {
             setIsUpscalingAsset(false);
         }
@@ -667,6 +687,11 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             </>
                         )}
                     </div>
+                    {upscaleError && (
+                        <p data-testid="showroom-upscale-error" className="text-xs text-red-400 -mt-5 mb-6" role="alert">
+                            {upscaleError}
+                        </p>
+                    )}
 
                     {/* Product Type Selector - Organized by Category */}
                     <div className="space-y-4">

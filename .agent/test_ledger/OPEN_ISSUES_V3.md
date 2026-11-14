@@ -7053,7 +7053,8 @@ Production existing signed-in account; actual plan remains unverified. Created o
 
 ### ISSUE-1612: Merchandise Showroom browser AI Upscale completes without enlarging the design asset
 
-- **Status:** 🔴 OPEN (2026-11-02; output-dimension and downstream mockup acceptance pending)
+- **Status:** 🟡 PARTIAL (2026-11-14; dimension enlargement check, persistent inline error alert, and unit tests verified; live browser acceptance pending)
+- **2026-11-14 verification:** `EnhancedShowroom.tsx` `handleUpscaleAsset` now validates `image.naturalWidth`/`naturalHeight`, throws when `outcome.width <= image.naturalWidth || outcome.height <= image.naturalHeight`, logs via `logger.error`, and renders a persistent inline alert (`data-testid="showroom-upscale-error"`) alongside toast feedback. `EnhancedShowroom.test.tsx` (4/4 passing) verifies `4×` enlargement (`1600×2000` -> `6400×8000`) with the `Upscaled 4× · 6400×8000` badge and inline error surfacing on non-enlarging upscale. Jev (`jev-1.14.0`, `req_01a1d8b060b17036bd310871ad12be2a`) scored `fix_addresses_root_cause=0.94`, `readiness_score=2.96/4.00` (confidence `0.92`). Live browser session verification of `2×`/`4×` output transparency and downstream mockup consumption remains open.
 - **Historical status / severity:** CONFIRMED OPEN / MEDIUM; production browser path, 2026-10-30.
 - **Location:** Art & Merch → New Design → Text → Export to Showroom → PNG → Export → AI Upscale 4×. Existing genuine signed-in W-avatar account; actual plan unverified.
 - **Reproduction:** Create the text design through the UI as above. Inspect Asset image natural dimensions (1600×2000). Click AI Upscale 4×. Both upscale controls disable with ellipses, then return enabled. Inspect the same Asset preview.
