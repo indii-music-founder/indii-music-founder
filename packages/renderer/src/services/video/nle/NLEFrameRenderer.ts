@@ -1,4 +1,4 @@
-import type { IndiiVideoProject, TimelineAST } from '@indii/shared';
+import type { IndiiVideoProject, TimelineAST, VideoClip } from '@indii/shared';
 import {
   projectToTimelineAST,
   isClipActive,
@@ -15,6 +15,7 @@ import {
 export class NLEFrameRenderer {
   private readonly ast: TimelineAST;
   private readonly sources = new Map<string, NLEVideoSource>();
+  private readonly sourceUris = new Map<string, string>();
   private pending: bigint | null = null;
   private running = false;
   private closed = false;
@@ -27,7 +28,7 @@ export class NLEFrameRenderer {
     this.ast = projectToTimelineAST(project, 60000);
     for (const clip of project.clips) {
       if (clip.type === 'video' && clip.src) {
-        this.sources.set(clip.id, new NLEVideoSource(clip.src));
+        this.sourceUris.set(clip.id, clip.src);
       }
     }
   }
@@ -46,22 +47,41 @@ export class NLEFrameRenderer {
         this.pending = null;
         const layers: RenderLayer[] = [];
         try {
-          for (const track of this.ast.tracks) {
-            if (track.type !== 'video' || track.muted) continue;
-            for (const clip of track.clips) {
-              if (clip.type !== 'video' || !isClipActive(pts, clip)) continue;
-              const source = this.sources.get(clip.id);
-              if (!source) throw new Error('This clip has no video source for NLE preview. Use HyperFrames for text and images.');
-              const seconds =
-                Number(getSourceOffsetPts(pts, clip, 60000)) / 60000;
-              const frame = await source.getFrameAt(seconds);
-              if (frame) {
-                layers.push({
-                  frame,
-                  transform: computeTransformMatrix(clip.transform),
-                  opacity: clip.transform.opacity,
-                });
-              }
+          const clips = this.ast.tracks.flatMap((track) =>
+            track.type === 'video' && !track.muted
+              ? track.clips.filter(
+                  (clip): clip is VideoClip =>
+                    clip.type === 'video' && isClipActive(pts, clip)
+                )
+              : []
+          );
+          const activeIds = new Set(clips.map((clip) => clip.id));
+          for (const [id, source] of this.sources) {
+            if (!activeIds.has(id)) {
+              source.close();
+              this.sources.delete(id);
+            }
+          }
+          for (const clip of clips) {
+            let source = this.sources.get(clip.id);
+            if (!source) {
+              const uri = this.sourceUris.get(clip.id);
+              if (!uri)
+                throw new Error(
+                  'This clip has no video source for NLE preview. Use HyperFrames for text and images.'
+                );
+              source = new NLEVideoSource(uri);
+              this.sources.set(clip.id, source);
+            }
+            const seconds =
+              Number(getSourceOffsetPts(pts, clip, 60000)) / 60000;
+            const frame = await source.getFrameAt(seconds);
+            if (frame) {
+              layers.push({
+                frame,
+                transform: computeTransformMatrix(clip.transform),
+                opacity: clip.transform.opacity,
+              });
             }
           }
           if (this.closed) {
@@ -85,5 +105,6 @@ export class NLEFrameRenderer {
     this.pending = null;
     for (const source of this.sources.values()) source.close();
     this.sources.clear();
+    this.sourceUris.clear();
   }
 }
