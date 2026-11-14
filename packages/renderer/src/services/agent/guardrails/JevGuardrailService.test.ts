@@ -201,4 +201,29 @@ describe('JevGuardrailService', () => {
     expect(result.text).not.toContain('successfully paired');
     expect(result.text).not.toContain('two-way communication is functional');
   });
+
+  it('preserves specialist tool-error explanations instead of replacing with social-media fallback', async () => {
+    const input = {
+      text: 'I could not create the product mockup because the asset URL failed to fetch.',
+      tool_calls: [
+        { name: 'create_product_mockup', result: { success: false, error: 'Failed to fetch asset image' } },
+      ],
+    };
+    judgeInvoke.mockResolvedValue({
+      data: {
+        answers: {
+          claims_disconnected_without_evidence: 0,
+          claims_scheduled_without_tool: 0,
+          confident_action_no_evidence: 0,
+          is_actionable_response: 0.1,
+        },
+      },
+    });
+
+    const result = await service.screen(input);
+
+    expect(result.flags).not.toContain('unactionable_response');
+    expect(result.text).toBe(input.text);
+    expect(result.text).not.toContain('schedule a post');
+  });
 });
