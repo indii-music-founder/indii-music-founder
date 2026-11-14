@@ -18,13 +18,16 @@
  * ```
  */
 import * as MotionReact from 'motion/react';
-import { useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { isTopFocusTrap, useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
-const { AnimatePresence, motion } = MotionReact;
 // Fall back cleanly when component tests replace motion/react with a partial stub.
+const AnimatePresence = Object.hasOwn(MotionReact, 'AnimatePresence')
+    ? MotionReact.AnimatePresence
+    : ({ children }: { children?: ReactNode }) => <>{children}</>;
+const motion = MotionReact.motion;
 const useModalPresence: () => boolean =
     Object.hasOwn(MotionReact, 'useIsPresent') ? MotionReact.useIsPresent : () => true;
 
