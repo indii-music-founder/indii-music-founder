@@ -379,6 +379,14 @@ describe('Boardroom capability truthfulness', () => {
             }
         });
 
+        it('scopes an observed audio connection to the current session (issue #858)', () => {
+            const response = 'Yes, I can hear you clearly. We are connected and fully operational.';
+            expect(detectCapabilityOverclaim(response).hasOverclaim).toBe(true);
+            expect(sanitizeAgentCapabilityOutput(response)).toBe(
+                'I received your audio in this session, so this audio path is working for this check. That does not verify the wider app or every capability as fully operational.',
+            );
+        });
+
         it('detectCapabilityOverclaim ignores grounded, hedged status answers', () => {
             const grounded = [
                 'Here is what I can do in this Boardroom right now: image generation is available.',

@@ -343,6 +343,9 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     /\b(?:my|our|the|all)\s+(?:core\s+)?capabilities\b[^.?!]{0,120}\b(?:are|is)\s+(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
     // e.g. "functioning normally and ready to work" or "operational and ready to work"
     /\b(?:functioning normally|operational)\s+and\s+ready\s+to\s+work\b/i,
+    // A successful session-level connection check does not certify the product.
+    // Issue #858: "I can hear you clearly. We are connected and fully operational."
+    /\b(?:connected|online)\b[^.?!]{0,40}\bfully\s+operational\b/i,
     // e.g. "confirm that all/my/our systems are operational/ready"
     /\b(?:confirm|certify)(?:\s+that)?\s+(?:all|my|our)\s+systems?\s+(?:are|to be)\s+(?:operational|ready|functional)\b/i,
     // e.g. "my current internal model is the latest deployed version" / "backend optimizations and tool enhancements we've pushed recently"
@@ -429,8 +432,18 @@ export function detectUnbackedFilingClaim(text: string): UnbackedFilingClaimResu
 
 export function sanitizeAgentCapabilityOutput(output: string): string {
     const detection = detectUngroundedEngineeringHallucination(output);
-    if (!detection.hasHallucination && !detectCapabilityOverclaim(output).hasOverclaim) {
+    const overclaim = detectCapabilityOverclaim(output);
+    if (!detection.hasHallucination && !overclaim.hasOverclaim) {
         return output;
+    }
+    // Keep simple audio/connectivity checks conversational and accurately
+    // scoped. Receiving this session's audio is evidence for that path only.
+    if (
+        overclaim.hasOverclaim
+        && /\b(?:hear you|hearing you|audio|microphone|mic)\b/i.test(output)
+        && /\b(?:connected|online)\b[^.?!]{0,40}\bfully\s+operational\b/i.test(output)
+    ) {
+        return 'I received your audio in this session, so this audio path is working for this check. That does not verify the wider app or every capability as fully operational.';
     }
     return buildDepartmentAuditReport();
 }
