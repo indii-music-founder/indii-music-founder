@@ -31,8 +31,8 @@ const FOCUSABLE_SELECTORS = [
     '[contenteditable="true"]',
 ].join(', ');
 
-function focusableElementsIn(container: HTMLElement): HTMLElement[] {
-    return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(element => {
+function focusableElementsIn(container: HTMLElement, backward = false): HTMLElement[] {
+    const eligible = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)).filter(element => {
         // Editable regions are focusable without an explicit tabindex even
         // though their tabIndex property defaults to -1.
         const implicitEditor = element.matches('[contenteditable="true"]') && !element.hasAttribute('tabindex');
@@ -43,6 +43,20 @@ function focusableElementsIn(container: HTMLElement): HTMLElement[] {
             if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
         }
         return true;
+    });
+    return eligible.filter(element => {
+        if (!element.matches('input[type="radio"]')) return true;
+        const radio = element as HTMLInputElement;
+        if (!radio.name) return true;
+        // Native sequential navigation treats a named radio group as one
+        // stop. Without a selection, reverse navigation enters at its end.
+        const group = eligible.filter((candidate): candidate is HTMLInputElement =>
+            candidate.matches('input[type="radio"]') &&
+            (candidate as HTMLInputElement).name === radio.name &&
+            (candidate as HTMLInputElement).form === radio.form &&
+            candidate.getRootNode() === radio.getRootNode());
+        const stop = group.find(candidate => candidate.checked) ?? (backward ? group.at(-1) : group[0]);
+        return radio === stop;
     }).sort((left, right) => {
         // Native tab navigation visits positive tabindex values first, in
         // ascending order, then the ordinary DOM order. Stable sorting keeps
@@ -79,9 +93,9 @@ export function useFocusTrap(isActive: boolean = true) {
     }, []);
     const trapId = useId();
 
-    const getFocusableElements = useCallback((): HTMLElement[] => {
+    const getFocusableElements = useCallback((backward = false): HTMLElement[] => {
         if (!containerRef.current) return [];
-        return focusableElementsIn(containerRef.current);
+        return focusableElementsIn(containerRef.current, backward);
     }, []);
 
     useGlobalShortcut({
@@ -93,7 +107,7 @@ export function useFocusTrap(isActive: boolean = true) {
             // Stacked dialogs register separate Tab handlers. Only the top
             // trap may redirect focus, even when it does not need to wrap.
             if (activeTrapContainers.at(-1) !== containerRef.current) return;
-            const elements = getFocusableElements();
+            const elements = getFocusableElements(e.shiftKey);
             if (elements.length === 0) {
                 e.preventDefault();
                 if (containerRef.current && !containerRef.current.hasAttribute('tabindex')) containerRef.current.tabIndex = -1;
