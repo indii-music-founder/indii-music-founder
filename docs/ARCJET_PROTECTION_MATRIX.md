@@ -100,7 +100,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/rights/rightsRegistration.ts:87` | `rightsRegistration` | `onCall` | Present | Present |
 | `functions/security/claimComputerApproval.ts:27` | `claimComputerApproval` | `onCall` | Present | Present |
 | `functions/security/claimComputerApproval.ts:73` | `denyComputerApproval` | `onCall` | Present | Present |
-| `functions/security/claimComputerApproval.ts:109` | `completeComputerApproval` | `onCall` | Present | Present |
+| `functions/security/claimComputerApproval.ts:112` | `completeComputerApproval` | `onCall` | Present | Present |
 | `functions/security/errorReportCallables.ts:119` | `listErrorReports` | `onCall` | Present | Present |
 | `functions/security/errorReportCallables.ts:149` | `updateErrorReportStatus` | `onCall` | Present | Present |
 | `functions/security/logAuditEvent.ts:164` | `logAuditEvent` | `onCall` | Present | Present |

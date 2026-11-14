@@ -1,50 +1,116 @@
 ---
-description: Founder-approved Argon and Flash 3.8 intelligence hierarchy with specialty-scoped trained models.
-description: Current tuned-endpoint routing and the founder-directed Argon migration, with tool and media boundaries.
+description: Inspected text-model routing, the Argon/Flash intelligence target, and specialty, media, approval, and verification boundaries.
 ---
 
-# Chat Model Routing and Migration
+# Chat Model Routing and Intelligence Hierarchy
 
-Reviewed 2026-11-05. The founder-approved target is a hierarchy: Argon directs the Conductor; Flash 3.8 supplies the other agents’ reasoning and coordination; trained models perform delegated work only within their specialties. Preserve the trained models. Solid edges below show inspected implementation; dashed edges show the target requiring runtime verification.
-Reviewed 2026-11-05. Solid edges below show inspected implementation. Dashed edges show the intended migration and its acceptance work; they are not deployed-state claims.
+Reviewed against source on 2026-11-13. This chart distinguishes configured routing
+from the founder's required hierarchy: Argon directs the Conductor, Flash 3.8
+provides other agents' intelligence, and trained models perform matching specialty
+tasks. Preserve the trained models, their identities, prompts, and tool boundaries.
+Source inspection does not establish active Remote Config values, provider access,
+or genuine deployed behavior.
+
+## Inspected routing
+
+The solid-edge diagram traces the primary BaseAgent streaming path.
 
 ```mermaid
 flowchart TD
-    Chat["Direct chat or Boardroom execution"] --> Agent["Agent identity, prompt, tools, and context"]
-    Agent --> Registry["Current getFineTunedModel registry"]
-    Registry --> Tuned["Generated R8 Vertex endpoints and explicit domain aliases"]
-    Tuned --> Backend["Authenticated backend generation and streaming"]
-    Backend --> Response["Response or explicit specialist-unavailable error"]
-    Agent --> Tools["Tool schemas, policy, approval, and execution evidence"]
-    Tools --> Media["Existing image, video, audio, retrieval, and department tools"]
-    Chat -.-> Conductor["Target apex: Argon Conductor directs work"]
-    Conductor -.-> Workers["Target coordination: Flash 3.8 agent intelligence"]
-    Workers -.-> Scope{"Task matches trained specialty?"}
-    Scope -.->|Yes| Specialist["Delegate bounded task to the matching trained model"]
-    Scope -.->|No| Reroute["Retain in intelligence layer or route to a qualified specialist"]
-    Specialist -.-> Evidence["Return specialty result and execution evidence to coordinating agent"]
-    Evidence -.-> Workers
-    Workers -.-> Gate["Verify provider IDs, access, capabilities, routing, and cost admission"]
-    Agent -.-> Conductor["Target: Conductor uses Argon"]
-    Agent -.-> Workers["Target: other agents use approved Flash workhorse"]
-    Conductor -.-> Gate["Verify provider IDs, access, capabilities, routing, and cost admission"]
-    Workers -.-> Gate
-    Gate -.-> Validation["Validate direct chat, Boardroom, tools, and failure recovery"]
-    Media -.-> Preserve["Preserve Nano Banana fast and Pro image paths and other supported tools"]
-    Preserve -.-> Validation
+    Chat["Direct chat or Boardroom agent request"] --> Identity["Agent identity, prompt, tools, and context"]
+    Identity --> Select{"BaseAgent config supplies modelId?"}
+    Select -->|Yes| Explicit["Use configured model ID"]
+    Select -->|No| Registry["Strict getFineTunedModel registry"]
+    Registry --> Tuned["Reviewed R8 endpoint or explicit domain alias"]
+    Explicit --> Resolve["Firebase client resolves recognized keys and Remote Config overrides"]
+    Tuned --> Resolve
+    Resolve --> Gateway["generateContentStream backend"]
+    Gateway --> Admission["Verified auth, App Check, cost admission, model allowlist"]
+    Admission -->|Rejected| Rejected["Visible authorization, model, or cost-admission error"]
+    Admission -->|Admitted| Kind{"Approved model is a tuned endpoint?"}
+    Kind -->|Yes| Vertex["Resolve full endpoint project and location"]
+    Kind -->|No| Base["Use approved base model"]
+    Vertex --> Response["Stream response or explicit failure"]
+    Base --> Response
+    Vertex -->|Unavailable or disabled| Failure["Specialist-unavailable result; no general-model substitution"]
+    Identity --> Tools["Independent tool authorization, approval, and result evidence"]
+    Tools --> Media["Image, video, audio, retrieval, and department capabilities"]
+```
+
+## Configured model references
+
+These are repository values, not a claim that a provider currently accepts every
+ID or that each agent invokes it in production.
+
+| Source and role | Configured reference | Routing implication |
+| --- | --- | --- |
+| Renderer `TEXT_AGENT` | `gemini-3.1-pro-preview` | Current client default for recognized agent capability keys; a Remote Config override can replace it. This literal is absent from the inspected server text-stream allowlist. |
+| Renderer `TEXT_FAST` | `gemini-3.8-flash` | Configured workhorse reference, present in the server allowlist. |
+| Server `TEXT.PRO` | `gemini-4-argon` | Server default when the stream request omits a model; present in the allowlist. It does not rewrite a supplied tuned endpoint. |
+| Server `TEXT.FAST` | `gemini-3.8-flash` | Configured server workhorse reference. |
+| Agent registry | Generated Vertex endpoint resource IDs and domain aliases | Default BaseAgent selection remains trained routing unless a model ID is supplied explicitly. Missing/disabled tuned routing fails visibly. |
+| Fast and Pro images | `gemini-3.1-flash-image`, `gemini-3-pro-image` | Separate image paths; text routing changes do not prove image capability. |
+| Server legacy image path | `gemini-2.5-flash-image` | Retained legacy image reference; validate its supported path separately. |
+
+## Required intelligence hierarchy
+
+Dashed edges describe the target and its acceptance work, not deployed-state proof.
+
+```mermaid
+flowchart TD
+    User["User goal and constraints"] -.-> Conductor["Argon Conductor plans and coordinates"]
+    Conductor -.-> Intelligence["Flash 3.8 department intelligence"]
+    Intelligence -.-> Scope{"Task matches a trained specialty?"}
+    Scope -.->|Yes| Worker["Matching trained model handles bounded specialty task"]
+    Scope -.->|No| Reroute["Keep in intelligence layer or select another qualified specialty"]
+    Worker -.-> Evidence["Return result, provenance, and tool evidence"]
+    Evidence -.-> Intelligence
+    Reroute -.-> Intelligence
+    Intelligence -.-> Review["Conductor checks goal and evidence"]
+    Review -.-> Deliver["Deliver verified outcomes and explicit uncertainty"]
 ```
 
 ## Transition Breakdown
 
-1. `packages/renderer/src/services/agent/fine-tuned-models.ts` currently requires a tuned endpoint for each valid agent, directly or through an alias. `IndiiNucleus.ts` also selects the generalist tuned model. Updating only a central model label would not migrate these call sites.
-2. The founder confirms Argon for the Conductor and Flash 3.8 for the other agents’ intelligence. Trained models remain specialty workers under that intelligence layer. Route only matching, bounded tasks to them; preserve their distinct prompts, tool permissions, and domain identity. Confirm exact provider API IDs and access before wiring the target. This chart does not assert the target is deployed.
-2. The founder directs Conductor to Argon and other agents to Flash. The recalled “Flash 3.5” version needs confirmation against the approved current provider catalog before selecting an API ID. Argon is the target, not an assertion that existing tuned endpoints already serve it.
-3. Model migration must cover renderer selection, backend provider routing, supported tool schemas, streaming, token and cost reservation, and error attribution. Preserve agent identities, scoped permissions, and evidence-based receipts.
-4. Media tools have their own provider/model paths. Keep fast Nano Banana and Pro image generation, plus other supported agent tools, in the acceptance matrix. A text-model migration alone does not validate image generation or asset retrieval.
-5. A specialist-unavailable response is a surfaced failure, not proof of its root cause. The backend classifier groups multiple provider errors; diagnose the original provider status and routing configuration before naming an outage.
-6. Keep approvals deterministic and request-bound. See [approval lifecycle](08-bug-reporter-pipeline.md) and [Boardroom execution](04-boardroom-context-orchestration.md). Provider success, tool authorization, tool completion, and visible deliverable rendering are separate acceptance checks.
+1. [BaseAgent](../../packages/renderer/src/services/agent/BaseAgent.ts) gives an
+   explicit `config.modelId` precedence; otherwise it calls the strict
+   [trained-model registry](../../packages/renderer/src/services/agent/fine-tuned-models.ts).
+   [IndiiNucleus](../../packages/renderer/src/services/agent/IndiiNucleus.ts) also
+   explicitly selects the generalist tuned endpoint. Changing one model label
+   cannot by itself establish the required hierarchy.
+2. The [Firebase intelligence client](../../packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts)
+   resolves recognized capability/model keys and optional Remote Config overrides.
+   An unrecognized full endpoint ID is preserved. Active cloud overrides have not
+   been inspected for this chart.
+3. The [stream gateway](../../packages/firebase/src/index.ts) checks the
+   [server-owned allowlist](../../packages/firebase/src/config/textStreamModels.ts),
+   validates reservation coverage, and resolves approved tuned endpoint resources.
+   A disabled or unavailable specialist produces a typed failure; it is not
+   silently replaced with a general model. A public error alone does not identify
+   the original provider/routing cause.
+4. Compare [renderer model configuration](../../packages/renderer/src/core/config/intelligence-models.ts)
+   with [server configuration](../../packages/firebase/src/config/models.ts).
+   The client/server agent-default mismatch above needs resolution and exact-path
+   verification; configured Argon availability does not prove Conductor dispatch.
+5. Trained specialty dispatch, out-of-scope rerouting, and handoff remain separate
+   acceptance requirements. Preserve the agents' specialized prompts and tools.
+   Media models and capabilities retain their independent provider and admission
+   paths, including fast, Pro, and legacy image references where supported.
+6. Keep approvals request-bound and deterministic. See [approval lifecycle](08-bug-reporter-pipeline.md),
+   [Boardroom execution](04-boardroom-context-orchestration.md), and
+   [stream reservation lifecycle](agent-stream-reservation-boardroom-budget.md).
+   Provider response, consent, tool execution, persisted receipt, and visible
+   deliverable are distinct facts.
 
 ## Completion criteria
 
-Confirm exact provider model IDs and account access; implement the intelligence hierarchy while retaining specialty-scoped trained routing; verify matching specialty dispatch, out-of-scope rerouting, and result handoff; verify genuine authenticated direct and Boardroom requests; exercise request-bound approve/deny and recovery; verify fast and Pro images and retained tools; inspect exact-commit CI and deployed behavior before calling the migration complete.
-Confirm exact provider model IDs and account access; replace or explicitly retire old tuned routing; verify genuine authenticated direct and Boardroom requests; exercise request-bound approve/deny and recovery; verify fast and Pro images and retained tools; inspect exact-commit CI and deployed behavior before calling the migration complete.
+- Align actual Conductor and department dispatch with approved provider IDs and
+  admission rules; retain trained models for matching specialty tasks.
+- Verify specialty scope, out-of-scope rerouting, and result/evidence handoff.
+- Exercise genuine authenticated direct chat and Boardroom paths, including
+  request-bound approve/deny, interruption, and recovery.
+- Verify fast and Pro image generation, retained supported legacy/media paths,
+  and asset retrieval independently of text generation.
+- Inspect exact-commit CI and genuine deployed results before declaring the
+  migration complete. Source labels, an allowed ID, and local tests are partial
+  evidence only.

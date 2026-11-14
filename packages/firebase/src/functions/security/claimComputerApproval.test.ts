@@ -30,7 +30,7 @@ vi.mock('../security/arcjet', () => ({ protectAuthenticatedApiRequest: mocks.pro
 vi.mock('../../config/secrets', () => ({ arcjetKey: {} }));
 
 import { Timestamp } from 'firebase-admin/firestore';
-import { claimComputerApproval, completeComputerApproval } from './claimComputerApproval';
+import { claimComputerApproval, completeComputerApproval, denyComputerApproval } from './claimComputerApproval';
 
 const invoke = claimComputerApproval as unknown as (request: unknown) => Promise<unknown>;
 const invokeComplete = completeComputerApproval as unknown as (request: unknown) => Promise<unknown>;
@@ -72,6 +72,26 @@ describe('claimComputerApproval expiry', () => {
     });
 });
 
+describe('approval owner and outcome boundaries (structural)', () => {
+    beforeEach(() => vi.clearAllMocks());
+    it.each([completeComputerApproval, denyComputerApproval])('rejects a changed expected owner before reading any approval', async fn => {
+        await expect((fn as unknown as (value: unknown) => Promise<unknown>)({
+            auth: { uid: 'artist-2', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+            data: { approvalId: 'approval-1', expectedOwnerId: 'artist-1', success: true },
+        })).rejects.toMatchObject({ code: 'permission-denied' });
+        expect(mocks.get).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+    it.each(['false', 1, null, undefined])('rejects a nonboolean completion outcome %j', async success => {
+        await expect(invokeComplete({
+            auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+            data: { approvalId: 'approval-1', expectedOwnerId: 'artist-1', success },
+        })).rejects.toMatchObject({ code: 'invalid-argument' });
+        expect(mocks.get).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+});
+
 describe('completeComputerApproval', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -85,7 +105,7 @@ describe('completeComputerApproval', () => {
 
         const result = await invokeComplete({
             auth: { uid: 'artist-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
-            data: { approvalId: 'approval-1', success: true },
+            data: { approvalId: 'approval-1', expectedOwnerId: 'artist-1', success: true },
         });
 
         expect(result).toMatchObject({ id: 'approval-1', status: 'executed', success: true });
