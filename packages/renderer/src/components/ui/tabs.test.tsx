@@ -78,6 +78,65 @@ describe('Tabs Component', () => {
         expect(last).toHaveAttribute('aria-selected', 'true');
     });
 
+    it('skips CSS-hidden triggers and wrappers during keyboard navigation', () => {
+        render(<Tabs defaultValue="first"><TabsList>
+            <TabsTrigger value="first">First</TabsTrigger>
+            <TabsTrigger value="hidden" style={{ visibility: 'hidden' }}>Hidden</TabsTrigger>
+            <div style={{ display: 'none' }}><TabsTrigger value="wrapped">Wrapped</TabsTrigger></div>
+            <TabsTrigger value="last">Last</TabsTrigger>
+        </TabsList></Tabs>);
+        const first = screen.getByRole('tab', { name: 'First' });
+        first.focus();
+        fireEvent.keyDown(first, { key: 'ArrowRight' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(last).toHaveFocus();
+        expect(last).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('restores the keyboard entry point when a selected tab is hidden through CSS', async () => {
+        function group(hidden: boolean) {
+            return <Tabs value="first"><TabsList>
+                <div style={{ display: hidden ? 'none' : 'contents' }}>
+                    <TabsTrigger value="first">First</TabsTrigger>
+                </div>
+                <TabsTrigger value="last">Last</TabsTrigger>
+            </TabsList></Tabs>;
+        }
+        const { rerender } = render(group(false));
+        const first = screen.getByRole('tab', { name: 'First' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(first.tabIndex).toBe(0);
+        rerender(group(true));
+        await waitFor(() => expect(last.tabIndex).toBe(0));
+        expect(first.tabIndex).toBe(-1);
+        rerender(group(false));
+        await waitFor(() => expect(first.tabIndex).toBe(0));
+        expect(last.tabIndex).toBe(-1);
+    });
+
+    it('rechecks the entry point after a viewport resize changes stylesheet visibility', async () => {
+        const style = document.createElement('style');
+        document.head.append(style);
+        try {
+            render(<Tabs value="first"><TabsList>
+                <TabsTrigger value="first" className="responsive-tab">First</TabsTrigger>
+                <TabsTrigger value="last">Last</TabsTrigger>
+            </TabsList></Tabs>);
+            const first = screen.getByRole('tab', { name: 'First' });
+            const last = screen.getByRole('tab', { name: 'Last' });
+            style.textContent = '.responsive-tab { display: none; }';
+            fireEvent(window, new Event('resize'));
+            await waitFor(() => expect(last.tabIndex).toBe(0));
+            expect(first.tabIndex).toBe(-1);
+            style.textContent = '';
+            fireEvent(window, new Event('resize'));
+            await waitFor(() => expect(first.tabIndex).toBe(0));
+            expect(last.tabIndex).toBe(-1);
+        } finally {
+            style.remove();
+        }
+    });
+
     it('skips nested tabs during keyboard navigation', () => {
         render(
             <Tabs defaultValue="first">

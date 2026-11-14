@@ -41,6 +41,19 @@ const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
 )
 Tabs.displayName = "Tabs"
 
+/** CSS visibility matters for responsive tabs as well as native hidden/inert. */
+function isAvailableTab(tab: HTMLElement): boolean {
+    if (tab.matches(':disabled, [aria-disabled="true"]') || tab.closest('[hidden], [inert]')) return false
+    const view = tab.ownerDocument.defaultView
+    if (!view) return true
+    const visibility = view.getComputedStyle(tab).visibility
+    if (visibility === 'hidden' || visibility === 'collapse') return false
+    for (let element: HTMLElement | null = tab; element; element = element.parentElement) {
+        if (view.getComputedStyle(element).display === 'none') return false
+    }
+    return true
+}
+
 const TabsList = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
@@ -55,8 +68,7 @@ const TabsList = React.forwardRef<
         const updateTabStop = () => {
             const tabs = Array.from(list.querySelectorAll<HTMLElement>('[role="tab"]'))
                 .filter(tab => tab.closest('[role="tablist"]') === list)
-            const available = tabs.filter(tab => !tab.matches(':disabled, [aria-disabled="true"]') &&
-                !tab.closest('[hidden], [inert]'))
+            const available = tabs.filter(isAvailableTab)
             const fallback = available.find(tab => tab.getAttribute('aria-selected') === 'true') ?? available[0]
             for (const tab of tabs) {
                 if (tab.hasAttribute('data-tab-index-override')) continue
@@ -67,8 +79,13 @@ const TabsList = React.forwardRef<
         updateTabStop()
         const observer = new MutationObserver(updateTabStop)
         observer.observe(list, { subtree: true, childList: true, attributes: true,
-            attributeFilter: ['disabled', 'aria-disabled', 'aria-selected', 'hidden', 'inert', 'tabindex', 'data-tab-index-override'] })
-        return () => observer.disconnect()
+            attributeFilter: ['disabled', 'aria-disabled', 'aria-selected', 'hidden', 'inert', 'tabindex', 'data-tab-index-override', 'class', 'style'] })
+        const view = list.ownerDocument.defaultView
+        view?.addEventListener('resize', updateTabStop)
+        return () => {
+            observer.disconnect()
+            view?.removeEventListener('resize', updateTabStop)
+        }
     }, [])
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -79,7 +96,7 @@ const TabsList = React.forwardRef<
 
         const list = e.currentTarget
         const tabs = Array.from(list.querySelectorAll('[role="tab"]:not([disabled]):not([aria-disabled="true"])')) as HTMLElement[]
-        const ownTabs = tabs.filter(tab => tab.closest('[role="tablist"]') === list && !tab.closest('[hidden], [inert]'))
+        const ownTabs = tabs.filter(tab => tab.closest('[role="tablist"]') === list && isAvailableTab(tab))
         const index = ownTabs.indexOf(list.ownerDocument.activeElement as HTMLElement)
 
         if (index === -1) return
