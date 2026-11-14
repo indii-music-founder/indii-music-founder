@@ -2,6 +2,8 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import WorkflowLab from './WorkflowLab';
+import { protocolToReactFlow } from './utils/maestroAdapter';
+import { WORKFLOW_REGISTRY } from '@/services/agent/WorkflowRegistry';
 
 let mockSelectedNodeId: string | null = null;
 
@@ -75,5 +77,20 @@ describe('WorkflowLab Inspector & Library responsive toggle (ISSUE-1616)', () =>
 
         expect(screen.getByTestId('workflow-right-panel').className).toContain('flex');
         expect(screen.getByTestId('mock-node-inspector')).toBeInTheDocument();
+    });
+});
+
+describe('maestroAdapter protocolToReactFlow (ISSUE-1617)', () => {
+    it('maps protocol agentIds to valid departmentNode definitions instead of Router fallback', () => {
+        const growthProtocol = WORKFLOW_REGISTRY['INDII_GROWTH_PROTOCOL'];
+        expect(growthProtocol).toBeDefined();
+
+        const { nodes } = protocolToReactFlow(growthProtocol);
+        expect(nodes.length).toBe(growthProtocol.steps.length);
+        for (const node of nodes) {
+            expect(node.data.nodeType).toBe('department');
+            expect(node.data.departmentName).toMatch(/Department$|Manager$/);
+            expect(node.data.selectedJobId).toBeTruthy();
+        }
     });
 });
