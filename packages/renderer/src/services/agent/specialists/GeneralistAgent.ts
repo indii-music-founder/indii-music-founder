@@ -1,5 +1,6 @@
  
 import { BaseAgent } from '../BaseAgent';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
 import {
@@ -66,6 +67,8 @@ export class GeneralistAgent extends BaseAgent {
             color: 'bg-green-500',
             category: 'manager',
             systemPrompt: systemPrompt,
+            // Conductor reasoning uses Argon; delegated specialists retain their tuned Vertex endpoints.
+            modelId: INTELLIGENCE_MODELS.TEXT.CONDUCTOR,
             tools: []
         });
 

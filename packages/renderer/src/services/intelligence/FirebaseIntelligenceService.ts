@@ -344,30 +344,34 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             ) {
                 const unifiedModelKey = 'TEXT_AGENT';
                 const remoteOverride = this.remoteConfig.overrides[unifiedModelKey];
-                const resolvedModel = remoteOverride || APPROVED_MODELS[unifiedModelKey];
+                const resolvedModel = typeof remoteOverride === 'string' && remoteOverride.trim()
+                    ? remoteOverride.trim()
+                    : APPROVED_MODELS[unifiedModelKey];
                 logger.info(`[FirebaseIntelligenceService] Routing multimodal capability "${normalized}" to unified model: ${resolvedModel}`);
                 return resolvedModel;
             }
         }
 
+        const normalizedModelKey = candidate.toUpperCase();
+
         let modelKey: string | undefined;
 
         // 1. Check if the candidate is directly a mapped capability
-        if (normalized in CAPABILITY_TO_MODEL_KEY) {
+        if (Object.prototype.hasOwnProperty.call(CAPABILITY_TO_MODEL_KEY, normalized)) {
             modelKey = CAPABILITY_TO_MODEL_KEY[normalized];
-        } else if (candidate in APPROVED_MODELS) {
+        } else if (Object.prototype.hasOwnProperty.call(APPROVED_MODELS, normalizedModelKey)) {
             // 2. Check if the candidate is directly a model key (e.g., 'TEXT_AGENT')
-            modelKey = candidate;
+            modelKey = normalizedModelKey;
         } else {
             // 3. Otherwise try to reverse-lookup the model key from the model ID
             modelKey = getModelKey(candidate);
         }
 
         // 4. Resolve overrides or fallback to APPROVED_MODELS default
-        if (modelKey && modelKey in APPROVED_MODELS) {
+        if (modelKey && Object.prototype.hasOwnProperty.call(APPROVED_MODELS, modelKey)) {
             const remoteOverride = this.remoteConfig.overrides[modelKey as keyof typeof APPROVED_MODELS];
-            if (remoteOverride) {
-                return remoteOverride;
+            if (typeof remoteOverride === 'string' && remoteOverride.trim()) {
+                return remoteOverride.trim();
             }
             return APPROVED_MODELS[modelKey as keyof typeof APPROVED_MODELS];
         }
@@ -638,6 +642,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!tools && Array.isArray(configRecord.tools)) {
             tools = configRecord.tools as Tool[];
         }
+        // Legacy callers may place request options inside generation config.
+        // Explicit request options take precedence.
+        if (!options?.safetySettings && Array.isArray(configRecord.safetySettings)) {
+            options = { ...options, safetySettings: configRecord.safetySettings as SafetySetting[] };
+        }
+        if (!options?.toolConfig && configRecord.toolConfig && typeof configRecord.toolConfig === 'object' && !Array.isArray(configRecord.toolConfig)) {
+            options = { ...options, toolConfig: configRecord.toolConfig as ToolConfig };
+        }
         delete configRecord.systemInstruction;
         delete configRecord.tools;
         delete configRecord.toolConfig;
@@ -666,9 +678,26 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             }))
             : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
 
-        const cacheKey = JSON.stringify({ leanPrompt, modelName, config: mergedConfig, systemInstruction });
+        // Never share in-flight requests across users or across distinct tool,
+        // cancellation, billing, or safety contexts.
+        const requestUserId = auth.currentUser?.uid;
+        const canCoalesce = Boolean(requestUserId)
+            && !options?.skipCache
+            && !options?.signal
+            && !options?.cachedContent
+            && !options?.thoughtSignature
+            && !options?.toolConfig
+            && !options?.safetySettings
+            && !options?.boardroomDispatchLeaseId
+            && !options?.boardroomAgentId
+            && options?.timeout === undefined
+            && !tools?.length
+            && (typeof prompt === 'string' || (Array.isArray(prompt) &&
+                prompt.every(content => content.parts.every(part =>
+                    'text' in part && typeof part.text === 'string'))));
+        const cacheKey = JSON.stringify({ requestUserId, leanPrompt, modelName, config: mergedConfig, systemInstruction });
 
-        if (!options?.skipCache && this.activeRequests.has(cacheKey)) {
+        if (canCoalesce && this.activeRequests.has(cacheKey)) {
             // logger.debug(`[FirebaseIntelligenceService] Coalescing request for ${modelName}`);
             return this.activeRequests.get(cacheKey)!;
         }
@@ -688,7 +717,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             // agent misattributed it to the image engine (generateImageV3 never
             // received the request). 120s bounds runaway calls while fitting the
             // real server capability.
-            const requestTimeout = options?.timeout || 120_000;
+            const requestTimeout = options?.timeout ?? 120_000;
             if (requestTimeout > 0) {
                 timeoutId = setTimeout(() => {
                     timeoutController.abort('TIMEOUT');
@@ -829,7 +858,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         };
 
         const requestPromise = executeRequest();
-        this.activeRequests.set(cacheKey, requestPromise);
+        if (canCoalesce) this.activeRequests.set(cacheKey, requestPromise);
         // Attach a secondary .catch to the .finally() chain to suppress duplicate
         // UnhandledPromiseRejection — the error is already surfaced via the returned
         // requestPromise. This suppression is intentional, not a silent swallow.
@@ -876,6 +905,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!tools && Array.isArray(streamConfigRecord.tools)) {
             tools = streamConfigRecord.tools as Tool[];
         }
+        // Legacy callers may place request options inside generation config.
+        // Explicit request options take precedence.
+        if (!options?.safetySettings && Array.isArray(streamConfigRecord.safetySettings)) {
+            options = { ...options, safetySettings: streamConfigRecord.safetySettings as SafetySetting[] };
+        }
+        if (!options?.toolConfig && streamConfigRecord.toolConfig && typeof streamConfigRecord.toolConfig === 'object' && !Array.isArray(streamConfigRecord.toolConfig)) {
+            options = { ...options, toolConfig: streamConfigRecord.toolConfig as ToolConfig };
+        }
         delete streamConfigRecord.systemInstruction;
         delete streamConfigRecord.tools;
         delete streamConfigRecord.toolConfig;
@@ -893,7 +930,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         // ISSUE-1367: same 25s→120s raise as the non-stream path — this timer
         // covers the entire stream (queue + pre-flight + tokens), and the
         // generateContentStream callable allows 300s server-side.
-        const requestTimeout = options?.timeout || 120_000;
+        const requestTimeout = options?.timeout ?? 120_000;
         if (requestTimeout > 0) {
             timeoutId = setTimeout(() => {
                 timeoutController.abort('TIMEOUT');
@@ -1025,7 +1062,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -1329,20 +1366,23 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                     logger.warn(`[FirebaseIntelligenceService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
 
-                    await new Promise((resolve, reject) => {
+                    await new Promise<void>((resolve, reject) => {
+                        let settled = false;
                         const handleAbort = () => {
+                            if (settled) return;
+                            settled = true;
                             clearTimeout(timer);
                             signal?.removeEventListener('abort', handleAbort);
                             reject(normalizeStreamInterruption(new Error('Request aborted during backoff'), signal));
-                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false }));
                         };
                         const timer = setTimeout(() => {
+                            if (settled) return;
+                            settled = true;
                             signal?.removeEventListener('abort', handleAbort);
-                            resolve(undefined);
+                            resolve();
                         }, waitTime);
                         if (signal) {
                             signal.addEventListener('abort', handleAbort, { once: true });
-                            // The signal may have aborted between the catch check and registration.
                             if (signal.aborted) handleAbort();
                         }
                     });
@@ -1362,6 +1402,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         if (Array.isArray(prompt)) {
             return prompt.map(content => ({
+                ...content,
                 role: content.role || 'user',
                 parts: content.parts.map((part) => {
                     if ('text' in part && typeof part.text === 'string') {

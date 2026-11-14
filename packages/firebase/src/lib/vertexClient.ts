@@ -60,7 +60,9 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
     vertexai: true,
     project: projectId,
     location: location,
-    httpOptions: { baseUrl }
+    // Pin the Vertex API contract across @google/genai major upgrades.
+    // Never inherit the Gemini Developer API's version default.
+    httpOptions: { baseUrl, apiVersion: 'v1beta1' }
   });
 
   clientsCache.set(cacheKey, client);

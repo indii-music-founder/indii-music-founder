@@ -31,7 +31,7 @@ describe('vertexClient', () => {
       vertexai: true,
       project: 'test-project',
       location: 'global',
-      httpOptions: { baseUrl: 'https://aiplatform.googleapis.com' },
+      httpOptions: { baseUrl: 'https://aiplatform.googleapis.com', apiVersion: 'v1beta1' },
     }));
   });
 
@@ -45,7 +45,7 @@ describe('vertexClient', () => {
       vertexai: true,
       project: '148015878263',
       location: 'us',
-      httpOptions: { baseUrl: 'https://aiplatform.us.rep.googleapis.com' },
+      httpOptions: { baseUrl: 'https://aiplatform.us.rep.googleapis.com', apiVersion: 'v1beta1' },
     }));
   });
 
@@ -58,7 +58,25 @@ describe('vertexClient', () => {
       vertexai: true,
       project: 'test-project',
       location: 'us-central1',
-      httpOptions: { baseUrl: 'https://us-central1-aiplatform.googleapis.com' },
+      httpOptions: { baseUrl: 'https://us-central1-aiplatform.googleapis.com', apiVersion: 'v1beta1' },
     }));
   });
+  it('reuses a client for the same project and location without changing credentials', async () => {
+    const { getVertexAIClient } = await import('./vertexClient');
+    const first = getVertexAIClient('test-project', 'us');
+    const second = getVertexAIClient('test-project', 'us');
+    expect(second).toBe(first);
+    expect(mockGoogleGenAI).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not share clients between different projects or locations', async () => {
+    const { getVertexAIClient } = await import('./vertexClient');
+    const a = getVertexAIClient('project-a', 'us');
+    const b = getVertexAIClient('project-b', 'us');
+    const c = getVertexAIClient('project-a', 'eu');
+    expect(a).not.toBe(b);
+    expect(a).not.toBe(c);
+    expect(mockGoogleGenAI).toHaveBeenCalledTimes(3);
+  });
+
 });

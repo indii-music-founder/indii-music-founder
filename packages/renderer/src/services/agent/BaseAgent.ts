@@ -1303,7 +1303,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 const resolvedModel = this.modelId;
                 if (iterations === 1) {
-                    logger.info(`[${this.id}] Using fine-tuned endpoint: ${resolvedModel}`);
+                    logger.info(`[${this.id}] Using configured Vertex model: ${resolvedModel}`);
                 }
 
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
@@ -1329,7 +1329,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     try {
                         streamResult = await AutonomousIntelligence.generateContentStream(
                             requestContents,
-                            resolvedModel, // modelOverride — strict fine-tuned endpoint
+                            resolvedModel, // modelOverride — approved base model or registered fine-tuned endpoint
                             generationConfig, // config — includes judgment-layer maxOutputTokens
                             undefined, // systemInstruction
                             iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContentStream']>[4], // tools — bridges internal ToolDefinition to SDK type
