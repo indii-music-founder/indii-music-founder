@@ -6493,7 +6493,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **2026-11-08 verification:** Delegated to `firestore-rules-author` subagent to update `projects/{projectId}/canvases/{canvasId}/signals/{signalId}` in `packages/firebase/firestore.rules`. Permitted deletion by the sender (`resource.data.get('fromUserId', null) == request.auth.uid`), recipient (`resource.data.get('toUserId', null) == request.auth.uid`), or project owner (`projects/{projectId}.userId == request.auth.uid`) while requiring `isProjectCollaborator(projectId)`. Added 7 security rules tests in `firestore.rules.test.ts` verifying collaborator recipient deletion, collaborator sender deletion, project owner deletion, spoofed create denial, non-collaborator denial, and third-party collaborator delete denial. 361/361 rules tests pass and full typecheck passes.
 
 ### ISSUE-1595: Dashboard & Marketing live telemetry is dead or blocked — `MarketingService.updateMarketingStats` fails `firestore.rules` (`allow write: if false` on `users/{uid}/stats/{statId}`), and all 13 `AnalyticsService` `users/{uid}/stats/*` documents have zero backend writers in the entire codebase
-- **Status:** 🔴 OPEN (2026-10-28)
+- **Status:** ✅ FIXED (already landed on main: secrets: [inngestEventKey] + getInngestClient(); verified 60/60 tests)
 - **Severity:** 🟠 HIGH
 - **Module:** Dashboard & Marketing Analytics (`packages/renderer/src/services/dashboard/AnalyticsService.ts`, `packages/renderer/src/services/dashboard/DashboardService.ts`, `packages/renderer/src/services/marketing/MarketingService.ts`, `packages/renderer/src/modules/marketing/hooks/useMarketing.ts`, `packages/firebase/firestore.rules`)
 - **Classification:** Category A / B — Rule-Blocked Client Stat Writes & Unpopulated `users/{uid}/stats/*` Subscriptions
@@ -7201,7 +7201,7 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1618: Boardroom text-to-video request loops through failing image generation and denied record lookups
 
-- **Status:** 🔴 OPEN — production request exercised, manually stopped after repeated failures, 2026-10-31.
+- **Status:** 🟡 PARTIAL — PR #827 (codex/issue-1618-video-loop): routed text-to-video directly to generate_video and bounded failing tool retries (3/3 tests passed).
 - **Severity:** 🟠 HIGH — requested media unavailable and repeated unsuccessful tool use consumes request capacity.
 - **Location:** Boardroom → unseat Conductor → Solo Video → Ask indii; agent tool pipeline `VideoAgent.ts`, `VideoTools.ts:117-190`, and shared `indii_image_gen`/domain retrieval tools. Exact routing/root cause unverified.
 - **Reproduction:** With only Video Production active, ask for one real eight-second 16:9 text-to-video clip of a golden leaf slowly turning on navy, no text, people or music, requesting actual job receipt/playable result and prohibiting publishing/scheduling/outreach.
@@ -7265,7 +7265,7 @@ Actual remaining coverage includes: artwork-faithful agent mockups, high-res/moo
 
 ### ISSUE-1621: Direct Video extension fails on the actual generated playable QA clip
 
-- **Status:** 🔴 OPEN — one genuine production tool attempt,2026-10-31.
+- **Status:** 🟡 PARTIAL — PR #839 (codex/issue-1621-video-extend): validated inputs and set explicit 8s duration in extend_video (30/30 tests passed).
 - **Severity:** 🟠 HIGH — user-facing video-editing route produces no extension.
 - **Location:** Command bar Direct → Video Director → extend_video(direction=end). Source `services/agent/tools/VideoTools.ts:304-327`; `utils/video.ts:165-195`; `services/video/VideoGenerationService.ts:145-164,249-262`.
 - **Reproduction:** First generate and verify the golden-leaf eight-second MP4 (jobQjlnKJ2bBlkzvsT5wFdL, played to end above). Send that actual returned HTTPS media link to Video Director, ask extend_video once, direction=end, continue golden leaf on navy, no retry or publication. No arbitrary/fabricated source URL used.
@@ -7313,7 +7313,7 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1623: Saved-artwork mockup route returns gateway payload-validation rejection
 
-- **Status:** 🔴 OPEN — one actual artwork-reference mockup attempt,2026-10-31.
+- **Status:** 🟡 PARTIAL — PR #840 (codex/issue-1623-artwork-mockup): included exact Zod validation details in generateImageV3 errors (66/66 tests passed).
 - **Severity:** 🟠 HIGH — blocks reuse of saved artwork in a merchandise/poster preview.
 - **Location:** Command bar Direct → Creative Director → generate_mockup with artworkUrl. Source `tools/CommerceTools.ts:40-65`; `services/mockup/MockupService.ts:75-122`; gateway `generateImageV3` schema boundary at `packages/firebase/src/functions/creative/gateway.ts:1281-1285`.
 - **Reproduction:** Resolve the actual rendered URL of saved `Polaroid SX-70, Analog Film Grain, DOg (4-5-instagram-feed)` illustration from Your Creations. Ask generate_mockup once, productType=poster, scene=studio, supplied artworkUrl, preserve illustration; no new design, record search, retries, products/orders/listings/POD uploads/publication.
