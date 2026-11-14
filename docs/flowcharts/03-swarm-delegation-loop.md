@@ -110,6 +110,12 @@ flowchart TD
 A complete receipt can lower a provisional hold; the updated balance is saved
 before using the judgment. Missing or malformed usage retains the hold. Restarts
 restore the saved spend, and revision conflicts cannot authorize another call.
+Recovery validates the saved execution schema before restoring that balance or
+writing a resume checkpoint. Firestore timestamps are normalized to milliseconds,
+and omitted legacy history defaults to an empty list. Malformed state is refused
+and excluded from the recovery list. A recorded action result proceeds directly
+to evaluation through the existing checkpoint path.
+
 The provider exposes no per-call token ceiling: actual overages are recorded and
 close further admission. This is execution token accounting, not proof of a
 provider-side hard monetary ceiling. Other semantic consumers still require

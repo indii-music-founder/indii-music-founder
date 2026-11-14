@@ -7,6 +7,8 @@ import { AgentLoopDefinition, type AgentLoopExecution, AgentLoopTriggerEnum, Age
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { FirestoreService } from '../../FirestoreService';
 
+const { Timestamp } = await vi.importActual<typeof import('firebase/firestore')>('firebase/firestore');
+
 const snapshotOf = (definition: AgentLoopDefinition) => ({
     id: definition.id,
     trigger: definition.trigger,
@@ -153,6 +155,30 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
     });
 
+    it.each([
+        { history: null },
+        { history: [{ iteration: 1, prompt: 'Review', timestamp: 1, passed: 'true' }] },
+        { status: 'UNKNOWN' },
+        { updatedAt: 'yesterday' },
+    ])('rejects malformed saved execution state before admission (structural): %j', async invalidFields => {
+        const definition: AgentLoopDefinition = {
+            id: 'invalid-state-loop', trigger: 'MANUAL', goal: 'Review', verifiabilityCriteria: 'Complete',
+            judgeMode: 'LLM_EVALUATION', maxIterations: 1, createdAt: 1, updatedAt: 1,
+        };
+        const saved = {
+            id: 'invalid-state-execution', loopId: definition.id, definitionSnapshot: snapshotOf(definition),
+            status: 'FAILED', currentIteration: 1, history: [], tokenBudgetSpent: 0,
+            actionCheckpoint: { phase: 'READY', iteration: 1 }, createdAt: 1, updatedAt: 1,
+            ...invalidFields,
+        };
+        seedExecution(saved);
+        await expect(new AgentLoopService().resumeLoop(definition, saved.id, { userId: 'user1' }))
+            .rejects.toThrow('invalid saved execution state');
+        expect(FirestoreService.prototype.setIfRevision).not.toHaveBeenCalled();
+        expect(maestroBatchingService.executeBatch).not.toHaveBeenCalled();
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
     it('lists only checkpoints eligible for recovery', async () => {
         const ready = {
             id: 'ready', loopId: 'loop', status: 'IDLE' as const, currentIteration: 1,
@@ -165,12 +191,16 @@ describe('AgentLoopService', () => {
         };
         vi.spyOn(FirestoreService.prototype, 'list').mockResolvedValue([
             ready,
+            { ...ready, id: 'legacy-history', history: undefined } as unknown as AgentLoopExecution,
             { ...ready, id: 'legacy', definitionSnapshot: undefined },
+            { ...ready, id: 'native-dates', createdAt: Timestamp.fromMillis(1), updatedAt: Timestamp.fromMillis(1) } as unknown as AgentLoopExecution,
+            { ...ready, id: 'serialized-dates', updatedAt: { seconds: 0, nanoseconds: 1000000 } } as unknown as AgentLoopExecution,
+            { ...ready, id: 'invalid-history', history: null } as unknown as AgentLoopExecution,
             { ...ready, id: 'no-budget', tokenBudgetSpent: undefined },
             { ...ready, id: 'claimed', actionCheckpoint: { phase: 'DISPATCHING', iteration: 1, prompt: 'Review' } },
             { ...ready, id: 'exhausted', currentIteration: 2, actionCheckpoint: { phase: 'READY', iteration: 2 } },
         ]);
-        expect(await agentLoopService.getResumableLoops('user1')).toEqual([ready]);
+        expect(await agentLoopService.getResumableLoops('user1')).toEqual([ready, { ...ready, id: 'legacy-history' }, { ...ready, id: 'native-dates' }, { ...ready, id: 'serialized-dates' }]);
     });
 
     it('allows only one dispatch when independent clients resume the same revision', async () => {
@@ -457,7 +487,7 @@ describe('AgentLoopService', () => {
         expect(maestroBatchingService.executeBatch).toHaveBeenCalledTimes(1);
     });
 
-    it('evaluates a recorded result on resume without dispatching again', async () => {
+    it.each([1000, Timestamp.fromMillis(1000), { seconds: 1, nanoseconds: 0 }])('evaluates a recorded result with persisted date %j without dispatching again (structural)', async updatedAt => {
         const def: AgentLoopDefinition = {
             id: 'recorded-result-loop', trigger: AgentLoopTriggerEnum.enum.MANUAL,
             goal: 'Review result', verifiabilityCriteria: 'Must be complete',
@@ -469,7 +499,7 @@ describe('AgentLoopService', () => {
             tokenBudgetSpent: 0,
             actionCheckpoint: { phase: 'RESULT_RECORDED' as const, iteration: 1, prompt: 'Saved prompt', output: 'Saved output' },
             status: AgentLoopStatusEnum.enum.EVALUATING, currentIteration: 1,
-            history: [], createdAt: 1000, updatedAt: 1000,
+            history: [], createdAt: 1000, updatedAt,
         };
         seedExecution(saved);
         (agentLoopService as any).executionOwners.set(saved.id, 'user1');
