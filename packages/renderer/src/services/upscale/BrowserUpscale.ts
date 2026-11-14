@@ -16,9 +16,40 @@ export interface BrowserUpscaleOptions {
 function loadImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const image = new Image();
+        if (!url.startsWith('data:') && !url.startsWith('blob:')) {
+            image.crossOrigin = 'anonymous';
+        }
         image.onload = () => resolve(image);
         image.onerror = () => reject(new Error('Could not read the artwork for enlargement.'));
         image.src = url;
+    });
+}
+
+async function encodeCanvasPngDataUrl(canvas: HTMLCanvasElement): Promise<string> {
+    try {
+        const direct = canvas.toDataURL('image/png');
+        if (direct.startsWith('data:image/png;base64,')) {
+            return direct;
+        }
+    } catch {
+        // Fallback to async toBlob encoding for large canvases
+    }
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) {
+        throw new Error('The browser could not encode this print size.');
+    }
+    return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = String(reader.result || '');
+            if (!result.startsWith('data:image/png;base64,')) {
+                reject(new Error('The browser could not encode this print size.'));
+                return;
+            }
+            resolve(result);
+        };
+        reader.onerror = () => reject(new Error('The browser could not encode this print size.'));
+        reader.readAsDataURL(blob);
     });
 }
 
@@ -125,8 +156,7 @@ export async function browserUpscale({ dataUrl, required, onProgress, onStage, s
         context.drawImage(source, cropX, cropY, cropWidth, cropHeight, 0, 0, width, height);
         context.globalCompositeOperation = 'source-over';
         signal?.throwIfAborted();
-        const url = output.toDataURL('image/png');
-        if (!url.startsWith('data:image/png;base64,')) throw new Error('The browser could not encode this print size.');
+        const url = await encodeCanvasPngDataUrl(output);
         return { url, width, height };
     } finally {
         engine.abort();
