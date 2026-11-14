@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';
@@ -59,6 +60,11 @@ vi.mock('@/services/agent/tools/index', () => ({
 }));
 
 describe('GeneralistAgent Routing Logic', () => {
+    it('selects the approved Argon Conductor model instead of a specialist endpoint', () => {
+        const conductor = new GeneralistAgent();
+        expect((conductor as unknown as { modelId: string }).modelId).toBe(INTELLIGENCE_MODELS.TEXT.CONDUCTOR);
+    });
+
     let agent: GeneralistAgent;
 
     beforeEach(async () => {
