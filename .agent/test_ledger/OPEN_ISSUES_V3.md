@@ -7012,7 +7012,8 @@ The same golden-leaf request progressed from Understanding to `I’m coordinatin
 
 ### ISSUE-1611: Boardroom image request terminates with an unrelated historical response and no media
 
-- **Status:** 🔴 OPEN (2026-11-02; current-message delegation and genuine media acceptance pending)
+- **Status:** 🟡 PARTIAL (2026-11-14; delegated Boardroom step history scoping and authoritative prompt ordering verified in unit tests; live UI acceptance pending)
+- **2026-11-14 verification:** `AgentService.ts` (`handleBoardroomRequestFlow`) now scopes delegated action step `chatHistory` to the most recent 4 turns, clears stale `chatHistoryString` (falling back to trailing 2000 chars only when no `chatHistory` array is present), instructs specialists to treat prior history as background only relative to `[ORIGINAL USER REQUEST]`, and preserves `soloSpecialist` `agentId` on the final Boardroom report. `AgentPromptBuilder.ts` (`buildFullPrompt`) marks `# HISTORY` as background context only and `# CURRENT OBJECTIVE` as authoritative. `BoardroomSoloRoutingAndLoopRecovery.test.ts` (4/4) and `AgentPromptBuilder.test.ts` (44/44) pass (48/48). Jev (`jev-1.14.0`) scored `fix_prevents_historical_hijack=0.86`, `readiness_score=2.15/4.00` (confidence `0.15`). Live Boardroom media UI acceptance remains pending.
 - **Historical status / severity:** CONFIRMED OPEN / HIGH; production reproduction 2026-10-30.
 - **Location:** Home → Enter Boardroom → Ask indii; existing genuine signed-in W-avatar Chrome session. No account created or auth injected; actual plan unverified.
 - **Reproduction:** Submit `For this media QA check, generate exactly one square image of a single golden leaf on a deep navy background, flat screen print shapes, no text. Return the actual generated image. Do not publish or send anything.` Wait through Conductor delegation to Creative Director.

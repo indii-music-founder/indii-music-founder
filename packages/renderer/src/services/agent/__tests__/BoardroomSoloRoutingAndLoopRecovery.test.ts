@@ -157,6 +157,92 @@ describe('ISSUE-1618: VideoAgent retrieval, solo specialist routing, and bounded
         );
     });
 
+    it('ISSUE-1611: scopes stale chatHistory during delegated Boardroom steps so current request takes precedence', async () => {
+        const { AgentService } = await import('@/services/agent/AgentService');
+        const { AgentPromptBuilder } = await import('@/services/agent/builders/AgentPromptBuilder');
+        const service = new AgentService();
+        const executeAgent = vi.fn().mockResolvedValue({
+            text: 'Generated image.',
+            data: null,
+            toolCalls: [{ name: 'indii_image_gen', args: { prompt: 'golden leaf' }, result: { success: true } }],
+        });
+
+        Object.assign(service as unknown as Record<string, unknown>, {
+            getStore: vi.fn().mockResolvedValue({
+                getState: () => ({
+                    activeSessionId: 'sess-1',
+                    activeAgents: ['generalist', 'creative'],
+                    uploadedImages: [],
+                    referencedAssets: [],
+                    generatedHistory: [],
+                    agentHistory: [],
+                    addActiveAgent: vi.fn(),
+                    updateAgentMessage: vi.fn(),
+                    addAgentMessage: vi.fn(),
+                    addMessageToSession: vi.fn(),
+                    appendAgentMessage: vi.fn(),
+                }),
+            }),
+            orchestrator: {
+                determineBoardroomIntent: vi.fn().mockResolvedValue('action'),
+                determineOrchestrationPath: vi.fn().mockResolvedValue({ type: 'single', agentId: 'creative' }),
+            },
+            executor: {
+                execute: executeAgent,
+            },
+            flushSyncMessage: vi.fn(),
+        });
+
+        const longHistory = Array.from({ length: 12 }, (_, idx) => ({
+            id: `msg-${idx}`,
+            role: idx % 2 === 0 ? 'user' : 'model',
+            text: `Historical 4k 3D render discussion turn ${idx}`,
+            timestamp: idx,
+        }));
+
+        await (service as unknown as {
+            handleBoardroomRequestFlow: (
+                task: { rawUserUtterance: string; normalizedUtterance: string },
+                attachments: undefined,
+                context: AgentContext,
+                responseId: string,
+            ) => Promise<void>;
+        }).handleBoardroomRequestFlow(
+            {
+                rawUserUtterance: 'Generate one square image of a single golden leaf on deep navy.',
+                normalizedUtterance: 'Generate one square image of a single golden leaf on deep navy.',
+            },
+            undefined,
+            {
+                userId: 'test-user-1',
+                orgId: 'org-1',
+                userProfile: { id: 'test-user-1' } as never,
+                chatHistory: longHistory as never,
+                chatHistoryString: 'Huge stale 4k 3D render transcript',
+            },
+            'resp-1611',
+        );
+
+        const passedContext = executeAgent.mock.calls[0]?.[2] as AgentContext;
+        expect(passedContext.chatHistory).toHaveLength(4);
+        expect(passedContext.chatHistoryString).toBeUndefined();
+
+        const prompt = AgentPromptBuilder.buildFullPrompt(
+            'Creative prompt',
+            'Generate one square image of a single golden leaf',
+            'Creative Director',
+            'creative',
+            passedContext,
+            {},
+            'Historical 4k 3D render',
+            '',
+            '',
+            '',
+        );
+        expect(prompt).toContain('# HISTORY (BACKGROUND CONTEXT ONLY');
+        expect(prompt).toContain('# CURRENT OBJECTIVE (AUTHORITATIVE');
+    });
+
     it('halts BaseAgent execution on repeated identical tool failure instead of looping', async () => {
         const failingTool = vi.fn().mockResolvedValue({
             success: false,
