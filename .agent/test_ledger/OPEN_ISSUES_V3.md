@@ -4635,6 +4635,8 @@ To prevent process crashes due to unmanaged GPU/WASM allocations:
   6. Track scrub canvas (`NLETrackScrubCanvas.tsx`), clip integration (`TimelineClip.tsx`), and tests (`NLETrackScrubCanvas.test.tsx`, `video.security.test.ts`).
 - **Validation:** 100% clean typecheck (`npm run typecheck`), zero ESLint errors, zero pre-commit gate violations, 15/15 test suites and 94/94 NLE tests passing green.
 - **Lifecycle follow-up (2026-10-24):** `useNLEPlayback` now calls `VideoTrackDecoder.close()` on unmount instead of only purging buffered frames, releasing decoder resources and its hardware pool slot. Focused hook/decoder tests pass. ISSUE-1510 remains PARTIAL: the production hook still constructs decoders without a demuxed encoded-frame feed, and real seek/drift/memory/export benchmarks remain unproven.
+- **Frame lifetime repair (2026-11-14):** `VideoTrackDecoder` now closes a distinct frame replaced at the same timestamp without evicting unrelated buffered frames. Re-adding the identical frame preserves it, and late decoder output after shutdown is closed immediately rather than retained. Three regressions failed on the previous source; the repaired decoder/hook suite passes 10 tests. Renderer TypeScript, scoped ESLint, the test-quality scan and `git diff --check` pass. Jev 1.14 assessed these bounded lifetime defects at Noul 0.93 (398 input / 21 output tokens). This does not supply the missing demuxed encoded-frame feed or establish the real seek, drift, export, or two-hour memory targets. ISSUE-1510 remains PARTIAL.
+
 
 ---
 

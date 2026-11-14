@@ -43,6 +43,7 @@ export class VideoTrackDecoder {
   private frameRingBuffer: Map<bigint, VideoFrameLike> = new Map();
   private maxBufferedFrames: number;
   private isHardwareAccelerated = false;
+  private disposed = false;
 
   constructor(
     trackId: string,
@@ -85,6 +86,19 @@ export class VideoTrackDecoder {
    * Stores a decoded frame into the ring buffer, evicting oldest if capacity is exceeded.
    */
   public addFrame(ptsUs: bigint, frame: VideoFrameLike): void {
+    if (this.disposed) {
+      frame.close();
+      return;
+    }
+
+    const previous = this.frameRingBuffer.get(ptsUs);
+    if (previous === frame) return;
+    if (previous) {
+      previous.close();
+      this.frameRingBuffer.set(ptsUs, frame);
+      return;
+    }
+
     if (this.frameRingBuffer.size >= this.maxBufferedFrames) {
       const oldestKey = this.frameRingBuffer.keys().next().value;
       if (oldestKey !== undefined) {
@@ -141,6 +155,7 @@ export class VideoTrackDecoder {
    * Shuts down decoder and cleans up all retained GPU textures and surfaces.
    */
   public close(): void {
+    this.disposed = true;
     for (const frame of this.frameRingBuffer.values()) {
       try {
         frame.close();

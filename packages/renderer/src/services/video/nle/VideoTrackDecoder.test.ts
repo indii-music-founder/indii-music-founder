@@ -74,6 +74,55 @@ describe('VideoTrackDecoder - Ring-Buffered WebCodecs Decoder', () => {
     expect(decoder.getFrameForPts(3000n, 100n)).toBe(f3);
   });
 
+  it('closes replaced frames without evicting unrelated frames at capacity', () => {
+    const decoder = new VideoTrackDecoder('replacement', undefined, 2);
+    const first = createMockFrame(0);
+    const previous = createMockFrame(33333);
+    const replacement = createMockFrame(33333);
+    decoder.addFrame(0n, first);
+    decoder.addFrame(33333n, previous);
+    decoder.addFrame(33333n, replacement);
+
+    expect(previous.close).toHaveBeenCalledOnce();
+    expect(first.close).not.toHaveBeenCalled();
+    expect(decoder.getBufferedCount()).toBe(2);
+    expect(decoder.getFrameForPts(33333n)).toBe(replacement);
+    decoder.close();
+    expect(first.close).toHaveBeenCalledOnce();
+    expect(replacement.close).toHaveBeenCalledOnce();
+    expect(previous.close).toHaveBeenCalledOnce();
+  });
+
+  it('does not dispose a retained frame when the same frame is added again', () => {
+    const decoder = new VideoTrackDecoder('same-frame', undefined, 1);
+    const frame = createMockFrame(0);
+    decoder.addFrame(0n, frame);
+    decoder.addFrame(0n, frame);
+    expect(frame.close).not.toHaveBeenCalled();
+    expect(decoder.getFrameForPts(0n)).toBe(frame);
+    decoder.close();
+    expect(frame.close).toHaveBeenCalledOnce();
+  });
+
+  it('closes late decoder output after shutdown without retaining it', () => {
+    let output: ((frame: VideoFrameLike) => void) | undefined;
+    const factory: VideoDecoderFactory = { create: (init) => {
+      output = init.output;
+      return {
+        state: 'configured', decode: vi.fn(), flush: vi.fn().mockResolvedValue(undefined),
+        reset: vi.fn(), close: vi.fn(), configure: vi.fn(),
+      };
+    } };
+    const decoder = new VideoTrackDecoder('late-output', factory);
+    decoder.close();
+    const late = createMockFrame(50000);
+    output?.(late);
+    expect(late.close).toHaveBeenCalledOnce();
+    expect(decoder.getBufferedCount()).toBe(0);
+    decoder.close();
+    expect(late.close).toHaveBeenCalledOnce();
+  });
+
   it('configures hardware acceleration via factory and releases pool slot on close', () => {
     let capturedConfig: unknown = null;
     const mockDecoderInstance: VideoDecoderLike = {
