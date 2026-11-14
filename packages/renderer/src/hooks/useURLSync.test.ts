@@ -44,7 +44,7 @@ vi.mock('@/core/store', () => {
 
 // Mock constants
 vi.mock('@/core/constants', () => ({
-    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge', 'distribution'].includes(m)
+    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge', 'distribution', 'settings'].includes(m)
 }));
 
 // These isolated hook tests are structural-only; deployed navigation requires real-user verification.
@@ -217,5 +217,31 @@ describe('useURLSync', () => {
 
         expect(mocks.setModule).not.toHaveBeenCalled();
         expect(mocks.navigate).toHaveBeenCalledWith('/creative/video', { replace: true });
+    });
+
+    it('preserves ?section=remote from window.location.search when navigating to settings (ISSUE-1610)', () => {
+        const { rerender } = renderHook(() => useURLSync());
+
+        window.history.replaceState(null, '', '/?section=remote');
+        mocks.currentModule.value = 'settings';
+        rerender();
+
+        expect(mocks.navigate).toHaveBeenCalledWith('/settings?section=remote');
+        window.history.replaceState(null, '', '/');
+    });
+
+    it('strips ?section=remote when navigating away from settings to another module', () => {
+        mocks.location.pathname = '/settings';
+        mocks.location.search = '?section=remote';
+        mocks.currentModule.value = 'settings';
+        window.history.replaceState(null, '', '/settings?section=remote');
+
+        const { rerender } = renderHook(() => useURLSync());
+
+        mocks.currentModule.value = 'finance';
+        rerender();
+
+        expect(mocks.navigate).toHaveBeenCalledWith('/finance');
+        window.history.replaceState(null, '', '/');
     });
 });
