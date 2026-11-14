@@ -141,13 +141,13 @@ describe('video_generation_direct: ISSUE-1135 frame-conditioned safety proof', (
         const callArgs = generateVideosMock.mock.calls[0][0];
 
         // 1. Prove it's a frame-conditioned job with loaded inline bytes
-        expect(callArgs.image).toBeDefined();
-        expect(callArgs.image.mimeType).toBe('image/png');
-        expect(typeof callArgs.image.imageBytes).toBe('string');
+        expect(callArgs.source.image).toBeDefined();
+        expect(callArgs.source.image.mimeType).toBe('image/png');
+        expect(typeof callArgs.source.image.imageBytes).toBe('string');
 
         // 2. Prove the 'dont_allow' safety setting is accurately preserved to Vertex AI
         expect(callArgs.config).toBeDefined();
         expect(callArgs.config.personGeneration).toBe('dont_allow');
-        expect(callArgs.prompt).toBe('An empty gallery with moving shadows');
+        expect(callArgs.source.prompt).toBe('An empty gallery with moving shadows');
     });
 });

@@ -1379,8 +1379,10 @@ describe('creative gateway generateVideoV3', () => {
 
     expect(mockGenerateVideos).toHaveBeenCalledWith(expect.objectContaining({
       model: 'veo-3.1-fast-generate-001',
-      prompt: 'A cinematic social clip',
-      image: { gcsUri: 'gs://test-bucket/frames/start.png' },
+      source: {
+        prompt: 'A cinematic social clip',
+        image: { gcsUri: 'gs://test-bucket/frames/start.png' },
+      },
       config: expect.objectContaining({
         numberOfVideos: 1,
         aspectRatio: '9:16',
