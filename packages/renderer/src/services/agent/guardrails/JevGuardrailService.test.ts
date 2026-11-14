@@ -17,7 +17,7 @@ vi.mock('../truthOverclaimReporter', () => ({
   reportOverclaimIfNeeded: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { JevGuardrailService, parseGuardrailProbability } from './JevGuardrailService';
+import { JevGuardrailService, parseGuardrailProbability, projectGuardrailToolEvidence } from './JevGuardrailService';
 
 describe('guardrail probability contract (pure parser)', () => {
   it.each([0, 0.3, 0.5, 0.7, 1])('preserves valid probability %s in both supported shapes', probability => {
@@ -34,6 +34,29 @@ describe('guardrail probability contract (pure parser)', () => {
     expect(parseGuardrailProbability([])).toBeNull();
     expect(parseGuardrailProbability({ score: 1 })).toBeNull();
     expect(parseGuardrailProbability({})).toBeNull();
+  });
+});
+
+describe('guardrail tool evidence (structural projection)', () => {
+  it('keeps unknown outcomes unconfirmed and retains bounded receipt fields', () => {
+    expect(projectGuardrailToolEvidence([
+      { name: 'legacy', result: 'Success' },
+      { name: 'connectivity', result: { success: true, data: { connected: false, url: 'https://example.com/receipt', imageBase64: 'private-image' } } },
+      { name: 'missing' },
+    ])).toEqual([
+      { name: 'legacy', reportedSuccess: null, message: 'Success' },
+      { name: 'connectivity', reportedSuccess: true, details: { connected: false, url: 'https://example.com/receipt' } },
+      { name: 'missing', reportedSuccess: null },
+    ]);
+  });
+
+  it('bounds receipt count and message length while preserving input', () => {
+    const calls = Array.from({ length: 25 }, (_, index) => ({ name: `tool-${index}`, result: { success: false, error: 'x'.repeat(1000) } }));
+    const projected = projectGuardrailToolEvidence(calls);
+    expect(projected).toHaveLength(20);
+    expect(projected[0]?.name).toBe('tool-5');
+    expect((projected[0]?.error as string).length).toBe(400);
+    expect(calls[0]?.result.error.length).toBe(1000);
   });
 });
 
@@ -69,6 +92,23 @@ describe('JevGuardrailService', () => {
     expect(result.wasModified).toBe(false);
     expect(httpsCallableMock).toHaveBeenCalledWith(expect.anything(), 'typesafeJudge');
     expect(judgeInvoke).toHaveBeenCalledWith(expect.objectContaining({ model: 'jev-latest' }));
+  });
+
+  it('passes failed tool outcomes to the judgment instead of only the attempted name (structural)', async () => {
+    judgeInvoke.mockResolvedValue({ data: { answers: {} } });
+    await service.screen({ text: 'The bug report was filed.', tool_calls: [{
+      name: 'report_bug', result: { success: false, status: 'PAUSED', error: 'Approval required' },
+    }] });
+    expect(judgeInvoke.mock.calls[0]?.[0]?.state.response.tool_results).toEqual([{
+      name: 'report_bug', reportedSuccess: false, status: 'PAUSED', error: 'Approval required',
+    }]);
+  });
+
+  it('replaces a flagged completion claim rather than retaining it behind a caution', async () => {
+    judgeInvoke.mockResolvedValue({ data: { answers: { confident_action_no_evidence: 0.95 } } });
+    const result = await service.screen({ text: 'Your post was successfully published.' });
+    expect(result.text).not.toContain('successfully published');
+    expect(result.text).toContain('cannot confirm');
   });
 
   it('intercepts unactionable text with helpful fallback when evaluated', async () => {

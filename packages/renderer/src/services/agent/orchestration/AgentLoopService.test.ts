@@ -1,8 +1,9 @@
+import { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AgentLoopService, agentLoopService } from './AgentLoopService';
 import { maestroBatchingService } from '../MaestroBatchingService';
 import { judgeTransientError } from '@/config/typesafeJudgments';
-import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
+import { AgentLoopDefinition, type AgentLoopExecution, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { FirestoreService } from '../../FirestoreService';
 
@@ -62,6 +63,7 @@ async function saveCheckpoint(this: FirestoreService, id: string, data: Record<s
 describe('AgentLoopService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(judgeTransientError).mockReset().mockResolvedValue(null);
         durableExecutions.clear();
         vi.spyOn(FirestoreService.prototype, 'setIfRevision').mockImplementation(saveCheckpoint);
         vi.spyOn(FirestoreService.prototype, 'get').mockImplementation(async function (id) {
@@ -70,6 +72,25 @@ describe('AgentLoopService', () => {
         });
     });
     afterEach(() => vi.restoreAllMocks());
+
+    it('persists a known settlement instead of retaining its provisional hold forever (structural)', async () => {
+        const budget = new ExecutionTokenBudget(100);
+        const execution = { id: 'settlement', checkpointRevision: 0, tokenBudgetSpent: 0 } as AgentLoopExecution;
+        durableExecutions.set('users/user1/agentLoopExecutions/settlement', structuredClone(execution) as unknown as Record<string, unknown>);
+        const persist = (agentLoopService as unknown as {
+            persistExecution: (owner: string, execution: AgentLoopExecution, phase: 'before-judge', budget: ExecutionTokenBudget) => Promise<void>;
+        }).persistExecution.bind(agentLoopService);
+        const reservation = budget.reserve(100)!;
+        await persist('user1', execution, 'before-judge', budget);
+        expect(durableExecutions.get('users/user1/agentLoopExecutions/settlement')?.tokenBudgetSpent).toBe(100);
+        budget.settle(reservation, 20);
+        await persist('user1', execution, 'before-judge', budget);
+        expect(durableExecutions.get('users/user1/agentLoopExecutions/settlement')?.tokenBudgetSpent).toBe(20);
+        const restarted = new ExecutionTokenBudget(100);
+        restarted.ensureSpentAtLeast(execution.tokenBudgetSpent!);
+        expect(restarted.remaining).toBe(80);
+    });
+
 
     it.each([0, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1])('rejects an invalid start iteration limit (%s)', async maxIterations => {
         const definition: AgentLoopDefinition = {

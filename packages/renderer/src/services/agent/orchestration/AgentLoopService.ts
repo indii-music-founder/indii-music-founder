@@ -1,3 +1,4 @@
+import type { SemanticCallAdmission } from '../governance/SemanticCallBudget';
 import { v4 as uuidv4 } from 'uuid';
 import { 
     AgentLoopDefinition, 
@@ -111,7 +112,7 @@ export class AgentLoopService {
         tokenBudget?: ExecutionTokenBudget,
         createOnly = false,
     ): Promise<void> {
-        if (tokenBudget) execution.tokenBudgetSpent = Math.max(execution.tokenBudgetSpent ?? 0, tokenBudget.spent);
+        if (tokenBudget) execution.tokenBudgetSpent = tokenBudget.spent;
         const save = async () => {
             if (!userId) throw new Error('A signed-in user is required to save a loop checkpoint.');
             const revision = await this.getService(userId).setIfRevision(
@@ -318,7 +319,7 @@ export class AgentLoopService {
      */
     private async resolveTransient(
         error: unknown,
-        context?: { retryAttempt?: number; action?: string }
+        context?: { retryAttempt?: number; action?: string; admission?: SemanticCallAdmission }
     ): Promise<boolean> {
         const heuristic = heuristicTransientError(error);
         const refined = await judgeTransientError(error, heuristic, context);
@@ -370,7 +371,10 @@ export class AgentLoopService {
                     return;
                 }
 
-                const action = await this.executeActionOnce(prompt, context);
+                const action = await this.executeActionOnce(prompt, context, {
+                    budget: tokenBudget,
+                    checkpoint: () => this.persistExecution(context.userId, execution, 'before-judge', tokenBudget),
+                });
                 actionResult = action.output;
                 if (action.failureKind) {
                     logger.warn(`[AgentLoop] Execution ${execution.id} halted after ${action.failureKind} action error: ${actionResult}`);
@@ -508,6 +512,7 @@ export class AgentLoopService {
     private async executeActionOnce(
         prompt: string,
         context: AgentContext,
+        admission: SemanticCallAdmission,
     ): Promise<{ output: string; failureKind: 'transient' | 'non-transient' | null }> {
         // A transport failure cannot prove whether an external effect happened.
         // Do not submit a second action until adapters provide idempotent receipts.
@@ -528,11 +533,11 @@ export class AgentLoopService {
                     : { output: 'Agent returned no evaluable output.', failureKind: 'non-transient' };
             }
             const errorMsg = results?.[0]?.error || 'Action failed.';
-            return { output: errorMsg, failureKind: await this.resolveTransient(errorMsg, { retryAttempt: 1, action: 'executeBatch' })
+            return { output: errorMsg, failureKind: await this.resolveTransient(errorMsg, { retryAttempt: 1, action: 'executeBatch', admission })
                 ? 'transient' : 'non-transient' };
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
-            return await this.resolveTransient(error, { retryAttempt: 1, action: 'executeBatch' })
+            return await this.resolveTransient(error, { retryAttempt: 1, action: 'executeBatch', admission })
                 ? { output: `Infrastructure timeout/error: ${msg}`, failureKind: 'transient' }
                 : { output: `Execution error: ${msg}`, failureKind: 'non-transient' };
         }
@@ -592,7 +597,7 @@ Respond in JSON format only:
             }
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
-            if (await this.resolveTransient(error, { action: 'evaluateOutcome' })) {
+            if (await this.resolveTransient(error, { action: 'evaluateOutcome', admission: { budget: tokenBudget, checkpoint: checkpointBudget } })) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
                     const retryResult = await generateJudge();

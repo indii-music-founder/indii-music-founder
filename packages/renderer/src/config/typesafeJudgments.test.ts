@@ -1,3 +1,4 @@
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 /**
  * TypeSafe judgment constants + decision-band tests (ISSUE-1442 pilot).
  *
@@ -246,6 +247,33 @@ describe('judgeTransientError decision bands', () => {
 
         expect(verdict).toBeNull();
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('charges the originating execution from the receipt before adopting a retry verdict', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const budget = new ExecutionTokenBudget(100);
+        const durableSpend: number[] = [];
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: {
+            answers: { transient: { type: 'noul', noul: 0.9 } },
+            usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 },
+        } }));
+        expect(await judgeTransientError(new Error('network'), true, { admission: {
+            budget, checkpoint: async () => { durableSpend.push(budget.spent); },
+        } })).toBe(true);
+        expect(durableSpend).toEqual([100, 20]);
+        expect(budget.spent).toBe(20);
+    });
+
+    it('skips the optional retry call when the execution has no allowance', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const budget = new ExecutionTokenBudget(10);
+        budget.reserve(10);
+        let calls = 0;
+        mocks.httpsCallable.mockReturnValue(async () => { calls++; return { data: { answers: {} } }; });
+        expect(await judgeTransientError(new Error('network'), true, { admission: {
+            budget, checkpoint: async () => {},
+        } })).toBeNull();
+        expect(calls).toBe(0);
     });
 
     it('adopts a confident transient verdict', async () => {

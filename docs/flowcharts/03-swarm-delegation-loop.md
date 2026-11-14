@@ -80,3 +80,37 @@ sequenceDiagram
 6. **Boardroom Reconciler**: If the `HarnessRun` creates a cross-domain conflict (e.g., Marketing wants to spend $500, but Finance strictly enforces a $300 cap), the agent triggers a `create_boardroom_decision` in the Meta-Harness to resolve the priority conflict.
 7. **Side Effects & Sync**: Standard side effects are executed via Cloud Functions, reading/writing to Firestore and Cloud Storage. The completion cascades back up the DAG to the Conductor.
 8. **Final UI Render**: The Conductor pushes the aggregated results to the Zustand store. React re-renders the chat overlay, and Firestore's `onSnapshot` listeners automatically sync any underlying database changes back to the UI.
+
+
+## AgentLoopService optional retry judgments
+
+This execution-loop accounting path is separate from Boardroom's server-owned
+`agent_stream` cost reservations. It applies to TypeSafe retry classification
+after an action or evaluation failure.
+
+```mermaid
+flowchart TD
+    ERROR["Action or evaluation failure"] --> FLAG{"Judgments available?"}
+    FLAG -->|No| BASELINE["Deterministic retry heuristic"]
+    FLAG -->|Yes| HOLD{"Reserve remaining execution allowance"}
+    HOLD -->|Exhausted| BASELINE
+    HOLD -->|Admitted| SAVE["Revision-checked reservation checkpoint"]
+    SAVE -->|Failed| BASELINE
+    SAVE -->|Saved| CALL["TypeSafe retry judgment"]
+    CALL -->|Interrupted, no receipt| KEEP["Retain conservative hold"]
+    CALL -->|Response| SETTLE["Validate complete usage receipt and settle ledger"]
+    SETTLE --> DURABLE["Revision-checked settlement checkpoint"]
+    DURABLE -->|Failed| BASELINE
+    DURABLE -->|Saved| VERDICT["Validate judgment and apply existing probability bands"]
+    VERDICT -->|Invalid or ambiguous| BASELINE
+    VERDICT -->|Adopted| RETRY["Existing bounded retry policy"]
+    KEEP --> BASELINE
+```
+
+A complete receipt can lower a provisional hold; the updated balance is saved
+before using the judgment. Missing or malformed usage retains the hold. Restarts
+restore the saved spend, and revision conflicts cannot authorize another call.
+The provider exposes no per-call token ceiling: actual overages are recorded and
+close further admission. This is execution token accounting, not proof of a
+provider-side hard monetary ceiling. Other semantic consumers still require
+integration with this execution-scoped admission mechanism.
