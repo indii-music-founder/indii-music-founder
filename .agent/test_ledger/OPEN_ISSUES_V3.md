@@ -7248,7 +7248,8 @@ Selected it in the normal creations UI. DOM-backed real video element loaded wit
 
 ### ISSUE-1620: Expanded Your Creations hides selected video player below a non-scrolling panel
 
-- **Status:** 🔴 OPEN — actual generated video preview reproduced2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; bounded `RightPanel` scroll container + above-grid selected preview placement verified in unit tests; live viewport acceptance pending)
+- **2026-11-14 verification:** `RightPanel.tsx` bounds the expanded Your Creations drawer with `max-h-[40vh] overflow-y-auto overscroll-contain`, and `AssetSpotlight.tsx` now renders the selected detail preview (`data-testid="asset-spotlight-detail"` with video player and `Discuss`/`Studio` controls) above the 2-column grid so it is immediately visible without scrolling past 12 cards. `AssetSpotlight.test.tsx` (1/1 passing) verifies detail placement ahead of the grid in DOM order. Jev (`jev-1.14.0`, `req_01a1d8c65aab779bbd507c62953b4403`) scored `fix_makes_selected_player_visible=0.92`, `readiness_score=2.83/4.00` (confidence `0.85`). Live viewport acceptance remains pending.
 - **Severity:** 🟡 MEDIUM — impedes playback and Studio/Discuss handoff despite working media bytes.
 - **Location:** Omni Agent right panel → Your Creations → select new video. `modules/dashboard/components/AssetSpotlight.tsx:122,195-206`; `core/components/RightPanel.tsx:243,293-328`.
 - **Reproduction:** In a1920×907 viewport with existing44-item history (spotlight shows12), expand Your Creations and select the newest golden-leaf video. Try normal scrolling downward in right panel.
