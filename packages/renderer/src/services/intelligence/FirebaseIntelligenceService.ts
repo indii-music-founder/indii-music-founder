@@ -638,6 +638,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!tools && Array.isArray(configRecord.tools)) {
             tools = configRecord.tools as Tool[];
         }
+        // Legacy callers may place request options inside generation config.
+        // Explicit request options take precedence.
+        if (!options?.safetySettings && Array.isArray(configRecord.safetySettings)) {
+            options = { ...options, safetySettings: configRecord.safetySettings as SafetySetting[] };
+        }
+        if (!options?.toolConfig && configRecord.toolConfig && typeof configRecord.toolConfig === 'object' && !Array.isArray(configRecord.toolConfig)) {
+            options = { ...options, toolConfig: configRecord.toolConfig as ToolConfig };
+        }
         delete configRecord.systemInstruction;
         delete configRecord.tools;
         delete configRecord.toolConfig;
@@ -876,6 +884,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!tools && Array.isArray(streamConfigRecord.tools)) {
             tools = streamConfigRecord.tools as Tool[];
         }
+        // Legacy callers may place request options inside generation config.
+        // Explicit request options take precedence.
+        if (!options?.safetySettings && Array.isArray(streamConfigRecord.safetySettings)) {
+            options = { ...options, safetySettings: streamConfigRecord.safetySettings as SafetySetting[] };
+        }
+        if (!options?.toolConfig && streamConfigRecord.toolConfig && typeof streamConfigRecord.toolConfig === 'object' && !Array.isArray(streamConfigRecord.toolConfig)) {
+            options = { ...options, toolConfig: streamConfigRecord.toolConfig as ToolConfig };
+        }
         delete streamConfigRecord.systemInstruction;
         delete streamConfigRecord.tools;
         delete streamConfigRecord.toolConfig;
@@ -1025,7 +1041,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -1362,6 +1378,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         if (Array.isArray(prompt)) {
             return prompt.map(content => ({
+                ...content,
                 role: content.role || 'user',
                 parts: content.parts.map((part) => {
                     if ('text' in part && typeof part.text === 'string') {
