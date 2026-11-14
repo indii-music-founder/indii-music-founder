@@ -7158,7 +7158,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1616: Workflow context panel removes access to node inspector and library without explaining how to restore them
 
-- **Status:** 🔴 OPEN — production UI reproduced 2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; responsive Inspector & Library drawer toggle and node-selection auto-open verified in unit tests; live viewport acceptance pending)
+- **2026-11-14 verification:** `WorkflowLab.tsx` now renders a `@6xl:hidden` `Inspector & Library` toggle (`data-testid="workflow-inspector-toggle"`) inside `#tour-workflow-canvas` and opens the right-hand inspector/library drawer (`data-testid="workflow-right-panel"`) automatically whenever `selectedNodeId` changes, with an explicit `Close` button. `WorkflowLab.test.tsx` (2/2 passing) verifies toggle behavior and auto-open on node selection. Jev (`jev-1.14.0`, `req_01a1d8bc18e67dbf9fb8c981039c9ad9`) scored `fix_restores_inspector_access=0.90`, `readiness_score=2.87/4.00` (confidence `0.89`). Live viewport acceptance remains pending.
 - **Severity:** 🟡 MEDIUM — confusing obstruction of configuration; collapse workaround exists.
 - **Location:** Workflow Lab, open global Context panel; `packages/renderer/src/modules/workflow/WorkflowLab.tsx:496-505` uses `hidden @6xl:flex` for node library/inspector.
 - **Reproduction:** At 1920×907 desktop viewport, enter Workflow Lab with global context panel expanded, load Simple Concept Art, select Concept Art. Inspector and node library are absent from visible UI and accessibility tree. Collapse global panel using Collapse Panel; both immediately appear, including prompt configuration and Save Changes.

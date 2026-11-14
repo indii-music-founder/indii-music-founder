@@ -64,6 +64,13 @@ export default function WorkflowLab() {
     const [showGenerator, setShowGenerator] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [showInspectorDrawer, setShowInspectorDrawer] = useState(false);
+
+    useEffect(() => {
+        if (selectedNodeId) {
+            setShowInspectorDrawer(true);
+        }
+    }, [selectedNodeId]);
     const [generatorPrompt, setGeneratorPrompt] = useState('');
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isGenerating, setIsGenerating] = useState(false);
@@ -634,11 +641,35 @@ export default function WorkflowLab() {
 
                 {/* ── CENTER — Node Editor Canvas ────────────────────── */}
                 <div id="tour-workflow-canvas" className="flex-1 relative min-w-0">
+                    <button
+                        type="button"
+                        data-testid="workflow-inspector-toggle"
+                        onClick={() => setShowInspectorDrawer(prev => !prev)}
+                        aria-expanded={showInspectorDrawer}
+                        aria-label={showInspectorDrawer ? 'Hide Inspector & Library' : 'Show Inspector & Library'}
+                        className="@6xl:hidden absolute top-3 right-3 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#161616]/95 hover:bg-gray-800 border border-dept-social/40 text-xs font-semibold text-gray-200 shadow-lg backdrop-blur-sm transition-colors"
+                    >
+                        <Settings size={14} className="text-purple-400" />
+                        <span>{showInspectorDrawer ? 'Hide Inspector' : (selectedNodeId ? 'Inspect Node & Library' : 'Inspector & Library')}</span>
+                    </button>
                     <WorkflowEditor onInit={(instance) => { rfInstanceRef.current = instance; }} />
                 </div>
 
                 {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
+                <aside
+                    data-testid="workflow-right-panel"
+                    className={`${showInspectorDrawer ? 'flex absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'hidden'} @6xl:static @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]`}
+                >
+                    <div className="@6xl:hidden flex items-center justify-between pb-2 border-b border-gray-800">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Inspector &amp; Library</span>
+                        <button
+                            type="button"
+                            onClick={() => setShowInspectorDrawer(false)}
+                            className="text-xs text-gray-400 hover:text-white px-2 py-0.5 rounded bg-gray-800"
+                        >
+                            Close
+                        </button>
+                    </div>
                     <NodeLibraryPanel />
                     {selectedNodeId ? (
                         <WorkflowNodeInspector />
