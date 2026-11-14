@@ -7180,6 +7180,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 **Mainline reconciliation — 2026-10-31:** Fetched and fast-forwarded this audit worktree to `6bd81df8b`, preserving the remote ISSUE-1602 SDK updates and reapplying only the local audit additions. Audit findings remain local/unpublished at this point.
 - **Production verification (2026-11-11):** In signed-in Chrome at a 1920×907 viewport, Workflow Builder opened Workflow Lab with the global Context panel expanded. **Node library & inspector** opened **NODE LIBRARY** while the global panel stayed open. No existing workflow was modified. Selected-node configuration, saving an edit, and narrower viewports remain unverified.
 
+- **Production follow-up:** In the signed-in web app, the compact tools showed both Node Library and Inspector. Clicking the Concept Art node body left the Inspector on Selected None. The pencil control opened its configuration, and Save Changes applied a new prompt to the node in the open template. The workflow itself was not saved or reopened. Keyboard operation of the labeled pencil still needs deployed verification.
+
 ### ISSUE-1617: Workflow Growth Protocol executor fails before media work while UI remains Running
 
 - **Status:** 🟡 PARTIAL — source lease and failure handling repaired; deployed execution acceptance pending.

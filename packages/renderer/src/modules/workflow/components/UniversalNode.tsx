@@ -402,13 +402,16 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 {/* Content Preview */}
                 <div className="flex-grow p-0 overflow-hidden relative group">
                     {/* Prompt/Config Preview Overlay */}
-                    <div className="absolute top-0 left-0 right-0 p-2 bg-linear-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="absolute top-0 left-0 right-0 p-2 bg-linear-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
                         <p className="text-[10px] text-gray-300 line-clamp-2">
                             {isSubgraph ? 'Composite Micro-Flow' : (isLogic ? 'Configure Node' : ('prompt' in data ? data.prompt : 'No prompt'))}
                         </p>
                         <button
+                            type="button"
+                            aria-label="Edit node configuration"
+                            title="Edit node configuration"
                             onClick={handleEdit}
-                            className="absolute top-1 right-1 p-1 bg-gray-800 rounded text-gray-300 hover:text-white hover:bg-teal-600"
+                            className="nodrag absolute top-1 right-1 p-1 bg-gray-800 rounded text-gray-300 hover:text-white hover:bg-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400"
                         >
                             <Pencil className="w-3 h-3" />
                         </button>
