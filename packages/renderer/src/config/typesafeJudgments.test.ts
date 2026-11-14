@@ -207,7 +207,12 @@ describe('TypeSafe HTTP question contract', () => {
                 }
                 if (type === "'choice' as const") {
                     choiceCount++;
-                    expect(get('criteria'), `Choice at line ${source.getLineAndCharacterOfPosition(node.pos).line + 1}`).toBeDefined();
+                    const criteria = get('criteria');
+                    expect(criteria, `Choice at line ${source.getLineAndCharacterOfPosition(node.pos).line + 1}`).toBeDefined();
+                    if (criteria) {
+                        expect(ts.isStringLiteral(criteria) || ts.isNoSubstitutionTemplateLiteral(criteria) || ts.isTemplateExpression(criteria)).toBe(false);
+                        expect(ts.isCallExpression(criteria) && criteria.expression.getText(source).endsWith('.join')).toBe(false);
+                    }
                     expect(get('options')).toBeUndefined();
                 }
             }
@@ -3081,6 +3086,40 @@ describe('judgeSocialAudioSnippetSelection (Judgment 43)', () => {
 
         expect(result.suggestedStartTimeSeconds).toBe(96);
         expect(result.suggestedEndTimeSeconds).toBe(110);
+    });
+
+    it('sends keyed object criteria for candidates when >= 2 sections and omits single-option candidate Choice when 1 section', async () => {
+        let capturedQuestions: Record<string, unknown> = {};
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async (req: { questions: Record<string, unknown> }) => {
+            capturedQuestions = req.questions;
+            return {
+                data: {
+                    answers: {
+                        candidate: { choice: '2', confidence: 0.88 },
+                        section: { choice: 'CHORUS', confidence: 0.9 },
+                        immediate_vocal: { noul: 0.9 },
+                        viral_potential: { score: 4 },
+                    },
+                },
+            };
+        });
+
+        await judgeSocialAudioSnippetSelection([
+            { section: 'VERSE', startTimeSeconds: 10, endTimeSeconds: 25, energyLevel: 'moderate', lyricSnippet: 'Verse one' },
+            { section: 'CHORUS', startTimeSeconds: 45, endTimeSeconds: 70, energyLevel: 'peak', lyricSnippet: 'Big chorus' },
+        ], 15);
+
+        const candQ = capturedQuestions.candidate as { criteria?: unknown };
+        expect(typeof candQ?.criteria).toBe('object');
+        expect(candQ?.criteria).not.toBeNull();
+        expect(Object.keys(candQ.criteria as Record<string, string>)).toEqual(['1', '2']);
+
+        await judgeSocialAudioSnippetSelection([
+            { section: 'CHORUS', startTimeSeconds: 45, endTimeSeconds: 70, energyLevel: 'peak', lyricSnippet: 'Only chorus' },
+        ], 15);
+
+        expect(capturedQuestions.candidate).toBeUndefined();
     });
 });
 
@@ -6286,5 +6325,140 @@ describe('TypeSafe Choice whitelisting, Score bounds, and confidence hardening',
             existingCatalog: [{ id: 'trk_1', title: 'Solar Flare', isrc: 'USABC2600001' }],
         });
         expect(collision.disposition).toBe('NEW_CANONICAL_TRACK');
+    });
+
+    it('normalizes unlisted/prototype Choice labels and rejects low/NaN confidence across remaining consumers', async () => {
+        // 1. judgeCrashTriage: unknown/prototype rootCause maps safely to UNKNOWN
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    cause: { choice: 'toString' },
+                    retryable: { noul: 0.9 },
+                    action: { choice: 'REFRESH_PAGE' },
+                },
+            },
+        }));
+        const crashRes = await judgeCrashTriage({ moduleName: 'Studio', errorMessage: 'Unexpected error' });
+        expect(crashRes?.rootCause).toBe('UNKNOWN');
+        expect(crashRes?.userGuidance).toContain('An unexpected issue occurred');
+
+        // 2. judgeArtistCareerDNA: unknown/prototype choices fall back safely
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    archetype: { choice: 'constructor' },
+                    monetization: { choice: 'INVENTED_FOCUS' },
+                },
+            },
+        }));
+        const dnaRes = await judgeArtistCareerDNA({ bioOrDescription: 'Solo indie vocalist releasing singles', genres: ['indie'] });
+        expect(dnaRes.careerArchetype).toBe('SOLO_RELEASE_ARTIST');
+        expect(dnaRes.monetizationFocus).toBe('STREAMING_SOCIAL');
+
+        // 3. judgeMusicVideoContinuity & judgePersonaPosturePreset & judgeAudioDrivenMerchSku & judgeArtistDnaOnboarding & judgeExpenseDeductibility
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    status: { choice: 'INVENTED_STATUS' },
+                    coverage: { noul: 0.9 },
+                    flow_score: { score: 3 },
+                },
+            },
+        }));
+        const contRes = await judgeMusicVideoContinuity([
+            { chunkId: 'c1', order: 0, startTimeSeconds: 0, durationSeconds: 4, shotScale: 'WIDE', isPerformance: true },
+        ]);
+        expect(contRes.status).toBe('READY_TO_RENDER');
+
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    preset: { choice: '__proto__' },
+                    alignment: { score: 3 },
+                },
+            },
+        }));
+        const postureRes = await judgePersonaPosturePreset({
+            philosophyDescription: 'DIY independent release mindset',
+            riskTolerance: 'MODERATE',
+            communicationStyle: 'CASUAL',
+        });
+        expect(postureRes.recommendedPreset).toBe('SCRAPPY_INDIE_DIY');
+
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    recommended_sku: { choice: 'FABRICATED_SKU' },
+                    conversion_score: { score: 3 },
+                },
+            },
+        }));
+        const skuRes = await judgeAudioDrivenMerchSku({
+            trackTitle: 'Midnight Echo',
+            genre: 'techno',
+            energyLevel: 'peak',
+            dominantAesthetic: 'cyber',
+        });
+        expect(skuRes.recommendedSku).toBe('HEAVYWEIGHT_BOXY_TEE');
+
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    archetype_choice: { choice: 'fabricated_archetype' },
+                    aesthetic_choice: { choice: 'minimalist_modernist' },
+                    maturity_score: { score: 2 },
+                },
+            },
+        }));
+        const onboardingRes = await judgeArtistDnaOnboarding({
+            bioSnippet: 'Techno DJ and club performer',
+            lyricsOrTrackTheme: 'Warehouse club lights',
+        });
+        expect(onboardingRes.archetype).toBe('electronic_dj');
+        expect(onboardingRes.aestheticStyle).toBe('minimalist_modernist');
+
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    tax_cat: { choice: 'INVENTED_TAX_CAT' },
+                    audit_strength: { score: 3 },
+                },
+            },
+        }));
+        const taxRes = await judgeExpenseDeductibility({
+            vendor: 'Sweetwater',
+            description: 'Condenser microphone',
+            amountUsd: 499,
+        });
+        expect(taxRes.category).toBe('EQUIPMENT_CAPITAL');
+
+        // 4. judgeCreativeJourneyIntent & judgeBoardroomExecutiveIntent reject low or NaN confidence
+        for (const badAnswer of [
+            { choice: 'guided_campaign', confidence: 0.25 },
+            { choice: 'guided_campaign', confidence: Number.NaN },
+        ]) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { intent: badAnswer } } }));
+            const journeyCtx = {
+                prompt: 'Cut my tour vlog into vertical reels for TikTok',
+                ingredients: { audio: true, image: false, video: true },
+                generationMode: 'video' as const,
+                viewMode: 'VIDEO' as const,
+            };
+            expect(await judgeCreativeJourneyIntent(journeyCtx)).toEqual(deterministicCreativeJourneyFallback(journeyCtx));
+        }
+
+        for (const badMission of [
+            { choice: 'royalty_waterfall', confidence: 0.2 },
+            { choice: 'royalty_waterfall', confidence: Number.NaN },
+        ]) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { mission: badMission } } }));
+            const boardCtx = {
+                prompt: 'Draft a 50/50 split sheet and clear sample rights',
+                activeAgents: ['generalist'],
+                hasReferencedAssets: false,
+                messageCount: 0,
+            };
+            expect(await judgeBoardroomExecutiveIntent(boardCtx)).toEqual(deterministicBoardroomExecutiveFallback(boardCtx));
+        }
     });
 });

@@ -2072,14 +2072,17 @@ export async function judgeCrashTriage(
         const retryAns = ans?.retryable as { noul?: unknown } | undefined;
         const actionAns = ans?.action as { choice?: unknown } | undefined;
 
-        const rootCause = (typeof causeAns?.choice === 'string' ? causeAns.choice : 'UNKNOWN') as CrashRootCause;
+        const allowedRootCauses: readonly CrashRootCause[] = [
+            'NETWORK_OFFLINE', 'CHUNK_STALE', 'STATE_CORRUPTION', 'AUTH_EXPIRED', 'UNKNOWN',
+        ];
+        const allowedActions: readonly CrashRecommendedAction[] = [
+            'RELOAD_MODULE', 'REFRESH_PAGE', 'REAUTHENTICATE', 'RESET_LOCAL_CACHE', 'CONTACT_SUPPORT',
+        ];
+        const rootCause = whitelistedChoice(causeAns, allowedRootCauses) ?? 'UNKNOWN';
         const retryProbability = boundedJudgmentNumber(retryAns, 'noul', 1);
-        const action = actionAns?.choice;
-        if (retryProbability === null || retryProbability === 0.5) return null;
-        if (action !== 'RELOAD_MODULE' && action !== 'REFRESH_PAGE' && action !== 'REAUTHENTICATE' &&
-            action !== 'RESET_LOCAL_CACHE' && action !== 'CONTACT_SUPPORT') return null;
+        const recommendedAction = whitelistedChoice(actionAns, allowedActions);
+        if (retryProbability === null || retryProbability === 0.5 || !recommendedAction) return null;
         const isRetryable = retryProbability > 0.5;
-        const recommendedAction = action;
 
         const GUIDANCE_MAP: Record<CrashRootCause, string> = {
             NETWORK_OFFLINE: 'A network connection drop interrupted this action. Check your internet connection and try again.',
@@ -3481,8 +3484,14 @@ export async function judgeArtistCareerDNA(
         const archAns = ans?.archetype as { choice?: unknown } | undefined;
         const monAns = ans?.monetization as { choice?: unknown } | undefined;
 
-        const resolvedArch = (typeof archAns?.choice === 'string' ? archAns.choice : archetype) as CareerArchetype;
-        const resolvedMon = (typeof monAns?.choice === 'string' ? monAns.choice : focus) as MonetizationFocus;
+        const allowedArchetypes: readonly CareerArchetype[] = [
+            'SOLO_RELEASE_ARTIST', 'BEATMAKER_PRODUCER', 'TOURING_BAND', 'BOUTIQUE_LABEL',
+        ];
+        const allowedFocuses: readonly MonetizationFocus[] = [
+            'STREAMING_SOCIAL', 'DIRECT_TO_FAN', 'SYNC_LICENSING', 'LIVE_TOURING',
+        ];
+        const resolvedArch = whitelistedChoice(archAns, allowedArchetypes) ?? archetype;
+        const resolvedMon = whitelistedChoice(monAns, allowedFocuses) ?? focus;
 
         return {
             careerArchetype: resolvedArch,
@@ -4225,7 +4234,14 @@ export async function judgeMusicVideoContinuity(
         const covAns = ans?.coverage as { noul?: unknown } | number | undefined;
         const flowAns = ans?.flow_score as { score?: unknown } | number | undefined;
 
-        const resolvedStatus = (typeof statAns?.choice === 'string' ? statAns.choice : fallbackStatus) as ContinuityStatus;
+        const allowedContinuityStatuses: readonly ContinuityStatus[] = [
+            'READY_TO_RENDER',
+            'CONSECUTIVE_JUMP_CUT_WARNING',
+            'INSUFFICIENT_CLOSEUPS',
+            'LOW_PERFORMANCE_COVERAGE',
+            'ERRATIC_PACING',
+        ];
+        const resolvedStatus = whitelistedChoice(statAns, allowedContinuityStatuses) ?? fallbackStatus;
         const resolvedCov = boundedJudgmentNumber(covAns, 'noul', 1);
         const resolvedScore = oneIndexedScore(flowAns, fallbackScore);
 
@@ -4310,6 +4326,13 @@ export async function judgeSocialAudioSnippetSelection(
             { answers: Record<string, unknown> }
         >(functions, 'typesafeJudge');
 
+        const candidateCriteria = Object.fromEntries(
+            sections.map((s, index) => [
+                String(index + 1),
+                `${s.section}, ${s.startTimeSeconds}-${s.endTimeSeconds}s, ${s.energyLevel} energy`,
+            ]),
+        );
+
         const result = await judgeFn({
             state: {
                 targetDuration: targetDurationSeconds,
@@ -4323,12 +4346,16 @@ export async function judgeSocialAudioSnippetSelection(
                 })),
             },
             questions: {
-                candidate: {
-                    type: 'choice' as const,
-                    instructions:
-                        'Choose the single candidate number whose timestamped moment is the strongest self-contained teaser. Compare the supplied lyric, energy, section, and start/end times. Return the candidate number exactly as shown.',
-                    criteria: sections.map((s, index) => `${index + 1}: ${s.section}, ${s.startTimeSeconds}-${s.endTimeSeconds}s, ${s.energyLevel} energy`).join('; '),
-                },
+                ...(sections.length >= 2
+                    ? {
+                          candidate: {
+                              type: 'choice' as const,
+                              instructions:
+                                  'Choose the single candidate key whose timestamped moment is the strongest self-contained teaser. Compare the supplied lyric, energy, section, and start/end times.',
+                              criteria: candidateCriteria,
+                          },
+                      }
+                    : {}),
                 section: {
                     type: 'choice' as const,
                     instructions:
@@ -4368,10 +4395,12 @@ export async function judgeSocialAudioSnippetSelection(
         const vocAns = ans?.immediate_vocal as { noul?: unknown } | number | undefined;
         const virAns = ans?.viral_potential as { score?: unknown } | number | undefined;
 
-        const selectedCandidate = Number.parseInt(String(candidateAns?.choice ?? ''), 10) - 1;
+        const validCandidate = whitelistedChoice(candidateAns, Object.keys(candidateCriteria));
+        const selectedCandidate = validCandidate !== null ? Number.parseInt(validCandidate, 10) - 1 : -1;
+        const validSection = whitelistedChoice(secAns, sections.map((s) => s.section));
         const matchedSection = Number.isInteger(selectedCandidate) && selectedCandidate >= 0 && selectedCandidate < sections.length
             ? sections[selectedCandidate]
-            : sections.find((s) => s.section === secAns?.choice) || peakSection;
+            : (validSection ? sections.find((s) => s.section === validSection) : undefined) || peakSection;
         const resolvedSec = matchedSection.section;
         const sTime = matchedSection.startTimeSeconds;
         const eTime = Math.min(matchedSection.endTimeSeconds, sTime + targetDurationSeconds);
@@ -5898,7 +5927,8 @@ export async function judgePersonaPosturePreset(
         const preAns = ans?.preset as { choice?: unknown } | undefined;
         const aliAns = ans?.alignment as { score?: unknown } | number | undefined;
 
-        const resolvedPreset = (typeof preAns?.choice === 'string' ? preAns.choice : fallbackPreset) as PersonaPosturePreset;
+        const allowedPresets = Object.keys(PERSONA_POSTURE_FADER_MAP) as PersonaPosturePreset[];
+        const resolvedPreset = whitelistedChoice(preAns, allowedPresets) ?? fallbackPreset;
         const resolvedAlign = oneIndexedScore(aliAns, 4);
 
         return {
@@ -6569,7 +6599,15 @@ export async function judgeAudioDrivenMerchSku(
         const skuAns = ans?.recommended_sku as { choice?: unknown } | undefined;
         const scAns = ans?.conversion_score as { score?: unknown } | number | undefined;
 
-        const resolvedSku = (typeof skuAns?.choice === 'string' ? skuAns.choice : fallbackSku) as MerchSkuRecommendation;
+        const allowedSkus: readonly MerchSkuRecommendation[] = [
+            'HEAVYWEIGHT_BOXY_TEE',
+            'VINTAGE_WASH_HOODIE',
+            'EMBROIDERED_DAD_CAP',
+            'LIMITED_VINYL_RECORD',
+            'CANVAS_TOTE_BAG',
+            'TOUR_POSTER_PRINT',
+        ];
+        const resolvedSku = whitelistedChoice(skuAns, allowedSkus) ?? fallbackSku;
         const resolvedScore = oneIndexedScore(scAns, 4);
 
         return {
@@ -7182,9 +7220,18 @@ export async function judgeArtistDnaOnboarding(
         const aesAns = ans?.aesthetic_choice as { choice?: unknown } | undefined;
         const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
 
-        const resolvedArchetype = (typeof arcAns?.choice === 'string' ? arcAns.choice : archetype) as ArtistCareerArchetype;
-        const resolvedAesthetic = (typeof aesAns?.choice === 'string' &&
-            Object.prototype.hasOwnProperty.call(aestheticCriteria, aesAns.choice) ? aesAns.choice : aesthetic) as AestheticStyleTag;
+        const allowedOnboardingArchetypes: readonly ArtistCareerArchetype[] = [
+            'solo_vocalist',
+            'producer_beatmaker',
+            'indie_band',
+            'electronic_dj',
+            'hiphop_mc',
+            'sync_composer',
+            'diy_label_operator',
+            'session_instrumentalist',
+        ];
+        const resolvedArchetype = whitelistedChoice(arcAns, allowedOnboardingArchetypes) ?? archetype;
+        const resolvedAesthetic = whitelistedChoice(aesAns, Object.keys(aestheticCriteria) as AestheticStyleTag[]) ?? aesthetic;
         const rawMat = oneIndexedScore(matAns, maturity);
 
         return {
@@ -8116,7 +8163,15 @@ export async function judgeExpenseDeductibility(
         const catAns = ans?.tax_cat as { choice?: unknown } | undefined;
         const scoreAns = ans?.audit_strength as { score?: unknown } | undefined;
 
-        const resolvedCat = (typeof catAns?.choice === 'string' ? catAns.choice : category) as ExpenseDeductibilityVerdict['category'];
+        const allowedExpenseCategories: readonly ExpenseDeductibilityVerdict['category'][] = [
+            'EQUIPMENT_CAPITAL',
+            'PRODUCTION_EXPENSE',
+            'TRAVEL_MEALS',
+            'MARKETING_PROMO',
+            'LEGAL_ADMIN',
+            'NON_DEDUCTIBLE',
+        ];
+        const resolvedCat = whitelistedChoice(catAns, allowedExpenseCategories) ?? category;
         const resolvedScore = Math.round(oneIndexedScore(scoreAns, auditScore));
 
         return {
@@ -9709,14 +9764,15 @@ export async function judgeCreativeJourneyIntent(
             },
         });
         const answer = result.data.answers?.intent;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence = typeof answer === 'object' && answer !== null ? (answer as { confidence?: unknown }).confidence : undefined;
         const validIntents = Object.keys(CREATIVE_JOURNEY_ACTIONS) as CreativeJourneyIntent[];
-        if (typeof choice !== 'string' || !validIntents.includes(choice as CreativeJourneyIntent)) return fallback;
-        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-            ? rawConfidence
-            : fallback.confidence;
-        return { intent: choice as CreativeJourneyIntent, confidence, ...CREATIVE_JOURNEY_ACTIONS[choice as CreativeJourneyIntent] };
+        const resolvedIntent = whitelistedChoice(answer, validIntents);
+        if (!resolvedIntent) return fallback;
+        const conf = boundedConfidenceValue(answer);
+        if ((typeof answer === 'object' && answer !== null && 'confidence' in answer && conf === null) ||
+            (conf !== null && conf < 0.5)) {
+            return fallback;
+        }
+        return { intent: resolvedIntent, confidence: conf ?? fallback.confidence, ...CREATIVE_JOURNEY_ACTIONS[resolvedIntent] };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'creative journey intent judgment', "judgeCreativeJourneyIntent");
         return fallback;
@@ -10155,26 +10211,20 @@ export async function judgeBoardroomExecutiveIntent(
         });
 
         const answer = result.data.answers?.mission;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
-
         const validMissions = Object.keys(BOARDROOM_MISSION_DETAILS) as BoardroomExecutiveMission[];
-        if (typeof choice !== 'string' || !validMissions.includes(choice as BoardroomExecutiveMission)) {
+        const resolvedMission = whitelistedChoice(answer, validMissions);
+        if (!resolvedMission) return fallback;
+
+        const conf = boundedConfidenceValue(answer);
+        if ((typeof answer === 'object' && answer !== null && 'confidence' in answer && conf === null) ||
+            (conf !== null && conf < 0.5)) {
             return fallback;
         }
 
-        const confidence =
-            typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                ? rawConfidence
-                : fallback.confidence;
-
         return {
-            mission: choice as BoardroomExecutiveMission,
-            confidence,
-            ...BOARDROOM_MISSION_DETAILS[choice as BoardroomExecutiveMission],
+            mission: resolvedMission,
+            confidence: conf ?? fallback.confidence,
+            ...BOARDROOM_MISSION_DETAILS[resolvedMission],
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'boardroom executive intent judgment', "judgeBoardroomExecutiveIntent");
