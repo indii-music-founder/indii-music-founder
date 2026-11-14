@@ -213,7 +213,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
                 if (section) search.set('section', section);
             }
             const query = search.toString();
-            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, query ? `?${query}` : '', carried));
+            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, query ? `?${query}` : '', carried, currentModule === 'settings'));
             return;
         }
 
