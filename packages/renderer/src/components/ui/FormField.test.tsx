@@ -39,6 +39,15 @@ describe('FormField relationships', () => {
         expect(screen.getByText('*')).toHaveAttribute('aria-hidden', 'true');
     });
 
+    it('keeps hint and error references valid when the input ID contains spaces', () => {
+        render(<FormField label="Artist name" hint="Use your stage name" error="Name is required">
+            <input id="artist name" />
+        </FormField>);
+        const input = screen.getByRole('textbox', { name: 'Artist name' });
+        expect(input.id).not.toMatch(/\s/);
+        expect(input).toHaveAccessibleDescription('Use your stage name Name is required');
+    });
+
     it('preserves an existing invalid state when no wrapper error is present', () => {
         render(<FormField label="Artist name"><input aria-invalid="true" /></FormField>);
         expect(screen.getByRole('textbox', { name: 'Artist name' })).toHaveAttribute('aria-invalid', 'true');

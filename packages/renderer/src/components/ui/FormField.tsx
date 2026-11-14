@@ -26,7 +26,8 @@ interface FormFieldProps {
 
 export function FormField({ label, hint, error, required, className, children }: FormFieldProps) {
     const generatedId = useId();
-    const inputId = children.props.id?.trim() ? children.props.id : generatedId;
+    const suppliedId = children.props.id;
+    const inputId = suppliedId && !/[\t\n\f\r ]/.test(suppliedId) ? suppliedId : generatedId;
     const hintId = hint ? `${inputId}-hint` : undefined;
     const errorId = error ? `${inputId}-error` : undefined;
 

@@ -10,13 +10,9 @@ interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 
 }
 
 const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
-    ({ className, defaultValue, max = 100, step = 1, onChange, onValueChange, ...props }, ref) => {
-        // Adapter for array-based value to single input
-        const [value, setValue] = React.useState(defaultValue ? defaultValue[0] : 0)
-
+    ({ className, defaultValue, value, max = 100, step = 1, onChange, onValueChange, ...props }, ref) => {
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            const newVal = parseFloat(e.target.value)
-            setValue(newVal)
+            const newVal = e.currentTarget.valueAsNumber
             if (onChange) onChange([newVal])
             if (onValueChange) onValueChange([newVal])
         }
@@ -33,6 +29,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
                 max={max}
                 step={step}
                 value={value}
+                defaultValue={value === undefined ? defaultValue?.[0] ?? 0 : undefined}
                 onChange={handleChange}
                 ref={ref}
                 {...props}
