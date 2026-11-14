@@ -132,7 +132,7 @@ describe('router Arcjet boundary', () => {
     }));
   });
 
-  it('handles CORS OPTIONS preflight request with 204 on getProfile, health, and sdkApi', async () => {
+  it('handles CORS OPTIONS preflight request with 204 on getProfile', async () => {
     const endMock = vi.fn();
     const res = response();
     mocks.status.mockReturnValue({ end: endMock, json: mocks.json, send: vi.fn() });
@@ -146,6 +146,29 @@ describe('router Arcjet boundary', () => {
     expect(mocks.status).toHaveBeenCalledWith(204);
     expect(endMock).toHaveBeenCalled();
   });
+
+  it.each(['/api/tracks/track-1', '/api/account/profile'])(
+    'allows browser SDK PATCH preflight for %s before authentication', async (path) => {
+      const end = vi.fn();
+      const res = response();
+      mocks.status.mockReturnValue({ end, json: mocks.json });
+      const handler = router.sdkApi as unknown as (
+        req: ReturnType<typeof request>, res: ReturnType<typeof response>,
+      ) => Promise<void>;
+      await handler({ ...request('OPTIONS', path), headers: {
+        'access-control-request-method': 'PATCH',
+        'access-control-request-headers': 'authorization,content-type',
+      } } as unknown as ReturnType<typeof request>, res);
+
+      const methods = mocks.set.mock.calls.find(([name]) => name === 'Access-Control-Allow-Methods')?.[1];
+      expect(methods.split(',').map((method: string) => method.trim())).toContain('PATCH');
+      expect(mocks.set).toHaveBeenCalledWith('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+      expect(mocks.status).toHaveBeenCalledWith(204);
+      expect(end).toHaveBeenCalledOnce();
+      expect(mocks.verifyIdToken).not.toHaveBeenCalled();
+      expect(mocks.protect).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects unauthenticated getProfile requests when validateAppCheckHttp rejects', async () => {
     const appCheckModule = await import('../../../middleware/appCheck');

@@ -211,7 +211,7 @@ function applyCorsHeaders(req: Request, res: express.Response, methods = 'GET, O
  * be bound to the actual release assets, rights, and distributor delivery path.
  */
 export const sdkApi = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
-  if (applyCorsHeaders(req, res, 'GET, POST, PUT, DELETE, OPTIONS')) return;
+  if (applyCorsHeaders(req, res, 'GET, POST, PUT, PATCH, DELETE, OPTIONS')) return;
   const requestId = generateRequestId();
   try {
     const route = sdkRoute(req.method, req.path.replace(/^\/api(?=\/)/, ''));
