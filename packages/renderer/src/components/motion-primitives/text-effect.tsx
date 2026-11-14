@@ -119,8 +119,8 @@ const AnimationComponent: React.FC<{
 }> = React.memo(({ segment, variants, per, segmentWrapperClassName }) => {
   const content =
     per === 'line' ? (
-      <motion.span variants={variants} className='block'>
-        {segment}
+      <motion.span variants={variants} className='block whitespace-pre-wrap'>
+        {segment || <br />}
       </motion.span>
     ) : per === 'word' ? (
       <motion.span
@@ -152,7 +152,7 @@ const AnimationComponent: React.FC<{
 AnimationComponent.displayName = 'AnimationComponent';
 
 const splitText = (text: string, per: PerType) => {
-  if (per === 'line') return text.split('\n');
+  if (per === 'line') return text.split(/\r\n|\r|\n/);
   if (per === 'char') {
     if (typeof Intl.Segmenter === 'function') {
       return Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text), part => part.segment);
@@ -223,7 +223,7 @@ export function TextEffect({
 }: TextEffectProps) {
   const reducedMotion = useReducedMotion();
   if (reducedMotion) {
-    return trigger ? React.createElement(as, { className, style }, children) : null;
+    return trigger ? React.createElement(as, { className: cn(per === 'line' && 'whitespace-pre-wrap', className), style }, children) : null;
   }
 
   const segments = splitText(children, per);
