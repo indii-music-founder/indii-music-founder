@@ -7,9 +7,11 @@ import {
     AgentLoopIteration,
     AgentLoopDefinitionSnapshot,
     AgentLoopActionCheckpointSchema,
+    AgentLoopExecutionSchema,
 } from '@indii/shared';
 import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
+import { toMillisSafe } from '@/utils/timestamps';
 import { useStore } from '@/core/store';
 import { maestroBatchingService } from '../MaestroBatchingService';
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
@@ -48,6 +50,15 @@ function definitionMatches(snapshot: AgentLoopDefinitionSnapshot, definition: Ag
         snapshot.verifiabilityCriteria === definition.verifiabilityCriteria &&
         snapshot.judgeMode === definition.judgeMode &&
         snapshot.maxIterations === definition.maxIterations;
+}
+
+function parseSavedExecution(execution: AgentLoopExecution) {
+    // FirestoreService replaces updatedAt with a Timestamp on every save.
+    return AgentLoopExecutionSchema.safeParse({
+        ...execution,
+        createdAt: toMillisSafe(execution.createdAt, NaN),
+        updatedAt: toMillisSafe(execution.updatedAt, NaN),
+    });
 }
 
 function resumableCheckpoint(execution: AgentLoopExecution) {
@@ -239,10 +250,14 @@ export class AgentLoopService {
         this.activeRuns.add(executionId);
         try {
             const userId = context.userId;
-            const execution = await this.getExecutionAsync(userId, executionId, true);
-            if (!execution) {
+            const savedExecution = await this.getExecutionAsync(userId, executionId, true);
+            if (!savedExecution) {
                 throw new Error(`Execution ${executionId} not found to resume`);
             }
+            const parsedExecution = parseSavedExecution(savedExecution);
+            const execution = parsedExecution.success
+                ? { ...savedExecution, ...parsedExecution.data }
+                : savedExecution;
             if (execution.id !== executionId) {
                 throw new Error(`Execution ${executionId} has a mismatched saved checkpoint identity.`);
             }
@@ -268,9 +283,17 @@ export class AgentLoopService {
                 throw new Error(`Execution ${executionId} cannot resume without a valid saved token allowance.`);
             }
 
+            if (!parsedExecution.success) {
+                throw new Error(`Execution ${executionId} has invalid saved execution state; repair it before resuming.`);
+            }
+
             logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
             executionTokenBudget(context, 1_500_000).ensureSpentAtLeast(execution.tokenBudgetSpent);
-            const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
+            const resumedExecution: AgentLoopExecution = {
+                ...execution,
+                status: AgentLoopStatusEnum.enum.EXECUTING,
+                updatedAt: Date.now(),
+            };
             delete resumedExecution.evaluationFailure;
             await this.persistExecution(userId, resumedExecution, 'before-dispatch', executionTokenBudget(context, 1_500_000));
 
@@ -292,7 +315,10 @@ export class AgentLoopService {
         try {
             const service = this.getService(userId);
             const executions = await service.list();
-            return executions.filter(execution => {
+            return executions.flatMap(savedExecution => {
+                const parsedExecution = parseSavedExecution(savedExecution);
+                if (!parsedExecution.success) return [];
+                const execution = { ...savedExecution, ...parsedExecution.data };
                 const snapshot = execution.definitionSnapshot;
                 const spent = execution.tokenBudgetSpent;
                 return ['IDLE', 'EXECUTING', 'EVALUATING', 'FAILED'].includes(execution.status)
@@ -302,7 +328,7 @@ export class AgentLoopService {
                     && Number.isSafeInteger(snapshot.maxIterations)
                     && execution.currentIteration <= snapshot.maxIterations
                     && spent !== undefined && Number.isSafeInteger(spent) && spent >= 0
-                    && Boolean(resumableCheckpoint(execution));
+                    && Boolean(resumableCheckpoint(execution)) ? [execution] : [];
             });
         } catch (error) {
             logger.warn(`[AgentLoop] Error listing resumable loops for user ${userId}:`, error);
