@@ -1311,8 +1311,13 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     logger.info(`[${this.id}] Using configured Vertex model: ${resolvedModel}`);
                 }
 
-                // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
-                const iterationTools = buildToolsSnapshot();
+                // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination.
+                // On the final permitted step of a multi-step run, withhold tools entirely so the
+                // model must compose a text answer instead of spending the step on another tool
+                // call and ending with a bare "Maximum iterations reached." (Boardroom caps
+                // agents at two steps, so this was the common outcome for the Conductor.)
+                const isFinalStepOfMultiStepRun = iterations === MAX_ITERATIONS && MAX_ITERATIONS > 1;
+                const iterationTools = isFinalStepOfMultiStepRun ? [] : buildToolsSnapshot();
 
                 if (signal?.aborted) {
                     throw new Error(signal.reason || 'Agent execution aborted via signal.');
@@ -1978,8 +1983,13 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 executionContext.rollback();
             }
 
+            const succeededTools = [...new Set(toolCalls
+                .filter(call => typeof call.result !== 'string' && call.result?.success === true)
+                .map(call => call.name))];
             return {
-                text: 'Maximum iterations reached.',
+                text: succeededTools.length > 0
+                    ? `I reached my step limit before writing a final summary. Completed actions: ${succeededTools.join(', ')}. Ask me to continue if anything is still missing.`
+                    : 'I reached my step limit before finishing this request. No action was completed. Ask me to continue and I will pick up from here.',
                 data: lastToolResult,
                 toolCalls,
                 error: 'Max iterations reached',

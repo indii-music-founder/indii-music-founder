@@ -595,7 +595,9 @@ export const BOARDROOM_INTENT_QUESTION = {
         'Choose action only when the user is asking to perform work now, including polite can-you requests. ' +
         'Capability questions ask what is possible or whether a feature exists, without requesting execution. ' +
         'Discussion includes greetings, social conversation, readiness/status questions, planning-only requests, advice, brainstorming, and explicit instructions not to execute. ' +
-        'Do not infer a request to execute a previous task from a greeting or a question asking whether you are available.',
+        'Do not infer a request to execute a previous task from a greeting or a question asking whether you are available. ' +
+        'A reply that supplies what an agent asked for in order to complete a pending requested task (for example "it is attached", "use upload-0", "here is the logo", or a confirmation such as "go ahead") is action, because it resumes that task. ' +
+        'attachedImageCount reports images attached to the current utterance; an attachment plus a request to place, apply, edit, mock up, or demo it is action.',
     criteria: {
         discussion: 'Conversation, advice, or planning without executing an action.',
         capability: 'Question about supported tools or functionality, without asking to execute.',
@@ -604,12 +606,12 @@ export const BOARDROOM_INTENT_QUESTION = {
 };
 export const BOARDROOM_INTENT_MIN_CONFIDENCE = 0.80;
 
-export async function judgeBoardroomIntent(query: string, recentConversation: string): Promise<BoardroomIntent | null> {
+export async function judgeBoardroomIntent(query: string, recentConversation: string, attachedImageCount = 0): Promise<BoardroomIntent | null> {
     if (!judgmentsAvailable("judgeBoardroomIntent") || !query.trim()) return null;
     try {
         const result = await httpsCallable<{ state: Record<string, unknown>; questions: Record<string, unknown> }, { answers: Record<string, unknown> }>(
             getFunctions(), 'typesafeJudge',
-        )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000) }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
+        )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000), attachedImageCount }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
         return parseBoardroomIntentDecision(result.data.answers.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
     } catch (error) { noteJudgmentFailure(error, 'Boardroom intent', "judgeBoardroomIntent"); return null; }
 }
