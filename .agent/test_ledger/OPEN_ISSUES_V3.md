@@ -7078,7 +7078,8 @@ Loaded stock Song → Performance Video, inspected Analyze Song / Beat-Sync Asse
 
 ### ISSUE-1613: Regional Tour Booking workflow treats an unsupported department fallback as a processed result
 
-- **Status:** 🔴 OPEN (2026-11-02; unsupported branch still returns a success-shaped fallback)
+- **Status:** 🟡 PARTIAL (2026-11-14; unsupported-department error and output-aggregation guard verified in unit tests; live UI acceptance pending)
+- **2026-11-14 verification:** `WorkflowEngine.ts` `executeDepartmentNode` default branch now throws `Department "<name>" does not have a supported execution handler.` instead of returning `"Processed by ..."`. `executeNode` now checks upstream parents of `outputNode` for `Status.ERROR` and downgrades downstream `outputNode`s in the error handler so partial failures cannot aggregate as `Status.DONE`. `WorkflowEngine.test.ts` (25/25 passing) verifies `Live & Booking Department` fails explicitly and prevents `outputNode` from marking `DONE`. Jev (`jev-1.14.0`, `req_01a1d8b38aa0767dbd4c29856167941d`) scored `fix_prevents_false_completion=0.97`, `readiness_score=2.99/4.00` (confidence `0.96`). Live UI acceptance remains pending.
 - **Historical status / severity:** CONFIRMED OPEN / MEDIUM; production UI plus source correlation, 2026-10-30.
 - **Location:** Workflow Lab → Templates → Regional Tour Booking Playbook → Run Workflow; Live & Booking Department node.
 - **Reproduction:** Load the stock template; enter a fictional tour/flyer QA brief explicitly prohibiting contacts/bookings/publication; run. The booking node immediately displays `Processed by Live & Booking De...`.

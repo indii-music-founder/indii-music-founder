@@ -981,4 +981,58 @@ describe('WorkflowEngine', () => {
         await engine.run({ bypassCache: true });
         expect(ImageGeneration.generateImages).toHaveBeenCalledTimes(2);
     });
+
+    it('rejects unsupported departments like Live & Booking Department and prevents output aggregation from marking DONE (ISSUE-1613)', async () => {
+        const nodes: CustomNode[] = [
+            { id: 'start', type: 'inputNode', position: { x: 0, y: 0 }, data: { nodeType: 'input', prompt: 'Regional tour QA brief', status: Status.PENDING } },
+            {
+                id: 'booking-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 0 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Live & Booking Department',
+                    selectedJobId: 'custom',
+                    status: Status.PENDING,
+                }
+            },
+            {
+                id: 'marketing-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Marketing Department',
+                    selectedJobId: 'marketing-department-job-0',
+                    status: Status.PENDING,
+                }
+            },
+            { id: 'end', type: 'outputNode', position: { x: 600, y: 75 }, data: { nodeType: 'output', status: Status.PENDING } },
+        ];
+        const edges: CustomEdge[] = [
+            { id: 'e1', source: 'start', target: 'booking-1' },
+            { id: 'e2', source: 'start', target: 'marketing-1' },
+            { id: 'e3', source: 'booking-1', target: 'end' },
+            { id: 'e4', source: 'marketing-1', target: 'end' },
+        ];
+
+        let latestNodes = nodes;
+        const trackingSetNodes = (updater: CustomNode[] | ((prev: CustomNode[]) => CustomNode[])) => {
+            latestNodes = typeof updater === 'function' ? updater(latestNodes) : updater;
+        };
+
+        const engine = new WorkflowEngine(nodes, edges, trackingSetNodes);
+        const results = await engine.run();
+
+        const bookingNode = latestNodes.find(n => n.id === 'booking-1');
+        expect(bookingNode?.data.status).toBe(Status.ERROR);
+        expect(bookingNode?.data.result).toBe(
+            'Department "Live & Booking Department" does not have a supported execution handler.'
+        );
+
+        const endNode = latestNodes.find(n => n.id === 'end');
+        expect(endNode?.data.status).toBe(Status.ERROR);
+        expect(String(endNode?.data.result)).toContain('Upstream branch failed (Live & Booking Department)');
+        expect(results.get('booking-1')).toBeUndefined();
+    });
 });

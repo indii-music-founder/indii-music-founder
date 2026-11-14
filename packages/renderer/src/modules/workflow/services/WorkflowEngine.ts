@@ -253,9 +253,20 @@ export class WorkflowEngine {
                     output = task.inputs.prompt;
                     break;
 
-                case 'outputNode':
+                case 'outputNode': {
+                    const failedUpstream = this.edges
+                        .filter(e => e.target === node.id)
+                        .map(e => this.nodes.find(n => n.id === e.source))
+                        .filter((src): src is CustomNode => Boolean(src && src.data?.status === Status.ERROR));
+                    if (failedUpstream.length > 0) {
+                        const failedNames = failedUpstream
+                            .map(src => ('departmentName' in src.data ? src.data.departmentName : src.id))
+                            .join(', ');
+                        throw new Error(`Upstream branch failed (${failedNames}); workflow output incomplete.`);
+                    }
                     output = task.inputs.data;
                     break;
+                }
 
                 case 'departmentNode':
                     output = await this.executeDepartmentNode(node, task.inputs, options);
@@ -310,6 +321,19 @@ export class WorkflowEngine {
             const msg = err instanceof Error ? err.message : 'Unknown error';
             this.updateNodeStatus(node.id, Status.ERROR, msg);
             options?.callbacks?.onNodeError?.(node.id, msg);
+
+            // Prevent any downstream outputNode from retaining DONE status from an earlier sibling branch
+            const failedNodeLabel = 'departmentName' in node.data ? node.data.departmentName : node.id;
+            const downstreamOutputs = this.edges
+                .filter(e => e.source === node.id)
+                .map(e => this.nodes.find(n => n.id === e.target))
+                .filter((dst): dst is CustomNode => Boolean(dst && dst.type === 'outputNode' && dst.data?.status === Status.DONE));
+            for (const outNode of downstreamOutputs) {
+                const outErr = `Upstream branch failed (${failedNodeLabel}); workflow output incomplete.`;
+                this.results.delete(outNode.id);
+                this.updateNodeStatus(outNode.id, Status.ERROR, outErr);
+                options?.callbacks?.onNodeError?.(outNode.id, outErr);
+            }
         }
     }
 
@@ -905,7 +929,9 @@ ${prompt}`
             }
 
             default:
-                return `Processed by ${data.departmentName}: ${prompt}`;
+                throw new Error(
+                    `Department "${data.departmentName}" does not have a supported execution handler.`
+                );
         }
     }
 
