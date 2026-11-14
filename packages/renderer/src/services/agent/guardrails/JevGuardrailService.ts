@@ -224,8 +224,11 @@ export class JevGuardrailService {
       }
     }
 
+    const hasFailedToolResult = toolResults.some(
+      (r) => r.reportedSuccess === false || Boolean(r.error),
+    );
     const isActionable = confidence['is_actionable_response'] ?? 1;
-    if (!prefix && isActionable < ACTIONABLE_THRESHOLD) {
+    if (!prefix && !hasFailedToolResult && isActionable < ACTIONABLE_THRESHOLD) {
       flags.push('unactionable_response');
       prefix = UNACTIONABLE_FALLBACK;
     }
