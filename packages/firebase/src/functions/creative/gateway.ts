@@ -1154,8 +1154,8 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
     providerSubmissionAttempted = true;
     let operation = await ai.models.generateVideos({
       model: modelId,
-      prompt: job.prompt,
-      ...(image ? { image } : {}),
+      // SDK 3.3 uses source for both text-to-video and image-to-video requests.
+      source: { prompt: job.prompt, ...(image ? { image } : {}) },
       config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
     });
 

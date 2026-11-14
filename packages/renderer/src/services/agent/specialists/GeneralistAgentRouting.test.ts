@@ -60,11 +60,6 @@ vi.mock('@/services/agent/tools/index', () => ({
 }));
 
 describe('GeneralistAgent Routing Logic', () => {
-    it('selects the approved Argon Conductor model instead of a specialist endpoint', () => {
-        const conductor = new GeneralistAgent();
-        expect((conductor as unknown as { modelId: string }).modelId).toBe(INTELLIGENCE_MODELS.TEXT.CONDUCTOR);
-    });
-
     let agent: GeneralistAgent;
 
     beforeEach(async () => {
@@ -86,6 +81,10 @@ describe('GeneralistAgent Routing Logic', () => {
         } as any);
 
         await agent.initialize();
+    });
+
+    it('selects the approved Argon Conductor model instead of a specialist endpoint', () => {
+        expect((agent as unknown as { modelId: string }).modelId).toBe(INTELLIGENCE_MODELS.TEXT.CONDUCTOR);
     });
 
     /**

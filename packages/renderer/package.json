@@ -85,7 +85,7 @@
     "devDependencies": {
         "@chromatic-com/storybook": "^5.1.2",
         "@firebase/rules-unit-testing": "^5.0.0",
-        "@google/genai": "^2.12.0",
+        "@google/genai": "^3.3.0",
         "@storybook/addon-a11y": "^10.3.5",
         "@storybook/addon-docs": "^10.3.5",
         "@storybook/addon-onboarding": "^10.3.5",

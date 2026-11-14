@@ -11,21 +11,16 @@
  * Video: 3 daisy chain segments of the producer working in the studio.
  */
 
-import { GoogleGenAI } from '@google/genai';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { getVertexAIClient } from '../packages/firebase/src/lib/vertexClient.js';
 
 // Load env from root
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const API_KEY = process.env.VITE_API_KEY;
-if (!API_KEY) {
-    console.error('❌ VITE_API_KEY not found in .env');
-    process.exit(1);
-}
-
-const client = new GoogleGenAI({ apiKey: API_KEY });
+const client = getVertexAIClient(undefined, process.env.VERTEX_IMAGE_LOCATION || 'global');
+const videoClient = getVertexAIClient(undefined, process.env.VERTEX_VIDEO_LOCATION || 'us-central1');
 
 // Output directory — all artifacts land here
 const OUTPUT_DIR = path.resolve(process.cwd(), 'scripts', 'daisy-chain-output');
@@ -191,13 +186,15 @@ async function generateDaisyChainVideo(editedImagePath: string): Promise<void> {
         // Generate video segment
         try {
             log('⏳', `Calling Veo 3.1 for segment ${i + 1}...`);
-            let operation = await client.models.generateVideos({
+            let operation = await videoClient.models.generateVideos({
                 model: VIDEO_MODEL,
-                prompt: segmentPrompt,
-                image: currentFrameBase64 ? {
-                    imageBytes: currentFrameBase64,
-                    mimeType: 'image/png'
-                } : undefined,
+                source: {
+                    prompt: segmentPrompt,
+                    image: currentFrameBase64 ? {
+                        imageBytes: currentFrameBase64,
+                        mimeType: 'image/png'
+                    } : undefined,
+                },
                 config: {
                     aspectRatio: '16:9',
                     numberOfVideos: 1,
@@ -221,30 +218,19 @@ async function generateDaisyChainVideo(editedImagePath: string): Promise<void> {
                 log('⏳', `Polling... (${elapsed}s elapsed)`);
 
                 // Re-poll using the full operation object
-                operation = await client.operations.getVideosOperation({
+                operation = await videoClient.operations.getVideosOperation({
                     operation: operation,
                 });
             }
 
-            // Extract video result
+            // With no output GCS URI configured, Vertex returns inline video bytes.
+            if (operation.error) throw new Error(JSON.stringify(operation.error));
             const video = operation.response?.generatedVideos?.[0]?.video;
-            if (!video?.uri) {
-                log('⚠️', `Segment ${i + 1} returned no video URI. Continuing chain without visual continuity.`);
-                chainContext = '';
-                continue;
-            }
-
-            log('✅', `Segment ${i + 1} complete! URI: ${video.uri.substring(0, 80)}...`);
-
-            // Download the video
-            const videoResponse = await fetch(`${video.uri}&key=${API_KEY}`);
-            if (videoResponse.ok) {
-                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-                const videoFilename = `03_video_segment_${i + 1}.mp4`;
-                const videoPath = path.join(OUTPUT_DIR, videoFilename);
-                fs.writeFileSync(videoPath, videoBuffer);
-                log('💾', `Video saved: ${videoFilename} (${(videoBuffer.length / 1024 / 1024).toFixed(1)} MB)`);
-            }
+            if (!video?.videoBytes) throw new Error('Veo returned no inline video bytes.');
+            const videoBuffer = Buffer.from(video.videoBytes, 'base64');
+            const videoFilename = `03_video_segment_${i + 1}.mp4`;
+            fs.writeFileSync(path.join(OUTPUT_DIR, videoFilename), videoBuffer);
+            log('💾', `Video saved: ${videoFilename} (${(videoBuffer.length / 1024 / 1024).toFixed(1)} MB)`);
 
             // ─── DAISY CHAIN: Analyze for next segment ───
             if (i < SEGMENTS - 1) {
@@ -270,6 +256,7 @@ async function generateDaisyChainVideo(editedImagePath: string): Promise<void> {
 
         } catch (err: unknown) {
             const errMsg = err instanceof Error ? err.message : String(err);
+            process.exitCode = 1;
             log('❌', `Segment ${i + 1} failed: ${errMsg}`);
 
             // Best-effort: continue the chain without this segment's frame

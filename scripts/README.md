@@ -37,7 +37,7 @@
 | Script                     | Runner                                  | Purpose                                                             |
 | -------------------------- | --------------------------------------- | ------------------------------------------------------------------- |
 | `run-gauntlet.sh`          | `bash scripts/run-gauntlet.sh`          | **Full E2E stress test (The Gauntlet)** — runs all Playwright specs |
-| `agent-stress-test.mjs`    | `node scripts/agent-stress-test.mjs --model-ladder --loop=3` | Live agent prompt stress test with model ladder and feedback retries |
+| `agent-stress-test.mjs`    | `node --import tsx scripts/agent-stress-test.mjs --model-ladder --loop=3` | Vertex agent prompt stress test with model ladder and feedback retries |
 | `load-test.js`             | `node scripts/load-test.js`             | HTTP load test for API endpoints                                    |
 | `stress-test-rag.ts`       | `npx tsx scripts/stress-test-rag.ts`    | RAG pipeline stress test                                            |
 | `keyboard-audit.ts`        | `npx tsx scripts/keyboard-audit.ts`     | Accessibility keyboard navigation audit                             |
@@ -50,7 +50,7 @@
 
 | Script                       | Runner                                       | Purpose                                  |
 | ---------------------------- | -------------------------------------------- | ---------------------------------------- |
-| `verify-api-permissions.ts`  | `npx tsx scripts/verify-api-permissions.ts`  | Check all API key permissions            |
+| `verify-api-permissions.ts`  | `npx tsx scripts/verify-api-permissions.ts`  | Check Vertex AI access with Application Default Credentials |
 | `verify-auth-config.ts`      | `npx tsx scripts/verify-auth-config.ts`      | Verify Firebase Auth configuration       |
 | `verify-rag.ts`              | `npx tsx scripts/verify-rag.ts`              | End-to-end RAG pipeline verification     |
 | `verify-rag-filedata.ts`     | `npx tsx scripts/verify-rag-filedata.ts`     | Verify RAG file ingestion                |

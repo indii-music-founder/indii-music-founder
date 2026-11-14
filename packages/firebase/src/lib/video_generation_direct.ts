@@ -10,11 +10,10 @@
  */
 
 import * as admin from "firebase-admin";
-import { GoogleGenAI } from "@google/genai";
 import { finalizeOperationReservation } from "../functions/billing/enforceOperationCost";
 import { renderFailureReservationOutcome } from "../functions/video/renderCostLifecycle";
 import { normalizeVeoDuration, resolveVeoModel } from "./video";
-import { getVertexAIBaseUrl } from "./vertexClient";
+import { getVertexAIClient } from "./vertexClient";
 
 /**
  * Sleep helper.
@@ -157,16 +156,10 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         const { modelId } = resolveVeoModel(requestedModel);
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
-        const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
         const location = process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
-        const ai = new GoogleGenAI({
-            vertexai: true,
-            project: projectId,
-            location,
-            httpOptions: { baseUrl: getVertexAIBaseUrl(location) },
-        });
+        const ai = getVertexAIClient(undefined, location);
 
-        console.log(`[VideoGenDirect] Using Vertex AI SDK with model: ${modelId}, project: ${projectId}`);
+        console.log(`[VideoGenDirect] Using Vertex AI SDK with model: ${modelId}, location: ${location}`);
 
         // ── Step 3: Build config ───────────────────────────────────────────
         // Only include parameters confirmed by official docs:
@@ -211,23 +204,11 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         }, { merge: true });
         providerSubmissionAttempted = true;
 
-        let operation;
-        if (imageInput) {
-            // Image-to-video
-            operation = await ai.models.generateVideos({
-                model: modelId,
-                prompt: finalPrompt,
-                image: imageInput,
-                config: config,
-            });
-        } else {
-            // Text-to-video
-            operation = await ai.models.generateVideos({
-                model: modelId,
-                prompt: finalPrompt,
-                config: config,
-            });
-        }
+        let operation = await ai.models.generateVideos({
+            model: modelId,
+            source: { prompt: finalPrompt, ...(imageInput ? { image: imageInput } : {}) },
+            config,
+        });
 
         console.log(`[VideoGenDirect] Operation created. Polling for completion...`);
 

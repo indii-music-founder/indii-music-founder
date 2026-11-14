@@ -5,7 +5,8 @@
  * Run this to diagnose why the app is broken after account separation.
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { getVertexAIClient } from "../packages/firebase/src/lib/vertexClient.js";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../packages/firebase/src/config/models.js";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth, Auth } from "firebase-admin/auth";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
@@ -34,59 +35,27 @@ function log(result: ValidationResult) {
   if (result.details) console.log(`  ${result.details}`);
 }
 
-async function validateGoogleGenAI() {
-  const apiKey = process.env.VITE_API_KEY;
-
-  if (!apiKey) {
-    log({
-      name: "Google GenAI API Key",
-      status: "✗",
-      message: "VITE_API_KEY not set in .env",
-      details: "Without this, image/video generation will fail.",
-    });
-    return;
-  }
-
+async function validateVertexAI() {
   try {
-    const ai = new GoogleGenAI({ apiKey });
-
-    // Try to list models (lightweight test)
+    const ai = getVertexAIClient();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: { role: "user", parts: [{ text: "Test connection" }] },
+      model: FUNCTION_INTELLIGENCE_MODELS.TEXT.LITE,
+      contents: "Reply with one word to confirm connectivity.",
     });
+    if (!response.text?.trim()) throw new Error("Vertex returned no text.");
 
     log({
-      name: "Google GenAI API",
+      name: "Vertex AI",
       status: "✓",
-      message: "API key is valid and reachable",
-      details: `Model: gemini-3-flash-preview, Response status: ${response ? "OK" : "No response"}`,
+      message: "Authenticated Vertex text generation succeeded",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (message.includes("API key")) {
-      log({
-        name: "Google GenAI API",
-        status: "✗",
-        message: "API key is invalid or revoked",
-        details: `Error: ${message}`,
-      });
-    } else if (message.includes("quota") || message.includes("billing")) {
-      log({
-        name: "Google GenAI API",
-        status: "✗",
-        message: "⚠️ LIKELY CAUSE: Billing/quota issue (prepayment credits depleted?)",
-        details: `Error: ${message}`,
-      });
-    } else {
-      log({
-        name: "Google GenAI API",
-        status: "✗",
-        message: "Failed to connect",
-        details: `Error: ${message}`,
-      });
-    }
+    log({
+      name: "Vertex AI",
+      status: "✗",
+      message: "Vertex text generation failed",
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -185,7 +154,7 @@ async function main() {
 
   console.log("Checking critical integrations...\n");
 
-  await validateGoogleGenAI();
+  await validateVertexAI();
   console.log("");
   await validateFirebase();
 

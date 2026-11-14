@@ -308,7 +308,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      */
     /**
      * Decoupled, Capability-based Router and model resolver.
-     * Resolves a capability name (e.g. 'text-agent'), model key (e.g. 'TEXT_AGENT'),
+     * Resolves a capability name (e.g. 'text-conductor'), model key (e.g. 'TEXT_AGENT'),
      * or model ID (e.g. 'gemini-3.1-pro-preview') to the active model ID,
      * respecting any Remote Config overrides.
      */
@@ -316,6 +316,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const candidate = modelOrCapability || this.model?.model || FALLBACK_MODEL;
 
         const CAPABILITY_TO_MODEL_KEY: Record<string, string> = {
+            'text-conductor': 'TEXT_CONDUCTOR',
             'text-agent': 'TEXT_AGENT',
             'text-fast': 'TEXT_FAST',
             'text-lite': 'TEXT_LITE',

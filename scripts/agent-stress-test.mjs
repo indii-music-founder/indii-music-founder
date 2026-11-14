@@ -10,46 +10,28 @@
  * would function in the production app.
  *
  * Usage:
- *   node scripts/agent-stress-test.mjs
- *   node scripts/agent-stress-test.mjs --agent finance     # Test single agent
- *   node scripts/agent-stress-test.mjs --quick             # 1 prompt per agent
- *   node scripts/agent-stress-test.mjs --model-ladder      # Compare Lite/Fast/Pro
- *   node scripts/agent-stress-test.mjs --models=a,b --loop=3
+ *   node --import tsx scripts/agent-stress-test.mjs
+ *   node --import tsx scripts/agent-stress-test.mjs --agent finance
+ *   node --import tsx scripts/agent-stress-test.mjs --quick
+ *   node --import tsx scripts/agent-stress-test.mjs --model-ladder
+ *   node --import tsx scripts/agent-stress-test.mjs --models=a,b --loop=3
  *
- * Requires: VITE_API_KEY in .env
+ * Requires: Google Cloud Application Default Credentials for Vertex AI.
  */
 
-import { GoogleGenAI } from '@google/genai';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { getVertexAIClient } from '../packages/firebase/src/lib/vertexClient.ts';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../packages/firebase/src/config/models.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
 
-// ─── Load API Key ────────────────────────────────────────────────────────────
-function loadApiKey() {
-    try {
-        const envFile = readFileSync(resolve(PROJECT_ROOT, '.env'), 'utf-8');
-        const match = envFile.match(/^VITE_API_KEY=(.+)$/m);
-        if (match) return match[1].trim();
-    } catch { /* ignore */ }
-    return process.env.VITE_API_KEY || process.env.GOOGLE_API_KEY;
-}
-
-const API_KEY = loadApiKey();
-if (!API_KEY) {
-    console.error('❌ No API key found. Set VITE_API_KEY in .env or GOOGLE_API_KEY env var.');
-    process.exit(1);
-}
-
-const genai = new GoogleGenAI({ apiKey: API_KEY });
-const DEFAULT_MODEL = process.env.AGENT_STRESS_MODEL || 'gemini-3-flash-preview';
-const MODEL_LADDER = [
-    'gemini-3.1-flash-lite',
-    'gemini-3-flash-preview',
-    'gemini-3.1-pro-preview',
-];
+const genai = getVertexAIClient();
+const { LITE, FAST, PRO } = FUNCTION_INTELLIGENCE_MODELS.TEXT;
+const DEFAULT_MODEL = process.env.AGENT_STRESS_MODEL || FAST;
+const MODEL_LADDER = [LITE, FAST, PRO];
 
 // ─── Load Agent System Prompts from agents/*/prompt.md ───────────────────────
 function loadSystemPrompt(agentId) {
