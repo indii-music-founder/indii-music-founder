@@ -17,10 +17,21 @@ const requestSchema = z.object({
   majorMilestoneUpdates: z.boolean().default(true),
 }).strict();
 
+export type FoundingArtistWaitlistStatus = 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked';
+
+const PRESERVED_ENROLLED_STATUSES = new Set<string>(['waitlisted', 'invited', 'accepted', 'declined', 'revoked']);
+
 export interface FoundingArtistEnrollmentResult {
-  status: 'waitlisted';
+  status: FoundingArtistWaitlistStatus;
   queuePosition: number;
   alreadyJoined: boolean;
+}
+
+export interface FoundingArtistInvitationAcceptanceResult {
+  status: 'accepted';
+  queuePosition: number;
+  alreadyAccepted: boolean;
+  betaAccessActive: true;
 }
 
 interface VerifiedIdentity {
@@ -37,8 +48,42 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function validateVerifiedEmailOrThrow(email: string): string {
+  const normalizedEmail = normalizeEmail(email);
+  if (!z.string().email().max(320).safeParse(normalizedEmail).success) {
+    throw new HttpsError('failed-precondition', 'The verified account does not contain a valid email address.');
+  }
+  return normalizedEmail;
+}
+
 function hashEmail(email: string): string {
   return createHash('sha256').update(email).digest('hex');
+}
+
+async function requireVerifiedFoundingArtistRequest(
+  request: CallableRequest<unknown>,
+  operationPrefix: string,
+): Promise<VerifiedIdentity> {
+  validateAppCheckV2(request);
+  const uid = requireVerifiedEmailV2(request);
+  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
+    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
+  }
+  if (request.rawRequest) {
+    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
+      userId: uid,
+      policy: 'verified-free',
+      operationId: `${operationPrefix}:${uid}`,
+    });
+    if (!protection.allowed) {
+      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
+    }
+  }
+  const email = typeof request.auth?.token.email === 'string' ? request.auth.token.email : '';
+  if (!email) {
+    throw new HttpsError('failed-precondition', 'The verified account does not contain an email address.');
+  }
+  return { uid, email };
 }
 
 export async function enrollVerifiedFoundingArtist(
@@ -46,10 +91,7 @@ export async function enrollVerifiedFoundingArtist(
   input: EnrollmentInput,
   firestore: admin.firestore.Firestore = admin.firestore(),
 ): Promise<FoundingArtistEnrollmentResult> {
-  const normalizedEmail = normalizeEmail(identity.email);
-  if (!z.string().email().max(320).safeParse(normalizedEmail).success) {
-    throw new HttpsError('failed-precondition', 'The verified account does not contain a valid email address.');
-  }
+  const normalizedEmail = validateVerifiedEmailOrThrow(identity.email);
 
   const emailHash = hashEmail(normalizedEmail);
   const artistRef = firestore.collection(FOUNDING_ARTIST_WAITLIST_COLLECTION).doc(identity.uid);
@@ -93,8 +135,12 @@ export async function enrollVerifiedFoundingArtist(
           },
         );
       }
+      const existingStatus: FoundingArtistWaitlistStatus =
+        typeof existing.status === 'string' && PRESERVED_ENROLLED_STATUSES.has(existing.status)
+          ? existing.status as FoundingArtistWaitlistStatus
+          : 'waitlisted';
       return {
-        status: 'waitlisted',
+        status: existingStatus,
         queuePosition: typeof existing.queuePosition === 'number' ? existing.queuePosition : 0,
         alreadyJoined: true,
       };
@@ -158,38 +204,115 @@ export async function enrollVerifiedFoundingArtist(
   });
 }
 
+export async function acceptVerifiedFoundingArtistInvitation(
+  identity: VerifiedIdentity,
+  firestore: admin.firestore.Firestore = admin.firestore(),
+): Promise<FoundingArtistInvitationAcceptanceResult> {
+  const normalizedEmail = validateVerifiedEmailOrThrow(identity.email);
+  const emailHash = hashEmail(normalizedEmail);
+  const artistRef = firestore.collection(FOUNDING_ARTIST_WAITLIST_COLLECTION).doc(identity.uid);
+  const userRef = firestore.collection('users').doc(identity.uid);
+
+  return firestore.runTransaction(async (transaction) => {
+    const artistSnapshot = await transaction.get(artistRef);
+    if (!artistSnapshot.exists) {
+      throw new HttpsError('failed-precondition', 'No Founding Artist waitlist record exists for this account.');
+    }
+
+    const existing = artistSnapshot.data() as {
+      emailHash?: unknown;
+      queuePosition?: unknown;
+      status?: unknown;
+      invitation?: { communicationId?: unknown } | null;
+    };
+
+    if (existing.emailHash !== emailHash) {
+      throw new HttpsError('permission-denied', 'This invitation belongs to a different verified email address.');
+    }
+
+    const queuePosition = typeof existing.queuePosition === 'number' ? existing.queuePosition : 0;
+    if (existing.status === 'accepted') {
+      return {
+        status: 'accepted',
+        queuePosition,
+        alreadyAccepted: true,
+        betaAccessActive: true,
+      };
+    }
+
+    if (existing.status !== 'invited') {
+      throw new HttpsError('failed-precondition', 'Your Founding Artist Beta invitation is not currently ready to accept.');
+    }
+
+    const timestamp = admin.firestore.FieldValue.serverTimestamp();
+    const communicationId = typeof existing.invitation?.communicationId === 'string'
+      ? existing.invitation.communicationId
+      : null;
+    const eventDocId = communicationId
+      ? `${identity.uid}_invitation_accepted_${communicationId}`
+      : `${identity.uid}_invitation_accepted_${randomUUID()}`;
+    const eventRef = firestore.collection(FOUNDING_ARTIST_EVENTS_COLLECTION).doc(eventDocId);
+
+    transaction.update(artistRef, {
+      status: 'accepted',
+      acceptedAt: timestamp,
+      'invitation.status': 'accepted',
+      'invitation.acceptedAt': timestamp,
+      updatedAt: timestamp,
+    });
+    transaction.set(userRef, {
+      foundingArtistBeta: {
+        status: 'accepted',
+        queuePosition,
+        communicationId,
+        acceptedAt: timestamp,
+      },
+      updatedAt: timestamp,
+    }, { merge: true });
+    transaction.set(eventRef, {
+      uid: identity.uid,
+      type: 'invitation_accepted',
+      fromStatus: 'invited',
+      toStatus: 'accepted',
+      communicationId,
+      queuePosition,
+      createdAt: timestamp,
+    });
+
+    return {
+      status: 'accepted',
+      queuePosition,
+      alreadyAccepted: false,
+      betaAccessActive: true,
+    };
+  });
+}
+
 export async function joinFoundingArtistWaitlistHandler(
   request: CallableRequest<unknown>,
 ): Promise<FoundingArtistEnrollmentResult> {
-  validateAppCheckV2(request);
-  const uid = requireVerifiedEmailV2(request);
-  if (request.auth?.token?.firebase?.sign_in_provider === 'anonymous') {
-    throw new HttpsError('permission-denied', 'Anonymous accounts may not perform this operation.');
-  }
-  if (request.rawRequest) {
-    const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
-      userId: uid,
-      policy: 'verified-free',
-      operationId: `founding-artist-waitlist:${uid}`,
-    });
-    if (!protection.allowed) {
-      throw new HttpsError('resource-exhausted', 'Request rate limit exceeded. Please try again later.');
-    }
-  }
-  const email = typeof request.auth?.token.email === 'string' ? request.auth.token.email : '';
-  if (!email) {
-    throw new HttpsError('failed-precondition', 'The verified account does not contain an email address.');
-  }
-
+  const identity = await requireVerifiedFoundingArtistRequest(request, 'founding-artist-waitlist');
   const parsed = requestSchema.safeParse(request.data ?? {});
   if (!parsed.success) {
     throw new HttpsError('invalid-argument', 'The waitlist request is invalid.');
   }
 
-  return enrollVerifiedFoundingArtist({ uid, email }, parsed.data);
+  return enrollVerifiedFoundingArtist(identity, parsed.data);
+}
+
+export async function acceptFoundingArtistInvitationHandler(
+  request: CallableRequest<unknown>,
+): Promise<FoundingArtistInvitationAcceptanceResult> {
+  const identity = await requireVerifiedFoundingArtistRequest(request, 'founding-artist-accept');
+  return acceptVerifiedFoundingArtistInvitation(identity);
 }
 
 export const joinFoundingArtistWaitlist = onCall(
   { cors: true, enforceAppCheck: false, secrets: [arcjetKey] },
   joinFoundingArtistWaitlistHandler,
+);
+
+export const acceptFoundingArtistInvitation = onCall(
+  { cors: true, enforceAppCheck: false, secrets: [arcjetKey], memory: '512MiB' },
+  acceptFoundingArtistInvitationHandler,
 );
