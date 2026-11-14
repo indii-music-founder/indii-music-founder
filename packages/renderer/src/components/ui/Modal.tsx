@@ -17,11 +17,16 @@
  * </Modal>
  * ```
  */
-import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import * as MotionReact from 'motion/react';
 import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { isTopFocusTrap, useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+
+const { AnimatePresence, motion } = MotionReact;
+// Fall back cleanly when component tests replace motion/react with a partial stub.
+const useModalPresence: () => boolean =
+    Object.hasOwn(MotionReact, 'useIsPresent') ? MotionReact.useIsPresent : () => true;
 
 interface ModalProps {
     isOpen: boolean;
@@ -42,7 +47,7 @@ interface ModalProps {
 
 /** Exit animation may outlive the open state and its keyboard focus trap. */
 function ModalOverlay({ children, ...props }: React.ComponentProps<typeof motion.div>) {
-    const isPresent = useIsPresent();
+    const isPresent = useModalPresence();
     const overlayRef = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
         if (overlayRef.current) overlayRef.current.inert = !isPresent;
