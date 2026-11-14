@@ -170,5 +170,38 @@ describe('TypeSafe Boardroom Jev Judgments', () => {
             expect(rec.recommendedModule).toBe('creative');
             expect(rec.source).toBe('deterministic');
         });
+
+        it('propagates real Choice confidence and falls back on low/invalid tab confidence', async () => {
+            mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+                data: {
+                    answers: {
+                        recommended_tab: { choice: 'browser', confidence: 0.78 },
+                        recommended_module: { choice: 'distribution', confidence: 0.84 },
+                    },
+                },
+            }));
+
+            const validRec = await judgeBoardroomWorkspaceRecommendation([
+                { role: 'user', text: 'Check Spotify for Artists documentation' },
+            ]);
+            expect(validRec.confidence).toBe(0.78);
+            expect(validRec.source).toBe('jev');
+
+            mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({
+                data: {
+                    answers: {
+                        recommended_tab: { choice: 'browser', confidence: 0.3 },
+                        recommended_module: { choice: 'distribution', confidence: 0.9 },
+                    },
+                },
+            }));
+
+            const lowConf = await judgeBoardroomWorkspaceRecommendation([
+                { role: 'user', text: 'Need a new cover art canvas' },
+            ]);
+            expect(lowConf.recommendedTab).toBe('module');
+            expect(lowConf.recommendedModule).toBe('creative');
+            expect(lowConf.source).toBe('deterministic');
+        });
     });
 });

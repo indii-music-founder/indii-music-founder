@@ -62,6 +62,14 @@ describe('typesafeClient (server-side System One transport)', () => {
         await expect(badCreds.judge({ state: {}, questions: { q: { type: 'noul' } } }))
             .rejects.toMatchObject({ kind: 'credentials' });
 
+        const badRequest = createTypesafeClient({ apiKey: 'k', fetchImpl: (async () => errorResponse(400, 'invalid question')) as unknown as typeof fetch });
+        await expect(badRequest.judge({ state: {}, questions: { q: { type: 'noul' } } }))
+            .rejects.toMatchObject({ kind: 'input', status: 400 });
+
+        const validationErr = createTypesafeClient({ apiKey: 'k', fetchImpl: (async () => errorResponse(422, 'unprocessable')) as unknown as typeof fetch });
+        await expect(validationErr.judge({ state: {}, questions: { q: { type: 'noul' } } }))
+            .rejects.toMatchObject({ kind: 'input', status: 422 });
+
         const boom = createTypesafeClient({ apiKey: 'k', fetchImpl: (async () => errorResponse(500, 'kaboom')) as unknown as typeof fetch });
         await expect(boom.judge({ state: {}, questions: { q: { type: 'noul' } } }))
             .rejects.toMatchObject({ kind: 'upstream' });

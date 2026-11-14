@@ -1,5 +1,8 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
-import { judgmentsAvailable } from '@/config/typesafeJudgments';
+import { judgmentsAvailable, noteJudgmentFailure } from '@/config/typesafeJudgments';
+
+const INTENT_MIN_CONFIDENCE = 0.5;
+const SPECIALIST_MIN_CONFIDENCE = 0.5;
 
 export interface SpokenConversationIntentVerdict {
     action: 'barge_in_stop' | 'product_skill' | 'agent_reassignment' | 'general_conversation';
@@ -137,7 +140,7 @@ export async function judgeSpokenConversationIntent(
     currentAgentId?: string,
 ): Promise<SpokenConversationIntentVerdict> {
     const fallback = deterministicSpokenIntentFallback(spokenText);
-    if (fallback.action === 'barge_in_stop' || !judgmentsAvailable()) {
+    if (fallback.action === 'barge_in_stop' || !judgmentsAvailable('judgeSpokenConversationIntent')) {
         return fallback;
     }
 
@@ -169,7 +172,7 @@ export async function judgeSpokenConversationIntent(
                 },
                 targetSpecialist: {
                     type: 'choice' as const,
-                    instructions: "Assuming this inquiry is handled by a studio department specialist, which one is most qualified? If it is a general or conductor question, select 'none'.",
+                    instructions: "When this inquiry calls for a studio department specialist, which department is most qualified?",
                     criteria: {
                         legal: "Contracts, copyright, trademarks, sync clearance, split sheets, dispute review.",
                         finance: "Royalties, recoupment, budgets, revenue, accounting, taxes, payout ledgers.",
@@ -184,15 +187,14 @@ export async function judgeSpokenConversationIntent(
                         publicist: "Press releases, media pitching, journalist outreach, interviews.",
                         road: "Tour routing, venue scouting, gig travel, live performance logistics.",
                         brand: "Brand identity, tone of voice, visual cohesion, brand narrative.",
-                        none: "General studio conversation, Conductor coordination, or uncategorized.",
                     },
                 },
             },
         });
 
-        return parseSpokenIntentAnswers(result.data.answers, fallback, currentAgentId);
-    } catch {
-        // Safe fallback on network or service error
+        return parseSpokenIntentAnswers(result.data.answers, fallback);
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'spoken conversation intent judgment', 'judgeSpokenConversationIntent');
     }
 
     return fallback;
@@ -202,7 +204,6 @@ export async function judgeSpokenConversationIntent(
 export function parseSpokenIntentAnswers(
     rawAnswers: unknown,
     fallback: SpokenConversationIntentVerdict,
-    currentAgentId?: string,
 ): SpokenConversationIntentVerdict {
     if (!rawAnswers || typeof rawAnswers !== 'object' || Array.isArray(rawAnswers)) return fallback;
     const answers = rawAnswers as Record<string, unknown>;
@@ -229,7 +230,7 @@ export function parseSpokenIntentAnswers(
     const choice = intent?.choice;
     const confidence = intent?.confidence;
     if (typeof choice !== 'string' || !['barge_in_stop', 'agent_reassignment', 'product_skill', 'general_conversation'].includes(choice) ||
-        typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return fallback;
+        typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < INTENT_MIN_CONFIDENCE || confidence > 1) return fallback;
 
     const specAnswer = answers.targetSpecialist;
     const specialist = specAnswer !== null && typeof specAnswer === 'object' && !Array.isArray(specAnswer)
@@ -238,21 +239,20 @@ export function parseSpokenIntentAnswers(
     const specChoice = specialist?.choice;
     const specConfidence = specialist?.confidence;
     const validSpecialist = typeof specChoice === 'string' &&
-        ['legal', 'finance', 'creative', 'video', 'music', 'marketing', 'social', 'distribution', 'publishing', 'licensing', 'publicist', 'road', 'brand', 'none'].includes(specChoice) &&
-        typeof specConfidence === 'number' && Number.isFinite(specConfidence) && specConfidence >= 0 && specConfidence <= 1;
-    const targetSpecialist = validSpecialist && specChoice !== 'none' ? specChoice as string : fallback.targetAgentId;
+        ['legal', 'finance', 'creative', 'video', 'music', 'marketing', 'social', 'distribution', 'publishing', 'licensing', 'publicist', 'road', 'brand'].includes(specChoice) &&
+        typeof specConfidence === 'number' && Number.isFinite(specConfidence) && specConfidence >= SPECIALIST_MIN_CONFIDENCE && specConfidence <= 1;
+    const targetSpecialist = validSpecialist ? specChoice : fallback.targetAgentId;
 
     if (choice === 'barge_in_stop') {
         return { action: 'barge_in_stop', confidence };
     }
 
-    if (choice === 'agent_reassignment' && !targetSpecialist) return fallback;
-
-    if (choice === 'agent_reassignment' || (targetSpecialist && targetSpecialist !== currentAgentId && targetSpecialist !== 'generalist')) {
+    if (choice === 'agent_reassignment') {
+        if (!targetSpecialist) return fallback;
         return {
             action: 'agent_reassignment',
             confidence,
-            targetAgentId: targetSpecialist || fallback.targetAgentId,
+            targetAgentId: targetSpecialist,
             explanation: `Jev routed to specialist: ${targetSpecialist}`,
         };
     }
@@ -264,6 +264,6 @@ export function parseSpokenIntentAnswers(
     return {
         action: 'general_conversation',
         confidence,
-        targetAgentId: targetSpecialist,
+        targetAgentId: fallback.targetAgentId,
     };
 }

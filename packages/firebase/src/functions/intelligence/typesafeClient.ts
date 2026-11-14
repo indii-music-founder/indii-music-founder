@@ -173,6 +173,9 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
                         } catch {
                             if (controller.signal.aborted) throw timeoutError();
                         }
+                        if (response.status === 400 || response.status === 422) {
+                            throw new TypesafeClientError('input', `TypeSafe judgment rejected payload (HTTP ${response.status}).`, response.status, requestId);
+                        }
                         if (response.status === 429) {
                             throw new TypesafeClientError('rate_limited', 'TypeSafe judgment rate limited.', response.status, requestId);
                         }

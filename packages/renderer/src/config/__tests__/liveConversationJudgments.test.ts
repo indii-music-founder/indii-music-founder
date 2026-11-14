@@ -41,6 +41,34 @@ describe('spoken intent answer composition (pure contract)', () => {
         const stop = deterministicSpokenIntentFallback('stop');
         expect(parseSpokenIntentAnswers(null, stop)).toBe(stop);
     });
+    it('does not hijack general conversation or product skill turns via speculative targetSpecialist picks', () => {
+        const general = parseSpokenIntentAnswers({
+            bargeInStop: { noul: 0.05 },
+            intent: { choice: 'general_conversation', confidence: 0.85 },
+            targetSpecialist: { choice: 'creative', confidence: 0.6 },
+        }, fallback);
+        expect(general.action).toBe('general_conversation');
+        expect(general.targetAgentId).toBeUndefined();
+
+        const skill = parseSpokenIntentAnswers({
+            bargeInStop: { noul: 0.02 },
+            intent: { choice: 'product_skill', confidence: 0.9 },
+            targetSpecialist: { choice: 'legal', confidence: 0.8 },
+        }, fallback);
+        expect(skill.action).toBe('product_skill');
+        expect(skill.targetAgentId).toBe('legal');
+    });
+    it('rejects low-confidence intent or specialist choices', () => {
+        expect(parseSpokenIntentAnswers({
+            intent: { choice: 'agent_reassignment', confidence: 0.35 },
+            targetSpecialist: { choice: 'legal', confidence: 0.9 },
+        }, fallback)).toBe(fallback);
+
+        expect(parseSpokenIntentAnswers({
+            intent: { choice: 'agent_reassignment', confidence: 0.9 },
+            targetSpecialist: { choice: 'legal', confidence: 0.3 },
+        }, fallback)).toBe(fallback);
+    });
 });
 
 vi.mock('firebase/functions', () => ({
@@ -50,6 +78,7 @@ vi.mock('firebase/functions', () => ({
 
 vi.mock('@/config/typesafeJudgments', () => ({
     judgmentsAvailable: vi.fn(() => true),
+    noteJudgmentFailure: vi.fn(),
 }));
 
 describe('liveConversationJudgments', () => {
@@ -131,6 +160,22 @@ describe('liveConversationJudgments', () => {
 
             const verdict = await judgeSpokenConversationIntent('Hello my friend');
             expect(verdict.action).toBe('general_conversation');
+        });
+
+        it('omits none from targetSpecialist criteria so specialist options do not compete with none', async () => {
+            mockHttpsCallable.mockResolvedValueOnce({
+                data: {
+                    answers: {
+                        bargeInStop: { noul: 0.02 },
+                        intent: { choice: 'general_conversation', confidence: 0.9 },
+                        targetSpecialist: { choice: 'creative', confidence: 0.6 },
+                    },
+                },
+            });
+
+            await judgeSpokenConversationIntent('Just brainstorming ideas for fall', 'generalist');
+            const payload = mockHttpsCallable.mock.calls[0]?.[0] as { questions?: { targetSpecialist?: { criteria?: Record<string, unknown> } } };
+            expect(payload.questions?.targetSpecialist?.criteria).not.toHaveProperty('none');
         });
     });
 });

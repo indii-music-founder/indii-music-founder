@@ -6155,3 +6155,136 @@ describe('creator incident classification confidence', () => {
         });
     });
 });
+
+describe('TypeSafe Choice whitelisting, Score bounds, and confidence hardening', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReturnValue(true);
+    });
+
+    it('judgeCandidatePreselect abstains on unparseable choice, out-of-range index, or invalid/low confidence', async () => {
+        const candidates = [{ id: 'c0', prompt: 'a' }, { id: 'c1', prompt: 'b' }];
+        for (const bad of [
+            { choice: 'not_a_candidate', confidence: 0.9 },
+            { choice: 'candidate_9', confidence: 0.9 },
+            { choice: 'candidate_1', confidence: undefined },
+            { choice: 'candidate_1', confidence: 0.4 },
+            { choice: 'candidate_1', confidence: Number.NaN },
+        ]) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { bestCandidate: bad } } }));
+            expect(await judgeCandidatePreselect('prompt', candidates)).toBeNull();
+        }
+    });
+
+    it('judgeStatementAnomalyTriage rejects unlisted choices and out-of-range fraud scores', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    classification: { choice: 'INVENTED_TYPE' },
+                    fraud_risk: { score: 99 },
+                    action: { choice: 'INVESTIGATE' },
+                },
+            },
+        }));
+
+        const verdict = await judgeStatementAnomalyTriage({
+            trackTitle: 'Midnight Drive',
+            platform: 'Spotify',
+            territory: 'US',
+            streams: 100,
+            revenueUsd: -5,
+            flagReason: 'Negative adjustment',
+        });
+        expect(verdict.classification).toBe('DSP_CLAWBACK');
+        expect(verdict.fraudRiskScore).toBe(1);
+    });
+
+    it('judgeNextBestAction falls back on unlisted modules, prototype keys, or invalid/low confidence', async () => {
+        const ctx = {
+            currentModule: 'creative',
+            unreleasedTrackCount: 1,
+            hasActiveCampaign: false,
+            pendingSplitCount: 0,
+            hasUnreadStatements: false,
+        };
+        for (const bad of [
+            { choice: 'toString', confidence: 0.95 },
+            { choice: 'unknown_module', confidence: 0.95 },
+            { choice: 'marketing', confidence: 0.3 },
+            { choice: 'marketing', confidence: Number.NaN },
+        ]) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { next_module: bad } } }));
+            const res = await judgeNextBestAction(ctx);
+            expect(res.nextModule).toBe('distribution');
+        }
+    });
+
+    it('judgeTopImageVariationCandidate ignores prototype property names in best_pick', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    best_pick: { choice: 'toString' },
+                    score: { score: 4 },
+                },
+            },
+        }));
+
+        const result = await judgeTopImageVariationCandidate('cover art', [
+            { id: 'var-1', promptAlignmentSummary: 'clean match' },
+            { id: 'var-2', promptAlignmentSummary: 'alt match' },
+        ]);
+        expect(result.topCandidateId).toBe('var-1');
+    });
+
+    it('judgeNextBestModule bounds out-of-range urgency scores and ignores unlisted IDs', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    best_action: { choice: 'unlisted_id' },
+                    urgency: { score: 99 },
+                },
+            },
+        }));
+
+        const res = await judgeNextBestModule([
+            { id: 'a1', targetModule: 'distribution', title: 'T1', description: 'D1', evidence: 'E1' },
+            { id: 'a2', targetModule: 'finance', title: 'T2', description: 'D2', evidence: 'E2' },
+        ]);
+        expect(res?.targetModule).toBe('distribution');
+        expect(res?.relevanceScore).toBeUndefined();
+    });
+
+    it('judgeTargetSpecialistAgent & judgeCatalogCollisionRisk ignore unlisted Choice values', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    target_agent: { choice: 'fabricated_agent', confidence: 0.95 },
+                    confidence_score: { score: 4 },
+                },
+            },
+        }));
+
+        const routed = await judgeTargetSpecialistAgent({
+            userPrompt: 'Review my contract agreement',
+            activeModule: 'generalist',
+        });
+        expect(routed.targetAgentId).toBe('legal');
+
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: {
+                answers: {
+                    disposition: { choice: 'INVENTED_DISPOSITION' },
+                    confidence: { score: 4 },
+                },
+            },
+        }));
+
+        const collision = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Neon Highway',
+            incomingIsrc: 'USABC2600055',
+            existingCatalog: [{ id: 'trk_1', title: 'Solar Flare', isrc: 'USABC2600001' }],
+        });
+        expect(collision.disposition).toBe('NEW_CANONICAL_TRACK');
+    });
+});

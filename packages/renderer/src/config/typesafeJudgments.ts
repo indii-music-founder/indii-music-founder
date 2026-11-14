@@ -32,6 +32,30 @@ function confidentDeclaredChoice(answer: unknown, allowed: readonly string[], mi
     return value.choice;
 }
 
+function whitelistedChoice<T extends string>(answer: unknown, allowed: readonly T[] | ReadonlySet<string>): T | null {
+    const raw = typeof answer === 'string'
+        ? answer
+        : answer !== null && typeof answer === 'object' && !Array.isArray(answer)
+            ? (answer as { choice?: unknown }).choice
+            : undefined;
+    if (typeof raw !== 'string') return null;
+    const valid = Array.isArray(allowed) ? allowed.includes(raw as T) : (allowed as ReadonlySet<string>).has(raw);
+    if (!valid) return null;
+    if (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && 'confidence' in answer) {
+        const conf = (answer as { confidence?: unknown }).confidence;
+        if (conf !== undefined && (typeof conf !== 'number' || !Number.isFinite(conf) || conf < 0 || conf > 1)) {
+            return null;
+        }
+    }
+    return raw as T;
+}
+
+function boundedConfidenceValue(answer: unknown): number | null {
+    if (answer === null || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const conf = (answer as { confidence?: unknown }).confidence;
+    return typeof conf === 'number' && Number.isFinite(conf) && conf >= 0 && conf <= 1 ? conf : null;
+}
+
 // ---------------------------------------------------------------------------
 // Judgment 2: skill intent routing (consumer: ProductSkillRegistry)
 // ---------------------------------------------------------------------------
@@ -185,7 +209,7 @@ export function judgmentsAvailable(scope?: string): boolean {
     return true;
 }
 
-function noteJudgmentFailure(err: unknown, context: string, scope: string): void {
+export function noteJudgmentFailure(err: unknown, context: string, scope: string): void {
     const code = err !== null && typeof err === 'object' && 'code' in err ? err.code : undefined;
     // A bad request, malformed response, or individual timeout is not a proxy outage.
     if (code === 'functions/invalid-argument' || code === 'functions/internal' || code === 'functions/deadline-exceeded') {
@@ -419,7 +443,7 @@ export async function judgeColumnSemantics(
             for (const [ref, answer] of Object.entries(result.data.answers ?? {})) {
                 if (typeof answer !== 'object' || answer === null) continue;
                 const a = answer as { choice?: unknown; confidence?: unknown };
-                if (typeof a.choice !== 'string' || typeof a.confidence !== 'number') continue;
+                if (typeof a.choice !== 'string' || typeof a.confidence !== 'number' || !Number.isFinite(a.confidence) || a.confidence > 1) continue;
                 if (a.confidence < FOUNDRY_COLUMN_MIN_CONFIDENCE) continue;
                 if (!FOUNDRY_SEMANTIC_ENUM.includes(a.choice as InferredFieldSemantic)) continue;
                 const index = Number(ref.replace('col_', ''));
@@ -1852,15 +1876,17 @@ export async function judgeCandidatePreselect(
         const ans = result.data.answers?.bestCandidate as { choice?: unknown; confidence?: unknown } | undefined;
         if (!ans || typeof ans.choice !== 'string') return null;
 
-        const match = ans.choice.match(/candidate_(\d+)/);
-        const idx = match ? parseInt(match[1], 10) : 0;
-        const validIdx = idx >= 0 && idx < candidates.length ? idx : 0;
-        const confidence = typeof ans.confidence === 'number' ? ans.confidence : 0.75;
+        const match = ans.choice.match(/^candidate_(\d+)$/);
+        if (!match) return null;
+        const idx = parseInt(match[1], 10);
+        if (idx < 0 || idx >= candidateSummaries.length) return null;
+        const confidence = boundedConfidenceValue(ans);
+        if (confidence === null || confidence < 0.5) return null;
 
         return {
-            selectedIndex: validIdx,
+            selectedIndex: idx,
             confidence,
-            recommendedId: candidates[validIdx].id,
+            recommendedId: candidates[idx].id,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'candidate preselect judgment', "judgeCandidatePreselect");
@@ -3202,13 +3228,21 @@ export async function judgeStatementAnomalyTriage(
         });
 
         const ans = result.data.answers;
-        const classAns = ans?.classification as { choice?: unknown } | undefined;
-        const riskAns = ans?.fraud_risk as { score?: unknown } | undefined;
-        const actAns = ans?.action as { choice?: unknown } | undefined;
+        const allowedClassifications: readonly StatementAnomalyType[] = [
+            'BOT_STREAM_SPIKE',
+            'DSP_CLAWBACK',
+            'RATE_COMPRESSION',
+            'CATALOG_METADATA_MISMATCH',
+            'ORGANIC_VIRAL_SURGE',
+        ];
+        const allowedActions = ['INVESTIGATE', 'DISPUTE', 'ACCEPT_SURGE', 'RECONCILE_METADATA'] as const;
 
-        const classification = (typeof classAns?.choice === 'string' ? classAns.choice : 'ORGANIC_VIRAL_SURGE') as StatementAnomalyType;
-        const fraudRiskScore = typeof riskAns?.score === 'number' ? riskAns.score : 0;
-        const actionRecommended = (typeof actAns?.choice === 'string' ? actAns.choice : 'INVESTIGATE') as 'INVESTIGATE' | 'DISPUTE' | 'ACCEPT_SURGE' | 'RECONCILE_METADATA';
+        const classification = whitelistedChoice(ans?.classification, allowedClassifications);
+        const fraudRiskScore = boundedJudgmentNumber(ans?.fraud_risk, 'score', 3);
+        const actionRecommended = whitelistedChoice(ans?.action, allowedActions);
+        if (classification === null || fraudRiskScore === null || actionRecommended === null) {
+            return fallbackVerdict();
+        }
 
         return {
             classification,
@@ -3311,12 +3345,6 @@ export async function judgeNextBestAction(
             },
         });
 
-        const ans = result.data.answers;
-        const modAns = ans?.next_module as { choice?: unknown; confidence?: unknown } | undefined;
-
-        const choice = (typeof modAns?.choice === 'string' ? modAns.choice : 'creative') as IndiiModuleTarget;
-        const conf = typeof modAns?.confidence === 'number' ? modAns.confidence : 0.85;
-
         const ctaMap: Record<IndiiModuleTarget, string> = {
             creative: 'Create visuals for your next release in Creative Studio',
             distribution: 'Distribute your finished music to DSPs',
@@ -3326,10 +3354,19 @@ export async function judgeNextBestAction(
             dashboard: 'View your release metrics and health dashboard',
             social: 'Manage social engagement and fan drops',
         };
+        const allowedModules = Object.keys(ctaMap) as IndiiModuleTarget[];
+
+        const ans = result.data.answers;
+        const modAns = ans?.next_module;
+        const choice = whitelistedChoice(modAns, allowedModules);
+        const conf = boundedConfidenceValue(modAns);
+        if (choice === null || conf === null || conf < 0.5) {
+            return fallbackVerdict();
+        }
 
         return {
             nextModule: choice,
-            callToAction: ctaMap[choice] || 'Proceed to next milestone',
+            callToAction: ctaMap[choice],
             confidence: conf,
             rationale: `System One predicted optimal workflow progression to ${choice}.`,
         };
@@ -3578,7 +3615,7 @@ export async function judgeSessionChunkTriage(
                 },
                 hook_energy: {
                     type: 'score' as const,
-                    instructions: 'Rate the visual and performance intensity of this clip from 1 (flat/static) to 5 (peak charisma/energy).',
+                    instructions: 'Rate the visual and performance intensity of this clip across the ordered criteria levels from flat/static (lowest level) to peak charisma/energy (highest level).',
                     criteria: [
                         'Static, flat, unengaging or unusable.',
                         'Low energy background action.',
@@ -3863,7 +3900,7 @@ export async function judgeLyricVisualPromptSynthesis(
                 },
                 density: {
                     type: 'score' as const,
-                    instructions: 'Rate the visual density for this visual setup from 1 (sparse negative space) to 5 (elaborate maximalist set).',
+                    instructions: 'Rate the visual density for this visual setup across the ordered criteria levels from sparse negative space (lowest level) to elaborate maximalist set (highest level).',
                     criteria: [
                         'Sparse negative space, single isolated element.',
                         'Clean minimalist composition.',
@@ -3995,7 +4032,7 @@ export async function judgeAudioStemSeparationPriority(
                 },
                 phase_risk: {
                     type: 'score' as const,
-                    instructions: 'Rate the phase cancellation risk when summed with the canonical studio master from 1 (zero risk) to 5 (destructive phase comb-filtering).',
+                    instructions: 'Rate the phase cancellation risk when summed with the canonical studio master across the ordered criteria levels from zero risk (lowest level) to destructive phase comb-filtering (highest level).',
                     criteria: [
                         'No audible phase interaction (muted or uncorrelated).',
                         'Minor comb filtering masked by master track.',
@@ -4169,7 +4206,7 @@ export async function judgeMusicVideoContinuity(
                 },
                 flow_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the visual editing flow from 1 (disjointed/stuttery) to 5 (cinematic masterpiece rhythm).',
+                    instructions: 'Rate the visual editing flow across the ordered criteria levels from disjointed/stuttery (lowest level) to cinematic masterpiece rhythm (highest level).',
                     criteria: [
                         'Disjointed and visually jarring.',
                         'Awkward cut timing or monotonous angles.',
@@ -4311,7 +4348,7 @@ export async function judgeSocialAudioSnippetSelection(
                 },
                 viral_potential: {
                     type: 'score' as const,
-                    instructions: 'Rate the viral social media engagement potential of this hook from 1 (unsuitable) to 5 (explosive trend potential).',
+                    instructions: 'Rate the viral social media engagement potential of this hook across the ordered criteria levels from unsuitable (lowest level) to explosive trend potential (highest level).',
                     criteria: [
                         'Low energy or confusing context.',
                         'Standard song excerpt with low standalone impact.',
@@ -4461,7 +4498,7 @@ export async function judgeMerchPrintViability(
                 },
                 contrast: {
                     type: 'score' as const,
-                    instructions: 'Rate the visual contrast between the artwork and the fabric background from 1 (unreadable) to 5 (punchy high contrast).',
+                    instructions: 'Rate the visual contrast between the artwork and the fabric background across the ordered criteria levels from unreadable (lowest level) to punchy high contrast (highest level).',
                     criteria: [
                         'Near invisible, dark on dark or light on light.',
                         'Low contrast, hard to read from 3 feet away.',
@@ -4619,7 +4656,7 @@ export async function judgeFanCommentModeration(
                 },
                 vibe: {
                     type: 'score' as const,
-                    instructions: 'Rate the cultural contribution of this comment from 1 (toxic/spam) to 5 (deep artistic appreciation).',
+                    instructions: 'Rate the cultural contribution of this comment across the ordered criteria levels from toxic/spam (lowest level) to deep artistic appreciation (highest level).',
                     criteria: [
                         'Spam, bot comment, or toxic trolling.',
                         'Low-effort generic noise.',
@@ -4768,7 +4805,7 @@ export async function judgeSyncLicensingMoodFit(
                 },
                 fit_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the creative alignment between this song and the supervisor scene brief from 1 (unrelated) to 5 (perfect synchronization lock).',
+                    instructions: 'Rate the creative alignment between this song and the supervisor scene brief across the ordered criteria levels from unrelated (lowest level) to perfect synchronization lock (highest level).',
                     criteria: [
                         'Clashing mood or tempo.',
                         'Plausible background filler with low emotional synergy.',
@@ -4928,7 +4965,7 @@ export async function judgeCameraAngleContinuity(
                 },
                 diversity_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the cinematic composition diversity and angle progression from 1 (flat/monotonous) to 5 (masterful dynamic variety).',
+                    instructions: 'Rate the cinematic composition diversity and angle progression across the ordered criteria levels from flat/monotonous (lowest level) to masterful dynamic variety (highest level).',
                     criteria: [
                         'Monotonous single-angle stagnation.',
                         'Predictable cuts with repetitive angle usage.',
@@ -4941,11 +4978,18 @@ export async function judgeCameraAngleContinuity(
         });
 
         const ans = result.data.answers;
-        const angAns = ans?.next_angle as { choice?: unknown } | undefined;
+        const allowedAngles: readonly ShotAngle[] = [
+            'EYE_LEVEL',
+            'LOW_ANGLE_HEROIC',
+            'HIGH_ANGLE_VULNERABLE',
+            'DUTCH_TILT_TENSION',
+            'OVERHEAD_GOD_VIEW',
+            'POINT_OF_VIEW',
+        ];
         const jumpAns = ans?.jump_violation as { noul?: unknown } | number | undefined;
         const divAns = ans?.diversity_score as { score?: unknown } | number | undefined;
 
-        const resolvedAngle = (typeof angAns?.choice === 'string' ? angAns.choice : fallbackNextAngle) as ShotAngle;
+        const resolvedAngle = whitelistedChoice(ans?.next_angle, allowedAngles) ?? fallbackNextAngle;
         const jumpProb = boundedJudgmentNumber(jumpAns, 'noul', 1);
         const resolvedDiversity = oneIndexedScore(divAns, fallbackDiversityScore);
 
@@ -5071,7 +5115,7 @@ export async function judgeVideoColorGradeMood(
                 },
                 synergy_score: {
                     type: 'score' as const,
-                    instructions: 'Score the aesthetic synergy between the music track and the chosen color palette from 1 (severe mismatch) to 5 (audiovisual perfection).',
+                    instructions: 'Score the aesthetic synergy between the music track and the chosen color palette across the ordered criteria levels from severe mismatch (lowest level) to audiovisual perfection (highest level).',
                     criteria: [
                         'Jarring emotional dissonance.',
                         'Generic or slightly mismatched tone.',
@@ -5093,15 +5137,13 @@ export async function judgeVideoColorGradeMood(
             'DESATURATED_GRITTY_NOIR', 'PASTEL_DREAM_POP', 'VINTAGE_SEPIA_VINYL',
             ...(cyberpunkRequested ? ['NEON_CYBER_NOCTURNE' as const] : []),
         ];
-        const resolvedPreset = allowedPresets.find(preset => preset === preAns?.choice) ?? fallbackPreset;
-        const rawClash = typeof claAns === 'number' ? claAns : (claAns as { noul?: unknown } | null)?.noul;
-        const clashProb = typeof rawClash === 'number' && Number.isFinite(rawClash) && rawClash >= 0 && rawClash <= 1
-            ? rawClash : (clashingHazard ? 0.75 : 0.1);
+        const resolvedPreset = whitelistedChoice(preAns, allowedPresets) ?? fallbackPreset;
+        const parsedClash = boundedJudgmentNumber(claAns, 'noul', 1);
         const resolvedSynergy = oneIndexedScore(synAns, fallbackScore);
 
         return {
             recommendedPreset: resolvedPreset,
-            clashingGradeHazard: clashProb >= 0.5,
+            clashingGradeHazard: parsedClash === null || parsedClash === 0.5 ? clashingHazard : parsedClash > 0.5,
             aestheticSynergyScore: Math.max(1, Math.min(5, Math.round(resolvedSynergy) || fallbackScore)),
             lutDescription: `System One color grade: ${resolvedPreset} (synergy score: ${resolvedSynergy}/5).`,
         };
@@ -5235,7 +5277,7 @@ export async function judgeStatementCatalogDisambiguation(
                 },
                 confidence_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the confidence of this catalog match from 1 (unmatched/guess) to 5 (ironclad metadata lock).',
+                    instructions: 'Rate the confidence of this catalog match across the ordered criteria levels from unmatched/guess (lowest level) to ironclad metadata lock (highest level).',
                     criteria: [
                         'No match or wild guess.',
                         'Plausible title similarity with conflicting artist/version.',
@@ -5385,7 +5427,7 @@ export async function judgeSplitSheetRightsClearance(
                 },
                 dispute_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the dispute resistance and legal clarity of this split arrangement from 1 (severe dispute trap) to 5 (airtight legal clarity).',
+                    instructions: 'Rate the dispute resistance and legal clarity of this split arrangement across the ordered criteria levels from severe dispute trap (lowest level) to airtight legal clarity (highest level).',
                     criteria: [
                         'Severe dispute trap; missing critical release agreements or ambiguous ownership.',
                         'High risk of publishing claim conflicts or royalty clawbacks.',
@@ -5398,11 +5440,16 @@ export async function judgeSplitSheetRightsClearance(
         });
 
         const ans = result.data.answers;
-        const rigAns = ans?.rights_stream as { choice?: unknown } | undefined;
+        const allowedStreams: readonly RightsStreamType[] = [
+            'MASTER_SOUND_RECORDING_ONLY',
+            'COMPOSITION_PUBLISHING_ONLY',
+            'BOTH_EQUAL_SYNCED',
+            'AMBIGUOUS_HIGH_DISPUTE_RISK',
+        ];
         const conAns = ans?.needs_contract as { noul?: unknown } | number | undefined;
         const disAns = ans?.dispute_score as { score?: unknown } | number | undefined;
 
-        const resolvedStream = (typeof rigAns?.choice === 'string' ? rigAns.choice : fallbackStream) as RightsStreamType;
+        const resolvedStream = whitelistedChoice(ans?.rights_stream, allowedStreams) ?? fallbackStream;
         const needsContractProb = boundedJudgmentNumber(conAns, 'noul', 1);
         const requiresAgreement = fallbackRequiresProducerAgreement ||
             (needsContractProb !== null && needsContractProb > 0.5);
@@ -5543,7 +5590,7 @@ export async function judgeUniversalErrorRemediation(
                 },
                 severity_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the severity and workflow disruption of this crash from 1 (minor cosmetic hiccup) to 5 (catastrophic blocking crash).',
+                    instructions: 'Rate the severity and workflow disruption of this crash across the ordered criteria levels from minor cosmetic hiccup (lowest level) to catastrophic blocking crash (highest level).',
                     criteria: [
                         'Minor cosmetic glitch with zero data risk.',
                         'Transient network blip that resolves automatically.',
@@ -5694,7 +5741,7 @@ export async function judgeLikenessEnrolmentSuitability(
                 },
                 clarity_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the facial fidelity and training suitability from 1 (unusable) to 5 (flawless reference portrait).',
+                    instructions: 'Rate the facial fidelity and training suitability across the ordered criteria levels from unusable (lowest level) to flawless reference portrait (highest level).',
                     criteria: [
                         'Unusable image without recognizable clear facial geometry.',
                         'Low quality with significant artifacts or blur.',
@@ -5833,7 +5880,7 @@ export async function judgePersonaPosturePreset(
                 },
                 alignment: {
                     type: 'score' as const,
-                    instructions: 'Score how accurately this posture preset matches the artist description from 1 (poor fit) to 5 (flawless alignment).',
+                    instructions: 'Score how accurately this posture preset matches the artist description across the ordered criteria levels from poor fit (lowest level) to flawless alignment (highest level).',
                     criteria: [
                         'Conflicting philosophy and mismatched tone.',
                         'Plausible generic fit with slight friction.',
@@ -5978,7 +6025,7 @@ export async function judgeTaxFormCompliance(
                 },
                 compliance_score: {
                     type: 'score' as const,
-                    instructions: 'Score the legal compliance and audit-readiness from 1 (unusable/reject) to 5 (ironclad IRS compliant).',
+                    instructions: 'Score the legal compliance and audit-readiness across the ordered criteria levels from unusable/reject (lowest level) to ironclad IRS compliant (highest level).',
                     criteria: [
                         'Unusable or unrelated file.',
                         'Defective form requiring mandatory correction.',
@@ -6159,7 +6206,7 @@ export async function judgeDistributionBlocker(
                 },
                 readiness_score: {
                     type: 'score' as const,
-                    instructions: 'Rate completeness of the supplied preflight fields from 1 (incomplete) to 5 (apparently complete). This is not delivery clearance.',
+                    instructions: 'Rate completeness of the supplied preflight fields across the ordered criteria levels from incomplete (lowest level) to apparently complete (highest level). This is not delivery clearance.',
                     criteria: [
                         'Missing multiple critical broadcast prerequisites.',
                         'Major blocker present requiring immediate asset correction.',
@@ -6350,7 +6397,7 @@ export async function judgeDdexGenreAndSubculture(
                 },
                 fit_score: {
                     type: 'score' as const,
-                    instructions: 'Rate the editorial playlist curation alignment from 1 (poor) to 5 (prime spotlight).',
+                    instructions: 'Rate the editorial playlist curation alignment across the ordered criteria levels from poor (lowest level) to prime spotlight (highest level).',
                     criteria: [
                         'Niche, misaligned with major editorial curation.',
                         'Marginal playlist compatibility.',
@@ -6363,18 +6410,23 @@ export async function judgeDdexGenreAndSubculture(
         });
 
         const ans = result.data.answers;
-        const genAns = ans?.primary_genre as { choice?: unknown } | undefined;
+        const allowedGenres: readonly DdexPrimaryGenre[] = [
+            'Electronic', 'Hip-Hop/Rap', 'Alternative Rock', 'R&B/Soul', 'Pop', 'Rock',
+            'Country', 'Jazz', 'Folk/Singer-Songwriter', 'Dance', 'Metal', 'Ambient/Experimental',
+        ];
+        const genAns = ans?.primary_genre;
         const fitAns = ans?.fit_score as { score?: unknown } | number | undefined;
 
-        const resolvedGenre = (typeof genAns?.choice === 'string' ? genAns.choice : fallbackPrimary) as DdexPrimaryGenre;
+        const resolvedGenre = whitelistedChoice(genAns, allowedGenres) ?? fallbackPrimary;
         const resolvedFit = oneIndexedScore(fitAns, 4);
+        const choiceConf = boundedConfidenceValue(genAns);
 
         return {
             ddexPrimaryGenre: resolvedGenre,
             subGenreCultural: fallbackCultural,
             moodTags: fallbackMoods,
             editorialPlaylistTarget: `${fallbackPlaylist} (Tier ${resolvedFit}/5)`,
-            confidence: 0.96,
+            confidence: choiceConf ?? 0.96,
         };
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'ddex genre classification judgment', "judgeDdexGenreAndSubculture");
@@ -6499,7 +6551,7 @@ export async function judgeAudioDrivenMerchSku(
                 },
                 conversion_score: {
                     type: 'score' as const,
-                    instructions: 'Score the purchase intent likelihood from 1 (unlikely impulse buy) to 5 (immediate must-have merch).',
+                    instructions: 'Score the purchase intent likelihood across the ordered criteria levels from unlikely impulse buy (lowest level) to immediate must-have merch (highest level).',
                     criteria: [
                         'Low emotional connection between audio and product.',
                         'Generic apparel; low conversion velocity.',
@@ -6656,12 +6708,14 @@ export async function judgeAudioMasterNormalization(
         });
 
         const ans = result.data.answers;
-        const stAns = ans?.compliance_status as { choice?: unknown } | undefined;
+        const allowedStatuses: readonly NormalizationStatus[] = [
+            'PASSED_COMPLIANT', 'NEEDS_ATTENUATION', 'NEEDS_LIMITER_BOOST', 'CLIPPING_HAZARD',
+        ];
         const noAns = ans?.is_safe_for_transcoding as { noul?: unknown } | undefined;
 
-        const resolvedStatus = (typeof stAns?.choice === 'string' ? stAns.choice : fallbackStatus) as NormalizationStatus;
+        const resolvedStatus = whitelistedChoice(ans?.compliance_status, allowedStatuses) ?? fallbackStatus;
         const safeProb = boundedJudgmentNumber(noAns, 'noul', 1);
-        const clippingHazard = safeProb === null || safeProb <= 0.5 || isClipping;
+        const clippingHazard = isClipping || safeProb === null || safeProb <= 0.5;
 
         return {
             status: resolvedStatus,
@@ -6790,7 +6844,7 @@ export async function judgeTargetSpecialistAgent(
                 },
                 confidence_score: {
                     type: 'score' as const,
-                    instructions: 'Rate routing confidence from 1 (ambiguous/uncertain) to 5 (undoubted domain match).',
+                    instructions: 'Rate routing confidence across the ordered criteria levels from ambiguous/uncertain (lowest level) to undoubted domain match (highest level).',
                     criteria: [
                         'Ambiguous or multi-disciplinary inquiry.',
                         'Plausible fit with minor cross-domain overlap.',
@@ -6803,12 +6857,20 @@ export async function judgeTargetSpecialistAgent(
         });
 
         const ans = result.data.answers;
-        const targetAns = ans?.target_agent as { choice?: unknown } | undefined;
+        const allowedTargets: readonly SpecialistAgentTarget[] = [
+            'creative', 'legal', 'marketing', 'finance', 'distribution', 'publishing', 'road', 'producer', 'generalist',
+        ];
+        const targetAns = ans?.target_agent;
         const confAns = ans?.confidence_score as { score?: unknown } | number | undefined;
 
-        const resolvedTarget = (typeof targetAns?.choice === 'string' ? targetAns.choice : fallbackTarget) as SpecialistAgentTarget;
+        const targetChoice = whitelistedChoice(targetAns, allowedTargets);
+        const targetChoiceConf = boundedConfidenceValue(targetAns);
         const rawScore = oneIndexedScore(confAns, 4);
-        const resolvedConf = Math.min(1.0, Math.max(0.2, (rawScore / 5)));
+        const scoreConf = Math.min(1.0, Math.max(0.2, rawScore / 5));
+        const resolvedConf = targetChoiceConf !== null && (confAns === undefined || targetChoiceConf < scoreConf)
+            ? targetChoiceConf
+            : scoreConf;
+        const resolvedTarget = targetChoice !== null && resolvedConf >= 0.45 ? targetChoice : fallbackTarget;
         const finalMisaligned = active !== 'generalist' && active !== resolvedTarget && resolvedTarget !== 'generalist';
 
         return {
@@ -6901,7 +6963,7 @@ export async function judgePromptActionability(
             questions: {
                 specificity: {
                     type: 'score' as const,
-                    instructions: 'Rate the specificity and operational readiness of this prompt from 1 (vague) to 5 (exhaustive production brief).',
+                    instructions: 'Rate the specificity and operational readiness of this prompt across the ordered criteria levels from vague (lowest level) to exhaustive production brief (highest level).',
                     criteria: [
                         'Single words or ambiguous concept with no constraints.',
                         'Mentions intent but misses format, aesthetic, and context.',
@@ -7101,7 +7163,7 @@ export async function judgeArtistDnaOnboarding(
                 },
                 maturity_score: {
                     type: 'score' as const,
-                    instructions: 'Score artist career maturity from 1 (bedroom beginner) to 5 (established headliner).',
+                    instructions: 'Score artist career maturity across the ordered criteria levels from bedroom beginner (lowest level) to established headliner (highest level).',
                     criteria: [
                         'Day 1 creator with unreleased demos.',
                         'Emerging DIY artist with 1-2 singles released.',
@@ -7208,7 +7270,7 @@ export async function judgeStemSeparationAcousticPurity(
             questions: {
                 purity_rating: {
                     type: 'score' as const,
-                    instructions: 'Rate stem acoustic purity and phase integrity from 1 (garbled) to 5 (isolated studio master).',
+                    instructions: 'Rate stem acoustic purity and phase integrity across the ordered criteria levels from garbled (lowest level) to isolated studio master (highest level).',
                     criteria: [
                         'Heavy phase cancellation, watery artifacts, severe crosstalk bleed.',
                         'Audible digital chirping and noticeable spill from other instruments.',
@@ -7576,7 +7638,7 @@ export async function judgeVideoChunkQuality(
                 },
                 score: {
                     type: 'score' as const,
-                    instructions: 'Rate visual usability for a finished music video from 1 (unusable discard) to 5 (flawless master take).',
+                    instructions: 'Rate visual usability for a finished music video across the ordered criteria levels from unusable discard (lowest level) to flawless master take (highest level).',
                     criteria: [
                         'Unusable footage that must be discarded.',
                         'Weak footage with major defects.',
@@ -7589,10 +7651,12 @@ export async function judgeVideoChunkQuality(
         });
 
         const ans = result.data.answers;
-        const classAns = ans?.class as { choice?: unknown } | undefined;
+        const allowedClasses: readonly VideoChunkVerdict['classification'][] = [
+            'KEEP_LEAD_TAKE', 'KEEP_BROLL', 'DISCARD_SHAKY', 'DISCARD_POOR_LIGHTING', 'DISCARD_DEAD_AIR',
+        ];
         const scoreAns = ans?.score as { score?: unknown } | undefined;
 
-        const resolvedClass = (typeof classAns?.choice === 'string' ? classAns.choice : classification) as VideoChunkVerdict['classification'];
+        const resolvedClass = whitelistedChoice(ans?.class, allowedClasses) ?? classification;
         const resolvedScore = Math.round(oneIndexedScore(scoreAns, usableScore));
         const resolvedKeep = resolvedClass === 'KEEP_LEAD_TAKE' || resolvedClass === 'KEEP_BROLL';
 
@@ -7675,7 +7739,7 @@ export async function judgeTopImageVariationCandidate(
                 },
                 score: {
                     type: 'score' as const,
-                    instructions: 'Rate overall aesthetic alignment and composition quality on a scale of 1 to 5.',
+                    instructions: 'Rate overall aesthetic alignment and composition quality across the ordered aesthetic levels.',
                     criteria: [
                         'Poor alignment or composition.',
                         'Weak aesthetic fit.',
@@ -7691,7 +7755,7 @@ export async function judgeTopImageVariationCandidate(
         const bestAns = ans?.best_pick as { choice?: unknown } | undefined;
         const scoreAns = ans?.score as { score?: unknown } | undefined;
 
-        const resolvedId = typeof bestAns?.choice === 'string' && criteria[bestAns.choice] ? bestAns.choice : fallbackCandidate;
+        const resolvedId = whitelistedChoice(bestAns, Object.keys(criteria)) ?? fallbackCandidate;
         const resolvedScore = Math.round(oneIndexedScore(scoreAns, fallbackScore));
 
         return {
@@ -7783,7 +7847,7 @@ export async function judgeNextBestModule(
                 },
                 urgency: {
                     type: 'score' as const,
-                    instructions: 'Rate the urgency of this step from 1 (background hygiene) to 5 (critical blocker or actionable revenue).',
+                    instructions: 'Rate the urgency of this step across the ordered criteria levels from background hygiene (lowest level) to critical blocker or actionable revenue (highest level).',
                     criteria: [
                         'Background hygiene with no immediate impact.',
                         'Low-priority useful task.',
@@ -7796,15 +7860,14 @@ export async function judgeNextBestModule(
         });
 
         const ans = result.data.answers;
-        const actionAns = ans?.best_action as { choice?: unknown } | undefined;
-        const urgencyAns = ans?.urgency as { score?: unknown } | undefined;
+        const actionAns = ans?.best_action;
+        const urgencyAns = ans?.urgency;
 
-        const chosenId = typeof actionAns?.choice === 'string' ? actionAns.choice : defaultCandidate.id;
+        const chosenId = whitelistedChoice(actionAns, Object.keys(criteria)) ?? defaultCandidate.id;
         const chosenCandidate = candidates.find(c => c.id === chosenId) || defaultCandidate;
 
-        const resolvedPrio = typeof urgencyAns?.score === 'number'
-            ? Math.round(oneIndexedScore(urgencyAns, 1))
-            : undefined;
+        const boundedUrgency = boundedJudgmentNumber(urgencyAns, 'score', 4);
+        const resolvedPrio = boundedUrgency !== null ? Math.round(boundedUrgency) + 1 : undefined;
 
         return {
             targetModule: chosenCandidate.targetModule,
@@ -8035,7 +8098,7 @@ export async function judgeExpenseDeductibility(
                 },
                 audit_strength: {
                     type: 'score' as const,
-                    instructions: 'Rate the audit defense strength of this deduction from 1 (high audit risk) to 5 (bulletproof IRS precedent).',
+                    instructions: 'Rate the audit defense strength of this deduction across the ordered criteria levels from high audit risk (lowest level) to bulletproof IRS precedent (highest level).',
                     criteria: [
                         'High audit risk with little support.',
                         'Weak deduction support.',
@@ -8151,7 +8214,7 @@ export async function judgeTourStopFeasibility(
                 },
                 feasibility: {
                     type: 'score' as const,
-                    instructions: 'Rate tour hop safety and scheduling sustainability from 1 (unacceptable hazard) to 5 (perfect routing).',
+                    instructions: 'Rate tour hop safety and scheduling sustainability across the ordered criteria levels from unacceptable hazard (lowest level) to perfect routing (highest level).',
                     criteria: [
                         'Unsafe or unsustainable tour hop.',
                         'Material schedule or safety concerns.',
@@ -8164,10 +8227,13 @@ export async function judgeTourStopFeasibility(
         });
 
         const ans = result.data.answers;
-        const statusAns = ans?.hop_status as { choice?: unknown } | undefined;
+        const allowedStatuses: readonly TourStopFeasibilityVerdict['status'][] = [
+            'OPTIMAL', 'TIGHT_TURNAROUND', 'LOGISTIC_RISK', 'INEFFICIENT_BACKTRACK',
+        ];
+        const statusAns = ans?.hop_status;
         const feasiAns = ans?.feasibility as { score?: unknown } | undefined;
 
-        const resolvedStatus = (typeof statusAns?.choice === 'string' ? statusAns.choice : status) as TourStopFeasibilityVerdict['status'];
+        const resolvedStatus = whitelistedChoice(statusAns, allowedStatuses) ?? status;
         const resolvedRating = Math.round(oneIndexedScore(feasiAns, rating));
 
         return {
@@ -8313,7 +8379,7 @@ export async function judgeMotionIntensityPreset(
                 },
                 intensity: {
                     type: 'score' as const,
-                    instructions: 'Score camera movement intensity from 1 (completely subtle/still) to 5 (extreme hyper-kinetic).',
+                    instructions: 'Score camera movement intensity across the ordered criteria levels from completely subtle/still (lowest level) to extreme hyper-kinetic (highest level).',
                     criteria: [
                         'Still or nearly imperceptible movement.',
                         'Subtle camera movement.',
@@ -8326,10 +8392,13 @@ export async function judgeMotionIntensityPreset(
         });
 
         const ans = result.data.answers;
-        const presetAns = ans?.preset as { choice?: unknown } | undefined;
+        const allowedPresets: readonly MotionIntensityPreset[] = [
+            'SLOW_DRIFT', 'DYNAMIC_TRACKING', 'KINETIC_WHIP', 'STATIC_LOCK',
+        ];
+        const presetAns = ans?.preset;
         const intensityAns = ans?.intensity as { score?: unknown } | undefined;
 
-        const resolvedPreset = (typeof presetAns?.choice === 'string' ? presetAns.choice : fallbackPreset) as MotionIntensityPreset;
+        const resolvedPreset = whitelistedChoice(presetAns, allowedPresets) ?? fallbackPreset;
         const resolvedScore = Math.round(oneIndexedScore(intensityAns, fallbackScore));
         const dampingMap: Record<MotionIntensityPreset, number> = {
             SLOW_DRIFT: 0.9,
@@ -8440,7 +8509,7 @@ export async function judgeStemSeparationRecipe(
                 },
                 confidence: {
                     type: 'score' as const,
-                    instructions: 'Score separation quality confidence from 1 (unreliable artifact risk) to 5 (pristine phase alignment).',
+                    instructions: 'Score separation quality confidence across the ordered criteria levels from unreliable artifact risk (lowest level) to pristine phase alignment (highest level).',
                     criteria: [
                         'Unreliable separation with severe artifacts.',
                         'Significant separation artifacts.',
@@ -8453,10 +8522,13 @@ export async function judgeStemSeparationRecipe(
         });
 
         const ans = result.data.answers;
-        const recipeAns = ans?.recipe as { choice?: unknown } | undefined;
+        const allowedRecipes: readonly StemSeparationRecipe[] = [
+            'TWO_STEM_VOCAL_INST', 'FOUR_STEM_CLASSIC', 'FIVE_STEM_DETAILED', 'PASS_THROUGH',
+        ];
+        const recipeAns = ans?.recipe;
         const confAns = ans?.confidence as { score?: unknown } | undefined;
 
-        const resolvedRecipe = (typeof recipeAns?.choice === 'string' ? recipeAns.choice : fallbackRecipe) as StemSeparationRecipe;
+        const resolvedRecipe = whitelistedChoice(recipeAns, allowedRecipes) ?? fallbackRecipe;
         const resolvedScore = Math.round(oneIndexedScore(confAns, fallbackScore));
 
         const modelMap: Record<StemSeparationRecipe, 'htdemucs' | 'mdx_extra' | 'bs_roformer'> = {
@@ -8730,7 +8802,7 @@ export async function judgeCatalogCollisionRisk(
                 },
                 confidence: {
                     type: 'score' as const,
-                    instructions: 'Rate disambiguation confidence from 1 (ambiguous) to 5 (ironclad).',
+                    instructions: 'Rate disambiguation confidence across the ordered criteria levels from ambiguous (lowest level) to ironclad (highest level).',
                     criteria: [
                         'Ambiguous match without reliable evidence.',
                         'Weak match with conflicting details.',
@@ -8743,14 +8815,13 @@ export async function judgeCatalogCollisionRisk(
         });
 
         const ans = result.data.answers;
+        const allowedDispositions: readonly CatalogCollisionDisposition[] = [
+            'IDENTICAL_COLLISION', 'INTENTIONAL_REMASTER', 'DELUXE_EDITION', 'NEW_CANONICAL_TRACK',
+        ];
         const dispRaw = ans?.disposition;
         const confRaw = ans?.confidence;
 
-        const dispChoice = typeof dispRaw === 'string'
-            ? dispRaw
-            : (typeof (dispRaw as { choice?: unknown })?.choice === 'string'
-                ? (dispRaw as { choice: string }).choice
-                : undefined);
+        const dispChoice = whitelistedChoice(dispRaw, allowedDispositions);
 
         const confScore = typeof confRaw === 'number'
             ? confRaw
@@ -8758,7 +8829,7 @@ export async function judgeCatalogCollisionRisk(
                 ? (confRaw as { score: number }).score
                 : undefined);
 
-        const resolvedDisp = (dispChoice ?? disposition) as CatalogCollisionDisposition;
+        const resolvedDisp = dispChoice ?? disposition;
         const resolvedConf = typeof confScore === 'number' && Number.isFinite(confScore)
             ? Math.round(oneIndexedScore(confScore, confidence))
             : confidence;
@@ -11187,21 +11258,31 @@ export async function judgeBoardroomWorkspaceRecommendation(
             },
         });
 
-        const tabAns = result.data.answers?.recommended_tab;
-        const tabChoice = (typeof tabAns === 'string' ? tabAns : (tabAns as { choice?: unknown } | null)?.choice) as BoardroomWorkspaceRecommendation['recommendedTab'];
-
-        const modAns = result.data.answers?.recommended_module;
-        const modChoice = (typeof modAns === 'string' ? modAns : (modAns as { choice?: unknown } | null)?.choice) as BoardroomWorkspaceRecommendation['recommendedModule'];
-
         const validTabs: BoardroomWorkspaceRecommendation['recommendedTab'][] = ['browser', 'module', 'workbench', 'agent-feed'];
         const validMods: NonNullable<BoardroomWorkspaceRecommendation['recommendedModule']>[] = [
             'creative', 'publishing', 'finance', 'legal', 'marketing', 'social', 'distribution'
         ];
 
+        const tabAns = result.data.answers?.recommended_tab;
+        const tabChoice = whitelistedChoice(tabAns, validTabs);
+        const tabConf = boundedConfidenceValue(tabAns);
+
+        const modAns = result.data.answers?.recommended_module;
+        const modChoice = whitelistedChoice(modAns, validMods);
+        const modConf = boundedConfidenceValue(modAns);
+
+        if (tabChoice === null || (tabConf !== null && tabConf < 0.5)) {
+            return fallback;
+        }
+        const useMod = modChoice !== null && (modConf === null || modConf >= 0.5);
+        const resolvedConfidence = tabConf !== null && modConf !== null && useMod
+            ? Math.min(tabConf, modConf)
+            : (tabConf ?? modConf ?? 0.95);
+
         return {
-            recommendedTab: validTabs.includes(tabChoice) ? tabChoice : fallback.recommendedTab,
-            recommendedModule: validMods.includes(modChoice as any) ? modChoice : fallback.recommendedModule,
-            confidence: 0.95,
+            recommendedTab: tabChoice,
+            recommendedModule: useMod ? modChoice : fallback.recommendedModule,
+            confidence: resolvedConfidence,
             reasoningHint: 'Recommended by TypeSafe Jev System One.',
             source: 'jev',
         };
