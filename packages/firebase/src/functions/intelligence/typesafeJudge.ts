@@ -32,6 +32,50 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function hasValidInstructions(instructions: unknown): boolean {
+    if (instructions === undefined || instructions === null) return true;
+    if (typeof instructions === 'string') return instructions.trim().length > 0;
+    if (Array.isArray(instructions)) return instructions.length > 0;
+    if (isPlainObject(instructions)) return Object.keys(instructions).length > 0;
+    return false;
+}
+
+function validateQuestionsSchema(questions: Record<string, unknown>): void {
+    for (const [key, rawQuestion] of Object.entries(questions)) {
+        if (!key.trim() || !isPlainObject(rawQuestion) || typeof rawQuestion.toJSON === 'function') {
+            throw new HttpsError('invalid-argument', `Question "${key}" must be a plain object.`);
+        }
+        const qType = rawQuestion.type;
+        if (qType !== 'noul' && qType !== 'choice' && qType !== 'score') {
+            throw new HttpsError('invalid-argument', `Question "${key}" has unsupported type.`);
+        }
+        if (!hasValidInstructions(rawQuestion.instructions)) {
+            throw new HttpsError('invalid-argument', `Question "${key}" has invalid instructions.`);
+        }
+        if (qType === 'choice') {
+            if (!isPlainObject(rawQuestion.criteria)) {
+                throw new HttpsError('invalid-argument', `Choice question "${key}" criteria must be an object.`);
+            }
+            const optionCount = Object.keys(rawQuestion.criteria).length;
+            if (optionCount < 1 || optionCount > 255) {
+                throw new HttpsError('invalid-argument', `Choice question "${key}" criteria must contain 1–255 options.`);
+            }
+        } else if (qType === 'score') {
+            if (!Array.isArray(rawQuestion.criteria) || rawQuestion.criteria.length < 2 || rawQuestion.criteria.length > 10) {
+                throw new HttpsError('invalid-argument', `Score question "${key}" criteria must be an array of 2–10 levels.`);
+            }
+        } else if (qType === 'noul' && rawQuestion.criteria !== undefined && rawQuestion.criteria !== null) {
+            if (!isPlainObject(rawQuestion.criteria)) {
+                throw new HttpsError('invalid-argument', `Noul question "${key}" criteria must be an object when provided.`);
+            }
+            const criteriaKeys = Object.keys(rawQuestion.criteria);
+            if (criteriaKeys.some((k) => k !== 'true' && k !== 'false')) {
+                throw new HttpsError('invalid-argument', `Noul question "${key}" criteria may only define "true" and "false".`);
+            }
+        }
+    }
+}
+
 export const typesafeJudge = onCall(
     {
         region: 'us-central1',
@@ -84,6 +128,7 @@ export const typesafeJudge = onCall(
         if (questionCount === 0 || questionCount > TYPESAFE_MAX_QUESTIONS) {
             throw new HttpsError('invalid-argument', `questions must contain 1–${TYPESAFE_MAX_QUESTIONS} entries.`);
         }
+        validateQuestionsSchema(input.questions);
 
         let stateJson: string;
         try {

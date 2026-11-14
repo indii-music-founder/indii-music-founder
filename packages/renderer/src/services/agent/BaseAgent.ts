@@ -767,6 +767,34 @@ export class BaseAgent implements SpecializedAgent {
                             ).catch(() => undefined);
                         }
 
+                        try {
+                            const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
+                            const outputCheck = await ModelArmor.scanOutput(fullText, getDefaultPolicy());
+                            if (outputCheck.redactedResponse) {
+                                fullText = outputCheck.redactedResponse;
+                            }
+                        } catch (armorErr) {
+                            logger.debug(`[BaseAgent] Streaming ModelArmor scan skipped: ${armorErr}`);
+                        }
+
+                        try {
+                            const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
+                            const guardrailResult = await Promise.race([
+                                jevGuardrailService.screen({
+                                    text: fullText,
+                                    tool_calls: [],
+                                    agentId: this.id,
+                                }),
+                                new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+                            ]);
+                            if (guardrailResult && guardrailResult.wasModified) {
+                                logger.warn(`[BaseAgent] 🛡️ Jev guardrail intercepted streaming response for ${this.id}. Flags: ${guardrailResult.flags.join(', ')}`);
+                                fullText = guardrailResult.text;
+                            }
+                        } catch (guardrailErr) {
+                            logger.debug(`[BaseAgent] Streaming Jev guardrail skipped (non-fatal): ${guardrailErr}`);
+                        }
+
                         // Store in memory (Phase 2 integration)
                         try {
                             const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
@@ -1950,6 +1978,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             jevGuardrailService.screen({
                                 text: finalResponse,
                                 tool_calls: toolCalls,
+                                agentId: this.id,
                             }),
                             new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
                         ]);

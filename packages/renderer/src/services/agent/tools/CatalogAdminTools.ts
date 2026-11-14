@@ -134,11 +134,16 @@ const catalog_query_gaps = wrapTool('catalog_query_gaps', async (args: {
 type Registry = 'ISWC' | 'CWR' | 'DDEX_ERN';
 
 interface ReleaseLikeData {
+    userId?: string;
     metadata?: Record<string, unknown>;
     isrc?: string;
     iswc?: string;
     trackTitle?: string;
     title?: string;
+}
+
+function isOwnedRelease(data: ReleaseLikeData, uid: string): boolean {
+    return typeof data.userId !== 'string' || data.userId.trim() === '' || data.userId === uid;
 }
 
 function writerRowsFrom(metadata: Record<string, unknown>): { name: string; percentage: number; role: string }[] {
@@ -171,6 +176,7 @@ const catalog_stage_registration_payload = wrapTool('catalog_stage_registration_
             const snap = await getDoc(doc(db, 'proprietaryIngestionReleases', args.releaseId));
             if (!snap.exists()) return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
             const data = snap.data() as ReleaseLikeData;
+            if (!isOwnedRelease(data, uid)) return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
             const metadata = (data.metadata ?? {}) as Record<string, unknown>;
             workTitle = String(metadata['trackTitle'] ?? data.trackTitle ?? data.title ?? '');
             refs = { releaseId: args.releaseId, masterHash: args.masterHash };
@@ -267,8 +273,10 @@ const catalog_dispatch_split_invitations = wrapTool('catalog_dispatch_split_invi
     try {
         const snap = await getDoc(doc(db, 'proprietaryIngestionReleases', args.releaseId));
         if (!snap.exists()) return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
+        const snapData = snap.data() as ReleaseLikeData;
+        if (!isOwnedRelease(snapData, uid)) return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
 
-        const metadata = ((snap.data() as ReleaseLikeData).metadata ?? {}) as Record<string, unknown>;
+        const metadata = (snapData.metadata ?? {}) as Record<string, unknown>;
         const splits = (metadata['recordingSplits'] ?? metadata['splits'] ?? []) as Record<string, unknown>[];
         if (!Array.isArray(splits) || splits.length === 0) {
             return toolError('No splits recorded for this release — nothing to invite.', 'NO_SPLITS');

@@ -68,11 +68,14 @@ export const catalogAdminSweep = onSchedule(
         const cursor = (cursorSnap.data() ?? { lastUserId: null, completedAt: null }) as SweepCursor;
         const cutoffMs = Date.now() - SWEEP_STALE_AFTER_MS;
 
-        const usersQuery: admin.firestore.Query = db
+        const baseUsersQuery: admin.firestore.Query = db
             .collection('users')
-            .orderBy('__name__')
-            .where(admin.firestore.FieldPath.documentId(), '>', cursor.lastUserId)
-            .limit(SWEEP_PAGE_SIZE);
+            .orderBy('__name__');
+        const usersQuery: admin.firestore.Query = (
+            typeof cursor.lastUserId === 'string' && cursor.lastUserId.trim().length > 0
+                ? baseUsersQuery.where(admin.firestore.FieldPath.documentId(), '>', cursor.lastUserId)
+                : baseUsersQuery
+        ).limit(SWEEP_PAGE_SIZE);
         const users = await usersQuery.get();
         if (users.empty) {
             await cursorRef.set({ lastUserId: null, completedAt: new Date().toISOString() });

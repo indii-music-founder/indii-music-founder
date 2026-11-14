@@ -6,6 +6,7 @@ import {
     emitAdministrativeTasks,
     type CatalogEntitySnapshot,
 } from './catalogAudit.js';
+import { findingsToTasks } from './catalogAdminAudit.js';
 
 const cleanRelease = (overrides: Partial<CatalogEntitySnapshot> = {}): CatalogEntitySnapshot => ({
     title: 'Midnight Motorway',
@@ -176,5 +177,51 @@ describe('administrative task construction & emission', () => {
         expect(third.skipped).toEqual([make().id]);
         expect(third.written).toHaveLength(0);
         expect(stored.get(make().id)?.['status']).toBe('dismissed');
+    });
+
+    it('writes to users/{uid}/administrative_tasks and preserves distinct tasks per co-writer', async () => {
+        const storedPaths: string[] = [];
+        const db = {
+            collection: (path: string) => ({
+                doc: (id?: string) => ({
+                    id: id ?? '',
+                    get: async () => ({ exists: false, data: () => undefined }),
+                    set: async () => { storedPaths.push(`${path}/${id}`); },
+                    collection: (subPath: string) => ({
+                        doc: (subId?: string) => ({
+                            id: subId ?? '',
+                            get: async () => ({ exists: false, data: () => undefined }),
+                            set: async () => { storedPaths.push(`${path}/${id}/${subPath}/${subId}`); },
+                        }),
+                    }),
+                }),
+            }),
+        };
+
+        const findings = auditCatalogEntity(cleanRelease({
+            writers: [
+                { name: 'Ana Artist', collaboratorId: 'artist-1', proAffiliation: null, ipiNumber: null },
+                { name: 'Zed Producer', collaboratorId: 'producer-1', proAffiliation: null, ipiNumber: null },
+            ],
+        }));
+        const tasks = findingsToTasks({
+            userId: 'user-1',
+            entityType: 'release',
+            baseRefs: { releaseId: 'rel-1' },
+            results: findings,
+        });
+        expect(tasks).toHaveLength(4);
+        const uniqueIds = new Set(tasks.map((t) => t.id));
+        expect(uniqueIds.size).toBe(4);
+        expect(tasks.map((t) => t.entityRefs.collaboratorId)).toEqual([
+            'Ana Artist',
+            'Ana Artist',
+            'Zed Producer',
+            'Zed Producer',
+        ]);
+
+        await emitAdministrativeTasks(db, tasks);
+        expect(storedPaths).toHaveLength(4);
+        expect(storedPaths.every((p) => p.startsWith('users/user-1/administrative_tasks/'))).toBe(true);
     });
 });

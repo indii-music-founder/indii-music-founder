@@ -109,9 +109,16 @@ describe('liveConversationJudgments', () => {
             expect(distroTurn.targetAgentId).toBe('distribution');
         });
 
-        it('defaults general studio chat to general_conversation', () => {
+        it('defaults general studio chat to general_conversation and does not misclassify conversational stop words or non-specialist pronouns', () => {
             const chat = deterministicSpokenIntentFallback('I want to brainstorm some new album concepts for the fall');
             expect(chat.action).toBe('general_conversation');
+
+            expect(deterministicSpokenIntentFallback('Can we add a quiet synth pad in the intro').action).toBe('general_conversation');
+            expect(deterministicSpokenIntentFallback('That is good enough for the chorus mix').action).toBe('general_conversation');
+            expect(deterministicSpokenIntentFallback('How do we trim the silence at the end of the master').action).toBe('general_conversation');
+            expect(deterministicSpokenIntentFallback('hey there how is the mix sounding').action).toBe('general_conversation');
+            expect(deterministicSpokenIntentFallback('let me think about the release rollout').action).toBe('general_conversation');
+            expect(deterministicSpokenIntentFallback('ask toString about this').action).toBe('general_conversation');
         });
     });
 

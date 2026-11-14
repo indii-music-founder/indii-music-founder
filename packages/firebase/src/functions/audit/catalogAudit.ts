@@ -247,8 +247,17 @@ export interface AdminTaskFirestore {
             id: string;
             get(): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
             set(data: unknown, opts?: { merge?: boolean }): Promise<unknown>;
+            collection?(subPath: string): ReturnType<AdminTaskFirestore['collection']>;
         };
     };
+}
+
+function resolveUserTaskCollection(db: AdminTaskFirestore, userId: string) {
+    const userDoc = db.collection('users').doc(userId);
+    if (typeof userDoc.collection === 'function') {
+        return userDoc.collection('administrative_tasks');
+    }
+    return db.collection(`users/${userId}/administrative_tasks`);
 }
 
 /**
@@ -260,10 +269,10 @@ export async function emitAdministrativeTasks(
     db: AdminTaskFirestore,
     tasks: AdministrativeTask[],
 ): Promise<EmitResult> {
-    const collection = db.collection('administrative_tasks');
     const written: string[] = [];
     const skipped: string[] = [];
     for (const task of tasks) {
+        const collection = resolveUserTaskCollection(db, task.userId);
         const reference = collection.doc(task.id);
         const existing = await reference.get();
         if (existing.exists) {

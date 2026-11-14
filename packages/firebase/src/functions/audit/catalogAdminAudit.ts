@@ -134,12 +134,14 @@ function resultsToTasks(
     now?: Date,
 ) {
     return results.map((result) => {
-        // Per-writer findings (PRO/IPI) embed the writer in the observed text;
+        // Per-writer findings (PRO/IPI) embed the writer in `expected` (or legacy `observed`);
         // their dedupe refs must differ per writer so each gets its own task.
+        const expected = result.findings[0]?.expected ?? '';
         const observed = result.findings[0]?.observed ?? '';
-        const writerMatch = /^(.*?)(?: has a PRO affiliation| has an IPI)/.exec(observed);
+        const writerPattern = /^(.*?)(?: has a PRO affiliation| has an IPI)/;
+        const writerMatch = writerPattern.exec(expected) ?? writerPattern.exec(observed);
         const refs: TaskEntityRefs =
-            (result.taskType === 'SPLIT_PRO_AFFILIATION_MISSING' || result.taskType === 'SPLIT_IPI_MISSING') && writerMatch
+            (result.taskType === 'SPLIT_PRO_AFFILIATION_MISSING' || result.taskType === 'SPLIT_IPI_MISSING') && writerMatch?.[1]
                 ? { ...baseRefs, collaboratorId: writerMatch[1] }
                 : baseRefs;
         return buildAdministrativeTask({
@@ -156,14 +158,21 @@ function resultsToTasks(
 
 // ── Entity loading ──────────────────────────────────────────────────────────
 
-async function loadSnapshot(payload: CatalogAuditEventPayload): Promise<{ snapshot: CatalogEntitySnapshot; found: boolean } | undefined> {
+function isOwnedBy(data: Record<string, unknown>, userId: string): boolean {
+    const owner = data['userId'];
+    return typeof owner !== 'string' || owner.trim() === '' || owner === userId;
+}
+
+export async function loadSnapshot(payload: CatalogAuditEventPayload): Promise<{ snapshot: CatalogEntitySnapshot; found: boolean } | undefined> {
     const db = getDb();
     if (payload.entityType === 'release') {
         const releaseId = payload.entityRefs.releaseId;
         if (!releaseId) return undefined;
         const snap = await db.collection('proprietaryIngestionReleases').doc(releaseId).get();
         if (!snap.exists) return { snapshot: { requireSplits: false }, found: false };
-        return { snapshot: snapshotFromReleaseData(snap.data() ?? {}), found: true };
+        const data = snap.data() ?? {};
+        if (!isOwnedBy(data, payload.userId)) return { snapshot: { requireSplits: false }, found: false };
+        return { snapshot: snapshotFromReleaseData(data), found: true };
     }
     if (payload.entityType === 'track') {
         const trackId = payload.entityRefs.trackId;
@@ -172,11 +181,29 @@ async function loadSnapshot(payload: CatalogAuditEventPayload): Promise<{ snapsh
         if (!snap.exists) return { snapshot: { requireSplits: false }, found: false };
         return { snapshot: snapshotFromTrackData(snap.data() ?? {}), found: true };
     }
-    // master — via analysis receipt
-    if (!payload.receiptId) return undefined;
-    const snap = await db.collection('audio_analysis_receipts').doc(payload.receiptId).get();
-    if (!snap.exists) return { snapshot: { requireSplits: false }, found: false };
-    return { snapshot: snapshotFromReceiptData(snap.data() ?? {}), found: true };
+    // master — via analysis receipt (by receiptId or by userId + masterHash for weekly sweeps)
+    const receiptsCol = db.collection('audio_analysis_receipts');
+    if (payload.receiptId) {
+        const snap = await receiptsCol.doc(payload.receiptId).get();
+        if (!snap.exists) return { snapshot: { requireSplits: false }, found: false };
+        const data = snap.data() ?? {};
+        if (!isOwnedBy(data, payload.userId)) return { snapshot: { requireSplits: false }, found: false };
+        return { snapshot: snapshotFromReceiptData(data), found: true };
+    }
+    const masterHash = payload.entityRefs.masterHash;
+    if (masterHash && typeof (receiptsCol as { where?: unknown }).where === 'function') {
+        const querySnap = await receiptsCol
+            .where('userId', '==', payload.userId)
+            .where('contentHash', '==', masterHash)
+            .limit(1)
+            .get();
+        const firstDoc = querySnap.docs[0];
+        if (!firstDoc) return { snapshot: { requireSplits: false }, found: false };
+        const data = firstDoc.data() ?? {};
+        if (!isOwnedBy(data, payload.userId)) return { snapshot: { requireSplits: false }, found: false };
+        return { snapshot: snapshotFromReceiptData(data), found: true };
+    }
+    return undefined;
 }
 
 // ── Inngest function ────────────────────────────────────────────────────────
@@ -193,7 +220,7 @@ export const catalogAdminAuditFn = (inngestClient: Inngest) =>
             const payload = event.data as CatalogAuditEventPayload;
 
             const loaded = await step.run('load-entity', async () => loadSnapshot(payload));
-            if (!loaded) {
+            if (!loaded || !loaded.found) {
                 return { entityFound: false, findingTypes: [], written: [], skipped: [], triage: { source: 'heuristic', releaseBlocking: false, priority: 'MONITOR_ONLY', suppress: true } };
             }
 

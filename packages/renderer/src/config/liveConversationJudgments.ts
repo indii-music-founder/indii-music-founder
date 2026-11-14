@@ -85,14 +85,26 @@ export function deterministicSpokenIntentFallback(
         return { action: 'general_conversation', confidence: 1 };
     }
 
-    // Direct barge-in stop check
-    for (const word of BARGE_IN_WORDS) {
-        if (clean === word || clean.startsWith(`${word} `) || clean.endsWith(` ${word}`) || clean.includes(` ${word} `)) {
-            return {
-                action: 'barge_in_stop',
-                confidence: 0.95,
-                explanation: `Detected stop command: "${word}"`,
-            };
+    // Direct barge-in stop check: only trigger 0ms deterministic stop on short
+    // imperative commands so studio prompts containing words like "quiet",
+    // "silence", "enough", "wait", or "cancel" in a longer sentence are routed
+    // through Jev System One (`bargeInStop` Noul) instead of being dropped.
+    const strippedPunct = clean.replace(/[.!?,;:]+$/g, '').trim();
+    const wordTokens = strippedPunct.split(/\s+/).filter(Boolean);
+    const withoutPoliteLead = strippedPunct.replace(/^(?:please|hey|ok|okay|yo)\s+/i, '');
+    if (wordTokens.length <= 6) {
+        for (const word of BARGE_IN_WORDS) {
+            if (
+                strippedPunct === word ||
+                withoutPoliteLead === word ||
+                withoutPoliteLead.startsWith(`${word} `)
+            ) {
+                return {
+                    action: 'barge_in_stop',
+                    confidence: 0.95,
+                    explanation: `Detected stop command: "${word}"`,
+                };
+            }
         }
     }
 
@@ -100,18 +112,23 @@ export function deterministicSpokenIntentFallback(
     const addressMatch = clean.match(/^(?:hey|ask|tell|message|switch to|bring in|have|let)\s+([a-z.-]+)/i);
     if (addressMatch && addressMatch[1]) {
         const candidate = addressMatch[1].toLowerCase();
-        const mappedId = SPECIALIST_KEYWORDS[candidate] || candidate;
-        return {
-            action: 'agent_reassignment',
-            confidence: 0.85,
-            targetAgentId: mappedId,
-            explanation: `Addressed agent: ${mappedId}`,
-        };
+        const mappedId = Object.prototype.hasOwnProperty.call(SPECIALIST_KEYWORDS, candidate)
+            ? SPECIALIST_KEYWORDS[candidate]
+            : undefined;
+        if (mappedId) {
+            return {
+                action: 'agent_reassignment',
+                confidence: 0.85,
+                targetAgentId: mappedId,
+                explanation: `Addressed agent: ${mappedId}`,
+            };
+        }
     }
 
     // Keyword specialist match across common natural inquiries
     for (const [kw, agentId] of Object.entries(SPECIALIST_KEYWORDS)) {
-        const regex = new RegExp(`\\b(?:ask|tell|consult|check with|have)\\s+${kw}\\b`, 'i');
+        const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b(?:ask|tell|consult|check with|have)\\s+${escapedKw}\\b`, 'i');
         if (regex.test(clean)) {
             return {
                 action: 'agent_reassignment',

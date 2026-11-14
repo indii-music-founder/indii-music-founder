@@ -101,6 +101,8 @@ export const stageRegistrationPayload: IndiiMcpTool = {
             let refs: Record<string, string>;
             let workTitle = '';
 
+            let releaseMetadataForAudit: Record<string, unknown> | undefined;
+
             if (args.releaseId !== undefined) {
                 const releaseId = requireString(args, 'releaseId', 200);
                 trackId = releaseId;
@@ -112,7 +114,16 @@ export const stageRegistrationPayload: IndiiMcpTool = {
                         message: `Release ${releaseId} not found.`, retryable: false,
                     }));
                 }
-                const metadata = ((snap.data() ?? {})['metadata'] ?? {}) as Record<string, unknown>;
+                const snapData = (snap.data() ?? {}) as Record<string, unknown>;
+                if (typeof snapData['userId'] === 'string' && snapData['userId'].trim() !== '' && snapData['userId'] !== actorUid) {
+                    return toolResponse(failedOperationResult({
+                        tool: 'stage_registration_payload', actorUid, resourceType: 'administrative_task',
+                        resourceId: releaseId, code: 'RELEASE_NOT_FOUND',
+                        message: `Release ${releaseId} not found.`, retryable: false,
+                    }));
+                }
+                const metadata = (snapData['metadata'] ?? {}) as Record<string, unknown>;
+                releaseMetadataForAudit = metadata;
                 workTitle = String(metadata['trackTitle'] ?? '');
                 refs = { releaseId };
                 payload = {
@@ -169,12 +180,17 @@ export const stageRegistrationPayload: IndiiMcpTool = {
             // The audit core is the shared validity gate: if the entity fails
             // deterministic audit on blocking metadata/identifier grounds, the
             // payload would be garbage — refuse rather than stage junk.
-            const snapshotMeta = args.releaseId
-                ? ((await firestore.collection('proprietaryIngestionReleases').doc(String(refs['releaseId'])).get()).data() ?? {})['metadata'] as Record<string, unknown> ?? {}
-                : {};
-            const blocking = auditCatalogEntity(args.releaseId
-                ? snapshotFromRelease(snapshotMeta)
-                : { requireSplits: false }).filter((result) => result.severity === 'blocking');
+            const blocking = (releaseMetadataForAudit !== undefined
+                ? auditCatalogEntity(snapshotFromRelease(releaseMetadataForAudit))
+                : auditCatalogEntity({
+                    title: workTitle || null,
+                    isrc: typeof payload['isrc'] === 'string' ? payload['isrc'] : null,
+                    iswc: typeof payload['iswc'] === 'string' ? payload['iswc'] : null,
+                    explicitFlag: typeof payload['explicit'] === 'boolean' ? payload['explicit'] : null,
+                    language: typeof payload['language'] === 'string' ? payload['language'] : null,
+                    requireSplits: false,
+                }).filter((result) => result.taskType === 'IDENTIFIER_FORMAT_INVALID')
+            ).filter((result) => result.severity === 'blocking');
             if (blocking.length > 0) {
                 return toolResponse(failedOperationResult({
                     tool: 'stage_registration_payload', actorUid, resourceType: 'administrative_task',

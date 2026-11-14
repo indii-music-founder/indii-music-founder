@@ -88,6 +88,18 @@ describe('typesafeJudge', () => {
             .rejects.toMatchObject({ code: 'invalid-argument' });
         await expect(callJudge({ state: {}, questions: { q: { toJSON: () => null } } }))
             .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'box', instructions: 'Find it' } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'choice', instructions: 'Pick one', criteria: 'not-an-object' } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'choice', instructions: 'Pick one', criteria: {} } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'score', instructions: 'Rate it', criteria: ['only-one'] } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'noul', instructions: 'Yes or no?', criteria: { maybe: 'invalid' } } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
+        await expect(callJudge({ state: {}, questions: { q: { type: 'noul', instructions: '   ' } } }))
+            .rejects.toMatchObject({ code: 'invalid-argument' });
         expect(mocks.fetch).not.toHaveBeenCalled();
     });
 

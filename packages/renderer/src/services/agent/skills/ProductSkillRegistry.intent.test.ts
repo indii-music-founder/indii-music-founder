@@ -79,4 +79,26 @@ describe('searchProductSkillByIntentAsync', () => {
         expect(skill).toBeUndefined();
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
+
+    it('escapes regex metacharacters in trigger labels and respects disable_model_invocation for non-slash queries', async () => {
+        ProductSkillRegistry.registerSkill(parseSkillDocument('cpp_dsp_plugin', `---
+name: cpp_dsp_plugin
+description: C++ DSP audio plugin synthesis.
+trigger_labels:
+  - c++ (vst3)
+---
+Body.`));
+        expect(() => ProductSkillRegistry.searchProductSkillByIntent('build a plugin in c++')).not.toThrow();
+
+        ProductSkillRegistry.registerSkill(parseSkillDocument('manual_only_skill', `---
+name: manual_only_skill
+description: High-risk manual skill.
+disable_model_invocation: true
+trigger_labels:
+  - dangerous_manual_op
+---
+Body.`));
+        expect(ProductSkillRegistry.searchProductSkillByIntent('dangerous_manual_op')).toBeUndefined();
+        expect(ProductSkillRegistry.searchProductSkillByIntent('/manual_only_skill')?.id).toBe('manual_only_skill');
+    });
 });

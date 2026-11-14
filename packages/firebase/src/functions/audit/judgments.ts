@@ -138,33 +138,70 @@ export async function triageAuditFindings(
         });
 
         const answers = result.answers;
-        const priorityAnswer = answers['priority'] as { choice?: unknown } | string | undefined;
-        const choice = typeof priorityAnswer === 'string' ? priorityAnswer : priorityAnswer?.choice;
-        const blockingAnswer = answers['release_blocking'];
-        const blockingProb =
-            typeof blockingAnswer === 'number'
-                ? blockingAnswer
-                : Number((blockingAnswer as { noul?: unknown } | undefined)?.noul);
-
-        if (!Number.isFinite(blockingProb) || typeof choice !== 'string') {
+        const priorityAnswer = answers['priority'];
+        const choice =
+            typeof priorityAnswer === 'string'
+                ? priorityAnswer
+                : priorityAnswer !== null && typeof priorityAnswer === 'object' && !Array.isArray(priorityAnswer)
+                    ? (priorityAnswer as { choice?: unknown }).choice
+                    : undefined;
+        const rawChoiceConfidence =
+            priorityAnswer !== null &&
+            typeof priorityAnswer === 'object' &&
+            !Array.isArray(priorityAnswer) &&
+            'confidence' in priorityAnswer
+                ? (priorityAnswer as { confidence?: unknown }).confidence
+                : undefined;
+        if (
+            rawChoiceConfidence !== undefined &&
+            (typeof rawChoiceConfidence !== 'number' ||
+                !Number.isFinite(rawChoiceConfidence) ||
+                rawChoiceConfidence < 0 ||
+                rawChoiceConfidence > 1)
+        ) {
             return heuristic;
         }
+        const choiceConfident = rawChoiceConfidence === undefined || rawChoiceConfidence >= 0.5;
+
+        const blockingAnswer = answers['release_blocking'];
+        const rawBlockingProb =
+            typeof blockingAnswer === 'number'
+                ? blockingAnswer
+                : blockingAnswer !== null && typeof blockingAnswer === 'object' && !Array.isArray(blockingAnswer)
+                    ? (blockingAnswer as { noul?: unknown }).noul
+                    : undefined;
+
+        if (
+            typeof rawBlockingProb !== 'number' ||
+            !Number.isFinite(rawBlockingProb) ||
+            rawBlockingProb < 0 ||
+            rawBlockingProb > 1 ||
+            typeof choice !== 'string'
+        ) {
+            return heuristic;
+        }
+        const blockingProb = rawBlockingProb;
 
         const validPriorities: AuditPriority[] = ['REGISTRATION', 'SPLITS', 'METADATA', 'MONITOR_ONLY'];
-        const priority = (validPriorities as string[]).includes(choice) ? (choice as AuditPriority) : heuristic.priority;
-
-        const releaseBlocking =
-            blockingProb >= RELEASE_BLOCKING_CONFIRM_MIN
-                ? true
-                : blockingProb < RELEASE_BLOCKING_CLEAR_MAX
-                    ? false
-                    : heuristic.releaseBlocking; // ambiguous band — keep the heuristic
+        const priority =
+            choiceConfident && (validPriorities as string[]).includes(choice)
+                ? (choice as AuditPriority)
+                : heuristic.priority;
 
         // Deterministic hard failures always stay; Jev may only demote when it
         // confidently sees nothing release-blocking AND picks MONITOR_ONLY.
         const hasDeterministicBlocking = summary.findingsSummary.some(
             (entry) => entry.severity === 'blocking' && entry.count > 0,
         );
+
+        const releaseBlocking =
+            hasDeterministicBlocking ||
+            (blockingProb >= RELEASE_BLOCKING_CONFIRM_MIN
+                ? true
+                : blockingProb < RELEASE_BLOCKING_CLEAR_MAX
+                    ? false
+                    : heuristic.releaseBlocking); // ambiguous band — keep the heuristic
+
         const suppress =
             !hasDeterministicBlocking &&
             priority === 'MONITOR_ONLY' &&

@@ -77,7 +77,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/finance/requestTaxFormUpload.ts:60` | `requestTaxFormUpload` | `onCall` | Present | Present |
 | `functions/finance/setRecoupmentBalance.ts:125` | `setRecoupmentBalance` | `onCall` | Present | Present |
 | `functions/finance/submitTaxForm.ts:159` | `submitTaxForm` | `onRequest` | Present | Present |
-| `functions/intelligence/typesafeJudge.ts:35` | `typesafeJudge` | `onCall` | Present | Present |
+| `functions/intelligence/typesafeJudge.ts:79` | `typesafeJudge` | `onCall` | Present | Present |
 | `functions/knowledge/query.ts:33` | `queryKnowledgeBase` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:29` | `createKnowledgeUpload` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:120` | `finalizeKnowledgeUpload` | `onCall` | Present | Present |

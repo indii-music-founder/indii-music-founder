@@ -81,13 +81,51 @@ describe('triageAuditFindings (Jev refinement, fallback-first)', () => {
         expect(verdict.priority).toBe('METADATA'); // the choice itself was valid — adopted
     });
 
-    it('never suppresses when deterministic blocking findings exist', async () => {
+    it('never suppresses or clears releaseBlocking when deterministic blocking findings exist', async () => {
         const client = mockClient({ priority: { choice: 'MONITOR_ONLY' }, release_blocking: 0.05 });
         const verdict = await triageAuditFindings(
             { entityTypes: ['release'], findingsSummary: [{ taskType: 'SPLIT_SUM_MASTER', severity: 'blocking', count: 1 }] },
             { client },
         );
         expect(verdict.suppress).toBe(false);
+        expect(verdict.releaseBlocking).toBe(true);
+    });
+
+    it('rejects null/boolean/out-of-range Noul values and low/invalid Choice confidence', async () => {
+        for (const invalidNoul of [null, false, '', -0.1, 1.2]) {
+            const client = mockClient({
+                priority: { choice: 'MONITOR_ONLY', confidence: 0.9 },
+                release_blocking: { noul: invalidNoul },
+            });
+            const verdict = await triageAuditFindings(
+                { entityTypes: ['release'], findingsSummary: [{ taskType: 'SPLIT_IPI_MISSING', severity: 'critical', count: 1 }] },
+                { client },
+            );
+            expect(verdict.source).toBe('heuristic');
+            expect(verdict.releaseBlocking).toBe(true);
+            expect(verdict.suppress).toBe(false);
+        }
+
+        const lowChoiceConfClient = mockClient({
+            priority: { choice: 'MONITOR_ONLY', confidence: 0.2 },
+            release_blocking: { noul: 0.1 },
+        });
+        const lowConfVerdict = await triageAuditFindings(
+            { entityTypes: ['release'], findingsSummary: [{ taskType: 'SPLIT_IPI_MISSING', severity: 'critical', count: 1 }] },
+            { client: lowChoiceConfClient },
+        );
+        expect(lowConfVerdict.priority).toBe('SPLITS');
+        expect(lowConfVerdict.suppress).toBe(false);
+
+        const nanChoiceConfClient = mockClient({
+            priority: { choice: 'SPLITS', confidence: Number.NaN },
+            release_blocking: { noul: 0.9 },
+        });
+        const nanConfVerdict = await triageAuditFindings(
+            { entityTypes: ['release'], findingsSummary: [{ taskType: 'SPLIT_IPI_MISSING', severity: 'critical', count: 1 }] },
+            { client: nanChoiceConfClient },
+        );
+        expect(nanConfVerdict.source).toBe('heuristic');
     });
 
     it('opens a failure cooldown and falls back on upstream errors', async () => {

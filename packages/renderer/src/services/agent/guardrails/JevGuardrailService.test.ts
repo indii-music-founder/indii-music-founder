@@ -174,6 +174,7 @@ describe('JevGuardrailService', () => {
     const { reportOverclaimIfNeeded } = await import('../truthOverclaimReporter');
     const input = {
       text: 'All 23 departments are fully implemented, verified, and operational in production.',
+      agentId: 'generalist',
     };
 
     judgeInvoke.mockResolvedValue({
@@ -183,7 +184,7 @@ describe('JevGuardrailService', () => {
           claims_scheduled_without_tool: 0,
           confident_action_no_evidence: 0,
           claims_verified_readiness_without_evidence: 0.92,
-          is_actionable_response: 0.9,
+          is_actionable_response: 0.1,
         },
       },
     });
@@ -191,7 +192,7 @@ describe('JevGuardrailService', () => {
     const result = await service.screen(input);
 
     expect(result.wasModified).toBe(true);
-    expect(result.flags).toContain('claims_verified_readiness_without_evidence');
+    expect(result.flags).toEqual(['claims_verified_readiness_without_evidence']);
     expect(result.confidence['claims_verified_readiness_without_evidence']).toBeCloseTo(0.92);
     expect(result.text).toContain('A current check or receipt is needed');
     expect(result.text).not.toContain(input.text);
@@ -200,7 +201,23 @@ describe('JevGuardrailService', () => {
     expect(reportOverclaimIfNeeded).toHaveBeenCalledWith(expect.objectContaining({
       source: 'jev_guardrail',
       signal: 'claims_verified_readiness_without_evidence',
+      agentId: 'generalist',
     }));
+  });
+
+  it('bounds oversized response text in state.response.text before calling typesafeJudge', async () => {
+    judgeInvoke.mockResolvedValue({
+      data: {
+        answers: {
+          is_actionable_response: 0.95,
+        },
+      },
+    });
+    const hugeText = 'A'.repeat(25_000);
+    const result = await service.screen({ text: hugeText });
+    expect(result.wasModified).toBe(false);
+    expect(result.text.length).toBe(25_000);
+    expect((judgeInvoke.mock.calls[0]?.[0]?.state.response.text as string).length).toBe(16_000);
   });
 
   it('does not repeat an unverified mobile pairing claim to the user', async () => {

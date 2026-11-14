@@ -113,9 +113,32 @@ describe('stage_registration_payload (MCP mirror)', () => {
         expect(payload.data.taskId).toContain('REGISTRATION_PAYLOAD_STAGED_');
 
         expect(setCalls).toHaveLength(1);
+        expect(setCalls[0]!.path).toMatch(/^users\/user-1\/administrative_tasks\/REGISTRATION_PAYLOAD_STAGED_/);
         const task = setCalls[0]!.data;
         expect(task['status']).toBe('action_ready');
         expect((task['proposedAction'] as Record<string, unknown>)['requiresApproval']).toBe(true);
+    });
+
+    it('refuses cross-tenant release access and supports owned track registration staging', async () => {
+        store.set('proprietaryIngestionReleases/rel-foreign', {
+            exists: true,
+            data: { userId: 'other-user', metadata: VALID_METADATA },
+        });
+        const foreignRes = await stageRegistrationPayload.handler({ registry: 'CWR', releaseId: 'rel-foreign' }, context);
+        const foreignPayload = JSON.parse((foreignRes.content as Array<{ text: string }>)[0]!.text);
+        expect(foreignPayload.status).toBe('failed');
+        expect(foreignPayload.error.code).toBe('RELEASE_NOT_FOUND');
+        expect(setCalls).toHaveLength(0);
+
+        store.set('users/user-1/tracks/track-1', {
+            exists: true,
+            data: { title: 'Track One', isrc: 'USABC7123456', explicit: false, language: 'en' },
+        });
+        const trackRes = await stageRegistrationPayload.handler({ registry: 'ISWC', trackId: 'track-1' }, context);
+        const trackPayload = JSON.parse((trackRes.content as Array<{ text: string }>)[0]!.text);
+        expect(trackPayload.status).toBe('requires_approval');
+        expect(setCalls).toHaveLength(1);
+        expect(setCalls[0]!.path).toMatch(/^users\/user-1\/administrative_tasks\/REGISTRATION_PAYLOAD_STAGED_/);
     });
 
     it('refuses to stage when blocking audit findings exist', async () => {

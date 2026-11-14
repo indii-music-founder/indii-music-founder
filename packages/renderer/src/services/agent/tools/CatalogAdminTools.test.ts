@@ -128,10 +128,18 @@ describe('catalog_stage_registration_payload', () => {
         expect((action['payload'] as Record<string, unknown>)['workTitle']).toBe('Midnight Motorway');
     });
 
-    it('refuses to stage when the release does not exist', async () => {
+    it('refuses to stage when the release does not exist or belongs to another user', async () => {
         const result = await CatalogAdminTools.catalog_stage_registration_payload({ registry: 'ISWC', releaseId: 'ghost' });
         expect(result.success).toBe(false);
         expect((result as { metadata?: { errorCode?: string } }).metadata?.errorCode).toBe('RELEASE_NOT_FOUND');
+
+        stores.getDoc.set('proprietaryIngestionReleases/rel-foreign', {
+            exists: true,
+            data: { userId: 'other-user', ...exactRelease.data },
+        });
+        const foreignResult = await CatalogAdminTools.catalog_stage_registration_payload({ registry: 'ISWC', releaseId: 'rel-foreign' });
+        expect(foreignResult.success).toBe(false);
+        expect((foreignResult as { metadata?: { errorCode?: string } }).metadata?.errorCode).toBe('RELEASE_NOT_FOUND');
     });
 
     it('refuses to stage when stored splits are malformed', async () => {

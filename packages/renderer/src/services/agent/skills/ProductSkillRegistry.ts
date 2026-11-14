@@ -318,14 +318,17 @@ class ProductSkillRegistryImpl {
             const command = normalizedQuery.split(/\s+/)[0]?.substring(1);
             if (command) {
                 const direct = this.getProductSkill(command);
-                if (direct) return direct;
+                if (direct && direct.userInvocable) return direct;
             }
         }
 
+        const autoRoutableSkills = this.getAllProductSkills().filter(s => !s.disableModelInvocation);
+
         // 2. Exact word boundary match on trigger labels
-        for (const skill of this.getAllProductSkills()) {
+        for (const skill of autoRoutableSkills) {
             for (const trigger of skill.triggerLabels) {
-                const regex = new RegExp(`\\b${trigger.toLowerCase()}\\b`, 'i');
+                const escapedTrigger = trigger.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`\\b${escapedTrigger}\\b`, 'i');
                 if (regex.test(normalizedQuery)) {
                     return skill;
                 }
@@ -333,7 +336,7 @@ class ProductSkillRegistryImpl {
         }
 
         // 3. Match in title/id
-        for (const skill of this.getAllProductSkills()) {
+        for (const skill of autoRoutableSkills) {
             const skillName = skill.name.toLowerCase().replace(/_/g, ' ');
             if (normalizedQuery.includes(skillName) || normalizedQuery.includes(skill.id.replace(/_/g, ' '))) {
                 return skill;
@@ -349,7 +352,7 @@ class ProductSkillRegistryImpl {
         let bestMatch: ProductSkill | undefined = undefined;
         let maxMatches = 0;
 
-        for (const skill of this.getAllProductSkills()) {
+        for (const skill of autoRoutableSkills) {
             const searchableText = `${skill.name} ${skill.id} ${skill.description}`.toLowerCase();
             let matches = 0;
             for (const word of queryWords) {
@@ -380,11 +383,15 @@ class ProductSkillRegistryImpl {
         const deterministic = this.searchProductSkillByIntent(query);
         if (deterministic) return deterministic;
 
-        const candidates = this.getAllProductSkills().map(s => ({
-            id: s.id, name: s.name, description: s.description,
-        }));
+        const candidates = this.getAllProductSkills()
+            .filter(s => !s.disableModelInvocation)
+            .map(s => ({
+                id: s.id, name: s.name, description: s.description,
+            }));
         const judgedId = await judgeSkillIntent(query, candidates);
-        return judgedId ? this.getProductSkill(judgedId) : undefined;
+        if (!judgedId) return undefined;
+        const matched = this.getProductSkill(judgedId);
+        return matched && !matched.disableModelInvocation ? matched : undefined;
     }
 
     /**

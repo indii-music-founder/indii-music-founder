@@ -12,6 +12,8 @@ export interface GuardrailInput {
   text: string;
   /** Tool calls that were executed in this turn (may be empty). */
   tool_calls?: Array<{ name: string; result?: unknown }>;
+  /** Optional agent ID for truthfulness telemetry attribution. */
+  agentId?: string;
 }
 
 export interface GuardrailResult {
@@ -154,6 +156,7 @@ export class JevGuardrailService {
             snippet: input.text,
             source: 'jev_guardrail',
             signal: 'claims_verified_readiness_without_evidence',
+            agentId: input.agentId,
           }),
         ).catch(() => undefined);
       }
@@ -175,7 +178,7 @@ export class JevGuardrailService {
   ): Promise<GuardrailResult | null> {
     const state = {
       response: {
-        text: responseText,
+        text: responseText.slice(0, 16_000),
         tool_calls: toolNames,
         tool_results: toolResults,
         omitted_tool_results: omittedToolResults,
@@ -228,7 +231,7 @@ export class JevGuardrailService {
       (r) => r.reportedSuccess === false || Boolean(r.error),
     );
     const isActionable = confidence['is_actionable_response'] ?? 1;
-    if (!prefix && !hasFailedToolResult && toolNames === 'none' && isActionable < ACTIONABLE_THRESHOLD) {
+    if (flags.length === 0 && !hasFailedToolResult && toolNames === 'none' && isActionable < ACTIONABLE_THRESHOLD) {
       flags.push('unactionable_response');
       prefix = UNACTIONABLE_FALLBACK;
     }
