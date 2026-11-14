@@ -107,3 +107,11 @@ describe('Button Interaction', () => {
     expect(childCapture).not.toHaveBeenCalled()
   })
 })
+
+it('announces a loading native button as disabled despite a forwarded ARIA value', () => {
+    render(<Button isLoading aria-disabled={false}>Save</Button>);
+    const button = screen.getByRole('button', { name: 'Save' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
+});
