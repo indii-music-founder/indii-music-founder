@@ -3,7 +3,7 @@
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-11-14 — reconciled `ISSUE-1596`, `ISSUE-1597`, and `ISSUE-1598` against `origin/main` source repairs and unit/security checks, and recorded 2026-11-14 verification notes for `ISSUE-1611` and `ISSUE-1618`–`ISSUE-1623` (live acceptance remains separate). Previous summary: 2026-11-02 — inventory rebaseline and status normalization for ISSUE-1608–1614; no new live closure. Previous summary: 2026-10-16 (Logged ISSUE-1537–1551 — Round 1, Round 2 & Round 3 Jev-verified bug hunt across TypeSafe System One schemas, multi-tenant recoupment ledger & attribution isolation, campaign budget refinement, Google/TikTok ad adapters & CAPI deduplication, Mobile Remote media bridges, Arcjet/AppCheck & Studio lease security, `deductCredits` & `handleMicroTransactionCheckoutCompleted` Firestore read-after-write transaction crashes, Split Escrow deadlocks, Tax Form single-use token burn & path traversal, Shopify/PandaDoc webhook HMAC & numeric ID crashes, and Inngest durable execution & timeline polling crashes)
+> **Last updated:** 2026-11-14 — merged `ISSUE-1420` Founding Artist Beta invitation acceptance (`PR #854`, `a80a088ea`), reconciled `ISSUE-1596`, `ISSUE-1597`, and `ISSUE-1598` against `origin/main` source repairs and unit/security checks, and recorded 2026-11-14 verification notes for `ISSUE-1611` and `ISSUE-1618`–`ISSUE-1623` (live acceptance remains separate). Previous summary: 2026-11-02 — inventory rebaseline and status normalization for ISSUE-1608–1614; no new live closure. Previous summary: 2026-10-16 (Logged ISSUE-1537–1551 — Round 1, Round 2 & Round 3 Jev-verified bug hunt across TypeSafe System One schemas, multi-tenant recoupment ledger & attribution isolation, campaign budget refinement, Google/TikTok ad adapters & CAPI deduplication, Mobile Remote media bridges, Arcjet/AppCheck & Studio lease security, `deductCredits` & `handleMicroTransactionCheckoutCompleted` Firestore read-after-write transaction crashes, Split Escrow deadlocks, Tax Form single-use token burn & path traversal, Shopify/PandaDoc webhook HMAC & numeric ID crashes, and Inngest durable execution & timeline polling crashes)
 > **Delivery:** `main` by default; this objective uses user-authorized task branches.
 >
 > **Ledger protocol (V3):** This is the ACTIVE master ledger. It operates with strict discipline:
@@ -32,6 +32,19 @@ their historical evidence is retained. Dated proposals remain separate.
 Reproduce counts with `node scripts/issue-ledger-inventory.mjs`. See
 [the execution plan](../../docs/ISSUE_COMPLETION_PLAN.md) and
 [the current acceptance inventory](../../docs/audits/open-issues-v3-closure-inventory-2026-11-02.md).
+
+## Handoff Note — 2026-11-14 Session Closeout
+
+At `origin/main` (`a80a088ea`, following `PR #854` merge), `node scripts/issue-ledger-inventory.mjs` reports **378** numbered entries (**374** unique IDs): **267** terminal, **1** decision (`ISSUE-1182`), **0** ambiguous, and **106** nonterminal items (`0` open PRs remaining on GitHub).
+
+- **Merged onto `main` in this closeout (`PR #854`, `a80a088ea`):** Implemented authoritative `acceptFoundingArtistInvitation` callable, Firestore transaction activation (`users/{uid}.foundingArtistBeta`), status-preserving repeat enrollment, and landing client helper for `ISSUE-1420` (all GitHub Actions checks passed; `Entire Gates` failed solely on Codex review usage quota). Temporary session worktrees and merged `codex/issue-*` branches were pruned cleanly.
+- **Remaining `🔴 OPEN` / `🔴 FOUNDER-GATED` / `⏳ BACKLOG` items (ops, secrets, content, telemetry — no code PRs pending):**
+  - `ISSUE-1365` / `ISSUE-1366` follow-up (`🔴 OPEN`): `creative_jobs` runtime write-path failure diagnosis requires inspecting Cloud Functions logs from the deployed logging gateway.
+  - `ISSUE-1372` & `ISSUE-1373` (`🔴 FOUNDER-GATED`): Live Stripe secret/price IDs and `30/39` Secret Manager credentials require founder configuration.
+  - `ISSUE-1427` & `ISSUE-1428` (`🔴 OPEN`): Founder-narrated real-product clips and social account ownership/security/brand inventory.
+  - `ISSUE-1163` (`⏳ BACKLOG`): GitHub Release updater manifest files blocked on `ISSUE-992` founder signing secrets.
+- **Remaining `🟡 PARTIAL` / `🟠` items (99 items):** Local code repairs and unit/contract tests are on `main`; remaining acceptance consists of deployed environment, Cloud Run/Cloud Tasks, external provider, or live browser QA verification (including live Firebase Email Link / App Check / invitation delivery acceptance on `ISSUE-1420`, Cloud Build `file:./shared-pkg` on `ISSUE-1434`, and Google Distance Matrix key enablement on `ISSUE-1448`).
+- **Workspace hygiene note:** Local working copy `/scratch/imf` still has uncommitted local workspace edits (`main`, `[behind origin/main]`); leave untouched or review separately before pulling `origin/main`.
 
 ## Active Unresolved Issues (Migrated from V2 Ledger)
 
