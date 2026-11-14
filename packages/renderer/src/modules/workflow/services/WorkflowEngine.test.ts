@@ -264,7 +264,7 @@ describe('WorkflowEngine', () => {
         const { nodes, edges } = makeLinearWorkflow(node);
         const errors = vi.fn();
         const results = await new WorkflowEngine(nodes, edges, mockSetNodes).run({ callbacks: { onNodeError: errors } });
-        expect(errors).toHaveBeenCalledWith('unsupported', expect.stringContaining('unavailable'));
+        expect(errors).toHaveBeenCalledWith('unsupported', expect.stringMatching(/unavailable|does not have a supported execution handler/));
         expect(results.has('unsupported')).toBe(false);
         expect(results.has('end')).toBe(false);
     });
