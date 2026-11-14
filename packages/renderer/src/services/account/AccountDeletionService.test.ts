@@ -27,6 +27,7 @@ describe('AccountDeletionService', () => {
             data: {
                 success: true,
                 deletedDocs: 42,
+                deletedStorageFiles: 3,
                 errors: [],
                 deletedAt: new Date().toISOString(),
             },
@@ -50,6 +51,7 @@ describe('AccountDeletionService', () => {
             expect(result.success).toBe(true);
             expect(result.errors).toHaveLength(0);
             expect(result.deletedCollections[0]).toContain('users/ (42 docs');
+            expect(result.deletedStorageFiles).toBe(3);
             expect(auth.signOut).toHaveBeenCalled();
         });
 
@@ -154,8 +156,18 @@ describe('AccountDeletionService', () => {
             expect(result).toHaveProperty('pendingExternalActions');
             expect(Array.isArray(result.deletedCollections)).toBe(true);
             expect(Array.isArray(result.errors)).toBe(true);
-            // Structural-only: the mocked response does not establish deletion.
-            expect(result.deletedStorageFiles).toBeNull();
+            expect(result.deletedStorageFiles).toBe(3);
+
+            mockCallableFn.mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    deletedDocs: 5,
+                    errors: [],
+                    deletedAt: new Date().toISOString(),
+                },
+            });
+            const omittedStorageResult = await deleteUserAccount('user-123', 'test@example.com');
+            expect(omittedStorageResult.deletedStorageFiles).toBeNull();
         });
     });
 });

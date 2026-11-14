@@ -30,6 +30,7 @@ describe('PaymentService', () => {
             userId: 'user-123',
             items: [
                 {
+                    productId: 'beat-license-nonexclusive',
                     name: 'Beat License',
                     description: 'Non-exclusive beat license',
                     amount: 2999,

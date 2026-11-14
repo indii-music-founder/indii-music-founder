@@ -1000,4 +1000,57 @@ describe('AgentService request-bound approval guidance', () => {
         expect(messages[0]?.text).toContain('No new request was submitted');
         expect(completeBoardroomLease).not.toHaveBeenCalled();
     });
+
+    it('tells read-only discussion agents about the attached image and forbids outage claims', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_READY',
+            executedAgentIds: ['generalist', 'marketing'],
+            deferredAgentIds: [],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: null,
+            leaseId: '33333333-3333-4333-8333-333333333333',
+            leaseExpiresAtMs: Date.now() + 60_000,
+            sideEffectOwnerAgentId: 'generalist',
+        });
+        const messages = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom', activeAgents: ['generalist', 'marketing'], referencedAssets: [], agentHistory: messages,
+            uploadedImages: [{ id: 'upload-a', prompt: 'indii logo' }],
+            generatedHistory: [],
+            addAgentMessage: vi.fn(message => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            handleBoardroomSwarmFlow: (
+                task: { rawUserUtterance: string },
+                attachments: { mimeType: string; base64: string }[],
+                context: AgentContext,
+                responseId: string,
+            ) => Promise<void>;
+        }).handleBoardroomSwarmFlow(
+            { rawUserUtterance: 'Put this on a black T-shirt.' },
+            [{ mimeType: 'image/png', base64: 'AAAA' }],
+            { isReadOnly: true },
+            'response-0',
+        );
+
+        expect(capturedExecutions).toHaveLength(2);
+        for (const execution of capturedExecutions) {
+            expect(execution.task).toContain('[AVAILABLE SOURCE ASSETS');
+            expect(execution.task).toContain('attachment-0');
+            expect(execution.task).toContain('upload-0');
+            expect(execution.task).toContain('Never ask the user to re-attach or re-specify');
+            expect(execution.task).toContain('[TURN MODE]');
+            expect(execution.task).toContain('never say a capability is broken');
+            expect(execution.task).not.toContain('AAAA');
+        }
+    });
 });

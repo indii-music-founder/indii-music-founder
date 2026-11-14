@@ -39,17 +39,17 @@ async function generateRoutingResponse(
 }
 
 export class AgentOrchestrator {
-    async determineBoardroomIntent(context: AgentContext, userQuery: string): Promise<BoardroomIntent | null> {
+    async determineBoardroomIntent(context: AgentContext, userQuery: string, attachedImageCount = 0): Promise<BoardroomIntent | null> {
         const validation = InputSanitizer.validate(userQuery);
         if (!validation.valid || InputSanitizer.securityCheck(userQuery).shouldBlock) throw new Error('Request blocked by input validation.');
         const query = InputSanitizer.sanitize(userQuery);
         const recentConversation = (context.chatHistoryString ?? '').slice(-6000);
-        const judgment = await judgeBoardroomIntent(query, recentConversation);
+        const judgment = await judgeBoardroomIntent(query, recentConversation, attachedImageCount);
         if (judgment) return judgment;
         try {
             const response = await generateRoutingResponse(context, [{ role: 'user', parts: [{ text: JSON.stringify({
                 instructions: BOARDROOM_INTENT_QUESTION.instructions, criteria: BOARDROOM_INTENT_QUESTION.criteria,
-                query, recentConversation,
+                query, recentConversation, attachedImageCount,
                 output: { intent: 'discussion | capability | action', confidence: 'number from 0 to 1' },
             }) }] }], INTELLIGENCE_MODELS.TEXT.FAST, { responseMimeType: 'application/json' });
             const decision = JSON.parse(response.response.text() || '{}');

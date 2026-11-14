@@ -20,14 +20,16 @@ import { validateAppCheckV2 } from '../middleware/appCheck';
 const MIN_UNIT_AMOUNT_CENTS = 50; // Stripe minimum $0.50 USD
 const MAX_UNIT_AMOUNT_CENTS = 5_000_000; // $50,000.00 cap per item
 const MAX_QUANTITY = 100;
+const PRODUCT_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
 export interface OneTimeCheckoutParams {
     userId: string;
     items: Array<{
-        productId?: string;
+        productId: string;
         name: string;
         description?: string;
-        amount: number; // in cents
+        /** @deprecated Legacy client price hint ignored server-side; resolved from Firestore catalog. */
+        amount?: number;
         quantity: number;
         metadata?: Record<string, string>;
     }>;
@@ -81,53 +83,73 @@ export const createOneTimeCheckout = onCall({
         name: string;
         description?: string;
         amount: number;
+        currency: string;
         quantity: number;
         metadata?: Record<string, string>;
     }> = [];
 
+    const db = getFirestore();
+
     for (const item of items) {
-        if (!item || typeof item.name !== 'string' || !item.name.trim()) {
-            throw new HttpsError('invalid-argument', 'Each item must have a valid name.');
-        }
-        if (
-            typeof item.quantity !== 'number' ||
-            !Number.isInteger(item.quantity) ||
-            item.quantity < 1 ||
-            item.quantity > MAX_QUANTITY
-        ) {
+        if (!item || typeof item.quantity !== 'number' || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_QUANTITY) {
             throw new HttpsError('invalid-argument', `Item quantity must be an integer between 1 and ${MAX_QUANTITY}.`);
         }
 
-        let authoritativeAmount = item.amount;
-        const catalogProductId = item.productId || item.metadata?.productId;
-        if (typeof catalogProductId === 'string' && catalogProductId.trim()) {
-            const productSnap = await getFirestore().collection('products').doc(catalogProductId.trim()).get();
-            if (!productSnap.exists) {
-                throw new HttpsError('not-found', `Catalog product '${catalogProductId}' not found.`);
-            }
-            const productData = productSnap.data();
-            if (typeof productData?.price !== 'number' || !Number.isInteger(productData.price)) {
-                throw new HttpsError('failed-precondition', `Catalog product '${catalogProductId}' has an invalid price.`);
-            }
-            authoritativeAmount = productData.price;
+        const rawProductId = typeof item.productId === 'string'
+            ? item.productId.trim()
+            : typeof item.metadata?.productId === 'string'
+                ? item.metadata.productId.trim()
+                : '';
+        if (!rawProductId || !PRODUCT_ID_PATTERN.test(rawProductId)) {
+            throw new HttpsError('invalid-argument', 'Each item must include a valid catalog productId.');
         }
 
+        // Security: resolve authoritative price and metadata from Firestore catalog;
+        // never trust client-supplied item.amount.
+        let productSnap = await db.collection('products').doc(rawProductId).get();
+        if (!productSnap.exists) {
+            productSnap = await db.collection('catalog_items').doc(rawProductId).get();
+        }
+        if (!productSnap.exists) {
+            throw new HttpsError('not-found', `Catalog product '${rawProductId}' not found.`);
+        }
+        const productData = productSnap.data() as Record<string, unknown> | undefined;
+        if (!productData || productData.isActive === false) {
+            throw new HttpsError('failed-precondition', `Catalog product '${rawProductId}' is unavailable.`);
+        }
+        const authoritativeAmount = typeof productData.priceCents === 'number'
+            ? productData.priceCents
+            : typeof productData.price === 'number'
+                ? productData.price
+                : NaN;
         if (
-            typeof authoritativeAmount !== 'number' ||
             !Number.isInteger(authoritativeAmount) ||
             authoritativeAmount < MIN_UNIT_AMOUNT_CENTS ||
             authoritativeAmount > MAX_UNIT_AMOUNT_CENTS
         ) {
             throw new HttpsError(
-                'invalid-argument',
-                `Item amount must be an integer in cents between ${MIN_UNIT_AMOUNT_CENTS} and ${MAX_UNIT_AMOUNT_CENTS}.`,
+                'failed-precondition',
+                `Catalog product '${rawProductId}' has an invalid server price.`,
             );
         }
 
+        const resolvedName = typeof productData.title === 'string' && productData.title.trim()
+            ? productData.title.trim()
+            : typeof productData.name === 'string' && productData.name.trim()
+                ? productData.name.trim()
+                : (typeof item.name === 'string' && item.name.trim() ? item.name.trim() : rawProductId);
+        const resolvedDescription = typeof productData.description === 'string'
+            ? productData.description
+            : item.description;
+        const currency = typeof productData.currency === 'string' && productData.currency.trim()
+            ? productData.currency.trim().toLowerCase()
+            : 'usd';
+
         resolvedItems.push({
-            name: item.name.trim(),
-            description: item.description,
+            name: resolvedName,
+            description: resolvedDescription,
             amount: authoritativeAmount,
+            currency,
             quantity: item.quantity,
             metadata: item.metadata,
         });
@@ -150,7 +172,7 @@ export const createOneTimeCheckout = onCall({
     try {
         const lineItems: any[] = resolvedItems.map((item) => ({
             price_data: {
-                currency: 'usd',
+                currency: item.currency || 'usd',
                 unit_amount: item.amount,
                 product_data: {
                     name: item.name,

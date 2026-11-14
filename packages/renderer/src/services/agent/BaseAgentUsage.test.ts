@@ -220,6 +220,40 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
         expect(lastText).toContain('[SYSTEM — FINAL STEP]');
     });
 
+    it('withholds tools on the final step and never ends with a bare iteration-limit message', async () => {
+        const agent = new BaseAgent({
+            ...baseConfig,
+            maxIterations: 2,
+            authorizedTools: ['noop_test_tool'],
+            tools: [{ functionDeclarations: [{ name: 'noop_test_tool', description: 'No-op test tool', parameters: { type: 'OBJECT', properties: {} } }] }],
+        } as ConstructorParameters<typeof BaseAgent>[0]);
+        const agentWithFunctions = agent as unknown as { functions: Record<string, () => Promise<{ success: boolean; message: string }>> };
+        agentWithFunctions.functions.noop_test_tool = async () => ({ success: true, message: 'ok' });
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        let callCount = 0;
+        vi.mocked(aiMock.AutonomousIntelligence.generateContent).mockImplementation(async () => {
+            callCount++;
+            return {
+                response: {
+                    text: () => '',
+                    candidates: [{ content: { parts: [{ functionCall: { name: 'noop_test_tool', args: { n: callCount } } }] } }],
+                    usageMetadata: undefined,
+                },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>;
+        });
+
+        const result = await agent.execute('Task');
+
+        const calls = vi.mocked(aiMock.AutonomousIntelligence.generateContent).mock.calls;
+        expect(calls).toHaveLength(2);
+        const firstTools = calls[0]?.[4] as Array<{ functionDeclarations: Array<{ name: string }> }>;
+        expect(firstTools.flatMap(tool => tool.functionDeclarations.map(fn => fn.name)).length).toBeGreaterThan(0);
+        expect(calls[1]?.[4]).toEqual([]);
+        expect(result.text).not.toBe('Maximum iterations reached.');
+        expect(result.text).toContain('step limit');
+        expect(result.text).toContain('No action was completed.');
+    });
+
     it('caps a Boardroom specialist at the server-owned per-agent iteration budget', async () => {
         const agent = new BaseAgent({ ...baseConfig, maxIterations: 8 });
         const agentWithFunctions = agent as unknown as { functions: Record<string, () => Promise<{ success: boolean; message: string }>> };

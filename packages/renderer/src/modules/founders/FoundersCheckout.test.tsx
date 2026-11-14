@@ -44,7 +44,7 @@ describe('FoundersCheckout', () => {
     beforeEach(() => {
         mockStore = {
             setModule: vi.fn(),
-            user: { email: 'founder@test.com', displayName: 'Test Founder' }
+            user: { uid: 'test-founder-uid', email: 'founder@test.com', displayName: 'Test Founder' }
         };
     });
 
