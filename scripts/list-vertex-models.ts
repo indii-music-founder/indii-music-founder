@@ -1,3 +1,4 @@
+import { resolveVertexLocation } from '../packages/firebase/src/lib/vertexRouting';
 
 import { GoogleAuth } from "google-auth-library";
 import { config } from "dotenv";
@@ -17,9 +18,7 @@ async function listModels() {
     const location = process.env.VERTEX_LOCATION || "global";
     const accessToken = await client.getAccessToken();
 
-    const baseUrl = location === "global" || location === "us" || location === "eu"
-        ? "https://aiplatform.googleapis.com"
-        : `https://${location}-aiplatform.googleapis.com`;
+    const baseUrl = resolveVertexLocation(location).baseUrl;
     const endpoint = `${baseUrl}/v1beta/projects/${projectId}/locations/${location}/publishers/google/models`;
 
     console.log(`Checking models at: ${endpoint}`);
