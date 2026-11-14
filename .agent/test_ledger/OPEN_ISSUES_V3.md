@@ -7171,6 +7171,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 **Mainline reconciliation — 2026-10-31:** Fetched and fast-forwarded this audit worktree to `6bd81df8b`, preserving the remote ISSUE-1602 SDK updates and reapplying only the local audit additions. Audit findings remain local/unpublished at this point.
 
+- **Production follow-up:** In the signed-in web app, the compact tools exposed both Node Library and Inspector. Clicking the Concept Art node body left the Inspector on Selected None. The pencil opened its configuration, and Save Changes updated the prompt on the canvas in the open Simple Concept Art template. Workflow reopen and deployed keyboard operation of the labeled pencil remain unverified.
+
 ### ISSUE-1617: Workflow Growth Protocol executor fails before media work while UI remains Running
 
 - **Status:** 🟡 PARTIAL (2026-11-14; lease `metadata.lease`/`serverTimestamp()`, `activeLoops` cleanup, TDZ interval guard, and `maestroAdapter` department mapping verified in unit tests; live protocol acceptance pending)
