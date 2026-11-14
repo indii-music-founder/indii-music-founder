@@ -293,6 +293,13 @@ export class MerchandiseAgent extends BaseAgent {
                     const { useStore } = await importWithRetry(() => import('@/core/store'));
 
                     // Extract image data from URL or data URL
+                    const trimmedAssetUrl = typeof assetUrl === 'string' ? assetUrl.trim() : '';
+                    if (!trimmedAssetUrl || !/^(https?:\/\/|data:image\/|gs:\/\/)/i.test(trimmedAssetUrl)) {
+                        throw new Error(
+                            'A valid artwork assetUrl (https://, gs://, or data:image/) is required to composite a product mockup. Provide an existing asset URL or generate artwork first.'
+                        );
+                    }
+
                     let imageData: { mimeType: string; data: string };
 
                     if (isDataUrl) {

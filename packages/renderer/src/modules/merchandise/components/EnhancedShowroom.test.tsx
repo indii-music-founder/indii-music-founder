@@ -5,8 +5,6 @@ import EnhancedShowroom from './EnhancedShowroom';
 import { Editing } from '@/services/image/EditingService';
 import { browserUpscale } from '@/services/upscale/BrowserUpscale';
 
-vi.mock('@/services/upscale/BrowserUpscale', () => ({ browserUpscale: vi.fn() }));
-
 const mockToast = {
     loading: vi.fn(() => 'loading-toast-id'),
     updateProgress: vi.fn(),
