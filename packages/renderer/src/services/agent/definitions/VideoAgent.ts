@@ -15,7 +15,7 @@ import { DirectorTools } from '../tools/DirectorTools';
 const videoRetrievalConfig = {
     'videoJobs': { path: 'videoJobs', requiresUserIdFilter: true },
     'video_releases': { path: 'video_releases', requiresUserIdFilter: true },
-    'generated_videos': { path: 'generated_videos', requiresUserIdFilter: true }
+    'generated_videos': { path: 'users/{uid}/generated_videos', requiresUserIdFilter: false }
 };
 const videoRetrievalTools = buildDomainRetrievalTools('Video', videoRetrievalConfig);
 const videoRetrievalDeclarations = buildDomainRetrievalDeclarations('Video', videoRetrievalConfig);

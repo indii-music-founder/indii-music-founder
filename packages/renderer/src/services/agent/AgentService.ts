@@ -1168,8 +1168,11 @@ export class AgentService {
             !/^(?:yes|yep|yeah|sure|go ahead|continue|start)[.!?]*$/i.test(task.rawUserUtterance.trim())) {
             return this.handleBoardroomSwarmFlow(task, attachments, { ...context, isReadOnly: true }, responseId, signal);
         }
+        const soloSpecialist = sourceState.activeAgents?.length === 1 && sourceState.activeAgents[0] !== 'generalist'
+            ? sourceState.activeAgents[0]
+            : null;
         store.getState().updateAgentMessage(responseId, {
-            agentId: 'generalist', text: '*(Understanding your request…)*', isStreaming: true,
+            agentId: soloSpecialist || 'generalist', text: '*(Understanding your request…)*', isStreaming: true,
         });
         const intent = isBoardroomCapabilityOnly(task.rawUserUtterance) ? 'capability'
             : await this.orchestrator.determineBoardroomIntent(context, task.rawUserUtterance);
@@ -1201,24 +1204,35 @@ export class AgentService {
             const label = assetManifest.find(item => item.alias === reference.alias);
             return { id: reference.id, alias: reference.alias, name: label && 'name' in label ? label.name : undefined };
         }));
-        // Use the existing routing/decomposition machinery; a seat is never
+        // Use the existing routing/decomposition machinery unless a solo specialist
+        // is already seated (Conductor explicitly unseated); a seat is never
         // treated as proof that work was handed off or completed.
-        const route = await this.orchestrator.determineOrchestrationPath(
-            { ...context, boardroomSourceManifest: assetContext }, task.rawUserUtterance);
-        const steps: BoardroomActionStep[] = route.type === 'graph' && route.graph
-            ? stepsFromBoardroomGraph(route.graph)
-            : route.type === 'parallel' && route.subtasks
-                ? route.subtasks.map((subtask, index) => ({ id: `step-${index}`, agentId: subtask.agentId, task: subtask.subtask, dependencies: [] }))
-                : [{ id: 'step-0', agentId: route.agentId || 'generalist', task: task.rawUserUtterance, dependencies: [] }];
+        const steps: BoardroomActionStep[] = soloSpecialist
+            ? [{ id: 'step-0', agentId: soloSpecialist, task: task.rawUserUtterance, dependencies: [] }]
+            : (() => {
+                return [];
+            })();
+        if (!soloSpecialist) {
+            const route = await this.orchestrator.determineOrchestrationPath(
+                { ...context, boardroomSourceManifest: assetContext }, task.rawUserUtterance);
+            const routedSteps: BoardroomActionStep[] = route.type === 'graph' && route.graph
+                ? stepsFromBoardroomGraph(route.graph)
+                : route.type === 'parallel' && route.subtasks
+                    ? route.subtasks.map((subtask, index) => ({ id: `step-${index}`, agentId: subtask.agentId, task: subtask.subtask, dependencies: [] }))
+                    : [{ id: 'step-0', agentId: route.agentId || 'generalist', task: task.rawUserUtterance, dependencies: [] }];
+            steps.push(...routedSteps);
+        }
         validateBoardroomSteps(steps);
         signal?.throwIfAborted();
-        for (const agentId of new Set(['generalist', ...steps.map(step => step.agentId)])) {
+        for (const agentId of new Set(soloSpecialist ? steps.map(step => step.agentId) : ['generalist', ...steps.map(step => step.agentId)])) {
             store.getState().addActiveAgent(agentId);
         }
         const receipts: BoardroomStepReceipt[] = [];
         const founder = isFounderUserProfile(context.userProfile);
         store.getState().updateAgentMessage(responseId, {
-            text: `I’m coordinating ${steps.length === 1 ? 'this action' : `${steps.length} steps`} with ${[...new Set(steps.map(step => agentRegistry.get(step.agentId)?.name || step.agentId))].join(', ')}.`,
+            text: soloSpecialist
+                ? `Routing directly to ${agentRegistry.get(soloSpecialist)?.name || soloSpecialist}.`
+                : `I’m coordinating ${steps.length === 1 ? 'this action' : `${steps.length} steps`} with ${[...new Set(steps.map(step => agentRegistry.get(step.agentId)?.name || step.agentId))].join(', ')}.`,
             isStreaming: true,
         });
         while (receipts.length < steps.length) {
