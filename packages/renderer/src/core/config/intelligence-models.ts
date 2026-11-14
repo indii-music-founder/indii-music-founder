@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
+    TEXT_CONDUCTOR: 'gemini-4-argon',            // Founder-approved Conductor reasoning target
     TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
     TEXT_FAST: 'gemini-3.8-flash',               // Workhorse agentic & fast tasks (GA) — per MODEL_POLICY.md
     TEXT_FLASH_3_8: 'gemini-3.8-flash',          // Gemini 3.8 Flash GA (September 2026)
@@ -40,6 +41,7 @@ export { MODEL_THINKING_LEVELS } from './model-thinking';
 
 export const INTELLIGENCE_MODELS = {
     TEXT: {
+        CONDUCTOR: APPROVED_MODELS.TEXT_CONDUCTOR,
         AGENT: APPROVED_MODELS.TEXT_AGENT,
         FAST: APPROVED_MODELS.TEXT_FAST,
         LITE: APPROVED_MODELS.TEXT_LITE,
@@ -229,6 +231,7 @@ function validateModels(): void {
 
 // Centralized mapping of Model IDs to display names in UI components to prevent hardcoding.
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
+    [APPROVED_MODELS.TEXT_CONDUCTOR]: 'Gemini 4 Argon',
     [APPROVED_MODELS.TEXT_FAST]: 'Gemini 3.8 Flash',
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
