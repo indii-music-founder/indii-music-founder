@@ -344,7 +344,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             ) {
                 const unifiedModelKey = 'TEXT_AGENT';
                 const remoteOverride = this.remoteConfig.overrides[unifiedModelKey];
-                const resolvedModel = remoteOverride || APPROVED_MODELS[unifiedModelKey];
+                const resolvedModel = typeof remoteOverride === 'string' && remoteOverride.trim()
+                    ? remoteOverride.trim()
+                    : APPROVED_MODELS[unifiedModelKey];
                 logger.info(`[FirebaseIntelligenceService] Routing multimodal capability "${normalized}" to unified model: ${resolvedModel}`);
                 return resolvedModel;
             }
@@ -368,8 +370,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         // 4. Resolve overrides or fallback to APPROVED_MODELS default
         if (modelKey && Object.prototype.hasOwnProperty.call(APPROVED_MODELS, modelKey)) {
             const remoteOverride = this.remoteConfig.overrides[modelKey as keyof typeof APPROVED_MODELS];
-            if (remoteOverride) {
-                return remoteOverride;
+            if (typeof remoteOverride === 'string' && remoteOverride.trim()) {
+                return remoteOverride.trim();
             }
             return APPROVED_MODELS[modelKey as keyof typeof APPROVED_MODELS];
         }
@@ -676,9 +678,26 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             }))
             : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
 
-        const cacheKey = JSON.stringify({ leanPrompt, modelName, config: mergedConfig, systemInstruction });
+        // Never share in-flight requests across users or across distinct tool,
+        // cancellation, billing, or safety contexts.
+        const requestUserId = auth.currentUser?.uid;
+        const canCoalesce = Boolean(requestUserId)
+            && !options?.skipCache
+            && !options?.signal
+            && !options?.cachedContent
+            && !options?.thoughtSignature
+            && !options?.toolConfig
+            && !options?.safetySettings
+            && !options?.boardroomDispatchLeaseId
+            && !options?.boardroomAgentId
+            && options?.timeout === undefined
+            && !tools?.length
+            && (typeof prompt === 'string' || (Array.isArray(prompt) &&
+                prompt.every(content => content.parts.every(part =>
+                    'text' in part && typeof part.text === 'string'))));
+        const cacheKey = JSON.stringify({ requestUserId, leanPrompt, modelName, config: mergedConfig, systemInstruction });
 
-        if (!options?.skipCache && this.activeRequests.has(cacheKey)) {
+        if (canCoalesce && this.activeRequests.has(cacheKey)) {
             // logger.debug(`[FirebaseIntelligenceService] Coalescing request for ${modelName}`);
             return this.activeRequests.get(cacheKey)!;
         }
@@ -839,7 +858,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         };
 
         const requestPromise = executeRequest();
-        this.activeRequests.set(cacheKey, requestPromise);
+        if (canCoalesce) this.activeRequests.set(cacheKey, requestPromise);
         // Attach a secondary .catch to the .finally() chain to suppress duplicate
         // UnhandledPromiseRejection — the error is already surfaced via the returned
         // requestPromise. This suppression is intentional, not a silent swallow.
