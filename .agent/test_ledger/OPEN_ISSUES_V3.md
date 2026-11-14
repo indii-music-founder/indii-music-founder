@@ -7013,7 +7013,7 @@ The same golden-leaf request progressed from Understanding to `I’m coordinatin
 
 ### ISSUE-1611: Boardroom image request terminates with an unrelated historical response and no media
 
-- **Status:** 🔴 OPEN (2026-11-02; current-message delegation and genuine media acceptance pending)
+- **Status:** 🟡 PARTIAL — `bbdb121b8` bounds delegated Boardroom history and explicitly prioritizes the current request. Production acceptance still requires a fresh image request in a conversation with older unrelated messages and a rendered image from that request.
 - **Historical status / severity:** CONFIRMED OPEN / HIGH; production reproduction 2026-10-30.
 - **Location:** Home → Enter Boardroom → Ask indii; existing genuine signed-in W-avatar Chrome session. No account created or auth injected; actual plan unverified.
 - **Reproduction:** Submit `For this media QA check, generate exactly one square image of a single golden leaf on a deep navy background, flat screen print shapes, no text. Return the actual generated image. Do not publish or send anything.` Wait through Conductor delegation to Creative Director.
