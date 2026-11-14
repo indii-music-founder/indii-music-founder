@@ -347,6 +347,10 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     /\b(?:confirm|certify)(?:\s+that)?\s+(?:all|my|our)\s+systems?\s+(?:are|to be)\s+(?:operational|ready|functional)\b/i,
     // e.g. "my current internal model is the latest deployed version" / "backend optimizations and tool enhancements we've pushed recently"
     /\bmy\s+current\s+internal\s+model\s+is\s+(?:the\s+)?latest\b/i,
+    // Issue #812: Catch unbacked diagnostic-check and active/functioning-normally self-certifications
+    /\bcompleted\s+(?:a\s+)?(?:comprehensive\s+)?(?:diagnostic|system|capability)\s+check\b/i,
+    /\b(?:my|our|the|all)\s+(?:core\s+)?(?:conversational\s+)?(?:abilities|capabilities)\b[^.?!]{0,120}\b(?:remain|are|is)\s+(?:fully\s+|completely\s+)?active\b/i,
+    /\b(?:my|our)\s+(?:ability|capabilities?|systems?)\b[^.?!]{0,80}\bis\s+functioning\s+normally\b/i,
 ];
 
 export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResult {

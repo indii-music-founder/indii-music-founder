@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
@@ -27,10 +27,22 @@ export function SectionCard({ title, icon, children, isOpen, onToggle }: Section
     const buttonId = useId();
     const contentId = useId();
     const reducedMotion = useReducedMotion();
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        const panel = panelRef.current;
+        if (!panel) return;
+        if (!isOpen && panel.contains(panel.ownerDocument.activeElement)) {
+            buttonRef.current?.focus();
+        }
+        panel.inert = !isOpen;
+    }, [isOpen]);
 
     return (
         <div className="mb-4">
             <button
+                ref={buttonRef}
                 id={buttonId}
                 type="button"
                 onClick={onToggle}
@@ -44,24 +56,26 @@ export function SectionCard({ title, icon, children, isOpen, onToggle }: Section
                 </div>
                 <ChevronDown aria-hidden="true" size={14} className={`text-gray-500 motion-safe:transition-transform motion-safe:duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        id={contentId}
-                        role="region"
-                        aria-labelledby={buttonId}
-                        initial={reducedMotion ? false : { height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={reducedMotion ? undefined : { height: 0, opacity: 0 }}
-                        transition={reducedMotion ? { duration: 0 } : { duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
-                    >
-                        <div className="pt-2 pb-1 space-y-3">
-                            {children}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <div ref={panelRef} aria-hidden={!isOpen || undefined}>
+                <AnimatePresence initial={false}>
+                    {isOpen && (
+                        <motion.div
+                            id={contentId}
+                            role="region"
+                            aria-labelledby={buttonId}
+                            initial={reducedMotion ? false : { height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={reducedMotion ? undefined : { height: 0, opacity: 0 }}
+                            transition={reducedMotion ? { duration: 0 } : { duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                            className="overflow-hidden"
+                        >
+                            <div className="pt-2 pb-1 space-y-3">
+                                {children}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 }

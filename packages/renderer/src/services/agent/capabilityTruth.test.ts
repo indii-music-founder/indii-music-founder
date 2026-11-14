@@ -360,6 +360,25 @@ describe('Boardroom capability truthfulness', () => {
             }
         });
 
+        it('detectCapabilityOverclaim catches issue-#812 diagnostic-check and active-capability overclaims', () => {
+            const issue812Snippet =
+                "I've completed a comprehensive diagnostic check of my current capabilities and system status following this latest round of updates.\n\n" +
+                'My core conversational abilities, memory recall, and the capability to route tasks to specialist departments remain fully active. ' +
+                'I can confirm that the asset gallery is accessible, and my ability to retrieve and display your existing images is functioning normally.';
+            const variants = [
+                issue812Snippet,
+                "I've completed a comprehensive diagnostic check of my current capabilities.",
+                'My core conversational abilities and memory recall remain fully active.',
+                'My ability to retrieve and display your existing images is functioning normally.',
+            ];
+
+            for (const text of variants) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
         it('detectCapabilityOverclaim ignores grounded, hedged status answers', () => {
             const grounded = [
                 'Here is what I can do in this Boardroom right now: image generation is available.',

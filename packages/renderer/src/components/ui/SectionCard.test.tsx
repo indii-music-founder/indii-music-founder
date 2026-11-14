@@ -4,6 +4,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { SectionCard } from './SectionCard';
 
 describe('SectionCard', () => {
+    it('returns focus to the disclosure when its caller closes a focused panel', () => {
+        const card = (isOpen: boolean) => (
+            <SectionCard title="Advanced metadata" isOpen={isOpen} onToggle={() => {}}>
+                <input aria-label="Catalog number" />
+            </SectionCard>
+        );
+        const { rerender } = render(card(true));
+        screen.getByRole('textbox', { name: 'Catalog number' }).focus();
+
+        rerender(card(false));
+
+        expect(screen.getByRole('button', { name: 'Advanced metadata' })).toHaveFocus();
+        expect(screen.queryByRole('textbox', { name: 'Catalog number' })).toBeNull();
+    });
+
     it('toggles its labeled region without submitting an enclosing form', () => {
         const submit = vi.fn((event: FormEvent) => event.preventDefault());
         function FormDisclosure() {
