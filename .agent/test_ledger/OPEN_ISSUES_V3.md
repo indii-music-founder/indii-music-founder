@@ -7301,7 +7301,8 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1622: Manual Workflow input connection handle is covered/clipped, preventing wiring a media node
 
-- **Status:** 🔴 OPEN — genuine manual creation and pointer failure reproduced2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; handle DOM order, `!z-30`, `!pointer-events-auto`, and 12×12 hit targets verified in unit tests; live pointer-drag acceptance pending)
+- **2026-11-14 verification:** `CustomNodes.tsx` now renders `<Handle>` elements in `InputNode`, `AudioSegmentNode`, and `OutputNode` after body content inside `overflow-visible` `NodeWrapper` with `!w-3.5 !h-3.5 !z-30 !pointer-events-auto`. `UniversalNode.tsx` upgrades handle columns to `z-20` and handles to 12×12px with `!z-30 !pointer-events-auto`. `UniversalNode.test.tsx` (8/8 passing) verifies handle DOM placement after content, stacking classes, and dimensions. Jev (`jev-1.14.0`, `req_01a1d8c9941570f29b79c26f9bfb582e`) scored `fix_unobstructs_handles=0.88`, `readiness_score=2.95/4.00` (confidence `0.96`). Live pointer-drag acceptance remains pending.
 - **Severity:** 🟠 HIGH — manual media workflow cannot be wired from its input through the advertised controls.
 - **Location:** Workflow Lab → Node Library (collapse global context panel to expose it) → Webhook input/Autonomous Generate. Source `components/CustomNodes.tsx:14-59`; `components/UniversalNode.tsx` outer overflow-hidden wrapper/handle columns.
 - **Reproduction:** Start empty graph. Drag Webhook onto canvas (creates START TRIGGER), drag Autonomous Generate (creates Autonomous Department), enter golden-leaf image QA prompt through normal fields, separate nodes/Fit View, then drag the actual rendered input output handle to the generation input handle. Two separated-node attempts moved the input body instead of making an edge. No generation request was run.

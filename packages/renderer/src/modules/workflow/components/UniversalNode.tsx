@@ -375,7 +375,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             {/* Body */}
             <div className="flex relative z-0 bg-linear-to-b from-transparent to-black/40">
                 {/* Input Handles Column */}
-                <div className="flex flex-col justify-center py-4 gap-4 border-r border-white/5 bg-black/20 w-10 relative">
+                <div className="flex flex-col justify-center py-4 gap-4 border-r border-white/5 bg-black/20 w-10 relative z-20">
                     {inputs.map((input, _i) => (
                         <div key={input.id} className="relative group flex items-center justify-center h-4">
                             <Handle
@@ -384,12 +384,12 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                 id={input.id}
                                 style={{
                                     left: -6,
-                                    width: 8,
-                                    height: 8,
+                                    width: 12,
+                                    height: 12,
                                     background: DATA_TYPE_COLORS[input.type as DataType] || DATA_TYPE_COLORS.ANY,
                                     border: '2px solid #1e293b'
                                 }}
-                                className="z-20 transition-transform hover:scale-150"
+                                className="!z-30 !pointer-events-auto transition-transform hover:scale-150"
                             />
                             {/* Tooltip for Input Type */}
                             <div className="absolute left-4 bg-black/90 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">
@@ -421,7 +421,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                 </div>
 
                 {/* Output Handles Column */}
-                <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative">
+                <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative z-20">
                     {outputs.map((output, _i) => (
                         <div key={output.id} className="relative group flex items-center justify-center h-4">
                             <Handle
@@ -430,12 +430,12 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                                 id={output.id}
                                 style={{
                                     right: -6,
-                                    width: 8,
-                                    height: 8,
+                                    width: 12,
+                                    height: 12,
                                     background: DATA_TYPE_COLORS[output.type as DataType] || DATA_TYPE_COLORS.ANY,
                                     border: '2px solid #1e293b'
                                 }}
-                                className="z-20 transition-transform hover:scale-150"
+                                className="!z-30 !pointer-events-auto transition-transform hover:scale-150"
                             />
                             {/* Tooltip for Output Type */}
                             <div className="absolute right-4 bg-black/90 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">
