@@ -265,7 +265,7 @@ const callables: CallableConfig[] = [
     handler: typesafeJudge as unknown as CallableHandler,
     defaultData: {
       state: { text: 'song' },
-      questions: { q1: 'Is this coherent?' },
+      questions: { q1: { type: 'noul', instructions: 'Is this coherent?' } },
     },
     expectedOpPrefix: 'typesafe-judge:',
   },
