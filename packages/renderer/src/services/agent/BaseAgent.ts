@@ -1,7 +1,7 @@
 import { delegatedAgentResult, unauthorizedToolFailure } from './executionFailure';
 import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
-import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt } from '@/services/intelligence/StreamPayloadGuard';
+import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt, streamImageTargetForRequest } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -1233,7 +1233,9 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 // generated artifact above) can exceed the backend contents guard
                 // and surfaced as an opaque INTERNAL_ERROR (ERROR_LEDGER
                 // 2026-08-27). Fail-open: compression errors keep the original.
-                const streamAttachments = await compressStreamImageAttachments(finalAttachments);
+                const streamAttachments = await compressStreamImageAttachments(
+                    finalAttachments, streamImageTargetForRequest(fullPrompt, finalAttachments)
+                );
 
                 let requestContents = [{
                     role: 'user' as const,
@@ -1248,14 +1250,17 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 // Server-guard mirror: fail-safe auto-compaction before network call.
                 // If the initial payload exceeds the 800K-character budget, auto-heal by:
                 // 1. Eliding raw base64 data URLs in prompt text.
-                // 2. Aggressively compressing attachments (overridePerImageTarget = 250_000).
+                // 2. Compressing attachments to the measured remaining space,
+                //    with an additional per-image ceiling of 250_000 chars.
                 // Only halt if even after compaction the payload cannot fit within budget.
                 try {
                     assertContentsWithinStreamBudget(requestContents, `${this.id}#iteration-${iterations}`);
                 } catch (payloadError) {
                     logger.warn(`[BaseAgent] Payload budget exceeded in ${this.id}, attempting self-healing compaction...`, payloadError);
                     const compactedPrompt = elideBase64Payloads(fullPrompt);
-                    const compactedAttachments = await compressStreamImageAttachments(finalAttachments, 250_000);
+                    const compactedAttachments = await compressStreamImageAttachments(
+                        finalAttachments, Math.min(250_000, streamImageTargetForRequest(compactedPrompt, finalAttachments))
+                    );
                     requestContents = [{
                         role: 'user' as const,
                         parts: [

@@ -55,6 +55,30 @@ export interface StreamImageAttachment {
 }
 
 /**
+ * Reserve the actual serialized text, non-image bytes and inlineData envelopes
+ * before dividing the remaining budget between image previews. Original assets
+ * stay with the caller; only the model's vision copies are compressed.
+ */
+export function streamImageTargetForRequest(prompt: string, attachments: readonly StreamImageAttachment[]): number {
+    const imageCount = attachments.filter(a => a.mimeType.startsWith('image/')).length;
+    const envelope: Content[] = [{
+        role: 'user',
+        parts: [
+            { text: prompt },
+            ...attachments.map(a => ({ inlineData: {
+                mimeType: a.mimeType,
+                data: a.mimeType.startsWith('image/') ? '' : a.base64,
+            } })),
+        ],
+    }];
+    // Compression emits JPEG; allow for its MIME type being longer than the
+    // input type. The final serialized-request assertion remains authoritative.
+    const remaining = AGENT_STREAM_CHAR_BUDGET - estimateContentsCharLength(envelope) - imageCount * 16;
+    return Math.max(1, Math.min(IMAGE_ATTACHMENT_TARGET_BASE64_CHARS,
+        Math.floor(remaining / Math.max(1, imageCount))));
+}
+
+/**
  * Mirror of the exact server measurement: `JSON.stringify(contents).length`.
  */
 export function estimateContentsCharLength(contents: Content[]): number {

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     AGENT_STREAM_CHAR_BUDGET,
     estimateContentsCharLength,
+    streamImageTargetForRequest,
     assertContentsWithinStreamBudget,
     compressStreamImageAttachments,
     elideBase64Payloads,
@@ -54,7 +55,55 @@ describe('assertContentsWithinStreamBudget', () => {
     });
 });
 
+// Structural-only payload arithmetic: no customer account or provider claims.
+describe('streamImageTargetForRequest', () => {
+    it('reserves the serialized prompt and image envelope before dividing image space', () => {
+        const prompt = 'T'.repeat(600_000);
+        const attachments = [{ mimeType: 'image/png', base64: 'AAAA' }];
+        // The previous fixed 250K fallback still overflowed this text budget.
+        expect(() => assertContentsWithinStreamBudget([{
+            role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType: 'image/png', data: 'A'.repeat(250_000) } }],
+        }], 'fixed-target')).toThrow();
+        const target = streamImageTargetForRequest(prompt, attachments);
+        expect(target).toBeLessThan(200_000);
+        expect(() => assertContentsWithinStreamBudget([{
+            role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType: 'image/png', data: 'A'.repeat(target) } }],
+        }], 'sized')).not.toThrow();
+        expect(attachments[0]!.base64).toBe('AAAA');
+    });
+
+    it('accounts for JSON escaping, multiple images, and non-image attachments', () => {
+        const prompt = '"\n'.repeat(100_000);
+        const attachments = [
+            { mimeType: 'image/png', base64: 'AAAA' },
+            { mimeType: 'image/jpeg', base64: 'BBBB' },
+            { mimeType: 'application/pdf', base64: 'C'.repeat(50_000) },
+        ];
+        const target = streamImageTargetForRequest(prompt, attachments);
+        const contents: Content[] = [{ role: 'user', parts: [
+            { text: prompt },
+            ...attachments.map(a => ({ inlineData: { mimeType: a.mimeType, data: a.mimeType.startsWith('image/') ? 'A'.repeat(target) : a.base64 } })),
+        ] }];
+        expect(estimateContentsCharLength(contents)).toBeLessThanOrEqual(AGENT_STREAM_CHAR_BUDGET);
+        expect(target).toBeGreaterThan(0);
+    });
+
+    it('keeps the usual image quality ceiling for short prompts', () => {
+        expect(streamImageTargetForRequest('Describe this', [{ mimeType: 'image/png', base64: 'AAAA' }])).toBe(400_000);
+    });
+
+    it('returns a positive compression target when text alone cannot fit; the request guard still rejects it', () => {
+        const prompt = 'T'.repeat(AGENT_STREAM_CHAR_BUDGET);
+        expect(streamImageTargetForRequest(prompt, [{ mimeType: 'image/png', base64: 'AAAA' }])).toBe(1);
+        expect(() => assertContentsWithinStreamBudget([{ role: 'user', parts: [{ text: prompt }] }], 'text')).toThrow();
+    });
+});
+
 describe('compressStreamImageAttachments', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it.each([undefined, 250_000])('shares the backend contents budget across images with target %s', async target => {
         const images = Array.from({ length: 4 }, () => ({ mimeType: 'image/png', base64: 'A'.repeat(200_000) }));
         compressImage.mockResolvedValue({ blob: new Blob(['x']), dataUri: `data:image/jpeg;base64,${'B'.repeat(140_000)}` });
@@ -63,10 +112,6 @@ describe('compressStreamImageAttachments', () => {
         expect(result.reduce((sum, image) => sum + image.base64.length, 0)).toBeLessThanOrEqual(600_000);
         expect(images[0]!.base64.length).toBe(200_000);
         compressImage.mockReset();
-    });
-
-    beforeEach(() => {
-        vi.clearAllMocks();
     });
 
     it('passes small image attachments through untouched without invoking compression', async () => {
