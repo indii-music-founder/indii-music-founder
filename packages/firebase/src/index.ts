@@ -231,8 +231,11 @@ export { sendEmail } from './email/sendEmail';
 // Artist Passport Funnel — automatic Gap Report email delivery on lead capture
 export { sendPassportReportEmail } from './passport/sendPassportReportEmail';
 
-// Founding Artist Beta — verified, server-authoritative waitlist enrollment.
-export { joinFoundingArtistWaitlist } from './foundingArtist/waitlist';
+// Founding Artist Beta — verified, server-authoritative waitlist enrollment & invitation acceptance.
+export {
+    acceptFoundingArtistInvitation,
+    joinFoundingArtistWaitlist,
+} from './foundingArtist/waitlist';
 export {
     inviteNextFoundingArtist,
     queueFoundingArtistMilestoneUpdate,

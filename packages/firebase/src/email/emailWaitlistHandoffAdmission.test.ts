@@ -171,7 +171,7 @@ vi.mock('../lib/rateLimit', () => ({
 
 import { sendEmail } from './sendEmail';
 import { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './tokenManager';
-import { joinFoundingArtistWaitlist } from '../foundingArtist/waitlist';
+import { acceptFoundingArtistInvitation, joinFoundingArtistWaitlist } from '../foundingArtist/waitlist';
 import { inviteNextFoundingArtist, queueFoundingArtistMilestoneUpdate } from '../foundingArtist/admin';
 import { createHandoffCode, redeemHandoffCode } from '../functions/auth/handoff';
 import { fetchStorageAssetForCanvas } from '../functions/storage/fetchStorageAssetForCanvas';
@@ -189,6 +189,7 @@ interface CallableConfig {
   defaultData: Record<string, unknown>;
   expectedOpPrefix: string;
   tokenClaims?: Record<string, unknown>;
+  docOverrides?: Record<string, unknown>;
 }
 
 const callables: CallableConfig[] = [
@@ -237,6 +238,14 @@ const callables: CallableConfig[] = [
     },
     expectedOpPrefix: 'founding-artist-waitlist:',
     tokenClaims: { email: 'artist@indii.music', email_verified: true },
+  },
+  {
+    name: 'acceptFoundingArtistInvitation',
+    handler: acceptFoundingArtistInvitation as unknown as CallableHandler,
+    defaultData: {},
+    expectedOpPrefix: 'founding-artist-accept:',
+    tokenClaims: { email: 'artist@indii.music', email_verified: true },
+    docOverrides: { status: 'invited', invitation: { status: 'sent', communicationId: 'comm-1' } },
   },
   {
     name: 'inviteNextFoundingArtist',
@@ -357,7 +366,7 @@ describe('Unit 19 Admission: Email, Founding Artist, Auth Handoff & Storage (ISS
     });
   });
 
-  for (const { name, handler, defaultData, expectedOpPrefix, tokenClaims } of callables) {
+  for (const { name, handler, defaultData, expectedOpPrefix, tokenClaims, docOverrides } of callables) {
     describe(`${name} callable boundary`, () => {
       it('validates App Check on every request', async () => {
         mocks.validateAppCheck.mockImplementationOnce(() => {
@@ -434,6 +443,14 @@ describe('Unit 19 Admission: Email, Founding Artist, Auth Handoff & Storage (ISS
 
       it('allows request when validly authenticated and Arcjet allows', async () => {
         mocks.protectAuthenticated.mockResolvedValueOnce({ allowed: true });
+        if (docOverrides) {
+          const baseSnapshot = await mocks.firestoreDocGet();
+          const baseData = baseSnapshot.data();
+          mocks.firestoreDocGet.mockResolvedValueOnce({
+            exists: true,
+            data: () => ({ ...baseData, ...docOverrides }),
+          });
+        }
 
         const result = await handler({
           auth: {

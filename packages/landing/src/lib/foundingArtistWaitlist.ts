@@ -10,10 +10,19 @@ const WAITLIST_EMAIL_STORAGE_KEY = 'indii_founding_artist_email';
 const WAITLIST_MILESTONE_CONSENT_STORAGE_KEY = 'indii_founding_artist_milestones';
 const WAITLIST_SOURCE_STORAGE_KEY = 'indii_founding_artist_source';
 
+export type FoundingArtistWaitlistStatus = 'waitlisted' | 'invited' | 'accepted' | 'declined' | 'revoked';
+
 export interface FoundingArtistEnrollmentResult {
-  status: 'waitlisted';
+  status: FoundingArtistWaitlistStatus;
   queuePosition: number;
   alreadyJoined: boolean;
+}
+
+export interface FoundingArtistInvitationAcceptanceResult {
+  status: 'accepted';
+  queuePosition: number;
+  alreadyAccepted: boolean;
+  betaAccessActive: true;
 }
 
 function normalizeEmail(email: string): string {
@@ -134,4 +143,19 @@ export async function enrollCurrentVerifiedArtist(
   }
   await currentUser.getIdToken(true);
   return finalizeEnrollment(majorMilestoneUpdates, source);
+}
+
+export async function acceptFoundingArtistInvitation(): Promise<FoundingArtistInvitationAcceptanceResult> {
+  const { firebaseAuth, firebaseFunctions } = requireFirebase();
+  const currentUser = firebaseAuth.currentUser;
+  if (!currentUser?.emailVerified) {
+    throw new Error('Verify your Founding Artist email before accepting beta access.');
+  }
+  await currentUser.getIdToken(true);
+  const callable = httpsCallable<
+    Record<string, never>,
+    FoundingArtistInvitationAcceptanceResult
+  >(firebaseFunctions, 'acceptFoundingArtistInvitation');
+  const response = await callable({});
+  return response.data;
 }

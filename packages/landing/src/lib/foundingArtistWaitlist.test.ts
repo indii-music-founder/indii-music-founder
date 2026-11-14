@@ -30,6 +30,7 @@ vi.mock('./firebase', () => ({
 }));
 
 import {
+  acceptFoundingArtistInvitation,
   beginFoundingArtistVerification,
   completeFoundingArtistVerification,
   enrollCurrentVerifiedArtist,
@@ -151,5 +152,35 @@ describe('Founding Artist waitlist verification', () => {
     });
     expect(result.queuePosition).toBe(12);
     expect(localStorage.getItem('indii_founding_artist_source')).toBeNull();
+  });
+
+  it('requires a verified signed-in artist before calling acceptFoundingArtistInvitation', async () => {
+    await expect(acceptFoundingArtistInvitation()).rejects.toThrow('Verify your Founding Artist email');
+    expect(mocks.callable).not.toHaveBeenCalled();
+
+    const getIdToken = vi.fn().mockResolvedValue('fresh-token');
+    mocks.auth.currentUser = {
+      email: 'invited@example.com',
+      emailVerified: true,
+      getIdToken,
+    };
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        status: 'accepted',
+        queuePosition: 5,
+        alreadyAccepted: false,
+        betaAccessActive: true,
+      },
+    });
+
+    await expect(acceptFoundingArtistInvitation()).resolves.toEqual({
+      status: 'accepted',
+      queuePosition: 5,
+      alreadyAccepted: false,
+      betaAccessActive: true,
+    });
+    expect(getIdToken).toHaveBeenCalledWith(true);
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(mocks.functions, 'acceptFoundingArtistInvitation');
+    expect(mocks.callable).toHaveBeenCalledWith({});
   });
 });

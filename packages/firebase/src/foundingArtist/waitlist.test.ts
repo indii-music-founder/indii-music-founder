@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import type * as admin from 'firebase-admin';
-import { enrollVerifiedFoundingArtist } from './waitlist';
+import { acceptVerifiedFoundingArtistInvitation, enrollVerifiedFoundingArtist } from './waitlist';
 
 interface Ref { path: string }
 interface StoredSnapshot { exists: boolean; data: () => Record<string, unknown> }
@@ -149,5 +149,154 @@ describe('Founding Artist verified waitlist enrollment', () => {
       source: 'replit_passport',
       type: 'verified_enrollment',
     });
+  });
+
+  it('preserves invited or accepted status when an enrolled artist updates preferences', async () => {
+    const email = 'artist@example.com';
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    const { firestore } = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 2,
+        status: 'invited',
+        communicationPreferences: { majorMilestoneUpdates: true },
+      },
+      [`foundingArtistEmailIndex/${emailHash}`]: { uid: 'artist-uid' },
+    });
+
+    const result = await enrollVerifiedFoundingArtist(
+      { uid: 'artist-uid', email },
+      { source: 'landing_page', majorMilestoneUpdates: true },
+      firestore,
+    );
+
+    expect(result).toEqual({ status: 'invited', queuePosition: 2, alreadyJoined: true });
+  });
+});
+
+describe('Founding Artist invitation acceptance', () => {
+  it('transitions an invited artist to accepted, records the lifecycle event, and activates beta participation metadata', async () => {
+    const email = 'invited@example.com';
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    const { firestore, writes } = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 5,
+        status: 'invited',
+        invitation: { status: 'sent', communicationId: 'comm-123' },
+      },
+    });
+
+    const result = await acceptVerifiedFoundingArtistInvitation(
+      { uid: 'artist-uid', email: ' Invited@Example.com ' },
+      firestore,
+    );
+
+    expect(result).toEqual({
+      status: 'accepted',
+      queuePosition: 5,
+      alreadyAccepted: false,
+      betaAccessActive: true,
+    });
+    expect(writes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        operation: 'update',
+        path: 'foundingArtistWaitlist/artist-uid',
+        data: expect.objectContaining({
+          status: 'accepted',
+          'invitation.status': 'accepted',
+        }),
+      }),
+      expect.objectContaining({
+        operation: 'set',
+        path: 'users/artist-uid',
+        data: expect.objectContaining({
+          foundingArtistBeta: expect.objectContaining({
+            status: 'accepted',
+            queuePosition: 5,
+            communicationId: 'comm-123',
+          }),
+        }),
+        options: { merge: true },
+      }),
+      expect.objectContaining({
+        operation: 'set',
+        path: 'foundingArtistEvents/artist-uid_invitation_accepted_comm-123',
+        data: expect.objectContaining({
+          uid: 'artist-uid',
+          type: 'invitation_accepted',
+          fromStatus: 'invited',
+          toStatus: 'accepted',
+          communicationId: 'comm-123',
+          queuePosition: 5,
+        }),
+      }),
+    ]));
+    const userWrite = writes.find((write) => write.path === 'users/artist-uid');
+    expect(userWrite?.data).not.toHaveProperty('tier');
+    expect(userWrite?.data).not.toHaveProperty('subscriptionTier');
+    expect(userWrite?.data).not.toHaveProperty('isFounder');
+  });
+
+  it('is idempotent when the invitation has already been accepted', async () => {
+    const email = 'accepted@example.com';
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    const { firestore, writes } = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 3,
+        status: 'accepted',
+      },
+    });
+
+    const result = await acceptVerifiedFoundingArtistInvitation(
+      { uid: 'artist-uid', email },
+      firestore,
+    );
+
+    expect(result).toEqual({
+      status: 'accepted',
+      queuePosition: 3,
+      alreadyAccepted: true,
+      betaAccessActive: true,
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('rejects acceptance when the account has not been invited yet or has no waitlist record', async () => {
+    const email = 'waiting@example.com';
+    const emailHash = createHash('sha256').update(email).digest('hex');
+    const waitingDb = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash,
+        queuePosition: 9,
+        status: 'waitlisted',
+      },
+    });
+    await expect(
+      acceptVerifiedFoundingArtistInvitation({ uid: 'artist-uid', email }, waitingDb.firestore),
+    ).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(waitingDb.writes).toHaveLength(0);
+
+    const missingDb = makeFirestore({});
+    await expect(
+      acceptVerifiedFoundingArtistInvitation({ uid: 'artist-uid', email }, missingDb.firestore),
+    ).rejects.toMatchObject({ code: 'failed-precondition' });
+  });
+
+  it('rejects acceptance when the verified email does not match the waitlist emailHash', async () => {
+    const otherHash = createHash('sha256').update('original@example.com').digest('hex');
+    const { firestore, writes } = makeFirestore({
+      'foundingArtistWaitlist/artist-uid': {
+        emailHash: otherHash,
+        queuePosition: 1,
+        status: 'invited',
+      },
+    });
+
+    await expect(
+      acceptVerifiedFoundingArtistInvitation({ uid: 'artist-uid', email: 'attacker@example.com' }, firestore),
+    ).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(writes).toHaveLength(0);
   });
 });
