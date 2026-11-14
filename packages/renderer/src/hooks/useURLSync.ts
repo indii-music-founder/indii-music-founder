@@ -64,12 +64,15 @@ const TAB_STATE: Record<string, TabStateConfig> = {
     },
 };
 
-function buildUrl(pathname: string, search: string, tab: string | null): string {
+function buildUrl(pathname: string, search: string, tab: string | null, preserveSection = true): string {
     const params = new URLSearchParams(search);
     if (tab) {
         params.set('tab', tab);
     } else {
         params.delete('tab');
+    }
+    if (!preserveSection) {
+        params.delete('section');
     }
     const query = params.toString();
     return `${pathname}${query ? `?${query}` : ''}`;
@@ -197,6 +200,8 @@ export function useURLSync(options: URLSyncOptions = {}) {
         if (currentModule !== currentPathModule) {
             // Module switch: carry the store-backed tab on the URL when it is
             // non-default so a mid-flow refresh or share keeps the context.
+            // Read live window.location.search as fallback so history.replaceState
+            // section requests (e.g. ?section=remote) are preserved across module switches.
             const config = TAB_STATE[currentModule as string];
             const tab = config ? (activeTab ?? config.defaultTab) : null;
             const carried = config && tab && tab !== config.defaultTab ? tab : null;
@@ -208,7 +213,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
                 if (section) search.set('section', section);
             }
             const query = search.toString();
-            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, query ? `?${query}` : '', carried));
+            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, query ? `?${query}` : '', carried, currentModule === 'settings'));
             return;
         }
 

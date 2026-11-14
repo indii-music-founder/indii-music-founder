@@ -60,4 +60,18 @@ describe('HighLevelAPI: extractAndParseJson & parseJSON', () => {
         expect(parseJSON(invalid)).toEqual({});
         expect(parseJSON(undefined)).toEqual({});
     });
+
+    it('recovers valid JSON with trailing commas or trailing commentary containing braces', () => {
+        const trailingComma = '{"name": "workflow-video-qa-leaf", "nodes": [{"id": "start",}],}';
+        expect(extractAndParseJson<{ name: string; nodes: Array<{ id: string }> }>(trailingComma)).toEqual({
+            name: 'workflow-video-qa-leaf',
+            nodes: [{ id: 'start' }],
+        });
+
+        const trailingBraces = '{"name": "workflow-video-qa-leaf", "nodes": []} Note: {use trigger handle}';
+        expect(extractAndParseJson<{ name: string; nodes: unknown[] }>(trailingBraces)).toEqual({
+            name: 'workflow-video-qa-leaf',
+            nodes: [],
+        });
+    });
 });

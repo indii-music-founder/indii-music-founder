@@ -84,14 +84,15 @@ export async function generateMockup(req: MockupRequest): Promise<MockupResult> 
 
     const promptUsed = `${MOCKUP_PROMPTS[req.kind].replace(SCENE_STUDIO_DEFAULT, SCENE_STAGING[scene])} Output aspect ratio ${aspect}.${colorway}`;
 
-    const sourceImages = await loadArtworkAsSource(req.artworkUrl);
+    const isGsUri = req.artworkUrl.startsWith('gs://');
+    const sourceImages = isGsUri ? undefined : await loadArtworkAsSource(req.artworkUrl);
 
     logger.info(`[MockupService] Generating ${req.kind} mockup (${scene}, ${aspect})`);
     const results = await ImageGeneration.generateImages({
         prompt: promptUsed,
         aspectRatio: aspect,
         model: APPROVED_MODELS.IMAGE_GEN,
-        sourceImages,
+        ...(isGsUri ? { referenceUris: [req.artworkUrl] } : { sourceImages }),
         quality: 'hd'
     });
 

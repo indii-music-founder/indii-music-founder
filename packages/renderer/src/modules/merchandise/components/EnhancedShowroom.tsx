@@ -133,15 +133,13 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const [productAsset, setProductAsset] = useState<string | null>(initialAsset);
     const [isUpscalingAsset, setIsUpscalingAsset] = useState(false);
     const [assetUpscaledNote, setAssetUpscaledNote] = useState<string | null>(null);
-    const [assetUpscaleError, setAssetUpscaleError] = useState<string | null>(null);
+    const [upscaleError, setUpscaleError] = useState<string | null>(null);
 
     // Sync state with prop if it changes from outside
     useEffect(() => {
         if (initialAsset) {
             logger.debug("[EnhancedShowroom] Syncing initialAsset:", initialAsset.substring(0, 50) + "...");
             setProductAsset(initialAsset);
-            setAssetUpscaledNote(null);
-            setAssetUpscaleError(null);
         }
     }, [initialAsset]);
     const [productType, setProductType] = useState('t-shirt');
@@ -230,7 +228,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const handleUpscaleAsset = async (scale: 2 | 4) => {
         if (!productAsset || isUpscalingAsset) return;
         setIsUpscalingAsset(true);
-        setAssetUpscaleError(null);
+        setUpscaleError(null);
         try {
             if (window.electronAPI?.upscale) {
                 const { upscalerService } = await import('@/services/upscale/UpscalerService');
@@ -238,32 +236,29 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 setProductAsset(outcome.outputDataUrl);
                 setAssetUpscaledNote(`${scale}× · ${outcome.model}`);
             } else {
-                let dataUrl = productAsset;
-                if (!productAsset.startsWith('data:')) {
-                    const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-                    const { blob } = await safeStorageFetch(productAsset);
-                    dataUrl = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(String(reader.result));
-                        reader.onerror = () => reject(new Error('Could not read the design.'));
-                        reader.readAsDataURL(blob);
-                    });
-                }
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(productAsset);
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result));
+                    reader.onerror = () => reject(new Error('Could not read the design.'));
+                    reader.readAsDataURL(blob);
+                });
                 const image = new Image();
                 image.src = dataUrl;
                 await image.decode();
+                if (!image.naturalWidth || !image.naturalHeight) {
+                    throw new Error('Could not determine source design dimensions for enlargement.');
+                }
                 const targetWidth = image.naturalWidth * scale;
                 const targetHeight = image.naturalHeight * scale;
                 const { browserUpscale } = await import('@/services/upscale/BrowserUpscale');
-                const outcome = await browserUpscale({
-                    dataUrl,
-                    required: { width: targetWidth, height: targetHeight },
-                });
-                if (outcome.width <= image.naturalWidth && outcome.height <= image.naturalHeight) {
-                    throw new Error('Upscale completed without enlarging the design dimensions.');
+                const outcome = await browserUpscale({ dataUrl, required: { width: targetWidth, height: targetHeight } });
+                if (!outcome.url || outcome.width <= image.naturalWidth || outcome.height <= image.naturalHeight) {
+                    throw new Error('Upscale completed without enlarging the design asset.');
                 }
                 setProductAsset(outcome.url);
-                setAssetUpscaledNote(`${scale}× (${outcome.width}×${outcome.height}) · on-device ESRGAN`);
+                setAssetUpscaledNote(`${scale}× · ${outcome.width}×${outcome.height}`);
             }
             toast.success(`Design upscaled ${scale}× — mockups will use the sharper source.`);
         } catch (err) {
@@ -284,7 +279,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
             } else {
                 toast.error(message);
             }
-            setAssetUpscaleError(message);
+            setUpscaleError(message);
         } finally {
             setIsUpscalingAsset(false);
         }
@@ -676,15 +671,6 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                                             Upscaled {assetUpscaledNote}
                                         </span>
                                     )}
-                                    {assetUpscaleError && (
-                                        <span
-                                            data-testid="merch-upscale-error"
-                                            className="px-2 py-0.5 rounded-md bg-red-900/80 border border-red-500/50 text-[10px] font-medium text-red-200 max-w-[220px] truncate"
-                                            title={assetUpscaleError}
-                                        >
-                                            {assetUpscaleError}
-                                        </span>
-                                    )}
                                 </div>
                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                     <p className="text-sm font-bold">Change Asset</p>
@@ -702,6 +688,11 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             </>
                         )}
                     </div>
+                    {upscaleError && (
+                        <p data-testid="showroom-upscale-error" className="text-xs text-red-400 -mt-5 mb-6" role="alert">
+                            {upscaleError}
+                        </p>
+                    )}
 
                     {/* Product Type Selector - Organized by Category */}
                     <div className="space-y-4">

@@ -271,31 +271,74 @@ export class MerchandiseAgent extends BaseAgent {
                         purpose?: string;
                     };
 
+                    if (!assetUrl || typeof assetUrl !== 'string' || !assetUrl.trim()) {
+                        return {
+                            success: false,
+                            error: 'A valid assetUrl (data: URL or http(s):// URL) is required to create a product mockup.',
+                        };
+                    }
+
+                    const trimmedUrl = assetUrl.trim();
+                    const isDataUrl = trimmedUrl.startsWith('data:');
+                    const isHttpUrl = /^https?:\/\//i.test(trimmedUrl);
+                    const isGsUrl = trimmedUrl.startsWith('gs://');
+                    if (!isDataUrl && !isHttpUrl && !isGsUrl) {
+                        return {
+                            success: false,
+                            error: `Unsupported assetUrl scheme: "${trimmedUrl}". Expected a data: URL, gs:// URI, or http(s):// URL.`,
+                        };
+                    }
+
                     const { Editing } = await importWithRetry(() => import('@/services/image/EditingService'));
                     const { useStore } = await importWithRetry(() => import('@/core/store'));
 
                     // Extract image data from URL or data URL
                     let imageData: { mimeType: string; data: string };
 
-                    if (assetUrl.startsWith('data:')) {
+                    if (isDataUrl) {
                         // Parse data URL
-                        const match = assetUrl.match(/^data:(.+);base64,(.+)$/);
-                        if (!match) throw new Error('Invalid data URL format');
+                        const match = trimmedUrl.match(/^data:(.+);base64,(.+)$/);
+                        if (!match) {
+                            return {
+                                success: false,
+                                error: 'Invalid data URL format for assetUrl.',
+                            };
+                        }
                         imageData = { mimeType: match[1]!, data: match[2]! };
                     } else {
-                        // Fetch image from URL and convert to base64
-                        const response = await fetch(assetUrl);
-                        const blob = await response.blob();
-                        const base64 = await new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                                const result = reader.result as string;
-                                const base64Data = result.split(',')[1]!;
-                                resolve(base64Data);
+                        // Fetch image from URL (resolving gs:// URIs first) and convert to base64
+                        try {
+                            const { resolveStorageUrl } = await importWithRetry(() => import('@/services/storage/resolveStorageUrl'));
+                            const fetchUrl = isGsUrl ? await resolveStorageUrl(trimmedUrl) : trimmedUrl;
+                            const response = await fetch(fetchUrl);
+                            if (!response.ok) {
+                                return {
+                                    success: false,
+                                    error: `Failed to fetch asset image (${response.status} ${response.statusText || 'HTTP error'}).`,
+                                };
+                            }
+                            const blob = await response.blob();
+                            const base64 = await new Promise<string>((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                    const result = reader.result as string;
+                                    const base64Data = result?.split(',')[1];
+                                    if (!base64Data) {
+                                        reject(new Error('Failed to decode fetched image blob as base64.'));
+                                        return;
+                                    }
+                                    resolve(base64Data);
+                                };
+                                reader.onerror = () => reject(new Error('Failed to read fetched image blob.'));
+                                reader.readAsDataURL(blob);
+                            });
+                            imageData = { mimeType: blob.type || 'image/png', data: base64 };
+                        } catch (err) {
+                            return {
+                                success: false,
+                                error: `Failed to fetch asset image: ${err instanceof Error ? err.message : String(err)}`,
                             };
-                            reader.readAsDataURL(blob);
-                        });
-                        imageData = { mimeType: blob.type, data: base64 };
+                        }
                     }
 
                     // Build purpose-aware prompt

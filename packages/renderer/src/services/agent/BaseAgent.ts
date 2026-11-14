@@ -1809,6 +1809,32 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 failure: result.failure, data: result.data, toolCalls,
                             };
                         }
+                        if (!result.success) {
+                            const priorFailures = toolCalls.slice(0, -1).filter(call =>
+                                call.name === name &&
+                                typeof call.result === 'object' &&
+                                call.result !== null &&
+                                (call.result as { success?: unknown }).success === false
+                            );
+                            const currentErrorKey = `${result.metadata?.errorCode ?? ''}:${result.error ?? ''}`;
+                            const hasIdenticalPriorFailure = priorFailures.some(call => {
+                                const prev = call.result as { error?: string; metadata?: { errorCode?: string } };
+                                return `${prev.metadata?.errorCode ?? ''}:${prev.error ?? ''}` === currentErrorKey;
+                            });
+                            if (hasIdenticalPriorFailure || priorFailures.length >= 2) {
+                                const message = result.message || result.error || `Tool '${name}' failed repeatedly and stopped to prevent an infinite retry loop.`;
+                                const failure = {
+                                    code: 'AGENT_EXECUTION_FAILED' as const,
+                                    retryable: false as const,
+                                    agentId: this.id,
+                                    toolName: name,
+                                    recovery: 'review_failure' as const,
+                                };
+                                onProgress?.({ type: 'tool_result', toolName: name, content: `Error: ${message}` });
+                                await executionContext.rollback();
+                                return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: message, error: message, failure, data: result.data, toolCalls };
+                            }
+                        }
 
                         // Elide base64 payloads: image tools return generated
                         // artifacts as data-URLs in result.data/args — embedding

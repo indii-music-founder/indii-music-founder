@@ -102,3 +102,46 @@ describe('AssetSpotlight — Discuss attaches the actual asset (ISSUE-752)', () 
         expect(mockState.currentModule).toBe('agent');
     });
 });
+
+describe('AssetSpotlight selected creation placement (ISSUE-1620)', () => {
+    const videoAsset = {
+        id: 'vid-1',
+        type: 'video' as const,
+        url: 'https://storage.googleapis.com/test/golden-leaf.mp4',
+        prompt: 'Golden leaf video',
+        timestamp: Date.now(),
+        projectId: 'proj-1',
+        category: 'video',
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockState.generatedHistory = [videoAsset, asset];
+    });
+
+    it('renders the expanded detail player above the creations grid when a creation is selected', () => {
+        const { container } = render(<AssetSpotlight />);
+
+        const grid = container.querySelector('.grid.grid-cols-2')!;
+        expect(screen.queryByTestId('asset-spotlight-detail')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Golden leaf video'));
+
+        const detail = screen.getByTestId('asset-spotlight-detail');
+        expect(detail).toBeInTheDocument();
+        expect(detail.querySelector('video[controls]')).toHaveAttribute('src', videoAsset.url);
+        expect(Boolean(detail.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    });
+
+    it('closes the expanded detail player when the close button is clicked', async () => {
+        render(<AssetSpotlight />);
+
+        fireEvent.click(screen.getByText('Golden leaf video'));
+        expect(screen.getByTestId('asset-spotlight-detail')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close selected creation' }));
+        await waitFor(() => {
+            expect(screen.queryByTestId('asset-spotlight-detail')).not.toBeInTheDocument();
+        });
+    });
+});

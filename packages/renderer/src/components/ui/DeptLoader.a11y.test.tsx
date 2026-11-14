@@ -17,6 +17,12 @@ describe('DeptLoader Accessibility', () => {
         expect(status).toHaveTextContent('Loading content...');
     });
 
+    it('keeps an accessible loading message for a spinner-only loader', () => {
+        render(<DeptLoader message="" />);
+        expect(screen.getByRole('status')).toHaveTextContent('Loading...');
+        expect(screen.getByText('Loading...')).toHaveClass('sr-only');
+    });
+
     it('should be accessible according to axe', async () => {
         const { container } = render(<DeptLoader message="Loading..." />);
         const results = await axe(container);
