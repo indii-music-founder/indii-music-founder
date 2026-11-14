@@ -20,3 +20,9 @@ Scope: existing Registration Center guidance and honest self-reported completion
 6. Validate focus, collapse/expand and mobile interaction without adding permanently expanded panels.
 
 No autonomous filing, account creation, provider permission, payment, registration completion, ownership determination or royalties are claimed.
+
+## Provenance follow-up
+
+The browser checklist now serializes schemaVersion 2 reports with explicit user_reported provenance; legacy verified booleans are interpreted only as local completion statements. Changing a reported identifier clears its completion. The walkthrough and checklist use completed labels. SubmitReleaseModal no longer promotes local reports to a verified ISRC registrant badge and reads only the current owner identifier for an explicit self-reported display. This browser record is not an authenticated provider receipt and does not confer backend authority. Independent provider evidence integration remains unimplemented.
+
+Validation: 13 pure report-format/migration tests and 17 existing structural UI tests passed; scoped lint and capability validation passed. Full local typecheck is blocked by missing existing React Three dependencies. Jev-1.14.0 selected partial (0.98) and live persistence acceptance as the next task (1.0). Genuine save/reload/account-switch and provider acknowledgement acceptance remain required.

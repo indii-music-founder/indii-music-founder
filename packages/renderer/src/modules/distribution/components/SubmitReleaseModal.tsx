@@ -13,6 +13,7 @@ import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/services/firebase';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports } from '@/modules/registration/prerequisiteReports';
 
 interface PipelineStep {
     id: string;
@@ -60,34 +61,20 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [coverRepairMessage, setCoverRepairMessage] = useState<string | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
-    const [founderIsrcVerified] = useState(() => {
-        const ownerId = userProfile?.uid || userProfile?.id;
-        if (!ownerId) return false;
+    // Local checklist completion is not provider verification or authority.
+    // Read for display only on each render, so account changes cannot retain a
+    // previous account's identifier through a useState initializer.
+    let reportedIsrcPrefix = '';
+    const ownerId = userProfile?.uid || userProfile?.id;
+    if (ownerId) {
         try {
-            const raw = localStorage.getItem(`indii_founder_readiness_prerequisites_v1_${ownerId}`);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                return !!parsed.isrc_prefix?.verified;
-            }
+            reportedIsrcPrefix = parsePrerequisiteReports(
+                localStorage.getItem(`${PREREQUISITE_STORAGE_KEY}_${ownerId}`),
+            ).isrc_prefix?.value || '';
         } catch {
-            // Ignore
+            // Unavailable local storage cannot establish registration status.
         }
-        return false;
-    });
-    const [founderIsrcPrefix] = useState(() => {
-        const ownerId = userProfile?.uid || userProfile?.id;
-        if (!ownerId) return '';
-        try {
-            const raw = localStorage.getItem(`indii_founder_readiness_prerequisites_v1_${ownerId}`);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                return parsed.isrc_prefix?.value || '';
-            }
-        } catch {
-            // Ignore
-        }
-        return '';
-    });
+    }
 
     const coverAssets: BrandAsset[] = [
         ...(userProfile?.brandKit?.brandAssets || []),
@@ -359,20 +346,15 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                         placeholder="US-XXX-25-XXXXX"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
                                     />
-                                    {founderIsrcVerified ? (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400 mt-1" data-testid="isrc-verified-badge">
-                                            <CheckCircle2 size={12} />
-                                            Verified US ISRC Registrant: {founderIsrcPrefix || 'Active'}
+                                    <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-200/90 flex items-start gap-2" data-testid="isrc-prerequisite-notice">
+                                        <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                                        <div>
+                                            <span className="font-bold text-amber-300">Commercial Authority Notice:</span>
+                                            {' '}Provider verification is not established by this local checklist.
+                                            {reportedIsrcPrefix && <span> Self-reported registrant prefix: {reportedIsrcPrefix}.</span>}
+                                            {' '}Confirm official allocation authority before issuing an ISRC. Local completion does not authorize issuance or delivery.
                                         </div>
-                                    ) : (
-                                        <div className="mt-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-[11px] text-amber-200/90 flex items-start gap-2" data-testid="isrc-prerequisite-notice">
-                                            <AlertCircle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-                                            <div>
-                                                <span className="font-bold text-amber-300">Commercial Authority Notice:</span>
-                                                {' '}No verified US ISRC Agency prefix found. Deliveries without an official registrant prefix will use a provisional draft code.
-                                            </div>
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
 

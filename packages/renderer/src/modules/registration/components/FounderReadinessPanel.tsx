@@ -12,6 +12,7 @@ import type { FounderPrerequisite, FounderPrerequisiteId } from '../types';
 import type { PortalTarget } from '@indii/shared';
 import { logger } from '@/utils/logger';
 import { RightsRegistrationWalkthroughModal } from './RightsRegistrationWalkthroughModal';
+import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports, serializePrerequisiteReports, reportPrerequisite, editPrerequisite, type PrerequisiteReports } from '../prerequisiteReports';
 
 const COPILOT_PORTAL_MAP: Partial<Record<FounderPrerequisiteId, PortalTarget>> = {
   usco_org: 'loc_copyright',
@@ -100,14 +101,19 @@ const PREREQUISITES: FounderPrerequisite[] = [
   },
 ];
 
-const STORAGE_KEY = 'indii_founder_readiness_prerequisites_v1';
+const STORAGE_KEY = PREREQUISITE_STORAGE_KEY;
 
 export function FounderReadinessPanel({ userId }: { userId: string }) {
-  const [data, setData] = useState<Record<string, { verified: boolean; value: string }>>(() => {
+  return <FounderReadinessWorkspace key={userId} userId={userId} />;
+}
+
+function FounderReadinessWorkspace({ userId }: { userId: string }) {
+  const [data, setData] = useState<PrerequisiteReports>(() => {
     try {
+      if (!userId) return {};
       const stored = localStorage.getItem(`${STORAGE_KEY}_${userId}`);
       if (stored) {
-        return JSON.parse(stored);
+        return parsePrerequisiteReports(stored);
       }
     } catch (err) {
       logger.warn('[FounderReadiness] Failed to load local readiness state', err);
@@ -123,14 +129,15 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     setIsWalkthroughOpen(true);
   };
 
-  const handleUpdatePrerequisite = (id: FounderPrerequisiteId, value: string, verified: boolean) => {
+  const handleUpdatePrerequisite = (id: FounderPrerequisiteId, value: string, completed: boolean) => {
     setData((prev) => {
       const updated = {
         ...prev,
-        [id]: { value, verified },
+        [id]: reportPrerequisite(value, completed),
       };
       try {
-        localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(updated));
+        if (!userId) return updated;
+        localStorage.setItem(`${STORAGE_KEY}_${userId}`, serializePrerequisiteReports(updated));
       } catch (err) {
         logger.error('[FounderReadiness] Failed to persist prerequisite update', err);
       }
@@ -139,12 +146,12 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     setSaved(false);
   };
 
-  const handleToggleVerified = (id: FounderPrerequisiteId) => {
+  const handleToggleCompleted = (id: FounderPrerequisiteId) => {
     setData((prev) => {
-      const current = prev[id] || { verified: false, value: '' };
+      const current = prev[id] || reportPrerequisite('', false);
       return {
         ...prev,
-        [id]: { ...current, verified: !current.verified },
+        [id]: reportPrerequisite(current.value, !current.completed),
       };
     });
     setSaved(false);
@@ -152,18 +159,19 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
 
   const handleValueChange = (id: FounderPrerequisiteId, value: string) => {
     setData((prev) => {
-      const current = prev[id] || { verified: false, value: '' };
+      const current = prev[id] || reportPrerequisite('', false);
       return {
         ...prev,
-        [id]: { ...current, value },
+        [id]: editPrerequisite(current, value),
       };
     });
     setSaved(false);
   };
 
   const handleSave = () => {
+    if (!userId) return;
     try {
-      localStorage.setItem(`${STORAGE_KEY}_${userId}`, JSON.stringify(data));
+      localStorage.setItem(`${STORAGE_KEY}_${userId}`, serializePrerequisiteReports(data));
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -171,8 +179,8 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
     }
   };
 
-  const verifiedCount = Object.values(data).filter((item) => item.verified).length;
-  const progressPct = Math.round((verifiedCount / PREREQUISITES.length) * 100);
+  const completedCount = PREREQUISITES.filter((item) => data[item.id]?.completed).length;
+  const progressPct = Math.round((completedCount / PREREQUISITES.length) * 100);
 
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
@@ -224,12 +232,12 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
       {/* Prerequisites List */}
       <div className="grid gap-4">
         {PREREQUISITES.map((item) => {
-          const state = data[item.id] || { verified: false, value: '' };
+          const state = data[item.id] || reportPrerequisite('', false);
           return (
             <div
               key={item.id}
               className={`p-5 rounded-xl border transition-colors ${
-                state.verified
+                state.completed
                   ? 'bg-neutral-900/60 border-emerald-500/30'
                   : 'bg-neutral-900/30 border-white/10 hover:border-white/20'
               }`}
@@ -238,13 +246,13 @@ export function FounderReadinessPanel({ userId }: { userId: string }) {
                 <div className="space-y-1 max-w-xl">
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleToggleVerified(item.id)}
+                      onClick={() => handleToggleCompleted(item.id)}
                       className="text-neutral-400 hover:text-white transition-colors"
-                      aria-label={`${state.verified ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
-                      aria-pressed={state.verified}
-                      title={`${state.verified ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
+                      aria-label={`${state.completed ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
+                      aria-pressed={state.completed}
+                      title={`${state.completed ? 'Mark pending' : 'Mark completed (self-reported)'}: ${item.title}`}
                     >
-                      {state.verified ? (
+                      {state.completed ? (
                         <CheckCircle2 size={18} className="text-emerald-400" />
                       ) : (
                         <Circle size={18} className="text-neutral-500" />
