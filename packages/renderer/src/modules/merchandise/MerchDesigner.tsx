@@ -361,8 +361,8 @@ export default function MerchDesigner() {
         // Set canvas background
         setBackgroundColor(template.backgroundColor);
 
-        // Convert template elements to Fabric objects and add them
-        const fabricObjects = templateService.toFabricObjects(template);
+        // Convert template elements to Fabric objects scaled to the 800x1000 DesignCanvas artboard
+        const fabricObjects = templateService.toFabricObjects(template, { width: 800, height: 1000 });
 
         for (const objData of fabricObjects as TemplateFabricObject[]) {
             try {

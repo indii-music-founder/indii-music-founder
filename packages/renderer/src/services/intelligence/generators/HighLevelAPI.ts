@@ -348,28 +348,63 @@ export function extractAndParseJson<T = Record<string, unknown>>(
     }
 
     let parsed: unknown;
-    try {
-        parsed = JSON.parse(candidate);
-    } catch {
-        // Fallback: extract outermost JSON object { ... } or array [ ... ]
+    const tryParse = (raw: string): unknown => {
+        try {
+            return JSON.parse(raw);
+        } catch {
+            // Strip trailing commas before closing braces/brackets as a safe recovery
+            const withoutTrailingCommas = raw.replace(/,\s*([}\]])/g, '$1');
+            try {
+                return JSON.parse(withoutTrailingCommas);
+            } catch {
+                return undefined;
+            }
+        }
+    };
+
+    parsed = tryParse(candidate);
+    if (parsed === undefined) {
+        // Fallback: extract outermost JSON object { ... }
         const firstBrace = candidate.indexOf('{');
         const lastBrace = candidate.lastIndexOf('}');
         if (firstBrace !== -1 && lastBrace > firstBrace) {
-            try {
-                parsed = JSON.parse(candidate.slice(firstBrace, lastBrace + 1));
-            } catch {
-                // Ignore fallback error
+            parsed = tryParse(candidate.slice(firstBrace, lastBrace + 1));
+        }
+        // Balanced object extraction if trailing commentary contains extra braces
+        if (parsed === undefined && firstBrace !== -1) {
+            let depth = 0;
+            let inString = false;
+            let escaped = false;
+            for (let i = firstBrace; i < candidate.length; i++) {
+                const ch = candidate[i];
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+                if (ch === '\\') {
+                    escaped = true;
+                    continue;
+                }
+                if (ch === '"') {
+                    inString = !inString;
+                    continue;
+                }
+                if (inString) continue;
+                if (ch === '{') depth++;
+                else if (ch === '}') {
+                    depth--;
+                    if (depth === 0) {
+                        parsed = tryParse(candidate.slice(firstBrace, i + 1));
+                        break;
+                    }
+                }
             }
         }
         if (parsed === undefined) {
             const firstBracket = candidate.indexOf('[');
             const lastBracket = candidate.lastIndexOf(']');
             if (firstBracket !== -1 && lastBracket > firstBracket) {
-                try {
-                    parsed = JSON.parse(candidate.slice(firstBracket, lastBracket + 1));
-                } catch {
-                    // Ignore fallback error
-                }
+                parsed = tryParse(candidate.slice(firstBracket, lastBracket + 1));
             }
         }
     }
