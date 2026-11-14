@@ -7315,7 +7315,8 @@ Direct → Creative Director, render_typography once for GOLDEN LEAF/fontSize96/
 
 ### ISSUE-1623: Saved-artwork mockup route returns gateway payload-validation rejection
 
-- **Status:** 🔴 OPEN — one actual artwork-reference mockup attempt,2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; `gs://` artwork pass-through, strict reference upload check, and exact Zod field validation errors verified in unit tests; live gateway acceptance pending)
+- **2026-11-14 verification:** `MockupService.ts` now forwards `gs://` `artworkUrl` values directly via `referenceUris` without fetching or re-encoding base64. `ImageGenerationService.ts` fails closed if `sourceImages` are provided but `uploadReferenceMedia` produces no valid `gs://` URI. `gateway.ts` `generateImageV3` now formats and surfaces exact `GenerateImageSchema.safeParse` Zod issue paths/messages in `HttpsError('invalid-argument', ...)`. `MockupService.test.ts` (10/10) and `ImageGenerationService.test.ts` (16/16) pass (26/26). Jev (`jev-1.14.0`, `req_01a1d8ce199371f6bbe37f4eccce4486`) scored `fix_hardens_artwork_mockup_boundary=0.92`, `readiness_score=3.00/4.00` (confidence `0.95`). Live gateway acceptance remains pending.
 - **Severity:** 🟠 HIGH — blocks reuse of saved artwork in a merchandise/poster preview.
 - **Location:** Command bar Direct → Creative Director → generate_mockup with artworkUrl. Source `tools/CommerceTools.ts:40-65`; `services/mockup/MockupService.ts:75-122`; gateway `generateImageV3` schema boundary at `packages/firebase/src/functions/creative/gateway.ts:1281-1285`.
 - **Reproduction:** Resolve the actual rendered URL of saved `Polaroid SX-70, Analog Film Grain, DOg (4-5-instagram-feed)` illustration from Your Creations. Ask generate_mockup once, productType=poster, scene=studio, supplied artworkUrl, preserve illustration; no new design, record search, retries, products/orders/listings/POD uploads/publication.

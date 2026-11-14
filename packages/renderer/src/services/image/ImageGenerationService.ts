@@ -464,6 +464,9 @@ export class ImageGenerationService {
             }
             // Filter referenceUris to ensure only valid gs:// URIs are sent
             const validGsReferenceUris = (referenceUris ?? []).filter(uri => typeof uri === 'string' && uri.startsWith('gs://'));
+            if (options.sourceImages && options.sourceImages.length > 0 && validGsReferenceUris.length === 0) {
+                throw new Error('Reference image upload failed to produce a valid gs:// URI.');
+            }
             const referenceUri = validGsReferenceUris?.[0];
 
             const payload: Record<string, unknown> = {
