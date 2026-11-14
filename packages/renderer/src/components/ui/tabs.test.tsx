@@ -1,9 +1,28 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 import { describe, it, expect } from 'vitest';
 
 describe('Tabs Component', () => {
+    it('keeps an available keyboard entry point when the controlled selection is disabled', async () => {
+        function group(disabled: boolean) {
+            return <Tabs value="first">
+                <TabsList>
+                    <TabsTrigger value="first" disabled={disabled}>First</TabsTrigger>
+                    <TabsTrigger value="last">Last</TabsTrigger>
+                </TabsList>
+            </Tabs>;
+        }
+        const { rerender } = render(group(true));
+        const first = screen.getByRole('tab', { name: 'First' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(last.tabIndex).toBe(0);
+        expect(first).toHaveAttribute('aria-selected', 'true');
+        rerender(group(false));
+        await waitFor(() => expect(last.tabIndex).toBe(-1));
+        expect(first.tabIndex).toBe(0);
+    });
+
     it('renders with correct accessibility roles', () => {
         render(
             <Tabs defaultValue="tab1">
@@ -40,6 +59,25 @@ describe('Tabs Component', () => {
         const tab1Id = tab1.getAttribute('id');
         expect(panel1LabelledBy).toBe(tab1Id);
     });
+    it('skips hidden triggers and triggers inside hidden wrappers', () => {
+        render(
+            <Tabs defaultValue="first">
+                <TabsList>
+                    <TabsTrigger value="first">First</TabsTrigger>
+                    <TabsTrigger hidden value="hidden">Hidden</TabsTrigger>
+                    <div hidden><TabsTrigger value="wrapped">Wrapped</TabsTrigger></div>
+                    <TabsTrigger value="last">Last</TabsTrigger>
+                </TabsList>
+            </Tabs>,
+        );
+        const first = screen.getByRole('tab', { name: 'First' });
+        first.focus();
+        fireEvent.keyDown(first, { key: 'ArrowRight' });
+        const last = screen.getByRole('tab', { name: 'Last' });
+        expect(last).toHaveFocus();
+        expect(last).toHaveAttribute('aria-selected', 'true');
+    });
+
     it('skips nested tabs during keyboard navigation', () => {
         render(
             <Tabs defaultValue="first">

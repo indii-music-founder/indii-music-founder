@@ -31,6 +31,14 @@ describe('FormField relationships', () => {
         expect(input).toHaveAttribute('aria-invalid', 'spelling');
     });
 
+    it('labels a native required input when the caller supplies an empty ID', () => {
+        render(<FormField label="Artist name"><input id="" required /></FormField>);
+        const input = screen.getByRole('textbox', { name: 'Artist name' });
+        expect(input.id).toBeTruthy();
+        expect(input).toBeRequired();
+        expect(screen.getByText('*')).toHaveAttribute('aria-hidden', 'true');
+    });
+
     it('preserves an existing invalid state when no wrapper error is present', () => {
         render(<FormField label="Artist name"><input aria-invalid="true" /></FormField>);
         expect(screen.getByRole('textbox', { name: 'Artist name' })).toHaveAttribute('aria-invalid', 'true');

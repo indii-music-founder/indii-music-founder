@@ -9,6 +9,11 @@ describe('clampTextStreamOutputTokens', () => {
         expect(clampTextStreamOutputTokens(9_999, SubscriptionTier.FREE)).toBe(1_024);
     });
 
+    it.each([null, false, '', '100', [], {}, NaN, Infinity])('uses the tier cap for malformed hints (%j)', hint => {
+        expect(clampTextStreamOutputTokens(hint, SubscriptionTier.FREE)).toBe(1_024);
+        expect(clampTextStreamOutputTokens(hint, SubscriptionTier.PRO_MONTHLY)).toBe(8_192);
+    });
+
     it('keeps paid and Founder calls bounded per request without treating browser input as authority', () => {
         expect(clampTextStreamOutputTokens(9_999, SubscriptionTier.PRO_MONTHLY)).toBe(8_192);
         expect(clampTextStreamOutputTokens(0, SubscriptionTier.FOUNDER)).toBe(1);
