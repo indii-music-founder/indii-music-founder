@@ -99,7 +99,7 @@ export const runVideoRendererContractSuite = (
                 expect(receipt.progress).toBeGreaterThanOrEqual(0);
                 expect(receipt.progress).toBeLessThanOrEqual(100);
             }
-        });
+        }, SHORT_POLL.timeoutMs);
 
         it('propagates engine failures through waitForRender', async () => {
             const adapter = scenario.makeAdapter();
