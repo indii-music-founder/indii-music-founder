@@ -49,6 +49,16 @@ describe('Slider Accessibility', () => {
     expect(slider).toHaveFocus()
   })
 
+  it('restores the initial value on native form reset', () => {
+    render(<form aria-label="Audio settings"><Slider aria-label="Volume" defaultValue={[25]} /></form>)
+    const slider = screen.getByRole('slider')
+    fireEvent.change(slider, { target: { value: '60' } })
+    expect(slider).toHaveValue('60')
+    const form = screen.getByRole<HTMLFormElement>('form', { name: 'Audio settings' })
+    form.reset()
+    expect(slider).toHaveValue('25')
+  })
+
   it('should trigger onValueChange when value changes', () => {
     const handleValueChange = vi.fn()
 
