@@ -905,7 +905,9 @@ ${prompt}`
             }
 
             default:
-                throw new Error(`Workflow operation unavailable for ${data.departmentName || 'this department'}.`);
+                throw new Error(
+                    `Department "${data.departmentName}" does not have a supported execution handler.`
+                );
         }
     }
 
