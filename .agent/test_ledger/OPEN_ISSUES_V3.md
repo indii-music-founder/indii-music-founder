@@ -7222,7 +7222,7 @@ Opened command bar mode picker → Direct → Publicist Director; verified compo
 
 ### ISSUE-1619: Merchandise Specialist mockup request fails to fetch and returns unrelated social advice
 
-- **Status:** 🔴 OPEN — actual Direct-mode production test, 2026-10-31.
+- **Status:** 🟡 PARTIAL — `bbdb121b8` added support for stored artwork references in the merchandise mockup path. A deployed Direct-mode request still needs to return a mockup using the supplied artwork and a relevant final response.
 - **Severity:** 🟡 MEDIUM — no requested visual preview; failure explanation is unhelpful.
 - **Location:** Command bar → Change Agent Mode → Direct → Merchandise Specialist. Source `services/agent/MerchandiseAgent.ts:63-102,265-389`.
 - **Reproduction:** Request one black t-shirt preview mockup with a golden-leaf chest graphic, no existing artwork required, one attempt only, no retry, orders, products, listings, POD uploads or publication. The test named generate_mockup; this specialist instead exposes create_product_mockup.
