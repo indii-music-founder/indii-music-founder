@@ -203,7 +203,7 @@ Before submitting any code that uses AI models, verify:
 
 If you believe this policy should be changed, contact the project owner. Do not make exceptions unilaterally.
 
-## Migration evidence — 2026-11-05
+## Migration evidence — source reconciled 2026-11-13
 
 The founder explicitly authorizes Argon, superseding the previous Gemini-3-only restriction. Provider identifiers are documented in [Google’s model lifecycle catalog](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions).
 
@@ -212,9 +212,32 @@ The founder explicitly authorizes Argon, superseding the previous Gemini-3-only 
 | Backend selection | `packages/firebase/src/config/models.ts` sets TEXT.PRO to Argon; `config/textStreamModels.ts` allows Argon | Verify actual project access and submitted model |
 | Renderer selection | `packages/renderer/src/core/config/intelligence-models.ts` still sets TEXT_AGENT to 3.1 Pro | Coordinate migration with pricing and supported request configuration |
 | Agent execution | `BaseAgent.ts` defaults to getFineTunedModel; `IndiiNucleus.ts` explicitly selects the generalist tuned endpoint | Add the intelligence layer and explicit specialty delegation without deleting trained workers |
-| Cost admission | Renderer ModelPricing has no Argon entry; backend textStreamAdmission uses generic non-Flash rates | Verify current provider rates and align estimation, reservation, and settlement before switching traffic |
+| Cost admission | Renderer and backend now have explicit Argon admission rates | Verify current provider rates by location, actual usage, and settlement before switching traffic |
 | Acceptance | Charts define the intended hierarchy | Verify genuine direct and Boardroom turns, specialty boundaries, approval continuation, artifacts, and retained media capabilities |
 
 See [routing and hierarchy chart](docs/flowcharts/chat-model-routing-and-approval.md). These gaps are open work, not evidence of a completed migration.
 
-### This policy was last updated: 2026-11-05
+### This policy was last updated: 2026-11-13
+
+
+## November 2026 candidate evaluation and request compatibility
+
+The user requested investigation of newer alternatives to Flash 3.8 and Argon.
+Official [Hydrogen migration guidance](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/guides/gemini-4-hydrogen)
+and [Carbon guidance](https://aistudio.google.com/docs/whats-new-gemini-4-carbon)
+identify Hydrogen as a fast agentic candidate and Carbon as a deeper-reasoning
+candidate. This research does not approve a live default change.
+
+`MODEL_THINKING_LEVELS` in renderer configuration records request compatibility:
+Argon and Carbon accept LOW, MEDIUM, HIGH; Hydrogen additionally accepts XHIGH.
+Unsupported explicit levels are rejected before transport. All three providers
+reject legacy thinking budgets and MINIMAL, so the request adapter
+removes budgets and maps disabled/minimal intent to LOW. Other nonzero legacy
+budgets leave the provider default; choose a supported level explicitly when
+latency or cost matters. Existing Gemini 3 request behavior is preserved.
+
+This metadata does not extend `APPROVED_MODELS` or the server-owned text-stream
+allowlist. Candidate rollout still requires model-aware input/output budgeting,
+pricing, SDK/request validation, signature-safe tool turns and compaction,
+project access, and genuine direct-chat/Boardroom/media acceptance. Trained
+specialty endpoints remain a separate preserved part of the hierarchy.
