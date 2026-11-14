@@ -46,3 +46,35 @@ flowchart TD
 ## Acceptance evidence still required
 
 Verify approving and denying the same pending request in the real UI; ensure consent cannot authorize a different request; test interruption and duplicate clicks; confirm the original result returns to the conversation. Confirm a returned issue URL and persistence status before claiming a report was filed. An existing issue proves one report reached GitHub, not that every approval path works.
+
+
+## Approval owner boundaries
+
+```mermaid
+flowchart TD
+    OWNER["Capture authenticated owner for approval ID"] --> READ["Read and validate request-bound approval"]
+    READ --> CHECK{"Owner still matches after awaited work?"}
+    CHECK -->|No| STOP["Do not dispatch; review under original account"]
+    CHECK -->|Yes| CLAIM["Persist approval claim or obtain desktop authorization"]
+    CLAIM --> RECHECK{"Owner still matches before tool dispatch?"}
+    RECHECK -->|No| STOP
+    RECHECK -->|Yes| EXECUTE["Execute original approved implementation once"]
+    EXECUTE --> RESULT["Keep actual returned tool outcome"]
+    RESULT --> COMPLETE{"Owner still matches?"}
+    COMPLETE -->|No| UNCONFIRMED["Return outcome with approval persistence unconfirmed"]
+    COMPLETE -->|Yes| WRITE["Record outcome under original owner"]
+    WRITE -->|Write unavailable| UNCONFIRMED
+```
+
+Owner checks also fence denial reads and transactions. Desktop denial and
+completion payloads carry `expectedOwnerId`; the callable compares it with the
+authenticated UID before reading the approval. Authentication remains the source
+of authority. The expected owner field is optional for existing clients.
+Completion requires a boolean success value, so a string such as `"false"` cannot
+be recorded as success through coercion.
+
+An owner change before dispatch leaves the tool unexecuted; any persisted claim
+may still need review under the original account. A change after dispatch does
+not erase the actual outcome or authorize a retry. Effects already started are
+not cancelled by these checks. Structural account-switch tests cover these
+boundaries; genuine multi-account UI acceptance remains unverified.

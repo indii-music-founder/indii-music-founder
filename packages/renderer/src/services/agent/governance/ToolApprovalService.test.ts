@@ -302,6 +302,76 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
         });
 
+        it.each(['read', 'claim'])('does not dispatch when the authenticated owner changes during %s (structural)', async boundary => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            const record = await bindApproval('execute_code', { code: 'approved code' }, execute);
+            if (boundary === 'read') {
+                mocks.getDoc.mockImplementationOnce(async () => {
+                    mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() };
+                    return { exists: () => true, data: () => record };
+                });
+            } else {
+                mocks.updateDoc.mockImplementationOnce(async () => undefined).mockImplementationOnce(async () => {
+                    mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() };
+                });
+            }
+            const result = await toolApprovalService.approve('approval-1');
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/account changed/i);
+            expect(execute).not.toHaveBeenCalled();
+        });
+
+        it.each(['token', 'authorization'])('does not execute computer control after an owner switch during %s (structural)', async boundary => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            mocks.toolRegistry = { computer_click: execute };
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({
+                status: 'pending', agentId: 'generalist', toolName: 'computer_click', args: { x: 1, y: 2 },
+            }) });
+            const changeOwner = () => { mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() }; };
+            const authorize = vi.fn(async () => {
+                if (boundary === 'authorization') changeOwner();
+                return { success: true, data: { token: 'authorization-token' } };
+            });
+            Object.defineProperty(window, 'electronAPI', { configurable: true, value: { computer: { authorizeApproval: authorize } } });
+            if (boundary === 'token') mocks.currentUser!.getIdToken = async () => { changeOwner(); return 'old-owner-token'; };
+            const result = await toolApprovalService.approve('approval-1');
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/account changed/i);
+            expect(execute).not.toHaveBeenCalled();
+            if (boundary === 'token') expect(authorize).not.toHaveBeenCalled();
+        });
+
+        it('retains an actual result and skips completion writes when the owner changes after dispatch (structural)', async () => {
+            const result = { success: true, data: { receipt: 'effect-1' } };
+            const execute = vi.fn(async () => {
+                mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() };
+                return result;
+            });
+            await bindApproval('execute_code', { code: 'approved code' }, execute);
+            const returned = await toolApprovalService.approve('approval-1');
+            expect(returned).toMatchObject({ ...result, metadata: { approvalPersistence: { status: 'unconfirmed' } } });
+            expect(execute).toHaveBeenCalledOnce();
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
+        });
+
+        it('preserves computer tool success without completing under a different owner (structural)', async () => {
+            const execute = vi.fn(async () => {
+                mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() };
+                return { success: true, data: { receipt: 'desktop-effect' } };
+            });
+            mocks.toolRegistry = { computer_click: execute };
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => ({
+                status: 'pending', agentId: 'generalist', toolName: 'computer_click', args: {},
+            }) });
+            Object.defineProperty(window, 'electronAPI', { configurable: true, value: { computer: { authorizeApproval: vi.fn().mockResolvedValue({ success: true, data: { token: 'authorization-token' } }) } } });
+            expect(await toolApprovalService.approve('approval-1')).toMatchObject({
+                success: true, data: { receipt: 'desktop-effect' },
+                metadata: { approvalPersistence: { status: 'unconfirmed' } },
+            });
+            expect(mocks.httpsCallable).not.toHaveBeenCalled();
+            expect(execute).toHaveBeenCalledOnce();
+        });
+
         it('waits for the claim write to complete before invoking the tool', async () => {
             const execute = vi.fn().mockResolvedValue({ success: true });
             await bindApproval('execute_code', {}, execute);
@@ -404,6 +474,19 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
     });
 
     describe('deny', () => {
+        it.each(['read', 'transaction'])('does not submit a denial after the owner changes during %s (structural)', async boundary => {
+            const record = { status: 'pending', toolName: 'execute_code' };
+            if (boundary === 'transaction') mocks.getDoc.mockResolvedValueOnce({ exists: () => true, data: () => record });
+            mocks.getDoc.mockImplementationOnce(async () => {
+                mocks.currentUser = { uid: 'user-2', getIdToken: vi.fn() };
+                return { exists: () => true, data: () => record };
+            });
+            await expect(toolApprovalService.deny('approval-1')).rejects.toThrow(/account changed/i);
+            if (boundary === 'read') expect(mocks.runTransaction).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).not.toHaveBeenCalled();
+            expect(mocks.httpsCallable).not.toHaveBeenCalled();
+        });
+
         it('is a no-op when unauthenticated', async () => {
             mocks.currentUser = null;
             await toolApprovalService.deny('approval-1', 'no thanks');
