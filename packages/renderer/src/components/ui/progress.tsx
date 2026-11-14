@@ -21,6 +21,9 @@ const Progress = React.forwardRef<
             className
         )}
         {...props}
+        aria-valuemin={0}
+        aria-valuemax={safeMax}
+        aria-valuenow={safeValue ?? undefined}
     >
         <ProgressPrimitive.Indicator
             className={cn("h-full w-full flex-1 bg-green-500 motion-safe:transition-transform", indicatorClassName)}
