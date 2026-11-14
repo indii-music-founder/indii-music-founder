@@ -363,7 +363,10 @@ export default function WorkflowLab() {
             setGeneratorPrompt('');
         } catch (error: unknown) {
             logger.error("Failed to generate workflow:", error);
-            toastError('Failed to generate workflow. Please try again.');
+            const message = error instanceof Error && error.message
+                ? error.message
+                : 'Failed to generate workflow. Please try again.';
+            toastError(message);
         } finally {
             setIsGenerating(false);
         }

@@ -7146,7 +7146,8 @@ Production Marketing → Release Assets → Press Kit (EPK). Entered Media Audit
 
 ### ISSUE-1615: Workflow Architect cannot create a requested media-only video graph
 
-- **Status:** 🔴 OPEN — genuine production reproduction 2026-10-31; not repaired.
+- **Status:** 🟡 PARTIAL (2026-11-14; structured JSON recovery, graph validation, and error surfacing verified in unit tests; live AI generation acceptance pending)
+- **2026-11-14 verification:** `HighLevelAPI.ts` `extractAndParseJson` now recovers JSON with trailing commas and performs balanced-brace object extraction before array fallback. `workflowGenerator.ts` `validateGeneratedGraph` guards `generated.nodes` before dereferencing, and `WorkflowLab.tsx` `handleGenerateWorkflow` surfaces the validation error message via `toastError`. `HighLevelAPI.test.ts` (9/9) and `workflowGenerator.test.ts` (12/12) pass (21/21). Jev (`jev-1.14.0`, `req_01a1d8b7ef8b7c0c8ad4ea53f3dad19c`) scored `fix_prevents_crash_and_hardens_parsing=0.95`, `readiness_score=3.02/4.00` (confidence `0.92`). Live AI generation acceptance remains pending.
 - **Severity:** 🟠 HIGH — blocks a user-facing route to video generation.
 - **Location:** Workflow Lab → Generate with AI → Autonomous Workflow Architect. Source: `packages/renderer/src/modules/workflow/services/workflowGenerator.ts:150-159`; `services/intelligence/generators/HighLevelAPI.ts:378`; `WorkflowLab.tsx:254-275`.
 - **Reproduction:** In existing signed-in production session, load Simple Concept Art, open Generate with AI, request Start Trigger → Video Department text-to-video → Final Output, one eight-second 16:9 golden leaf video, explicitly excluding image prerequisites and all social, marketing, email, commerce and publication nodes. Click Generate Workflow and wait for Designing to end.
