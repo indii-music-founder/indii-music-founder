@@ -303,7 +303,8 @@ export const VideoTools = {
 
     extend_video: wrapTool('extend_video', async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
         const { extractVideoFrame } = await importWithRetry(() => import('@/utils/video'));
-        const frameData = await extractVideoFrame(args.videoUrl);
+        const framePosition = args.direction === 'start' ? 'first' : 'last';
+        const frameData = await extractVideoFrame(args.videoUrl, framePosition);
 
         if (!frameData) {
             return toolError("Failed to extract frame from the provided video URL.", 'EXTRACTION_FAILED');

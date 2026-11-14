@@ -7266,7 +7266,8 @@ Actual remaining coverage includes: artwork-faithful agent mockups, high-res/moo
 
 ### ISSUE-1621: Direct Video extension fails on the actual generated playable QA clip
 
-- **Status:** 🔴 OPEN — one genuine production tool attempt,2026-10-31.
+- **Status:** 🟡 PARTIAL (2026-11-14; direction-accurate frame extraction and strict `gs://` frame-upload validation verified in unit tests; live video extension acceptance pending)
+- **2026-11-14 verification:** `VideoTools.ts` `extend_video` now passes `'first'` for `direction === 'start'` and `'last'` for `direction === 'end'` to `extractVideoFrame`. `VideoGenerationService.ts` validates that `CreativeStorageService.uploadReferenceMedia` returns a valid `gs://` URI for `firstFrame`, `imageBytes`, and `lastFrame` before submitting `generateVideoV3`. `VideoTools.test.ts` (30/30) and `VideoGenerationService.test.ts` (15/15) pass (45/45). Jev (`jev-1.14.0`, `req_01a1d8d3f3c27178acfe73a104cb27e8`) scored `fix_hardens_video_extension=0.94`, `readiness_score=2.96/4.00` (confidence `0.92`). Live video extension acceptance remains pending.
 - **Severity:** 🟠 HIGH — user-facing video-editing route produces no extension.
 - **Location:** Command bar Direct → Video Director → extend_video(direction=end). Source `services/agent/tools/VideoTools.ts:304-327`; `utils/video.ts:165-195`; `services/video/VideoGenerationService.ts:145-164,249-262`.
 - **Reproduction:** First generate and verify the golden-leaf eight-second MP4 (jobQjlnKJ2bBlkzvsT5wFdL, played to end above). Send that actual returned HTTPS media link to Video Director, ask extend_video once, direction=end, continue golden leaf on navy, no retry or publication. No arbitrary/fabricated source URL used.

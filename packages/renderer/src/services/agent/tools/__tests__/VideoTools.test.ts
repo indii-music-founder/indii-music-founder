@@ -320,7 +320,7 @@ describe('VideoTools', () => {
 
             const result = await VideoTools.extend_video(args);
 
-            expect(mockExtractVideoFrame).toHaveBeenCalledWith('http://video.url');
+            expect(mockExtractVideoFrame).toHaveBeenCalledWith('http://video.url', 'first');
             expect(mockGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
                 lastFrame: frameData,
                 prompt: 'extend'
@@ -341,7 +341,7 @@ describe('VideoTools', () => {
 
             const result = await VideoTools.extend_video(args);
 
-            expect(mockExtractVideoFrame).toHaveBeenCalledWith('http://video.url');
+            expect(mockExtractVideoFrame).toHaveBeenCalledWith('http://video.url', 'last');
             expect(mockGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
                 firstFrame: frameData,
                 prompt: 'extend'
