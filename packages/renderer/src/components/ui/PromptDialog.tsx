@@ -41,7 +41,7 @@ export const PromptDialog = createCallable<PromptProps, string | null>(({
                     autoFocus
                     className="w-full bg-slate-800 border border-white/10 rounded-md px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-dept-creative mb-6"
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229) {
                             call.end(value);
                         }
                     }}

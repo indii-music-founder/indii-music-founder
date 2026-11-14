@@ -23,6 +23,21 @@ describe('GlobalKeyboardOrchestrator registration cleanup', () => {
         expect(second).toHaveBeenCalledOnce();
     });
 
+    it.each([{ isComposing: true }, { keyCode: 229 }])('leaves composition keystrokes to the input method (%j)', composition => {
+        const close = vi.fn((event: KeyboardEvent) => event.preventDefault());
+        cleanups.push(globalKeyboardOrchestrator.register({
+            id: 'composition-escape', key: 'Escape', priority: 'modal', ignoreInput: true, handler: close,
+        }));
+        const composingEscape = new KeyboardEvent('keydown', {
+            key: 'Escape', bubbles: true, cancelable: true, ...composition,
+        });
+        window.dispatchEvent(composingEscape);
+        expect(close).not.toHaveBeenCalled();
+        expect(composingEscape.defaultPrevented).toBe(false);
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+        expect(close).toHaveBeenCalledOnce();
+    });
+
     it('offers the newest modal Escape handler the key before an older dialog', () => {
         const older = vi.fn();
         const newer = vi.fn((event: KeyboardEvent) => event.preventDefault());

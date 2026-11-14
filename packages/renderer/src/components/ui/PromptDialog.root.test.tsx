@@ -1,9 +1,30 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PromptDialog } from './PromptDialog';
 
 describe('PromptDialog callable Root', () => {
+    it.each([{ isComposing: true }, { keyCode: 229 }])('does not submit a composing Enter (%j)', async composition => {
+        render(<PromptDialog />);
+        let answer!: Promise<string | null>;
+        await act(async () => {
+            answer = PromptDialog.call({ title: 'Name', message: 'Enter a name' });
+        });
+        const input = screen.getByRole('textbox', { name: 'Response' });
+        fireEvent.change(input, { target: { value: '日本語' } });
+        const settled = vi.fn();
+        void answer.then(settled);
+        await act(async () => {
+            fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', ...composition });
+        });
+        expect(settled).not.toHaveBeenCalled();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(input).toHaveValue('日本語');
+        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+        await expect(answer).resolves.toBe('日本語');
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
     it('closes only the top Call on Escape inside its input and restores the lower Call', async () => {
         const user = userEvent.setup();
         render(<PromptDialog />);

@@ -92,6 +92,43 @@ function RemovableLowerHarness({ lower }: { lower: boolean }) {
 describe('useFocusTrap', () => {
     afterEach(() => globalKeyboardOrchestrator.dispose());
 
+    it.each([true, false])('wraps from the actual radio-group stop (checked: %s)', checked => {
+        function RadioDialog() {
+            const ref = useFocusTrap();
+            return <div ref={ref}>
+                <button>First</button>
+                <label><input type="radio" name="format" defaultChecked={checked} />Audio</label>
+                <label><input type="radio" name="format" />Video</label>
+            </div>;
+        }
+        render(<RadioDialog />);
+        const first = screen.getByRole('button', { name: 'First' });
+        const audio = screen.getByRole('radio', { name: 'Audio' });
+        audio.focus();
+        fireEvent.keyDown(audio, { key: 'Tab' });
+        expect(first).toHaveFocus();
+        fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+        expect(screen.getByRole('radio', { name: checked ? 'Audio' : 'Video' })).toHaveFocus();
+    });
+
+    it('keeps same-name radio groups in separate forms independent', () => {
+        function RadioFormsDialog() {
+            const ref = useFocusTrap();
+            return <div ref={ref}>
+                <form><input aria-label="First form" type="radio" name="format" defaultChecked /></form>
+                <form><input aria-label="Second form" type="radio" name="format" defaultChecked /></form>
+            </div>;
+        }
+        render(<RadioFormsDialog />);
+        const first = screen.getByRole('radio', { name: 'First form' });
+        const last = screen.getByRole('radio', { name: 'Second form' });
+        last.focus();
+        fireEvent.keyDown(last, { key: 'Tab' });
+        expect(first).toHaveFocus();
+        fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+        expect(last).toHaveFocus();
+    });
+
     it('wraps according to browser tab order when controls have positive tabindex', () => {
         function OrderedDialog() {
             const ref = useFocusTrap();

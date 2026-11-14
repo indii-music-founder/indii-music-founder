@@ -101,6 +101,11 @@ class KeyboardOrchestrator {
     }
 
     private handleKeyDown(e: KeyboardEvent) {
+        // Input methods own these keys while choosing or committing text.
+        // Some browsers report the final composition key as 229 after
+        // isComposing has already become false.
+        if (e.isComposing || e.keyCode === 229) return;
+
         const isInput = this.isEventFromInput(e);
         const recentlyBlurred = !isInput && (Date.now() - this.lastInputBlurTime < 200);
 

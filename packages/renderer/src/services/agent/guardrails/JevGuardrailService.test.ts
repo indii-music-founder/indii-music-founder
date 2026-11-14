@@ -131,7 +131,29 @@ describe('JevGuardrailService', () => {
 
     expect(result.wasModified).toBe(true);
     expect(result.flags).toContain('unactionable_response');
-    expect(result.text).toContain('Try asking me to schedule a post');
+    expect(result.text).toContain('Please specify what you would like to create, check, or update');
+  });
+
+  it('preserves agent tool-failure explanations when tool_calls were executed (ISSUE-1619)', async () => {
+    const input = {
+      text: 'Mockup generation failed: A valid artwork assetUrl is required.',
+      tool_calls: [{ name: 'create_product_mockup', args: { assetUrl: '' } }],
+    };
+    judgeInvoke.mockResolvedValue({
+      data: {
+        answers: {
+          claims_posted_without_tool: 0,
+          claims_scheduled_without_tool: 0,
+          confident_action_no_evidence: 0,
+          is_actionable_response: 0.1,
+        },
+      },
+    });
+
+    const result = await service.screen(input);
+
+    expect(result.wasModified).toBe(false);
+    expect(result.text).toBe(input.text);
   });
 
   it('passes through the original response when the server-side Jev proxy is unavailable', async () => {
