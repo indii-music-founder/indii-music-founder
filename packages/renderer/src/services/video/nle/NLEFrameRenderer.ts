@@ -1,0 +1,89 @@
+import type { IndiiVideoProject, TimelineAST } from '@indii/shared';
+import {
+  projectToTimelineAST,
+  isClipActive,
+  getSourceOffsetPts,
+} from '@indii/video-compiler';
+import { NLEVideoSource } from './NLEVideoSource';
+import {
+  computeTransformMatrix,
+  type RenderLayer,
+  type WebGL2Compositor,
+} from './WebGL2Compositor';
+
+/** Serializes decoding and coalesces scrub requests to the latest playhead. */
+export class NLEFrameRenderer {
+  private readonly ast: TimelineAST;
+  private readonly sources = new Map<string, NLEVideoSource>();
+  private pending: bigint | null = null;
+  private running = false;
+  private closed = false;
+
+  constructor(
+    project: IndiiVideoProject,
+    private readonly compositor: WebGL2Compositor,
+    private readonly onError: (error: unknown) => void
+  ) {
+    this.ast = projectToTimelineAST(project, 60000);
+    for (const clip of project.clips) {
+      if (clip.type === 'video' && clip.src) {
+        this.sources.set(clip.id, new NLEVideoSource(clip.src));
+      }
+    }
+  }
+
+  request(pts: bigint): void {
+    if (this.closed) return;
+    this.pending = pts;
+    if (!this.running) void this.renderPending();
+  }
+
+  private async renderPending(): Promise<void> {
+    this.running = true;
+    try {
+      while (!this.closed && this.pending !== null) {
+        const pts = this.pending;
+        this.pending = null;
+        const layers: RenderLayer[] = [];
+        try {
+          for (const track of this.ast.tracks) {
+            if (track.type !== 'video' || track.muted) continue;
+            for (const clip of track.clips) {
+              if (clip.type !== 'video' || !isClipActive(pts, clip)) continue;
+              const source = this.sources.get(clip.id);
+              if (!source) throw new Error('This clip has no video source for NLE preview. Use HyperFrames for text and images.');
+              const seconds =
+                Number(getSourceOffsetPts(pts, clip, 60000)) / 60000;
+              const frame = await source.getFrameAt(seconds);
+              if (frame) {
+                layers.push({
+                  frame,
+                  transform: computeTransformMatrix(clip.transform),
+                  opacity: clip.transform.opacity,
+                });
+              }
+            }
+          }
+          if (this.closed) {
+            for (const layer of layers) (layer.frame as VideoFrame).close();
+          } else {
+            this.compositor.renderTick(layers.splice(0));
+          }
+        } catch (error) {
+          for (const layer of layers) (layer.frame as VideoFrame).close();
+          if (!this.closed) this.onError(error);
+          this.close();
+        }
+      }
+    } finally {
+      this.running = false;
+    }
+  }
+
+  close(): void {
+    this.closed = true;
+    this.pending = null;
+    for (const source of this.sources.values()) source.close();
+    this.sources.clear();
+  }
+}

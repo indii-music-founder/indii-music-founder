@@ -110,7 +110,17 @@ describe('WebGL2Compositor - GPU Layer Compositor', () => {
     // Crucial: VideoFrame.close() must be explicitly called to avoid GPU memory leaks
     expect(mockFrame.close).toHaveBeenCalled();
 
+    const failedFrames = [{ close: vi.fn() }, { close: vi.fn() }];
+    vi.mocked(mockGl.texImage2D).mockImplementationOnce(() => { throw new Error('Upload failed'); });
+    expect(() => compositor.renderTick(failedFrames.map(frame => ({
+      frame, transform: new Float32Array(9), opacity: 1,
+    })))).toThrow('Upload failed');
+    for (const frame of failedFrames) expect(frame.close).toHaveBeenCalledOnce();
+
     compositor.dispose();
     expect(mockGl.deleteProgram).toHaveBeenCalled();
+    const lateFrame = { close: vi.fn() };
+    compositor.renderTick([{ frame: lateFrame, transform: new Float32Array(9), opacity: 1 }]);
+    expect(lateFrame.close).toHaveBeenCalledOnce();
   });
 });

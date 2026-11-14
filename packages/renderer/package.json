@@ -44,6 +44,7 @@
         "idb": "^7.1.1",
         "jszip": "3.10.1",
         "lucide-react": "0.555.0",
+        "mediabunny": "1.66.0",
         "motion": "12.23.26",
         "opentype.js": "2.0.0",
         "pdfjs-dist": "5.4.449",

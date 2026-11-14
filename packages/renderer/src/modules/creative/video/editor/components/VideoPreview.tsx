@@ -166,13 +166,23 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
                         {!error && <span className="text-xs opacity-60">The timeline preview appears as soon as media is added.</span>}
                     </div>
                 ) : engine === 'nle' ? (
-                    <canvas
-                        ref={setCanvas}
-                        data-testid="nle-preview-canvas"
-                        width={project.width}
-                        height={project.height}
-                        className="w-full h-full object-contain"
-                    />
+                    <>
+                        {nle.error && (
+                            <div role="alert" className="absolute inset-x-4 top-4 z-10 rounded bg-red-950/90 p-3 text-sm text-red-100">
+                                <p>{nle.error}</p>
+                                <button type="button" onClick={nle.retry} className="mt-2 underline focus-visible:outline focus-visible:outline-2">
+                                    Retry preview
+                                </button>
+                            </div>
+                        )}
+                        <canvas
+                            ref={setCanvas}
+                            data-testid="nle-preview-canvas"
+                            width={project.width}
+                            height={project.height}
+                            className="w-full h-full object-contain"
+                        />
+                    </>
                 ) : html ? (
                     React.createElement('hyperframes-player', {
                         ref: playerRef,

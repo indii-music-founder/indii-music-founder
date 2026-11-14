@@ -1,7 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useNLEPlayback } from './useNLEPlayback';
-import { VideoTrackDecoder } from './VideoTrackDecoder';
+import { NLEFrameRenderer } from './NLEFrameRenderer';
+
+// Structural transport checks. Media decoding is verified separately with encoded files.
 import type { IndiiVideoProject } from '@indii/shared';
 
 describe('useNLEPlayback React Hook (Issue #413)', () => {
@@ -15,17 +17,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     tracks: [
       { id: 't_video', type: 'video', name: 'Main Video', isMuted: false, isLocked: false },
     ],
-    clips: [
-      {
-        id: 'c_video',
-        name: 'Clip 1',
-        type: 'video',
-        src: 'https://cdn.indii.music/test.mp4',
-        trackId: 't_video',
-        startFrame: 0,
-        durationInFrames: 90,
-      },
-    ],
+    clips: [],
   };
 
   let mockCanvas: HTMLCanvasElement;
@@ -168,12 +160,12 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     expect(result.current.isPlaying).toBe(false);
   });
 
-  it('looks up decoded frames in microseconds at the requested source position', () => {
-    const lookup = vi.spyOn(VideoTrackDecoder.prototype, 'getFrameForPts');
+  it('requests rendering at the requested timeline position', () => {
+    const lookup = vi.spyOn(NLEFrameRenderer.prototype, 'request');
     const { result, unmount } = renderHook(() => useNLEPlayback({ project: sampleProject, canvas: mockCanvas }));
     try {
       act(() => result.current.seekToSeconds(1));
-      expect(lookup).toHaveBeenCalledWith(1000000n);
+      expect(lookup).toHaveBeenCalledWith(60000n);
     } finally {
       unmount();
       lookup.mockRestore();
@@ -201,7 +193,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
 
   it('cleans up RAF and resources when unmounted', () => {
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
-    const closeSpy = vi.spyOn(VideoTrackDecoder.prototype, 'close');
+    const closeSpy = vi.spyOn(NLEFrameRenderer.prototype, 'close');
     const { result, unmount } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,

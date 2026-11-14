@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { IndiiVideoProject } from '@indii/shared';
-import { projectToTimelineAST, isClipActive, getSourceOffsetPts, rescaleTime } from '@indii/video-compiler';
 import { MasterAudioClock } from './MasterAudioClock';
-import { VideoTrackDecoder } from './VideoTrackDecoder';
-import { WebGL2Compositor, computeTransformMatrix, type RenderLayer } from './WebGL2Compositor';
+import { NLEFrameRenderer } from './NLEFrameRenderer';
+import { WebGL2Compositor } from './WebGL2Compositor';
 import { logger } from '@/utils/logger';
 
 export interface UseNLEPlaybackOptions {
@@ -15,6 +14,8 @@ export interface UseNLEPlaybackOptions {
 
 export interface UseNLEPlaybackReturn {
   isPlaying: boolean;
+  error: string | null;
+  retry: () => void;
   currentFrame: number;
   currentSeconds: number;
   play: () => void;
@@ -30,6 +31,9 @@ export function useNLEPlayback({
   onEnded,
 }: UseNLEPlaybackOptions): UseNLEPlaybackReturn {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
+  const retry = useCallback(() => setRevision(value => value + 1), []);
   const [currentFrame, setCurrentFrame] = useState(0);
 
   const fps = project.fps > 0 ? project.fps : 30;
@@ -38,7 +42,7 @@ export function useNLEPlayback({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const clockRef = useRef<MasterAudioClock | null>(null);
   const compositorRef = useRef<WebGL2Compositor | null>(null);
-  const decodersRef = useRef<Map<string, VideoTrackDecoder>>(new Map());
+  const frameRendererRef = useRef<NLEFrameRenderer | null>(null);
   const rafIdRef = useRef<number | null>(null);
   const currentFrameRef = useRef<number>(0);
 
@@ -48,14 +52,27 @@ export function useNLEPlayback({
   // Initialize WebGL2 Compositor and Web Audio Master Clock
   useEffect(() => {
     if (!canvas) return;
+    setError(null);
 
     try {
       const gl = canvas.getContext('webgl2') as WebGL2RenderingContext | null;
       if (gl && typeof gl.createShader === 'function') {
-        compositorRef.current = new WebGL2Compositor(gl);
+        const compositor = new WebGL2Compositor(gl);
+        compositorRef.current = compositor;
+        frameRendererRef.current = new NLEFrameRenderer(project, compositor, (cause) => {
+          setError(cause instanceof Error ? cause.message : 'Video preview could not decode this media.');
+          if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+          clockRef.current?.pause();
+          setIsPlaying(false);
+        });
+        frameRendererRef.current.request(BigInt(Math.round(currentFrameRef.current * 60000 / fps)));
+      } else {
+        setError('WebGL2 is unavailable in this browser.');
       }
     } catch (err) {
       logger.error('[useNLEPlayback] Failed to initialize WebGL2Compositor:', err);
+      setError('The NLE preview could not initialize.');
     }
 
     const AudioContextClass =
@@ -84,13 +101,13 @@ export function useNLEPlayback({
 
     clockRef.current = new MasterAudioClock(audioCtx ?? fallbackCtx, 60000);
 
-    const decoders = decodersRef.current;
-
     return () => {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
       }
+      frameRendererRef.current?.close();
+      frameRendererRef.current = null;
       if (compositorRef.current) {
         compositorRef.current.dispose();
         compositorRef.current = null;
@@ -99,55 +116,14 @@ export function useNLEPlayback({
         void audioCtxRef.current.close().catch(() => {});
         audioCtxRef.current = null;
       }
-      for (const decoder of decoders.values()) {
-        decoder.close();
-      }
-      decoders.clear();
       clockRef.current = null;
       setIsPlaying(false);
     };
-  }, [canvas]);
+  }, [canvas, project, fps, revision]);
 
-  // Render a single frame tick at a specific playhead PTS
-  const renderAtPts = useCallback(
-    (playheadPts: bigint) => {
-      const compositor = compositorRef.current;
-      if (!compositor) return;
-
-      const ast = projectToTimelineAST(project, 60000);
-      const layers: RenderLayer[] = [];
-
-      for (const track of ast.tracks) {
-        if (track.type !== 'video' || track.muted) continue;
-
-        for (const clip of track.clips) {
-          if (clip.type !== 'video' || !isClipActive(playheadPts, clip)) continue;
-
-          let decoder = decodersRef.current.get(track.id);
-          if (!decoder) {
-            decoder = new VideoTrackDecoder(track.id);
-            decodersRef.current.set(track.id, decoder);
-          }
-
-          const offsetPts = getSourceOffsetPts(playheadPts, clip, 60000);
-          const offsetUs = rescaleTime({ pts: offsetPts, timescale: 60000 }, 1000000).pts;
-          const frame = decoder.getFrameForPts(offsetUs);
-
-          if (frame) {
-            const transform = computeTransformMatrix(clip.transform);
-            layers.push({
-              frame,
-              transform,
-              opacity: clip.transform.opacity,
-            });
-          }
-        }
-      }
-
-      compositor.renderTick(layers);
-    },
-    [project]
-  );
+  const renderAtPts = useCallback((pts: bigint) => {
+    frameRendererRef.current?.request(pts);
+  }, []);
 
   const pause = useCallback(() => {
     if (rafIdRef.current !== null) {
@@ -163,7 +139,8 @@ export function useNLEPlayback({
   const play = useCallback(() => {
     const audioCtx = audioCtxRef.current;
     const clock = clockRef.current;
-    if (!clock) return;
+    if (!clock || error) return;
+    if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
 
     if (audioCtx && audioCtx.state === 'suspended') {
       void audioCtx.resume();
@@ -194,7 +171,7 @@ export function useNLEPlayback({
     };
 
     rafIdRef.current = requestAnimationFrame(tick);
-  }, [fps, onEnded, onFrameUpdate, pause, project.durationInFrames, renderAtPts]);
+  }, [error, fps, onEnded, onFrameUpdate, pause, project.durationInFrames, renderAtPts]);
 
   const seekToFrame = useCallback(
     (frame: number) => {
@@ -224,6 +201,8 @@ export function useNLEPlayback({
 
   return {
     isPlaying,
+    error,
+    retry,
     currentFrame,
     currentSeconds,
     play,

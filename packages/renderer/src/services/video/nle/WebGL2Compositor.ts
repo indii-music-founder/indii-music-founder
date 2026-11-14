@@ -173,25 +173,25 @@ export class WebGL2Compositor {
    */
   public renderTick(layers: RenderLayer[]): void {
     const gl = this.gl;
-    if (!this.program || !this.quadVao || !this.texture) return;
+    try {
+      if (!this.program || !this.quadVao || !this.texture) return;
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.enable(gl.BLEND);
-    // Premultiplied alpha blending
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      gl.enable(gl.BLEND);
+      // Premultiplied alpha blending
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
-    gl.useProgram(this.program);
-    gl.bindVertexArray(this.quadVao);
+      gl.useProgram(this.program);
+      gl.bindVertexArray(this.quadVao);
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.texture);
-    if (this.uTextureLoc) gl.uniform1i(this.uTextureLoc, 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, this.texture);
+      if (this.uTextureLoc) gl.uniform1i(this.uTextureLoc, 0);
 
-    for (const layer of layers) {
-      try {
+      for (const layer of layers) {
         // Upload TexImageSource or VideoFrame directly to texture memory
         gl.texImage2D(
           gl.TEXTURE_2D,
@@ -210,16 +210,17 @@ export class WebGL2Compositor {
         }
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      } finally {
-        // Explicitly dispose VideoFrame to prevent GPU allocation exhaustion
-        if (layer.frame && typeof (layer.frame as { close?: () => void }).close === 'function') {
+      }
+
+      gl.bindVertexArray(null);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+    } finally {
+      for (const layer of layers) {
+        if (typeof (layer.frame as { close?: () => void }).close === 'function') {
           (layer.frame as { close: () => void }).close();
         }
       }
     }
-
-    gl.bindVertexArray(null);
-    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
   /**
