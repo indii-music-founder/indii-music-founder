@@ -894,15 +894,20 @@ export class TemplateService {
     }
 
     /**
-     * Convert template elements to Fabric.js compatible objects
+     * Convert template elements to Fabric.js compatible objects.
+     * Maps percentage coordinates into targetDimensions (e.g. 800x1000 DesignCanvas artboard)
+     * so templates authored at print resolutions fit cleanly without clipping.
      */
-    toFabricObjects(template: DesignTemplate): TemplateFabricObject[] {
+    toFabricObjects(template: DesignTemplate, targetDimensions?: { width: number; height: number }): TemplateFabricObject[] {
+        const targetWidth = targetDimensions?.width ?? template.canvasWidth;
+        const targetHeight = targetDimensions?.height ?? template.canvasHeight;
+
         return template.elements.map(element => {
             const baseProps = {
-                left: (element.x / 100) * template.canvasWidth,
-                top: (element.y / 100) * template.canvasHeight,
-                width: (element.width / 100) * template.canvasWidth,
-                height: (element.height / 100) * template.canvasHeight,
+                left: (element.x / 100) * targetWidth,
+                top: (element.y / 100) * targetHeight,
+                width: (element.width / 100) * targetWidth,
+                height: (element.height / 100) * targetHeight,
                 angle: element.angle,
                 opacity: element.opacity,
                 selectable: element.editable,

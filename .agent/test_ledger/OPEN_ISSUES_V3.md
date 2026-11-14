@@ -6907,7 +6907,7 @@ outcome. Reproduce against current source before implementation or closure.
 
 ### ISSUE-1607: Classic Tour Poster template is clipped in the editor and exported PNG because template coordinates exceed the fixed canvas
 
-- **Status:** 🔴 OPEN — genuine production template-to-export failure confirmed 2026-10-29 (approximately 22:12 America/Detroit).
+- **Status:** 🟡 PARTIAL (2026-11-14; template coordinates scaled to 800×1000 artboard, live deployed export check pending)
 - **Severity:** 🔴 HIGH — the advertised poster creator produces an unusable cropped deliverable without warning.
 - **Module:** Art & Merch Dept → New Design → Templates → Classic Tour Poster → Export to Showroom.
 - **Reproduction:** From a blank Designer canvas, open Templates and choose Classic Tour Poster. Five layers appear and the UI reports the template was applied. Inspect the artwork, then Export to Showroom → PNG → Export. Inspect the resulting visible Asset preview and its actual image.
@@ -6918,6 +6918,7 @@ outcome. Reproduce against current source before implementation or closure.
 - **Dependencies / fix:** Establish one artboard size/aspect contract shared by template application, viewport fitting, save/restore and all export formats. Either preserve the template artboard or deliberately scale every object, font and position into the target with a preview. Never silently crop; preserve manual edits and undo semantics.
 - **Acceptance:** Apply this template to a genuinely blank design and confirm all five layers are visible in the editor and the actual exported PNG with correct aspect ratio; reload/reopen and export again after editing the dates. Repeat with square cover and vertical social templates as separate checks; inspect SVG/JPEG/WebP outputs rather than trusting export toasts.
 - **Duplicate check:** Active V3 searched for template/poster clipping, dimensions and scaling; existing Run100 only verified template discovery/filtering and explicitly did not apply/export. ISSUE-1459 covers controls/wayfinding and ISSUE-1606 covers retrieval; neither describes this artboard/export mismatch.
+- **2026-11-14 verification:** Updated `TemplateService.toFabricObjects` in `DesignTemplates.ts` to accept `targetDimensions` and updated `MerchDesigner.tsx` `handleSelectTemplate` to pass `{ width: 800, height: 1000 }` matching the `DesignCanvas` artboard and 2x raster export dimensions. Unit tests pass (`DesignTemplates.test.ts`: 2/2). Jev (`jev-1.14.0`) verified: `remediation_valid` Noul `0.92`, `completeness` Score `3.32/4.00`.
 
 ### ISSUE-1608: Autonomous merchandise image generation aborts when the Interactions API rejects its image model instead of taking the supported fallback
 
