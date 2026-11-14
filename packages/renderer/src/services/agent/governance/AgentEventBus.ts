@@ -26,6 +26,7 @@ export type AgentEventType =
 export interface ToolExecutionEvent {
     agentId: string;
     toolName: string;
+    toolCallId?: string;
     targetContext?: string;
     timestamp: number;
     durationMs?: number;
@@ -53,12 +54,14 @@ export class AgentEventBus {
         toolName: string,
         startedAt: number,
         result: { success: boolean; error?: string },
+        toolCallId?: string,
     ): void {
         const succeeded = result.success === true;
         const finishedAt = Date.now();
         this.emitToolEvent(succeeded ? 'TOOL_EXECUTION_COMPLETE' : 'TOOL_EXECUTION_FAILED', {
             agentId,
             toolName,
+            toolCallId,
             timestamp: finishedAt,
             durationMs: finishedAt - startedAt,
             ...(!succeeded ? { errorMessage: result.error || 'Tool reported failure.' } : {}),
@@ -77,6 +80,7 @@ export class AgentEventBus {
             action: type,
             details: `Tool: ${payload.toolName}${payload.durationMs !== undefined ? ` (${payload.durationMs}ms)` : ''}`,
             toolName: payload.toolName,
+            toolCallId: payload.toolCallId,
             targetContext: payload.targetContext,
             timestamp: payload.timestamp,
             durationMs: payload.durationMs,
@@ -100,6 +104,8 @@ export class AgentEventBus {
             action: type,
             details: `Session: ${payload.sessionId} ${payload.reason ? ` - ${payload.reason}` : ''}`,
             sessionId: payload.sessionId,
+            timestamp: Date.now(),
+            ...(type === 'AGENT_SESSION_FAILED' && payload.reason !== undefined ? { errorMessage: payload.reason } : {}),
             durationMs: payload.durationMs,
         });
     }

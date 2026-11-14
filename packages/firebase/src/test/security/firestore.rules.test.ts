@@ -37,11 +37,14 @@ import {
     updateDoc,
     deleteDoc,
     serverTimestamp,
+    runTransaction,
+    writeBatch,
     Timestamp,
     collection,
     getDocs,
     limit,
     query,
+    where,
 } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -568,6 +571,45 @@ describe('Firestore Security Rules', () => {
                 doc(db, 'users', ALICE_UID, 'agent_queue', 'queue'),
                 { ...queue, tasks: Array.from({ length: 101 }, (_, id) => ({ id })) },
             ));
+        });
+    });
+
+    describe('agent loop checkpoint ownership (structural emulator tests)', () => {
+        const checkpoint = { id: 'loop-checkpoint', loopId: 'loop-definition', checkpointRevision: 1, status: 'EXECUTING' };
+        it('requires an initial revision and rejects stale or skipped updates', async () => {
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+            await assertFails(setDoc(ref, { id: checkpoint.id }));
+            await assertSucceeds(setDoc(ref, checkpoint));
+            await assertFails(updateDoc(ref, { status: 'FAILED' }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 3 }));
+            await assertSucceeds(updateDoc(ref, { checkpointRevision: 2, status: 'EVALUATING' }));
+            await assertFails(setDoc(ref, { ...checkpoint, status: 'FAILED' }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 3, id: 'different-execution' }));
+            await assertFails(updateDoc(doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), { checkpointRevision: 3 }));
+        });
+        it('upgrades a legacy checkpoint once without permitting a second stale claim', async () => {
+            await testEnv.withSecurityRulesDisabled(async context => {
+                await setDoc(doc(context.firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), { id: checkpoint.id, loopId: checkpoint.loopId });
+            });
+            const ref = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+            await assertSucceeds(updateDoc(ref, { checkpointRevision: 1 }));
+            await assertFails(updateDoc(ref, { checkpointRevision: 1 }));
+        });
+        it('lets only one independent transaction claim a saved revision', async () => {
+            const firstDb = verifiedCtx(ALICE_UID).firestore();
+            const secondDb = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(firstDb, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id), checkpoint);
+            const claim = (db: typeof firstDb) => runTransaction(db, async transaction => {
+                const ref = doc(db, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id);
+                const saved = await transaction.get(ref);
+                if (saved.data()?.checkpointRevision !== 1) throw new Error('Stale checkpoint');
+                transaction.update(ref, { checkpointRevision: 2, status: 'DISPATCHING' });
+            });
+            const claims = await Promise.allSettled([claim(firstDb), claim(secondDb)]);
+            expect(claims.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+            expect(claims.filter(result => result.status === 'rejected')).toHaveLength(1);
+            expect((await getDoc(doc(firstDb, 'users', ALICE_UID, 'agentLoopExecutions', checkpoint.id))).data()?.status).toBe('DISPATCHING');
         });
     });
 
@@ -2079,6 +2121,21 @@ describe('Firestore Security Rules', () => {
             }));
         });
 
+        it('allows only the owner-filtered library query and owner deletion', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            const aliceAssets = collection(aliceDb, 'audio_assets');
+            const bobAssets = collection(bobDb, 'audio_assets');
+
+            const owned = await assertSucceeds(getDocs(query(aliceAssets, where('userId', '==', ALICE_UID))));
+            expect(owned.docs.map(asset => asset.id)).toContain(audioId);
+            await assertFails(getDocs(aliceAssets));
+            await assertFails(getDocs(query(bobAssets, where('userId', '==', ALICE_UID))));
+            await assertFails(deleteDoc(doc(bobDb, 'audio_assets', audioId)));
+            await assertSucceeds(deleteDoc(doc(aliceDb, 'audio_assets', audioId)));
+        });
+
         it('rejects malformed assets and immutable-owner spoofing on update', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
@@ -2467,6 +2524,41 @@ describe('Firestore Security Rules', () => {
         await assertFails(updateDoc(session, { deletingAt: null }));
         await assertSucceeds(deleteDoc(existing));
         await assertSucceeds(deleteDoc(session));
+    });
+
+    it('fences clearing writes, requires the current generation, and prevents generation rollback', async () => {
+        if (requireEmulator()) return;
+        const path = 'sessions/clear-generation';
+        await testEnv.withSecurityRulesDisabled(async context => {
+            await setDoc(doc(context.firestore(), path), { userId: ALICE_UID, orgId: ORG_ID });
+        });
+        const db = verifiedCtx(ALICE_UID).firestore();
+        const parent = doc(db, path);
+        const old = doc(db, `${path}/messages/old`);
+        await assertSucceeds(setDoc(old, { text: 'Before clear' }));
+        const atomicRace = writeBatch(db);
+        atomicRace.update(parent, { messageEpoch: 1, clearingOperation: 'atomic-race', messages: [], messageStorage: 'subcollection' });
+        atomicRace.set(doc(db, `${path}/messages/racing`), { text: 'Stale same-batch append' });
+        await assertFails(atomicRace.commit());
+        await assertFails(updateDoc(parent, { messageEpoch: -1 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 0.5 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 2, clearingOperation: 'skip', messages: [], messageStorage: 'subcollection' }));
+        await assertFails(updateDoc(parent, { messageEpoch: 1, messages: [], messageStorage: 'subcollection' }));
+        await assertFails(updateDoc(doc(verifiedCtx(BOB_UID).firestore(), path), { messageEpoch: 1, clearingOperation: 'foreign', messages: [], messageStorage: 'subcollection' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 1, clearingOperation: 'clear-one', messages: [], messageStorage: 'subcollection' }));
+        await assertFails(setDoc(doc(db, `${path}/messages/during`), { text: 'During clear', messageEpoch: 1 }));
+        await assertFails(updateDoc(old, { text: 'During clear' }));
+        await assertSucceeds(deleteDoc(old));
+        await assertFails(updateDoc(parent, { clearingOperation: null }));
+        await assertSucceeds(updateDoc(parent, { clearingOperation: null, lastClearedOperation: 'clear-one' }));
+        await assertFails(setDoc(doc(db, `${path}/messages/stale`), { text: 'Old client' }));
+        await assertSucceeds(setDoc(doc(db, `${path}/messages/current`), { text: 'Current client', messageEpoch: 1 }));
+        await assertFails(updateDoc(parent, { messageEpoch: 0 }));
+        await assertFails(updateDoc(parent, { messages: [{ id: 'resurrected' }] }));
+        await assertFails(updateDoc(parent, { clearingOperation: 'no-generation-increment' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 2, clearingOperation: 'clear-two' }));
+        await assertSucceeds(updateDoc(parent, { messageEpoch: 3, clearingOperation: 'takeover' }));
+        await assertFails(updateDoc(parent, { messageEpoch: 4, clearingOperation: 'takeover' }));
     });
 
     describe('root owner-scoped collections pin every authority field', () => {
@@ -3559,6 +3651,149 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/screenwriterDrafts/{draftId}', () => {
+        const projectId = 'proj-screenplay-1';
+        const validDraft = {
+            ownerId: ALICE_UID,
+            projectId,
+            payload: {
+                activeTab: 'scriptwriter',
+                songConcept: 'A music video concept',
+                selectedTone: 'cinematic',
+                scenes: [],
+                selectedSceneId: 'scene-1',
+            },
+            revision: 1,
+        };
+
+        it('allows owner to create, read, update, and delete drafts with valid revision', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const draftRef = doc(aliceDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+
+            // Create valid draft
+            await assertSucceeds(setDoc(draftRef, validDraft));
+
+            // Read valid draft
+            await assertSucceeds(getDoc(draftRef));
+
+            // Update with incremented revision
+            await assertSucceeds(setDoc(draftRef, { ...validDraft, revision: 2 }));
+
+            // Delete draft
+            await assertSucceeds(deleteDoc(draftRef));
+        });
+
+        it('denies unauthenticated and cross-owner access', async () => {
+            if (requireEmulator()) return;
+            const aliceDraftRef = doc(unauthCtx().firestore(), 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+            await assertFails(getDoc(aliceDraftRef));
+            await assertFails(setDoc(aliceDraftRef, validDraft));
+
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            const bobDraftRef = doc(bobDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+            await assertFails(getDoc(bobDraftRef));
+            await assertFails(setDoc(bobDraftRef, validDraft));
+            await assertFails(deleteDoc(bobDraftRef));
+        });
+
+        it('denies creation and update with invalid revision or mismatched identifiers', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            const draftRef = doc(aliceDb, 'users', ALICE_UID, 'screenwriterDrafts', projectId);
+
+            // Mismatched ownerId
+            await assertFails(setDoc(draftRef, { ...validDraft, ownerId: BOB_UID }));
+
+            // Mismatched projectId
+            await assertFails(setDoc(draftRef, { ...validDraft, projectId: 'different-project' }));
+
+            // Missing or non-int revision
+            await assertFails(setDoc(draftRef, { ownerId: ALICE_UID, projectId }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: '1' }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: 1.5 }));
+
+            // Non-positive revision (< 1)
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: 0 }));
+            await assertFails(setDoc(draftRef, { ...validDraft, revision: -1 }));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // KNOWLEDGE BASE RECEIPTS & TOMBSTONES (ISSUE-1252)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('actor-owned immutable legal audit receipts', () => {
+        it('permits actor receipts and denies cross-owner access, mutation and conflicting identities', async () => {
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            const path = 'legal_audit_ledger';
+            const ref = doc(alice, path, 'actor-owned-receipt');
+            await assertSucceeds(setDoc(ref, { actorUid: ALICE_UID, actionType: 'CONTRACT_DRAFTED', timestamp: Timestamp.now() }));
+            await assertSucceeds(getDoc(ref));
+            await assertSucceeds(getDocs(query(collection(alice, path), where('actorUid', '==', ALICE_UID))));
+            await assertFails(getDoc(doc(bob, path, ref.id)));
+            await assertFails(updateDoc(ref, { actionType: 'CHANGED' }));
+            await assertFails(deleteDoc(ref));
+            await assertFails(setDoc(doc(alice, path, 'conflicting-receipt'), { userId: BOB_UID, actorUid: ALICE_UID }));
+            await assertFails(setDoc(doc(alice, path, 'conflicting-actor'), { userId: ALICE_UID, actorUid: BOB_UID }));
+        });
+    });
+
+    describe('knowledge receipts, tombstones, chunks, and indexing jobs (ISSUE-1252)', () => {
+        const collections = [
+            'knowledge_query_receipts',
+            'knowledge_tombstones',
+            'knowledge_chunks',
+            'knowledge_indexing_jobs',
+        ];
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                for (const coll of collections) {
+                    await setDoc(doc(ctx.firestore(), coll, 'item-1'), {
+                        userId: ALICE_UID,
+                        status: 'completed',
+                    });
+                }
+            });
+        });
+
+        it('allows owner to read records', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            for (const coll of collections) {
+                await assertSucceeds(getDoc(doc(aliceDb, coll, 'item-1')));
+            }
+        });
+
+        it('denies unauthenticated and cross-owner read access', async () => {
+            if (requireEmulator()) return;
+            const unauthDb = unauthCtx().firestore();
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            for (const coll of collections) {
+                await assertFails(getDoc(doc(unauthDb, coll, 'item-1')));
+                await assertFails(getDoc(doc(bobDb, coll, 'item-1')));
+            }
+        });
+
+        it('denies all client writes (create, update, delete)', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            for (const coll of collections) {
+                await assertFails(setDoc(doc(aliceDb, coll, 'item-new'), {
+                    userId: ALICE_UID,
+                    data: 'forged',
+                }));
+                await assertFails(updateDoc(doc(aliceDb, coll, 'item-1'), {
+                    status: 'mutated',
+                }));
+                await assertFails(deleteDoc(doc(aliceDb, coll, 'item-1')));
+            }
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
@@ -3948,6 +4183,17 @@ describe('Firestore Security Rules', () => {
                 goals: ['Improve royalty registration', 'Grow audience'],
             };
 
+            it('permits a missing-record preflight and preserves PII protection after contact update', async () => {
+                const ref = doc(unauthCtx().firestore(), 'prospect_assessments', 'missing-assessment-preflight');
+                expect((await assertSucceeds(getDoc(ref))).exists()).toBe(false);
+                await assertSucceeds(setDoc(ref, { ...validAssessment, id: ref.id }));
+                await assertSucceeds(updateDoc(ref, {
+                    email: 'policy-check@example.com', assessmentConsent: true,
+                    marketingConsent: false, updatedAt: Timestamp.now(),
+                }));
+                await assertFails(getDoc(ref));
+            });
+
             it('create: allows unauthenticated visitor to create valid assessment', async () => {
                 if (requireEmulator()) return;
                 const unauthDb = unauthCtx().firestore();
@@ -4329,10 +4575,10 @@ describe('Firestore Security Rules', () => {
                 const bobDb = verifiedCtx(BOB_UID).firestore();
                 const docRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1');
 
-                await assertSucceeds(setDoc(docRef, { status: 'EXECUTING', loopId: 'loop-1' }));
+                await assertSucceeds(setDoc(docRef, { id: 'exec-1', checkpointRevision: 1, status: 'EXECUTING', loopId: 'loop-1' }));
                 await assertSucceeds(getDoc(docRef));
                 await assertFails(getDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-1')));
-                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { status: 'FAIL' }));
+                await assertFails(setDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-2'), { id: 'exec-2', checkpointRevision: 1, status: 'FAIL' }));
             });
 
             it('users/{userId}/agentAuditTrails: owner can read/create, update/delete denied, cross-user denied', async () => {
@@ -4877,7 +5123,7 @@ describe('Firestore Security Rules', () => {
                 const bobDb = verifiedCtx(BOB_UID).firestore();
                 const execRef = doc(aliceDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1');
 
-                await assertSucceeds(setDoc(execRef, { status: 'COMPLETED', loopId: 'loop-del' }));
+                await assertSucceeds(setDoc(execRef, { id: 'exec-del-1', checkpointRevision: 1, status: 'COMPLETED', loopId: 'loop-del' }));
                 await assertFails(deleteDoc(doc(bobDb, 'users', ALICE_UID, 'agentLoopExecutions', 'exec-del-1')));
                 await assertSucceeds(deleteDoc(execRef));
             });

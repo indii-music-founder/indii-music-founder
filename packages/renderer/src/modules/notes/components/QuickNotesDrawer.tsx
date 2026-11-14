@@ -18,6 +18,7 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+import { isTopFocusTrap, useFocusTrap } from '@/hooks/useFocusTrap';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { cn } from '@/lib/utils';
 import type { Note } from '@/core/store/slices/notesSlice';
@@ -207,6 +208,7 @@ const QuickNotesDrawerContent: React.FC<QuickNotesDrawerContentProps> = ({ onClo
     );
 
     const [searchQuery, setSearchQuery] = useState('');
+    const drawerRef = useFocusTrap();
 
     // Escape shortcut to close drawer
     useGlobalShortcut(
@@ -216,6 +218,7 @@ const QuickNotesDrawerContent: React.FC<QuickNotesDrawerContentProps> = ({ onClo
             priority: 'modal',
             ignoreInput: true,
             handler: (event) => {
+                if (!isTopFocusTrap(drawerRef.current)) return;
                 event.preventDefault();
                 event.stopPropagation();
                 onClose();
@@ -276,7 +279,7 @@ const QuickNotesDrawerContent: React.FC<QuickNotesDrawerContentProps> = ({ onClo
     }, [notes, searchQuery]);
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden select-none">
+        <div className="fixed inset-0 z-[100000] overflow-hidden select-none">
             {/* Backdrop */}
             <motion.div
                 initial={{ opacity: 0 }}
@@ -290,6 +293,7 @@ const QuickNotesDrawerContent: React.FC<QuickNotesDrawerContentProps> = ({ onClo
 
             {/* Slide-over Panel */}
             <motion.aside
+                ref={drawerRef}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Quick Notes Drawer"

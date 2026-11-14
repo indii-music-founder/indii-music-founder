@@ -425,12 +425,19 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         await httpsCallable<{ operationId: string }, { voided: true }>(functions, 'voidAgentStreamCostReservation')({ operationId });
     }
 
-    private async reserveAgentStream(userId: string, model: string, streaming: boolean, estimatedCost: number): Promise<string> {
+    private async reserveAgentStream(userId: string, model: string, streaming: boolean, estimatedCost: number, options?: GenerateContentOptions): Promise<string> {
         const costCheck = await CostControlService.checkAndReserve({
             operationType: 'agent_stream',
             estimatedCost,
             userId,
-            metadata: { model, streaming },
+            metadata: {
+                model,
+                streaming,
+                ...(options?.boardroomDispatchLeaseId && options.boardroomAgentId ? {
+                    boardroomDispatchLeaseId: options.boardroomDispatchLeaseId,
+                    boardroomAgentId: options.boardroomAgentId,
+                } : {}),
+            },
         });
         if (!costCheck.allowed) {
             const unavailable = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
@@ -614,6 +621,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             thoughtSignature?: string;
             skipCache?: boolean;
             timeout?: number;
+            boardroomDispatchLeaseId?: string;
+            boardroomAgentId?: string;
         }
     ): Promise<GenerateContentResult> {
         const modelName = this.getModelName(modelOverride);
@@ -776,7 +785,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         };
                         headers = await this.prepareBackendRequestHeaders();
                         costReservationId = await this.reserveAgentStream(userId, modelName, false,
-                            estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens));
+                            estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens), options);
                         const streamResult = await this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                         const reader = streamResult.stream.getReader();
                         while (!(await reader.read()).done) {
@@ -852,6 +861,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             toolConfig?: ToolConfig;
             thoughtSignature?: string;
             timeout?: number;
+            boardroomDispatchLeaseId?: string;
+            boardroomAgentId?: string;
         }
     ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
         const modelName = this.getModelName(modelOverride);
@@ -965,7 +976,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     };
                     headers = await this.prepareBackendRequestHeaders();
                     costReservationId = await this.reserveAgentStream(userId, modelName, true,
-                        estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens));
+                        estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens), options);
                     return this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                 }, 0, 1000, internalSignal);
             });
@@ -998,7 +1009,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string, timeout?: number, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
     ): Promise<GenerateContentResult> {
         logger.debug('[FirebaseIntelligenceService] generateContent request');
 
@@ -1014,7 +1025,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, boardroomDispatchLeaseId?: string, boardroomAgentId?: string }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }

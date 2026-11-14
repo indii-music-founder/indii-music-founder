@@ -117,6 +117,7 @@ describe('PlatformBridgeService', () => {
             // is no longer desktop-only.
             expect(caps.canCompileVideoPreview).toBe(true);
             expect(caps.canRenderVideoLocally).toBe(false);
+            expect(caps.canPersistLocalHistory).toBe(true);
             expect(bridge.isElectron()).toBe(false);
         });
 
@@ -167,8 +168,66 @@ describe('PlatformBridgeService', () => {
             expect(localStorage.getItem('indii_session_history_session-web')).toBeNull();
         });
 
+        it('merges a title-only patch without discarding cached messages or timestamps', async () => {
+            const bridge = new ElectronPlatformAdapter();
+            const messages = [{ id: 'message-1', role: 'user', text: 'Keep my draft' }];
+            await bridge.saveHistory('patch-session', { id: 'patch-session', title: 'Before', createdAt: 100, messages });
+            await bridge.saveHistory('patch-session', { title: 'After', updatedAt: 200 });
+            expect(JSON.parse(localStorage.getItem('indii_session_history_patch-session')!)).toEqual({
+                id: 'patch-session', title: 'After', createdAt: 100, updatedAt: 200, messages,
+            });
+        });
+
+        it('honors an explicit messages reset while retaining session identity', async () => {
+            const bridge = new ElectronPlatformAdapter();
+            await bridge.saveHistory('clear-patch', { id: 'clear-patch', messages: ['old'], title: 'Keep title' });
+            await bridge.saveHistory('clear-patch', { messages: [] });
+            expect(JSON.parse(localStorage.getItem('indii_session_history_clear-patch')!)).toEqual({ id: 'clear-patch', messages: [], title: 'Keep title' });
+        });
+
+        it.each(['broken JSON', 'null', '[]', '12'])('retains corrupt or incompatible stored bytes: %s', async previous => {
+            localStorage.setItem('indii_session_history_corrupt', previous);
+            await expect(new ElectronPlatformAdapter().saveHistory('corrupt', { title: 'Patch' })).rejects.toThrow();
+            expect(localStorage.getItem('indii_session_history_corrupt')).toBe(previous);
+        });
+
+        it.each([null, [], 'invalid', 7, new Date(0)])('rejects a non-record patch without replacing an existing cache: %j', async patch => {
+            const bridge = new ElectronPlatformAdapter();
+            await bridge.saveHistory('invalid-patch', { messages: ['keep'] });
+            await expect(bridge.saveHistory('invalid-patch', patch)).rejects.toThrow('plain objects');
+            expect(JSON.parse(localStorage.getItem('indii_session_history_invalid-patch')!)).toEqual({ messages: ['keep'] });
+        });
+
+        it('leaves the cache intact when serializing a circular patch fails', async () => {
+            const bridge = new ElectronPlatformAdapter();
+            await bridge.saveHistory('circular', { messages: ['keep'] });
+            const patch: Record<string, unknown> = {};
+            patch.circular = patch;
+            await expect(bridge.saveHistory('circular', patch)).rejects.toThrow();
+            expect(JSON.parse(localStorage.getItem('indii_session_history_circular')!)).toEqual({ messages: ['keep'] });
+        });
+
+        it('reports unavailable storage rather than acknowledging a save or deletion', async () => {
+            vi.stubGlobal('localStorage', undefined);
+            const bridge = new ElectronPlatformAdapter();
+            expect(bridge.getCapabilities().canPersistLocalHistory).toBe(false);
+            await expect(bridge.saveHistory('unavailable', { messages: [] })).rejects.toThrow('unavailable');
+            await expect(bridge.deleteHistory('unavailable')).rejects.toThrow('unavailable');
+        });
+
+        it('rejects empty identifiers and keeps different session patches isolated', async () => {
+            const bridge = new ElectronPlatformAdapter();
+            await expect(bridge.saveHistory('', {})).rejects.toThrow('session ID');
+            await expect(bridge.deleteHistory('')).rejects.toThrow('session ID');
+            await bridge.saveHistory('first', { title: 'First' });
+            await bridge.saveHistory('second', { title: 'Second' });
+            await bridge.saveHistory('first', { messages: ['first only'] });
+            expect(JSON.parse(localStorage.getItem('indii_session_history_second')!)).toEqual({ title: 'Second' });
+        });
+
         it('reports web storage quota failures to its caller', async () => {
             vi.stubGlobal('localStorage', {
+                getItem: () => null,
                 setItem: () => { throw new Error('quota exceeded'); },
             });
 

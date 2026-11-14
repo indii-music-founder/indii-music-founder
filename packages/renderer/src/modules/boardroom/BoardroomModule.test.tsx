@@ -127,8 +127,7 @@ describe('BoardroomModule', () => {
         render(<BoardroomModule />);
         // BoardroomConversationPanel renders "Awaiting discussion..." when empty
         expect(screen.getByText('Awaiting discussion...')).toBeInTheDocument();
-        // BoardroomTable renders "Drag agents to the table to begin" when activeCount is 0
-        expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
+        expect(screen.getByText('1 Agent Seated')).toBeInTheDocument();
         // Top bar renders "Boardroom HQ"
         expect(screen.getByText('Boardroom HQ')).toBeInTheDocument();
     });
@@ -228,7 +227,7 @@ describe('MessageFeed', () => {
 });
 
 describe('BoardroomTable', () => {
-    it('shows "Drag agents" prompt when no agents are active', () => {
+    it('shows the Indii command path when no participant count is supplied', () => {
         render(<BoardroomTable messages={[]} activeCount={0} />);
         expect(screen.getByText('Drag agents to the table to begin')).toBeInTheDocument();
     });

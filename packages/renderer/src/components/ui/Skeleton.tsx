@@ -57,7 +57,7 @@ export function SkeletonTable({ rows = 5, cols = 4 }: SkeletonTableProps) {
             {/* Header */}
             <div className="flex gap-4 pb-2 border-b border-white/5">
                 {Array.from({ length: cols }).map((_, i) => (
-                    <Skeleton key={i} className="h-3 flex-1" />
+                    <Skeleton key={i} className="h-3 min-w-0 flex-1" />
                 ))}
             </div>
             {/* Rows */}
@@ -66,7 +66,7 @@ export function SkeletonTable({ rows = 5, cols = 4 }: SkeletonTableProps) {
                     {Array.from({ length: cols }).map((_, col) => (
                         <Skeleton
                             key={col}
-                            className={cn('h-4 flex-1', col === 0 ? 'w-32' : '')}
+                            className="h-4 min-w-0 flex-1"
                         />
                     ))}
                 </div>

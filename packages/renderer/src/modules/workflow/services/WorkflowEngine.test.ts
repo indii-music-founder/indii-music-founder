@@ -250,6 +250,25 @@ describe('WorkflowEngine', () => {
         expect(mockSetNodes).toHaveBeenCalledWith(expect.any(Function));
     });
 
+    // Structural-only: these checks do not establish a live workflow outcome.
+    it.each([
+        ['Live & Booking Department', 'custom'],
+        ['Micro-Workflows', 'micro-audio-qc'],
+        ['Micro-Workflows', 'micro-rights-metadata'],
+        ['Micro-Workflows', 'unsupported-job'],
+    ])('does not report an unsupported %s operation as complete', async (departmentName, selectedJobId) => {
+        const node: CustomNode = {
+            id: 'unsupported', type: 'departmentNode', position: { x: 300, y: 0 },
+            data: { nodeType: 'department', departmentName, selectedJobId, status: Status.PENDING },
+        };
+        const { nodes, edges } = makeLinearWorkflow(node);
+        const errors = vi.fn();
+        const results = await new WorkflowEngine(nodes, edges, mockSetNodes).run({ callbacks: { onNodeError: errors } });
+        expect(errors).toHaveBeenCalledWith('unsupported', expect.stringContaining('unavailable'));
+        expect(results.has('unsupported')).toBe(false);
+        expect(results.has('end')).toBe(false);
+    });
+
     it('executes Video Department (text-to-video) and calls VideoGeneration', async () => {
         const videoNode: CustomNode = {
             id: 'vid-1',

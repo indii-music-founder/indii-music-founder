@@ -75,10 +75,12 @@ export function DeptLoader({
                 aria-hidden="true"
                 className={`${sizeClasses[size]} ${colors.text} motion-safe:animate-spin drop-shadow-[0_0_8px_var(--dept-color)]`}
             />
-            {message && (
+            {message.trim() ? (
                 <p className={`${textSizes[size]} text-gray-400 font-main`}>
                     {message}
                 </p>
+            ) : (
+                <span className="sr-only">Loading...</span>
             )}
         </div>
     );

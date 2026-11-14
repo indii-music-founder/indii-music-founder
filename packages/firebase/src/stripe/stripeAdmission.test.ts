@@ -415,14 +415,10 @@ describe('Stripe Connect, Escrow, Payment Links & Webhook Admission (ISSUE-1543 
         expect(sendFn).toHaveBeenCalledWith('Unauthorized');
       });
 
-      it('processes webhook successfully with valid signature and settled transaction', async () => {
+      // Structural-only admission check; provider settlement requires live evidence.
+      it('refuses to settle from a valid shared-secret callback', async () => {
         const payload = JSON.stringify({ transaction_id: 'tx-1', status: 'success' });
         const validSig = crypto.createHmac('sha256', 'test_escrow_secret').update(payload).digest('hex');
-
-        mocks.firestoreDocGet.mockResolvedValueOnce({
-          exists: true,
-          data: () => ({ status: 'LOCKED' }),
-        });
 
         const req = {
           headers: { 'x-indii-signature': validSig },
@@ -435,8 +431,8 @@ describe('Stripe Connect, Escrow, Payment Links & Webhook Admission (ISSUE-1543 
         const webhook = handleEscrowWebhook as unknown as (req: unknown, res: unknown) => Promise<void>;
         await webhook(req, res);
 
-        expect(statusFn).toHaveBeenCalledWith(200);
-        expect(sendFn).toHaveBeenCalledWith('Webhook processed successfully');
+        expect(statusFn).toHaveBeenCalledWith(409);
+        expect(sendFn).toHaveBeenCalledWith('Escrow settlement requires verified payment and transfer receipts.');
       });
     });
 

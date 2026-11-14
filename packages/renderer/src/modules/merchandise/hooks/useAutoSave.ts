@@ -1,3 +1,4 @@
+import { getDesignArtboard, serializeDesignCanvas } from '../designArtboard';
 import { logger } from '@/utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
@@ -55,6 +56,11 @@ export const useAutoSave = (
     const [error, setError] = useState<string | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const saveDesign = useCallback(async (): Promise<SaveResult> => {
+        // Showroom unmounts the editor before all pending save callbacks finish.
+        // Fabric keeps the object reference but releases its rendering contexts.
+        if (canvas?.disposed || canvas?.destroyed) {
+            return { success: false, reason: 'Auto-save skipped: canvas has been disposed.' };
+        }
         if (!canvas || !user || !currentProjectId) {
             const reason = `Auto-save skipped: missing ${[
                 !canvas && 'canvas',
@@ -75,7 +81,7 @@ export const useAutoSave = (
 
         try {
             // Serialize canvas state
-            const canvasJSON = JSON.stringify(canvas.toObject(['name', 'thumbnail']));
+            const canvasJSON = JSON.stringify(serializeDesignCanvas(canvas, ['name', 'thumbnail']));
 
             // Generate thumbnail (low quality for storage efficiency)
             // ⚡ indii.music FIX: Reset zoom and viewport temporarily for consistent thumbnails
@@ -91,11 +97,11 @@ export const useAutoSave = (
                 thumbnail = canvas.toDataURL({
                     format: 'png',
                     quality: 0.6,
-                    multiplier: 0.3, // Fixed 30x scale of 800x1000 = 240x300 thumbnail
+                    multiplier: 0.3, // Preserve the document aspect ratio in the saved preview
                     left: 0,
                     top: 0,
-                    width: 800,
-                    height: 1000
+                    width: getDesignArtboard(canvas).width,
+                    height: getDesignArtboard(canvas).height
                 });
             } finally {
                 // Restore even when toDataURL throws (tainted canvas, memory

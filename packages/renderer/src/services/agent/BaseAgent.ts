@@ -1,7 +1,6 @@
 import { delegatedAgentResult, unauthorizedToolFailure } from './executionFailure';
 import { logger } from '@/utils/logger';
-import { functions, auth } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { auth } from '@/services/firebase';
 import { compressStreamImageAttachments, assertContentsWithinStreamBudget, elideBase64Payloads, sanitizeObjectForPrompt } from '@/services/intelligence/StreamPayloadGuard';
 import {
     SpecializedAgent,
@@ -25,7 +24,8 @@ import {
     ToolFunctionResult,
     validateHubAndSpoke
 } from './types';
-import { INTELLIGENCE_MODELS, INTELLIGENCE_CONFIG, MODEL_PRICING } from '@/core/config/intelligence-models';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
+import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
 import { executionTokenBudget, inheritExecutionTokenBudget } from './governance/ExecutionTokenBudget';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
@@ -35,6 +35,7 @@ import { ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { toolError } from './utils/ToolUtils';
 import { getDurableReportReceipt } from './utils/durableReportReceipt';
+import { recordToolOutcome } from './governance/ToolOutcomeAudit';
 import { completedBoardroomToolResult } from './orchestration/BoardroomActionPlan';
 import { cancelledPrintResponse, finishedPrintResponse } from '@/services/upscale/PrintPreparationControl';
 import { ToolPoolAssembler } from './governance/ToolPoolAssembler';
@@ -54,6 +55,8 @@ import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
 import { getReflectionLoop } from './ReflectionLoop';
 import { importWithRetry } from '@/utils/dynamicImport';
+
+const BOARDROOM_SINGLE_OWNER_TOOL_NAMES = new Set(['generate_image', 'indii_image_gen']);
 
 export class BaseAgent implements SpecializedAgent {
     public id: string;
@@ -91,7 +94,7 @@ export class BaseAgent implements SpecializedAgent {
      * tool outcome instead of replacing it with a misleading generation error.
      * The limiter remains enforced; this method never makes another model call.
      */
-    private recoverRateLimitedPostToolTurn(
+    private recoverAuthoritativeImageToolOutcome(
         error: unknown,
         lastToolResult: ToolFunctionResult | undefined,
         toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }>
@@ -101,6 +104,17 @@ export class BaseAgent implements SpecializedAgent {
         const lastToolCall = toolCalls[toolCalls.length - 1];
         const isImageTool = lastToolCall?.name === 'generate_image' || lastToolCall?.name === 'indii_image_gen';
         if (!isImageTool) return null;
+
+        // The image tool result is the authoritative effect receipt. Once it
+        // completed, a later summary-only timeout/network/5xx/capacity failure
+        // must not turn that completed action into a false failure or retry.
+        if (lastToolResult.success) {
+            return {
+                text: lastToolResult.message?.trim() || 'The requested image completed successfully.',
+                data: lastToolResult.data,
+                toolCalls,
+            };
+        }
 
         const record = error && typeof error === 'object'
             ? error as { code?: unknown; status?: unknown; message?: unknown }
@@ -119,14 +133,6 @@ export class BaseAgent implements SpecializedAgent {
             || message.trim() === 'Too many AI generation requests. Please retry shortly.'
         );
         if (!isRateLimited) return null;
-
-        if (lastToolResult.success) {
-            return {
-                text: lastToolResult.message?.trim() || 'The requested action completed successfully.',
-                data: lastToolResult.data,
-                toolCalls,
-            };
-        }
 
         const toolErrorCode = typeof lastToolResult.metadata?.errorCode === 'string'
             ? lastToolResult.metadata.errorCode
@@ -534,7 +540,9 @@ export class BaseAgent implements SpecializedAgent {
                 // Delegate to the shared SwarmTools implementation
                 const { consult_specialist: swarmToolImpl } = await importWithRetry(() => import('./tools/SwarmTools'));
                 const task = typeof args.task === 'string' ? args.task : '';
-                return swarmToolImpl({ ...args, task }, { ...context, agentIdentity: this.identityCard || undefined });
+                const specialistContext = { ...context, agentIdentity: this.identityCard || undefined };
+                inheritExecutionTokenBudget(context, specialistContext);
+                return swarmToolImpl({ ...args, task }, specialistContext);
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
@@ -863,6 +871,7 @@ export class BaseAgent implements SpecializedAgent {
             userId: context?.userId,
             orgId: context?.orgId,
             projectId: context?.projectId,
+            executingAgentId: this.id,
             // GEAP: Inject agent identity into context for provenance tracking
             agentIdentity: this.identityCard,
         });
@@ -1057,7 +1066,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 || 'unknown';
         }
 
-        const allFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
+        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
             specialistTools,
             {
                 agentId: this.id,
@@ -1067,6 +1076,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 conversationMode: context?.conversationMode,
             }
         );
+        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
+        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
+            || boardroomSideEffectOwner === this.id;
+        const allFunctions = mayExecuteBoardroomSideEffects
+            ? assembledFunctions
+            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
 
         // IMPORTANT: Tools must be deep-cloned on EACH iteration because model gateways may
         // freeze (Object.freeze) tool declaration objects while normalizing requests.
@@ -1090,8 +1105,19 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
         const _accumulatedResponse = '';
         let iterations = 0;
+        let reportedUsage: { promptTokens: number; completionTokens: number; totalTokens: number } | undefined;
+        const validTokenCount = (value: unknown): number =>
+            typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0;
         const DEFAULT_MAX_ITERATIONS = 8; // Lowered from 15 for safety against runaway costs
-        const MAX_ITERATIONS = this.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+        const configuredMaxIterations = this.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+        const boardroomMaxIterations = context?.conversationMode === 'boardroom'
+            ? context.boardroomDispatchPlan?.maxIterationsPerAgent
+            : undefined;
+        const MAX_ITERATIONS = typeof boardroomMaxIterations === 'number'
+            && Number.isInteger(boardroomMaxIterations)
+            && boardroomMaxIterations > 0
+            ? Math.min(configuredMaxIterations, boardroomMaxIterations)
+            : configuredMaxIterations;
         // Judgment layer: verbosity/cost backstop applied to every generateContent(Stream) call below
         const generationConfig = {
             ...INTELLIGENCE_CONFIG.THINKING.LOW,
@@ -1118,6 +1144,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
         // Lazy import MembershipService for budget checks
         const { MembershipService } = await importWithRetry(() => import('@/services/MembershipService'));
 
+        let tokenReservation: number | null = null;
         try {
             while (iterations < MAX_ITERATIONS) {
                 // Phase 3: High-frequency call detection (Rate Limiting)
@@ -1137,6 +1164,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     logger.error(`[BaseAgent] HIGH FREQUENCY DETECTED: ${this.id} attempted > 20 calls in 1 minute. Aborting to prevent burn.`);
                     executionContext.rollback();
                     return {
+                        ...(reportedUsage ? { usage: reportedUsage } : {}),
                         text: 'Task aborted: High-frequency LLM call pattern detected (>20 calls/min). Safety circuit breaker triggered.',
                         error: 'High-frequency Abort',
                         toolCalls
@@ -1150,6 +1178,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     const tier = await MembershipService.getCurrentTier();
                     executionContext.rollback();
                     return {
+                        ...(reportedUsage ? { usage: reportedUsage } : {}),
                         text: (budgetCheck.requiresApproval
                             ? 'Task paused: The next step exceeds the $0.50 auto-approval threshold. Please review and authorize the next action in the Ledger.'
                             : 'Task ended: Your daily budget limit has been reached or a session-wide emergency limit was triggered.') +
@@ -1179,7 +1208,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
                 if (!armorResult.allowed) {
                     executionContext.rollback();
-                    return { text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
+                    return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
                 }
 
                 const finalAttachments = [...(attachments || [])];
@@ -1243,6 +1272,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         logger.warn(`[BaseAgent] Payload budget halted execution in ${this.id} even after compaction.`, compactError);
                         executionContext.rollback();
                         return {
+                            ...(reportedUsage ? { usage: reportedUsage } : {}),
                             text: 'Task halted: request payload exceeds the backend limit even after image compression and context compaction. Reduce image attachments or start a fresh conversation.',
                             error: 'Payload Too Large',
                             toolCalls
@@ -1264,6 +1294,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     logger.warn(`[BaseAgent] Token Estimator halted execution in ${this.id}. Projected: ${tokenEstimate.totalProjected}`);
                     executionContext.rollback();
                     return {
+                        ...(reportedUsage ? { usage: reportedUsage } : {}),
                         text: 'Task halted: Pre-flight token projection exceeded safe budget (1.5M tokens limit). Context compaction required.',
                         error: 'Projected Budget Exceeded',
                         toolCalls
@@ -1282,19 +1313,19 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     throw new Error(signal.reason || 'Agent execution aborted via signal.');
                 }
 
-                let tokenReservation = tokenBudget.reserve(tokenEstimate.totalProjected);
-                if (tokenReservation === null) {
-                    executionContext.rollback();
-                    return {
-                        text: 'Task halted: The cumulative token allowance for this execution is exhausted.',
-                        error: 'Cumulative Token Budget Exceeded',
-                        toolCalls
-                    };
-                }
-
                 logger.debug(`BaseAgent calling AutonomousIntelligence.generateContentStream for ${this.id}, iteration ${iterations}`);
                 let streamResult: any;
                 if (typeof AutonomousIntelligence.generateContentStream === 'function') {
+                    tokenReservation = tokenBudget.reserve(tokenEstimate.totalProjected);
+                    if (tokenReservation === null) {
+                        executionContext.rollback();
+                        return {
+                            ...(reportedUsage ? { usage: reportedUsage } : {}),
+                            text: 'Task halted: The cumulative token allowance for this execution is exhausted.',
+                            error: 'Cumulative Token Budget Exceeded',
+                            toolCalls
+                        };
+                    }
                     try {
                         streamResult = await AutonomousIntelligence.generateContentStream(
                             requestContents,
@@ -1302,17 +1333,22 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             generationConfig, // config — includes judgment-layer maxOutputTokens
                             undefined, // systemInstruction
                             iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContentStream']>[4], // tools — bridges internal ToolDefinition to SDK type
-                            { thoughtSignature: currentThoughtSignature, signal } as any // options
+                            {
+                                thoughtSignature: currentThoughtSignature,
+                                signal,
+                                boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
+                                boardroomAgentId: context?.boardroomDispatchPlan?.leaseId ? this.id : undefined,
+                            } as any // options
                         );
                     } catch (err: unknown) {
-                        const recovered = this.recoverRateLimitedPostToolTurn(err, lastToolResult, toolCalls);
+                        const recovered = this.recoverAuthoritativeImageToolOutcome(err, lastToolResult, toolCalls);
                         if (recovered) {
                             if (lastToolResult?.success && executionContext.hasUncommittedChanges()) {
                                 await executionContext.commit();
                             } else if (!lastToolResult?.success) {
                                 await executionContext.rollback();
                             }
-                            return recovered;
+                            return reportedUsage ? { ...recovered, usage: reportedUsage } : recovered;
                         }
                         throw err;
                     }
@@ -1322,10 +1358,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     logger.debug(`[BaseAgent] generateContentStream returned empty or is not mocked. Falling back to generateContent for test compatibility.`);
                     // A failed or empty stream may still have been billed. Retain that
                     // reservation and reserve the fallback call independently.
+                    if (tokenReservation !== null) tokenBudget.settle(tokenReservation, undefined);
                     tokenReservation = tokenBudget.reserve(tokenEstimate.totalProjected);
                     if (tokenReservation === null) {
                         executionContext.rollback();
                         return {
+                            ...(reportedUsage ? { usage: reportedUsage } : {}),
                             text: 'Task halted: The cumulative token allowance for this execution is exhausted.',
                             error: 'Cumulative Token Budget Exceeded',
                             toolCalls
@@ -1337,7 +1375,12 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         generationConfig,
                         undefined,
                         iterationTools as any,
-                        { thoughtSignature: currentThoughtSignature, signal }
+                        {
+                            thoughtSignature: currentThoughtSignature,
+                            signal,
+                            boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
+                            boardroomAgentId: context?.boardroomDispatchPlan?.leaseId ? this.id : undefined,
+                        }
                     );
                     streamResult = {
                         stream: {
@@ -1438,18 +1481,27 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                 // LEDGER: Record Spend based on Token Usage
                 const usage = response.usage?.();
-                tokenBudget.settle(tokenReservation, usage?.totalTokenCount);
+                if (tokenReservation !== null) tokenBudget.settle(tokenReservation, usage?.totalTokenCount);
+                tokenReservation = null;
+                if (usage) {
+                    const callUsage = {
+                        promptTokens: validTokenCount(usage.promptTokenCount),
+                        completionTokens: validTokenCount(usage.candidatesTokenCount),
+                        totalTokens: validTokenCount(usage.totalTokenCount),
+                    };
+                    reportedUsage ??= { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+                    reportedUsage.promptTokens += callUsage.promptTokens;
+                    reportedUsage.completionTokens += callUsage.completionTokens;
+                    reportedUsage.totalTokens += callUsage.totalTokens;
+                    onProgress?.({ type: 'usage', content: 'Token usage report', usage: callUsage });
+                }
                 if (usage && context?.userId) {
-                    const pricing = MODEL_PRICING[INTELLIGENCE_MODELS.TEXT.AGENT];
-                    // Ensure we are using a text model pricing schema (input/output)
-                    if (pricing && 'input' in pricing && 'output' in pricing) {
-                        const inputCost = ((usage.promptTokenCount || 0) / 1000000) * pricing.input;
-                        const outputCost = ((usage.candidatesTokenCount || 0) / 1000000) * pricing.output;
-                        const totalCost = inputCost + outputCost;
-
-                        if (totalCost > 0) {
-                            await MembershipService.recordSpend(context.userId, totalCost);
-                        }
+                    const totalCost = estimateCostUsd(resolvedModel, {
+                        inputTokens: usage.promptTokenCount,
+                        outputTokens: usage.candidatesTokenCount,
+                    });
+                    if (Number.isFinite(totalCost) && totalCost > 0) {
+                        await MembershipService.recordSpend(context.userId, totalCost);
                     }
                 }
 
@@ -1496,6 +1548,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
                             await executionContext.rollback();
                             return {
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
                                 text: `Task ended: ${loopCheck.reason}`,
                                 error: 'Loop detected',
                                 toolCalls
@@ -1527,6 +1580,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             onProgress?.({ type: 'tool_result', toolName: name, content: `Error: ${message}` });
                             await executionContext.rollback();
                             return {
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
                                 text: `${message} The blocked call was not executed. Choose an authorized agent to continue.`,
                                 error: message, failure, data: blockedResult, toolCalls,
                             };
@@ -1536,6 +1590,27 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             toolCalls.push({ name, args, result: blockedResult });
                             fullPrompt += `\n[Tool ${name} blocked: no reviewed risk classification.]\n`;
                             continue;
+                        }
+
+                        if (
+                            context?.boardroomDispatchPlan?.leaseId
+                            && BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(name)
+                            && context.boardroomDispatchPlan.sideEffectOwnerAgentId !== this.id
+                        ) {
+                            logger.warn(`[BaseAgent] Boardroom side-effect tool '${name}' blocked for advisory agent '${this.id}'.`);
+                            const blockedResult: ToolFunctionResult = {
+                                success: false,
+                                error: 'This Boardroom participant is advisory for the current action. No generation request was submitted.',
+                                metadata: { errorCode: 'BOARDROOM_SIDE_EFFECT_OWNER_MISMATCH' },
+                            };
+                            toolCalls.push({ name, args, result: blockedResult });
+                            lastToolResult = blockedResult;
+                            await executionContext.rollback();
+                            return {
+                                text: 'This participant remained advisory. No generation request was submitted.',
+                                error: 'BOARDROOM_SIDE_EFFECT_OWNER_MISMATCH',
+                                toolCalls,
+                            };
                         }
 
                         // ISSUE-1172 fix (re-ticketed from ISSUE-1115): Artist Operating Profile gate.
@@ -1557,6 +1632,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 toolCalls.push({ name, args, result: blockedResult });
                                 await executionContext.rollback();
                                 return {
+                                    ...(reportedUsage ? { usage: reportedUsage } : {}),
                                     text: `Execution paused: '${name}' needs Autonomous Computer Control enabled in Settings > Automation first.`,
                                     toolCalls,
                                     error: 'AUTONOMOUS_COMPUTER_CONTROL_DISABLED'
@@ -1589,7 +1665,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 const message = `Tool '${name}' has no trusted approval implementation.`;
                                 toolCalls.push({ name, args, result: toolError(message, 'UNBOUND_APPROVAL_TOOL') });
                                 await executionContext.rollback();
-                                return { text: message, error: message, toolCalls };
+                                return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: message, error: message, toolCalls };
                             }
                             const approvalId = await toolApprovalService.createPendingApproval({
                                 agentId: this.id,
@@ -1622,7 +1698,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 const message = `Approval for '${name}' could not be saved. The tool was not executed.`;
                                 toolCalls.push({ name, args, result: toolError(message, 'APPROVAL_UNAVAILABLE') });
                                 await executionContext.rollback();
-                                return { text: message, error: message, toolCalls };
+                                return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: message, error: message, toolCalls };
                             }
                             const blockedResult: ToolFunctionResult = {
                                 success: false,
@@ -1631,6 +1707,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             toolCalls.push({ name, args, result: blockedResult });
                             await executionContext.rollback();
                             return {
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
                                 text: `Execution paused: '${name}' requires your explicit approval (${riskMeta.description}). Check the Approvals panel to approve or deny.`,
                                 toolCalls,
                                 error: 'AWAITING_TOOL_APPROVAL'
@@ -1651,9 +1728,11 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
 
                         // EVENT: Tool Execution Start
                         const startTime = Date.now();
+                        const toolCallId = crypto.randomUUID();
                         AgentEventBus.emitToolEvent('TOOL_EXECUTION_START', {
                             agentId: this.id,
                             toolName: name,
+                            toolCallId,
                             timestamp: startTime
                         });
 
@@ -1664,59 +1743,51 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 if (schema) schema.parse(args);
                                 // Phase 3.5: Pass execution context to tools for isolated state access
                                 result = await this.functions[name](args, enrichedContext, toolContext);
-
-                                AgentEventBus.emitToolResult(this.id, name, startTime, result);
                             } catch (err: unknown) {
                                 const msg = err instanceof Error ? err.message : String(err);
                                 result = { success: false, error: msg };
-
-                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
-                                    agentId: this.id,
-                                    toolName: name,
-                                    timestamp: Date.now(),
-                                    durationMs: Date.now() - startTime,
-                                    errorMessage: msg
-                                });
                             }
                         } else {
-                            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
+                            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools')).catch((error: unknown) => {
+                                AgentEventBus.emitToolResult(this.id, name, startTime, {
+                                    success: false,
+                                    error: 'Tool registry could not be loaded.',
+                                }, toolCallId);
+                                throw error;
+                            });
                             if (TOOL_REGISTRY[name]) {
                                 try {
                                     // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
                                     result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
-
-                                    AgentEventBus.emitToolResult(this.id, name, startTime, result);
                                 } catch (err: unknown) {
                                     const msg = err instanceof Error ? err.message : String(err);
                                     result = { success: false, error: msg };
-
-                                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
-                                        agentId: this.id,
-                                        toolName: name,
-                                        timestamp: Date.now(),
-                                        durationMs: Date.now() - startTime,
-                                        errorMessage: msg
-                                    });
                                 }
                             } else {
                                 result = { success: false, error: `Tool '${name}' not found.` };
-                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
-                                    agentId: this.id,
-                                    toolName: name,
-                                    timestamp: Date.now(),
-                                    durationMs: Date.now() - startTime,
-                                    errorMessage: `Tool '${name}' not found.`
-                                });
                             }
                         }
+
+                        // Record every completed invocation before any terminal-result return.
+                        // Audit uncertainty must never turn a completed external action into a retry.
+                        const audit = await recordToolOutcome({
+                            userId: enrichedContext.userId,
+                            agentId: this.id,
+                            toolName: name,
+                            toolCallId,
+                            success: result.success === true,
+                            fingerprint: this.identityCard?.fingerprint,
+                        });
+                        result = { ...result, metadata: { ...result.metadata, audit } };
+
+                        AgentEventBus.emitToolResult(this.id, name, startTime, result, toolCallId);
 
                         // Store tool call and result
                         lastToolResult = result;
                         toolCalls.push({ name, args, result });
-                        // A missing credential bridge is an environment capability, not a
-                        // transient model error. Re-prompting the agent cannot make the
-                        // bridge appear and previously repeated the same failure eight times.
-                        if (!result.success && result.metadata?.errorCode === 'CREDENTIAL_STORAGE_UNAVAILABLE') {
+                        // Missing credential storage and uncertain memory writes require
+                        // review, not another model attempt that could repeat an effect.
+                        if (!result.success && (result.metadata?.errorCode === 'CREDENTIAL_STORAGE_UNAVAILABLE' || result.metadata?.errorCode === 'MEMORY_SAVE_UNCONFIRMED' || result.metadata?.errorCode === 'MEMORY_NOT_SAVED')) {
                             const message = result.error || 'Secure credential storage is unavailable in this environment.';
                             const failure = {
                                 code: 'AGENT_EXECUTION_FAILED' as const,
@@ -1727,44 +1798,16 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             };
                             onProgress?.({ type: 'tool_result', toolName: name, content: `Error: ${message}` });
                             await executionContext.rollback();
-                            return { text: message, error: message, failure, data: result.data, toolCalls };
+                            return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: message, error: message, failure, data: result.data, toolCalls };
                         }
                         if (!result.success && result.failure?.retryable === false) {
                             await executionContext.rollback();
                             return {
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
                                 text: result.message || result.error || 'The delegated action stopped. Review the recorded failure before trying again.',
                                 error: result.error || result.failure.code,
                                 failure: result.failure, data: result.data, toolCalls,
                             };
-                        }
-
-                        // Item 406: Write an immutable, server-timestamped tool audit
-                        // record. The callable binds the event to the authenticated
-                        // user; the browser cannot write global audit documents.
-                        if (enrichedContext.userId) {
-                            const succeeded = typeof result === 'object' && result !== null
-                                ? (result as unknown as Record<string, unknown>).success !== false
-                                : true;
-                            try {
-                                const recordAuditEvent = httpsCallable(functions, 'logAuditEvent');
-                                void recordAuditEvent({
-                                    action: `agent.tool.${name}`,
-                                    resourceId: `agent/${this.id}`,
-                                    severity: succeeded ? 'low' : 'medium',
-                                    agentId: this.id,
-                                    status: succeeded ? 'success' : 'failure',
-                                    ...(this.identityCard?.fingerprint
-                                        ? { details: `agentFingerprint=${this.identityCard.fingerprint}` }
-                                        : {}),
-                                }).catch((err: unknown) => {
-                                    // ISSUE-1365: audit records must not vanish silently —
-                                    // log so missing audits are discoverable.
-                                    logger.warn('[BaseAgent] Audit event write failed (best-effort):', err);
-                                });
-                            } catch {
-                                // Audit availability must not replace the authoritative
-                                // tool result or break an artist workflow.
-                            }
                         }
 
                         // Elide base64 payloads: image tools return generated
@@ -1808,6 +1851,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                             logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
                             await executionContext.rollback();
                             return {
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
                                 text: `Execution paused: The agent drafted an artifact or plan and is awaiting your explicit approval to proceed.`,
                                 toolCalls,
                                 error: 'AWAITING_USER_APPROVAL'
@@ -1827,14 +1871,13 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     const reportReceipt = getDurableReportReceipt(toolCalls.slice(batchStart));
                     if (reportReceipt) {
                         if (executionContext.hasUncommittedChanges()) await executionContext.commit();
-                        return { text: reportReceipt, data: lastToolResult, toolCalls, thoughtSignature: currentThoughtSignature };
+                        return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: reportReceipt, data: lastToolResult, toolCalls, thoughtSignature: currentThoughtSignature };
                     }
 
                     // For most tools, we continue to let the Autonomous process the result
                     continue;
                 } else {
                     let finalResponse = response.text?.() || '';
-                    const usage = response.usage?.();
 
                     // Guardrail against ungrounded engineering roadmap/deficit hallucinations
                     const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
@@ -1893,11 +1936,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         data: lastToolResult,
                         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
                         thoughtSignature: currentThoughtSignature,
-                        usage: usage ? {
-                            promptTokens: usage.promptTokenCount || 0,
-                            completionTokens: usage.candidatesTokenCount || 0,
-                            totalTokens: usage.totalTokenCount || 0
-                        } : undefined
+                        usage: reportedUsage
                     };
                 }
             }
@@ -1912,7 +1951,8 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 text: 'Maximum iterations reached.',
                 data: lastToolResult,
                 toolCalls,
-                error: 'Max iterations reached'
+                error: 'Max iterations reached',
+                ...(reportedUsage ? { usage: reportedUsage } : {})
             };
         } catch (error: unknown) {
             // Phase 3: Error occurred - rollback any uncommitted changes
@@ -1922,7 +1962,13 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             }
 
             const errorMessage = error instanceof Error ? error.message : String(error);
-            return { text: `Error: ${errorMessage}`, error: errorMessage };
+            return {
+                text: `Error: ${errorMessage}`,
+                error: errorMessage,
+                ...(reportedUsage ? { usage: reportedUsage } : {}),
+            };
+        } finally {
+            if (tokenReservation !== null) tokenBudget.settle(tokenReservation, undefined);
         }
     }
 }

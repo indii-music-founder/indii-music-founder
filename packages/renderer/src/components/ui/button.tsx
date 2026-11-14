@@ -53,6 +53,7 @@ const Button = React.memo(React.forwardRef<HTMLButtonElement, ButtonProps>(
                 },
                 className: cn(baseStyles, variants[variant], sizes[size], childProps.className, className),
                 'aria-disabled': true,
+                'aria-busy': isLoading ? true : props['aria-busy'] ?? childProps['aria-busy'],
                 'data-loading': isLoading,
                 tabIndex: -1,
                 href: undefined,
@@ -87,13 +88,14 @@ const Button = React.memo(React.forwardRef<HTMLButtonElement, ButtonProps>(
                 className={cn(baseStyles, variants[variant], sizes[size], className)}
                 ref={ref}
                 {...(asChild ? {} : { disabled: isBlocked })}
-                aria-disabled={isBlocked}
                 data-loading={isLoading}
                 {...props}
+                aria-disabled={isBlocked ? true : props['aria-disabled']}
+                aria-busy={isLoading ? true : props['aria-busy']}
             >
                 {asChild ? children : (
                     <>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isLoading && <Loader2 aria-hidden="true" className="mr-2 h-4 w-4 motion-safe:animate-spin" />}
                         {children}
                     </>
                 )}

@@ -970,7 +970,8 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) &&
           request.resource.data.get('ownerId', userId) == userId &&
-          request.resource.data.get('projectId', draftId) == draftId;
+          request.resource.data.get('projectId', draftId) == draftId &&
+          request.resource.data.revision is int && request.resource.data.revision >= 1;
         allow delete: if isOwner(userId);
       }
 
@@ -1271,7 +1272,19 @@ service cloud.firestore {
       }
 
       match /agentLoopExecutions/{executionId} {
-        allow read, create, update: if isOwner(userId);
+        function validRevision() {
+          return request.resource.data.id == executionId &&
+            request.resource.data.checkpointRevision is int &&
+            request.resource.data.checkpointRevision > 0 &&
+            request.resource.data.checkpointRevision <= 9007199254740991;
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validRevision() &&
+          request.resource.data.checkpointRevision == 1;
+        // Legacy records can be claimed once at revision 1. Stale clients
+        // cannot overwrite a newer dispatch claim, even with an unconditional set.
+        allow update: if isOwner(userId) && validRevision() &&
+          request.resource.data.checkpointRevision == resource.data.get('checkpointRevision', 0) + 1;
         allow delete: if isOwner(userId);
       }
 
@@ -1960,6 +1973,26 @@ service cloud.firestore {
         resource.data.get('userId', null) == request.auth.uid;
     }
 
+    match /knowledge_query_receipts/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_tombstones/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_chunks/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /knowledge_indexing_jobs/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow write: if false;
+    }
+
     // =========================================================================
     // Publishing Registrations (verified users only — PRO/MLC filings)
     // =========================================================================
@@ -2586,8 +2619,14 @@ service cloud.firestore {
       allow delete: if isVerifiedUser() && resource.data.authorId == request.auth.uid;
     }
     match /legal_audit_ledger/{auditId} {
-      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
+      function auditOwner(data) {
+        return data.get('userId', data.get('actorUid', null));
+      }
+      allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid ||
+        resource.data.get('actorUid', null) == request.auth.uid)) ||
+        (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create: if isVerifiedUser() && auditOwner(request.resource.data) == request.auth.uid &&
+        request.resource.data.get('actorUid', request.auth.uid) == request.auth.uid;
       allow update, delete: if false;
     }
     match /legal_templates/{templateId} {
@@ -2683,18 +2722,42 @@ service cloud.firestore {
     // Boardroom & Session Synced Messages
     // =========================================================================
     match /sessions/{sessionId} {
+      function validMessageGeneration(data) {
+        return data.get('messageEpoch', 0) is int && data.get('messageEpoch', 0) >= 0 &&
+          data.get('messageEpoch', 0) <= 9007199254740991 &&
+          (data.get('clearingOperation', null) == null ||
+            (data.clearingOperation is string && data.clearingOperation.size() >= 1 && data.clearingOperation.size() <= 128)) &&
+          (data.get('lastClearedOperation', null) == null ||
+            (data.lastClearedOperation is string && data.lastClearedOperation.size() >= 1 && data.lastClearedOperation.size() <= 128)) &&
+          (data.get('messageEpoch', 0) == 0 ||
+            (data.get('messageStorage', null) == 'subcollection' && data.get('messages', []) == []));
+      }
+      function validGenerationTransition() {
+        let oldEpoch = resource.data.get('messageEpoch', 0);
+        let newEpoch = request.resource.data.get('messageEpoch', 0);
+        let oldClear = resource.data.get('clearingOperation', null);
+        let newClear = request.resource.data.get('clearingOperation', null);
+        let oldLast = resource.data.get('lastClearedOperation', null);
+        let newLast = request.resource.data.get('lastClearedOperation', null);
+        return (newEpoch == oldEpoch &&
+            ((newClear == oldClear && newLast == oldLast) || (oldClear != null && newClear == null && newLast == oldClear))) ||
+          (newEpoch == oldEpoch + 1 && newClear is string && newClear != oldClear && newClear != oldLast && newLast == oldLast && resource.data.get('deletingAt', null) == null);
+      }
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId') &&
+      allow create: if isVerifiedUser() && ownerCreateIsValid('userId') && validMessageGeneration(request.resource.data) &&
+        request.resource.data.get('messageEpoch', 0) == 0 && request.resource.data.get('clearingOperation', null) == null && request.resource.data.get('lastClearedOperation', null) == null;
+      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId') && validMessageGeneration(request.resource.data) && validGenerationTransition() &&
         (resource.data.get('deletingAt', null) == null || request.resource.data.get('deletingAt', null) == resource.data.get('deletingAt', null));
     }
     match /sessions/{sessionId}/messages/{messageId} {
       function parentSession() { return get(/databases/$(database)/documents/sessions/$(sessionId)).data; }
       function canAccessSession() { return (isAuthenticated() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid'); }
-      function sessionIsActive() { return parentSession().get('deletingAt', null) == null; }
+      function sessionAfterWrite() { return getAfter(/databases/$(database)/documents/sessions/$(sessionId)).data; }
+      function sessionIsActive() { return sessionAfterWrite().get('deletingAt', null) == null && sessionAfterWrite().get('clearingOperation', null) == null; }
+      function currentGeneration(data) { return data.get('messageEpoch', 0) == sessionAfterWrite().get('messageEpoch', 0); }
       allow read, delete: if canAccessSession();
-      allow update: if canAccessSession() && sessionIsActive();
-      allow create: if ((isVerifiedUser() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid')) && sessionIsActive();
+      allow update: if canAccessSession() && sessionIsActive() && currentGeneration(resource.data) && currentGeneration(request.resource.data);
+      allow create: if ((isVerifiedUser() && parentSession().get('userId', null) == request.auth.uid) || (isGuest() && parentSession().get('userId', null) == 'founder-demo-uid')) && sessionIsActive() && currentGeneration(request.resource.data);
     }
     match /boardroom_messages/{msgId} {
       allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
@@ -3176,7 +3239,7 @@ service cloud.firestore {
 
       // Single doc read: unclaimed assessments without PII can be read by session visitor;
       // reading assessment PII (email / artistName) or claimed docs strictly requires authentication (ISSUE-1559).
-      allow get: if (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null) && (!('artistName' in resource.data) || resource.data.artistName == null)) ||
+      allow get: if !exists(/databases/$(database)/documents/prospect_assessments/$(assessmentId)) || (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null) && (!('artistName' in resource.data) || resource.data.artistName == null)) ||
                     (isAuthenticated() && (
                       resource.data.get('claimedByUid', null) == request.auth.uid ||
                       (resource.data.get('claimedByUid', null) == null && (!('email' in resource.data) || resource.data.email == null || (request.auth.token.email != null && request.auth.token.email == resource.data.email)))

@@ -13,6 +13,8 @@
 
 import type { ValidAgentId } from './types';
 
+export const BOARDROOM_CONDUCTOR_ID = 'generalist' as const;
+
 export interface Department {
     id: string;
     headId: ValidAgentId;
@@ -87,4 +89,25 @@ export function listWorkerIds(): string[] {
 /** Type-narrow helper for using ValidAgentId list at runtime. */
 export function isValidHeadId(agentId: string): agentId is ValidAgentId {
     return isHead(agentId);
+}
+
+/**
+ * Canonical public Boardroom roster boundary.
+ *
+ * The user communicates with the Indii Conductor. Only registered department
+ * heads may be visible beside Indii; workers and unknown/stale identifiers are
+ * intentionally discarded at every state and presentation boundary.
+ */
+export function normalizeBoardroomAgentIds(agentIds: readonly string[]): string[] {
+    const managerIds = agentIds.filter(
+        (agentId, index): agentId is ValidAgentId =>
+            isValidHeadId(agentId) && agentIds.indexOf(agentId) === index
+    );
+
+    return [BOARDROOM_CONDUCTOR_ID, ...managerIds];
+}
+
+/** Registered managers currently visible in the Boardroom, excluding Indii. */
+export function listSeatedManagerIds(agentIds: readonly string[]): ValidAgentId[] {
+    return normalizeBoardroomAgentIds(agentIds).filter(isValidHeadId);
 }

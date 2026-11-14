@@ -302,15 +302,23 @@ export const VideoTools = {
     }),
 
     extend_video: wrapTool('extend_video', async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
+        if (!args.videoUrl || typeof args.videoUrl !== 'string' || !args.videoUrl.trim()) {
+            return toolError("A valid videoUrl is required to extend a video.", 'INVALID_INPUT');
+        }
+        if (!args.prompt || typeof args.prompt !== 'string' || !args.prompt.trim()) {
+            return toolError("A prompt describing the extension is required.", 'INVALID_INPUT');
+        }
+
         const { extractVideoFrame } = await importWithRetry(() => import('@/utils/video'));
-        const frameData = await extractVideoFrame(args.videoUrl);
+        const frameData = await extractVideoFrame(args.videoUrl.trim(), args.direction === 'start' ? 'first' : 'last');
 
         if (!frameData) {
             return toolError("Failed to extract frame from the provided video URL.", 'EXTRACTION_FAILED');
         }
 
         const options: VideoGenerationOptions = {
-            prompt: args.prompt,
+            prompt: args.prompt.trim(),
+            duration: 8,
         };
 
         if (args.direction === 'start') {

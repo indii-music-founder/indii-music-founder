@@ -4,8 +4,8 @@ Generated from current source with `npm run inventory:arcjet`. Check freshness w
 
 This replaces the earlier blanket compliance claim. **No row is a runtime protection certification.**
 
-- Trigger declarations: **216** across **106** source files.
-- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **216**.
+- Trigger declarations: **218** across **106** source files.
+- Declarations with both a local guard-call reference and an ARCJET_KEY option reference: **218**.
 - Declarations missing at least one of those local references: **0**. These require review; absence of local evidence does not prove the absence of imported middleware.
 
 Scope: non-test TypeScript under `packages/firebase/src`; `onCall`, `onRequest` (including namespace/v1 chains) and imported `defineCallable` / `defineHttps` wrappers. Factory declarations are included and labeled. Event triggers are outside this HTTP inventory; that exclusion makes no IAM or caller-authentication guarantee. This is a source inventory, not a deployed export list.
@@ -48,11 +48,13 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/auth/handoff.ts:174` | `createHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/handoff.ts:245` | `redeemHandoffCode` | `onRequest` | Present | Present |
 | `functions/auth/mintElectronAppCheckToken.ts:17` | `mintElectronAppCheckToken` | `onCall` | Present | Present |
-| `functions/billing/enforceOperationCost.ts:925` | `enforceOperationCost` | `onCall` | Present | Present |
-| `functions/billing/enforceOperationCost.ts:942` | `voidAgentStreamCostReservation` | `onCall` | Present | Present |
-| `functions/billing/enforceOperationCost.ts:960` | `voidVideoCostReservation` | `onCall` | Present | Present |
-| `functions/billing/enforceOperationCost.ts:983` | `getOperationCostStatus` | `onCall` | Present | Present |
-| `functions/billing/enforceOperationCost.ts:1033` | `getOperationCostHistory` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1476` | `enforceOperationCost` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1499` | `planBoardroomAgentStreamDispatch` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1512` | `completeBoardroomAgentStreamDispatch` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1524` | `voidAgentStreamCostReservation` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1542` | `voidVideoCostReservation` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1565` | `getOperationCostStatus` | `onCall` | Present | Present |
+| `functions/billing/enforceOperationCost.ts:1615` | `getOperationCostHistory` | `onCall` | Present | Present |
 | `functions/catalog/semanticProjection.ts:142` | `setCatalogVisibility` | `onCall` | Present | Present |
 | `functions/catalog/semanticProjection.ts:220` | `catalogSemanticApi` | `onRequest` | Present | Present |
 | `functions/creative/analyzeCampaignAudio.ts:125` | `analyzeCampaignAudio` | `onCall` | Present | Present |
@@ -98,7 +100,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/rights/rightsRegistration.ts:87` | `rightsRegistration` | `onCall` | Present | Present |
 | `functions/security/claimComputerApproval.ts:27` | `claimComputerApproval` | `onCall` | Present | Present |
 | `functions/security/claimComputerApproval.ts:73` | `denyComputerApproval` | `onCall` | Present | Present |
-| `functions/security/claimComputerApproval.ts:109` | `completeComputerApproval` | `onCall` | Present | Present |
+| `functions/security/claimComputerApproval.ts:112` | `completeComputerApproval` | `onCall` | Present | Present |
 | `functions/security/errorReportCallables.ts:119` | `listErrorReports` | `onCall` | Present | Present |
 | `functions/security/errorReportCallables.ts:149` | `updateErrorReportStatus` | `onCall` | Present | Present |
 | `functions/security/logAuditEvent.ts:164` | `logAuditEvent` | `onCall` | Present | Present |
@@ -123,34 +125,34 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/video/relayVideoRenderJob.ts:70` | `completeVideoRenderJob` | `onCall` | Present | Present |
 | `functions/video/retrySessionProxyJob.ts:144` | `retrySessionProxyJob` | `onCall` | Present | Present |
 | `functions/webhooks/dispatcher.ts:443` | `createWebhook` | `onRequest` | Present | Present |
-| `index.ts:458` | `triggerVideoJob` | `onCall` | Present | Present |
-| `index.ts:682` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
-| `index.ts:855` | `renderVideo` | `onCall` | Present | Present |
-| `index.ts:1141` | `inngestApi` | `onRequest` | Present | Present |
-| `index.ts:1228` | `generateContentStream` | `onRequest` | Present | Present |
-| `index.ts:1675` | `ragProxy` | `onRequest` | Present | Present |
-| `index.ts:1763` | `listGKEClusters` | `onCall` | Present | Present |
-| `index.ts:1834` | `getGKEClusterStatus` | `onCall` | Present | Present |
-| `index.ts:1879` | `scaleGKENodePool` | `onCall` | Present | Present |
-| `index.ts:1924` | `listGCEInstances` | `onCall` | Present | Present |
-| `index.ts:1968` | `restartGCEInstance` | `onCall` | Present | Present |
-| `index.ts:2014` | `runChaosMeshTests` | `onCall` | Present | Present |
-| `index.ts:2058` | `configureCircuitBreaker` | `onCall` | Present | Present |
-| `index.ts:2103` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
-| `index.ts:2147` | `runContentionTest` | `onCall` | Present | Present |
-| `index.ts:2191` | `configureSentryCrashReporting` | `onCall` | Present | Present |
-| `index.ts:2234` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
-| `index.ts:2278` | `configureLogicalSharding` | `onCall` | Present | Present |
-| `index.ts:2322` | `provisionQASandbox` | `onCall` | Present | Present |
-| `index.ts:2366` | `scrubOrphanedMedia` | `onCall` | Present | Present |
-| `index.ts:2419` | `executeBigQueryQuery` | `onCall` | Present | Present |
-| `index.ts:2472` | `getBigQueryTableSchema` | `onCall` | Present | Present |
-| `index.ts:2517` | `listBigQueryDatasets` | `onCall` | Present | Present |
-| `index.ts:2608` | `exportUserData` | `onCall` | Present | Present |
-| `index.ts:2700` | `requestAccountDeletion` | `onCall` | Present | Present |
-| `index.ts:2865` | `healthCheck` | `onRequest` | Present | Present |
-| `index.ts:2908` | `healthCheckWest1` | `onRequest` | Present | Present |
-| `index.ts:2950` | `enrichFanData` | `onCall` | Present | Present |
+| `index.ts:471` | `triggerVideoJob` | `onCall` | Present | Present |
+| `index.ts:695` | `triggerLongFormVideoJob` | `onCall` | Present | Present |
+| `index.ts:868` | `renderVideo` | `onCall` | Present | Present |
+| `index.ts:1154` | `inngestApi` | `onRequest` | Present | Present |
+| `index.ts:1241` | `generateContentStream` | `onRequest` | Present | Present |
+| `index.ts:1748` | `ragProxy` | `onRequest` | Present | Present |
+| `index.ts:1836` | `listGKEClusters` | `onCall` | Present | Present |
+| `index.ts:1907` | `getGKEClusterStatus` | `onCall` | Present | Present |
+| `index.ts:1952` | `scaleGKENodePool` | `onCall` | Present | Present |
+| `index.ts:1997` | `listGCEInstances` | `onCall` | Present | Present |
+| `index.ts:2041` | `restartGCEInstance` | `onCall` | Present | Present |
+| `index.ts:2087` | `runChaosMeshTests` | `onCall` | Present | Present |
+| `index.ts:2131` | `configureCircuitBreaker` | `onCall` | Present | Present |
+| `index.ts:2176` | `configureWebSocketKeepalive` | `onCall` | Present | Present |
+| `index.ts:2220` | `runContentionTest` | `onCall` | Present | Present |
+| `index.ts:2264` | `configureSentryCrashReporting` | `onCall` | Present | Present |
+| `index.ts:2307` | `triggerWatchdogRecovery` | `onCall` | Present | Present |
+| `index.ts:2351` | `configureLogicalSharding` | `onCall` | Present | Present |
+| `index.ts:2395` | `provisionQASandbox` | `onCall` | Present | Present |
+| `index.ts:2439` | `scrubOrphanedMedia` | `onCall` | Present | Present |
+| `index.ts:2492` | `executeBigQueryQuery` | `onCall` | Present | Present |
+| `index.ts:2545` | `getBigQueryTableSchema` | `onCall` | Present | Present |
+| `index.ts:2590` | `listBigQueryDatasets` | `onCall` | Present | Present |
+| `index.ts:2681` | `exportUserData` | `onCall` | Present | Present |
+| `index.ts:2773` | `requestAccountDeletion` | `onCall` | Present | Present |
+| `index.ts:2946` | `healthCheck` | `onRequest` | Present | Present |
+| `index.ts:2989` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:3031` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/analyzeContract.ts:20` | `analyzeContract` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:11` | `sendForDigitalSignature` | `onCall` | Present | Present |
 | `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |
@@ -212,16 +214,16 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `streaming/agentStream.ts:321` | `agentStreamHealth` | `onRequest` | Present | Present |
 | `stripe/connect.ts:13` | `createStripeConnectAccount` | `onCall` | Present | Present |
 | `stripe/connect.ts:123` | `createTransfer` | `onCall` | Present | Present |
-| `stripe/escrow.ts:17` | `handleEscrowWebhook` | `onRequest` | Present | Present |
+| `stripe/escrow.ts:10` | `handleEscrowWebhook` | `onRequest` | Present | Present |
 | `stripe/paymentLinks.ts:226` | `createStripePaymentLinks` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:46` | `initiateSplitEscrow` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:236` | `signEscrow` | `onCall` | Present | Present |
-| `stripe/splitEscrow.ts:334` | `releaseEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:47` | `initiateSplitEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:237` | `signEscrow` | `onCall` | Present | Present |
+| `stripe/splitEscrow.ts:335` | `releaseEscrow` | `onCall` | Present | Present |
 | `stripe/taxForms.ts:14` | `requestTaxForms` | `onCall` | Present | Present |
 | `stripe/webhookHandler.ts:1284` | `stripeWebhook` | `onRequest` | Present | Present |
 | `subscription/activateFounderPass.ts:205` | `activateFounderPass` | `onCall` | Present | Present |
 | `subscription/cancelSubscription.ts:16` | `cancelSubscription` | `onCall` | Present | Present |
-| `subscription/createCheckoutSession.ts:20` | `createCheckoutSession` | `onCall` | Present | Present |
+| `subscription/createCheckoutSession.ts:21` | `createCheckoutSession` | `onCall` | Present | Present |
 | `subscription/createMicroTransaction.ts:13` | `createMicroTransaction` | `onCall` | Present | Present |
 | `subscription/createOneTimeCheckout.ts:40` | `createOneTimeCheckout` | `onCall` | Present | Present |
 | `subscription/deductCredits.ts:22` | `deductCredits` | `onCall` | Present | Present |

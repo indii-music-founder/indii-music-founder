@@ -55,8 +55,13 @@ export default function WorkflowLab() {
     })));
     const { success: toastSuccess, error: toastError } = useToast();
     const [isRunning, setIsRunning] = useState(false);
+    const [showCompactInspector, setShowCompactInspector] = useState(false);
     const [workflowName, setWorkflowName] = useState('My Workflow');
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (selectedNodeId) setShowCompactInspector(true);
+    }, [selectedNodeId]);
 
     // Alias user for compatibility
     const currentUser = user;
@@ -272,7 +277,7 @@ export default function WorkflowLab() {
                 if (!protocol) throw new Error("Protocol not found");
 
                 // Dynamic import to avoid circular dependency
-                const { agentGraphService } = await import('@/services/agent/orchestration/AgentGraphService');
+                const { agentGraphService, GraphLeaseConflictError } = await import('@/services/agent/orchestration/AgentGraphService');
                 const { agentGraphStateService } = await import('@/services/agent/orchestration/AgentGraphStateService');
                 const { useStore } = await import('@/core/store');
                 const user = useStore.getState().user;
@@ -311,9 +316,11 @@ export default function WorkflowLab() {
                     clearInterval(interval);
                     setIsRunning(false);
                     toastError(`Workflow failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
-                    await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
-                        logger.error('Failed to persist workflow failure', stateError);
-                    });
+                    if (!(e instanceof GraphLeaseConflictError)) {
+                        await agentGraphStateService.finalizeStatus(user.uid, executionId, 'FAILED').catch((stateError: unknown) => {
+                            logger.error('Failed to persist workflow failure', stateError);
+                        });
+                    }
                 });
 
                 // Start polling state to update UI nodes
@@ -653,23 +660,20 @@ export default function WorkflowLab() {
                         <span>{showInspectorDrawer ? 'Hide Inspector' : (selectedNodeId ? 'Inspect Node & Library' : 'Inspector & Library')}</span>
                     </button>
                     <WorkflowEditor onInit={(instance) => { rfInstanceRef.current = instance; }} />
+                    <button
+                        type="button"
+                        className="absolute top-3 right-3 z-10 @6xl:hidden rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-xs font-semibold text-white"
+                        aria-controls="workflow-tools-panel"
+                        aria-expanded={showCompactInspector}
+                        onClick={() => setShowCompactInspector(value => !value)}
+                    >
+                        {showCompactInspector ? 'Hide node tools' : 'Node library & inspector'}
+                    </button>
                 </div>
 
                 {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
-                <aside
-                    data-testid="workflow-right-panel"
-                    className={`${showInspectorDrawer ? 'flex absolute right-0 top-0 bottom-0 z-30 shadow-2xl' : 'hidden'} @6xl:static @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]`}
-                >
-                    <div className="@6xl:hidden flex items-center justify-between pb-2 border-b border-gray-800">
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Inspector &amp; Library</span>
-                        <button
-                            type="button"
-                            onClick={() => setShowInspectorDrawer(false)}
-                            className="text-xs text-gray-400 hover:text-white px-2 py-0.5 rounded bg-gray-800"
-                        >
-                            Close
-                        </button>
-                    </div>
+                <aside id="workflow-tools-panel" aria-label="Node library and inspector" className={`${showCompactInspector ? 'flex' : 'hidden'} absolute inset-y-0 right-0 z-20 w-[min(20rem,90%)] @6xl:static @6xl:flex @6xl:w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]`}>
+                    <button type="button" className="@6xl:hidden self-end rounded border border-gray-600 px-3 py-1 text-xs text-white" onClick={() => setShowCompactInspector(false)}>Close node tools</button>
                     <NodeLibraryPanel />
                     {selectedNodeId ? (
                         <WorkflowNodeInspector />

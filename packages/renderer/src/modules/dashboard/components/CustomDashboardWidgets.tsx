@@ -1,3 +1,4 @@
+import { approvalRecordingWarning } from '@/services/agent/governance/ApprovalResultReceipt';
 import React, { useState, useEffect, useRef } from 'react';
 import { Logger } from '@/core/logger/Logger';
 import {
@@ -1359,7 +1360,10 @@ function ApprovalGatesWidget() {
         setBusyId(id);
         try {
             const result = await toolApprovalService.approve(id);
-            if (result.success) {
+            const warning = approvalRecordingWarning(result);
+            if (warning) {
+                toast.warning(warning);
+            } else if (result.success) {
                 if (toast?.success) {
                     toast.success('Gate approved & executed');
                 } else {

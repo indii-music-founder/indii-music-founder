@@ -1,12 +1,16 @@
 import { StateCreator } from 'zustand';
+import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';
 import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 let agentMessagesUnsubscribe: (() => void) | null = null;
+let agentMessagesSubscriptionRevision = 0;
 const agentSessionRuntimeStartedAt = Date.now();
 const pendingMessageIds = new Map<string, Set<string>>();
+const deletingSessionIds = new Set<string>();
+const sessionCreationChains = new Map<string, Promise<void>>();
 const messageWriteChains = new Map<string, Promise<void>>();
 const sessionClearChains = new Map<string, Promise<void>>();
 const pendingTextWrites = new Map<string, { latest: string }>();
@@ -38,6 +42,11 @@ async function persistMessageWrite(
             onSuccess?.();
             return;
         } catch (error) {
+            if (error instanceof SessionPersistenceConflict) {
+                logger.warn(`[AgentSlice] ${label} stopped because the conversation changed:`, error);
+                onFailure?.();
+                return;
+            }
             if (attempt === 3) {
                 logger.error(`[AgentSlice] ${label} failed after 3 attempts:`, error);
                 onFailure?.();
@@ -182,7 +191,7 @@ export interface AgentMessage {
     role: 'user' | 'model' | 'system';
     text: string;
     timestamp: number;
-    attachments?: { mimeType: string; base64: string }[];
+    attachments?: { mimeType: string; base64: string; filename?: string; loadFailed?: boolean }[];
     isStreaming?: boolean;
     thoughts?: AgentThought[];
     agentId?: string;
@@ -266,7 +275,9 @@ export interface AgentSessionSlice {
  */
 export function buildAgentSessionState(
     set: Parameters<StateCreator<AgentSessionSlice>>[0],
-    get: Parameters<StateCreator<AgentSessionSlice>>[1]
+    get: Parameters<StateCreator<AgentSessionSlice>>[1],
+    loadSessionService: () => Promise<Pick<typeof import('@/services/agent/SessionService')['sessionService'], 'createSession' | 'appendMessage' | 'deleteSession' | 'subscribeToMessages'>> =
+        () => import('@/services/agent/SessionService').then(module => module.sessionService),
 ): AgentSessionSlice {
     const markAppendFailed = (sessionId: string, messageId: string) => set(state => {
         if (!pendingMessageIds.get(sessionId)?.has(messageId)) return {};
@@ -295,10 +306,13 @@ export function buildAgentSessionState(
     });
 
     const subscribeToActiveMessages = (sessionId: string) => {
+        const revision = ++agentMessagesSubscriptionRevision;
         if (agentMessagesUnsubscribe) agentMessagesUnsubscribe();
         agentMessagesUnsubscribe = null;
-        import('@/services/agent/SessionService').then(({ sessionService }) => {
+        loadSessionService().then(sessionService => {
+            if (revision !== agentMessagesSubscriptionRevision || get().activeSessionId !== sessionId) return;
             agentMessagesUnsubscribe = sessionService.subscribeToMessages(sessionId, (messages) => {
+                if (revision !== agentMessagesSubscriptionRevision || get().activeSessionId !== sessionId) return;
                 set(state => {
                     const session = state.sessions[sessionId];
                     if (!session) return {};
@@ -319,7 +333,11 @@ export function buildAgentSessionState(
                         ...(state.activeSessionId === sessionId ? { agentHistory: nextMessages } : {}),
                     };
                 });
-            }, error => logger.error('[AgentSlice] Message subscription failed:', error));
+            }, error => {
+                if (revision !== agentMessagesSubscriptionRevision || get().activeSessionId !== sessionId) return;
+                logger.error('[AgentSlice] Message subscription failed:', error);
+                toast.error('Chat history or an attachment could not be loaded. Try reopening this conversation.');
+            });
         }).catch(error => logger.error('[AgentSlice] Failed to start message subscription:', error));
     };
 
@@ -367,11 +385,14 @@ export function buildAgentSessionState(
             });
 
             // Persist the new session immediately
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.createSession(newSession)
-                    .then(() => { if (!namespace) subscribeToActiveMessages(id); })
-                    .catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+            const creation = loadSessionService().then(async sessionService => {
+                await sessionService.createSession(newSession);
+                if (!namespace && get().activeSessionId === id) subscribeToActiveMessages(id);
             });
+            sessionCreationChains.set(id, creation);
+            void creation.then(() => {
+                if (sessionCreationChains.get(id) === creation) sessionCreationChains.delete(id);
+            }, e => logger.error('[AgentSlice] Session sync failed:', e));
 
             return id;
         },
@@ -387,37 +408,48 @@ export function buildAgentSessionState(
             }
         },
 
-        deleteSession: (sessionId) => set(state => {
-            const newSessions = { ...state.sessions };
-            delete newSessions[sessionId];
-            pendingMessageIds.delete(sessionId);
-
-            // Persist the deletion
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.deleteSession(sessionId).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
-            });
-
-            // If deleting active session, fallback to another or null
-            let newActiveId = state.activeSessionId;
-            let newHistory = state.agentHistory;
-
-            if (state.activeSessionId === sessionId) {
-                const remainingIds = Object.keys(newSessions);
-                if (remainingIds.length > 0) {
-                    newActiveId = remainingIds[0]!;
-                    newHistory = newSessions[newActiveId]!.messages;
-                } else {
-                    newActiveId = null;
-                    newHistory = [];
+        deleteSession: (sessionId) => {
+            if (deletingSessionIds.has(sessionId)) return;
+            deletingSessionIds.add(sessionId);
+            void loadSessionService().then(async sessionService => {
+                // A pending create (including implicit creation inside a message
+                // write) must settle before deletion or it can recreate the session.
+                await sessionCreationChains.get(sessionId);
+                const outstandingWrites = [...messageWriteChains]
+                    .filter(([key]) => key.startsWith(`${sessionId}:`))
+                    .map(([, write]) => write);
+                await Promise.all(outstandingWrites);
+                await sessionService.deleteSession(sessionId);
+                pendingMessageIds.delete(sessionId);
+                sessionCreationChains.delete(sessionId);
+                const wasActive = get().activeSessionId === sessionId;
+                set(state => {
+                    const newSessions = { ...state.sessions };
+                    delete newSessions[sessionId];
+                    const activeSessionId = state.activeSessionId === sessionId
+                        ? Object.keys(newSessions)[0] ?? null : state.activeSessionId;
+                    return {
+                        sessions: newSessions,
+                        activeSessionId,
+                        agentHistory: state.activeSessionId === sessionId
+                            ? (activeSessionId ? newSessions[activeSessionId]!.messages : []) : state.agentHistory,
+                    };
+                });
+                if (wasActive) {
+                    const nextSessionId = get().activeSessionId;
+                    if (nextSessionId) {
+                        subscribeToActiveMessages(nextSessionId);
+                    } else {
+                        ++agentMessagesSubscriptionRevision;
+                        agentMessagesUnsubscribe?.();
+                        agentMessagesUnsubscribe = null;
+                    }
                 }
-            }
-
-            return {
-                sessions: newSessions,
-                activeSessionId: newActiveId,
-                agentHistory: newHistory
-            };
-        }),
+            }).catch(error => {
+                logger.error('[AgentSlice] Session deletion failed:', error);
+                toast.error('Conversation deletion could not be completed. Try again.');
+            }).finally(() => deletingSessionIds.delete(sessionId));
+        },
 
         updateSessionTitle: (sessionId, title) => {
             set(state => {
@@ -510,11 +542,14 @@ export function buildAgentSessionState(
             markMessagePending(currentSessionId, msg.id);
 
             // Serialize the append ahead of every later update for this response.
+            let sessionCreated = !isNewSession;
             enqueueMessageWrite(currentSessionId, msg.id, async () => {
-                const { sessionService } = await import('@/services/agent/SessionService');
-                if (isNewSession) {
+                const sessionService = await loadSessionService();
+                await sessionCreationChains.get(currentSessionId);
+                if (!sessionCreated) {
                     await sessionService.createSession(currentSession);
-                    subscribeToActiveMessages(currentSessionId);
+                    sessionCreated = true;
+                    if (get().activeSessionId === currentSessionId) subscribeToActiveMessages(currentSessionId);
                 }
                 await sessionService.appendMessage(currentSessionId, msg);
             }, 'Session persistence', () => markAppendFailed(currentSessionId, msg.id));
@@ -619,6 +654,7 @@ export function buildAgentSessionState(
 
             // Finish writes already queued for this session, then clear. New
             // appends wait for this barrier so they cannot enter the delete snapshot.
+            const clearOperation = { id: crypto.randomUUID() };
             const previousClear = sessionClearChains.get(targetSessionId) ?? Promise.resolve();
             const outstandingWrites = [...messageWriteChains]
                 .filter(([key]) => key.startsWith(`${targetSessionId}:`))
@@ -626,7 +662,7 @@ export function buildAgentSessionState(
             const clear = Promise.all([previousClear.catch(() => undefined), ...outstandingWrites])
                 .then(() => persistMessageWrite(async () => {
                     const { sessionService } = await import('@/services/agent/SessionService');
-                    await sessionService.clearMessages(targetSessionId);
+                    await sessionService.clearMessages(targetSessionId, clearOperation);
                 }, 'Clear history', () => {
                     toast.error('Chat history could not be cleared. Try Clear chat again.');
                 }))
@@ -704,7 +740,7 @@ export function buildAgentSessionState(
                         // Ensure messages is always an array
                         if (!s.messages) s.messages = [];
                         
-                        if (!hasDoneInitialCleanup) {
+                        if (!hasDoneInitialCleanup && s.messageStorage !== 'subcollection') {
                             let mutated = false;
                             s.messages.forEach(msg => {
                                 if (msg.isStreaming) {

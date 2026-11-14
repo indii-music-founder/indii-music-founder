@@ -5,138 +5,30 @@ import {
   calculateBillingTotal,
   TIER_CONFIGS,
   getTierOrder,
-  BillingPeriod,
 } from '../SubscriptionTier';
 
 describe('Subscription Pricing & Cadence Math', () => {
-  describe('calculateBillingTotal', () => {
-    it('calculates monthly billing with 0% discount and whole number totals', () => {
-      const startMonthly = calculateBillingTotal(22, 'monthly');
-      expect(startMonthly.total).toBe(22);
-      expect(startMonthly.monthlyEquivalent).toBe(22);
-      expect(startMonthly.months).toBe(1);
-      expect(startMonthly.discountPercent).toBe(0);
-
-      const buildMonthly = calculateBillingTotal(55, 'monthly');
-      expect(buildMonthly.total).toBe(55);
-      expect(buildMonthly.monthlyEquivalent).toBe(55);
-      expect(buildMonthly.months).toBe(1);
-
-      const scaleMonthly = calculateBillingTotal(110, 'monthly');
-      expect(scaleMonthly.total).toBe(110);
-      expect(scaleMonthly.monthlyEquivalent).toBe(110);
-      expect(scaleMonthly.months).toBe(1);
-    });
-
-    it('calculates quarterly billing with ~5% discount and whole number totals', () => {
-      // Start ($22/mo): 22 * 3 * 0.95 = 62.7 -> rounded to 63 (~$21/mo)
-      const startQuarterly = calculateBillingTotal(22, 'quarterly');
-      expect(startQuarterly.total).toBe(63);
-      expect(startQuarterly.monthlyEquivalent).toBe(21);
-      expect(startQuarterly.months).toBe(3);
-      expect(startQuarterly.discountPercent).toBe(5);
-
-      // Build ($55/mo): 55 * 3 * 0.95 = 156.75 -> rounded to 157 (~$52/mo)
-      const buildQuarterly = calculateBillingTotal(55, 'quarterly');
-      expect(buildQuarterly.total).toBe(157);
-      expect(buildQuarterly.monthlyEquivalent).toBe(52);
-      expect(buildQuarterly.months).toBe(3);
-
-      // Scale ($110/mo): 110 * 3 * 0.95 = 313.5 -> rounded to 314 (~$105/mo)
-      const scaleQuarterly = calculateBillingTotal(110, 'quarterly');
-      expect(scaleQuarterly.total).toBe(314);
-      expect(scaleQuarterly.monthlyEquivalent).toBe(105);
-      expect(scaleQuarterly.months).toBe(3);
-    });
-
-    it('calculates six-month billing with ~10% discount and whole number totals', () => {
-      // Start ($22/mo): 22 * 6 * 0.90 = 118.8 -> rounded to 119 (~$20/mo)
-      const startSixMonth = calculateBillingTotal(22, 'six_month');
-      expect(startSixMonth.total).toBe(119);
-      expect(startSixMonth.monthlyEquivalent).toBe(20);
-      expect(startSixMonth.months).toBe(6);
-      expect(startSixMonth.discountPercent).toBe(10);
-
-      // Build ($55/mo): 55 * 6 * 0.90 = 297 (~$50/mo)
-      const buildSixMonth = calculateBillingTotal(55, 'six_month');
-      expect(buildSixMonth.total).toBe(297);
-      expect(buildSixMonth.monthlyEquivalent).toBe(50);
-      expect(buildSixMonth.months).toBe(6);
-
-      // Scale ($110/mo): 110 * 6 * 0.90 = 594 (~$99/mo)
-      const scaleSixMonth = calculateBillingTotal(110, 'six_month');
-      expect(scaleSixMonth.total).toBe(594);
-      expect(scaleSixMonth.monthlyEquivalent).toBe(99);
-      expect(scaleSixMonth.months).toBe(6);
-    });
-
-    it('supports legacy six-month alias with hyphen', () => {
-      const startHyphen = calculateBillingTotal(22, 'six-month');
-      expect(startHyphen.total).toBe(119);
-      expect(startHyphen.months).toBe(6);
-    });
-
-    it('calculates annual billing with ~20% discount and whole number totals', () => {
-      // Start ($22/mo): 22 * 12 * 0.80 = 211.2 -> rounded to 211 (~$18/mo)
-      const startAnnual = calculateBillingTotal(22, 'annual');
-      expect(startAnnual.total).toBe(211);
-      expect(startAnnual.monthlyEquivalent).toBe(18);
-      expect(startAnnual.months).toBe(12);
-      expect(startAnnual.discountPercent).toBe(20);
-
-      // Build ($55/mo): 55 * 12 * 0.80 = 528 (~$44/mo)
-      const buildAnnual = calculateBillingTotal(55, 'annual');
-      expect(buildAnnual.total).toBe(528);
-      expect(buildAnnual.monthlyEquivalent).toBe(44);
-      expect(buildAnnual.months).toBe(12);
-
-      // Scale ($110/mo): 110 * 12 * 0.80 = 1056 (~$88/mo)
-      const scaleAnnual = calculateBillingTotal(110, 'annual');
-      expect(scaleAnnual.total).toBe(1056);
-      expect(scaleAnnual.monthlyEquivalent).toBe(88);
-      expect(scaleAnnual.months).toBe(12);
-    });
-
-    it('strictly enforces no .99 or non-integer pricing across all tiers and cadences', () => {
-      const prices = [22, 55, 110];
-      const periods: BillingPeriod[] = ['monthly', 'quarterly', 'six_month', 'annual'];
-
-      for (const price of prices) {
-        for (const period of periods) {
-          const res = calculateBillingTotal(price, period);
-          expect(Number.isInteger(res.total)).toBe(true);
-          expect(Number.isInteger(res.monthlyEquivalent)).toBe(true);
-          expect(res.total.toString()).not.toMatch(/\.99$/);
-          expect(res.total.toString()).not.toMatch(/\.95$/);
-        }
-      }
-    });
-
-    it('handles zero or negative price gracefully', () => {
-      const zero = calculateBillingTotal(0, 'annual');
-      expect(zero.total).toBe(0);
-      expect(zero.monthlyEquivalent).toBe(0);
-
-      const negative = calculateBillingTotal(-10, 'monthly');
-      expect(negative.total).toBe(0);
-      expect(negative.monthlyEquivalent).toBe(0);
+  describe.each([
+    { period: 'monthly' as const, months: 1, discount: 0, totals: [22, 55, 110] },
+    { period: 'quarterly' as const, months: 3, discount: 15, totals: [56, 140, 281] },
+    { period: 'six_month' as const, months: 6, discount: 30, totals: [92, 231, 462] },
+    { period: 'annual' as const, months: 12, discount: 50, totals: [132, 330, 660] },
+  ])('$period introductory and renewal pricing', ({ period, months, discount, totals }) => {
+    it.each([22, 55, 110])('calculates the first term and undiscounted renewal for $%s/month', (price) => {
+      const result = calculateBillingTotal(price, period);
+      expect(result.total).toBe(totals[[22, 55, 110].indexOf(price)]);
+      expect(result.monthlyEquivalent).toBe(Math.round(result.total / months));
+      expect(result.months).toBe(months);
+      expect(result.discountPercent).toBe(discount);
+      expect(result.renewalTotal).toBe(price * months);
+      expect(BILLING_PERIODS[period].discountRate).toBe(discount / 100);
     });
   });
 
-  describe('BILLING_PERIODS configuration', () => {
-    it('defines all four supported cadences with expected commit discounts', () => {
-      expect(BILLING_PERIODS.monthly.months).toBe(1);
-      expect(BILLING_PERIODS.monthly.discountRate).toBe(0);
-
-      expect(BILLING_PERIODS.quarterly.months).toBe(3);
-      expect(BILLING_PERIODS.quarterly.discountRate).toBe(0.05);
-
-      expect(BILLING_PERIODS.six_month.months).toBe(6);
-      expect(BILLING_PERIODS.six_month.discountRate).toBe(0.10);
-
-      expect(BILLING_PERIODS.annual.months).toBe(12);
-      expect(BILLING_PERIODS.annual.discountRate).toBe(0.20);
-    });
+  it('preserves the six-month alias and free pricing', () => {
+    expect(calculateBillingTotal(22, 'six-month')).toEqual(calculateBillingTotal(22, 'six_month'));
+    expect(calculateBillingTotal(0, 'annual').total).toBe(0);
+    expect(calculateBillingTotal(-10, 'monthly').renewalTotal).toBe(0);
   });
 
   describe('TIER_CONFIGS stage-appropriate limits', () => {

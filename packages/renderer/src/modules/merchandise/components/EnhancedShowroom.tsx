@@ -396,6 +396,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     };
 
     const handleGenerateMockup = async () => {
+        if (isUpscalingAsset) return;
         if (!productAsset || !scenePrompt) {
             toast.error("Please upload an asset and describe the scene.");
             return;
@@ -876,7 +877,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             onClick={handleGenerateMockup}
-                            disabled={isGeneratingMockup || !productAsset || !scenePrompt}
+                            disabled={isGeneratingMockup || isUpscalingAsset || !productAsset || !scenePrompt}
                             data-testid="showroom-generate-mockup-btn"
                             className="py-4 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold flex flex-col items-center justify-center gap-2 transition-all border border-neutral-700 hover:border-neutral-500"
                         >

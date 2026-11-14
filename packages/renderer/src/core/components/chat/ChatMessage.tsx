@@ -92,6 +92,21 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
     video: Video,
 });
 
+function attachmentDownloadName(index: number, mimeType: string, filename?: string): string {
+    const safeName = filename && Array.from(filename, character => {
+        const code = character.charCodeAt(0);
+        return code < 32 || code === 127 || character === '/' || character === '\\' ? '_' : character;
+    }).join('').trim().slice(0, 200);
+    if (safeName && safeName !== '.' && safeName !== '..') return safeName;
+    const extensions: Record<string, string> = {
+        'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif',
+        'application/pdf': 'pdf', 'application/json': 'json', 'text/plain': 'txt',
+        'audio/mpeg': 'mp3', 'audio/wav': 'wav', 'audio/mp4': 'm4a',
+    };
+    const extension = extensions[mimeType.toLowerCase().split(';')[0]!.trim()];
+    return `attachment-${index + 1}${extension ? `.${extension}` : ''}`;
+}
+
 interface MessageItemProps {
     msg: AgentMessage & { agentId?: string };
     avatarUrl?: string;
@@ -246,6 +261,7 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
 });
 
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: MessageItemProps) => {
+    const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
     const showCognitiveLogicByDefault = useStore(
         state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
     );
@@ -481,9 +497,15 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                 )}
 
                 {msg.saveStatus === 'failed' && (
-                    <p role="alert" className="mt-2 text-xs text-amber-300">
-                        This message could not be saved. Copy it before leaving this conversation.
-                    </p>
+                    <div className="mt-2 text-xs text-amber-300">
+                        <p role="alert">This message could not be saved. Copy its text and download any attachments before leaving this conversation.</p>
+                        {msg.text && <button type="button" className="mt-1 underline" onClick={() => {
+                            if (!navigator.clipboard?.writeText) { setCopyStatus('failed'); return; }
+                            void navigator.clipboard.writeText(msg.text).then(() => setCopyStatus('copied'))
+                                .catch(() => setCopyStatus('failed'));
+                        }}>Copy message</button>}
+                        {copyStatus !== 'idle' && <p role="status">{copyStatus === 'copied' ? 'Message copied.' : 'Copy failed. Select the message text to copy it.'}</p>}
+                    </div>
                 )}
 
                 {/* Metadata-driven Plan Rendering (Fallback/Secondary) */}
@@ -704,7 +726,9 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                                 className="relative group/att"
                             >
                                 <div className="absolute inset-0 bg-green-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
-                                {att.mimeType && !att.mimeType.startsWith('image/') ? (
+                                {att.loadFailed ? (
+                                    <p role="alert" className="w-24 text-xs text-amber-200">Attachment could not be loaded. Reopen this conversation to retry.</p>
+                                ) : att.mimeType && !att.mimeType.startsWith('image/') ? (
                                     <div className="w-24 h-24 rounded-xl border border-white/10 shadow-lg relative z-10 flex flex-col items-center justify-center bg-gray-900/50 p-2 text-center overflow-hidden">
                                         <div className="flex-1 flex items-center justify-center">
                                             {att.mimeType.startsWith('audio/') ? (
@@ -723,6 +747,15 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                                     </div>
                                 ) : (
                                     <img src={att.base64.startsWith('data:') ? att.base64 : `data:${att.mimeType || 'image/png'};base64,${att.base64}`} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
+                                )}
+                                {!att.loadFailed && att.base64 && (
+                                    <a
+                                        href={att.base64.startsWith('data:') ? att.base64 : `data:${att.mimeType || 'application/octet-stream'};base64,${att.base64}`}
+                                        download={attachmentDownloadName(i, att.mimeType || '', att.filename)}
+                                        className="relative z-10 mt-1 block text-xs text-amber-200 underline"
+                                    >
+                                        Download attachment {i + 1}
+                                    </a>
                                 )}
                             </motion.div>
                         ))}

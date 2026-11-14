@@ -1,3 +1,4 @@
+import { getDesignArtboard, renderDesignCanvas } from '../designArtboard';
 import { logger } from '@/utils/logger';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
@@ -405,20 +406,21 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
 
-            const canvasAspect = 800 / 1000;
+            const { width, height } = getDesignArtboard(fabricCanvasRef.current);
+            const canvasAspect = width / height;
             const containerAspect = containerWidth / containerHeight;
 
             let scale: number;
             if (containerAspect > canvasAspect) {
-                scale = (containerHeight * 0.85) / 1000;
+                scale = (containerHeight * 0.85) / height;
             } else {
-                scale = (containerWidth * 0.85) / 800;
+                scale = (containerWidth * 0.85) / width;
             }
 
             fabricCanvasRef.current.setZoom(scale);
             fabricCanvasRef.current.setDimensions({
-                width: 800 * scale,
-                height: 1000 * scale
+                width: width * scale,
+                height: height * scale
             });
         };
 
@@ -541,8 +543,8 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         const objects = canvas.getObjects();
         if (objects.length === 0) {
             return {
-                left: (800 - width) / 2,
-                top: (1000 - height) / 2
+                left: (getDesignArtboard(canvas).width - width) / 2,
+                top: (getDesignArtboard(canvas).height - height) / 2
             };
         }
 
@@ -746,39 +748,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         if (!canvas) return null;
 
         try {
-            // SVG export
-            if (format === 'svg') {
-                return canvas.toSVG();
-            }
-
-            // Raster formats (PNG, JPEG, WebP)
-            // ⚡ indii.music FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
-            // to ensure no cropping occurs due to responsive scaling
-            const currentZoom = canvas.getZoom();
-            const currentWidth = canvas.width;
-            const currentHeight = canvas.height;
-            const currentVpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
-
-            // Set to absolute 1:1 state
-            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-            canvas.setZoom(1);
-            canvas.setDimensions({ width: 800, height: 1000 });
-            canvas.renderAll();
-
-            const dataURL = canvas.toDataURL({
-                format: format === 'jpeg' ? 'jpeg' : 'png',
-                quality: format === 'jpeg' ? 0.9 : 1,
-                multiplier: 2 // Export at 2x resolution (1600x2000)
-            });
-
-            // Restore zoom and dimensions for the interactive UI
-            canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
-            canvas.setZoom(currentZoom);
-            canvas.setDimensions({
-                width: currentWidth || (800 * currentZoom),
-                height: currentHeight || (1000 * currentZoom)
-            });
-            canvas.renderAll();
+            const dataURL = renderDesignCanvas(canvas, format === 'webp' ? 'png' : format);
 
             // Convert to WebP if requested
             if (format === 'webp') {

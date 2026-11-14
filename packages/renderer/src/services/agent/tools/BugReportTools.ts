@@ -91,7 +91,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let githubStatus: 'ok' | 'failed' | 'skipped' | 'merged_as_comment' = 'skipped';
         let issueUrl: string | undefined;
         let persistedBugId: string | undefined;
-        let callableError: string | undefined;
+        let saveUnconfirmed = false;
 
         try {
             const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
@@ -124,57 +124,74 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
                 errorMessage: bugReport.errorMessage,
             });
 
+            saveUnconfirmed = result.data.firestore !== 'ok' && result.data.firestore !== 'failed';
             firestoreOk = result.data.firestore === 'ok';
-            githubStatus = result.data.github;
-            issueUrl = result.data.issueUrl;
-            persistedBugId = result.data.bugId;
+            const sync = result.data.github;
+            githubStatus = sync === 'ok' || sync === 'merged_as_comment' || sync === 'failed' ? sync : 'skipped';
+            issueUrl = typeof result.data.issueUrl === 'string' ? result.data.issueUrl.trim() || undefined : undefined;
+            persistedBugId = typeof result.data.bugId === 'string' ? result.data.bugId.trim() || undefined : undefined;
             logger.info(`[BugReportTools] Cloud Function response: github=${githubStatus} firestore=${firestoreOk}`, result.data);
         } catch (cfErr: unknown) {
-            callableError = cfErr instanceof Error ? cfErr.message : String(cfErr);
+            saveUnconfirmed = true;
             logger.warn('[BugReportTools] Cloud Function call failed:', cfErr);
         }
 
         // 2. Honesty gate — the agent must NEVER tell the user a report was
         // filed when nothing durable happened. Durable = the callable's
         // Admin-SDK Firestore write succeeded.
+        if (saveUnconfirmed) {
+            const message = 'Bug report save could not be confirmed. Check the bug tracker before retrying to avoid a duplicate.';
+            try {
+                toast.warning(message);
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the unconfirmed save warning:', error);
+            }
+            return toolError(message, 'SAVE_UNCONFIRMED');
+        }
         if (!firestoreOk) {
-            toast.error('Bug report could NOT be filed — nothing was saved. The report pipeline is unreachable. DevOps: check reportBugFn deployment.');
-            return toolError(
-                `Bug report was NOT filed. Pipeline error: ${callableError || 'reportBugFn could not persist the report'}. Tell the user their bug report failed to save; do not claim it was documented.`,
-                'PIPELINE_UNAVAILABLE',
-            );
+            const message = 'The bug tracker could not save your report.';
+            try {
+                toast.error(message);
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the save failure:', error);
+            }
+            return toolError(message, 'REPORT_SAVE_FAILED');
         }
 
         // 3. GitHub sync failure stays loud (silent-strand regression 2026-09-26:
         // a log line nobody read is not observability).
         if (githubStatus === 'failed' || githubStatus === 'skipped') {
-            toast.warning('Bug report saved, but GitHub issue sync failed. DevOps: check GITHUB_TOKEN / GITHUB_REPO configuration.');
+            try {
+                toast.warning('Bug report saved, but GitHub issue sync failed.');
+            } catch (error) {
+                logger.warn('[BugReportTools] Could not display the GitHub sync warning:', error);
+            }
         }
 
-        // 3. Save to Agent Memory for context continuity
-        try {
-            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
-            await alwaysOnMemoryEngine.ingest(
+        // Memory ingestion is best effort. The report is already saved.
+        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
+            .then(({ alwaysOnMemoryEngine }) => alwaysOnMemoryEngine.ingest(
                 `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
                 'system',
                 'context'
-            );
-        } catch (e: unknown) {
-            logger.warn('[BugReportTools] Failed to save bug to memory:', e);
-        }
+            ))
+            .catch(error => logger.warn('[BugReportTools] Failed to save bug to memory:', error));
 
-        const finalMessage = githubStatus === 'merged_as_comment'
-            ? `Bug report merged as comment on existing issue: ${issueUrl}`
+        const reportReference = persistedBugId ? ` Report ID: ${persistedBugId}.` : '';
+        const issueReference = issueUrl ? ` ${issueUrl}` : '';
+        const syncMessage = githubStatus === 'merged_as_comment'
+            ? `Added as a comment to an existing GitHub issue.${issueReference}`
             : githubStatus === 'ok'
-            ? `Bug report created: "${bugReport.title}" (${bugReport.severity}). Saved to project bug tracker. ${issueUrl || ''}`
-            : `Bug report saved to the project bug tracker: "${bugReport.title}" (${bugReport.severity}).${persistedBugId ? ` Report ID: ${persistedBugId}.` : ""} GitHub sync failed.`;
+                ? `Created a GitHub issue.${issueReference}`
+                : 'GitHub sync did not complete.';
+        const finalMessage = `Bug report saved to the project bug tracker: "${bugReport.title}" (${bugReport.severity}).${reportReference} ${syncMessage}`;
 
         return toolSuccess({
             bugId: persistedBugId,
             title: bugReport.title,
             issueUrl,
             githubStatus
-        }, `Bug report successfully filed.\n\n${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`, { durableReceipt: true, receiptText: finalMessage });
+        }, `${finalMessage}\n\n### ${bugReport.title} (${bugReport.severity})\n\n${markdownBody}`, { durableReceipt: true, receiptText: finalMessage });
     }),
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -235,11 +252,12 @@ ${featureRequest.useCase}
 *This feature request was captured by the indii agent from an in-app conversation.*`;
 
         // 1. Save to Firestore
+        let savedFeatureId: string;
         try {
             const { FirestoreService } = await importWithRetry(() => import('@/services/FirestoreService'));
             const featureService = new FirestoreService<typeof featureRequest>('feature_requests');
-            await featureService.add(featureRequest);
-            logger.info(`[BugReportTools] Feature request saved: ${featureRequest.id} — "${featureRequest.title}"`);
+            savedFeatureId = await featureService.add(featureRequest);
+            logger.info(`[BugReportTools] Feature request saved: ${savedFeatureId} — "${featureRequest.title}"`);
         } catch (e: unknown) {
             logger.warn('[BugReportTools] Failed to persist feature request to Firestore:', e);
             return toolError(
@@ -248,21 +266,19 @@ ${featureRequest.useCase}
             );
         }
 
-        // 2. Save to Agent Memory
-        try {
-            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
-            await alwaysOnMemoryEngine.ingest(
+        // The tracker write is confirmed. Memory is a best-effort follow-up.
+        void importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'))
+            .then(({ alwaysOnMemoryEngine }) => alwaysOnMemoryEngine.ingest(
                 `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
                 'system',
                 'context'
-            );
-        } catch (e: unknown) {
-            logger.warn('[BugReportTools] Failed to save feature request to memory:', e);
-        }
+            ))
+            .catch(error => logger.warn('[BugReportTools] Failed to save feature request to memory:', error));
 
+        const receiptText = `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker. Request ID: ${savedFeatureId}.`;
         return toolSuccess({
-            featureId: featureRequest.id,
+            featureId: savedFeatureId,
             title: featureRequest.title
-        }, `Feature request captured: "${featureRequest.title}" (${featureRequest.priority}). Saved to your feedback tracker.\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`);
+        }, `${receiptText}\n\n### ${featureRequest.title} (${featureRequest.priority})\n\n${markdownBody}`, { durableReceipt: true, receiptText });
     })
 } satisfies Record<string, AnyToolFunction>;

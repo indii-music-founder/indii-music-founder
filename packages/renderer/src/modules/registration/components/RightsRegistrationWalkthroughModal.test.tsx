@@ -6,10 +6,10 @@ describe('RightsRegistrationWalkthroughModal', () => {
     const mockOnClose = vi.fn();
     const mockOnUpdate = vi.fn();
     const defaultData = {
-        pro_affiliation: { verified: false, value: '' },
-        mlc_membership: { verified: false, value: '' },
-        usco_org: { verified: false, value: '' },
-        soundexchange: { verified: false, value: '' },
+        pro_affiliation: { completed: false, value: '', provenance: 'user_reported' as const },
+        mlc_membership: { completed: false, value: '', provenance: 'user_reported' as const },
+        usco_org: { completed: false, value: '', provenance: 'user_reported' as const },
+        soundexchange: { completed: false, value: '', provenance: 'user_reported' as const },
     };
 
     it('does not render when isOpen is false', () => {
@@ -80,7 +80,8 @@ describe('RightsRegistrationWalkthroughModal', () => {
         expect(screen.getByLabelText('Mark step 1 as incomplete')).toBeInTheDocument();
     });
 
-    it('allows entering identifier and saving prerequisite verification', () => {
+    // Structural-only: the callback below is a test double, not provider verification.
+    it('allows entering an identifier and saving self-reported completion', () => {
         render(
             <RightsRegistrationWalkthroughModal
                 isOpen={true}
@@ -94,7 +95,7 @@ describe('RightsRegistrationWalkthroughModal', () => {
         const input = screen.getByLabelText('Authoritative Writer / Publisher IPI Number');
         fireEvent.change(input, { target: { value: '00987654321' } });
 
-        const saveBtn = screen.getByRole('button', { name: /Save & Verify/i });
+        const saveBtn = screen.getByRole('button', { name: /Save as Completed/i });
         fireEvent.click(saveBtn);
 
         expect(mockOnUpdate).toHaveBeenCalledWith('pro_affiliation', '00987654321', true);

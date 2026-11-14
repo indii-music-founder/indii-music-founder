@@ -1,3 +1,4 @@
+import { setDesignArtboard, restoreDesignCanvas } from './designArtboard';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import * as fabric from 'fabric';
@@ -113,7 +114,7 @@ export default function MerchDesigner() {
         fabricCanvas,
         designName,
         designId,
-        { interval: 30000, enabled: true }
+        { interval: 30000, enabled: viewMode === 'design' }
     );
 
     // Staged Handoff Hook Interceptor
@@ -355,6 +356,8 @@ export default function MerchDesigner() {
             clear();
         }
 
+        setDesignArtboard(canvas, { width: template.canvasWidth, height: template.canvasHeight });
+
         // Set canvas background
         setBackgroundColor(template.backgroundColor);
 
@@ -365,6 +368,8 @@ export default function MerchDesigner() {
             try {
                 if (objData.type === 'textbox') {
                     const text = new fabric.Textbox(objData.text ?? '', {
+                        originX: 'left',
+                        originY: 'top',
                         left: objData.left,
                         top: objData.top,
                         width: objData.width,
@@ -381,6 +386,8 @@ export default function MerchDesigner() {
                     canvas.add(text);
                 } else if (objData.type === 'rect') {
                     const rect = new fabric.Rect({
+                        originX: 'left',
+                        originY: 'top',
                         left: objData.left,
                         top: objData.top,
                         width: objData.width,
@@ -424,7 +431,7 @@ export default function MerchDesigner() {
             clearHistory();
 
             // Load the saved state
-            await canvas.loadFromJSON(canvasData);
+            await restoreDesignCanvas(canvas, canvasData);
             canvas.renderAll();
 
             // Establish this loaded design as the new undo baseline

@@ -212,6 +212,18 @@ export interface BoardroomDispatchTask {
     readonly rawUserUtterance: string;
 }
 
+export interface BoardroomDispatchPlanContext {
+    readonly type: 'BOARDROOM_DISPATCH_PLAN';
+    readonly code: 'BOARDROOM_DISPATCH_READY' | 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED' | 'BOARDROOM_DISPATCH_ACTIVE_TURN';
+    readonly executedAgentIds: readonly string[];
+    readonly deferredAgentIds: readonly string[];
+    readonly maxIterationsPerAgent: number;
+    readonly nextContinuationAgentId: string | null;
+    readonly leaseId: string | null;
+    readonly leaseExpiresAtMs: number | null;
+    readonly sideEffectOwnerAgentId: string | null;
+}
+
 export interface AgentContext {
     agentId?: string;
     userId?: string;
@@ -240,6 +252,9 @@ export interface AgentContext {
     signal?: AbortSignal;
     seatedAgents?: string[];
     readonly boardroomTask?: Readonly<BoardroomDispatchTask>;
+    readonly boardroomDispatchPlan?: Readonly<BoardroomDispatchPlanContext>;
+    /** Runtime-only provenance for tool admission; never sourced from model output. */
+    readonly executingAgentId?: string;
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
     traceId?: string;

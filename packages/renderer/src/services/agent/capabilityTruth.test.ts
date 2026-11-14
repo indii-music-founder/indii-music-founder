@@ -56,6 +56,9 @@ describe('Boardroom capability truthfulness', () => {
 
     it.each([
         'What can you do?',
+        'Are you operating normally?',
+        'Is the system operational right now?',
+        'What is your current readiness status?',
         'What can and can’t you do based on the APIs you have?',
         'What are indii’s capabilities?',
         'Which tools can you use?',

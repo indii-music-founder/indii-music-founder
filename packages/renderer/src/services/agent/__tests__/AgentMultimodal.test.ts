@@ -84,7 +84,7 @@ describe('Agent Multimodal Support', () => {
         vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         const attachments = [
-            { mimeType: 'image/jpeg', base64: 'base64-data-here' }
+            { mimeType: 'image/jpeg', base64: 'base64-data-here', filename: 'private-cover.jpg' }
         ];
 
         const result = await agent.execute('What is in this image?', {}, undefined, undefined, attachments);

@@ -25,7 +25,7 @@ export enum SubscriptionTier {
 }
 
 /**
- * Supported billing periods with commit discounts
+ * Supported billing periods with first-prepaid-term discounts
  */
 export type BillingPeriod = 'monthly' | 'quarterly' | 'six_month' | 'annual';
 
@@ -38,25 +38,27 @@ export interface BillingPeriodConfig {
 
 export const BILLING_PERIODS: Record<BillingPeriod, BillingPeriodConfig> = {
     monthly: { period: 'monthly', label: 'Monthly', months: 1, discountRate: 0 },
-    quarterly: { period: 'quarterly', label: 'Quarterly', months: 3, discountRate: 0.05 },
-    six_month: { period: 'six_month', label: 'Six-month', months: 6, discountRate: 0.10 },
-    annual: { period: 'annual', label: 'Annual', months: 12, discountRate: 0.20 },
+    quarterly: { period: 'quarterly', label: 'Quarterly', months: 3, discountRate: 0.15 },
+    six_month: { period: 'six_month', label: 'Six-month', months: 6, discountRate: 0.30 },
+    annual: { period: 'annual', label: 'Annual', months: 12, discountRate: 0.50 },
 };
 
 /**
  * Settle whole-number totals for subscription cadences.
- * Enforces NO .99 charm pricing and stage-appropriate discounts (approx 5%/10%/20%).
+ * Enforces NO .99 charm pricing and first-term discounts (approximately 15%/30%/50% after whole-dollar rounding).
+ * Renewal is the undiscounted monthly price multiplied by the prepaid term.
  */
 export function calculateBillingTotal(monthlyPrice: number, period: BillingPeriod | 'six-month' = 'monthly'): {
     total: number;
     monthlyEquivalent: number;
     months: number;
     discountPercent: number;
+    renewalTotal: number;
 } {
     const normalizedPeriod = period === 'six-month' ? 'six_month' : period;
     const config = BILLING_PERIODS[normalizedPeriod] ?? BILLING_PERIODS.monthly;
     if (monthlyPrice <= 0) {
-        return { total: 0, monthlyEquivalent: 0, months: config.months, discountPercent: 0 };
+        return { total: 0, monthlyEquivalent: 0, months: config.months, discountPercent: 0, renewalTotal: 0 };
     }
     const total = Math.round(monthlyPrice * config.months * (1 - config.discountRate));
     const monthlyEquivalent = Math.round(total / config.months);
@@ -65,6 +67,7 @@ export function calculateBillingTotal(monthlyPrice: number, period: BillingPerio
         monthlyEquivalent,
         months: config.months,
         discountPercent: Math.round(config.discountRate * 100),
+        renewalTotal: Math.round(monthlyPrice * config.months),
     };
 }
 
@@ -363,8 +366,8 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
 
     [SubscriptionTier.PRO_YEARLY]: {
         name: 'indii Pro (Yearly)',
-        description: 'Save 20% with annual billing',
-        price: 211,
+        description: 'Annual billing; introductory savings apply to the first prepaid term only',
+        price: 264,
         billingPeriod: 'year',
         imageGenerations: {
             monthly: 500,

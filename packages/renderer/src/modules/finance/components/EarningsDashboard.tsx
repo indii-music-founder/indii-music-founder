@@ -116,7 +116,8 @@ export const EarningsDashboard: React.FC = () => {
     }, [releases]);
 
     if (loading) return (
-        <div className="space-y-6 pt-2">
+        <div role="status" className="space-y-6 pt-2">
+            <span className="sr-only">Loading earnings</span>
             <SkeletonStatPanel />
             <SkeletonTable rows={6} cols={5} />
         </div>

@@ -312,9 +312,10 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             ? 'bg-gray-900/80 text-gray-300 border-gray-600/40'
                             : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
                     }`}
-                    title={`Brand aesthetic fit: ${brandFit.score}/5 (${brandFit.label.replace('_', ' ')}) - ${brandFit.reason}`}
+                    title={`Prompt-to-brand match: ${brandFit.score}/5 (${brandFit.source === 'jev' ? 'Jev judgment' : 'keyword heuristic'}) - ${brandFit.reason}`}
                 >
-                    <Sparkles size={9} className={brandFit.score >= 4 ? 'text-emerald-400' : brandFit.score === 3 ? 'text-gray-400' : 'text-amber-400'} />
+                    <Sparkles aria-hidden="true" size={9} className={brandFit.score >= 4 ? 'text-emerald-400' : brandFit.score === 3 ? 'text-gray-400' : 'text-amber-400'} />
+                    <span className="sr-only">Prompt-to-brand match ({brandFit.source === 'jev' ? 'Jev judgment' : 'keyword heuristic'}): </span>
                     <span>{brandFit.score}/5</span>
                 </div>
             )}

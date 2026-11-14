@@ -476,6 +476,8 @@ describe('CreativeCanvas', () => {
         fireEvent.change(screen.getByTestId('magic-fill-input'), { target: { value: 'Apply the edit.' } });
         await waitFor(() => expect(screen.getByTestId('magic-fill-input')).toHaveValue('Apply the edit.'));
         fireEvent.click(screen.getByTestId('magic-generate-btn'));
+        // Structural-only: allow the edit handler to finish before jsdom teardown.
+        await waitFor(() => expect(screen.getByTestId('magic-generate-btn')).not.toBeDisabled(), { timeout: 5000 });
 
         await waitFor(() => {
             expect(Editing.editImage).toHaveBeenCalledOnce();
@@ -545,6 +547,8 @@ describe('CreativeCanvas', () => {
         fireEvent.change(screen.getByTestId('magic-fill-input'), { target: { value: 'Apply the edit.' } });
         await waitFor(() => expect(screen.getByTestId('magic-fill-input')).toHaveValue('Apply the edit.'));
         fireEvent.click(screen.getByTestId('magic-generate-btn'));
+        // Structural-only: allow the edit handler to finish before jsdom teardown.
+        await waitFor(() => expect(screen.getByTestId('magic-generate-btn')).not.toBeDisabled(), { timeout: 5000 });
 
         await waitFor(() => {
             expect(Editing.editImage).toHaveBeenCalledOnce();
@@ -580,6 +584,8 @@ describe('CreativeCanvas', () => {
         fireEvent.change(screen.getByTestId('magic-fill-input'), { target: { value: 'Remix this image' } });
         await waitFor(() => expect(screen.getByTestId('magic-fill-input')).toHaveValue('Remix this image'));
         fireEvent.click(screen.getByTestId('magic-generate-btn'));
+        // Structural-only: allow the edit handler to finish before jsdom teardown.
+        await waitFor(() => expect(screen.getByTestId('magic-generate-btn')).not.toBeDisabled(), { timeout: 5000 });
 
         await waitFor(() => {
             expect(canvasOps.getFlattenedDataURL).toHaveBeenCalledWith({ format: 'png', multiplier: 1 });

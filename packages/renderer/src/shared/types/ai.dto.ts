@@ -393,6 +393,8 @@ export interface GenerateContentOptions {
     safetySettings?: SafetySetting[];
     signal?: AbortSignal;
     timeout?: number;
+    boardroomDispatchLeaseId?: string;
+    boardroomAgentId?: string;
     // Caching options
     skipCache?: boolean;
     cache?: boolean;

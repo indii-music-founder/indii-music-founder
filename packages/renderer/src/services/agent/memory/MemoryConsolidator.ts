@@ -1,3 +1,4 @@
+import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
 import { db } from '../../firebase';
 import {
@@ -11,6 +12,7 @@ import {
     updateDoc,
     doc as firestoreDoc,
     writeBatch,
+    runTransaction,
     Timestamp,
 } from 'firebase/firestore';
 import { MemorySummarizer } from './MemorySummarizer';
@@ -18,7 +20,6 @@ import type {
     AlwaysOnMemory,
     ConsolidationInsight,
     ConsolidationConfig,
-    MemoryConnection,
     MemoryTier,
     MemoryTierConfig,
 } from '@/types/AlwaysOnMemory';
@@ -153,14 +154,14 @@ export class MemoryConsolidator {
     ): Promise<{
         memoriesProcessed: number;
         insightsGenerated: number;
-        connectionsFound: number;
+        insightConnectionCount: number;
         tiersUpdated: number;
         memoriesDecayed: number;
     }> {
         const result = {
             memoriesProcessed: 0,
             insightsGenerated: 0,
-            connectionsFound: 0,
+            insightConnectionCount: 0,
             tiersUpdated: 0,
             memoriesDecayed: 0,
         };
@@ -183,18 +184,12 @@ export class MemoryConsolidator {
                     if (group.length < 2) continue;
 
                     const insight = await MemorySummarizer.generateInsight(userId, group);
+                    const committed = await this.commitInsightGroup(userId, group.map(memory => memory.id), insight);
+                    if (!committed) continue;
                     if (insight) {
-                        // Store the insight
-                        await this.storeInsight(userId, insight);
                         result.insightsGenerated++;
-                        result.connectionsFound += insight.connections.length;
-
-                        // Step 4: Store connections on the memories themselves
-                        await this.storeConnections(userId, insight.connections);
+                        result.insightConnectionCount += insight.connections.length;
                     }
-
-                    // Step 5: Mark memories as consolidated
-                    await this.markAsConsolidated(userId, group.map(m => m.id));
                     result.memoriesProcessed += group.length;
                 }
 
@@ -217,7 +212,7 @@ export class MemoryConsolidator {
                 `[MemoryConsolidator] 🔄 Consolidation complete: ` +
                 `${result.memoriesProcessed} processed, ` +
                 `${result.insightsGenerated} insights, ` +
-                `${result.connectionsFound} connections, ` +
+                `${result.insightConnectionCount} links in saved insights, ` +
                 `${result.tiersUpdated} tier changes, ` +
                 `${result.memoriesDecayed} decayed`
             );
@@ -225,7 +220,7 @@ export class MemoryConsolidator {
             return result;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Consolidation cycle failed:', error);
-            return result;
+            throw error;
         }
     }
 
@@ -325,59 +320,28 @@ export class MemoryConsolidator {
     // PRIVATE - STORAGE
     // ========================================================================
 
-    /**
-     * Store a consolidation insight.
-     */
-    private static async storeInsight(
+    private static async commitInsightGroup(
         userId: string,
-        insight: Omit<ConsolidationInsight, 'id'>
-    ): Promise<string> {
-        const insightRef = collection(db, 'users', userId, 'consolidationInsights');
-        // ISSUE-1380 class: the LLM-parsed insight may carry undefined fields
-        // ('Unsupported field value: undefined' observed live). Strip them so
-        // the write can never be rejected.
-        const cleanInsight = JSON.parse(JSON.stringify({
-            ...insight,
-            connections: insight.connections.map(c => ({
-                fromMemoryId: c.fromMemoryId,
-                toMemoryId: c.toMemoryId,
-                relationship: c.relationship,
-                confidence: c.confidence,
-                discoveredAt: c.discoveredAt,
-            })),
-        }));
-        const docRef = await addDoc(insightRef, cleanInsight);
-        logger.info(`[MemoryConsolidator] 💡 New insight: ${insight.insight.slice(0, 80)}...`);
-        return docRef.id;
-    }
+        memoryIds: string[],
+        insight: Omit<ConsolidationInsight, 'id'> | null,
+    ): Promise<boolean> {
+        const refs = memoryIds.map(id => firestoreDoc(db, 'users', userId, 'alwaysOnMemories', id));
+        const insightRef = firestoreDoc(collection(db, 'users', userId, 'consolidationInsights'));
+        const payload = insight ? cleanFirestoreData(insight) : null;
 
-    /**
-     * Store connections on the memories themselves (bidirectional).
-     */
-    private static async storeConnections(
-        userId: string,
-        connections: MemoryConnection[]
-    ): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const batch = writeBatch(db);
-
-        for (const conn of connections) {
-            // We need to read the current connections, add the new one, and write back.
-            // Since writeBatch doesn't support reads, we'll use individual updates.
-            try {
-                // Update the "from" memory
-                const _fromRef = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', conn.fromMemoryId);
-                // Note: In production, you'd read the current connections first.
-                // For simplicity, we use arrayUnion-like behavior.
-                // Firestore arrayUnion requires exact match, so we store as a subcollection instead.
-                // For now, log and skip complex cross-referencing.
-                logger.debug(
-                    `[MemoryConsolidator] 🔗 Connection: ${conn.fromMemoryId} → ${conn.toMemoryId}: ${conn.relationship}`
-                );
-            } catch (error: unknown) {
-                logger.error('[MemoryConsolidator] Failed to store connection:', error);
+        return runTransaction(db, async transaction => {
+            const memories = await Promise.all(refs.map(ref => transaction.get(ref)));
+            if (memories.some(memory => !memory.exists() ||
+                memory.data().isActive !== true || memory.data().consolidated !== false)) {
+                return false;
             }
-        }
+            if (payload) transaction.set(insightRef, payload);
+            const now = Timestamp.now();
+            for (const ref of refs) {
+                transaction.update(ref, { consolidated: true, updatedAt: now });
+            }
+            return true;
+        });
     }
 
     /**
@@ -458,7 +422,7 @@ export class MemoryConsolidator {
             return decayedCount;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Importance decay failed:', error);
-            return 0;
+            throw error;
         }
     }
 
@@ -536,7 +500,7 @@ export class MemoryConsolidator {
             return tiersChanged;
         } catch (error: unknown) {
             logger.error('[MemoryConsolidator] Tier update failed:', error);
-            return 0;
+            throw error;
         }
     }
 

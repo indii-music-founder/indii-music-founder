@@ -13,6 +13,31 @@ import { logger } from '@/utils/logger';
 import { parseBoardroomIntentDecision } from '@/config/boardroomIntentPolicy';
 import { refineInjectionRisk, judgeOrchestrationComplexity, judgeBoardroomIntent, BOARDROOM_INTENT_QUESTION, BOARDROOM_INTENT_MIN_CONFIDENCE, type BoardroomIntent } from '@/config/typesafeJudgments';
 
+import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { TokenEstimator } from '../governance/TokenEstimator';
+
+async function generateRoutingResponse(
+    context: AgentContext,
+    contents: Parameters<typeof AI.generateContent>[0],
+    model: Parameters<typeof AI.generateContent>[1],
+    config: NonNullable<Parameters<typeof AI.generateContent>[2]>,
+) {
+    const limit = 1_500_000;
+    const maxOutputTokens = 4096;
+    const estimate = TokenEstimator.estimate(contents, undefined, [], limit, maxOutputTokens);
+    const budget = executionTokenBudget(context, limit);
+    const reservation = estimate.willExceed ? null : budget.reserve(estimate.totalProjected);
+    if (reservation === null) throw new Error('The execution token allowance cannot cover routing.');
+    let actualTokens: number | undefined;
+    try {
+        const result = await AI.generateContent(contents, model, { ...config, maxOutputTokens });
+        actualTokens = result.response.usageMetadata?.totalTokenCount;
+        return result;
+    } finally {
+        budget.settle(reservation, actualTokens);
+    }
+}
+
 export class AgentOrchestrator {
     async determineBoardroomIntent(context: AgentContext, userQuery: string): Promise<BoardroomIntent | null> {
         const validation = InputSanitizer.validate(userQuery);
@@ -22,7 +47,7 @@ export class AgentOrchestrator {
         const judgment = await judgeBoardroomIntent(query, recentConversation);
         if (judgment) return judgment;
         try {
-            const response = await AI.generateContent([{ role: 'user', parts: [{ text: JSON.stringify({
+            const response = await generateRoutingResponse(context, [{ role: 'user', parts: [{ text: JSON.stringify({
                 instructions: BOARDROOM_INTENT_QUESTION.instructions, criteria: BOARDROOM_INTENT_QUESTION.criteria,
                 query, recentConversation,
                 output: { intent: 'discussion | capability | action', confidence: 'number from 0 to 1' },
@@ -141,7 +166,8 @@ These are gallery/upload references, not desktop files. Match the requested labe
         `;
 
         try {
-            const res = await AI.generateContent(
+            const res = await generateRoutingResponse(
+                context,
                 [{ role: 'user', parts: [{ text: prompt }] }],
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 {
@@ -277,7 +303,8 @@ These are gallery/upload references, not desktop files. Match the requested labe
         `;
 
         try {
-            const res = await AI.generateContent(
+            const res = await generateRoutingResponse(
+                context,
                 [{ role: 'user', parts: [{ text: prompt }] }],
                 INTELLIGENCE_MODELS.TEXT.FAST,
                 { ...INTELLIGENCE_CONFIG.THINKING.LOW, responseMimeType: 'application/json' }
@@ -363,14 +390,18 @@ Is this a:
 
 Return ONLY a JSON object: { "type": "SIMPLE" | "PARALLEL" | "COMPLEX", "reasoning": "..." }
 `;
-                const res = await AI.generateContent(
+                const res = await generateRoutingResponse(
+                    context,
                     [{ role: 'user', parts: [{ text: complexityPrompt }] }],
                     INTELLIGENCE_MODELS.TEXT.FAST,
                     { responseMimeType: 'application/json' }
                 );
-                const decision = JSON.parse(res.response.text() || '{"type":"SIMPLE"}');
-                pathType = decision.type || 'SIMPLE';
-                pathReasoning = decision.reasoning || 'Evaluated by generative fast model';
+                const decision: unknown = JSON.parse(res.response.text() || '{}');
+                if (decision && typeof decision === 'object' && 'type' in decision &&
+                    (decision.type === 'SIMPLE' || decision.type === 'PARALLEL' || decision.type === 'COMPLEX')) {
+                    pathType = decision.type;
+                    pathReasoning = 'Evaluated by generative fast model';
+                }
             }
 
             if (pathType === 'COMPLEX') {

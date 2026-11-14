@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AlwaysOnMemoryEngine } from './AlwaysOnMemoryEngine';
+import { memoryIngestionPipeline } from './MemoryIngestionPipeline';
+import { MemoryConsolidator } from './MemoryConsolidator';
 
 // ============================================================================
 // MOCKS
@@ -27,6 +29,7 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
     addDoc: (...args: any[]) => mockAddDoc(...args),
     getDocs: (...args: any[]) => mockGetDocs(...args),
+    getDocsFromServer: (...args: any[]) => mockGetDocs(...args),
     getCountFromServer: (...args: any[]) => mockGetCountFromServer(...args),
     updateDoc: (...args: any[]) => mockUpdateDoc(...args),
     deleteDoc: (...args: any[]) => mockDeleteDoc(...args),
@@ -136,6 +139,51 @@ describe('AlwaysOnMemoryEngine', () => {
         engine.stop();
     });
 
+    it('exposes stored, skipped and unconfirmed pipeline receipts without parsing status text', async () => {
+        await engine.start('test-user-123');
+        const spy = vi.spyOn(memoryIngestionPipeline, 'ingestText');
+        try {
+            spy.mockResolvedValueOnce({ success: true, memoryId: 'saved-memory', summary: 'Artist preference' });
+            expect(await engine.ingestWithReceipt('preference')).toEqual({ status: 'stored', memoryId: 'saved-memory', summary: 'Artist preference' });
+            spy.mockResolvedValueOnce({ success: true, skipped: true, skipReason: 'duplicate' });
+            expect(await engine.ingestWithReceipt('duplicate')).toEqual({ status: 'skipped', reason: 'duplicate' });
+            spy.mockResolvedValueOnce({ success: false, error: 'private details' });
+            expect(await engine.ingestWithReceipt('failed')).toMatchObject({ status: 'unconfirmed' });
+            spy.mockResolvedValueOnce({ success: true });
+            expect(await engine.ingestWithReceipt('missing id')).toMatchObject({ status: 'unconfirmed' });
+        } finally { spy.mockRestore(); }
+    });
+
+    it('keeps ingestion status active until concurrent text and file writes have settled', async () => {
+        await engine.start('test-user-123');
+        let finishText!: (value: { success: boolean; memoryId: string }) => void;
+        let finishFile!: (value: { success: boolean; memoryId: string }) => void;
+        const textSpy = vi.spyOn(memoryIngestionPipeline, 'ingestText').mockImplementationOnce(() => new Promise(resolve => { finishText = resolve; }));
+        const fileSpy = vi.spyOn(memoryIngestionPipeline, 'ingestFile').mockImplementationOnce(() => new Promise(resolve => { finishFile = resolve; }));
+        try {
+            const text = engine.ingestWithReceipt('Artist rule');
+            const file = engine.ingestFile(new Uint8Array([1]), 'notes.txt', 'text/plain');
+            finishText({ success: true, memoryId: 'text-memory' });
+            await text;
+            expect((await engine.getStatus()).isIngesting).toBe(true);
+            finishFile({ success: true, memoryId: 'file-memory' });
+            await file;
+            expect((await engine.getStatus()).isIngesting).toBe(false);
+        } finally { textSpy.mockRestore(); fileSpy.mockRestore(); }
+    });
+
+    it('does not acknowledge a memory to a new owner after an in-flight owner change', async () => {
+        await engine.start('test-user-123');
+        let complete!: (value: { success: boolean; memoryId: string }) => void;
+        const spy = vi.spyOn(memoryIngestionPipeline, 'ingestText').mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+        try {
+            const pending = engine.ingestWithReceipt('old owner preference');
+            await engine.start('another-owner');
+            complete({ success: true, memoryId: 'old-owner-memory' });
+            expect(await pending).toMatchObject({ status: 'unconfirmed' });
+        } finally { spy.mockRestore(); }
+    });
+
     it('does not report skipped feedback as a stored memory', async () => {
         await engine.start('test-user-123');
         const ingest = vi.spyOn(engine, 'ingest')
@@ -165,7 +213,7 @@ describe('AlwaysOnMemoryEngine', () => {
             await expect(engine.query('After stop?')).rejects.toThrow('Engine not started');
             await expect(engine.deleteMemory('old-memory')).rejects.toThrow('Engine not started');
             await expect(engine.clearAll()).rejects.toThrow('Engine not started');
-            expect(await engine.consolidateNow()).toBe('Engine not started');
+            await expect(engine.consolidateNow()).rejects.toThrow('Engine not started');
             expect(await engine.getAllMemories()).toEqual([]);
             expect(await engine.getInsights()).toEqual([]);
             expect((await engine.getStatus()).startedAt).toBeUndefined();
@@ -196,6 +244,38 @@ describe('AlwaysOnMemoryEngine', () => {
             await engine.start('user-2');
             expect(engine.running).toBe(true);
         });
+    });
+
+    it('rejects a failed consolidation read and leaves the completion timestamp unset', async () => {
+        await engine.start('test-user-123');
+        mockGetDocs.mockRejectedValueOnce(new Error('memory read unavailable'));
+        await expect(engine.consolidateNow()).rejects.toThrow('memory read unavailable');
+        expect(await engine.getStatus()).toMatchObject({ isConsolidating: false, lastConsolidatedAt: undefined });
+    });
+
+    it('isolates overlapping consolidation status across account changes', async () => {
+        let finishOld!: (value: any) => void;
+        let finishCurrent!: (value: any) => void;
+        const cycle = vi.spyOn(MemoryConsolidator, 'runConsolidationCycle')
+            .mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve; }))
+            .mockImplementationOnce(() => new Promise(resolve => { finishCurrent = resolve; }));
+        const result = { memoriesProcessed: 0, insightsGenerated: 0, insightConnectionCount: 0 };
+        try {
+            await engine.start('old-owner');
+            const oldRun = engine.consolidateNow();
+            const oldFailure = expect(oldRun).rejects.toThrow('account changed');
+            await engine.start('current-owner');
+            const currentRun = engine.consolidateNow();
+            finishOld(result);
+            await oldFailure;
+            expect(await engine.getStatus()).toMatchObject({ isConsolidating: true, lastConsolidatedAt: undefined });
+            await expect(engine.consolidateNow()).rejects.toThrow('already in progress');
+            finishCurrent(result);
+            await expect(currentRun).resolves.toContain('Consolidation complete');
+            expect(await engine.getStatus()).toMatchObject({ isConsolidating: false });
+        } finally {
+            cycle.mockRestore();
+        }
     });
 
     describe('Ingest (IngestAgent)', () => {
@@ -326,6 +406,13 @@ describe('AlwaysOnMemoryEngine', () => {
             );
 
             await engine.start('test-user-123');
+        });
+
+        it('does not turn a failed database read into an empty search and general answer', async () => {
+            mockGenerateText.mockClear();
+            mockGetDocs.mockRejectedValueOnce(new Error('database unavailable'));
+            await expect(engine.queryFromServer('What did I save?')).rejects.toThrow('database unavailable');
+            expect(mockGenerateText).not.toHaveBeenCalled();
         });
 
         it('should answer questions with memory citations', async () => {

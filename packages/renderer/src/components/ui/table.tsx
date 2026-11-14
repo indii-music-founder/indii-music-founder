@@ -3,15 +3,39 @@ import * as React from "react"
 const Table = React.forwardRef<
     HTMLTableElement,
     React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-        <table
-            ref={ref}
-            className={`w-full caption-bottom text-sm ${className || ''}`}
-            {...props}
-        />
-    </div>
-))
+>(({ className, ...props }, ref) => {
+    const wrapperRef = React.useRef<HTMLDivElement>(null)
+    const [hasOverflow, setHasOverflow] = React.useState(false)
+
+    React.useLayoutEffect(() => {
+        const wrapper = wrapperRef.current
+        if (!wrapper) return
+        const measure = () => setHasOverflow(wrapper.scrollWidth > wrapper.clientWidth)
+        measure()
+        if (typeof ResizeObserver === "undefined") return
+        const observer = new ResizeObserver(measure)
+        observer.observe(wrapper)
+        if (wrapper.firstElementChild) observer.observe(wrapper.firstElementChild)
+        return () => observer.disconnect()
+    }, [])
+
+    return (
+        <div
+            ref={wrapperRef}
+            tabIndex={hasOverflow ? 0 : undefined}
+            role={hasOverflow ? "region" : undefined}
+            aria-label={hasOverflow && !props["aria-labelledby"] ? props["aria-label"] || "Scrollable table" : undefined}
+            aria-labelledby={hasOverflow ? props["aria-labelledby"] : undefined}
+            className="relative w-full min-w-0 overflow-auto focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        >
+            <table
+                ref={ref}
+                className={`w-full caption-bottom text-sm ${className || ''}`}
+                {...props}
+            />
+        </div>
+    )
+})
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
@@ -52,7 +76,8 @@ const TableHead = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <th
         ref={ref}
-        className={`h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] ${className || ''}`}
+        scope="col"
+        className={`h-10 px-2 text-start align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px] ${className || ''}`}
         {...props}
     />
 ))
@@ -64,7 +89,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <td
         ref={ref}
-        className={`p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] ${className || ''}`}
+        className={`p-2 align-middle [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px] ${className || ''}`}
         {...props}
     />
 ))

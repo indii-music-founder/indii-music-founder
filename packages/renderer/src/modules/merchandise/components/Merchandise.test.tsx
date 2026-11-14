@@ -109,7 +109,7 @@ describe('Merchandise Dashboard', () => {
         expect(screen.getByTestId('merch-dashboard-loading')).toBeInTheDocument();
     });
 
-    it('shows error state', () => {
+    it('shows the dashboard error and keeps Designer accessible', () => {
         vi.mocked(useMerchandise).mockReturnValue({
             ...defaultMockReturn,
             error: 'Failed to fetch',
@@ -124,5 +124,6 @@ describe('Merchandise Dashboard', () => {
 
         expect(screen.getByText('Failed to load dashboard data.')).toBeInTheDocument();
         expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Open Designer' })).toHaveAttribute('href', '/merch/design');
     });
 });

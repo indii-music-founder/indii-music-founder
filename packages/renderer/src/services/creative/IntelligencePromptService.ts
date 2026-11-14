@@ -54,11 +54,14 @@ Your output prompts produce stunning, production-quality video clips.`
 You understand photographic composition, lighting, lens effects, film stocks, and artistic styles.
 Your output prompts produce stunning, gallery-quality images.`;
 
+        const intentEvidence = intentVerdict.source === 'jev'
+            ? `Jev classification; confidence: ${Math.round(intentVerdict.confidence * 100)}%`
+            : 'deterministic prompt heuristic; model confidence unavailable';
         const prompt = `
 ${systemInstruction}
 
 CREATIVE ARCHETYPE & DIRECTION:
-Primary Archetype: ${intentVerdict.archetype} (confidence: ${Math.round(intentVerdict.confidence * 100)}%)
+Primary Archetype: ${intentVerdict.archetype} (${intentEvidence})
 Brand Color Weighting: ${intentVerdict.brandColorWeight}
 Recommended Technical Descriptors: ${intentVerdict.focusTechnical.join(', ')}
 

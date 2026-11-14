@@ -36,6 +36,8 @@ export const APPROVED_MODELS = {
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
+export { MODEL_THINKING_LEVELS } from './model-thinking';
+
 export const INTELLIGENCE_MODELS = {
     TEXT: {
         AGENT: APPROVED_MODELS.TEXT_AGENT,

@@ -9,9 +9,17 @@ import {
 import { agentGraphStateService } from './AgentGraphStateService';
 import { agentService } from '../AgentService';
 import { AgentEventBus } from '../governance/AgentEventBus';
+import { inheritExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { memoryBankService } from '../memory/MemoryBankService';
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+
+export class GraphLeaseConflictError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'GraphLeaseConflictError';
+    }
+}
 
 function currentGraphLease(data: Pick<GraphExecutionState, 'metadata' | 'lease'>): GraphExecutionState['lease'] {
     return data.metadata && Object.prototype.hasOwnProperty.call(data.metadata, 'lease')
@@ -75,7 +83,9 @@ export class AgentGraphService {
             return result;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
-            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
+            if (!(error instanceof GraphLeaseConflictError)) {
+                AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
+            }
             throw error;
         }
     }
@@ -173,15 +183,21 @@ export class AgentGraphService {
         initialInput?: string
     ): Promise<string> {
         if (this.activeLoops.has(executionId)) {
-            throw new Error(`Graph execution ${executionId} already has an active loop.`);
+            throw new GraphLeaseConflictError(`Graph execution ${executionId} already has an active loop.`);
         }
         this.activeLoops.add(executionId);
 
         const runnerId = uuidv4();
-        const acquired = await this.acquireGraphLease(userId, executionId, runnerId);
+        let acquired: boolean;
+        try {
+            acquired = await this.acquireGraphLease(userId, executionId, runnerId);
+        } catch (error) {
+            this.activeLoops.delete(executionId);
+            throw error;
+        }
         if (!acquired) {
             this.activeLoops.delete(executionId);
-            throw new Error(`Graph execution ${executionId} is locked by another runner.`);
+            throw new GraphLeaseConflictError(`Graph execution ${executionId} is locked by another runner.`);
         }
 
         // Arm 5-second lease heartbeat
@@ -552,7 +568,8 @@ export class AgentGraphService {
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution (capped to top 5 / 3,000 chars)
                 let memoryContext = '';
                 try {
-                    const { results } = await memoryBankService.searchMemories(userId, prompt, 5);
+                    const { results, unavailable } = await memoryBankService.searchMemories(userId, prompt, 5);
+                    if (unavailable) throw new Error('Semantic memory search was unavailable.');
                     const memoryLines: string[] = [];
                     let totalChars = 0;
                     for (const m of results) {
@@ -572,12 +589,12 @@ export class AgentGraphService {
                     nodeId: node.id,
                     agentId: node.agentId,
                     prompt,
-                    context: {
+                    context: inheritExecutionTokenBudget(context, {
                         ...context,
                         ...node.contextOverrides,
                         memoryContext,
                         traceId: `${traceId}/${node.id}`
-                    },
+                    }),
                 };
             }));
 

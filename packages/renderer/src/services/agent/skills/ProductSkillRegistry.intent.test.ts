@@ -53,7 +53,7 @@ describe('searchProductSkillByIntentAsync', () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockImplementation((name: unknown) => {
             expect(name).toBe('typesafeJudge');
-            return async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } });
+            return async () => ({ data: { answers: { skill: { type: 'choice', choice: 'digital_distribution', confidence: 0.9 } } } });
         });
 
         // 'xyzzy plugh' matches no bundled skill's name/id/description, so the
@@ -61,6 +61,14 @@ describe('searchProductSkillByIntentAsync', () => {
         const skill = await ProductSkillRegistry.searchProductSkillByIntentAsync('xyzzy plugh');
 
         expect(skill?.id).toBe('digital_distribution');
+    });
+
+    it('does not install an uncertain playbook on a deterministic miss', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'digital_distribution', confidence: 0.2 } } } }));
+        const skill = await ProductSkillRegistry.searchProductSkillByIntentAsync('xyzzy uncertain unmatched');
+        expect(skill).toBeUndefined();
+        expect(mocks.httpsCallable).toHaveBeenCalled();
     });
 
     it('stays undefined on a miss when the flag is off', async () => {

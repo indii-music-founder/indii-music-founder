@@ -18,9 +18,9 @@ const billingCycles: Array<{
   discount: number;
 }> = [
   { id: 'monthly', label: 'Monthly', months: 1, discount: 0 },
-  { id: 'quarterly', label: 'Quarterly', months: 3, discount: 0.05 },
-  { id: 'six-month', label: 'Six-month', months: 6, discount: 0.1 },
-  { id: 'annual', label: 'Annual', months: 12, discount: 0.2 },
+  { id: 'quarterly', label: 'Quarterly', months: 3, discount: 0.15 },
+  { id: 'six-month', label: 'Six-month', months: 6, discount: 0.3 },
+  { id: 'annual', label: 'Annual', months: 12, discount: 0.5 },
 ];
 
 const plans = [
@@ -68,15 +68,16 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
   const selectedCycle = billingCycles.find((cycle) => cycle.id === billingCycle) ?? billingCycles[0];
 
   const getDisplayedPrice = (monthlyPrice: number) => {
-    if (monthlyPrice === 0) return { total: '$0', cadence: 'to begin', equivalent: null };
+    if (monthlyPrice === 0) return { total: '$0', cadence: 'to begin', equivalent: null, renewal: null };
     const total = Math.round(monthlyPrice * selectedCycle.months * (1 - selectedCycle.discount));
     const monthlyEquivalent = Math.round(total / selectedCycle.months);
     if (selectedCycle.id === 'monthly') {
-      return { total: `$${total}`, cadence: 'charged monthly', equivalent: null };
+      return { total: `$${total}`, cadence: 'charged monthly', equivalent: null, renewal: null };
     }
     return {
       total: `$${total}`,
-      cadence: `charged ${selectedCycle.label.toLowerCase()}`,
+      cadence: `for the first ${selectedCycle.months} months`,
+      renewal: `Then $${monthlyPrice * selectedCycle.months} every ${selectedCycle.months} months.`,
       equivalent: `about $${monthlyEquivalent}/month`,
     };
   };
@@ -124,7 +125,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
               >
                 <span className="block">{cycle.label}</span>
                 <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/75 font-bold' : 'text-amber-400'}`}>
-                  {cycle.discount ? `${Math.round(cycle.discount * 100)}% savings` : 'Standard price'}
+                  {cycle.discount ? `${Math.round(cycle.discount * 100)}% off first term` : 'Standard price'}
                 </span>
               </button>
             ))}
@@ -165,6 +166,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
                 <span className="text-5xl font-black tracking-[-0.055em] text-white [text-shadow:0_0_20px_rgba(255,255,255,0.15)]">{displayedPrice.total}</span>
                 <span className="pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-white/50">{displayedPrice.cadence}</span>
               </div>
+              {displayedPrice.renewal && <p className="mt-2 text-xs text-white/70">{displayedPrice.renewal}</p>}
               {displayedPrice.equivalent && <div className="mt-2 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-[#FFB800]">{displayedPrice.equivalent}</div>}
               <p className="mt-5 min-h-[78px] text-sm leading-relaxed text-white/70">{plan.audience}</p>
               <div className="mt-6 flex-1 border-t border-white/10 pt-4">
@@ -198,9 +200,9 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ['Quarterly', 'About 5% less'],
-              ['Six-month', 'About 10% less'],
-              ['Annual', 'About 20% less'],
+              ['Quarterly', 'About 15% off the first 3 months'],
+              ['Six-month', 'About 30% off the first 6 months'],
+              ['Annual', '50% off the first year'],
             ].map(([period, discount]) => (
               <div key={period} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                 <div className="text-sm font-bold text-white">{period}</div>
@@ -212,7 +214,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
         <div className="mt-6 flex flex-col gap-3 text-xs leading-relaxed text-white/40 md:flex-row md:items-start md:justify-between">
           <p className="max-w-2xl">
             These are introductory beta prices and may change after real operating costs are measured. Select a billing rhythm above to see the total charge
-            and approximate monthly equivalent now.
+            and approximate monthly equivalent now. Prepaid discounts apply only to the first term; subsequent terms renew at the regular price shown. Totals are rounded to whole dollars, before applicable tax.
           </p>
           <p className="max-w-lg md:text-right">
             Need to finish more work? One-off units, project packs, and reusable capacity packs are planned. Purchased extra capacity will not expire, and an

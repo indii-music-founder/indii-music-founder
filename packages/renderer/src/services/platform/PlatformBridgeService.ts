@@ -9,7 +9,6 @@
  * without crashing or leaking platform-specific internals into business logic.
  */
 
-import { logger } from '@/utils/logger';
 import { compileProjectForWebPreview } from '@/services/video/webPreviewCompiler';
 import type { IndiiVideoProject } from '@indii/shared';
 
@@ -36,6 +35,11 @@ export interface PlatformBridge {
     deleteHistory(id: string): Promise<void>;
 }
 
+function isHistoryRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+        (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+
 export class ElectronPlatformAdapter implements PlatformBridge {
     private get api(): Window['electronAPI'] | undefined {
         return typeof window !== 'undefined' ? window.electronAPI : undefined;
@@ -43,6 +47,8 @@ export class ElectronPlatformAdapter implements PlatformBridge {
 
     getCapabilities(): PlatformCapabilities {
         const api = this.api;
+        let webHistoryAvailable = false;
+        try { webHistoryAvailable = typeof localStorage !== 'undefined'; } catch { /* Browser policy can deny the storage getter. */ }
         return {
             isElectron: Boolean(api),
             canSelectDirectory: Boolean(api?.selectDirectory),
@@ -51,7 +57,7 @@ export class ElectronPlatformAdapter implements PlatformBridge {
             // preview works on the web too; desktop additionally exposes IPC.
             canCompileVideoPreview: true,
             canRenderVideoLocally: Boolean(api?.video?.render),
-            canPersistLocalHistory: Boolean(api?.agent?.saveHistory),
+            canPersistLocalHistory: Boolean(api?.agent?.saveHistory) || webHistoryAvailable,
         };
     }
 
@@ -118,10 +124,19 @@ export class ElectronPlatformAdapter implements PlatformBridge {
             return;
         }
 
-        // Web fallback: persist to localStorage with isolation
-        if (typeof localStorage !== 'undefined') {
-            localStorage.setItem(`indii_session_history_${id}`, JSON.stringify(data));
-        }
+        // Match HistoryStore.save: a session update is a shallow patch, not a
+        // replacement of the messages and other fields in the existing cache.
+        if (typeof localStorage === 'undefined') throw new Error('Local history storage is unavailable.');
+        if (!id) throw new Error('A session ID is required for local history.');
+        if (!isHistoryRecord(data)) throw new Error('Local history updates must be plain objects.');
+        const key = `indii_session_history_${id}`;
+        const previous = localStorage.getItem(key);
+        const existing: unknown = previous === null ? {} : JSON.parse(previous);
+        if (!isHistoryRecord(existing)) throw new Error('Existing local history is not a session object.');
+        // Parse, validate and serialize before writing so a malformed patch or
+        // corrupt cache cannot silently replace the original stored bytes.
+        const serialized = JSON.stringify({ ...existing, ...data });
+        localStorage.setItem(key, serialized);
     }
 
     async deleteHistory(id: string): Promise<void> {
@@ -131,10 +146,9 @@ export class ElectronPlatformAdapter implements PlatformBridge {
             return;
         }
 
-        // Web fallback: remove from localStorage
-        if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem(`indii_session_history_${id}`);
-        }
+        if (typeof localStorage === 'undefined') throw new Error('Local history storage is unavailable.');
+        if (!id) throw new Error('A session ID is required for local history.');
+        localStorage.removeItem(`indii_session_history_${id}`);
     }
 }
 

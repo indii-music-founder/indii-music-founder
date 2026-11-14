@@ -168,9 +168,8 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
                     requestId = response.headers.get('x-typesafe-request-id') ?? undefined;
 
                     if (!response.ok) {
-                        let detail = '';
                         try {
-                            detail = await response.text();
+                            await response.text();
                         } catch {
                             if (controller.signal.aborted) throw timeoutError();
                         }
@@ -182,7 +181,7 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
                         }
                         throw new TypesafeClientError(
                             'upstream',
-                            `TypeSafe judgment upstream error (HTTP ${response.status})${detail ? `: ${detail.slice(0, 300)}` : ''}.`,
+                            `TypeSafe judgment upstream error (HTTP ${response.status}).`,
                             response.status,
                             requestId,
                         );
@@ -201,7 +200,7 @@ export function createTypesafeClient(config: TypesafeClientConfig): TypesafeClie
 
                     const usage = isPlainObject(body.usage) ? body.usage : {};
                     const finite = (value: unknown): number | undefined =>
-                        typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+                        typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 
                     return {
                         answers: body.answers,

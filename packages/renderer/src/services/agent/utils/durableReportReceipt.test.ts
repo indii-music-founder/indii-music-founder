@@ -6,7 +6,7 @@ describe('durable reporting batch receipt (structural only)', () => {
     const receipt = { success: true, metadata: { durableReceipt: true, receiptText: 'Saved report receipt' } };
     it('finishes a reporting-only batch and preserves every receipt', () => {
         expect(getDurableReportReceipt([{ name: 'report_bug', result: receipt },
-            { name: 'report_bug', result: { ...receipt, metadata: { ...receipt.metadata, receiptText: 'Second receipt' } } }]))
+            { name: 'request_feature', result: { ...receipt, metadata: { ...receipt.metadata, receiptText: 'Second receipt' } } }]))
             .toBe('Saved report receipt\n\nSecond receipt');
     });
     it('continues mixed batches and failures instead of abandoning work', () => {

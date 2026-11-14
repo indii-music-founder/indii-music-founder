@@ -44,13 +44,6 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
 
     return (
         <NodeWrapper selected={selected} className="w-[280px]">
-            {/* Standard Output Handle for Trigger/Text */}
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="output"
-                className="!bg-slate-400 !w-3 !h-3 !border-2 !border-[#1e293b] !z-20"
-            />
             <div
                 className="w-full h-full text-left rounded-lg relative group bg-gray-900/50"
                 onClick={() => setSelectedNodeId(id)}
@@ -97,6 +90,12 @@ export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegment
                     <p className="text-[10px] text-gray-500 font-mono mt-1">{formatTime(data.startTime)} - {formatTime(data.endTime)}</p>
                 </div>
             </div>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="audio_out"
+                className="!bg-amber-400 !w-3 !h-3 !border-2 !border-[#1e293b] !z-50"
+            />
         </NodeWrapper>
     );
 });

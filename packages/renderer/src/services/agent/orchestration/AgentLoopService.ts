@@ -1,3 +1,4 @@
+import type { SemanticCallAdmission } from '../governance/SemanticCallBudget';
 import { v4 as uuidv4 } from 'uuid';
 import { 
     AgentLoopDefinition, 
@@ -5,6 +6,7 @@ import {
     AgentLoopStatusEnum,
     AgentLoopIteration,
     AgentLoopDefinitionSnapshot,
+    AgentLoopActionCheckpointSchema,
 } from '@indii/shared';
 import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
@@ -19,7 +21,8 @@ import { executionTokenBudget, type ExecutionTokenBudget } from '../governance/E
 
 class ExecutionTokenBudgetExceeded extends Error {}
 class ExecutionBudgetCheckpointFailed extends Error {}
-class InvalidEvaluationResponse extends Error {}
+class EvaluationUnavailable extends Error {}
+class InvalidEvaluationResponse extends EvaluationUnavailable {}
 
 function requireConfiguredJudge(definition: AgentLoopDefinition): void {
     if (definition.judgeMode === 'DETERMINISTIC_TEST') {
@@ -47,17 +50,29 @@ function definitionMatches(snapshot: AgentLoopDefinitionSnapshot, definition: Ag
         snapshot.maxIterations === definition.maxIterations;
 }
 
+function resumableCheckpoint(execution: AgentLoopExecution) {
+    const parsed = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
+    if (!parsed.success || parsed.data.iteration !== execution.currentIteration) return undefined;
+    const checkpoint = parsed.data;
+    if (checkpoint.phase === 'DISPATCHING') return undefined;
+    if (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim()) return undefined;
+    return checkpoint;
+}
+
 function parseEvaluationResponse(result: {
-    response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    response?: { text?: () => string; candidates?: Array<{ content?: { parts?: Array<{ text?: string; thought?: boolean }> } }> };
 }): { passed: boolean; feedback: string } {
     const response = result?.response;
     const text = typeof response?.text === 'function'
         ? response.text()
-        : response?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+        : response?.candidates?.[0]?.content?.parts
+            ?.filter(part => !part.thought)
+            .map(part => part.text ?? '')
+            .join('') ?? '';
+    const fencedJson = text.trim().match(/^```(?:json)?[^\S\r\n]*\r?\n([\s\S]*?)\r?\n```$/i);
     let parsed: unknown;
     try {
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+        parsed = JSON.parse(fencedJson?.[1] ?? text);
     } catch {
         throw new InvalidEvaluationResponse('Agent loop judge returned invalid JSON.');
     }
@@ -93,21 +108,31 @@ export class AgentLoopService {
     private async persistExecution(
         userId: string | undefined,
         execution: AgentLoopExecution,
-        requiredPhase?: 'before-dispatch' | 'after-action' | 'before-judge',
+        requiredPhase?: 'before-dispatch' | 'after-action' | 'before-judge' | 'after-judge',
         tokenBudget?: ExecutionTokenBudget,
+        createOnly = false,
     ): Promise<void> {
-        if (tokenBudget) execution.tokenBudgetSpent = Math.max(execution.tokenBudgetSpent ?? 0, tokenBudget.spent);
+        if (tokenBudget) execution.tokenBudgetSpent = tokenBudget.spent;
+        const save = async () => {
+            if (!userId) throw new Error('A signed-in user is required to save a loop checkpoint.');
+            const revision = await this.getService(userId).setIfRevision(
+                execution.id, execution, 'checkpointRevision', createOnly ? null : execution.checkpointRevision ?? 0,
+            );
+            execution.checkpointRevision = revision;
+        };
         if (requiredPhase) {
             if (!userId) throw new Error('A signed-in user is required to save the loop checkpoint before execution.');
             try {
-                await this.getService(userId).set(execution.id, execution);
+                await save();
             } catch (error) {
                 logger.warn(`[AgentLoop] Required checkpoint could not be saved for ${execution.id}:`, error);
                 throw new Error(requiredPhase === 'before-dispatch'
                     ? 'Loop checkpoint could not be saved; no action was dispatched.'
                     : requiredPhase === 'after-action'
                         ? 'Action result checkpoint could not be saved; the action outcome requires reconciliation.'
-                        : 'Token budget checkpoint could not be saved; no judge call was dispatched.');
+                        : requiredPhase === 'after-judge'
+                            ? 'Evaluation checkpoint could not be saved; resume to evaluate the recorded result.'
+                            : 'Token budget checkpoint could not be saved; no judge call was dispatched.');
             }
             this.executionStore.set(execution.id, execution);
             this.executionOwners.set(execution.id, userId);
@@ -122,8 +147,7 @@ export class AgentLoopService {
         if (!userId) return;
 
         try {
-            const service = this.getService(userId);
-            await service.set(execution.id, execution);
+            await save();
         } catch (error) {
             logger.warn(`[AgentLoop] Failed to persist execution ${execution.id} to Firestore:`, error);
         }
@@ -134,6 +158,9 @@ export class AgentLoopService {
      */
     async startLoop(definition: AgentLoopDefinition, context: AgentContext): Promise<string> {
         requireConfiguredJudge(definition);
+        if (!Number.isSafeInteger(definition.maxIterations) || definition.maxIterations < 1) {
+            throw new Error('Loop iteration limit must be a positive safe integer.');
+        }
         const executionId = uuidv4();
         
         const execution: AgentLoopExecution = {
@@ -151,7 +178,7 @@ export class AgentLoopService {
 
         this.activeRuns.add(executionId);
         try {
-            await this.persistExecution(context.userId, execution, 'before-dispatch');
+            await this.persistExecution(context.userId, execution, 'before-dispatch', undefined, true);
         } catch (error) {
             this.activeRuns.delete(executionId);
             throw error;
@@ -178,14 +205,14 @@ export class AgentLoopService {
     /**
      * Fetch the current state of a loop execution asynchronously, falling back to Firestore.
      */
-    async getExecutionAsync(userId: string | undefined, executionId: string): Promise<AgentLoopExecution | null> {
+    async getExecutionAsync(userId: string | undefined, executionId: string, refresh = false): Promise<AgentLoopExecution | null> {
         if (!userId) return null;
         const cached = this.executionStore.get(executionId);
-        if (cached && this.executionOwners.get(executionId) === userId) return cached;
+        if (!refresh && cached && this.executionOwners.get(executionId) === userId) return cached;
 
         try {
             const service = this.getService(userId);
-            const doc = await service.get(executionId);
+            const doc = await service.get(executionId, refresh);
             if (doc) {
                 this.executionStore.set(executionId, doc);
                 this.executionOwners.set(executionId, userId);
@@ -212,9 +239,12 @@ export class AgentLoopService {
         this.activeRuns.add(executionId);
         try {
             const userId = context.userId;
-            const execution = await this.getExecutionAsync(userId, executionId);
+            const execution = await this.getExecutionAsync(userId, executionId, true);
             if (!execution) {
                 throw new Error(`Execution ${executionId} not found to resume`);
+            }
+            if (execution.id !== executionId) {
+                throw new Error(`Execution ${executionId} has a mismatched saved checkpoint identity.`);
             }
             if (execution.loopId !== definition.id) {
                 throw new Error(`Execution ${executionId} belongs to a different loop definition.`);
@@ -228,10 +258,10 @@ export class AgentLoopService {
             if (!execution.definitionSnapshot || !definitionMatches(execution.definitionSnapshot, definition)) {
                 throw new Error(`Execution ${executionId} cannot resume because its saved loop definition is missing or has changed.`);
             }
-            const checkpoint = execution.actionCheckpoint;
-            if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
-                checkpoint.phase === 'DISPATCHING' ||
-                (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
+            if (!Number.isSafeInteger(definition.maxIterations) || execution.currentIteration > definition.maxIterations) {
+                throw new Error(`Execution ${executionId} has no iterations left to resume.`);
+            }
+            if (!resumableCheckpoint(execution)) {
                 throw new Error(`Execution ${executionId} may have dispatched an action without a recorded result; reconcile its outcome before resuming.`);
             }
             if (execution.tokenBudgetSpent === undefined || !Number.isSafeInteger(execution.tokenBudgetSpent) || execution.tokenBudgetSpent < 0) {
@@ -241,6 +271,7 @@ export class AgentLoopService {
             logger.info(`[AgentLoop] Resuming execution ${executionId} from iteration ${execution.currentIteration}`);
             executionTokenBudget(context, 1_500_000).ensureSpentAtLeast(execution.tokenBudgetSpent);
             const resumedExecution: AgentLoopExecution = { ...execution, status: AgentLoopStatusEnum.enum.EXECUTING, updatedAt: Date.now() };
+            delete resumedExecution.evaluationFailure;
             await this.persistExecution(userId, resumedExecution, 'before-dispatch', executionTokenBudget(context, 1_500_000));
 
             void this.runLoop(definition, resumedExecution, context).catch(err => {
@@ -261,12 +292,18 @@ export class AgentLoopService {
         try {
             const service = this.getService(userId);
             const executions = await service.list();
-            return executions.filter(e =>
-                e.status === AgentLoopStatusEnum.enum.IDLE ||
-                e.status === AgentLoopStatusEnum.enum.EXECUTING ||
-                e.status === AgentLoopStatusEnum.enum.EVALUATING ||
-                e.status === AgentLoopStatusEnum.enum.FAILED
-            );
+            return executions.filter(execution => {
+                const snapshot = execution.definitionSnapshot;
+                const spent = execution.tokenBudgetSpent;
+                return ['IDLE', 'EXECUTING', 'EVALUATING', 'FAILED'].includes(execution.status)
+                    && !this.activeRuns.has(execution.id)
+                    && snapshot !== undefined && snapshot.id === execution.loopId
+                    && snapshot.judgeMode === 'LLM_EVALUATION'
+                    && Number.isSafeInteger(snapshot.maxIterations)
+                    && execution.currentIteration <= snapshot.maxIterations
+                    && spent !== undefined && Number.isSafeInteger(spent) && spent >= 0
+                    && Boolean(resumableCheckpoint(execution));
+            });
         } catch (error) {
             logger.warn(`[AgentLoop] Error listing resumable loops for user ${userId}:`, error);
             return [];
@@ -282,7 +319,7 @@ export class AgentLoopService {
      */
     private async resolveTransient(
         error: unknown,
-        context?: { retryAttempt?: number; action?: string }
+        context?: { retryAttempt?: number; action?: string; admission?: SemanticCallAdmission }
     ): Promise<boolean> {
         const heuristic = heuristicTransientError(error);
         const refined = await judgeTransientError(error, heuristic, context);
@@ -300,7 +337,8 @@ export class AgentLoopService {
 
         while (execution.currentIteration <= definition.maxIterations && !isSatisfied) {
             logger.info(`[AgentLoop] Iteration ${execution.currentIteration}/${definition.maxIterations} starting.`);
-            const checkpoint = execution.actionCheckpoint;
+            const parsedCheckpoint = AgentLoopActionCheckpointSchema.safeParse(execution.actionCheckpoint);
+            const checkpoint = parsedCheckpoint.success ? parsedCheckpoint.data : undefined;
             if (!checkpoint || checkpoint.iteration !== execution.currentIteration ||
                 checkpoint.phase === 'DISPATCHING' ||
                 (checkpoint.phase === 'RESULT_RECORDED' && !checkpoint.output.trim())) {
@@ -333,7 +371,10 @@ export class AgentLoopService {
                     return;
                 }
 
-                const action = await this.executeActionOnce(prompt, context);
+                const action = await this.executeActionOnce(prompt, context, {
+                    budget: tokenBudget,
+                    checkpoint: () => this.persistExecution(context.userId, execution, 'before-judge', tokenBudget),
+                });
                 actionResult = action.output;
                 if (action.failureKind) {
                     logger.warn(`[AgentLoop] Execution ${execution.id} halted after ${action.failureKind} action error: ${actionResult}`);
@@ -386,8 +427,9 @@ export class AgentLoopService {
                     }
                 });
             } catch (error) {
-                if (!(error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed)) throw error;
+                if (!(error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed || error instanceof EvaluationUnavailable)) throw error;
                 execution.status = AgentLoopStatusEnum.enum.FAILED;
+                execution.evaluationFailure = error.message;
                 execution.updatedAt = Date.now();
                 await this.persistExecution(context.userId, execution, undefined, tokenBudget);
                 logger.warn(`[AgentLoop] Execution ${execution.id} halted: ${error.message}`);
@@ -403,27 +445,35 @@ export class AgentLoopService {
                 passed: evaluation.passed,
                 timestamp: Date.now()
             };
-            execution.history.push(iterationRecord);
-
-            if (evaluation.passed) {
-                isSatisfied = true;
-                execution.status = AgentLoopStatusEnum.enum.COMPLETED;
-                logger.info(`[AgentLoop] Execution ${execution.id} COMPLETED at iteration ${execution.currentIteration}.`);
-            } else {
-                logger.info(`[AgentLoop] Iteration ${execution.currentIteration} failed evaluation: ${evaluation.feedback}`);
-                execution.currentIteration++;
-                execution.actionCheckpoint = { phase: 'READY', iteration: execution.currentIteration };
+            const nextIteration = evaluation.passed ? execution.currentIteration : execution.currentIteration + 1;
+            const nextExecution: AgentLoopExecution = {
+                ...execution,
+                history: [...execution.history, iterationRecord],
+                currentIteration: nextIteration,
+                actionCheckpoint: evaluation.passed
+                    ? execution.actionCheckpoint
+                    : { phase: 'READY', iteration: nextIteration },
+                status: evaluation.passed
+                    ? AgentLoopStatusEnum.enum.COMPLETED
+                    : nextIteration > definition.maxIterations
+                        ? AgentLoopStatusEnum.enum.FAILED
+                        : AgentLoopStatusEnum.enum.EXECUTING,
+                updatedAt: Date.now(),
+            };
+            try {
+                await this.persistExecution(context.userId, nextExecution, 'after-judge', tokenBudget);
+            } catch (error) {
+                execution.status = AgentLoopStatusEnum.enum.FAILED;
+                execution.evaluationFailure = 'Evaluation checkpoint could not be saved.';
+                logger.warn(`[AgentLoop] Execution ${execution.id} stopped before advancing:`, error);
+                return;
             }
-            await this.persistExecution(context.userId, execution, undefined, tokenBudget);
+            execution = nextExecution;
+            isSatisfied = evaluation.passed;
+            if (isSatisfied) {
+                logger.info(`[AgentLoop] Execution ${execution.id} COMPLETED at iteration ${execution.currentIteration}.`);
+            }
         }
-
-        if (!isSatisfied) {
-            execution.status = AgentLoopStatusEnum.enum.FAILED;
-            logger.warn(`[AgentLoop] Execution ${execution.id} FAILED after reaching max iterations (${definition.maxIterations}).`);
-        }
-
-        execution.updatedAt = Date.now();
-        await this.persistExecution(context.userId, execution, undefined, tokenBudget);
     }
 
     private buildIterationPrompt(definition: AgentLoopDefinition, execution: AgentLoopExecution): string {
@@ -462,6 +512,7 @@ export class AgentLoopService {
     private async executeActionOnce(
         prompt: string,
         context: AgentContext,
+        admission: SemanticCallAdmission,
     ): Promise<{ output: string; failureKind: 'transient' | 'non-transient' | null }> {
         // A transport failure cannot prove whether an external effect happened.
         // Do not submit a second action until adapters provide idempotent receipts.
@@ -482,11 +533,11 @@ export class AgentLoopService {
                     : { output: 'Agent returned no evaluable output.', failureKind: 'non-transient' };
             }
             const errorMsg = results?.[0]?.error || 'Action failed.';
-            return { output: errorMsg, failureKind: await this.resolveTransient(errorMsg, { retryAttempt: 1, action: 'executeBatch' })
+            return { output: errorMsg, failureKind: await this.resolveTransient(errorMsg, { retryAttempt: 1, action: 'executeBatch', admission })
                 ? 'transient' : 'non-transient' };
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
-            return await this.resolveTransient(error, { retryAttempt: 1, action: 'executeBatch' })
+            return await this.resolveTransient(error, { retryAttempt: 1, action: 'executeBatch', admission })
                 ? { output: `Infrastructure timeout/error: ${msg}`, failureKind: 'transient' }
                 : { output: `Execution error: ${msg}`, failureKind: 'non-transient' };
         }
@@ -518,15 +569,20 @@ Respond in JSON format only:
             const estimate = TokenEstimator.estimate(prompt, judgeInstruction, [], 1_500_000, 300);
             const reservation = estimate.willExceed ? null : tokenBudget.reserve(estimate.totalProjected);
             if (reservation === null) throw new ExecutionTokenBudgetExceeded();
-            await checkpointBudget();
-            const result = await FirebaseIntelligenceService.getInstance().generateContent(
-                prompt,
-                INTELLIGENCE_MODELS.TEXT.FAST,
-                { temperature: 1.0, maxOutputTokens: 300 },
-                judgeInstruction
-            );
-            tokenBudget.settle(reservation, result?.response?.usageMetadata?.totalTokenCount);
-            return result;
+            let actualTokens: number | undefined;
+            try {
+                await checkpointBudget();
+                const result = await FirebaseIntelligenceService.getInstance().generateContent(
+                    prompt,
+                    INTELLIGENCE_MODELS.TEXT.FAST,
+                    { temperature: 1.0, maxOutputTokens: 300 },
+                    judgeInstruction
+                );
+                actualTokens = result?.response?.usageMetadata?.totalTokenCount;
+                return result;
+            } finally {
+                tokenBudget.settle(reservation, actualTokens);
+            }
         };
 
         try {
@@ -537,11 +593,11 @@ Respond in JSON format only:
             if (error instanceof ExecutionTokenBudgetExceeded || error instanceof ExecutionBudgetCheckpointFailed) throw error;
             if (error instanceof InvalidEvaluationResponse) {
                 logger.warn('[AgentLoop] Judge returned an invalid verdict.');
-                return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+                throw new InvalidEvaluationResponse('Evaluation returned an invalid verdict.');
             }
             logger.error('[AgentLoop] Evaluation error:', error);
             // If judge fails due to transient error, retry once
-            if (await this.resolveTransient(error, { action: 'evaluateOutcome' })) {
+            if (await this.resolveTransient(error, { action: 'evaluateOutcome', admission: { budget: tokenBudget, checkpoint: checkpointBudget } })) {
                 try {
                     await new Promise(r => setTimeout(r, 500));
                     const retryResult = await generateJudge();
@@ -550,12 +606,12 @@ Respond in JSON format only:
                     if (retryErr instanceof ExecutionTokenBudgetExceeded || retryErr instanceof ExecutionBudgetCheckpointFailed) throw retryErr;
                     if (retryErr instanceof InvalidEvaluationResponse) {
                         logger.warn('[AgentLoop] Judge retry returned an invalid verdict.');
-                        return { passed: false, feedback: 'Evaluation returned an invalid verdict.' };
+                        throw new InvalidEvaluationResponse('Evaluation returned an invalid verdict.');
                     }
                     logger.error('[AgentLoop] Evaluation retry also failed:', retryErr);
                 }
             }
-            return { passed: false, feedback: 'Evaluation failed. Please try again.' };
+            throw new EvaluationUnavailable('Evaluation failed. Resume to evaluate the saved result.');
         }
     }
 }

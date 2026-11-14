@@ -21,12 +21,12 @@ interface FormFieldProps {
     error?: string;
     required?: boolean;
     className?: string;
-    children: React.ReactElement<{ id?: string; 'aria-describedby'?: string; 'aria-invalid'?: boolean | 'true' | 'false' }>;
+    children: React.ReactElement<{ id?: string; required?: boolean; 'aria-describedby'?: string; 'aria-required'?: boolean | 'true' | 'false'; 'aria-invalid'?: boolean | 'true' | 'false' | 'grammar' | 'spelling' }>;
 }
 
 export function FormField({ label, hint, error, required, className, children }: FormFieldProps) {
     const generatedId = useId();
-    const inputId = children.props.id ?? generatedId;
+    const inputId = children.props.id?.trim() ? children.props.id : generatedId;
     const hintId = hint ? `${inputId}-hint` : undefined;
     const errorId = error ? `${inputId}-error` : undefined;
 
@@ -35,12 +35,15 @@ export function FormField({ label, hint, error, required, className, children }:
         hintId,
         errorId,
     ].filter((id): id is string => Boolean(id)))).join(' ') || undefined;
-    const invalid = Boolean(error) || children.props['aria-invalid'] === true || children.props['aria-invalid'] === 'true';
+    const isRequired = required || children.props.required ||
+        children.props['aria-required'] === true || children.props['aria-required'] === 'true';
+    const invalid = error ? true : children.props['aria-invalid'];
 
     const enhancedChild = React.cloneElement(children, {
         id: inputId,
         'aria-describedby': describedBy,
-        'aria-invalid': invalid || undefined,
+        'aria-invalid': invalid,
+        'aria-required': isRequired || children.props['aria-required'],
     });
 
     return (
@@ -50,7 +53,7 @@ export function FormField({ label, hint, error, required, className, children }:
                 className="block text-xs font-bold text-gray-500 tracking-wider uppercase mb-1.5"
             >
                 {label}
-                {required && <span className="text-red-400 ml-0.5" aria-hidden="true">*</span>}
+                {isRequired && <span className="text-red-400 ml-0.5" aria-hidden="true">*</span>}
             </label>
             {enhancedChild}
             {hint && (

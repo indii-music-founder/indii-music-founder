@@ -21,7 +21,8 @@ import { writeAuditLog } from '@/lib/auditLogChain';
 export interface DeletionResult {
     success: boolean;
     deletedCollections: string[];
-    deletedStorageFiles: number;
+    /** The server currently does not return an object count. */
+    deletedStorageFiles: number | null;
     errors: string[];
     pendingExternalActions: string[];
 }
@@ -43,7 +44,7 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
     const result: DeletionResult = {
         success: false,
         deletedCollections: [],
-        deletedStorageFiles: 0,
+        deletedStorageFiles: null,
         errors: [],
         pendingExternalActions: [
             'Stripe customer deletion (stripe.customers.del)',
@@ -86,7 +87,6 @@ export async function deleteUserAccount(userId: string, userEmail: string): Prom
 
         if (data && data.success) {
             result.deletedCollections.push(`users/ (${data.deletedDocs || 0} docs across profile and subcollections)`);
-            result.deletedStorageFiles = 1; // Backend cleans all user storage prefixes
             result.success = true;
             logger.info(`[AccountDeletion] Backend GDPR erasure succeeded for user ${userId}. docs=${data.deletedDocs}`);
         } else if (data && data.errors && data.errors.length > 0) {

@@ -91,6 +91,7 @@ export function isCapabilityQuestion(task: string): boolean {
     const subject = String.raw`(?:you|indii|(?:the )?(?:other )?agents?|(?:the )?(?:other )?departments?|specialists?)`;
 
     return [
+        /^(?:(?:hey|hi) (?:boardroom|conductor)[,.:]? +)?(?:are you (?:currently )?(?:active|operational|online|ready|operating normally|working normally)|(?:is|are) (?:the )?(?:boardroom|conductor|system|app|platform) (?:currently )?(?:active|operational|online|ready|working|production[- ]ready)|(?:what(?:'s| is) )?(?:your|the system's|the boardroom's) (?:current )?(?:operational |readiness |production )?status)(?: right now| now| today)?[?!.]*$/i,
         new RegExp(String.raw`\bwhat can(?: and can(?:not|'t))? ${subject} do\b`, 'i'),
         new RegExp(String.raw`\bwhat (?:can(?:not|'t)|can't) ${subject} do\b`, 'i'),
         new RegExp(String.raw`\bwhat are (?:your|indii(?:'s)?|the|the other) (?:agents?'? |departments?'? )?capabilit(?:y|ies)\b`, 'i'),

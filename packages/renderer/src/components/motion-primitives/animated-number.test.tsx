@@ -14,10 +14,19 @@ describe('AnimatedNumber', () => {
 
     it('announces the final value while hiding the animated frames', () => {
         const { rerender } = render(<AnimatedNumber value={12.34} precision={1} />);
-        expect(screen.getByText('12.3')).toHaveClass('sr-only');
-        expect(screen.getByText('12.3').nextElementSibling).toHaveAttribute('aria-hidden', 'true');
+        expect(screen.getByText('12.3', { selector: '.sr-only' })).toHaveClass('sr-only');
+        expect(screen.getByText('12.3', { selector: '.sr-only' }).nextElementSibling).toHaveAttribute('aria-hidden', 'true');
         rerender(<AnimatedNumber value={20.56} precision={1} />);
-        expect(screen.getByText('20.6')).toHaveClass('sr-only');
+        expect(screen.getByText('20.6', { selector: '.sr-only' })).toHaveClass('sr-only');
+    });
+
+    it('shows the first known value immediately after an unavailable reading', () => {
+        const { container, rerender } = render(<AnimatedNumber value={NaN} />);
+        rerender(<AnimatedNumber value={42} />);
+        expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^42$/);
+        rerender(<AnimatedNumber value={Infinity} />);
+        rerender(<AnimatedNumber value={83} />);
+        expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^83$/);
     });
 
     it('shows a stable value without animation when reduced motion is requested', () => {

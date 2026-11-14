@@ -39,7 +39,12 @@ export async function browserUpscale({ dataUrl, required, onProgress, onStage, s
     ]), signal);
     onStage?.('Starting browser graphics...');
     await runPrintStage('Starting browser graphics', 60_000, () => tf.ready(), signal);
-    const engine = new Upscaler({ model: { ...model, path: `${import.meta.env.BASE_URL}models/upscale/x${scale}/model.json` } });
+    const modelPath = `${import.meta.env.BASE_URL}models/upscale/x${scale}/model.json`;
+    // Hosted routes can be nested. Resolve Vite's relative base from the hosting root.
+    const modelUrl = window.location.origin === 'null'
+        ? new URL(modelPath, document.baseURI)
+        : new URL(modelPath, window.location.origin);
+    const engine = new Upscaler({ model: { ...model, path: modelUrl.href } });
     const output = document.createElement('canvas');
     output.width = width;
     output.height = height;

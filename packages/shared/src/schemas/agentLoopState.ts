@@ -70,8 +70,13 @@ export const AgentLoopExecutionSchema = z.object({
     currentIteration: z.number().int().nonnegative().default(0),
     history: z.array(AgentLoopIterationSchema).default([]),
     // Durable high-water mark; checkpoints without it cannot prove remaining allowance.
+    checkpointRevision: z.number().int().nonnegative().safe().optional(),
     tokenBudgetSpent: z.number().int().nonnegative().safe().optional(),
     actionCheckpoint: AgentLoopActionCheckpointSchema.optional(),
+    // Keep scheduled provenance when queue entries pass through schema parsing.
+    sourceDefinitionPath: z.string().min(1).optional(),
+    scheduledFor: z.number().int().nonnegative().safe().optional(),
+    evaluationFailure: z.string().optional(),
     createdAt: z.number(),
     updatedAt: z.number(),
 });

@@ -390,9 +390,11 @@ export class CreatorProtectionHarnessService {
     }
 
     const mergedFlags = Array.from(new Set([...baseline.flags, ...jevVerdict.flags]));
+    const severities = ['low', 'medium', 'high'] as const;
+    const severity = severities[Math.max(severities.indexOf(baseline.severity), severities.indexOf(jevVerdict.severity))]!;
     return {
       flags: mergedFlags,
-      severity: jevVerdict.severity,
+      severity,
       recommendedClause: baseline.recommendedClause,
       jevVerdict,
     };

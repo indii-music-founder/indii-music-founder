@@ -436,7 +436,10 @@ export function LabelDealRecoupment() {
 
             {/* Deal list */}
             {loading ? (
-                <SkeletonList rows={3} />
+                <div role="status">
+                    <span className="sr-only">Loading label deals</span>
+                    <SkeletonList rows={3} />
+                </div>
             ) : deals.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 border border-dashed border-white/10 rounded-2xl">
                     <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-gray-600 mb-3">

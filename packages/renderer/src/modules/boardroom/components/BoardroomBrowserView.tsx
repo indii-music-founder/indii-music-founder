@@ -47,6 +47,8 @@ interface BoardroomBrowserViewProps {
 export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewProps) {
     const toast = useToast();
     const containerRef = useRef<HTMLDivElement>(null);
+    const pageRevision = useRef(0);
+    const currentUrl = useRef<string | null>(null);
 
     const boardroomBrowserUrl = useStore(state => state.boardroomBrowserUrl);
     const setBoardroomBrowserUrl = useStore(state => state.setBoardroomBrowserUrl);
@@ -54,11 +56,13 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const activeAgents = useStore(state => state.activeAgents) || [];
     const toggleAgent = useStore(state => state.toggleAgent);
 
+    const initialBrowserUrl = useRef(boardroomBrowserUrl || 'https://artists.spotify.com');
     const [inputUrl, setInputUrl] = useState(boardroomBrowserUrl || 'https://artists.spotify.com');
     const [isLoading, setIsLoading] = useState(false);
+    const [pageLoadFailed, setPageLoadFailed] = useState(false);
     const [canGoBack, setCanGoBack] = useState(false);
     const [canGoForward, setCanGoForward] = useState(false);
-    const [pageTitle, setPageTitle] = useState('Spotify for Artists');
+    const [pageTitle, setPageTitle] = useState('');
     const [isPinned, setIsPinned] = useState(false);
     const [isReaderMode, setIsReaderMode] = useState(false);
     const [extractedText, setExtractedText] = useState<string | null>(null);
@@ -66,12 +70,25 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
     const isNativeElectron = typeof window !== 'undefined' && Boolean(window.electronAPI?.boardroomBrowser);
 
+    const invalidatePage = useCallback((url: string) => {
+        if (currentUrl.current === url) return;
+        currentUrl.current = url;
+        initialBrowserUrl.current = url;
+        pageRevision.current += 1;
+        setLastSemanticJudgment(null);
+        setIsPinned(false);
+        setExtractedText(null);
+        setIsReaderMode(false);
+        setPageTitle('');
+    }, []);
+
     // Keep input field updated with store URL
     useEffect(() => {
         if (boardroomBrowserUrl) {
+            invalidatePage(boardroomBrowserUrl);
             setInputUrl(boardroomBrowserUrl);
         }
-    }, [boardroomBrowserUrl]);
+    }, [boardroomBrowserUrl, invalidatePage]);
 
     // Electron Native Viewport Sync
     useEffect(() => {
@@ -80,15 +97,19 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         const api = window.electronAPI.boardroomBrowser;
 
         // Attach native WebContentsView
-        void api.attach({ initialUrl: boardroomBrowserUrl || 'https://artists.spotify.com' });
+        void api.attach({ initialUrl: initialBrowserUrl.current }).then(result => {
+            if (!result.success) setPageLoadFailed(true);
+        }).catch(() => setPageLoadFailed(true));
 
         const unsubscribeState = api.onStateChange((state) => {
             if (state.url) {
+                invalidatePage(state.url);
                 setBoardroomBrowserUrl(state.url);
                 setInputUrl(state.url);
             }
             if (state.title) setPageTitle(state.title);
             setIsLoading(state.isLoading);
+            setPageLoadFailed(Boolean(state.error));
             setCanGoBack(state.canGoBack);
             setCanGoForward(state.canGoForward);
         });
@@ -120,12 +141,14 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             // Hide on unmount or tab switch
             void api.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false });
         };
-    }, [isNativeElectron, isVisible, boardroomBrowserUrl, setBoardroomBrowserUrl]);
+    }, [isNativeElectron, isVisible, setBoardroomBrowserUrl, invalidatePage]);
 
     const handleNavigate = (targetUrl: string) => {
         const trimmed = targetUrl.trim();
         if (!trimmed) return;
 
+        invalidatePage(trimmed);
+        setPageLoadFailed(false);
         setBoardroomBrowserUrl(trimmed);
         setInputUrl(trimmed);
         setIsPinned(false);
@@ -171,11 +194,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     };
 
     const handlePinToContext = async () => {
+        const revision = pageRevision.current;
         try {
             setIsLoading(true);
             let pageData = {
-                title: pageTitle || inputUrl,
-                url: inputUrl || boardroomBrowserUrl,
+                title: '',
+                url: boardroomBrowserUrl || inputUrl,
                 text: '',
             };
 
@@ -201,11 +225,13 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
             // TypeSafe Jev System One semantic enrichment
             const semantics = await judgeBoardroomWebpageSemantics(pageData.url, pageData.title, pageData.text);
+            if (revision !== pageRevision.current) return;
             setLastSemanticJudgment(semantics);
 
+            const classificationSource = semantics.source === 'jev' ? 'TypeSafe Jev' : 'Automatic category suggestion';
             const promptText = pageData.text
-                ? `[TypeSafe Jev: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()} | Relevance: ${Math.round(semantics.relevanceScore * 100)}%]\n\nExtracted Webpage Content:\n${pageData.text.slice(0, 10000)}`
-                : `[TypeSafe Jev: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()}]`;
+                ? `[${classificationSource}: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()} | Relevance: ${Math.round(semantics.relevanceScore * 100)}%]\n\nExtracted Webpage Content:\n${pageData.text.slice(0, 10000)}`
+                : `[${classificationSource}: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()}]\nPage text was not captured; only the URL is available.`;
 
             addReferencedAsset({
                 id: `web-${Date.now()}`,
@@ -217,7 +243,11 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             });
 
             setIsPinned(true);
-            toast.success(`Pinned & classified via Jev: ${semantics.categoryLabel} (${semantics.recommendedDepartment.toUpperCase()})`);
+            if (pageData.text.trim()) {
+                toast.success(`Pinned. ${classificationSource}: ${semantics.categoryLabel} (${semantics.recommendedDepartment.toUpperCase()})`);
+            } else {
+                toast.info('Page URL pinned, but its text could not be captured.');
+            }
         } catch (error) {
             toast.error('Failed to capture webpage context.');
         } finally {
@@ -231,18 +261,20 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             return;
         }
 
+        const revision = pageRevision.current;
         try {
             setIsLoading(true);
             if (window.electronAPI?.agent?.extractWebPage) {
-                const res = await window.electronAPI.agent.extractWebPage(inputUrl);
-                if (res.success && res.data) {
+                const res = await window.electronAPI.agent.extractWebPage(boardroomBrowserUrl || inputUrl);
+                if (revision !== pageRevision.current) return;
+                if (res.success && res.data?.text?.trim()) {
+                    setPageTitle(res.data.title || '');
                     setExtractedText(res.data.text);
                     setIsReaderMode(true);
                     return;
                 }
             }
-            toast.info('Reader mode is ready. Opening reader preview.');
-            setIsReaderMode(true);
+            toast.error('Could not extract text for reader mode.');
         } catch {
             toast.error('Could not extract text for reader mode.');
         } finally {
@@ -316,6 +348,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 <button
                     type="button"
                     onClick={handlePinToContext}
+                    disabled={isNativeElectron && (pageLoadFailed || isLoading)}
                     className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0",
                         isPinned
@@ -394,7 +427,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     <div className="flex items-center gap-2 overflow-hidden">
                         <span className="flex items-center gap-1 font-bold text-indigo-300 shrink-0">
                             <Sparkles size={11} className="text-indigo-400" />
-                            TypeSafe Jev:
+                            {lastSemanticJudgment.source === 'jev' ? 'TypeSafe Jev:' : 'Automatic suggestion:'}
                         </span>
                         <span className="text-white/90 font-medium truncate">{lastSemanticJudgment.categoryLabel}</span>
                         <span className="text-white/30 shrink-0">•</span>
@@ -420,6 +453,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 </div>
             )}
 
+            {isNativeElectron && pageLoadFailed && (
+                <div role="alert" className="px-3 py-2 text-xs text-amber-200 bg-amber-950/70 border-b border-amber-500/30">
+                    This page could not be loaded. Check its address or try reloading before pinning it.
+                </div>
+            )}
+
             {/* Browser Viewport */}
             <div className="flex-1 relative min-h-0 min-w-0 bg-black flex flex-col overflow-hidden">
                 {isNativeElectron ? (
@@ -438,7 +477,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     <div className="flex-1 p-6 overflow-y-auto custom-scrollbar text-white/80 space-y-4 max-w-3xl mx-auto">
                         <div className="border-b border-white/10 pb-3 flex items-center justify-between">
                             <div>
-                                <h2 className="text-base font-bold text-white">{pageTitle}</h2>
+                                <h2 className="text-base font-bold text-white">{pageTitle || boardroomBrowserUrl || inputUrl}</h2>
                                 <p className="text-xs text-white/40 truncate mt-0.5">{inputUrl}</p>
                             </div>
                             <button

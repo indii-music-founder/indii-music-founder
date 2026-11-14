@@ -1,18 +1,11 @@
 import * as crypto from 'crypto';
-import { getFirestore } from 'firebase-admin/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
 import { arcjetKey, escrowWebhookSecret } from '../config/secrets';
 import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
 
-// Lazy Firestore handle: a bare getFirestore() at module top level throws at
-// import time in test environments (import-crash class, see 2179e43a).
-function getDb() {
-  return getFirestore();
-}
-
 /**
- * Pay-Per-Approval Escrow Infrastructure
- * Settles escrow transactions using immutable ACID transactions and HMAC signature verification.
+ * Legacy callback. A shared-secret message does not establish that Stripe
+ * captured funds and completed all transfers, so it must not settle escrow.
  */
 export const handleEscrowWebhook = onRequest({
     secrets: [arcjetKey, escrowWebhookSecret],
@@ -55,44 +48,7 @@ export const handleEscrowWebhook = onRequest({
             return;
         }
 
-        let data;
-        try {
-            data = JSON.parse(webhookPayload);
-        } catch (_e) {
-            response.status(400).send("Bad Request: Invalid JSON");
-            return;
-        }
-        
-        const transactionId = data.transaction_id;
-
-        if (!transactionId) {
-            response.status(400).send("Missing transaction_id");
-            return;
-        }
-
-        // ACID Transaction to prevent double-spending
-        await getDb().runTransaction(async (t) => {
-            const escrowRef = getDb().collection('split_escrows').doc(transactionId);
-            const doc = await t.get(escrowRef);
-
-            if (!doc.exists) {
-                throw new Error("Transaction not found");
-            }
-
-            const currentStatus = doc.data()?.status;
-            if (currentStatus === 'RELEASED' || currentStatus === 'REFUNDED') {
-                throw new Error("Idempotency check failed: Transaction already settled or invalid.");
-            }
-
-            if (data.status === 'success') {
-                t.update(escrowRef, { status: 'RELEASED', releasedAt: new Date().toISOString() });
-            } else {
-                // Refund flow
-                t.update(escrowRef, { status: 'REFUNDED', refundedAt: new Date().toISOString() });
-            }
-        });
-
-        response.status(200).send("Webhook processed successfully");
+        response.status(409).send('Escrow settlement requires verified payment and transfer receipts.');
     } catch (error) {
         console.error("Escrow Webhook Error:", error);
         response.status(500).send("Internal Server Error");

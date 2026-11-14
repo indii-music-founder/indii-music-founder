@@ -125,6 +125,18 @@ describe('BigBrainEngine', () => {
     });
 
     describe('assembleContext', () => {
+        it('reports unavailable alignment recall while preserving other context', async () => {
+            vi.mocked(memoryBankService.searchMemories).mockResolvedValueOnce({
+                results: [], hasMore: false, unavailable: true,
+            });
+            const context = await bigBrainEngine.assembleContext('user-1', 'generalist', 'Help with a release');
+            expect(context.alignmentRules).toEqual([]);
+            expect(context.episodicRecall).toContain('first ranked memory page');
+            expect(context.meta.layerErrors).toEqual([
+                expect.stringContaining('alignmentRules: Error: Semantic memory search was unavailable.'),
+            ]);
+        });
+
         it('does not promote an unrelated first memory into user alignment', async () => {
             vi.mocked(memoryBankService.searchMemories).mockResolvedValueOnce({
                 results: [

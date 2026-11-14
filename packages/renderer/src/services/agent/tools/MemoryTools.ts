@@ -1,11 +1,25 @@
 
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
-import type { AnyToolFunction, AgentContext } from '../types';
+import type { AnyToolFunction, AgentContext, ToolFunctionResult } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
-import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { alwaysOnMemoryEngine, type MemoryIngestReceipt } from '../memory/AlwaysOnMemoryEngine';
 import type { AlwaysOnMemoryCategory } from '@/types/AlwaysOnMemory';
 import { importWithRetry } from '@/utils/dynamicImport';
+
+function memoryWriteFailure(toolName: string, message: string, code: 'MEMORY_SAVE_UNCONFIRMED' | 'MEMORY_NOT_SAVED' = 'MEMORY_SAVE_UNCONFIRMED'): ToolFunctionResult {
+    return toolError(message, code, { retryable: false, toolName });
+}
+
+function memoryReceiptResult(toolName: string, receipt: MemoryIngestReceipt, data: Record<string, unknown> = {}): ToolFunctionResult {
+    if (receipt.status !== 'stored') {
+        return memoryWriteFailure(toolName, receipt.status === 'skipped'
+            ? `No new memory was saved: ${receipt.reason}.`
+            : 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.', receipt.status === 'skipped' ? 'MEMORY_NOT_SAVED' : 'MEMORY_SAVE_UNCONFIRMED');
+    }
+    const message = `Memory saved. Reference: ${receipt.memoryId}.`;
+    return toolSuccess({ ...data, ...receipt }, message, { durableReceipt: true, receiptText: message });
+}
 
 /**
  * MemoryTools - Unified tools for interacting with the Always-On Memory system.
@@ -31,21 +45,16 @@ export const MemoryTools = {
                 'preference': 'preference'
             };
 
-            const result = await alwaysOnMemoryEngine.ingest(
+            const result = await alwaysOnMemoryEngine.ingestWithReceipt(
                 args.content,
                 'agent_extraction',
                 categoryMap[args.type || 'fact'] || 'fact'
             );
 
-            return {
-                content: args.content,
-                projectId,
-                engineResponse: result,
-                message: `Memory stored via AlwaysOnMemoryEngine.`
-            };
+            return memoryReceiptResult('save_memory', result, { content: args.content, projectId });
         } catch (e: unknown) {
             logger.error('[MemoryTools] save_memory failed:', e);
-            return toolError("Failed to save memory to engine.", "ENGINE_ERROR");
+            return memoryWriteFailure('save_memory', 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 
@@ -54,7 +63,7 @@ export const MemoryTools = {
         const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
         try {
-            const result = await alwaysOnMemoryEngine.query(args.query);
+            const result = await alwaysOnMemoryEngine.queryFromServer(args.query);
             return {
                 answer: result,
                 projectId,
@@ -71,16 +80,17 @@ export const MemoryTools = {
         const userId = useStore.getState().user?.uid;
         
         if (!userId) {
-            return toolError("User is not authenticated.", "AUTH_ERROR");
+            return memoryWriteFailure('index_memory', 'Sign in before saving semantic memory. No memory was saved.', 'MEMORY_NOT_SAVED');
         }
 
         try {
             const { memoryBankService } = await importWithRetry(() => import('../memory/MemoryBankService'));
             const result = await memoryBankService.addMemory(userId, args.content);
-            return toolSuccess({ results: result }, "Successfully indexed memory to semantic memory bank.");
+            if (!result.length) return memoryWriteFailure('index_memory', 'Semantic memory save could not be confirmed. Check memory before retrying.');
+            return toolSuccess({ results: result }, `Semantic memory saved. Reference: ${result.map(item => item.id).join(', ')}.`);
         } catch (e: unknown) {
             logger.error('[MemoryTools] index_memory failed:', e);
-            return toolError("Failed to index memory.", "INDEX_ERROR");
+            return memoryWriteFailure('index_memory', 'Semantic memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 
@@ -95,15 +105,14 @@ export const MemoryTools = {
         tags?: string[] 
     }) => {
         try {
-            const summary = await alwaysOnMemoryEngine.ingest(
+            const receipt = await alwaysOnMemoryEngine.ingestWithReceipt(
                 args.content,
                 'user_input',
                 args.category
             );
-            return toolSuccess({ summary }, `Successfully saved to persistent memory.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to save user memory: ${error.message}`, 'STORAGE_ERROR');
+            return memoryReceiptResult('save_user_memory', receipt);
+        } catch {
+            return memoryWriteFailure('save_user_memory', 'Memory save could not be confirmed. Check memory before retrying to avoid a duplicate.');
         }
     }),
 
@@ -112,12 +121,16 @@ export const MemoryTools = {
         categories?: AlwaysOnMemoryCategory[]; 
         limit?: number 
     }) => {
+        const pageSize = args.limit ?? 500;
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+            return toolError('Memory search limit must be an integer from 1 to 500.', 'INVALID_ARGUMENT');
+        }
+        const categories = args.categories ?? [];
         try {
-            const answer = await alwaysOnMemoryEngine.query(args.query);
-            return toolSuccess({ answer }, `Memory search complete.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to search user memory: ${error.message}`, 'QUERY_ERROR');
+            const answer = await alwaysOnMemoryEngine.queryFromServer(args.query, pageSize, categories);
+            return toolSuccess({ answer }, `Searched up to ${pageSize} recent active memories${categories.length ? ' in the requested categories' : ' and 10 recent insights'}.`);
+        } catch {
+            return toolError('Memory recall is currently unavailable.', 'QUERY_ERROR');
         }
     }),
 
@@ -125,26 +138,27 @@ export const MemoryTools = {
         try {
             const status = await alwaysOnMemoryEngine.getStatus();
             // We synthesize a context summary for the agent
-            const answer = await alwaysOnMemoryEngine.query("Summarize the user's primary goals, preferences, and current creative focus based on all memories.");
+            const answer = await alwaysOnMemoryEngine.queryFromServer("Summarize the user's primary goals, preferences, and current creative focus based on recent memories and insights.");
             return toolSuccess({ context: answer, engineStatus: status }, `User context retrieved.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to get user context: ${error.message}`, 'CONTEXT_ERROR');
+        } catch {
+            return toolError('Memory recall is currently unavailable.', 'CONTEXT_ERROR');
         }
     }),
 
-    list_user_memories: wrapTool('list_user_memories', async (args: { 
-        categories?: AlwaysOnMemoryCategory[]; 
-        limit?: number 
+    list_user_memories: wrapTool('list_user_memories', async (args: {
+        categories?: AlwaysOnMemoryCategory[];
+        limit?: number;
     }) => {
+        const pageSize = args.limit ?? 20;
+        if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+            return toolError('Memory list limit must be an integer from 1 to 500.', 'INVALID_ARGUMENT');
+        }
         try {
-            const memories = await alwaysOnMemoryEngine.getAllMemories(args.limit || 20, { 
-                category: args.categories?.[0] 
-            });
-            return toolSuccess({ memories }, `Found ${memories.length} memories.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to list memories: ${error.message}`, 'LIST_ERROR');
+            const categories = [...new Set(args.categories ?? [])];
+            const memories = await alwaysOnMemoryEngine.listRecentFromServer(pageSize, categories);
+            return toolSuccess({ memories, limit: pageSize, categories }, `Returned ${memories.length} recent active memories.`);
+        } catch {
+            return toolError('Memory listing is currently unavailable.', 'LIST_ERROR');
         }
     }),
 
@@ -152,9 +166,8 @@ export const MemoryTools = {
         try {
             const result = await alwaysOnMemoryEngine.consolidateNow();
             return toolSuccess({ result }, `Consolidation complete.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Consolidation failed: ${error.message}`, 'CONSOLIDATE_ERROR');
+        } catch {
+            return toolError('Memory consolidation did not complete. Review memory status before trying again.', 'CONSOLIDATE_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;

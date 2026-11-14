@@ -1,3 +1,4 @@
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 /**
  * TypeSafe judgment constants + decision-band tests (ISSUE-1442 pilot).
  *
@@ -62,6 +63,8 @@ import {
     judgeReceiptDataVerification,
     judgeStatementAnomalyTriage,
     judgeNextBestAction,
+    judgeContractAIClauseProtection,
+    judgeCreatorIncidentClassification,
     judgeArtistCareerDNA,
     judgeSessionChunkTriage,
     judgeVideoBeatCutPacing,
@@ -111,6 +114,7 @@ import {
     deterministicPlpVariantAdFallback,
     judgeCreativeJourneyIntent,
     deterministicCreativeJourneyFallback,
+    judgeBoardroomWebpageSemantics,
     judgeBoardroomExecutiveIntent,
     deterministicBoardroomExecutiveFallback,
     judgeDepartmentJourneyIntent,
@@ -133,6 +137,47 @@ const SKILLS = [
     { id: 'digital_distribution', name: 'Digital Distribution', description: 'DSP ingestion, DDEX, ISRC allocation.' },
     { id: 'legal_affairs', name: 'Legal Affairs', description: 'Contracts, DMCA takedowns, rights.' },
 ];
+
+
+describe('Boardroom webpage relevance contract', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReturnValue(true);
+    });
+
+    it.each([NaN, Infinity, -Infinity])('uses the deterministic relevance when Jev returns invalid score %s', async score => {
+        const callable = vi.fn().mockResolvedValue({ data: { answers: {
+            industry_category: { choice: 'general_research' },
+            recommended_department: { choice: 'marketing' },
+            relevance: { score },
+        } } });
+        mocks.httpsCallable.mockReturnValue(callable);
+        const result = await judgeBoardroomWebpageSemantics('https://example.org', 'Research');
+        expect(result.source).toBe('deterministic');
+        expect(Number.isFinite(result.relevanceScore)).toBe(true);
+        expect(result.relevanceScore).toBeGreaterThanOrEqual(0);
+        expect(result.relevanceScore).toBeLessThanOrEqual(1);
+    });
+
+    it('sends ordered relevance criteria and preserves the returned score', async () => {
+        const callable = vi.fn().mockResolvedValue({ data: { answers: {
+            industry_category: { choice: 'pro_rights' },
+            recommended_department: { choice: 'publishing' },
+            relevance: { score: 0.72 },
+        } } });
+        mocks.httpsCallable.mockReturnValue(callable);
+        const result = await judgeBoardroomWebpageSemantics('https://example.org/royalties', 'Royalties');
+        expect(callable).toHaveBeenCalledWith(expect.objectContaining({
+            questions: expect.objectContaining({ relevance: expect.objectContaining({
+                type: 'score', criteria: expect.arrayContaining([
+                    expect.stringContaining('no useful connection'), expect.stringContaining('directly supports'),
+                ]),
+            }) }),
+        }));
+        expect(result).toMatchObject({ source: 'jev', category: 'pro_rights', recommendedDepartment: 'publishing', relevanceScore: 0.72 });
+    });
+});
 
 describe('TypeSafe HTTP question contract', () => {
     it('defines ordered criteria for every Score and criteria for every Choice', () => {
@@ -202,6 +247,33 @@ describe('judgeTransientError decision bands', () => {
 
         expect(verdict).toBeNull();
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
+    });
+
+    it('charges the originating execution from the receipt before adopting a retry verdict', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const budget = new ExecutionTokenBudget(100);
+        const durableSpend: number[] = [];
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: {
+            answers: { transient: { type: 'noul', noul: 0.9 } },
+            usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 },
+        } }));
+        expect(await judgeTransientError(new Error('network'), true, { admission: {
+            budget, checkpoint: async () => { durableSpend.push(budget.spent); },
+        } })).toBe(true);
+        expect(durableSpend).toEqual([100, 20]);
+        expect(budget.spent).toBe(20);
+    });
+
+    it('skips the optional retry call when the execution has no allowance', async () => {
+        mocks.enabled.mockReturnValue(true);
+        const budget = new ExecutionTokenBudget(10);
+        budget.reserve(10);
+        let calls = 0;
+        mocks.httpsCallable.mockReturnValue(async () => { calls++; return { data: { answers: {} } }; });
+        expect(await judgeTransientError(new Error('network'), true, { admission: {
+            budget, checkpoint: async () => {},
+        } })).toBeNull();
+        expect(calls).toBe(0);
     });
 
     it('adopts a confident transient verdict', async () => {
@@ -316,7 +388,7 @@ describe('judgeSkillIntent (Choice routing)', () => {
 
     it('returns the chosen candidate id', async () => {
         mocks.enabled.mockReturnValue(true);
-        const call = vi.fn(async () => ({ data: { answers: { skill: { choice: 'digital_distribution' } } } }));
+        const call = vi.fn(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'digital_distribution', confidence: 0.9 } } } }));
         mocks.httpsCallable.mockImplementation((name: unknown) => {
             expect(name).toBe('typesafeJudge');
             return call;
@@ -332,14 +404,14 @@ describe('judgeSkillIntent (Choice routing)', () => {
 
     it('maps a none choice to null', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'none' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'none', confidence: 0.9 } } } }));
 
         expect(await judgeSkillIntent('what is the weather', SKILLS)).toBeNull();
     });
 
     it('maps an unknown choice id to null', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { choice: 'not_a_skill' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { skill: { type: 'choice', choice: 'not_a_skill', confidence: 0.9 } } } }));
 
         expect(await judgeSkillIntent('anything', SKILLS)).toBeNull();
     });
@@ -507,6 +579,26 @@ describe('judgeMemoryImportance (composite scoring)', () => {
 
         expect(await judgeMemoryImportance('x', 'fact')).toBeNull();
     });
+
+    // Structural answer-contract checks; no live memory persistence is exercised.
+    it.each([null, true, '4', -0.1, 4.1, NaN, Infinity, undefined])('abstains on malformed or out-of-range memory scores (%s)', async score => {
+        mocks.enabled.mockReturnValue(true);
+        for (const dimension of ['actionability', 'business_criticality', 'permanence']) {
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+                actionability: { score: 3 }, business_criticality: { score: 3 }, permanence: { score: 3 },
+                [dimension]: { score },
+            } } }));
+            expect(await judgeMemoryImportance('literal parser input', 'fact')).toBeNull();
+        }
+    });
+
+    it('preserves fractional scores and valid endpoints', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            actionability: { score: 0 }, business_criticality: { score: 2.5 }, permanence: { score: 4 },
+        } } }));
+        expect(await judgeMemoryImportance('literal parser input', 'fact')).toBeCloseTo(0.45, 5);
+    });
 });
 
 
@@ -520,27 +612,27 @@ describe('judgePreviewErrorGuidance (video pop-out unit)', () => {
 
     it('maps a timing error to the trim_timeline action', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'trim_timeline' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'trim_timeline', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('compiler: clip c1 exceeds the project duration')).toBe('trim_timeline');
     });
 
     it('maps an unreadable media error to fix_media', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'fix_media' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'fix_media', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('compiler: media source missing for clip v2')).toBe('fix_media');
     });
 
     it('maps transient phrasing to retry', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'retry' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'retry', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('typesafeJudge: service unavailable')).toBe('retry');
     });
 
     it('returns null for the none option and unknown choices (consumer keeps raw error)', async () => {
         mocks.enabled.mockReturnValue(true);
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'none' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'none', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('something unfathomable')).toBeNull();
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { choice: 'delete_everything' } } } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: { guidance: { type: 'choice', choice: 'delete_everything', confidence: 0.9 } } } }));
         expect(await judgePreviewErrorGuidance('something unfathomable')).toBeNull();
     });
 
@@ -5466,7 +5558,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
         mocks.enabled.mockReturnValue(false);
         const verdict = await judgeCreativePromptModeIntent('drone shot orbiting a mountain sunset', 'image');
         expect(verdict.suggestedMode).toBe('video');
-        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+        expect(verdict).toMatchObject({ source: 'heuristic', confidence: null });
         expect(mocks.httpsCallable).not.toHaveBeenCalled();
     });
 
@@ -5486,6 +5578,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
             data: {
                 answers: {
                     target_mode: {
+                        type: 'choice',
                         choice: 'video',
                         confidence: 0.95,
                     },
@@ -5507,7 +5600,7 @@ describe('judgeCreativePromptModeIntent (Judgment 78)', () => {
 
         const verdict = await judgeCreativePromptModeIntent('cinematic tracking camera pan', 'image');
         expect(verdict.suggestedMode).toBe('video');
-        expect(verdict.confidence).toBeGreaterThanOrEqual(0.7);
+        expect(verdict).toMatchObject({ source: 'heuristic', confidence: null });
     });
 });
 
@@ -5553,6 +5646,7 @@ describe('judgeGalleryAssetBrandFit (Judgment 79)', () => {
             data: {
                 answers: {
                     brand_fit: {
+                        type: 'score',
                         score: 3, // mapped to 4 (strong_fit)
                         confidence: 0.92,
                     },
@@ -5628,12 +5722,12 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
         expect(verdict.formatTag).toBe('THUMBNAIL_SAFE');
     });
 
-    it('detects defect semantics in prompt and recommends retry offline', () => {
+    it('does not infer an output defect from prompt wording alone', () => {
         const verdict = deterministicPlpVariantAdFallback({
             prompt: 'glitch broken render with distorted artifacts',
             slotIndex: 4,
         });
-        expect(verdict.retryRecommended).toBe(true);
+        expect(verdict.retryRecommended).toBe(false);
     });
 
     it('calls Jev online and returns the resolved format classification', async () => {
@@ -5642,6 +5736,7 @@ describe('judgePlpVariantAdFormat (Judgment 80)', () => {
             data: {
                 answers: {
                     ad_format: {
+                        type: 'choice',
                         choice: 'HIGH_CONVERTING_HERO',
                         confidence: 0.94,
                     },
@@ -5838,6 +5933,7 @@ describe('judgeDepartmentJourneyIntent (Judgment 83)', () => {
         expect(result.journeyId).toBe('preflight_qc');
         expect(result.targetTab).toBe('brain');
         expect(result.confidence).toBe(0.93);
+        expect(result.source).toBe('jev');
         expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
     });
 
@@ -5850,6 +5946,18 @@ describe('judgeDepartmentJourneyIntent (Judgment 83)', () => {
         const result = await judgeDepartmentJourneyIntent(ctx);
         expect(result).toEqual(deterministicDepartmentJourneyFallback(ctx));
         expect(result.journeyId).toBe('split_agreements');
+    });
+
+    it.each([undefined, null, true, '0.9', NaN, Infinity, -0.1, 1.1])('retains a heuristic suggestion when model confidence is invalid (%s)', async confidence => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({
+            data: { answers: { journey: { choice: 'preflight_qc', confidence } } },
+        }));
+        const context = { department: 'distribution' as const, activeTab: 'releases', itemCount: 2 };
+        const result = await judgeDepartmentJourneyIntent(context);
+        expect(result).toEqual(deterministicDepartmentJourneyFallback(context));
+        expect(result.source).toBe('heuristic');
+        expect(result.confidence).toBeNull();
     });
 });
 
@@ -5873,7 +5981,7 @@ describe('judgeCreativeStudioConfigPreset (Judgment 84)', () => {
     it('uses Jev Choice to resolve a unified Creative Hub config preset online', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => ({
-            data: { answers: { preset: { choice: 'grounded_editorial', confidence: 0.92 } } },
+            data: { answers: { preset: { type: 'choice', choice: 'grounded_editorial', confidence: 0.92 } } },
         }));
 
         const result = await judgeCreativeStudioConfigPreset({
@@ -5924,7 +6032,7 @@ describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions 
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    archetype: { choice: 'cinematic_film', confidence: 0.94 },
+                    archetype: { type: 'choice', choice: 'cinematic_film', confidence: 0.94 },
                 },
             },
         }));
@@ -5939,7 +6047,7 @@ describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions 
         mocks.httpsCallable.mockReturnValue(async () => ({
             data: {
                 answers: {
-                    bestFit: { choice: 'cand_1' },
+                    bestFit: { type: 'choice', choice: 'cand_1', confidence: 0.9 },
                 },
             },
         }));
@@ -5956,3 +6064,94 @@ describe('judgePromptImprovementIntent & judgeCreativePromptAdditiveSuggestions 
 });
 
 
+
+// Structural answer-contract cases using literal clause text and provider fields.
+describe('contract AI clause confidence and severity', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+    });
+    const answers = (confidence: unknown) => ({
+        grants_unrestricted_ai_training: { noul: 0 },
+        grants_unrestricted_voice_likeness_clone: { noul: 0 },
+        contains_artist_protective_prohibition: { noul: 0 },
+        overall_clause_risk: { score: 0, confidence },
+    });
+
+    it.each([undefined, null, true, '0.9', NaN, Infinity, -0.1, 1.1])('abstains on invalid confidence %s', confidence => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: answers(confidence) } }));
+        return expect(judgeContractAIClauseProtection('Literal clause text')).resolves.toBeNull();
+    });
+
+    it.each([
+        { training: 0.5, cloning: 0, risk: 0 },
+        { training: 0, cloning: 0.5, risk: 0 },
+        { training: 0, cloning: 0, risk: 1.25 },
+        { training: 0, cloning: 0, risk: 3.5 },
+    ])('withholds protective clearance for ambiguous or conflicting evidence %j', async ({ training, cloning, risk }) => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            grants_unrestricted_ai_training: { noul: training },
+            grants_unrestricted_voice_likeness_clone: { noul: cloning },
+            contains_artist_protective_prohibition: { noul: 0.95 },
+            overall_clause_risk: { score: risk, confidence: 0.9 },
+        } } }));
+        const verdict = await judgeContractAIClauseProtection('Literal clause text');
+        expect(verdict?.containsArtistProtectiveProhibition).toBe(false);
+    });
+
+    it('retains protective clearance with independently negative grants and low risk', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            grants_unrestricted_ai_training: { noul: 0.4 },
+            grants_unrestricted_voice_likeness_clone: { noul: 0.4 },
+            contains_artist_protective_prohibition: { noul: 0.95 },
+            overall_clause_risk: { score: 1.24, confidence: 0.9 },
+        } } }));
+        expect((await judgeContractAIClauseProtection('Literal clause text'))?.containsArtistProtectiveProhibition).toBe(true);
+    });
+
+    it('keeps baseline high severity while retaining a warning that the semantic verdict did not resolve', async () => {
+        mocks.enabled.mockReturnValue(true);
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: answers(0.9) } }));
+        const { creatorProtectionHarnessService } = await import('@/services/creator-protection/CreatorProtectionHarnessService');
+        const clause = 'Artist grants perpetual irrevocable rights to create digital replica, synthetic performances, and train models using voice and likeness with sublicensing.';
+        const baseline = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(clause);
+        const review = await creatorProtectionHarnessService.reviewAIVoiceLikenessClauseWithJev(clause);
+        expect(baseline.severity).toBe('high');
+        expect(review.severity).toBe('high');
+        expect(review.flags).toEqual(expect.arrayContaining(baseline.flags));
+        expect(review.jevVerdict?.severity).toBe('low');
+    });
+});
+
+// Literal answer composition only, without reporting or sending any notice.
+describe('creator incident classification confidence', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetJudgmentCooldownForTests();
+        mocks.enabled.mockReturnValue(true);
+    });
+    it.each([undefined, null, true, '0.9', NaN, Infinity, -0.1, 1.1])('rejects invalid confidence in either Choice (%s)', async confidence => {
+        for (const field of ['incident_type', 'takedown_route']) {
+            const answers = {
+                incident_type: { choice: 'voice_clone', confidence: 0.9 },
+                takedown_route: { choice: 'platform_digital_replica', confidence: 0.8 },
+            };
+            Object.assign(answers[field as keyof typeof answers], { confidence });
+            mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers } }));
+            // Each field is independently required by the composed verdict.
+            await expect(judgeCreatorIncidentClassification({ description: 'Literal incident description' })).resolves.toBeNull();
+        }
+    });
+    it('retains the less certain of the two valid Choice confidences', async () => {
+        mocks.httpsCallable.mockReturnValue(async () => ({ data: { answers: {
+            incident_type: { choice: 'voice_clone', confidence: 0.95 },
+            takedown_route: { choice: 'platform_digital_replica', confidence: 0.6 },
+        } } }));
+        expect(await judgeCreatorIncidentClassification({ description: 'Literal incident description' })).toMatchObject({
+            incidentType: 'voice_clone', route: 'platform_digital_replica', confidence: 0.6,
+        });
+    });
+});

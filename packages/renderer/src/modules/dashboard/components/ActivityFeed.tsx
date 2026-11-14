@@ -75,28 +75,30 @@ export default function ActivityFeed() {
                 }
                 case 'AGENT_ACTION': {
                     const action = data as AgentActionEvent;
+                    const timestamp = action.timestamp ?? Date.now();
                     item = {
-                        id,
+                        id: action.toolCallId ? `tool-${action.toolCallId}` : id,
                         icon: <Zap size={12} className="text-green-400" />,
                         text: `${action.action}: ${action.details}`,
-                        time: formatTime(Date.now()),
-                        color: 'border-l-purple-500/40',
-                        timestamp: Date.now()
+                        time: formatTime(timestamp),
+                        color: action.action === 'TOOL_EXECUTION_FAILED' ? 'border-l-red-500/40' : 'border-l-purple-500/40',
+                        timestamp
                     };
                     break;
                 }
             }
 
-            if (item) {
-                setCustomEvents(prev => [item!, ...prev].slice(0, 10));
+            const nextItem = item;
+            if (nextItem) {
+                setCustomEvents(prev => [nextItem, ...prev.filter(entry => entry.id !== nextItem.id)].slice(0, 10));
             }
         };
 
         const types: EventType[] = ['TASK_COMPLETED', 'ASSET_FINALIZED', 'SYSTEM_ALERT', 'AGENT_ACTION'];
-        types.forEach(t => events.on<ActivityEventPayload>(t, (data) => handleEvent(t, data)));
+        const unsubscribe = types.map(type => events.on<ActivityEventPayload>(type, data => handleEvent(type, data)));
 
         return () => {
-            types.forEach(t => events.off<ActivityEventPayload>(t, (data) => handleEvent(t, data)));
+            unsubscribe.forEach(off => off());
         };
 
     }, []);
@@ -119,18 +121,6 @@ export default function ActivityFeed() {
                 time: formatTime(msg.timestamp),
                 color: isAgent ? 'border-l-purple-500/40' : 'border-l-blue-500/40',
                 timestamp: msg.timestamp
-            });
-        }
-
-        // Add boot message if empty
-        if (items.length === 0) {
-            items.push({
-                id: 'boot',
-                icon: <Zap size={12} className="text-green-400" />,
-                text: 'System initialized — awaiting input',
-                time: '',
-                color: 'border-l-green-500/40',
-                timestamp: 0 // Always at the bottom
             });
         }
 
@@ -165,7 +155,7 @@ export default function ActivityFeed() {
                     </motion.div>
                 ))}
 
-                {feedItems.length <= 2 && (
+                {feedItems.length === 0 && (
                     <div className="text-center py-4">
                         <p className="text-[10px] text-gray-600 italic">
                             Start a conversation with indii to see activity here

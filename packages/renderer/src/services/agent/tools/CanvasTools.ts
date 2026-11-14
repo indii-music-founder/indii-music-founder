@@ -373,7 +373,8 @@ export const CanvasTools = {
         if (!target?.url) return toolError('imageIndex did not resolve to an image.', 'INVALID_INPUT');
         try {
             store.openImage(target.url, currentProjectId ?? 'project_default');
-            const docId = store.currentDoc?.id ?? null;
+            const docId = useStore.getState().currentDoc?.id;
+            if (!docId) return toolError('The layer editor did not create a document. Try opening the image again.', 'CANVAS_OPEN_ERROR');
             return toolSuccess({ docId }, `Opened image ${args.imageIndex} into the layer editor (${docId}).`);
         } catch (error) {
             logger.error('[CanvasTools] canvas_open_image error:', error);

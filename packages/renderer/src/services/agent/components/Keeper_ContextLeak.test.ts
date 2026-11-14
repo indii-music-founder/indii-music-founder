@@ -1,3 +1,4 @@
+// Structural-only persistence contract tests. Genuine-user production clearing remains unverified.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from '@/core/store/slices/agent';
@@ -134,6 +135,6 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         expect(useStore.getState().agentHistory).toHaveLength(0);
 
         // Assert: Persistence Cleared
-        expect(mockClearMessages).toHaveBeenCalledWith(sessionId);
+        await vi.waitFor(() => expect(mockClearMessages).toHaveBeenCalledWith(sessionId, { id: expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) }));
     });
 });

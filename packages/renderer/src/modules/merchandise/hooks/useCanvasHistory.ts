@@ -1,3 +1,4 @@
+import { serializeDesignCanvas, restoreDesignCanvas } from '../designArtboard';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { logger } from '@/utils/logger';
@@ -51,7 +52,7 @@ export const useCanvasHistory = (
     try {
       // We use toObject with custom properties we care about
       // 'name' and 'id' are critical for our layer management
-      const obj = canvas.toObject(['name', 'id', 'selectable', 'locked']);
+      const obj = serializeDesignCanvas(canvas, ['name', 'id', 'selectable', 'locked']);
       const json = JSON.stringify(obj);
 
       // Optimization: Don't save if nothing changed
@@ -110,7 +111,7 @@ export const useCanvasHistory = (
 
       lastSavedJson.current = prevState.json;
       
-      await canvas.loadFromJSON(parsedJson);
+      await restoreDesignCanvas(canvas, parsedJson);
       canvas.renderAll();
       
       setHistory(prev => ({ ...prev, index: prevIndex }));
@@ -138,7 +139,7 @@ export const useCanvasHistory = (
 
       lastSavedJson.current = nextState.json;
 
-      await canvas.loadFromJSON(parsedJson);
+      await restoreDesignCanvas(canvas, parsedJson);
       canvas.renderAll();
       
       setHistory(prev => ({ ...prev, index: nextIndex }));

@@ -41,6 +41,7 @@ import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import type { ToolFunctionResult, ToolFunctionArgs } from '../types';
 import type { ToolRiskTier } from '../types';
+import { unconfirmedApprovalResult } from './ApprovalResultReceipt';
 
 export interface PendingToolApproval {
     id?: string;
@@ -132,6 +133,16 @@ function isRecoverableBugReport(approval: PendingToolApproval): boolean {
 
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
+}
+
+class ApprovalOwnerChangedError extends Error {
+    constructor() {
+        super('Signed-in account changed during approval. Tool was not run; review the approval under its original account.');
+    }
+}
+
+function requireApprovalOwner(uid: string): void {
+    if (getUserId() !== uid) throw new ApprovalOwnerChangedError();
 }
 
 function getApprovalsRef() {
@@ -249,6 +260,7 @@ class ToolApprovalService {
         };
         try {
             const snapshot = await getDoc(approvalDocRef);
+            requireApprovalOwner(uid);
             if (!snapshot.exists()) throw new Error(`Approval ${approvalId} not found`);
             const candidate = snapshot.data() as PendingToolApproval;
             isComputerApproval = candidate.toolName.startsWith('computer_') && !candidate.bindingSessionId && !binding;
@@ -262,6 +274,7 @@ class ToolApprovalService {
                 approval = candidate;
             } else approval = await runTransaction(db, async transaction => {
                 const snap = await transaction.get(approvalDocRef);
+                requireApprovalOwner(uid);
                 if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                 const current = snap.data() as PendingToolApproval;
                 if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
@@ -278,8 +291,14 @@ class ToolApprovalService {
         if (!isComputerApproval) {
             try {
                 // A durable claim separates approval from the point where a side effect may start.
+                requireApprovalOwner(uid);
                 await updateDoc(approvalDocRef, { status: 'claimed', claimedAt: serverTimestamp() });
-            } catch {
+                requireApprovalOwner(uid);
+            } catch (error) {
+                if (error instanceof ApprovalOwnerChangedError) {
+                    this.boundCalls.delete(approvalId);
+                    return { success: false, error: error.message };
+                }
                 this.boundCalls.delete(approvalId);
                 logger.error(`[ToolApprovalService] Approval ${approvalId} dispatch claim could not be recorded; tool was not run`);
                 return {
@@ -291,13 +310,16 @@ class ToolApprovalService {
 
         let result: ToolFunctionResult;
         try {
+            requireApprovalOwner(uid);
             if (isComputerApproval) {
                 const { TOOL_REGISTRY } = await import('../tools');
+                requireApprovalOwner(uid);
                 const toolFn = TOOL_REGISTRY[approval.toolName];
                 if (!toolFn) throw new Error(`Tool '${approval.toolName}' not found in registry`);
                 const user = auth.currentUser;
                 if (!user || !window.electronAPI?.computer) throw new Error('Verified desktop sign-in is required for computer control.');
                 const idToken = await user.getIdToken();
+                requireApprovalOwner(uid);
                 let appCheckToken: string | undefined;
                 if (appCheck) {
                     try {
@@ -306,12 +328,14 @@ class ToolApprovalService {
                         // App Check is optional in dev/test
                     }
                 }
+                requireApprovalOwner(uid);
                 const authorized = await window.electronAPI.computer.authorizeApproval({
                     idToken,
                     approvalId,
                     rendererSessionId: this.rendererSessionId,
                     appCheckToken,
                 });
+                requireApprovalOwner(uid);
                 if (!authorized.success || !authorized.data) throw new Error(authorized.error || 'Main-process computer authorization failed.');
                 const executionArgs = {
                     ...approval.args,
@@ -331,6 +355,10 @@ class ToolApprovalService {
                 result = await binding!.execute(JSON.parse(binding!.argsJson) as ToolFunctionArgs);
             }
         } catch (err: unknown) {
+            if (err instanceof ApprovalOwnerChangedError) {
+                this.boundCalls.delete(approvalId);
+                return { success: false, error: err.message };
+            }
             if (!isComputerApproval) {
                 // The claim is durable, but the tool may have completed an external
                 // effect before its response was lost. Leave it unresolved.
@@ -342,6 +370,13 @@ class ToolApprovalService {
                 };
             }
             result = { success: false, error: err instanceof Error ? err.message : String(err) };
+        }
+
+        // Preserve an actual dispatched result, but never complete an old owner's
+        // approval using a new account's callable identity or database session.
+        if (getUserId() !== uid) {
+            this.boundCalls.delete(approvalId);
+            return unconfirmedApprovalResult(result, approvalId);
         }
 
         if (!isComputerApproval) {
@@ -356,21 +391,20 @@ class ToolApprovalService {
                 });
             } catch {
                 logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`);
-                return {
-                    success: false,
-                    error: `Action outcome needs reconciliation: ${result.success ? 'the tool reported success' : 'the tool reported failure'}, but its approval result could not be saved. Do not retry automatically.`,
-                };
+                return unconfirmedApprovalResult(result, approvalId);
             }
         } else {
             try {
                 const completeFn = httpsCallable(functions, 'completeComputerApproval');
                 await completeFn({
                     approvalId,
+                    expectedOwnerId: uid,
                     success: result.success,
                     ...(result.error ? { error: result.error } : {}),
                 });
             } catch (completeErr) {
                 logger.warn(`[ToolApprovalService] Failed to complete computer approval ${approvalId}:`, completeErr);
+                return unconfirmedApprovalResult(result, approvalId);
             }
         }
 
@@ -383,12 +417,14 @@ class ToolApprovalService {
         if (!uid) return;
         const approvalDocRef = doc(db, 'users', uid, 'tool_approvals', approvalId);
         const snapshot = await getDoc(approvalDocRef);
+        requireApprovalOwner(uid);
         if (snapshot.exists() && String(snapshot.data().toolName).startsWith('computer_')) {
-            await httpsCallable(functions, 'denyComputerApproval')({ approvalId });
+            await httpsCallable(functions, 'denyComputerApproval')({ approvalId, expectedOwnerId: uid });
             return;
         }
         await runTransaction(db, async transaction => {
             const current = await transaction.get(approvalDocRef);
+            requireApprovalOwner(uid);
             if (!current.exists() || current.data().status !== 'pending') {
                 throw new Error(`Approval ${approvalId} is no longer pending`);
             }

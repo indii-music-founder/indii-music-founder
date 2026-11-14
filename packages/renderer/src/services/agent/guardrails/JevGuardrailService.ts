@@ -1,3 +1,4 @@
+import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
@@ -24,21 +25,63 @@ export interface GuardrailResult {
   confidence: Record<string, number>;
 }
 
+/** Bounded status and receipt fields; never turn an attempted tool name into success. */
+export function projectGuardrailToolEvidence(calls: NonNullable<GuardrailInput['tool_calls']>) {
+  return calls.slice(-20).map(call => {
+    const evidence: Record<string, unknown> & { name: string; reportedSuccess: boolean | null } = {
+      name: call.name.slice(0, 160), reportedSuccess: null,
+    };
+    const result = call.result;
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      if (typeof result === 'string') evidence.message = result.slice(0, 400);
+      return evidence;
+    }
+    const record = result as Record<string, unknown>;
+    if (typeof record.success === 'boolean') evidence.reportedSuccess = record.success;
+    for (const key of ['status', 'error', 'message'] as const) {
+      if (typeof record[key] === 'string') evidence[key] = record[key].slice(0, 400);
+    }
+    if (record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
+      const data = record.data as Record<string, unknown>;
+      const details: Record<string, unknown> = {};
+      for (const key of ['status', 'connected', 'requiresApproval', 'id', 'documentId', 'issueUrl', 'url', 'scheduledAt']) {
+        const value = data[key];
+        if (typeof value === 'string') details[key] = value.slice(0, 160);
+        else if (typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) details[key] = value;
+      }
+      if (Object.keys(details).length) evidence.details = details;
+    }
+    return evidence;
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 /** Jev model — System One, structured judgments only, not generative. */
-const JEV_MODEL = 'jev-latest';
+const JEV_MODEL = GUARDRAIL_MODEL;
 
 /** Max milliseconds to wait for Jev before passing through unmodified. */
 const GUARDRAIL_TIMEOUT_MS = 2000;
 
 /** Noul threshold above which a flag is considered fired. */
-const FIRE_THRESHOLD = 0.7;
+const FIRE_THRESHOLD = GUARDRAIL_FIRE_THRESHOLD;
 
 /** Threshold below which a response is considered un-actionable. */
-const ACTIONABLE_THRESHOLD = 0.3;
+const ACTIONABLE_THRESHOLD = GUARDRAIL_ACTIONABLE_THRESHOLD;
+
+/** Invalid probabilities abstain; coercion must never manufacture a flag. */
+export function parseGuardrailProbability(answer: unknown): number | null {
+  const probability = typeof answer === 'number'
+    ? answer
+    : answer !== null && typeof answer === 'object' && !Array.isArray(answer)
+      ? (answer as Record<string, unknown>).noul
+      : undefined;
+  return typeof probability === 'number' && Number.isFinite(probability) && probability >= 0 && probability <= 1
+    ? probability
+    : null;
+}
 
 // ---------------------------------------------------------------------------
 // Correction prefixes injected when flags fire
@@ -85,12 +128,16 @@ export class JevGuardrailService {
       confidence: {},
     };
 
-    const toolNames = (input.tool_calls ?? []).map((t) => t.name).join(', ') || 'none';
+    const toolResults = projectGuardrailToolEvidence(input.tool_calls ?? []);
+    const toolNames = toolResults.map(tool => tool.name).join(', ') || 'none';
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const result = await Promise.race([
-        this.runEvaluation(input.text, toolNames),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS)),
+        this.runEvaluation(input.text, toolNames, toolResults, Math.max(0, (input.tool_calls?.length ?? 0) - toolResults.length)),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS);
+        }),
       ]);
 
       if (!result) {
@@ -115,56 +162,27 @@ export class JevGuardrailService {
     } catch (err) {
       logger.warn('[JevGuardrail] Evaluation failed — passing through unmodified:', err);
       return passthrough;
+    } finally {
+      clearTimeout(timer);
     }
   }
 
   private async runEvaluation(
     responseText: string,
-    toolNames: string
+    toolNames: string,
+    toolResults: ReturnType<typeof projectGuardrailToolEvidence>,
+    omittedToolResults: number,
   ): Promise<GuardrailResult | null> {
     const state = {
       response: {
         text: responseText,
         tool_calls: toolNames,
+        tool_results: toolResults,
+        omitted_tool_results: omittedToolResults,
       },
     };
 
-    const questionsDef = {
-      claims_disconnected_without_evidence: {
-        type: 'noul' as const,
-        instructions:
-          'Does `response.text` assert that a platform (Instagram, Spotify, Apple Music, etc.) ' +
-          'is disconnected or unavailable, when `response.tool_calls` is "none" or contains no ' +
-          'connectivity-checking tool?',
-      },
-      claims_scheduled_without_tool: {
-        type: 'noul' as const,
-        instructions:
-          'Does `response.text` state that a post was scheduled, queued, or will be posted, ' +
-          'while `response.tool_calls` contains no scheduling tool execution?',
-      },
-      confident_action_no_evidence: {
-        type: 'noul' as const,
-        instructions:
-          'Does `response.text` claim a concrete action was completed (posted, uploaded, sent, ' +
-          'saved, published) when `response.tool_calls` is "none"?',
-      },
-      claims_verified_readiness_without_evidence: {
-        type: 'noul' as const,
-        instructions:
-          'Does `response.text` assert that departments, agents, systems, or capabilities are fully ' +
-          'implemented, verified, production-ready, or operational — or that no engineering work ' +
-          'remains — without `response.tool_calls` containing an audit or verification tool that ' +
-          'produced live evidence? A claim of complete production readiness with no verification ' +
-          'step is an overclaim.',
-      },
-      is_actionable_response: {
-        type: 'noul' as const,
-        instructions:
-          'Does `response.text` give the user either a completed result, a clear next step, ' +
-          'or a request for missing information they can act on?',
-      },
-    };
+    const questionsDef = GUARDRAIL_QUESTIONS;
 
     let rawAnswers: Record<string, unknown> | undefined;
 
@@ -193,13 +211,9 @@ export class JevGuardrailService {
     const flags: string[] = [];
     let prefix = '';
 
-    for (const key of Object.keys(rawAnswers)) {
-      const ans = rawAnswers[key];
-      if (typeof ans === 'number') {
-        confidence[key] = ans;
-      } else if (typeof ans === 'object' && ans !== null && 'noul' in ans) {
-        confidence[key] = Number((ans as { noul: unknown }).noul);
-      }
+    for (const key of Object.keys(questionsDef)) {
+      const probability = parseGuardrailProbability(rawAnswers[key]);
+      if (probability !== null) confidence[key] = probability;
     }
 
     for (const [flag, correction] of Object.entries(CORRECTIONS)) {
@@ -210,8 +224,11 @@ export class JevGuardrailService {
       }
     }
 
+    const hasFailedToolResult = toolResults.some(
+      (r) => r.reportedSuccess === false || Boolean(r.error),
+    );
     const isActionable = confidence['is_actionable_response'] ?? 1;
-    if (!prefix && isActionable < ACTIONABLE_THRESHOLD) {
+    if (!prefix && !hasFailedToolResult && isActionable < ACTIONABLE_THRESHOLD) {
       flags.push('unactionable_response');
       prefix = UNACTIONABLE_FALLBACK;
     }
@@ -226,7 +243,7 @@ export class JevGuardrailService {
     } else if (flags.includes('unactionable_response')) {
       finalText = UNACTIONABLE_FALLBACK;
     } else {
-      finalText = prefix + responseText;
+      finalText = 'I cannot confirm that action or connection status from the tool results available here. A successful result is needed before treating it as completed.';
     }
 
     if (wasModified) {

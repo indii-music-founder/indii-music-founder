@@ -20,6 +20,45 @@ describe('MemorySummarizer parse diagnostics', () => {
         }
     });
 
+    it('distinguishes synthesis failures from a valid empty insight', async () => {
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        generateText.mockRejectedValueOnce(new Error('Provider unavailable'));
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('Provider unavailable');
+        generateText.mockResolvedValueOnce('Invalid response');
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('invalid response');
+        generateText.mockResolvedValueOnce('{"insights":[],"connections":[]}');
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).resolves.toBeNull();
+    });
+
+    it.each([[42], [' '], ['Valid pattern', null]])('rejects malformed insight entries %j', async (...insights) => {
+        generateText.mockResolvedValueOnce(JSON.stringify({ insights, connections: [], confidence: 0.9 }));
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('invalid insight');
+    });
+
+    it('keeps only links between distinct memories in the synthesis input', async () => {
+        generateText.mockResolvedValueOnce(JSON.stringify({
+            insights: ['Related preferences'],
+            confidence: 0.8,
+            connections: [
+                null,
+                { fromId: 'first', toId: 'outside', relationship: 'related' },
+                { fromId: 'first', toId: 'first', relationship: 'related' },
+                { fromId: 'first', toId: 'second', relationship: ' ' },
+                { fromId: 'first', toId: 'second', relationship: 'related', confidence: 0.8 },
+            ],
+        }));
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        const result = await MemorySummarizer.generateInsight('user-1', memories);
+        expect(result?.connections).toMatchObject([{ fromMemoryId: 'first', toMemoryId: 'second', relationship: 'related' }]);
+    });
+
+    it.each([undefined, 1.5, '0.9'])('rejects unsupported insight confidence %s', async confidence => {
+        generateText.mockResolvedValueOnce(JSON.stringify({ insights: ['Pattern'], connections: [], confidence }));
+        const memories = [{ id: 'first', content: 'First' }, { id: 'second', content: 'Second' }] as never[];
+        await expect(MemorySummarizer.generateInsight('user-1', memories)).rejects.toThrow('confidence');
+    });
+
     it('ISSUE-1587: generateInsight derives numeric top-level confidence when omitted by model and uses temperature 1.0', async () => {
         generateText.mockResolvedValueOnce(JSON.stringify({
             connections: [

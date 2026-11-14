@@ -541,6 +541,7 @@ vi.mock('firebase/firestore', () => {
             }
             return Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' });
         }),
+        getDocFromServer: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
         getUsageStats: vi.fn(() => Promise.resolve({
             data: {
                 tier: 'free',

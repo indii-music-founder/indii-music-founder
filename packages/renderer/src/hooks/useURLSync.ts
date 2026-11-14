@@ -205,17 +205,15 @@ export function useURLSync(options: URLSyncOptions = {}) {
             const config = TAB_STATE[currentModule as string];
             const tab = config ? (activeTab ?? config.defaultTab) : null;
             const carried = config && tab && tab !== config.defaultTab ? tab : null;
-            const liveSearch = (typeof window !== 'undefined' && window.location.search)
-                ? window.location.search
-                : location.search;
-            navigate(
-                buildUrl(
-                    currentModule === 'dashboard' ? '/' : `/${currentModule}`,
-                    liveSearch,
-                    carried,
-                    currentModule === 'settings'
-                )
-            );
+            const search = new URLSearchParams(location.search);
+            // A settings request can update browser history before React Router
+            // observes it. Preserve that requested section when the module opens.
+            if (currentModule === 'settings' && typeof window !== 'undefined') {
+                const section = new URLSearchParams(window.location.search).get('section');
+                if (section) search.set('section', section);
+            }
+            const query = search.toString();
+            navigate(buildUrl(currentModule === 'dashboard' ? '/' : `/${currentModule}`, query ? `?${query}` : '', carried));
             return;
         }
 

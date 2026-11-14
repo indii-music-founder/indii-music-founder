@@ -1,3 +1,4 @@
+import { runBudgetedSemanticCall, SemanticCallCheckpointError, type SemanticCallAdmission } from '@/services/agent/governance/SemanticCallBudget';
 /**
  * TypeSafe judgment constants — the single reviewable place for every
  * question, option set, and threshold used with the typesafeJudge callable
@@ -16,6 +17,20 @@ export type { BoardroomIntent } from './boardroomIntentPolicy';
 import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 import { logger } from '@/utils/logger';
 import type { MaskedTextCandidate } from '@/services/image/maskedTextEdit';
+
+/** Explicit adoption policies; semantic calibration remains a separate acceptance task. */
+export const SKILL_INTENT_MIN_CONFIDENCE = 0.65;
+export const PREVIEW_GUIDANCE_MIN_CONFIDENCE = 0.65;
+export const UPSCALE_MODEL_MIN_CONFIDENCE = 0.65;
+
+function confidentDeclaredChoice(answer: unknown, allowed: readonly string[], minimumConfidence: number): string | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
+    if (value.type !== 'choice' || typeof value.choice !== 'string' || !allowed.includes(value.choice) ||
+        typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) ||
+        value.confidence < minimumConfidence || value.confidence > 1) return null;
+    return value.choice;
+}
 
 // ---------------------------------------------------------------------------
 // Judgment 2: skill intent routing (consumer: ProductSkillRegistry)
@@ -48,7 +63,7 @@ export async function judgeSkillIntent(
     query: string,
     candidates: SkillCandidate[],
 ): Promise<string | null> {
-    if (!judgmentsAvailable() || candidates.length === 0) return null;
+    if (!judgmentsAvailable("judgeSkillIntent") || candidates.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -67,14 +82,10 @@ export async function judgeSkillIntent(
             },
         });
 
-        const answer = result.data.answers?.skill;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
-        if (typeof choice !== 'string' || choice === SKILL_INTENT_NONE || !candidates.some(c => c.id === choice)) {
-            return null;
-        }
-        return choice;
+        return confidentDeclaredChoice(result.data.answers?.skill,
+            candidates.map(candidate => candidate.id).filter(id => id !== SKILL_INTENT_NONE), SKILL_INTENT_MIN_CONFIDENCE);
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'skill intent judgment');
+        noteJudgmentFailure(err, 'skill intent judgment', "judgeSkillIntent");
         return null;
     }
 }
@@ -121,7 +132,7 @@ export type InjectionVerdict = 'block' | 'flag' | 'allow' | null;
  * Static-critical/block verdicts never reach this — policy keeps them blocked.
  */
 export async function refineInjectionRisk(input: string): Promise<InjectionVerdict> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("refineInjectionRisk")) return null;
 
     try {
         const functions = getFunctions();
@@ -146,7 +157,7 @@ export async function refineInjectionRisk(input: string): Promise<InjectionVerdi
         if (override < INJECTION_HAZARD_CLEAR_MAX && exfil < INJECTION_HAZARD_CLEAR_MAX) return 'allow';
         return 'flag';
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'injection refinement');
+        noteJudgmentFailure(err, 'injection refinement', "refineInjectionRisk");
         return null;
     }
 }
@@ -164,22 +175,33 @@ export async function refineInjectionRisk(input: string): Promise<InjectionVerdi
  */
 export const JUDGMENT_FAILURE_COOLDOWN_MS = 5 * 60 * 1000;
 let lastJudgmentFailureAt = 0;
+const judgmentFailureTimes = new Map<string, number>();
 
-export function judgmentsAvailable(): boolean {
+export function judgmentsAvailable(scope?: string): boolean {
     if (!typesafeJudgmentsEnabled()) return false;
     if (Date.now() - lastJudgmentFailureAt < JUDGMENT_FAILURE_COOLDOWN_MS) return false;
+    const scopedFailureAt = scope ? judgmentFailureTimes.get(scope) : undefined;
+    if (scopedFailureAt !== undefined && Date.now() - scopedFailureAt < JUDGMENT_FAILURE_COOLDOWN_MS) return false;
     return true;
 }
 
-function noteJudgmentFailure(err: unknown, context: string): void {
+function noteJudgmentFailure(err: unknown, context: string, scope: string): void {
+    const code = err !== null && typeof err === 'object' && 'code' in err ? err.code : undefined;
+    // A bad request, malformed response, or individual timeout is not a proxy outage.
+    if (code === 'functions/invalid-argument' || code === 'functions/internal' || code === 'functions/deadline-exceeded') {
+        judgmentFailureTimes.set(scope, Date.now());
+        logger.warn(`[typesafeJudgments] ${context} failed (${code}); using the deterministic baseline.`);
+        return;
+    }
     lastJudgmentFailureAt = Date.now();
-    logger.warn(`[typesafeJudgments] ${context} unavailable — determinstic baseline in use for ${JUDGMENT_FAILURE_COOLDOWN_MS / 1000}s:`,
+    logger.warn(`[typesafeJudgments] ${context} unavailable — deterministic baseline in use for ${JUDGMENT_FAILURE_COOLDOWN_MS / 1000}s:`,
         err instanceof Error ? err.message : err);
 }
 
 /** Test hook: clears the failure cooldown so suites stay order-independent. */
 export function __resetJudgmentCooldownForTests(): void {
     lastJudgmentFailureAt = 0;
+    judgmentFailureTimes.clear();
 }
 export function typesafeJudgmentsEnabled(): boolean {
     return featureFlags.isEnabled(FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS);
@@ -242,6 +264,7 @@ export const TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC = true;
 
 /** Optional execution context for transient error refinement. */
 export interface TransientJudgmentContext {
+    admission?: SemanticCallAdmission;
     statusCode?: number;
     retryAttempt?: number;
     action?: string;
@@ -273,18 +296,18 @@ export async function judgeTransientError(
     heuristicVerdict: boolean,
     context?: TransientJudgmentContext
 ): Promise<boolean | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeTransientError")) return null;
 
     try {
         const functions = getFunctions();
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
+            { answers: Record<string, unknown>; usage?: unknown }
         >(functions, 'typesafeJudge');
 
         const detectedStatusCode = context?.statusCode ?? extractStatusCode(error);
 
-        const result = await judgeFn({
+        const invoke = async () => (await judgeFn({
             state: {
                 errorMessage: error instanceof Error ? error.message : String(error),
                 errorName: error instanceof Error ? error.name : typeof error,
@@ -294,9 +317,13 @@ export async function judgeTransientError(
                 heuristicVerdict,
             },
             questions: { transient: TRANSIENT_FAILURE_QUESTION },
-        });
+        })).data;
+        const result = context?.admission
+            ? await runBudgetedSemanticCall(context.admission, invoke)
+            : await invoke();
+        if (!result) return null;
 
-        const answer = result.data.answers?.transient;
+        const answer = result.answers?.transient;
         const probability = boundedJudgmentNumber(answer, 'noul', 1);
         if (probability === null) {
             logger.warn('[typesafeJudgments] transient judgment returned an invalid probability — keeping heuristic.');
@@ -307,7 +334,11 @@ export async function judgeTransientError(
         if (probability <= TRANSIENT_REJECT_MAX) return false;
         return TRANSIENT_AMBIGUOUS_KEEP_HEURISTIC ? heuristicVerdict : null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'transient judgment');
+        if (err instanceof SemanticCallCheckpointError) {
+            logger.warn('[typesafeJudgments] Retry judgment skipped because its execution checkpoint failed.');
+            return null;
+        }
+        noteJudgmentFailure(err, 'transient judgment', "judgeTransientError");
         return null;
     }
 }
@@ -354,7 +385,7 @@ export interface FoundryColumnUpgrade {
 export async function judgeColumnSemantics(
     columns: FoundryColumnInput[],
 ): Promise<FoundryColumnUpgrade[] | null> {
-    if (!judgmentsAvailable() || columns.length === 0) return null;
+    if (!judgmentsAvailable("judgeColumnSemantics") || columns.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -398,7 +429,7 @@ export async function judgeColumnSemantics(
         }
         return upgrades;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'foundry column semantics judgment');
+        noteJudgmentFailure(err, 'foundry column semantics judgment', "judgeColumnSemantics");
         return null;
     }
 }
@@ -446,7 +477,7 @@ const MEMORY_IMPORTANCE_QUESTIONS = {
  * TEXT_FAST LLM re-rate (token saving). Null when unavailable.
  */
 export async function judgeMemoryImportance(text: string, category: string): Promise<number | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeMemoryImportance")) return null;
 
     try {
         const functions = getFunctions();
@@ -461,15 +492,13 @@ export async function judgeMemoryImportance(text: string, category: string): Pro
         });
 
         const answers = result.data.answers;
-        const scoreOf = (q: string): number => {
-            const a = answers?.[q];
-            return typeof a === 'number' ? a : Number((a as { score?: unknown })?.score);
-        };
+        const scoreOf = (q: string): number | null =>
+            boundedJudgmentNumber(answers?.[q], 'score', IMPORTANCE_LEVELS.length - 1);
         const actionability = scoreOf('actionability');
         const business = scoreOf('business_criticality');
         const permanence = scoreOf('permanence');
-        if (![actionability, business, permanence].every(Number.isFinite)) {
-            logger.warn('[typesafeJudgments] memory importance returned non-numeric scores — keeping heuristic.');
+        if (actionability === null || business === null || permanence === null) {
+            logger.warn('[typesafeJudgments] memory importance returned invalid scores — keeping heuristic.');
             return null;
         }
 
@@ -477,7 +506,7 @@ export async function judgeMemoryImportance(text: string, category: string): Pro
         const combined = (actionability * w.actionability + business * w.business_criticality + permanence * w.permanence) / 4;
         return Math.max(0, Math.min(1, combined));
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'memory importance judgment');
+        noteJudgmentFailure(err, 'memory importance judgment', "judgeMemoryImportance");
         return null;
     }
 }
@@ -512,11 +541,11 @@ const previewErrorQuestion = {
 /**
  * Choice-judge which artist action best unblocks a failed preview compilation.
  * Returns the chosen action, or null when judgments are unavailable / the
- * answer is 'none' / the choice is not a known action. The consumer falls back
+ * answer is 'none' / the choice is not a known action / confidence is insufficient. The consumer falls back
  * to showing the raw error text — the judgment only ever ADDS guidance.
  */
 export async function judgePreviewErrorGuidance(error: string): Promise<PreviewErrorAction | null> {
-    if (!judgmentsAvailable() || !error) return null;
+    if (!judgmentsAvailable("judgePreviewErrorGuidance") || !error) return null;
 
     try {
         const functions = getFunctions();
@@ -530,15 +559,10 @@ export async function judgePreviewErrorGuidance(error: string): Promise<PreviewE
             questions: { guidance: previewErrorQuestion },
         });
 
-        const answer = result.data.answers?.guidance;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
         const known: PreviewErrorAction[] = ['trim_timeline', 'fix_media', 'retry'];
-        if (typeof choice !== 'string' || !known.includes(choice as PreviewErrorAction)) {
-            return null;
-        }
-        return choice as PreviewErrorAction;
+        return confidentDeclaredChoice(result.data.answers?.guidance, known, PREVIEW_GUIDANCE_MIN_CONFIDENCE) as PreviewErrorAction | null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'preview error guidance judgment');
+        noteJudgmentFailure(err, 'preview error guidance judgment', "judgePreviewErrorGuidance");
         return null;
     }
 }
@@ -581,13 +605,13 @@ export const BOARDROOM_INTENT_QUESTION = {
 export const BOARDROOM_INTENT_MIN_CONFIDENCE = 0.80;
 
 export async function judgeBoardroomIntent(query: string, recentConversation: string): Promise<BoardroomIntent | null> {
-    if (!judgmentsAvailable() || !query.trim()) return null;
+    if (!judgmentsAvailable("judgeBoardroomIntent") || !query.trim()) return null;
     try {
         const result = await httpsCallable<{ state: Record<string, unknown>; questions: Record<string, unknown> }, { answers: Record<string, unknown> }>(
             getFunctions(), 'typesafeJudge',
         )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000) }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
         return parseBoardroomIntentDecision(result.data.answers.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
-    } catch (error) { noteJudgmentFailure(error, 'Boardroom intent'); return null; }
+    } catch (error) { noteJudgmentFailure(error, 'Boardroom intent', "judgeBoardroomIntent"); return null; }
 }
 
 /**
@@ -598,7 +622,7 @@ export async function judgeBoardroomIntent(query: string, recentConversation: st
 export async function judgeOrchestrationComplexity(
     query: string
 ): Promise<{ path: OrchestrationPathType; confidence: number } | null> {
-    if (!judgmentsAvailable() || !query.trim()) return null;
+    if (!judgmentsAvailable("judgeOrchestrationComplexity") || !query.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -630,7 +654,7 @@ export async function judgeOrchestrationComplexity(
 
         return { path: choice as OrchestrationPathType, confidence };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'orchestration complexity judgment');
+        noteJudgmentFailure(err, 'orchestration complexity judgment', "judgeOrchestrationComplexity");
         return null;
     }
 }
@@ -681,7 +705,7 @@ export async function judgeCollaboratorRoleSemantics(
     role: string,
     contributionNotes?: string
 ): Promise<RoleSemanticJudgment | null> {
-    if (!judgmentsAvailable() || !role.trim()) return null;
+    if (!judgmentsAvailable("judgeCollaboratorRoleSemantics") || !role.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -726,7 +750,7 @@ export async function judgeCollaboratorRoleSemantics(
             confidence,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'collaborator role semantics judgment');
+        noteJudgmentFailure(err, 'collaborator role semantics judgment', "judgeCollaboratorRoleSemantics");
         return null;
     }
 }
@@ -782,7 +806,7 @@ export async function judgeExpenseCategorization(
     description?: string,
     amount?: number
 ): Promise<ExpenseCategorizationJudgment | null> {
-    if (!judgmentsAvailable() || !vendor.trim()) return null;
+    if (!judgmentsAvailable("judgeExpenseCategorization") || !vendor.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -837,7 +861,7 @@ export async function judgeExpenseCategorization(
             confidence,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'expense categorization judgment');
+        noteJudgmentFailure(err, 'expense categorization judgment', "judgeExpenseCategorization");
         return null;
     }
 }
@@ -863,7 +887,7 @@ export async function judgeBrandMarkCandidate(
     candidates: DetectedVisualCandidate[],
     brandContext?: string
 ): Promise<string | null> {
-    if (!judgmentsAvailable() || candidates.length === 0) return null;
+    if (!judgmentsAvailable("judgeBrandMarkCandidate") || candidates.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -909,7 +933,7 @@ export async function judgeBrandMarkCandidate(
 
         return choice;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'brand mark disambiguation judgment');
+        noteJudgmentFailure(err, 'brand mark disambiguation judgment', "judgeBrandMarkCandidate");
         return null;
     }
 }
@@ -971,7 +995,7 @@ export interface CommandIntentJudgment {
 export async function judgeCommandIntent(
     query: string
 ): Promise<CommandIntentJudgment | null> {
-    if (!judgmentsAvailable() || !query.trim() || query.trim().length < 3) return null;
+    if (!judgmentsAvailable("judgeCommandIntent") || !query.trim() || query.trim().length < 3) return null;
 
     try {
         const functions = getFunctions();
@@ -1027,7 +1051,7 @@ export async function judgeCommandIntent(
             confidence,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'command intent judgment');
+        noteJudgmentFailure(err, 'command intent judgment', "judgeCommandIntent");
         return null;
     }
 }
@@ -1063,7 +1087,7 @@ export async function judgeVideoTreatmentPreset(
     direction: string,
     artistBrandVibe?: string
 ): Promise<string | null> {
-    if (!judgmentsAvailable() || !direction.trim()) return null;
+    if (!judgmentsAvailable("judgeVideoTreatmentPreset") || !direction.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -1094,7 +1118,7 @@ export async function judgeVideoTreatmentPreset(
 
         return choice;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video treatment preset judgment');
+        noteJudgmentFailure(err, 'video treatment preset judgment', "judgeVideoTreatmentPreset");
         return null;
     }
 }
@@ -1121,7 +1145,7 @@ export const VIDEO_ASPECT_RATIO_QUESTION = {
 export async function judgeVideoAspectRatioIntent(
     input: string
 ): Promise<TargetVideoRatio | null> {
-    if (!judgmentsAvailable() || !input.trim()) return null;
+    if (!judgmentsAvailable("judgeVideoAspectRatioIntent") || !input.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -1144,7 +1168,7 @@ export async function judgeVideoAspectRatioIntent(
         }
         return null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video aspect ratio intent judgment');
+        noteJudgmentFailure(err, 'video aspect ratio intent judgment', "judgeVideoAspectRatioIntent");
         return null;
     }
 }
@@ -1187,7 +1211,7 @@ export async function judgeStreamVelocityAnomaly(
 ): Promise<StreamAnomalyVerdict | null> {
     if (!Number.isFinite(pctIncrease) || pctIncrease < 0) return null;
     const note = context?.trim();
-    if (!note || !judgmentsAvailable()) return null;
+    if (!note || !judgmentsAvailable("judgeStreamVelocityAnomaly")) return null;
 
     try {
         const functions = getFunctions();
@@ -1219,7 +1243,7 @@ export async function judgeStreamVelocityAnomaly(
             recommendation: 'The note is an unverified clue. Review the provider traffic sources and recent promotion; ask your distributor or label to investigate any unexplained spike.',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'stream velocity anomaly judgment');
+        noteJudgmentFailure(err, 'stream velocity anomaly judgment', "judgeStreamVelocityAnomaly");
         return null;
     }
 }
@@ -1243,7 +1267,7 @@ export async function judgeFanToMerchSku(
     fanQuery: string,
     products: MerchProductCandidate[]
 ): Promise<string | null> {
-    if (!judgmentsAvailable() || !fanQuery.trim() || products.length === 0) return null;
+    if (!judgmentsAvailable("judgeFanToMerchSku") || !fanQuery.trim() || products.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -1288,7 +1312,7 @@ export async function judgeFanToMerchSku(
 
         return products.some((p) => p.id === choice) ? choice : null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'fan-to-merch SKU routing judgment');
+        noteJudgmentFailure(err, 'fan-to-merch SKU routing judgment', "judgeFanToMerchSku");
         return null;
     }
 }
@@ -1332,7 +1356,7 @@ export async function judgeAestheticMoodTagging(
     trackTitle: string,
     lyricsOrNotes?: string
 ): Promise<AestheticCultureTag | null> {
-    if (!judgmentsAvailable() || !trackTitle.trim()) return null;
+    if (!judgmentsAvailable("judgeAestheticMoodTagging") || !trackTitle.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -1356,7 +1380,7 @@ export async function judgeAestheticMoodTagging(
         const choice = answer.choice as AestheticCultureTag;
         return choice;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'aesthetic mood tagging judgment');
+        noteJudgmentFailure(err, 'aesthetic mood tagging judgment', "judgeAestheticMoodTagging");
         return null;
     }
 }
@@ -1401,7 +1425,7 @@ export async function judgeUploadCopyrightRisk(
     trackTitle: string,
     metadataSummary: string
 ): Promise<CopyrightTriageVerdict | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeUploadCopyrightRisk")) return null;
 
     try {
         const functions = getFunctions();
@@ -1445,7 +1469,7 @@ export async function judgeUploadCopyrightRisk(
             reason,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'copyright upload risk judgment');
+        noteJudgmentFailure(err, 'copyright upload risk judgment', "judgeUploadCopyrightRisk");
         return null;
     }
 }
@@ -1499,7 +1523,7 @@ export async function judgeDynamicDashboardLayout(
     context: LayoutContextData,
     availableModules: DynamicComponentKey[]
 ): Promise<DynamicLayoutResult | null> {
-    if (!judgmentsAvailable() || availableModules.length === 0) return null;
+    if (!judgmentsAvailable("judgeDynamicDashboardLayout") || availableModules.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -1537,7 +1561,7 @@ export async function judgeDynamicDashboardLayout(
             layoutVariant: variant,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'dynamic dashboard layout judgment');
+        noteJudgmentFailure(err, 'dynamic dashboard layout judgment', "judgeDynamicDashboardLayout");
         return null;
     }
 }
@@ -1558,7 +1582,7 @@ export async function judgeSemanticCatalogFilter(
     query: string,
     items: TrackSearchItem[]
 ): Promise<string[] | null> {
-    if (!judgmentsAvailable() || !query.trim() || items.length === 0) return null;
+    if (!judgmentsAvailable("judgeSemanticCatalogFilter") || !query.trim() || items.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -1602,7 +1626,7 @@ export async function judgeSemanticCatalogFilter(
 
         return matchedIds;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'semantic catalog filter judgment');
+        noteJudgmentFailure(err, 'semantic catalog filter judgment', "judgeSemanticCatalogFilter");
         return null;
     }
 }
@@ -1688,7 +1712,7 @@ export const THEME_PALETTE_QUESTION = {
 export async function judgeAestheticThemeDerivation(
     metadata: ThemeDerivationMetadata
 ): Promise<ThemeTokens | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeAestheticThemeDerivation")) return null;
 
     try {
         const functions = getFunctions();
@@ -1710,7 +1734,7 @@ export async function judgeAestheticThemeDerivation(
             ? THEME_PALETTES[choice] ?? null
             : null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'theme derivation judgment');
+        noteJudgmentFailure(err, 'theme derivation judgment', "judgeAestheticThemeDerivation");
         return null;
     }
 }
@@ -1745,7 +1769,7 @@ export const TRIAGE_DECISION_QUESTION = {
 export async function judgeSubmissionTriage(
     payload: SubmissionPayload
 ): Promise<TriageDecision | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeSubmissionTriage")) return null;
 
     try {
         const functions = getFunctions();
@@ -1766,7 +1790,7 @@ export async function judgeSubmissionTriage(
         const choice = ans.choice as TriageDecision;
         return valid.includes(choice) ? choice : null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'submission triage judgment');
+        noteJudgmentFailure(err, 'submission triage judgment', "judgeSubmissionTriage");
         return null;
     }
 }
@@ -1805,7 +1829,7 @@ export async function judgeCandidatePreselect(
     prompt: string,
     candidates: CandidateItem[]
 ): Promise<CandidatePreselectResult | null> {
-    if (!judgmentsAvailable() || !candidates || candidates.length === 0) return null;
+    if (!judgmentsAvailable("judgeCandidatePreselect") || !candidates || candidates.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -1839,7 +1863,7 @@ export async function judgeCandidatePreselect(
             recommendedId: candidates[validIdx].id,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'candidate preselect judgment');
+        noteJudgmentFailure(err, 'candidate preselect judgment', "judgeCandidatePreselect");
         return null;
     }
 }
@@ -1890,7 +1914,7 @@ export const VIDEO_DEFECT_CHOICE_QUESTION = {
 export async function judgeVideoReshootRequirement(
     input: VideoReshootInput
 ): Promise<VideoReshootDecision | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeVideoReshootRequirement")) return null;
 
     try {
         const functions = getFunctions();
@@ -1927,7 +1951,7 @@ export async function judgeVideoReshootRequirement(
             primaryDefect: defect,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video reshoot judgment');
+        noteJudgmentFailure(err, 'video reshoot judgment', "judgeVideoReshootRequirement");
         return null;
     }
 }
@@ -1997,7 +2021,7 @@ export const CRASH_ACTION_QUESTION = {
 export async function judgeCrashTriage(
     input: CrashTriageInput
 ): Promise<CrashTriageResult | null> {
-    if (!judgmentsAvailable()) return null;
+    if (!judgmentsAvailable("judgeCrashTriage")) return null;
 
     try {
         const functions = getFunctions();
@@ -2044,7 +2068,7 @@ export async function judgeCrashTriage(
             userGuidance: GUIDANCE_MAP[rootCause] || GUIDANCE_MAP.UNKNOWN,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'crash triage judgment');
+        noteJudgmentFailure(err, 'crash triage judgment', "judgeCrashTriage");
         return null;
     }
 }
@@ -2096,7 +2120,7 @@ export async function judgeSplitSheetVerification(
     collaborators: SplitSheetCollaboratorInput[],
     trackTitle?: string
 ): Promise<SplitSheetVerificationResult | null> {
-    if (!judgmentsAvailable() || !collaborators || collaborators.length === 0) return null;
+    if (!judgmentsAvailable("judgeSplitSheetVerification") || !collaborators || collaborators.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -2155,7 +2179,7 @@ export async function judgeSplitSheetVerification(
             advisories,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'split sheet verification judgment');
+        noteJudgmentFailure(err, 'split sheet verification judgment', "judgeSplitSheetVerification");
         return null;
     }
 }
@@ -2252,7 +2276,7 @@ export async function judgeCampaignBidAction(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeCampaignBidAction")) {
         return fallbackDecision();
     }
 
@@ -2295,7 +2319,7 @@ export async function judgeCampaignBidAction(
                 (evidenceScore === null ? '; evidence rating unavailable.' : `; Jev-rated evidence strength ${rawEvidence}/3.`),
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'campaign bid action judgment');
+        noteJudgmentFailure(err, 'campaign bid action judgment', "judgeCampaignBidAction");
         return fallbackDecision();
     }
 }
@@ -2315,7 +2339,7 @@ export async function judgeAdCreativeBatchCompliance(
     artistBrandVibe = 'Authentic Independent Music'
 ): Promise<string[]> {
     if (!creatives || creatives.length === 0) return [];
-    if (!judgmentsAvailable()) return [];
+    if (!judgmentsAvailable("judgeAdCreativeBatchCompliance")) return [];
 
     try {
         const functions = getFunctions();
@@ -2353,7 +2377,7 @@ export async function judgeAdCreativeBatchCompliance(
 
         return approved;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'ad creative batch compliance judgment');
+        noteJudgmentFailure(err, 'ad creative batch compliance judgment', "judgeAdCreativeBatchCompliance");
         return [];
     }
 }
@@ -2449,7 +2473,7 @@ export async function judgeAudioToVisualTokens(
     };
 
     const fallback = fallbackTokens();
-    if (!judgmentsAvailable()) return fallback;
+    if (!judgmentsAvailable("judgeAudioToVisualTokens")) return fallback;
 
     try {
         const motionCriteria = {
@@ -2518,7 +2542,7 @@ export async function judgeAudioToVisualTokens(
             recommendedAspectRatio: fallback.recommendedAspectRatio,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'audio to visual tokens judgment');
+        noteJudgmentFailure(err, 'audio to visual tokens judgment', "judgeAudioToVisualTokens");
         return fallback;
     }
 }
@@ -2581,7 +2605,7 @@ export async function judgeCuratorPlaylistAlignment(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeCuratorPlaylistAlignment")) {
         return fallbackMatch();
     }
 
@@ -2620,7 +2644,7 @@ export async function judgeCuratorPlaylistAlignment(
                 : `Low curator alignment (${(matchScore * 100).toFixed(0)}% < ${(CURATOR_DISPATCH_THRESHOLD * 100).toFixed(0)}%). Suppressing pitch to avoid curator spam.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'curator playlist alignment judgment');
+        noteJudgmentFailure(err, 'curator playlist alignment judgment', "judgeCuratorPlaylistAlignment");
         return fallbackMatch();
     }
 }
@@ -2692,7 +2716,7 @@ export async function judgeAgentActionRisk(
 
     const deterministic = fallbackRisk();
     if (deterministic.verdict === 'CIRCUIT_BREAKER_TRIP' || !typesafeJudgmentsEnabled()) return deterministic;
-    if (!judgmentsAvailable()) return requireConfirmation();
+    if (!judgmentsAvailable("judgeAgentActionRisk")) return requireConfirmation();
 
     try {
         const functions = getFunctions();
@@ -2752,7 +2776,7 @@ export async function judgeAgentActionRisk(
                 : undefined,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'agent action risk judgment');
+        noteJudgmentFailure(err, 'agent action risk judgment', "judgeAgentActionRisk");
         return requireConfirmation();
     }
 }
@@ -2787,7 +2811,7 @@ export async function judgeVisualQualityInspection(
         reason: 'Deterministic baseline approval (inspection offline).',
     });
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeVisualQualityInspection")) {
         return fallbackVerdict();
     }
 
@@ -2855,7 +2879,7 @@ export async function judgeVisualQualityInspection(
                 : `Aesthetic quality score: ${qualityScore}/3 (${choice}).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'visual quality inspection judgment');
+        noteJudgmentFailure(err, 'visual quality inspection judgment', "judgeVisualQualityInspection");
         return fallbackVerdict();
     }
 }
@@ -2895,7 +2919,7 @@ export async function judgeSoftBrandAestheticAlignment(
         };
     };
 
-    if (fallbackVerdict().violationDetected || !judgmentsAvailable()) {
+    if (fallbackVerdict().violationDetected || !judgmentsAvailable("judgeSoftBrandAestheticAlignment")) {
         return fallbackVerdict();
     }
 
@@ -2950,7 +2974,7 @@ export async function judgeSoftBrandAestheticAlignment(
                 : `Creative aligns with artist vibe (score ${vibeScore}/3).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'soft brand aesthetic alignment judgment');
+        noteJudgmentFailure(err, 'soft brand aesthetic alignment judgment', "judgeSoftBrandAestheticAlignment");
         return fallbackVerdict();
     }
 }
@@ -3003,7 +3027,7 @@ export async function judgeReceiptDataVerification(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeReceiptDataVerification")) {
         return fallbackVerdict();
     }
 
@@ -3064,7 +3088,7 @@ export async function judgeReceiptDataVerification(
                 : 'Proposed operating expense classification. Review business purpose and applicable tax treatment.',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'receipt data verification judgment');
+        noteJudgmentFailure(err, 'receipt data verification judgment', "judgeReceiptDataVerification");
         return fallbackVerdict();
     }
 }
@@ -3126,7 +3150,7 @@ export async function judgeStatementAnomalyTriage(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeStatementAnomalyTriage")) {
         return fallbackVerdict();
     }
 
@@ -3193,7 +3217,7 @@ export async function judgeStatementAnomalyTriage(
             summary: `Jev triage: ${classification} (Risk ${fraudRiskScore}/3, Action: ${actionRecommended}).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'statement anomaly triage judgment');
+        noteJudgmentFailure(err, 'statement anomaly triage judgment', "judgeStatementAnomalyTriage");
         return fallbackVerdict();
     }
 }
@@ -3255,7 +3279,7 @@ export async function judgeNextBestAction(
         };
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeNextBestAction")) {
         return fallbackVerdict();
     }
 
@@ -3310,7 +3334,7 @@ export async function judgeNextBestAction(
             rationale: `System One predicted optimal workflow progression to ${choice}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'next best action judgment');
+        noteJudgmentFailure(err, 'next best action judgment', "judgeNextBestAction");
         return fallbackVerdict();
     }
 }
@@ -3367,7 +3391,7 @@ export async function judgeArtistCareerDNA(
         BOUTIQUE_LABEL: ['distribution', 'finance', 'marketing'],
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeArtistCareerDNA")) {
         return {
             careerArchetype: archetype,
             monetizationFocus: focus,
@@ -3428,7 +3452,7 @@ export async function judgeArtistCareerDNA(
             identitySummary: `System One synthesized ${resolvedArch} oriented toward ${resolvedMon}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'artist career DNA judgment');
+        noteJudgmentFailure(err, 'artist career DNA judgment', "judgeArtistCareerDNA");
         return {
             careerArchetype: archetype,
             monetizationFocus: focus,
@@ -3504,7 +3528,7 @@ export async function judgeSessionChunkTriage(
         fallbackHook = 1;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeSessionChunkTriage")) {
         return {
             action: fallbackAction,
             isUsable: fallbackUsable,
@@ -3586,7 +3610,7 @@ export async function judgeSessionChunkTriage(
             rationale: `System One classified ${resolvedAction} with hook energy ${resolvedHook}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'session chunk triage judgment');
+        noteJudgmentFailure(err, 'session chunk triage judgment', "judgeSessionChunkTriage");
         return {
             action: fallbackAction,
             isUsable: fallbackUsable,
@@ -3653,7 +3677,7 @@ export async function judgeVideoBeatCutPacing(
         fallbackBeats = 8;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeVideoBeatCutPacing")) {
         return {
             cutFrequency: fallbackFrequency,
             transitionStyle: fallbackStyle,
@@ -3737,7 +3761,7 @@ export async function judgeVideoBeatCutPacing(
             recommendedBeatsPerCut: beatsMap[resolvedFreq] || fallbackBeats,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video beat cut pacing judgment');
+        noteJudgmentFailure(err, 'video beat cut pacing judgment', "judgeVideoBeatCutPacing");
         return {
             cutFrequency: fallbackFrequency,
             transitionStyle: fallbackStyle,
@@ -3797,7 +3821,7 @@ export async function judgeLyricVisualPromptSynthesis(
         fallbackDensity = 3;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeLyricVisualPromptSynthesis")) {
         return {
             category: fallbackCategory,
             avoidLiteralCliche: fallbackAvoidCliche,
@@ -3870,7 +3894,7 @@ export async function judgeLyricVisualPromptSynthesis(
             suggestedVisualKeywords: [input.artistAestheticVibe, resolvedCat.toLowerCase().replace('_', ' ')],
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'lyric visual prompt synthesis judgment');
+        noteJudgmentFailure(err, 'lyric visual prompt synthesis judgment', "judgeLyricVisualPromptSynthesis");
         return {
             category: fallbackCategory,
             avoidLiteralCliche: fallbackAvoidCliche,
@@ -3929,7 +3953,7 @@ export async function judgeAudioStemSeparationPriority(
         fallbackPhaseRisk = 2;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeAudioStemSeparationPriority")) {
         return {
             recipe: fallbackRecipe,
             isSalvageable: fallbackSalvageable,
@@ -4001,7 +4025,7 @@ export async function judgeAudioStemSeparationPriority(
             treatmentRecommendation: `System One determined ${resolvedRecipe} with phase risk ${resolvedPhase}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'audio stem separation priority judgment');
+        noteJudgmentFailure(err, 'audio stem separation priority judgment', "judgeAudioStemSeparationPriority");
         return {
             recipe: fallbackRecipe,
             isSalvageable: fallbackSalvageable,
@@ -4095,7 +4119,7 @@ export async function judgeMusicVideoContinuity(
         fallbackNote = 'Sequence lacks closeups. Add intimate vocal closeups to establish emotional connection.';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeMusicVideoContinuity")) {
         return {
             status: fallbackStatus,
             flowScore: fallbackScore,
@@ -4173,7 +4197,7 @@ export async function judgeMusicVideoContinuity(
             directorNote: `System One assessed editing flow as ${resolvedStatus} (score: ${resolvedScore}).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'music video continuity judgment');
+        noteJudgmentFailure(err, 'music video continuity judgment', "judgeMusicVideoContinuity");
         return {
             status: fallbackStatus,
             flowScore: fallbackScore,
@@ -4229,7 +4253,7 @@ export async function judgeSocialAudioSnippetSelection(
     const fallbackPotential = peakSection.section === 'CHORUS' || peakSection.section === 'DROP' ? 5 : 3;
     const fallbackImmediateVocal = peakSection.section === 'CHORUS';
 
-    if (!judgmentsAvailable() || sections.length === 0) {
+    if (!judgmentsAvailable("judgeSocialAudioSnippetSelection") || sections.length === 0) {
         return {
             recommendedSection: fallbackSection,
             suggestedStartTimeSeconds: startTime,
@@ -4325,7 +4349,7 @@ export async function judgeSocialAudioSnippetSelection(
             hookStrategy: `System One selected ${resolvedSec} at ${sTime}s with viral potential ${resolvedScore}/5.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'social audio snippet selection judgment');
+        noteJudgmentFailure(err, 'social audio snippet selection judgment', "judgeSocialAudioSnippetSelection");
         return {
             recommendedSection: fallbackSection,
             suggestedStartTimeSeconds: startTime,
@@ -4393,7 +4417,7 @@ export async function judgeMerchPrintViability(
         fallbackWarning = `Resolution (${input.designResolutionDpi} DPI) is below the 150 DPI minimum manufacturing threshold.`;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeMerchPrintViability")) {
         return {
             recommendedTechnique: fallbackTechnique,
             isPrintSafe: fallbackSafe,
@@ -4477,7 +4501,7 @@ export async function judgeMerchPrintViability(
             warningOrGuidance: isSafe ? undefined : (fallbackWarning || 'Print contrast is low. Verify digital proof before ordering.'),
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'merch print viability judgment');
+        noteJudgmentFailure(err, 'merch print viability judgment', "judgeMerchPrintViability");
         return {
             recommendedTechnique: fallbackTechnique,
             isPrintSafe: fallbackSafe,
@@ -4553,7 +4577,7 @@ export async function judgeFanCommentModeration(
         moderationFlag: fallbackFlag || 'Comment could not be checked. Please try again.',
     });
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeFanCommentModeration")) {
         if (typesafeJudgmentsEnabled()) return reviewVerdict();
         return {
             intent: fallbackIntent,
@@ -4634,7 +4658,7 @@ export async function judgeFanCommentModeration(
             moderationFlag: isApproved ? undefined : (fallbackFlag || 'Comment flagged by community safety policy.'),
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'fan comment moderation judgment');
+        noteJudgmentFailure(err, 'fan comment moderation judgment', "judgeFanCommentModeration");
         return reviewVerdict();
     }
 }
@@ -4697,7 +4721,7 @@ export async function judgeSyncLicensingMoodFit(
         fallbackScore = 4;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeSyncLicensingMoodFit")) {
         return {
             recommendedScene: fallbackCategory,
             syncFitScore: fallbackScore,
@@ -4782,7 +4806,7 @@ export async function judgeSyncLicensingMoodFit(
             syncPitchDeckBlurb: `System One matched "${input.trackTitle}" to ${resolvedScene} (sync fit: ${resolvedFit}/5).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'sync licensing mood fit judgment');
+        noteJudgmentFailure(err, 'sync licensing mood fit judgment', "judgeSyncLicensingMoodFit");
         return {
             recommendedScene: fallbackCategory,
             syncFitScore: fallbackScore,
@@ -4859,7 +4883,7 @@ export async function judgeCameraAngleContinuity(
     };
     const fallbackNextAngle = angleCycle[lastCut.angle] || 'EYE_LEVEL';
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeCameraAngleContinuity")) {
         return {
             recommendedNextAngle: fallbackNextAngle,
             hasJumpAngleViolation,
@@ -4932,7 +4956,7 @@ export async function judgeCameraAngleContinuity(
             cinematicNotes: `System One camera direction: next shot ${resolvedAngle} (diversity: ${resolvedDiversity}/5).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'camera angle continuity judgment');
+        noteJudgmentFailure(err, 'camera angle continuity judgment', "judgeCameraAngleContinuity");
         return {
             recommendedNextAngle: fallbackNextAngle,
             hasJumpAngleViolation,
@@ -5001,7 +5025,7 @@ export async function judgeVideoColorGradeMood(
     const clashingHazard = (input.energyLevel === 'EXPLOSIVE' && fallbackPreset === 'VINTAGE_SEPIA_VINYL') ||
         (moods.includes('somber') && fallbackPreset === 'PASTEL_DREAM_POP');
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeVideoColorGradeMood")) {
         return {
             recommendedPreset: fallbackPreset,
             clashingGradeHazard: clashingHazard,
@@ -5082,7 +5106,7 @@ export async function judgeVideoColorGradeMood(
             lutDescription: `System One color grade: ${resolvedPreset} (synergy score: ${resolvedSynergy}/5).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video color grade mood judgment');
+        noteJudgmentFailure(err, 'video color grade mood judgment', "judgeVideoColorGradeMood");
         return {
             recommendedPreset: fallbackPreset,
             clashingGradeHazard: clashingHazard,
@@ -5163,7 +5187,7 @@ export async function judgeStatementCatalogDisambiguation(
     const fallbackScore = fallbackMatch ? 4 : 1;
     const fallbackCertainty = fallbackMatch !== null;
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeStatementCatalogDisambiguation")) {
         return {
             matchedTrackId: fallbackMatch ? fallbackMatch.trackId : null,
             isUnmatched: fallbackUnmatched,
@@ -5243,7 +5267,7 @@ export async function judgeStatementCatalogDisambiguation(
                 : `System One classified "${line.rawTitle}" as UNMATCHED to catalog.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'statement catalog disambiguation judgment');
+        noteJudgmentFailure(err, 'statement catalog disambiguation judgment', "judgeStatementCatalogDisambiguation");
         return {
             matchedTrackId: fallbackMatch ? fallbackMatch.trackId : null,
             isUnmatched: fallbackUnmatched,
@@ -5315,7 +5339,7 @@ export async function judgeSplitSheetRightsClearance(
         fallbackScore = 4;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeSplitSheetRightsClearance")) {
         return {
             rightsStream: fallbackStream,
             requiresProducerAgreementBeforeRelease: fallbackRequiresProducerAgreement,
@@ -5393,7 +5417,7 @@ export async function judgeSplitSheetRightsClearance(
                 : `Review the proposed ${resolvedStream} split of ${input.claimedPercentage}% for ${input.collaboratorName}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'split sheet rights clearance judgment');
+        noteJudgmentFailure(err, 'split sheet rights clearance judgment', "judgeSplitSheetRightsClearance");
         return {
             rightsStream: fallbackStream,
             requiresProducerAgreementBeforeRelease: fallbackRequiresProducerAgreement,
@@ -5473,7 +5497,7 @@ export async function judgeUniversalErrorRemediation(
         fallbackBtn = 'Clear Module Cache';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeUniversalErrorRemediation")) {
         return {
             remedyAction: fallbackAction,
             isTransient: fallbackTransient,
@@ -5561,7 +5585,7 @@ export async function judgeUniversalErrorRemediation(
             actionButtonText: actionButtons[resolvedAction] || fallbackBtn,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'universal error remediation judgment');
+        noteJudgmentFailure(err, 'universal error remediation judgment', "judgeUniversalErrorRemediation");
         return {
             remedyAction: fallbackAction,
             isTransient: fallbackTransient,
@@ -5625,7 +5649,7 @@ export async function judgeLikenessEnrolmentSuitability(
         fallbackClarity = 3;
     }
 
-    if (fallbackStatus !== 'READY_FOR_TRAINING' || !judgmentsAvailable()) {
+    if (fallbackStatus !== 'READY_FOR_TRAINING' || !judgmentsAvailable("judgeLikenessEnrolmentSuitability")) {
         return {
             status: fallbackStatus,
             faceClarityScore: fallbackClarity,
@@ -5701,7 +5725,7 @@ export async function judgeLikenessEnrolmentSuitability(
             advisoryNotes: `System One likeness audit: ${resolvedStatus} (clarity score: ${resolvedClarity}/5).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'likeness enrolment suitability judgment');
+        noteJudgmentFailure(err, 'likeness enrolment suitability judgment', "judgeLikenessEnrolmentSuitability");
         return {
             status: fallbackStatus,
             faceClarityScore: fallbackClarity,
@@ -5771,7 +5795,7 @@ export async function judgePersonaPosturePreset(
 
     const fallbackFaders = PERSONA_POSTURE_FADER_MAP[fallbackPreset];
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgePersonaPosturePreset")) {
         return {
             recommendedPreset: fallbackPreset,
             alignmentScore: 4,
@@ -5835,7 +5859,7 @@ export async function judgePersonaPosturePreset(
             calibratedFaders: PERSONA_POSTURE_FADER_MAP[resolvedPreset] || fallbackFaders,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'persona posture preset judgment');
+        noteJudgmentFailure(err, 'persona posture preset judgment', "judgePersonaPosturePreset");
         return {
             recommendedPreset: fallbackPreset,
             alignmentScore: 4,
@@ -5906,7 +5930,7 @@ export async function judgeTaxFormCompliance(
     const missingTin = !input.hasExtractedTinOrSsn;
     const isExempt = fallbackStatus === 'VALID_W9_COMPLETE' || fallbackStatus === 'VALID_W8BEN_COMPLETE';
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeTaxFormCompliance")) {
         return {
             status: isExempt ? 'REQUIRES_MANUAL_REVIEW' : fallbackStatus,
             isWithholdingExempt: false,
@@ -6002,7 +6026,7 @@ export async function judgeTaxFormCompliance(
                 : `Tax compliance alert: ${resolvedStatus} (disbursement on hold).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'tax form compliance judgment');
+        noteJudgmentFailure(err, 'tax form compliance judgment', "judgeTaxFormCompliance");
         return {
             status: isExempt ? 'REQUIRES_MANUAL_REVIEW' : fallbackStatus,
             isWithholdingExempt: false,
@@ -6091,7 +6115,7 @@ export async function judgeDistributionBlocker(
 
     const isReady = false;
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeDistributionBlocker")) {
         return {
             blocker: fallbackBlocker,
             isReady,
@@ -6187,7 +6211,7 @@ export async function judgeDistributionBlocker(
                 : `Distribution hold: ${resolvedBlocker}. Review the missing requirement before submission.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'distribution blocker guidance judgment');
+        noteJudgmentFailure(err, 'distribution blocker guidance judgment', "judgeDistributionBlocker");
         return {
             blocker: fallbackBlocker,
             isReady,
@@ -6279,7 +6303,7 @@ export async function judgeDdexGenreAndSubculture(
         fallbackPlaylist = 'Undercurrents';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeDdexGenreAndSubculture")) {
         return {
             ddexPrimaryGenre: fallbackPrimary,
             subGenreCultural: fallbackCultural,
@@ -6353,7 +6377,7 @@ export async function judgeDdexGenreAndSubculture(
             confidence: 0.96,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'ddex genre classification judgment');
+        noteJudgmentFailure(err, 'ddex genre classification judgment', "judgeDdexGenreAndSubculture");
         return {
             ddexPrimaryGenre: fallbackPrimary,
             subGenreCultural: fallbackCultural,
@@ -6435,7 +6459,7 @@ export async function judgeAudioDrivenMerchSku(
         fallbackPitch = `Limited-edition 180g heavyweight collector wax with archival jacket.`;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeAudioDrivenMerchSku")) {
         return {
             recommendedSku: fallbackSku,
             recommendedColorway: fallbackColorway,
@@ -6502,7 +6526,7 @@ export async function judgeAudioDrivenMerchSku(
             conversionPitch: `${fallbackPitch} (Impulse intent: ${resolvedScore}/5)`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'fan to merch sku judgment');
+        noteJudgmentFailure(err, 'fan to merch sku judgment', "judgeAudioDrivenMerchSku");
         return {
             recommendedSku: fallbackSku,
             recommendedColorway: fallbackColorway,
@@ -6582,7 +6606,7 @@ export async function judgeAudioMasterNormalization(
         fallbackBlurb = `Master is quiet (${input.integratedLufs} LUFS). Consider mastering limiter boost of ~${gainOffsetDb} dB to reach broadcast competitive volume.`;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeAudioMasterNormalization")) {
         return {
             status: fallbackStatus,
             targetPlatform: platform,
@@ -6648,7 +6672,7 @@ export async function judgeAudioMasterNormalization(
             advisoryBlurb: fallbackBlurb,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'master audio normalization judgment');
+        noteJudgmentFailure(err, 'master audio normalization judgment', "judgeAudioMasterNormalization");
         return {
             status: fallbackStatus,
             targetPlatform: platform,
@@ -6724,7 +6748,7 @@ export async function judgeTargetSpecialistAgent(
 
     const isMisaligned = active !== 'generalist' && active !== fallbackTarget && fallbackTarget !== 'generalist';
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeTargetSpecialistAgent")) {
         return {
             targetAgentId: fallbackTarget,
             confidence: 0.85,
@@ -6794,7 +6818,7 @@ export async function judgeTargetSpecialistAgent(
             isModuleMisaligned: finalMisaligned,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'specialist agent target router judgment');
+        noteJudgmentFailure(err, 'specialist agent target router judgment', "judgeTargetSpecialistAgent");
         return {
             targetAgentId: fallbackTarget,
             confidence: 0.85,
@@ -6852,7 +6876,7 @@ export async function judgePromptActionability(
         ? `Try adding ${missing.join(', ')} to get production-grade output immediately.`
         : 'Prompt has strong specificity and clear execution parameters.';
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgePromptActionability")) {
         return {
             specificityScore: fallbackScore,
             hasDeliverable: hasActionVerb,
@@ -6913,7 +6937,7 @@ export async function judgePromptActionability(
             isReadyForExecution: specScore >= 3 && resolvedHasDeliverable,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'prompt actionability judgment');
+        noteJudgmentFailure(err, 'prompt actionability judgment', "judgePromptActionability");
         return {
             specificityScore: fallbackScore,
             hasDeliverable: hasActionVerb,
@@ -7031,7 +7055,7 @@ export async function judgeArtistDnaOnboarding(
         ...(raw.includes('cyberpunk') ? { cyberpunk_futuristic: 'The artist explicitly requested this style.' } : {}),
     };
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeArtistDnaOnboarding")) {
         return {
             archetype,
             aestheticStyle: aesthetic,
@@ -7108,7 +7132,7 @@ export async function judgeArtistDnaOnboarding(
             executiveSummary: `System One synthesized artist profile: ${resolvedArchetype} with ${resolvedAesthetic} styling.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'artist DNA onboarding judgment');
+        noteJudgmentFailure(err, 'artist DNA onboarding judgment', "judgeArtistDnaOnboarding");
         return {
             archetype,
             aestheticStyle: aesthetic,
@@ -7158,7 +7182,7 @@ export async function judgeStemSeparationAcousticPurity(
         remedy = 'Acceptable for background backing tracks; minor chirping artifacts in high frequencies.';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeStemSeparationAcousticPurity")) {
         return {
             purityScore: fallbackScore,
             isRemixReady: fallbackScore >= 3 && !isSeverePhase,
@@ -7219,7 +7243,7 @@ export async function judgeStemSeparationAcousticPurity(
             recommendedRemedy: remedy,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'stem separation acoustic purity judgment');
+        noteJudgmentFailure(err, 'stem separation acoustic purity judgment', "judgeStemSeparationAcousticPurity");
         return {
             purityScore: fallbackScore,
             isRemixReady: fallbackScore >= 3 && !isSeverePhase,
@@ -7339,7 +7363,7 @@ export async function judgeDirectToFanEmailSubjectLine(
     }[input.campaignType];
     const suggestion = hasSpamRisk ? safeSuggestion : text;
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeDirectToFanEmailSubjectLine")) {
         return {
             copyQualityScore: fallbackScore,
             hasSpamStyleSignal: hasSpamRisk,
@@ -7400,7 +7424,7 @@ export async function judgeDirectToFanEmailSubjectLine(
             suggestedSubjectLine: finalSpam ? safeSuggestion : text,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'direct-to-fan email subject line judgment');
+        noteJudgmentFailure(err, 'direct-to-fan email subject line judgment', "judgeDirectToFanEmailSubjectLine");
         return {
             copyQualityScore: fallbackScore,
             hasSpamStyleSignal: hasSpamRisk,
@@ -7516,7 +7540,7 @@ export async function judgeVideoChunkQuality(
         reason = 'Prime performance take: stable camera, optimal lighting, and clear subject presence.';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeVideoChunkQuality")) {
         return { classification, usableScore, isKeep, reason };
     }
 
@@ -7579,7 +7603,7 @@ export async function judgeVideoChunkQuality(
             reason: resolvedKeep ? 'Validated by Jev Vision filter for music video timeline.' : 'Flagged for timeline pruning.',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video chunk quality judgment');
+        noteJudgmentFailure(err, 'video chunk quality judgment', "judgeVideoChunkQuality");
         return { classification, usableScore, isKeep, reason };
     }
 }
@@ -7618,7 +7642,7 @@ export async function judgeTopImageVariationCandidate(
     const fallbackScore = 4;
     const fallbackRationale = 'Selected based on baseline prompt fidelity and focal composition.';
 
-    if (!judgmentsAvailable() || candidates.length === 1) {
+    if (!judgmentsAvailable("judgeTopImageVariationCandidate") || candidates.length === 1) {
         return {
             topCandidateId: fallbackCandidate,
             alignmentScore: fallbackScore,
@@ -7676,7 +7700,7 @@ export async function judgeTopImageVariationCandidate(
             selectionRationale: 'Pre-selected by Jev Vision intelligence for superior focal balance and prompt match.',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'top image variation candidate judgment');
+        noteJudgmentFailure(err, 'top image variation candidate judgment', "judgeTopImageVariationCandidate");
         return {
             topCandidateId: fallbackCandidate,
             alignmentScore: fallbackScore,
@@ -7723,7 +7747,7 @@ export async function judgeNextBestModule(
     };
 
     // If there is only 1 candidate, or Jev is offline/unavailable, return deterministic default immediately
-    if (candidates.length === 1 || !judgmentsAvailable()) {
+    if (candidates.length === 1 || !judgmentsAvailable("judgeNextBestModule")) {
         return defaultVerdict;
     }
 
@@ -7790,7 +7814,7 @@ export async function judgeNextBestModule(
             source: 'jev',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'next best module judgment');
+        noteJudgmentFailure(err, 'next best module judgment', "judgeNextBestModule");
         return defaultVerdict;
     }
 }
@@ -7846,7 +7870,7 @@ export async function judgeVideoTreatmentIntent(
         fps = 24;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeVideoTreatmentIntent")) {
         return {
             aspectRatio,
             treatment,
@@ -7912,7 +7936,7 @@ export async function judgeVideoTreatmentIntent(
             rationale: `Jev Video Intent: configured for ${resolvedStyle} style in ${resolvedRatio} aspect ratio.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'video treatment intent judgment');
+        noteJudgmentFailure(err, 'video treatment intent judgment', "judgeVideoTreatmentIntent");
         return {
             aspectRatio,
             treatment,
@@ -7978,7 +8002,7 @@ export async function judgeExpenseDeductibility(
         notes = '100% deductible legal and professional services under Schedule C Line 17.';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeExpenseDeductibility")) {
         return { category, auditDefenseScore: auditScore, is100PercentDeductible: is100Percent, taxScheduleNotes: notes };
     }
 
@@ -8037,7 +8061,7 @@ export async function judgeExpenseDeductibility(
             taxScheduleNotes: notes,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'expense deductibility judgment');
+        noteJudgmentFailure(err, 'expense deductibility judgment', "judgeExpenseDeductibility");
         return { category, auditDefenseScore: auditScore, is100PercentDeductible: is100Percent, taxScheduleNotes: notes };
     }
 }
@@ -8090,7 +8114,7 @@ export async function judgeTourStopFeasibility(
         restHours = 9;
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeTourStopFeasibility")) {
         return {
             status,
             feasibilityRating: rating,
@@ -8153,7 +8177,7 @@ export async function judgeTourStopFeasibility(
             recommendedRestHours: restHours,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'tour stop feasibility judgment');
+        noteJudgmentFailure(err, 'tour stop feasibility judgment', "judgeTourStopFeasibility");
         return {
             status,
             feasibilityRating: rating,
@@ -8191,7 +8215,7 @@ function upscaleModelQuestion() {
  * back deterministically to the illustration-safe model.
  */
 export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelChoice | null> {
-    if (!judgmentsAvailable() || !prompt.trim()) return null;
+    if (!judgmentsAvailable("judgeUpscaleModel") || !prompt.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -8209,12 +8233,10 @@ export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelCho
             },
         });
 
-        const answer = result.data.answers?.model;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown })?.choice;
-        if (choice === 'realesrgan-x4plus' || choice === 'realesrgan-x4plus-anime') return choice;
-        return null;
+        return confidentDeclaredChoice(result.data.answers?.model,
+            ['realesrgan-x4plus', 'realesrgan-x4plus-anime'], UPSCALE_MODEL_MIN_CONFIDENCE) as UpscaleModelChoice | null;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'upscale model judgment');
+        noteJudgmentFailure(err, 'upscale model judgment', "judgeUpscaleModel");
         return null;
     }
 }
@@ -8260,7 +8282,7 @@ export async function judgeMotionIntensityPreset(
         fallbackExpl = 'Rock-steady tripod lock with zero camera jitter or translation.';
     }
 
-    if (!judgmentsAvailable() || !promptOrDescription.trim()) {
+    if (!judgmentsAvailable("judgeMotionIntensityPreset") || !promptOrDescription.trim()) {
         return {
             preset: fallbackPreset,
             intensityScore: fallbackScore,
@@ -8323,7 +8345,7 @@ export async function judgeMotionIntensityPreset(
             explanation: `TypeSafe camera motion calibrated as ${resolvedPreset} (intensity ${resolvedScore}/5).`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'motion intensity judgment');
+        noteJudgmentFailure(err, 'motion intensity judgment', "judgeMotionIntensityPreset");
         return {
             preset: fallbackPreset,
             intensityScore: fallbackScore,
@@ -8382,7 +8404,7 @@ export async function judgeStemSeparationRecipe(
         fallbackRationale = 'Multi-layered synthetic arrangement requires 5-stem isolation with sub-bass extraction.';
     }
 
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeStemSeparationRecipe")) {
         return {
             recipe: fallbackRecipe,
             recommendedModel: fallbackModel,
@@ -8451,7 +8473,7 @@ export async function judgeStemSeparationRecipe(
             rationale: `Recipe certified by Jev Audio Intelligence: ${resolvedRecipe}.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'stem separation recipe judgment');
+        noteJudgmentFailure(err, 'stem separation recipe judgment', "judgeStemSeparationRecipe");
         return {
             recipe: fallbackRecipe,
             recommendedModel: fallbackModel,
@@ -8529,7 +8551,7 @@ export async function judgeDawTitleSanitization(
 
     const cleanTitle = cleanedTokens.join(' ').replace(/^[-_.\s]+|[-_.\s]+$/g, '').trim() || 'Untitled Track';
 
-    if (!judgmentsAvailable() || !raw) {
+    if (!judgmentsAvailable("judgeDawTitleSanitization") || !raw) {
         return {
             cleanTitle,
             cleanArtist,
@@ -8593,7 +8615,7 @@ export async function judgeDawTitleSanitization(
             confidence: 5,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'DAW title sanitization judgment');
+        noteJudgmentFailure(err, 'DAW title sanitization judgment', "judgeDawTitleSanitization");
         return {
             cleanTitle,
             cleanArtist,
@@ -8673,7 +8695,7 @@ export async function judgeCatalogCollisionRisk(
         }
     }
 
-    if (!judgmentsAvailable() || !matchedTrackId || disposition === 'NEW_CANONICAL_TRACK') {
+    if (!judgmentsAvailable("judgeCatalogCollisionRisk") || !matchedTrackId || disposition === 'NEW_CANONICAL_TRACK') {
         return {
             disposition,
             matchedTrackId,
@@ -8748,7 +8770,7 @@ export async function judgeCatalogCollisionRisk(
             recommendation,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'catalog collision risk judgment');
+        noteJudgmentFailure(err, 'catalog collision risk judgment', "judgeCatalogCollisionRisk");
         return {
             disposition,
             matchedTrackId,
@@ -8790,7 +8812,7 @@ export interface CanvasTextRegion {
 /** Select an exact source span only when native lettering satisfies the whole edit. */
 export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Promise<Record<string, number>> {
     const eligible = regions.filter(region => region.candidates.length > 0 && region.prompt.length <= 4000).slice(0, 8);
-    if (!judgmentsAvailable() || !eligible.length) return {};
+    if (!judgmentsAvailable("judgeCanvasTextCandidates") || !eligible.length) return {};
     const state = { regions: Object.fromEntries(eligible.map(region => [region.id, { prompt: region.prompt, candidates: region.candidates }])) };
     if (JSON.stringify(state).length > 60_000) return {};
     const questions = Object.fromEntries(eligible.map(region => [region.id, {
@@ -8817,7 +8839,7 @@ export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Pr
         }
         return approved;
     } catch (error: unknown) {
-        noteJudgmentFailure(error, 'masked literal text routing');
+        noteJudgmentFailure(error, 'masked literal text routing', "judgeCanvasTextCandidates");
         return {};
     }
 }
@@ -8864,7 +8886,7 @@ export async function judgeStatementColumnLoss(
     missingColumns: string[],
     formatId: string
 ): Promise<StatementColumnLossJudgment | null> {
-    if (!judgmentsAvailable() || missingColumns.length === 0) return null;
+    if (!judgmentsAvailable("judgeStatementColumnLoss") || missingColumns.length === 0) return null;
 
     try {
         const functions = getFunctions();
@@ -8897,7 +8919,7 @@ export async function judgeStatementColumnLoss(
                 : `Missing columns (${missingColumns.join(', ')}) are non-critical supplementary metadata.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'statement column loss judgment');
+        noteJudgmentFailure(err, 'statement column loss judgment', "judgeStatementColumnLoss");
         return null;
     }
 }
@@ -8948,7 +8970,7 @@ export async function judgeEventRetentionTier(
     type: string,
     meta?: Record<string, unknown>
 ): Promise<EventRetentionJudgment | null> {
-    if (!judgmentsAvailable() || !text.trim()) return null;
+    if (!judgmentsAvailable("judgeEventRetentionTier") || !text.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -8993,7 +9015,7 @@ export async function judgeEventRetentionTier(
                 : `Transient context (score ${permScore}/4): suitable for standard age-based decay.`,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'event retention tier judgment');
+        noteJudgmentFailure(err, 'event retention tier judgment', "judgeEventRetentionTier");
         return null;
     }
 }
@@ -9025,7 +9047,7 @@ export async function judgeWorkflowCondition(
     dataPayload: string,
     condition: string,
 ): Promise<boolean | null> {
-    if (!judgmentsAvailable() || !condition.trim()) return null;
+    if (!judgmentsAvailable("judgeWorkflowCondition") || !condition.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -9050,7 +9072,7 @@ export async function judgeWorkflowCondition(
 
         return prob >= WORKFLOW_ROUTER_MIN_CONFIDENCE;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'workflow condition judgment');
+        noteJudgmentFailure(err, 'workflow condition judgment', "judgeWorkflowCondition");
         return null;
     }
 }
@@ -9061,16 +9083,29 @@ export async function judgeWorkflowCondition(
 
 export type CreativeStudioTargetMode = 'image' | 'video' | 'omni';
 
-export interface CreativePromptModeVerdict {
-    suggestedMode: CreativeStudioTargetMode;
-    confidence: number;
-    reason: string;
+type AmbientCreativeEvidence =
+    | { source: 'jev'; confidence: number }
+    | { source: 'heuristic'; confidence: null };
+
+export const GALLERY_PROMPT_FIT_MIN_CONFIDENCE = 0.65;
+export const PLP_FORMAT_MIN_CONFIDENCE = 0.65;
+
+function ambientJudgmentConfidence(answer: unknown, kind: 'choice' | 'score', minimum: number): number | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; confidence?: unknown };
+    return value.type === kind && typeof value.confidence === 'number' && Number.isFinite(value.confidence) &&
+        value.confidence >= minimum && value.confidence <= 1 ? value.confidence : null;
 }
+
+export type CreativePromptModeVerdict = {
+    suggestedMode: CreativeStudioTargetMode;
+    reason: string;
+} & AmbientCreativeEvidence;
 
 export const CREATIVE_PROMPT_MODE_MIN_CONFIDENCE = 0.70;
 
 const VIDEO_KEYWORD_PATTERNS = [
-    /\b(video|clip|footage|motion|cinematic|camera|orbit|pan\s+(?:left|right|up|down)|tilt|zoom\s+(?:in|out)|tracking\s+shot|drone\s+shot|fps|slow\s+motion|timelapse|hyperlapse|b-roll|transition|animate[d]?|looping|veo)\b/i,
+    /\b(video|clip|footage|motion|camera\s+(?:pan|orbit|movement|move)|orbit|pan\s+(?:left|right|up|down)|tilt|zoom\s+(?:in|out)|tracking\s+shot|drone\s+shot|fps|slow\s+motion|timelapse|hyperlapse|b-roll|transition|animate[d]?|looping|veo)\b/i,
 ];
 
 const OMNI_KEYWORD_PATTERNS = [
@@ -9085,7 +9120,8 @@ export function deterministicCreativePromptModeFallback(
     if (!text) {
         return {
             suggestedMode: currentMode,
-            confidence: 1.0,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Empty prompt defaults to current mode.',
         };
     }
@@ -9093,7 +9129,8 @@ export function deterministicCreativePromptModeFallback(
     if (OMNI_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
         return {
             suggestedMode: 'omni',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt mentions remixing, style transfer, or multimodal blending.',
         };
     }
@@ -9101,14 +9138,16 @@ export function deterministicCreativePromptModeFallback(
     if (VIDEO_KEYWORD_PATTERNS.some((pattern) => pattern.test(text))) {
         return {
             suggestedMode: 'video',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt contains motion, camera direction, or video keywords.',
         };
     }
 
     return {
         suggestedMode: 'image',
-        confidence: 0.80,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Prompt is focused on static illustration, album art, or photograph.',
     };
 }
@@ -9138,7 +9177,7 @@ export async function judgeCreativePromptModeIntent(
     currentMode: CreativeStudioTargetMode = 'image',
 ): Promise<CreativePromptModeVerdict> {
     const fallback = deterministicCreativePromptModeFallback(prompt, currentMode);
-    if (!judgmentsAvailable() || !prompt.trim()) {
+    if (!judgmentsAvailable("judgeCreativePromptModeIntent") || !prompt.trim()) {
         return fallback;
     }
 
@@ -9161,24 +9200,20 @@ export async function judgeCreativePromptModeIntent(
 
         const ans = result.data.answers?.target_mode;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
-        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
-            ? (ans as { confidence?: unknown }).confidence
-            : undefined;
-        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-            ? rawConfidence
-            : fallback.confidence;
+        const confidence = ambientJudgmentConfidence(ans, 'choice', CREATIVE_PROMPT_MODE_MIN_CONFIDENCE);
 
-        if (choice === 'image' || choice === 'video' || choice === 'omni') {
+        if (confidence !== null && (choice === 'image' || choice === 'video' || choice === 'omni')) {
             return {
                 suggestedMode: choice as CreativeStudioTargetMode,
-                confidence: confidence ?? fallback.confidence,
+                source: 'jev',
+                confidence,
                 reason: `Jev resolved target mode as ${choice}.`,
             };
         }
 
         return fallback;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'creative prompt mode intent judgment');
+        noteJudgmentFailure(err, 'creative prompt mode intent judgment', "judgeCreativePromptModeIntent");
         return fallback;
     }
 }
@@ -9193,12 +9228,11 @@ export async function judgeCreativePromptModeIntent(
 
 export type GalleryBrandFitLabel = 'perfect_match' | 'strong_fit' | 'neutral' | 'drift' | 'mismatch';
 
-export interface GalleryBrandFitVerdict {
+export type GalleryBrandFitVerdict = {
     score: number; // 1 to 5 integer
     label: GalleryBrandFitLabel;
-    confidence: number;
     reason: string;
-}
+} & AmbientCreativeEvidence;
 
 export interface GalleryAssetBrandContext {
     promptUsed: string;
@@ -9217,7 +9251,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 3,
             label: 'neutral',
-            confidence: 0.5,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Empty prompt defaults to neutral brand alignment.',
         };
     }
@@ -9232,7 +9267,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 5,
             label: 'perfect_match',
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt strongly incorporates project brand vibe and aesthetic tags.',
         };
     }
@@ -9241,7 +9277,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 4,
             label: 'strong_fit',
-            confidence: 0.75,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt aligns with project brand direction.',
         };
     }
@@ -9252,7 +9289,8 @@ export function deterministicGalleryBrandFitFallback(
         return {
             score: 1,
             label: 'mismatch',
-            confidence: 0.80,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Prompt contains quality defects or anti-brand keywords.',
         };
     }
@@ -9260,7 +9298,8 @@ export function deterministicGalleryBrandFitFallback(
     return {
         score: 3,
         label: 'neutral',
-        confidence: 0.60,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Asset exhibits standard stylistic coherence.',
     };
 }
@@ -9290,7 +9329,7 @@ export async function judgeGalleryAssetBrandFit(
     context: GalleryAssetBrandContext,
 ): Promise<GalleryBrandFitVerdict> {
     const fallback = deterministicGalleryBrandFitFallback(context);
-    if (!judgmentsAvailable() || !context.promptUsed?.trim()) {
+    if (!judgmentsAvailable("judgeGalleryAssetBrandFit") || !context.promptUsed?.trim()) {
         return fallback;
     }
 
@@ -9313,40 +9352,25 @@ export async function judgeGalleryAssetBrandFit(
         });
 
         const ans = result.data.answers?.brand_fit;
-        let rawScore: number | undefined;
-        let rawConfidence: number | undefined;
-
-        if (typeof ans === 'number') {
-            rawScore = ans;
-        } else if (typeof ans === 'object' && ans !== null) {
-            if ('score' in ans && typeof (ans as { score?: unknown }).score === 'number') {
-                rawScore = (ans as { score: number }).score;
-            }
-            if ('confidence' in ans && typeof (ans as { confidence?: unknown }).confidence === 'number') {
-                rawConfidence = (ans as { confidence: number }).confidence;
-            }
-        }
-
-        if (typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
+        const confidence = ambientJudgmentConfidence(ans, 'score', GALLERY_PROMPT_FIT_MIN_CONFIDENCE);
+        const rawScore = ans && typeof ans === 'object' ? (ans as { score?: unknown }).score : undefined;
+        if (confidence !== null && typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
             // Map 0-4 scale to 1-5
             const score = Math.round(rawScore) + 1;
             const labels: GalleryBrandFitLabel[] = ['mismatch', 'drift', 'neutral', 'strong_fit', 'perfect_match'];
             const label = labels[score - 1] ?? 'neutral';
-            const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                ? rawConfidence
-                : fallback.confidence;
-
             return {
                 score,
                 label,
+                source: 'jev',
                 confidence,
-                reason: `Jev scored brand aesthetic fit at ${score}/5.`,
+                reason: `Jev scored prompt-to-brand alignment at ${score}/5.`,
             };
         }
 
         return fallback;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'gallery asset brand fit judgment');
+        noteJudgmentFailure(err, 'gallery asset brand fit judgment', "judgeGalleryAssetBrandFit");
         return fallback;
     }
 }
@@ -9372,12 +9396,11 @@ export interface PlpVariantAdContext {
     kind?: 'image' | 'video';
 }
 
-export interface PlpVariantAdVerdict {
+export type PlpVariantAdVerdict = {
     formatTag: PlpVariantFormatTag;
     retryRecommended: boolean;
-    confidence: number;
     reason: string;
-}
+} & AmbientCreativeEvidence;
 
 export function deterministicPlpVariantAdFallback(
     context: PlpVariantAdContext,
@@ -9386,22 +9409,15 @@ export function deterministicPlpVariantAdFallback(
     const ratio = (context.aspectRatio || '').trim();
     const isVideo = context.kind === 'video' || context.slotIndex >= 10;
 
-    // Check for obvious defects or anti-patterns
-    if (/glitch|broken|distorted|unusable/i.test(prompt)) {
-        return {
-            formatTag: 'STANDARD',
-            retryRecommended: true,
-            confidence: 0.85,
-            reason: 'Defect detected in prompt semantics; recommend retry.',
-        };
-    }
+    // Prompt wording does not establish a rendered defect or justify a paid retry.
 
     // Video vertical slots
     if (ratio === '9:16' || isVideo) {
         return {
             formatTag: 'STORY_REEL',
             retryRecommended: false,
-            confidence: 0.90,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Vertical / video motion format suited for Story and Reels placements.',
         };
     }
@@ -9411,7 +9427,8 @@ export function deterministicPlpVariantAdFallback(
         return {
             formatTag: 'HIGH_CONVERTING_HERO',
             retryRecommended: false,
-            confidence: 0.85,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Widescreen cinematic composition suited for top hero placements.',
         };
     }
@@ -9421,7 +9438,8 @@ export function deterministicPlpVariantAdFallback(
         return {
             formatTag: 'THUMBNAIL_SAFE',
             retryRecommended: false,
-            confidence: 0.80,
+            source: 'heuristic',
+            confidence: null,
             reason: 'Square or focused subject framing suited for grid and thumbnail cards.',
         };
     }
@@ -9429,7 +9447,8 @@ export function deterministicPlpVariantAdFallback(
     return {
         formatTag: 'STANDARD',
         retryRecommended: false,
-        confidence: 0.70,
+        source: 'heuristic',
+        confidence: null,
         reason: 'Standard ad variant placement.',
     };
 }
@@ -9460,7 +9479,7 @@ export async function judgePlpVariantAdFormat(
     context: PlpVariantAdContext,
 ): Promise<PlpVariantAdVerdict> {
     const fallback = deterministicPlpVariantAdFallback(context);
-    if (!judgmentsAvailable() || !context.prompt?.trim()) {
+    if (!judgmentsAvailable("judgePlpVariantAdFormat") || !context.prompt?.trim()) {
         return fallback;
     }
 
@@ -9485,22 +9504,18 @@ export async function judgePlpVariantAdFormat(
 
         const ans = result.data.answers?.ad_format;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
-        const rawConfidence = typeof ans === 'object' && ans !== null && 'confidence' in ans
-            ? (ans as { confidence?: unknown }).confidence
-            : undefined;
-        const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-            ? rawConfidence
-            : fallback.confidence;
+        const confidence = ambientJudgmentConfidence(ans, 'choice', PLP_FORMAT_MIN_CONFIDENCE);
 
-        if (
+        if (confidence !== null && (
             choice === 'HIGH_CONVERTING_HERO' ||
             choice === 'STORY_REEL' ||
             choice === 'THUMBNAIL_SAFE' ||
             choice === 'STANDARD'
-        ) {
+        )) {
             return {
                 formatTag: choice as PlpVariantFormatTag,
                 retryRecommended: false,
+                source: 'jev',
                 confidence,
                 reason: `Jev classified variant format as ${choice}.`,
             };
@@ -9508,7 +9523,7 @@ export async function judgePlpVariantAdFormat(
 
         return fallback;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'plp variant ad format judgment');
+        noteJudgmentFailure(err, 'plp variant ad format judgment', "judgePlpVariantAdFormat");
         return fallback;
     }
 }
@@ -9589,7 +9604,7 @@ export async function judgeCreativeJourneyIntent(
 ): Promise<CreativeJourneyIntentVerdict> {
     const fallback = deterministicCreativeJourneyFallback(context);
     const ingredients = context.ingredients || { audio: false, image: false, video: false };
-    if (!judgmentsAvailable() || (!context.prompt?.trim() && !ingredients.audio && !ingredients.image && !ingredients.video)) {
+    if (!judgmentsAvailable("judgeCreativeJourneyIntent") || (!context.prompt?.trim() && !ingredients.audio && !ingredients.image && !ingredients.video)) {
         return fallback;
     }
 
@@ -9630,7 +9645,7 @@ export async function judgeCreativeJourneyIntent(
             : fallback.confidence;
         return { intent: choice as CreativeJourneyIntent, confidence, ...CREATIVE_JOURNEY_ACTIONS[choice as CreativeJourneyIntent] };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'creative journey intent judgment');
+        noteJudgmentFailure(err, 'creative journey intent judgment', "judgeCreativeJourneyIntent");
         return fallback;
     }
 }
@@ -9699,10 +9714,13 @@ export const CONTRACT_AI_CLAUSE_QUESTIONS = {
  * likeness, digital replica, and model-training risk while respecting negation
  * semantics (e.g. "No AI voice clone or model training is permitted").
  */
+const CONTRACT_AI_GRANT_MIN = 0.60;
+const CONTRACT_AI_MEDIUM_RISK_MIN = 1.25;
+
 export async function judgeContractAIClauseProtection(
     contractText: string,
 ): Promise<ContractAIClauseJudgmentVerdict | null> {
-    if (!judgmentsAvailable() || !contractText.trim()) return null;
+    if (!judgmentsAvailable("judgeContractAIClauseProtection") || !contractText.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -9732,14 +9750,16 @@ export async function judgeContractAIClauseProtection(
             return null;
         }
 
-        const grantsUnrestrictedAiTraining = trainProb >= 0.60;
-        const grantsUnrestrictedVoiceLikenessClone = cloneProb >= 0.60;
-        const containsArtistProtectiveProhibition = protectProb >= 0.65 && !grantsUnrestrictedAiTraining && !grantsUnrestrictedVoiceLikenessClone;
+        const grantsUnrestrictedAiTraining = trainProb >= CONTRACT_AI_GRANT_MIN;
+        const grantsUnrestrictedVoiceLikenessClone = cloneProb >= CONTRACT_AI_GRANT_MIN;
+        const containsArtistProtectiveProhibition = protectProb >= 0.65 &&
+            trainProb <= 1 - CONTRACT_AI_GRANT_MIN && cloneProb <= 1 - CONTRACT_AI_GRANT_MIN &&
+            riskScore < CONTRACT_AI_MEDIUM_RISK_MIN;
 
         let severity: 'low' | 'medium' | 'high' = 'low';
         if (grantsUnrestrictedAiTraining || grantsUnrestrictedVoiceLikenessClone || riskScore >= 2.75) {
             severity = 'high';
-        } else if (!containsArtistProtectiveProhibition && riskScore >= 1.25) {
+        } else if (!containsArtistProtectiveProhibition && riskScore >= CONTRACT_AI_MEDIUM_RISK_MIN) {
             severity = 'medium';
         }
 
@@ -9759,7 +9779,9 @@ export async function judgeContractAIClauseProtection(
             : undefined;
         const confidence = typeof rawConf === 'number' && Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1
             ? rawConf
-            : 0.85;
+            : null;
+
+        if (confidence === null) return null;
 
         return {
             severity,
@@ -9771,7 +9793,7 @@ export async function judgeContractAIClauseProtection(
             confidence,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'contract AI clause protection judgment');
+        noteJudgmentFailure(err, 'contract AI clause protection judgment', "judgeContractAIClauseProtection");
         return null;
     }
 }
@@ -9839,7 +9861,7 @@ export async function judgeCreatorIncidentClassification(input: {
     platform?: string;
     nonconsensualIntimateImagery?: boolean;
 }): Promise<CreatorIncidentClassificationVerdict | null> {
-    if (!judgmentsAvailable() || !input.description.trim()) return null;
+    if (!judgmentsAvailable("judgeCreatorIncidentClassification") || !input.description.trim()) return null;
 
     try {
         const functions = getFunctions();
@@ -9878,9 +9900,12 @@ export async function judgeCreatorIncidentClassification(input: {
         const rawConf = typeof typeAns === 'object' && typeAns !== null
             ? (typeAns as { confidence?: unknown }).confidence
             : undefined;
-        const confidence = typeof rawConf === 'number' && Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1
-            ? rawConf
-            : 0.85;
+        const routeConfidence = typeof routeAns === 'object' && routeAns !== null
+            ? (routeAns as { confidence?: unknown }).confidence
+            : undefined;
+        if (typeof rawConf !== 'number' || !Number.isFinite(rawConf) || rawConf < 0 || rawConf > 1 ||
+            typeof routeConfidence !== 'number' || !Number.isFinite(routeConfidence) || routeConfidence < 0 || routeConfidence > 1) return null;
+        const confidence = Math.min(rawConf, routeConfidence);
 
         return {
             incidentType: input.nonconsensualIntimateImagery ? 'take_it_down_ncii' : (typeChoice as CreatorIncidentTypeChoice),
@@ -9888,7 +9913,7 @@ export async function judgeCreatorIncidentClassification(input: {
             confidence,
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'creator incident classification judgment');
+        noteJudgmentFailure(err, 'creator incident classification judgment', "judgeCreatorIncidentClassification");
         return null;
     }
 }
@@ -10034,7 +10059,7 @@ export async function judgeBoardroomExecutiveIntent(
         context.hasReferencedAssets ||
         (context.activeAgents || []).some(id => id !== 'generalist');
 
-    if (!judgmentsAvailable() || !hasSignal) {
+    if (!judgmentsAvailable("judgeBoardroomExecutiveIntent") || !hasSignal) {
         return fallback;
     }
 
@@ -10079,7 +10104,7 @@ export async function judgeBoardroomExecutiveIntent(
             ...BOARDROOM_MISSION_DETAILS[choice as BoardroomExecutiveMission],
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'boardroom executive intent judgment');
+        noteJudgmentFailure(err, 'boardroom executive intent judgment', "judgeBoardroomExecutiveIntent");
         return fallback;
     }
 }
@@ -10128,7 +10153,8 @@ export interface DepartmentJourneyVerdict {
     headline: string;
     actionLabel: string;
     targetTab: string;
-    confidence: number;
+    confidence: number | null;
+    source: 'jev' | 'heuristic';
 }
 
 export const DEPARTMENT_JOURNEYS: Record<DepartmentWorkspaceId, readonly DepartmentJourneyOption[]> = {
@@ -10222,7 +10248,8 @@ export function deterministicDepartmentJourneyFallback(
                 headline: opt.description,
                 actionLabel: opt.actionLabel,
                 targetTab: opt.targetTab,
-                confidence: 0.85,
+                confidence: null,
+                source: 'heuristic',
             };
         }
     }
@@ -10236,7 +10263,8 @@ export function deterministicDepartmentJourneyFallback(
             headline: alertOption.description,
             actionLabel: alertOption.actionLabel,
             targetTab: alertOption.targetTab,
-            confidence: 0.8,
+            confidence: null,
+            source: 'heuristic',
         };
     }
 
@@ -10248,13 +10276,13 @@ export function deterministicDepartmentJourneyFallback(
             headline: nextOption.description,
             actionLabel: nextOption.actionLabel,
             targetTab: nextOption.targetTab,
-            confidence: 0.78,
+            confidence: null,
+            source: 'heuristic',
         };
     }
 
     // 3. Pick complementary pathway relative to current activeTab
     const complementary = options.find(o => o.targetTab !== context.activeTab) ?? options[0]!;
-    const hasSignal = Boolean(text.trim() || (context.itemCount ?? 0) > 0 || (context.pendingCount ?? 0) > 0 || context.hasAlert);
 
     return {
         department: context.department,
@@ -10262,7 +10290,8 @@ export function deterministicDepartmentJourneyFallback(
         headline: complementary.description,
         actionLabel: complementary.actionLabel,
         targetTab: complementary.targetTab,
-        confidence: hasSignal ? 0.72 : 0.55,
+        confidence: null,
+        source: 'heuristic',
     };
 }
 
@@ -10270,7 +10299,7 @@ export async function judgeDepartmentJourneyIntent(
     context: DepartmentJourneyContext,
 ): Promise<DepartmentJourneyVerdict> {
     const fallback = deterministicDepartmentJourneyFallback(context);
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeDepartmentJourneyIntent")) {
         return fallback;
     }
 
@@ -10320,7 +10349,8 @@ export async function judgeDepartmentJourneyIntent(
         const confidence =
             typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
                 ? rawConfidence
-                : 0.85;
+                : null;
+        if (confidence === null) return fallback;
 
         return {
             department: context.department,
@@ -10329,9 +10359,10 @@ export async function judgeDepartmentJourneyIntent(
             actionLabel: matched.actionLabel,
             targetTab: matched.targetTab,
             confidence,
+            source: 'jev',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'department journey intent judgment');
+        noteJudgmentFailure(err, 'department journey intent judgment', "judgeDepartmentJourneyIntent");
         return fallback;
     }
 }
@@ -10363,12 +10394,26 @@ export interface CreativeStudioConfigPresetPatch {
     useGrounding?: boolean;
 }
 
-export interface CreativeStudioConfigPresetVerdict {
+type CreativeJudgmentEvidence =
+    | { source: 'jev'; confidence: number }
+    | { source: 'heuristic'; confidence: null };
+
+export type CreativeStudioConfigPresetVerdict = {
     presetId: CreativeConfigPresetId;
     label: string;
     summary: string;
-    confidence: number;
     controlsPatch: CreativeStudioConfigPresetPatch;
+} & CreativeJudgmentEvidence;
+
+export const CREATIVE_CONFIG_PRESET_MIN_CONFIDENCE = 0.65;
+export const PROMPT_IMPROVEMENT_MIN_CONFIDENCE = 0.65;
+
+function creativeChoiceConfidence(answer: unknown, minimum: number): number | null {
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; confidence?: unknown };
+    return value.type === 'choice' && typeof value.confidence === 'number' &&
+        Number.isFinite(value.confidence) && value.confidence >= minimum && value.confidence <= 1
+        ? value.confidence : null;
 }
 
 export interface CreativeStudioConfigContext {
@@ -10503,7 +10548,8 @@ export function deterministicCreativeStudioConfigFallback(
         presetId,
         label: preset.label,
         summary: preset.summary,
-        confidence: 0.88,
+        source: 'heuristic',
+        confidence: null,
         controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
     };
 }
@@ -10527,7 +10573,7 @@ export async function judgeCreativeStudioConfigPreset(
     context: CreativeStudioConfigContext,
 ): Promise<CreativeStudioConfigPresetVerdict> {
     const fallback = deterministicCreativeStudioConfigFallback(context);
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeCreativeStudioConfigPreset")) {
         return fallback;
     }
 
@@ -10551,22 +10597,16 @@ export async function judgeCreativeStudioConfigPreset(
 
         const answer = result.data.answers?.preset;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
 
-        if (typeof choice === 'string' && choice in CREATIVE_CONFIG_PRESETS) {
+        const confidence = creativeChoiceConfidence(answer, CREATIVE_CONFIG_PRESET_MIN_CONFIDENCE);
+        if (confidence !== null && typeof choice === 'string' && Object.hasOwn(CREATIVE_CONFIG_PRESETS, choice)) {
             const presetId = choice as CreativeConfigPresetId;
             const preset = CREATIVE_CONFIG_PRESETS[presetId];
-            const confidence =
-                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                    ? rawConfidence
-                    : 0.89;
             return {
                 presetId,
                 label: preset.label,
                 summary: preset.summary,
+                source: 'jev',
                 confidence,
                 controlsPatch: context.mode === 'video' ? preset.videoPatch : preset.imagePatch,
             };
@@ -10574,7 +10614,7 @@ export async function judgeCreativeStudioConfigPreset(
 
         return fallback;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'creative studio config preset judgment');
+        noteJudgmentFailure(err, 'creative studio config preset judgment', "judgeCreativeStudioConfigPreset");
         return fallback;
     }
 }
@@ -10594,11 +10634,21 @@ export type PromptVisualArchetype =
     | 'graphic_cover_typography'
     | 'moody_editorial';
 
-export interface PromptImprovementIntentVerdict {
+export type PromptImprovementIntentVerdict = {
     archetype: PromptVisualArchetype;
-    confidence: number;
     brandColorWeight: 'foreground' | 'subtle' | 'neutral';
     focusTechnical: string[];
+} & CreativeJudgmentEvidence;
+
+function technicalFocusForArchetype(archetype: PromptVisualArchetype): string[] {
+    const focus: Record<PromptVisualArchetype, string[]> = {
+        photorealistic: ['depth of field', 'studio lighting', 'fine texture'],
+        cinematic_film: ['anamorphic lens', 'cinematic lighting', 'film stock grain'],
+        digital_3d_surreal: ['3D materials', 'render lighting', 'spatial depth'],
+        graphic_cover_typography: ['typographic hierarchy', 'layout balance', 'graphic contrast'],
+        moody_editorial: ['editorial composition', 'directional lighting', 'tonal contrast'],
+    };
+    return [...focus[archetype]];
 }
 
 export function promptImprovementQuestion() {
@@ -10634,11 +10684,10 @@ export function deterministicPromptImprovementFallback(
 
     return {
         archetype,
-        confidence: 0.85,
+        source: 'heuristic',
+        confidence: null,
         brandColorWeight: p.includes('brand') || p.includes('color') ? 'foreground' : 'subtle',
-        focusTechnical: archetype === 'cinematic_film'
-            ? ['anamorphic lens', 'cinematic lighting', 'film stock grain']
-            : ['depth of field', 'studio lighting', 'fine texture'],
+        focusTechnical: technicalFocusForArchetype(archetype),
     };
 }
 
@@ -10647,7 +10696,7 @@ export async function judgePromptImprovementIntent(
     brandSummary?: string,
 ): Promise<PromptImprovementIntentVerdict> {
     const fallback = deterministicPromptImprovementFallback(rawPrompt);
-    if (!judgmentsAvailable()) return fallback;
+    if (!judgmentsAvailable("judgePromptImprovementIntent")) return fallback;
 
     try {
         const judgeFn = httpsCallable<
@@ -10667,10 +10716,6 @@ export async function judgePromptImprovementIntent(
 
         const answer = result.data.answers?.archetype;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
-        const rawConfidence =
-            typeof answer === 'object' && answer !== null
-                ? (answer as { confidence?: unknown }).confidence
-                : undefined;
 
         const validArchetypes: PromptVisualArchetype[] = [
             'photorealistic',
@@ -10680,22 +10725,20 @@ export async function judgePromptImprovementIntent(
             'moody_editorial',
         ];
 
-        if (typeof choice === 'string' && validArchetypes.includes(choice as PromptVisualArchetype)) {
-            const confidence =
-                typeof rawConfidence === 'number' && Number.isFinite(rawConfidence) && rawConfidence >= 0 && rawConfidence <= 1
-                    ? rawConfidence
-                    : 0.88;
+        const confidence = creativeChoiceConfidence(answer, PROMPT_IMPROVEMENT_MIN_CONFIDENCE);
+        if (confidence !== null && typeof choice === 'string' && validArchetypes.includes(choice as PromptVisualArchetype)) {
             return {
                 archetype: choice as PromptVisualArchetype,
+                source: 'jev',
                 confidence,
                 brandColorWeight: fallback.brandColorWeight,
-                focusTechnical: fallback.focusTechnical,
+                focusTechnical: technicalFocusForArchetype(choice as PromptVisualArchetype),
             };
         }
 
         return fallback;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'prompt improvement intent judgment');
+        noteJudgmentFailure(err, 'prompt improvement intent judgment', "judgePromptImprovementIntent");
         return fallback;
     }
 }
@@ -10708,7 +10751,7 @@ export interface CandidateAdditiveItem {
 
 export function rankAdditivesDeterministically(
     prompt: string,
-    candidates: CandidateAdditiveItem[],
+    candidates: readonly CandidateAdditiveItem[],
 ): CandidateAdditiveItem[] {
     const p = prompt.toLowerCase();
     return [...candidates].sort((a, b) => {
@@ -10721,17 +10764,20 @@ export function rankAdditivesDeterministically(
     });
 }
 
+export const PROMPT_ADDITIVE_MIN_CONFIDENCE = 0.65;
+
 export async function judgeCreativePromptAdditiveSuggestions(
     prompt: string,
-    candidates: CandidateAdditiveItem[],
+    candidates: readonly CandidateAdditiveItem[],
 ): Promise<CandidateAdditiveItem[]> {
-    if (candidates.length === 0) return [];
-    if (!prompt.trim() || !judgmentsAvailable() || candidates.length < 2) {
-        return rankAdditivesDeterministically(prompt, candidates);
+    const baseline = rankAdditivesDeterministically(prompt, candidates);
+    if (baseline.length === 0) return [];
+    if (!prompt.trim() || !judgmentsAvailable("judgeCreativePromptAdditiveSuggestions") || candidates.length < 2) {
+        return baseline;
     }
 
     try {
-        const topCandidates = candidates.slice(0, 8);
+        const topCandidates = baseline.slice(0, 8);
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
             { answers: Record<string, unknown> }
@@ -10759,21 +10805,24 @@ export async function judgeCreativePromptAdditiveSuggestions(
         });
 
         const answer = result.data.answers?.bestFit;
-        const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
+        if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return baseline;
+        const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
+        if (value.type !== 'choice' || typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) ||
+            value.confidence < PROMPT_ADDITIVE_MIN_CONFIDENCE || value.confidence > 1) return baseline;
 
-        if (typeof choice === 'string' && choice.startsWith('cand_')) {
-            const chosenIndex = parseInt(choice.replace('cand_', ''), 10);
-            if (!isNaN(chosenIndex) && topCandidates[chosenIndex]) {
-                const picked = topCandidates[chosenIndex];
-                const rest = topCandidates.filter((_, i) => i !== chosenIndex);
-                return [picked, ...rest];
-            }
+        // Exact offered ID membership: parsing numeric prefixes accepted names
+        // the provider was never offered (for example cand_1junk or cand_01).
+        const chosenIndex = topCandidates.findIndex((_, index) => value.choice === `cand_${index}`);
+        if (chosenIndex >= 0) {
+            // Promotion is a permutation of the full baseline, including entries
+            // outside the bounded provider shortlist and duplicate references.
+            return [baseline[chosenIndex]!, ...baseline.filter((_, index) => index !== chosenIndex)];
         }
 
-        return rankAdditivesDeterministically(prompt, candidates);
+        return baseline;
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'prompt additive suggestion judgment');
-        return rankAdditivesDeterministically(prompt, candidates);
+        noteJudgmentFailure(err, 'prompt additive suggestion judgment', "judgeCreativePromptAdditiveSuggestions");
+        return baseline;
     }
 }
 
@@ -10905,7 +10954,7 @@ export async function judgeBoardroomWebpageSemantics(
     snippet?: string
 ): Promise<BoardroomWebpageSemantics> {
     const fallback = heuristicBoardroomWebpageSemantics(url, title, snippet);
-    if (!judgmentsAvailable()) {
+    if (!judgmentsAvailable("judgeBoardroomWebpageSemantics")) {
         return fallback;
     }
 
@@ -10954,6 +11003,10 @@ export async function judgeBoardroomWebpageSemantics(
                     type: 'score' as const,
                     instructions:
                         'On a scale from 0.0 to 1.0, how relevant is this webpage to an independent artist or music business founder?',
+                    criteria: [
+                        'The webpage has no useful connection to an independent artist or music business founder.',
+                        'The webpage directly supports an independent artist or music business founder in their work.',
+                    ],
                 },
             },
         });
@@ -10966,11 +11019,11 @@ export async function judgeBoardroomWebpageSemantics(
         const deptChoice = (typeof deptAns === 'string' ? deptAns : (deptAns as { choice?: unknown } | null)?.choice) as BoardroomDepartment;
 
         const rawRelevance = answers?.relevance;
-        const relevanceScore = typeof rawRelevance === 'number'
-            ? Math.max(0, Math.min(1, rawRelevance))
-            : (typeof rawRelevance === 'object' && rawRelevance !== null && 'score' in rawRelevance && typeof (rawRelevance as { score?: unknown }).score === 'number')
-                ? Math.max(0, Math.min(1, (rawRelevance as { score: number }).score))
-                : fallback.relevanceScore;
+        const relevanceValue = typeof rawRelevance === 'number' ? rawRelevance
+            : typeof rawRelevance === 'object' && rawRelevance !== null && 'score' in rawRelevance
+                ? (rawRelevance as { score?: unknown }).score : undefined;
+        const relevanceScore = typeof relevanceValue === 'number' && Number.isFinite(relevanceValue)
+            ? Math.max(0, Math.min(1, relevanceValue)) : fallback.relevanceScore;
 
         const validCategories: BoardroomWebpageCategory[] = [
             'dsp', 'pro_rights', 'legal_compliance', 'marketing_social', 'press_pr', 'distribution', 'general_research'
@@ -10979,8 +11032,14 @@ export async function judgeBoardroomWebpageSemantics(
             'marketing', 'finance', 'legal', 'distribution', 'publishing', 'creative', 'social'
         ];
 
-        const finalCategory = validCategories.includes(categoryChoice) ? categoryChoice : fallback.category;
-        const finalDept = validDepts.includes(deptChoice) ? deptChoice : fallback.recommendedDepartment;
+        // Treat the response as one judgment: partial or malformed answers must
+        // not be presented as a wholly Jev-derived classification.
+        if (!validCategories.includes(categoryChoice) || !validDepts.includes(deptChoice) ||
+            typeof relevanceValue !== 'number' || !Number.isFinite(relevanceValue) || relevanceValue < 0 || relevanceValue > 1) {
+            return fallback;
+        }
+        const finalCategory = categoryChoice;
+        const finalDept = deptChoice;
 
         return {
             category: finalCategory,
@@ -10990,7 +11049,7 @@ export async function judgeBoardroomWebpageSemantics(
             source: 'jev',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'boardroom webpage semantics judgment');
+        noteJudgmentFailure(err, 'boardroom webpage semantics judgment', "judgeBoardroomWebpageSemantics");
         return fallback;
     }
 }
@@ -11082,7 +11141,7 @@ export async function judgeBoardroomWorkspaceRecommendation(
     messages: { role: string; text?: string }[]
 ): Promise<BoardroomWorkspaceRecommendation> {
     const fallback = heuristicBoardroomWorkspaceRecommendation(messages);
-    if (!judgmentsAvailable() || messages.length === 0) {
+    if (!judgmentsAvailable("judgeBoardroomWorkspaceRecommendation") || messages.length === 0) {
         return fallback;
     }
 
@@ -11147,7 +11206,7 @@ export async function judgeBoardroomWorkspaceRecommendation(
             source: 'jev',
         };
     } catch (err: unknown) {
-        noteJudgmentFailure(err, 'boardroom workspace recommendation judgment');
+        noteJudgmentFailure(err, 'boardroom workspace recommendation judgment', "judgeBoardroomWorkspaceRecommendation");
         return fallback;
     }
 }
@@ -11155,3 +11214,45 @@ export async function judgeBoardroomWorkspaceRecommendation(
 
 
 
+
+
+// Final-response truthfulness screening. Names are attempts; result evidence determines confirmation.
+export const GUARDRAIL_MODEL = 'jev-latest';
+export const GUARDRAIL_FIRE_THRESHOLD = 0.7;
+export const GUARDRAIL_ACTIONABLE_THRESHOLD = 0.3;
+export const GUARDRAIL_QUESTIONS = {
+      claims_disconnected_without_evidence: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` assert that a platform (Instagram, Spotify, Apple Music, etc.) ' +
+          'is disconnected or unavailable without a successful relevant result in `response.tool_results` confirming that status? Attempted, failed, paused, or unconfirmed calls are not confirmation. Use a successful ' +
+          'connectivity check and its reported connection status as evidence.',
+      },
+      claims_scheduled_without_tool: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` state that a post was scheduled, queued, or will be posted, ' +
+          'without a successful scheduling receipt in `response.tool_results`? Names alone, failed calls, and pending approval do not prove scheduling.',
+      },
+      confident_action_no_evidence: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` claim a concrete action was completed (posted, uploaded, sent, ' +
+          'saved, published) without a relevant successful receipt in `response.tool_results`? Attempted names, reportedSuccess null or false, errors, and paused or pending statuses do not confirm completion.',
+      },
+      claims_verified_readiness_without_evidence: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` assert that departments, agents, systems, or capabilities are fully ' +
+          'implemented, verified, production-ready, or operational — or that no engineering work ' +
+          'remains — without `response.tool_results` containing a successful relevant audit or verification result that ' +
+          'produced live evidence? A claim of complete production readiness with no verification ' +
+          'step is an overclaim.',
+      },
+      is_actionable_response: {
+        type: 'noul' as const,
+        instructions:
+          'Does `response.text` give the user either a completed result, a clear next step, ' +
+          'or a request for missing information they can act on?',
+      },
+    };

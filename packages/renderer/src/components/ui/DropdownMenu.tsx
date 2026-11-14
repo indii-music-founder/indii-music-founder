@@ -45,7 +45,7 @@ export function DropdownMenuSubContent({
         <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.SubContent
                 sideOffset={4}
-                className={`z-[130] min-w-[200px] max-h-[300px] overflow-y-auto custom-scrollbar rounded-xl border border-gray-700 bg-[#141821] p-1.5 shadow-2xl shadow-black/60 ${className}`}
+                className={`z-[100021] min-w-[200px] max-h-[300px] overflow-y-auto custom-scrollbar rounded-xl border border-gray-700 bg-[#141821] p-1.5 shadow-2xl shadow-black/60 ${className}`}
                 {...props}
             >
                 {children}
@@ -108,7 +108,7 @@ export function DropdownMenuContent({
             <DropdownMenuPrimitive.Content
                 sideOffset={6}
                 align="start"
-                className={`z-[120] min-w-[220px] max-h-[320px] overflow-y-auto custom-scrollbar rounded-xl border border-gray-700 bg-[#141821] p-1.5 shadow-2xl shadow-black/50 ${className}`}
+                className={`z-[100020] min-w-[220px] max-h-[320px] overflow-y-auto custom-scrollbar rounded-xl border border-gray-700 bg-[#141821] p-1.5 shadow-2xl shadow-black/50 ${className}`}
                 {...props}
             >
                 {children}

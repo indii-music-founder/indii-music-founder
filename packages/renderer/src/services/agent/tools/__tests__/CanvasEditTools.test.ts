@@ -34,7 +34,16 @@ describe('CanvasTools C2 tools', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('canvas_open_image opens the indexed image into a doc', async () => {
+        // Structural-only: model Zustand replacing its state when opening a document.
+        const { useStore } = await import('@/core/store');
+        const previousState = useStore.getState();
+        const getState = vi.spyOn(useStore, 'getState');
+        openImage.mockImplementationOnce(() => {
+            getState.mockReturnValue({ ...previousState, currentDoc: { id: 'new_doc' } } as never);
+        });
         const res = await t('canvas_open_image')({ imageIndex: 0 } as never);
+        getState.mockRestore();
+        expect(res.data.docId).toBe('new_doc');
         expect(res.success).toBe(true);
         expect(openImage).toHaveBeenCalledWith('data:image/png;base64,SUBJECT', 'proj_1');
     });

@@ -93,6 +93,9 @@ export const denyComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen1', 
             );
         }
     }
+    if (request.data?.expectedOwnerId !== undefined && request.data.expectedOwnerId !== uid) {
+        throw new HttpsError('permission-denied', 'The signed-in account no longer matches this approval operation.');
+    }
     const approvalId = request.data?.approvalId;
     if (typeof approvalId !== 'string' || approvalId.length < 1 || approvalId.length > 256) throw new HttpsError('invalid-argument', 'A valid approval ID is required.');
     const ref = getFirestore().doc(`users/${uid}/tool_approvals/${approvalId}`);
@@ -129,11 +132,17 @@ export const completeComputerApproval = onCall({ memory: '512MiB', cpu: 'gcf_gen
             );
         }
     }
+    if (request.data?.expectedOwnerId !== undefined && request.data.expectedOwnerId !== uid) {
+        throw new HttpsError('permission-denied', 'The signed-in account no longer matches this approval operation.');
+    }
     const approvalId = request.data?.approvalId;
     if (typeof approvalId !== 'string' || approvalId.length < 1 || approvalId.length > 256) {
         throw new HttpsError('invalid-argument', 'A valid approval ID is required.');
     }
-    const success = Boolean(request.data?.success);
+    if (typeof request.data?.success !== 'boolean') {
+        throw new HttpsError('invalid-argument', 'A boolean execution outcome is required.');
+    }
+    const success = request.data.success;
     const error = typeof request.data?.error === 'string' ? request.data.error.slice(0, 1000) : undefined;
     const ref = getFirestore().doc(`users/${uid}/tool_approvals/${approvalId}`);
 

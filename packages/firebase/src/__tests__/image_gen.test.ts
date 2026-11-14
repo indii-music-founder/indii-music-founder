@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
         },
         enforceRateLimit: vi.fn().mockResolvedValue(undefined),
         claimReservation: vi.fn().mockResolvedValue(undefined),
+        recordAgentStreamLifecycle: vi.fn().mockResolvedValue(undefined),
         finalizeReservation: vi.fn().mockResolvedValue(undefined),
     };
 });
@@ -144,7 +145,9 @@ vi.mock('../functions/creative/legacyAdmission', () => ({
 vi.mock('../functions/billing/enforceOperationCost', () => ({
     checkOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
     finalizeOperationReservation: mocks.finalizeReservation,
+    finalizeAgentStreamReservationTerminal: mocks.finalizeReservation,
     claimOperationReservation: mocks.claimReservation,
+    recordAgentStreamReservationLifecycle: mocks.recordAgentStreamLifecycle,
     requireVerifiedCreativeUser: vi.fn((auth: { uid?: string; token?: Record<string, unknown> } | undefined) => {
         if (!auth?.uid) throw new Error('User must be authenticated.');
         if (auth.token?.email_verified !== true) throw new Error('Verify your email before using creative generation.');
@@ -153,6 +156,7 @@ vi.mock('../functions/billing/enforceOperationCost', () => ({
     getOperationCostHistory: vi.fn(),
     getOperationCostStatus: vi.fn(),
     expireStaleOperationCostReservations: vi.fn(),
+    planBoardroomAgentStreamDispatch: vi.fn(),
 }));
 
 vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
@@ -166,6 +170,7 @@ describe('Image and Content Generation Functions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.enforceRateLimit.mockResolvedValue(undefined);
+        mocks.recordAgentStreamLifecycle.mockResolvedValue(undefined);
     });
 
     describe('generateImageV3', () => {
@@ -311,7 +316,7 @@ describe('Image and Content Generation Functions', () => {
                 generateContentStream(req, res);
                 await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(409));
                 expect(mocks.generateContentStream).not.toHaveBeenCalled();
-                expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+                expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PRE_SUBMISSION_FAILED' }));
             } finally {
                 vi.mocked(admin.firestore).mockReturnValue(originalDb);
             }
@@ -363,7 +368,7 @@ describe('Image and Content Generation Functions', () => {
             expect(mocks.claimReservation).toHaveBeenCalledWith(expect.objectContaining({
                 userId: 'user123', operationId: 'agent-stream-op-1', operationType: 'agent_stream',
             }));
-            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PRE_SUBMISSION_FAILED' }));
             expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.json.mock.invocationCallOrder[0]);
         });
         it('should yield chunks from SDK stream', async () => {
@@ -433,7 +438,10 @@ describe('Image and Content Generation Functions', () => {
                 config: expect.objectContaining({ maxOutputTokens: 1_024 }),
             }));
             expect(mocks.claimReservation.mock.invocationCallOrder[0]).toBeLessThan(mocks.generateContentStream.mock.invocationCallOrder[0]);
-            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'SETTLED' }));
+            expect(mocks.recordAgentStreamLifecycle).toHaveBeenCalledWith(expect.objectContaining({ state: 'PROVIDER_SUBMITTING' }));
+            const submittingCall = mocks.recordAgentStreamLifecycle.mock.invocationCallOrder[0];
+            expect(submittingCall).toBeLessThan(mocks.generateContentStream.mock.invocationCallOrder[0]);
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'COMPLETED' }));
             const terminalWrite = res.write.mock.calls.find(([value]: [string]) => value === `${JSON.stringify({ complete: true })}\n`);
             expect(terminalWrite).toBeDefined();
             expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.write.mock.invocationCallOrder[2]);
@@ -553,6 +561,32 @@ describe('Image and Content Generation Functions', () => {
                     nextActions: ['retry_later', 'select_qualified_specialist'],
                 },
             });
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PROVIDER_FAILED' }));
+        });
+
+        it('voids only when opening the provider stream throws synchronously before submission', async () => {
+            const req: any = {
+                method: 'POST',
+                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
+                body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'open' }] }] },
+            };
+            const res: any = {
+                setHeader: vi.fn(), status: vi.fn().mockReturnThis(), send: vi.fn(), end: vi.fn(), write: vi.fn(),
+                headersSent: false, writableEnded: false, once: vi.fn(),
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }),
+            } as any);
+            mocks.generateContentStream.mockImplementationOnce(() => {
+                throw new Error('local SDK validation failed before request creation');
+            });
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(500));
+
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PRE_SUBMISSION_FAILED' }));
+            expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
         });
 
         it('emits a terminal typed failure when a specialist stream fails after its first chunk', async () => {
@@ -603,11 +637,11 @@ describe('Image and Content Generation Functions', () => {
                     nextActions: ['retry_later', 'select_qualified_specialist'],
                 },
             })}\n`);
-            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PROVIDER_FAILED' }));
             expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.end.mock.invocationCallOrder[0]);
         });
 
-        it('actively terminates a pending provider iterator and voids exactly once when the client disconnects', async () => {
+        it('actively terminates a pending provider iterator and settles exactly once when the client disconnects after submission', async () => {
             let closeHandler: (() => void) | undefined;
             let resolvePendingNext!: (value: IteratorResult<unknown>) => void;
             const pendingNext = new Promise<IteratorResult<unknown>>(resolve => { resolvePendingNext = resolve; });
@@ -635,13 +669,70 @@ describe('Image and Content Generation Functions', () => {
             await vi.waitFor(() => expect(res.write).toHaveBeenCalledWith(`${JSON.stringify({ text: 'partial' })}\n`));
             closeHandler?.();
             await vi.waitFor(() => expect(providerIterator.return).toHaveBeenCalledOnce());
-            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' })));
+            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PROVIDER_CANCELLED' })));
             expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
             expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
             releaseFinalizer();
             resolvePendingNext({ done: true, value: undefined });
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+        });
+
+        it('never refunds a completed provider stream when atomic terminal persistence is temporarily unavailable', async () => {
+            mocks.finalizeReservation.mockRejectedValueOnce(new Error('transient lifecycle write failure'));
+            async function* completedStream() {
+                yield { text: 'paid result' };
+            }
+            mocks.generateContentStream.mockResolvedValueOnce(completedStream());
+            const req: any = {
+                method: 'POST',
+                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
+                body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'complete' }] }] },
+            };
+            const res: any = {
+                setHeader: vi.fn(), write: vi.fn(), end: vi.fn(), status: vi.fn().mockReturnThis(), send: vi.fn(),
+                headersSent: true, writableEnded: false, once: vi.fn(),
+            };
+            vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.end).toHaveBeenCalled());
+
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'COMPLETED' }));
+            expect(mocks.finalizeReservation).not.toHaveBeenCalledWith(expect.objectContaining({ state: 'PRE_SUBMISSION_FAILED' }));
+            expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
+        });
+
+        it('joins one COMPLETED finalization when close races the delayed terminal transaction', async () => {
+            let closeHandler: (() => void) | undefined;
+            let releaseFinalizer!: () => void;
+            mocks.finalizeReservation.mockImplementationOnce(() => new Promise<void>(resolve => { releaseFinalizer = resolve; }));
+            async function* completedStream() {
+                yield { text: 'paid result' };
+            }
+            mocks.generateContentStream.mockResolvedValueOnce(completedStream());
+            const req: any = {
+                method: 'POST',
+                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
+                body: { costReservationId: 'agent-stream-op-1', model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO, contents: [{ role: 'user', parts: [{ text: 'complete' }] }] },
+            };
+            const res: any = {
+                setHeader: vi.fn(), write: vi.fn(), end: vi.fn(), status: vi.fn().mockReturnThis(), send: vi.fn(),
+                headersSent: true, writableEnded: false,
+                once: vi.fn((_event: string, handler: () => void) => { closeHandler = handler; }),
+            };
+            vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'COMPLETED' })));
+            closeHandler?.();
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            releaseFinalizer();
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
         });
 
         it('does not submit a provider request when close arrives during deferred admission', async () => {
@@ -655,7 +746,7 @@ describe('Image and Content Generation Functions', () => {
             await vi.waitFor(() => expect(mocks.enforceRateLimit).toHaveBeenCalled());
             closeHandler?.();
             releaseAdmission();
-            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' })));
+            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ state: 'PRE_SUBMISSION_CANCELLED' })));
             expect(mocks.generateContentStream).not.toHaveBeenCalled();
             expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
             expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);

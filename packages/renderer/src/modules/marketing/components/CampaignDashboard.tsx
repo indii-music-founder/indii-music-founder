@@ -187,7 +187,7 @@ const CampaignDashboard: React.FC = () => {
 
                         {activeTab === 'campaigns' || activeTab === 'overview' ? (
                             isLoading ? (
-                                <div className="p-4 space-y-4" data-testid="marketing-dashboard-loader" aria-busy="true" aria-label="Loading campaigns">
+                                <div className="p-4 space-y-4" data-testid="marketing-dashboard-loader" role="status"><span className="sr-only">Loading campaigns</span>
                                     <div className="grid grid-cols-3 gap-3">
                                         <SkeletonStat /><SkeletonStat /><SkeletonStat />
                                     </div>

@@ -49,10 +49,18 @@ class MemoryBankService {
         try {
             const callable = httpsCallable<{ action: string; memory: string }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
             const result = await callable({ action: 'add', memory: redactedContent });
-            return result.data.results || [];
+            const results: unknown = result.data?.results;
+            if (!Array.isArray(results) || !results.length || results.some(item =>
+                !item || typeof item !== 'object' || typeof item.id !== 'string' || !item.id.trim() ||
+                typeof item.memory !== 'string' || !item.memory.trim())) {
+                throw new Error('Semantic memory save acknowledgement is incomplete.');
+            }
+            return results as MemoryBankResult[];
         } catch (error) {
             logger.error('[MemoryBank] Failed to add memory via manageSemanticMemory proxy', error);
-            return [];
+            // The request may have committed before its response was lost.
+            // Callers must distinguish uncertainty from a successful empty result.
+            throw error;
         }
     }
 
@@ -68,7 +76,13 @@ class MemoryBankService {
                 { results: MemoryBankResult[]; hasMore: boolean }
             >(functions, 'manageSemanticMemory');
             const result = await callable({ action: 'search', query: redactedQuery, limit });
-            return { results: result.data.results || [], hasMore: result.data.hasMore ?? false };
+            const page = result.data;
+            if (!Array.isArray(page?.results) || typeof page.hasMore !== 'boolean' ||
+                page.results.some(item => !item || typeof item.id !== 'string' || !item.id.trim() ||
+                    typeof item.memory !== 'string' || !item.memory.trim())) {
+                throw new Error('Semantic memory search returned an invalid page.');
+            }
+            return { results: page.results, hasMore: page.hasMore };
         } catch (error) {
             logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
             return { results: [], hasMore: false, unavailable: true };

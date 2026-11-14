@@ -255,65 +255,53 @@ export async function evaluateCampaignAllocationWithJev(
 
     try {
         const result = await client.judge({ state, questions });
-        const dominantRaw = result.answers['dominant_platform'];
-        const fitScoreRaw = result.answers['creative_fit_score'];
-        const readinessRaw = result.answers['creative_readiness_confirmed'];
-
-        let dominantPlatform = baseline.dominantPlatform;
-        let confidence: number | undefined;
-
-        if (isPlainObject(dominantRaw)) {
-            const choice = dominantRaw['choice'];
-            const conf =
-                typeof dominantRaw['confidence'] === 'number' &&
-                Number.isFinite(dominantRaw['confidence'])
-                    ? dominantRaw['confidence']
-                    : undefined;
-            confidence = conf;
-
-            if (
-                (choice === 'META' || choice === 'TIKTOK' || choice === 'GOOGLE_ADS') &&
-                directive.platforms.includes(choice) &&
-                (conf === undefined || conf >= DOMINANT_PLATFORM_MIN_CONFIDENCE)
-            ) {
-                dominantPlatform = choice;
-            }
-        }
-
-        let creativeFitScore = baseline.creativeFitScore;
-        if (isPlainObject(fitScoreRaw) && typeof fitScoreRaw['score'] === 'number') {
-            const rawScore = fitScoreRaw['score'];
-            if (Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
-                creativeFitScore = Math.round((rawScore + 1) * 100) / 100;
-            }
-        }
-
-        let creativeReadinessConfirmed = baseline.creativeReadinessConfirmed;
-        if (isPlainObject(readinessRaw) && typeof readinessRaw['noul'] === 'number') {
-            creativeReadinessConfirmed = readinessRaw['noul'] >= 0.65;
-        }
-
-        const refinedSplitPercentages =
-            confidence !== undefined && confidence >= DOMINANT_PLATFORM_MIN_CONFIDENCE
-                ? computeBoundedSplitRefinement(
-                    directive.platforms,
-                    directive.budgetAllocation.platformSplitPercentages,
-                    dominantPlatform,
-                    creativeFitScore,
-                )
-                : baseline.refinedSplitPercentages;
-
-        return {
-            dominantPlatform,
-            refinedSplitPercentages,
-            creativeFitScore,
-            creativeReadinessConfirmed,
-            source: 'jev',
-            confidence,
-            requestId: result.requestId,
-        };
+        return parseCampaignAllocationAnswers(result.answers, directive, baseline, result.requestId);
     } catch (err) {
         noteCampaignJudgmentFailure(err);
         return baseline;
     }
+}
+
+/** Pure composition: invalid semantic evidence retains the deterministic baseline. */
+export function parseCampaignAllocationAnswers(
+    answers: unknown,
+    directive: Pick<UnifiedCampaignDirective, 'platforms' | 'budgetAllocation'>,
+    baseline: CampaignAllocationJudgment,
+    requestId?: string,
+): CampaignAllocationJudgment {
+    if (!isPlainObject(answers)) return baseline;
+    const dominant = answers.dominant_platform;
+    const fit = answers.creative_fit_score;
+    const readiness = answers.creative_readiness_confirmed;
+    const probability = isPlainObject(readiness) ? readiness.noul : undefined;
+    const validReadiness = typeof probability === 'number' && Number.isFinite(probability) && probability >= 0 && probability <= 1;
+    // Independent negative evidence must survive an invalid allocation answer.
+    const fallback: CampaignAllocationJudgment = validReadiness && probability < 0.65
+        ? { ...baseline, creativeReadinessConfirmed: false, source: 'jev', requestId }
+        : baseline;
+    if (!isPlainObject(dominant) || !isPlainObject(fit)) return fallback;
+
+    const choice = dominant.choice;
+    const confidence = dominant.confidence;
+    const score = fit.score;
+    if ((choice !== 'META' && choice !== 'TIKTOK' && choice !== 'GOOGLE_ADS') || !directive.platforms.includes(choice) ||
+        typeof confidence !== 'number' || !Number.isFinite(confidence) || confidence < 0 || confidence > 1 ||
+        typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 4 ||
+        !validReadiness) return fallback;
+
+    const useRefinement = confidence >= DOMINANT_PLATFORM_MIN_CONFIDENCE;
+    const dominantPlatform = useRefinement ? choice : baseline.dominantPlatform;
+    // Explicit domain mapping: the API's five levels are 0–4; fit uses 1–5.
+    const creativeFitScore = score + 1;
+    return {
+        dominantPlatform,
+        refinedSplitPercentages: useRefinement
+            ? computeBoundedSplitRefinement(directive.platforms, directive.budgetAllocation.platformSplitPercentages, dominantPlatform, creativeFitScore)
+            : baseline.refinedSplitPercentages,
+        creativeFitScore,
+        creativeReadinessConfirmed: probability >= 0.65,
+        source: 'jev',
+        confidence,
+        requestId,
+    };
 }

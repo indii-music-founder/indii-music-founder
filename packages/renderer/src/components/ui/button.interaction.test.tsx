@@ -84,7 +84,7 @@ describe('Button Interaction Lifecycle', () => {
     expect(btn).toHaveTextContent('Saving...')
     expect(screen.getByTestId('loader-icon')).toBeInTheDocument()
     // Verify spinner class (passed from Button component)
-    expect(screen.getByTestId('loader-icon')).toHaveClass('animate-spin')
+    expect(screen.getByTestId('loader-icon')).toHaveClass('motion-safe:animate-spin')
 
     // --------------------------------------------------
     // 4. ASYNC COMPLETION (Success)

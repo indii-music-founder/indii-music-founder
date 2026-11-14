@@ -63,7 +63,7 @@ describe('Button Interaction', () => {
 
     // Check for spinner (Loader2 from lucide-react)
     // We look for the class 'animate-spin' which Loader2 should have
-    const spinner = button.querySelector('.animate-spin')
+    const spinner = button.querySelector('svg[aria-hidden=true]')
     expect(spinner).toBeInTheDocument()
 
     fireEvent.click(button)
@@ -107,3 +107,11 @@ describe('Button Interaction', () => {
     expect(childCapture).not.toHaveBeenCalled()
   })
 })
+
+it('announces a loading native button as disabled despite a forwarded ARIA value', () => {
+    render(<Button isLoading aria-disabled={false}>Save</Button>);
+    const button = screen.getByRole('button', { name: 'Save' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-busy', 'true');
+});

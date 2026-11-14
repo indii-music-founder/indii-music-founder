@@ -1,3 +1,4 @@
+import { useMobile } from '@/hooks/useMobile';
 import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
@@ -39,7 +40,6 @@ import { useShallow } from 'zustand/react/shallow';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
-import { useMobile } from '@/hooks/useMobile';
 import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
@@ -94,6 +94,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const scrollRef = useRef<HTMLDivElement>(null);
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
+    const { isAnyPhone } = useMobile();
     const [visibleMessageCount, setVisibleMessageCount] = React.useState(BOARDROOM_MESSAGE_BATCH_SIZE);
     const { showCognitiveLogicByDefault, activeAgents, openBoardroomBrowser } = useStore(
         useShallow(state => ({
@@ -102,7 +103,6 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             openBoardroomBrowser: state.openBoardroomBrowser,
         }))
     );
-    const { isAnyPhone } = useMobile();
     const latestMessage = messages[messages.length - 1];
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`

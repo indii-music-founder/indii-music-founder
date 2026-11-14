@@ -1,9 +1,8 @@
 /**
  * Judgment failure-cooldown tests (ISSUE-1442, "use jev moving forward").
  *
- * The cooldown is module-global state, so it lives in its own test file:
- * after an upstream failure, ALL judgment calls skip the doomed network round
- * trip until the cooldown expires — then calls resume.
+ * Structural callable-error checks cover shared outage cooldown and scoped
+ * request/response failures. No live provider path is exercised.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
@@ -59,6 +58,30 @@ describe('judgment failure cooldown', () => {
             vi.useRealTimers();
         }
     });
+
+    it.each(['invalid-argument', 'internal', 'deadline-exceeded'])(
+        'keeps other judgments available after a callable %s failure',
+        async code => {
+            vi.useFakeTimers();
+            try {
+                mocks.httpsCallable.mockReturnValueOnce(async () => {
+                    throw Object.assign(new Error('Judgment failed'), { code: `functions/${code}` });
+                });
+                expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
+                const callsAfterFailure = mocks.httpsCallable.mock.calls.length;
+                expect(await judgeTransientError(new Error('timeout'), true)).toBeNull();
+                expect(mocks.httpsCallable.mock.calls.length).toBe(callsAfterFailure);
+
+                mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { skill: { type: 'choice', choice: 's', confidence: 0.9 } } } }));
+                expect(await judgeSkillIntentShim()).toBe('s');
+                vi.advanceTimersByTime(JUDGMENT_FAILURE_COOLDOWN_MS + 1);
+                mocks.httpsCallable.mockReturnValueOnce(async () => ({ data: { answers: { transient: 0.9 } } }));
+                expect(await judgeTransientError(new Error('timeout'), true)).toBe(true);
+            } finally {
+                vi.useRealTimers();
+            }
+        },
+    );
 
     it('resumes judgment calls after the cooldown expires', async () => {
         vi.useFakeTimers();
