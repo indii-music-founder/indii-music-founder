@@ -118,6 +118,60 @@ export default function AssetSpotlight() {
                 <span className="text-[9px] text-gray-600 ml-auto">{assets.length}</span>
             </div>
 
+            {/* Expanded detail — rendered above the grid so selected media stays visible without scrolling */}
+            <AnimatePresence>
+                {sel && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden mb-2.5"
+                    >
+                        <div className="p-2.5 rounded-lg bg-black/30 border border-white/5">
+                            {/* Preview */}
+                            <div className="w-full aspect-video rounded-md overflow-hidden bg-gray-900 mb-2 relative">
+                                {sel.type === 'video' ? (
+                                    <video src={sel.url} className="w-full h-full object-cover" controls playsInline />
+                                ) : sel.type === 'image' ? (
+                                    <img src={sel.url} alt="" className="w-full h-full object-contain bg-black" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        {React.createElement(BADGE[sel.type]?.icon || Image, { size: 28, className: 'text-gray-600' })}
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-[11px] text-gray-300 line-clamp-2 mb-1.5 leading-snug">{sel.prompt}</p>
+                            <div className="flex flex-wrap gap-1.5 text-[9px] text-gray-500 mb-2">
+                                <span>{relTime(sel.timestamp)}</span>
+                                {sel.category && <span>· {sel.category}</span>}
+                            </div>
+                            <div className="flex gap-1.5">
+                                <button
+                                    onClick={() => handleDiscuss(sel)}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/15 text-green-400 text-[10px] font-medium hover:bg-green-500/25 transition-colors"
+                                >
+                                    <MessageCircle size={10} />
+                                    Discuss
+                                </button>
+                                <button
+                                    onClick={() => openInStudio(sel)}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 text-gray-400 text-[10px] font-medium hover:bg-white/10 transition-colors"
+                                >
+                                    <Maximize2 size={10} />
+                                    Studio
+                                </button>
+                                <button
+                                    onClick={() => setSelIdx(null)}
+                                    className="ml-auto p-1 rounded text-gray-600 hover:text-gray-300 transition-colors"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Grid — 2 columns */}
             <div className="grid grid-cols-2 gap-2">
                 {assets.map((asset, i) => {
@@ -189,60 +243,6 @@ export default function AssetSpotlight() {
                     );
                 })}
             </div>
-
-            {/* Expanded detail */}
-            <AnimatePresence>
-                {sel && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="mt-2.5 p-2.5 rounded-lg bg-black/30 border border-white/5">
-                            {/* Preview */}
-                            <div className="w-full aspect-video rounded-md overflow-hidden bg-gray-900 mb-2 relative">
-                                {sel.type === 'video' ? (
-                                    <video src={sel.url} className="w-full h-full object-cover" controls playsInline />
-                                ) : sel.type === 'image' ? (
-                                    <img src={sel.url} alt="" className="w-full h-full object-contain bg-black" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        {React.createElement(BADGE[sel.type]?.icon || Image, { size: 28, className: 'text-gray-600' })}
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-[11px] text-gray-300 line-clamp-2 mb-1.5 leading-snug">{sel.prompt}</p>
-                            <div className="flex flex-wrap gap-1.5 text-[9px] text-gray-500 mb-2">
-                                <span>{relTime(sel.timestamp)}</span>
-                                {sel.category && <span>· {sel.category}</span>}
-                            </div>
-                            <div className="flex gap-1.5">
-                                <button
-                                    onClick={() => handleDiscuss(sel)}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/15 text-green-400 text-[10px] font-medium hover:bg-green-500/25 transition-colors"
-                                >
-                                    <MessageCircle size={10} />
-                                    Discuss
-                                </button>
-                                <button
-                                    onClick={() => openInStudio(sel)}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 text-gray-400 text-[10px] font-medium hover:bg-white/10 transition-colors"
-                                >
-                                    <Maximize2 size={10} />
-                                    Studio
-                                </button>
-                                <button
-                                    onClick={() => setSelIdx(null)}
-                                    className="ml-auto p-1 rounded text-gray-600 hover:text-gray-300 transition-colors"
-                                >
-                                    <X size={12} />
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
