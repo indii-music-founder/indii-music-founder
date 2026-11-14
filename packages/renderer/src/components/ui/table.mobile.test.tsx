@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table';
 
 describe('Table Component Mobile Responsiveness', () => {
@@ -21,6 +21,40 @@ describe('Table Component Mobile Responsiveness', () => {
       configurable: true,
       value: ORIGINAL_INNER_WIDTH,
     });
+  });
+
+  it('adds a named keyboard entry point only while columns overflow', () => {
+    let measure: () => void = () => {};
+    const disconnect = vi.fn();
+    class TestResizeObserver {
+      constructor(callback: () => void) { measure = callback; }
+      observe() {}
+      disconnect = disconnect;
+    }
+    vi.stubGlobal('ResizeObserver', TestResizeObserver);
+    try {
+      const { unmount } = render(<Table aria-label="Royalties" />);
+      const wrapper = screen.getByRole('table', { name: 'Royalties' }).parentElement!;
+      expect(wrapper).not.toHaveAttribute('tabindex');
+
+      Object.defineProperties(wrapper, {
+        clientWidth: { configurable: true, value: 375 },
+        scrollWidth: { configurable: true, value: 640 },
+      });
+      act(measure);
+      expect(screen.getByRole('region', { name: 'Royalties' })).toBe(wrapper);
+      expect(wrapper).toHaveAttribute('tabindex', '0');
+
+      Object.defineProperty(wrapper, 'clientWidth', { value: 640 });
+      act(measure);
+      expect(wrapper).not.toHaveAttribute('tabindex');
+      expect(screen.queryByRole('region')).toBeNull();
+
+      unmount();
+      expect(disconnect).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('renders with overflow auto wrapper to prevent layout breakage', () => {
