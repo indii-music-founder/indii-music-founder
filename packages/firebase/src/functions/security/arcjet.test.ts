@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     loggerError: vi.fn(),
     loggerWarn: vi.fn(),
     loggerDebug: vi.fn(),
+    enforceRateLimit: vi.fn(),
 }));
 
 vi.mock("@arcjet/node", () => ({
@@ -26,6 +27,10 @@ vi.mock("firebase-functions/logger", () => ({
     error: mocks.loggerError,
     warn: mocks.loggerWarn,
     debug: mocks.loggerDebug,
+}));
+
+vi.mock("../../lib/rateLimit", () => ({
+    enforceRateLimit: mocks.enforceRateLimit,
 }));
 
 type DecisionOptions = {
@@ -254,5 +259,49 @@ describe("Arcjet request protection", () => {
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FOUNDER, isAdmin: false })).toBe("founder");
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: true })).toBe("admin");
         expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: false, bringYourOwnApiEnabled: true })).toBe("byo-api");
+    });
+
+    it("falls back to distributed rate limiting for authenticated callers when Arcjet monthly quota is exhausted", async () => {
+        mocks.enforceRateLimit.mockResolvedValue(undefined);
+        mocks.freeProtect.mockResolvedValue(mockDecision({
+            errored: true,
+            errorMessage: "[resource_exhausted] quota exceeded: log_drains (0/0 bytes), protected_requests (28365/10000 requests), total_requests (28365/10000 requests)",
+        }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "typesafe-judge:user_123",
+        })).resolves.toEqual({ allowed: true, degraded: true });
+
+        expect(mocks.enforceRateLimit).toHaveBeenCalledWith("user_123", "provider-quota-continuity", {
+            maxRequests: 30,
+            windowMs: 60_000,
+        });
+
+        // Subsequent calls during the 5-minute cooldown use the fallback directly without hitting Arcjet again.
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "subscription-check:user_123",
+        })).resolves.toEqual({ allowed: true, degraded: true });
+
+        expect(mocks.freeProtect).toHaveBeenCalledTimes(1);
+    });
+
+    it("enforces 429 rate limit if fallback quota continuity budget is exceeded", async () => {
+        mocks.enforceRateLimit.mockRejectedValue(Object.assign(new Error("Rate limit exceeded"), { code: "resource-exhausted" }));
+        mocks.freeProtect.mockResolvedValue(mockDecision({
+            errored: true,
+            errorMessage: "[resource_exhausted] quota exceeded: protected_requests (28365/10000 requests)",
+        }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "typesafe-judge:user_123",
+        })).resolves.toMatchObject({ allowed: false, status: 429, code: "RATE_LIMITED" });
     });
 });
