@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 
 export interface UseNLEPlaybackOptions {
   project: IndiiVideoProject;
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  canvas: HTMLCanvasElement | null;
   onFrameUpdate?: (frame: number) => void;
   onEnded?: () => void;
 }
@@ -25,7 +25,7 @@ export interface UseNLEPlaybackReturn {
 
 export function useNLEPlayback({
   project,
-  canvasRef,
+  canvas,
   onFrameUpdate,
   onEnded,
 }: UseNLEPlaybackOptions): UseNLEPlaybackReturn {
@@ -47,7 +47,6 @@ export function useNLEPlayback({
 
   // Initialize WebGL2 Compositor and Web Audio Master Clock
   useEffect(() => {
-    const canvas = canvasRef.current;
     if (!canvas) return;
 
     try {
@@ -104,8 +103,10 @@ export function useNLEPlayback({
         decoder.close();
       }
       decoders.clear();
+      clockRef.current = null;
+      setIsPlaying(false);
     };
-  }, [canvasRef]);
+  }, [canvas]);
 
   // Render a single frame tick at a specific playhead PTS
   const renderAtPts = useCallback(

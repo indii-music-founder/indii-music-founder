@@ -29,7 +29,6 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
   };
 
   let mockCanvas: HTMLCanvasElement;
-  let canvasRef: { current: HTMLCanvasElement | null };
 
   beforeEach(() => {
     mockCanvas = document.createElement('canvas');
@@ -107,14 +106,13 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
       return null;
     }) as any);
 
-    canvasRef = { current: mockCanvas };
   });
 
   it('initializes with default stopped state', () => {
     const { result } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,
-        canvasRef,
+        canvas: mockCanvas,
       })
     );
 
@@ -128,7 +126,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     const { result } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,
-        canvasRef,
+        canvas: mockCanvas,
         onFrameUpdate,
       })
     );
@@ -155,7 +153,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     const { result } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,
-        canvasRef,
+        canvas: mockCanvas,
       })
     );
 
@@ -172,7 +170,7 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
 
   it('looks up decoded frames in microseconds at the requested source position', () => {
     const lookup = vi.spyOn(VideoTrackDecoder.prototype, 'getFrameForPts');
-    const { result, unmount } = renderHook(() => useNLEPlayback({ project: sampleProject, canvasRef }));
+    const { result, unmount } = renderHook(() => useNLEPlayback({ project: sampleProject, canvas: mockCanvas }));
     try {
       act(() => result.current.seekToSeconds(1));
       expect(lookup).toHaveBeenCalledWith(1000000n);
@@ -182,13 +180,32 @@ describe('useNLEPlayback React Hook (Issue #413)', () => {
     }
   });
 
+  it('initializes playback after the preview canvas mounts and stops when it detaches', () => {
+    const { result, rerender } = renderHook(
+      ({ canvas }: { canvas: HTMLCanvasElement | null }) => useNLEPlayback({ project: sampleProject, canvas }),
+      { initialProps: { canvas: null } },
+    );
+
+    act(() => result.current.play());
+    expect(result.current.isPlaying).toBe(false);
+
+    rerender({ canvas: mockCanvas });
+    act(() => result.current.play());
+    expect(result.current.isPlaying).toBe(true);
+
+    rerender({ canvas: null });
+    expect(result.current.isPlaying).toBe(false);
+    act(() => result.current.play());
+    expect(result.current.isPlaying).toBe(false);
+  });
+
   it('cleans up RAF and resources when unmounted', () => {
     const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame');
     const closeSpy = vi.spyOn(VideoTrackDecoder.prototype, 'close');
     const { result, unmount } = renderHook(() =>
       useNLEPlayback({
         project: sampleProject,
-        canvasRef,
+        canvas: mockCanvas,
       })
     );
 

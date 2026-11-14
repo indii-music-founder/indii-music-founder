@@ -36,7 +36,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
 
     const playerRef = React.useRef<HyperframesPlayer | null>(null);
     const videoRef = React.useRef<HTMLVideoElement | null>(null);
-    const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+    const [canvas, setCanvas] = React.useState<HTMLCanvasElement | null>(null);
 
     const { html, error, isCompiling } = useCompiledVideoPreview(project);
     const aspectRatio = project.width / project.height;
@@ -45,7 +45,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
 
     const nle = useNLEPlayback({
         project,
-        canvasRef,
+        canvas,
         onFrameUpdate: engine === 'nle' ? onFrameUpdate : undefined,
     });
 
@@ -67,6 +67,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     // Transport element attachment
     React.useEffect(() => {
         if (engine === 'nle') {
+            if (!canvas) return;
             attachPreviewElement(nleTransport);
             if (seekRequest && seekRequest.nonce !== lastNonceRef.current) {
                 lastNonceRef.current = seekRequest.nonce;
@@ -82,7 +83,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
             previewSeekToFrame(seekRequest.frame, project.fps);
         }
         return () => detachPreviewElement(el);
-    }, [engine, nleTransport, html, artifactUrl, seekRequest, project.fps, nle]);
+    }, [engine, canvas, nleTransport, html, artifactUrl, seekRequest, project.fps, nle]);
 
     // Frame update emitter for non-NLE engines (HyperFrames / video)
     React.useEffect(() => {
@@ -166,7 +167,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
                     </div>
                 ) : engine === 'nle' ? (
                     <canvas
-                        ref={canvasRef}
+                        ref={setCanvas}
                         data-testid="nle-preview-canvas"
                         width={project.width}
                         height={project.height}
