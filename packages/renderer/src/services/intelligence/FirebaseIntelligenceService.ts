@@ -350,21 +350,23 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             }
         }
 
+        const normalizedModelKey = candidate.toUpperCase();
+
         let modelKey: string | undefined;
 
         // 1. Check if the candidate is directly a mapped capability
-        if (normalized in CAPABILITY_TO_MODEL_KEY) {
+        if (Object.prototype.hasOwnProperty.call(CAPABILITY_TO_MODEL_KEY, normalized)) {
             modelKey = CAPABILITY_TO_MODEL_KEY[normalized];
-        } else if (candidate in APPROVED_MODELS) {
+        } else if (Object.prototype.hasOwnProperty.call(APPROVED_MODELS, normalizedModelKey)) {
             // 2. Check if the candidate is directly a model key (e.g., 'TEXT_AGENT')
-            modelKey = candidate;
+            modelKey = normalizedModelKey;
         } else {
             // 3. Otherwise try to reverse-lookup the model key from the model ID
             modelKey = getModelKey(candidate);
         }
 
         // 4. Resolve overrides or fallback to APPROVED_MODELS default
-        if (modelKey && modelKey in APPROVED_MODELS) {
+        if (modelKey && Object.prototype.hasOwnProperty.call(APPROVED_MODELS, modelKey)) {
             const remoteOverride = this.remoteConfig.overrides[modelKey as keyof typeof APPROVED_MODELS];
             if (remoteOverride) {
                 return remoteOverride;
