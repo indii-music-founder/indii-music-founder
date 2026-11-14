@@ -60,3 +60,32 @@ describe('model thinking compatibility', () => {
         expect(resolveModelThinkingConfig('gemini-4-argon', null)).toBeUndefined();
     });
 });
+
+
+describe('Gemini 4 candidate thinking compatibility (pure request normalization)', () => {
+    it.each(['LOW', 'MEDIUM', 'HIGH', 'XHIGH'])('preserves Hydrogen %s with legacy budget removed', thinkingLevel => {
+        expect(resolveModelThinkingConfig('gemini-4-hydrogen', { thinkingLevel: thinkingLevel.toLowerCase(), thinkingBudget: 2048, includeThoughts: true }))
+            .toEqual({ thinkingLevel, includeThoughts: true });
+    });
+    it.each(['gemini-4-hydrogen', 'gemini-4-carbon'])('maps disabled legacy thinking to LOW for %s', model => {
+        expect(resolveModelThinkingConfig(model, { thinkingBudget: 0 })).toEqual({ thinkingLevel: 'LOW' });
+        expect(resolveModelThinkingConfig(model, { thinkingLevel: 'MINIMAL' })).toEqual({ thinkingLevel: 'LOW' });
+    });
+    it('preserves Carbon settings and rejects unsupported XHIGH without mutating the request', () => {
+        const input = Object.freeze({ thinkingLevel: 'XHIGH', thinkingBudget: -1, includeThoughts: false });
+        expect(() => resolveModelThinkingConfig('gemini-4-carbon', input)).toThrow('Unsupported thinking level');
+        expect(resolveModelThinkingConfig('gemini-4-carbon', { thinkingLevel: 'HIGH' })).toEqual({ thinkingLevel: 'HIGH' });
+        expect(input.thinkingBudget).toBe(-1);
+    });
+});
+
+
+describe('thinking setting validation', () => {
+    it.each(['toString', 'constructor', '__proto__', 'gemini-4-unknown'])('abstains for unsupported model key %s', model => {
+        expect(resolveModelThinkingConfig(model, { thinkingLevel: 'HIGH' })).toBeUndefined();
+    });
+    it.each([null, true, 1, 'unknown'])('rejects invalid explicit levels %j', thinkingLevel => {
+        expect(() => resolveModelThinkingConfig('gemini-4-hydrogen', { thinkingLevel }))
+            .toThrow('Unsupported thinking level');
+    });
+});

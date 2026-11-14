@@ -101,6 +101,22 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
         expect(latestBackendRequest().model).toBe(APPROVED_MODELS.TEXT_AGENT);
     });
 
+    it.each([
+        { model: 'gemini-4-hydrogen', level: 'XHIGH' },
+        { model: 'gemini-4-carbon', level: 'HIGH' },
+    ])('preserves explicit candidate $model thinking settings in prepared requests (structural)', async ({ model, level }) => {
+        mockRemoteConfigValue.mockImplementation(key => key === 'ai_system_config'
+            ? JSON.stringify({ overrides: { TEXT_AGENT: model }, pricing: {}, config: {} }) : '');
+        await service.bootstrap();
+        await service.generateContent('test', APPROVED_MODELS.TEXT_AGENT, {
+            thinkingConfig: { thinkingLevel: level, thinkingBudget: 2048, includeThoughts: true },
+        });
+        expect(latestBackendRequest()).toMatchObject({ model, config: {
+            thinkingConfig: { thinkingLevel: level, includeThoughts: true },
+        } });
+        expect(latestBackendRequest().config.thinkingConfig).not.toHaveProperty('thinkingBudget');
+    });
+
     it('should intercept and replace model ID when override is present', async () => {
         // Setup override: TEXT_AGENT -> "gemini-4-ultra"
         const config = {
