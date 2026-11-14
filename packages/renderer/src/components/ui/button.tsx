@@ -88,9 +88,9 @@ const Button = React.memo(React.forwardRef<HTMLButtonElement, ButtonProps>(
                 className={cn(baseStyles, variants[variant], sizes[size], className)}
                 ref={ref}
                 {...(asChild ? {} : { disabled: isBlocked })}
-                aria-disabled={isBlocked}
                 data-loading={isLoading}
                 {...props}
+                aria-disabled={isBlocked ? true : props['aria-disabled']}
                 aria-busy={isLoading ? true : props['aria-busy']}
             >
                 {asChild ? children : (
