@@ -538,6 +538,8 @@ At `origin/main` (`a80a088ea`, following `PR #854` merge), `node scripts/issue-l
 
 ### ISSUE-1158: Generated-audio library service writes to an unruled path while rules authorize a different collection
 
+- **Playback object-identity repair (2026-11-14):** Shared `resolveStorageUrl` now passes the full persisted `gs://` URI to Firebase `ref`, retaining its bucket instead of resolving the path in the default bucket. This matches [Firebase reference construction](https://firebase.google.com/docs/storage/web/download-files#create_a_reference). A local installed-SDK construction check confirmed that an explicit bucket survives a different default-bucket configuration; it made no service request. Resolver/audio-persistence structural suites passed 13/13, scoped lint and renderer typecheck pass. Jev `jev-1.14.0` advisory object-identity score: 0.86. No genuine account, generated output, production access, or clean-reload playback was verified; status stays PARTIAL.
+
 - **Re-ticketed from:** ISSUE-1005 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)`)
 - **Status:** 🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)
 - **Severity:** 🔴 CRITICAL (generated audio cannot become a durable user-library asset)

@@ -1,3 +1,4 @@
+// Legacy structural-only resolver tests; no real Storage access or playback proof.
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/services/firebase', () => ({ storage: {} }));
@@ -28,9 +29,9 @@ describe('resolveStorageUrl', () => {
     it('passes non-gs URIs through unchanged', async () => {
         expect(await resolveStorageUrl('https://cdn/x.mp4')).toBe('https://cdn/x.mp4');
     });
-    it('resolves a gs:// URI against the default storage bucket', async () => {
+    it('preserves the explicit gs:// bucket when resolving an object', async () => {
         const resolved = await resolveStorageUrl('gs://bucket/videos/abc.mp4');
-        expect(resolved).toBe('https://firebasestorage.googleapis.com/videos/abc.mp4');
+        expect(resolved).toBe('https://firebasestorage.googleapis.com/gs://bucket/videos/abc.mp4');
     });
     it('returns the original gs:// URI on a malformed input', async () => {
         expect(await resolveStorageUrl('gs://')).toBe('gs://');
