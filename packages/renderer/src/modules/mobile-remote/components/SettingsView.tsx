@@ -31,10 +31,13 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import { buildMobileRemoteUrl } from '../routing';
 import { pushNotificationService } from '@/services/notifications/PushNotificationService';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from './JevRemoteHintBar';
 
 interface SettingsViewProps {
     desktopState: DesktopState | null;
     isPaired: boolean;
+    onNavigateTab?: (tab: 'home' | 'studio' | 'stream' | 'encounters' | 'road' | 'settings') => void;
 }
 
 type DesktopStatus = 'active' | 'sleeping' | 'offline';
@@ -48,13 +51,25 @@ function timeoutLabel(minutes: number): string {
     return minutes <= 0 ? 'Never' : `${minutes} min`;
 }
 
-export default function SettingsView({ desktopState, isPaired }: SettingsViewProps) {
+export default function SettingsView({ desktopState, isPaired, onNavigateTab }: SettingsViewProps) {
     const [settings, setSettings] = useState<RemoteSleepSettings>(DEFAULT_REMOTE_SLEEP_SETTINGS);
     const [isWaking, setIsWaking] = useState(false);
     const [pushStatus, setPushStatus] = useState<string | null>(null);
     const [isEnablingPush, setIsEnablingPush] = useState(false);
     const wakeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const status = resolveStatus(desktopState);
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void judgeMobileRemoteIntent({
+            tab: 'settings',
+            text: `desktop ${status}`,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [status]);
 
     // Load settings reactively (desktop writes nothing here, but other devices might).
     useEffect(() => {
@@ -161,6 +176,17 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
                 <h2 className="text-2xl font-bold font-display text-white tracking-tight mb-1">Settings</h2>
                 <p className="text-sm text-[#a1a1a6] font-medium font-sans">Control how <span className="indii-name">indii</span> sleeps and wakes.</p>
             </div>
+
+            <JevRemoteHintBar
+                judgment={jevHint}
+                onAction={(judgment) => {
+                    if (status === 'sleeping') {
+                        void handleWake();
+                    } else if (onNavigateTab) {
+                        onNavigateTab(judgment.recommendedTab);
+                    }
+                }}
+            />
 
             {/* ─── Desktop Status + Wake ─────────────────────────────── */}
             <section className="rounded-[24px] border border-white/10 bg-[#1a1512]/80 p-5">

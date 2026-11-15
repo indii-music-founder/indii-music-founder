@@ -30,6 +30,8 @@ import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
 import { searchNearbyPlaces, navigateToPlace, type NearbyPlace, type NearbySearchResult } from '@/services/places/NearbyPlacesService';
 import { logger } from '@/utils/logger';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from '@/modules/mobile-remote/components/JevRemoteHintBar';
 
 // ============================================================================
 // RoadMode — Phone-optimized voice-first road interface
@@ -243,6 +245,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
     const [activeAction, setActiveAction] = useState<QuickAction | null>(null);
     const [searchError, setSearchError] = useState<string | null>(null);
     const [mileageOpen, setMileageOpen] = useState(false);
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Grab GPS on mount
@@ -270,6 +273,22 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
     const nextStop = itinerary?.stops.find(
         (s) => new Date(s.date) >= today
     ) || itinerary?.stops[0];
+
+    useEffect(() => {
+        const signal = manualInput.trim() || nextStop?.city || '';
+        if (!signal) {
+            setJevHint(null);
+            return;
+        }
+        let cancelled = false;
+        void judgeMobileRemoteIntent({
+            tab: 'road',
+            text: signal,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [manualInput, nextStop?.city]);
 
     // Submit a prompt to the agent — forces native orchestrator mode for tool access
     const handleSubmitPrompt = useCallback(async (prompt: string) => {
@@ -362,6 +381,31 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
         setLastAction(null);
     };
 
+    // Route freeform voice / text commands through TypeSafe Jev first so local Places queries stay instant
+    const handleSmartRoadPrompt = useCallback(async (prompt: string) => {
+        if (!prompt.trim()) return false;
+        const judgment = await judgeMobileRemoteIntent({ tab: 'road', text: prompt });
+        if (judgment.roadPlacesAction && currentLocation) {
+            const matchedAction = QUICK_ACTIONS.find(a => a.id === judgment.roadPlacesAction);
+            if (matchedAction) {
+                setLastAction(matchedAction.id);
+                setSearchError(null);
+                setIsSubmitting(true);
+                try {
+                    const results = await searchNearbyPlaces(matchedAction.id, currentLocation.lat, currentLocation.lng);
+                    setSearchResults(results);
+                    setActiveAction(matchedAction);
+                    return true;
+                } catch {
+                    // Fallback cleanly to agent prompt
+                } finally {
+                    setIsSubmitting(false);
+                }
+            }
+        }
+        return handleSubmitPrompt(prompt);
+    }, [currentLocation, handleSubmitPrompt]);
+
     // Handle navigating to a place
     const handleNavigate = (place: NearbyPlace) => {
         navigateToPlace(place);
@@ -375,9 +419,9 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
         if (roadVoiceSession.current.owned && roadVoiceSession.current.wasListening && transcript && !isListening && transcript.length > 5 && submittedTranscriptRef.current !== transcript) {
             roadVoiceSession.current.owned = false;
             submittedTranscriptRef.current = transcript;
-            void handleSubmitPrompt(transcript);
+            void handleSmartRoadPrompt(transcript);
         }
-    }, [transcript, isListening, handleSubmitPrompt]);
+    }, [transcript, isListening, handleSmartRoadPrompt]);
 
     const toggleRoadListening = () => {
         if (!isListening) {
@@ -390,7 +434,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
     // Handle manual text submission
     const handleManualSubmit = async () => {
         const submitted = manualInput;
-        if (submitted.trim() && await handleSubmitPrompt(submitted)) {
+        if (submitted.trim() && await handleSmartRoadPrompt(submitted)) {
             setManualInput(current => current === submitted ? '' : current);
             setShowInput(false);
         }
@@ -465,6 +509,20 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                         exit={{ opacity: 0 }}
                         className="flex-1 overflow-y-auto px-4 py-5"
                     >
+                        <JevRemoteHintBar
+                            className="mb-4"
+                            judgment={jevHint}
+                            onAction={(judgment) => {
+                                if (judgment.roadPlacesAction) {
+                                    const match = QUICK_ACTIONS.find((a) => a.id === judgment.roadPlacesAction);
+                                    if (match) {
+                                        void handleQuickAction(match);
+                                        return;
+                                    }
+                                }
+                                setMileageOpen(true);
+                            }}
+                        />
                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mb-3 px-1">
                             Quick Actions
                         </div>

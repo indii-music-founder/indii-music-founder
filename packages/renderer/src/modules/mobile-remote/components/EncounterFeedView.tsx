@@ -12,6 +12,8 @@ import { useStore } from '@/core/store';
 import { auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
 import ArtistShareCardModal from './ArtistShareCardModal';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from './JevRemoteHintBar';
 
 type FeedFilter = 'all' | 'contacts' | 'media' | 'memos';
 
@@ -22,7 +24,13 @@ const FEED_FILTERS: ReadonlyArray<{ id: FeedFilter; label: string }> = [
     { id: 'memos', label: 'Memos' },
 ];
 
-export default function EncounterFeedView({ isPaired = false }: { isPaired?: boolean }) {
+export default function EncounterFeedView({
+    isPaired = false,
+    onNavigateTab,
+}: {
+    isPaired?: boolean;
+    onNavigateTab?: (tab: 'home' | 'studio' | 'stream' | 'encounters' | 'road' | 'settings') => void;
+}) {
     const [openingId, setOpeningId] = useState<string | null>(null);
     const [encounters, setEncounters] = useState<FieldEncounter[]>([]);
     const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
@@ -173,6 +181,34 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
         return true;
     });
 
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
+    const leadEncounter = filteredEncounters[0];
+    const leadEncounterKey = leadEncounter
+        ? `${leadEncounter.id}:${leadEncounter.title || ''}:${leadEncounter.summary || ''}:${leadEncounter.assets[0]?.type || ''}`
+        : '';
+
+    useEffect(() => {
+        if (!leadEncounter) {
+            setJevHint(null);
+            return;
+        }
+        let cancelled = false;
+        const summary = [
+            leadEncounter.title,
+            leadEncounter.summary,
+            leadEncounter.extractedContact?.name,
+            leadEncounter.audioTranscript,
+        ].filter(Boolean).join(' ');
+        void judgeMobileRemoteIntent({
+            tab: 'feed',
+            text: summary || leadEncounter.assets[0]?.type || 'field capture',
+            attachmentType: leadEncounter.assets[0]?.type ?? null,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [leadEncounterKey, leadEncounter]);
+
     const contactHeader = <>
         <div className="flex items-center justify-between px-1">
             <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Field Feed</span>
@@ -235,6 +271,11 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
     return (
         <div className="w-full flex flex-col space-y-4 px-3 pb-24">
             {contactHeader}
+
+            <JevRemoteHintBar
+                judgment={jevHint}
+                onAction={onNavigateTab ? (judgment) => onNavigateTab(judgment.recommendedTab) : undefined}
+            />
 
             {filteredEncounters.map((enc) => {
                 const photoAsset = enc.assets.find((a) => a.type === 'photo');

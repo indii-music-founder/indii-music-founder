@@ -6,6 +6,8 @@ import { buildGeneratedImagesGallery } from './GenerationMonitor';
 import { triggerHaptic } from '../haptics';
 import { useToast } from '@/core/context/ToastContext';
 import { downloadCapturedMedia } from './QuickCaptureView';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from './JevRemoteHintBar';
 
 const AgentChat = lazy(() => import('./AgentChat'));
 const GenerationMonitor = lazy(() => import('./GenerationMonitor'));
@@ -48,6 +50,24 @@ export default function StudioWorkView({
     const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
     const [flyerPrompt, setFlyerPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
+
+    useEffect(() => {
+        const signal = flyerPrompt.trim() || activeDesktopModule || '';
+        if (!signal) {
+            setJevHint(null);
+            return;
+        }
+        let cancelled = false;
+        void judgeMobileRemoteIntent({
+            tab: 'studio',
+            text: signal,
+            desktopModule: activeDesktopModule,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [flyerPrompt, activeDesktopModule]);
 
     useEffect(() => {
         if (pendingChatAttachment || pendingChatCommandId) {
@@ -181,6 +201,29 @@ export default function StudioWorkView({
                     </button>
                 </div>
             </div>
+
+            {/* TypeSafe Jev Contextual Hint (non-chat subtabs) */}
+            {subTab !== 'chat' && jevHint && (
+                <JevRemoteHintBar
+                    judgment={jevHint}
+                    className="mx-4 mb-2 shrink-0"
+                    onAction={(judgment) => {
+                        if (judgment.recommendedTab !== 'studio' && onNavigateRemoteTab && (
+                            judgment.recommendedTab === 'home' ||
+                            judgment.recommendedTab === 'road' ||
+                            judgment.recommendedTab === 'stream' ||
+                            judgment.recommendedTab === 'encounters' ||
+                            judgment.recommendedTab === 'settings'
+                        )) {
+                            onNavigateRemoteTab(judgment.recommendedTab);
+                        } else if (judgment.recommendedDepartment === 'creative' && subTab !== 'outputs') {
+                            setSubTab('outputs');
+                        } else {
+                            setSubTab('chat');
+                        }
+                    }}
+                />
+            )}
 
             {/* SubTab Views */}
             {subTab === 'chat' ? (

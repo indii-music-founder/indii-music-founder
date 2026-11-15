@@ -562,4 +562,18 @@ describe('QuickCaptureView — venue pin geolocation (ISSUE-988)', () => {
         });
         expect(mockDispatchTask).not.toHaveBeenCalled();
     });
+
+    it('renders JevRemoteHintBar when typing a financial note and routes on click', async () => {
+        const onNavigateTab = vi.fn();
+        render(<QuickCaptureView isPaired={true} onNavigateTab={onNavigateTab} />);
+
+        const input = screen.getByPlaceholderText('Capture a live moment...');
+        fireEvent.change(input, { target: { value: 'Venue merch receipt $240' } });
+
+        const hintBar = await screen.findByTestId('jev-remote-hint-bar');
+        expect(hintBar).toHaveTextContent(/Jev · finance/i);
+
+        fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
+        expect(onNavigateTab).toHaveBeenCalledWith('studio');
+    });
 });

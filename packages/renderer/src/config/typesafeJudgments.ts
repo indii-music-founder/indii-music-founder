@@ -11468,6 +11468,217 @@ export async function judgeBoardroomWorkspaceRecommendation(
     }
 }
 
+export type MobileRemoteTabChoice = 'home' | 'studio' | 'stream' | 'encounters' | 'road' | 'settings';
+export type MobileRemoteDepartmentChoice = 'generalist' | 'creative' | 'finance' | 'legal' | 'distribution' | 'road' | 'marketing';
+export type RoadPlacesActionChoice = 'gas' | 'food' | 'restroom' | 'lodging' | 'emergency';
+
+export interface MobileRemoteIntentInput {
+    tab: 'capture' | 'studio' | 'vault' | 'feed' | 'road' | 'settings';
+    text: string;
+    desktopModule?: string | null;
+    attachmentType?: string | null;
+}
+
+export interface MobileRemoteIntentJudgment {
+    recommendedTab: MobileRemoteTabChoice;
+    recommendedDepartment: MobileRemoteDepartmentChoice;
+    roadPlacesAction?: RoadPlacesActionChoice;
+    actionLabel: string;
+    hint: string;
+    source: 'jev' | 'deterministic';
+}
+
+export function heuristicMobileRemoteIntent(input: MobileRemoteIntentInput): MobileRemoteIntentJudgment {
+    const combined = `${input.text || ''} ${input.desktopModule || ''} ${input.attachmentType || ''}`.toLowerCase();
+
+    if (input.tab === 'road' || /\b(gas|fuel|bathroom|restroom|toilet|eat|food|dinner|lunch|breakfast|coffee|hotel|motel|lodging|hospital|police|emergency|ambulance|911|mileage|reroute|traffic|stay tonight)\b/.test(combined)) {
+        if (/\b(hospital|police|emergency|ambulance|911)\b/.test(combined)) {
+            return { recommendedTab: 'road', recommendedDepartment: 'road', roadPlacesAction: 'emergency', actionLabel: 'Find Emergency Help', hint: 'Urgent safety request — opening nearby emergency services.', source: 'deterministic' };
+        }
+        if (/\b(gas|fuel|petrol|ev charger)\b/.test(combined)) {
+            return { recommendedTab: 'road', recommendedDepartment: 'road', roadPlacesAction: 'gas', actionLabel: 'Find Gas Nearby', hint: 'Fuel stop needed — querying nearby stations via Places.', source: 'deterministic' };
+        }
+        if (/\b(restroom|bathroom|toilet)\b/.test(combined)) {
+            return { recommendedTab: 'road', recommendedDepartment: 'road', roadPlacesAction: 'restroom', actionLabel: 'Find Restroom', hint: 'Quick stop needed — checking nearest open restrooms.', source: 'deterministic' };
+        }
+        if (/\b(hotel|motel|lodging|sleep|stay tonight)\b/.test(combined)) {
+            return { recommendedTab: 'road', recommendedDepartment: 'road', roadPlacesAction: 'lodging', actionLabel: 'Find Lodging', hint: 'Overnight stop detected — searching nearby hotels.', source: 'deterministic' };
+        }
+        if (/\b(food|eat|restaurant|dinner|lunch|breakfast|coffee)\b/.test(combined)) {
+            return { recommendedTab: 'road', recommendedDepartment: 'road', roadPlacesAction: 'food', actionLabel: 'Find Food Nearby', hint: 'Meal stop detected — finding open restaurants nearby.', source: 'deterministic' };
+        }
+        return { recommendedTab: 'road', recommendedDepartment: 'road', actionLabel: 'Open Road Controls', hint: 'Touring or route activity fits the Road tab.', source: 'deterministic' };
+    }
+
+    if (/\b(receipts?|expenses?|invoices?|budgets?|royalt(?:y|ies)|tax(?:es)?|payouts?)\b/.test(combined)) {
+        return {
+            recommendedTab: 'studio',
+            recommendedDepartment: 'finance',
+            actionLabel: 'Route to Finance',
+            hint: 'Financial item — Finance can categorize and log it.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/\b(split(?:\s|_|-)?sheets?|contracts?|agreements?|copyrights?|clearances?|trademarks?|pro|ascap|bmi)\b/.test(combined)) {
+        return {
+            recommendedTab: 'studio',
+            recommendedDepartment: 'legal',
+            actionLabel: 'Review with Legal',
+            hint: 'Rights or agreement detected — Legal can verify terms.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/\b(flyers?|cover(?:\s|_|-)?art|artwork|posters?|visuals?|videos?|clips?|selfies?|photos?)\b/.test(combined)) {
+        return {
+            recommendedTab: 'studio',
+            recommendedDepartment: 'creative',
+            actionLabel: 'Open Creative Studio',
+            hint: 'Visual production item — Creative can turn this into assets.',
+            source: 'deterministic',
+        };
+    }
+
+    if (/\b(tracks?|mix(?:es)?|masters?|wav|mp3|stems?|vaults?|albums?|singles?|isrc|releases?)\b/.test(combined) && input.tab !== 'vault') {
+        return {
+            recommendedTab: 'stream',
+            recommendedDepartment: 'distribution',
+            actionLabel: 'Open Cloud Vault',
+            hint: 'Audio/release context fits the Cloud Vault & Distribution.',
+            source: 'deterministic',
+        };
+    }
+
+    if (input.tab === 'vault') {
+        return {
+            recommendedTab: 'studio',
+            recommendedDepartment: 'creative',
+            actionLabel: 'Prep Release in Studio',
+            hint: 'Ready to generate cover art, credits, or release tasks from this track.',
+            source: 'deterministic',
+        };
+    }
+
+    if (input.tab === 'feed') {
+        return {
+            recommendedTab: 'studio',
+            recommendedDepartment: 'generalist',
+            actionLabel: 'Act on Feed Item',
+            hint: 'Follow up with your Desktop studio agents from this field log.',
+            source: 'deterministic',
+        };
+    }
+
+    if (input.tab === 'settings') {
+        if (/sleeping/.test(combined)) {
+            return {
+                recommendedTab: 'settings',
+                recommendedDepartment: 'generalist',
+                actionLabel: 'Wake Studio First',
+                hint: 'Wake INDII before dispatching desktop-only computer actions.',
+                source: 'deterministic',
+            };
+        }
+        return {
+            recommendedTab: 'home',
+            recommendedDepartment: 'generalist',
+            actionLabel: 'Cloud Capture Ready',
+            hint: 'Field Capture, Feed, and Vault stay synced even when Desktop rests.',
+            source: 'deterministic',
+        };
+    }
+
+    return {
+        recommendedTab: 'studio',
+        recommendedDepartment: 'generalist',
+        actionLabel: 'Send to Studio',
+        hint: 'Ask the Studio boardroom or department leads to process this.',
+        source: 'deterministic',
+    };
+}
+
+export async function judgeMobileRemoteIntent(
+    input: MobileRemoteIntentInput
+): Promise<MobileRemoteIntentJudgment> {
+    const fallback = heuristicMobileRemoteIntent(input);
+    const signalText = `${input.text || ''} ${input.desktopModule || ''} ${input.attachmentType || ''}`.trim();
+    if (!judgmentsAvailable('judgeMobileRemoteIntent') || signalText.length < 3) {
+        return fallback;
+    }
+
+    try {
+        const judgeFn = httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge');
+
+        const result = await judgeFn({
+            state: {
+                activeTab: input.tab,
+                text: input.text.slice(0, 400),
+                desktopModule: input.desktopModule ?? null,
+                attachmentType: input.attachmentType ?? null,
+            },
+            questions: {
+                recommended_tab: {
+                    type: 'choice' as const,
+                    instructions: 'Which Mobile Remote tab should handle the user’s current activity or follow-up?',
+                    criteria: {
+                        home: 'Field Capture (voice memo, photo, receipt, contact scan)',
+                        studio: 'Studio Work (flyers, actions, department agent chat)',
+                        stream: 'Cloud Vault (tracks, audio stems, playback)',
+                        encounters: 'Field Feed (reviewing captured contacts, memos, receipts)',
+                        road: 'Road Mode (navigation, gas/food/lodging/emergency, tour mileage)',
+                        settings: 'More / Settings (desktop sleep/wake, shortcuts, notifications)',
+                    },
+                },
+                recommended_department: {
+                    type: 'choice' as const,
+                    instructions: 'Which indii department should handle this task?',
+                    criteria: {
+                        generalist: 'Conductor / cross-department routing',
+                        creative: 'Artwork, flyers, video, visual design',
+                        finance: 'Receipts, expenses, royalties, budgets, mileage',
+                        legal: 'Contracts, split sheets, copyright, rights clearance',
+                        distribution: 'DSP releases, tracks, ISRC/UPC packaging',
+                        road: 'Touring logistics, stops, travel safety',
+                        marketing: 'Campaigns, press, social promotion',
+                    },
+                },
+            },
+        });
+
+        const validTabs: readonly MobileRemoteTabChoice[] = ['home', 'studio', 'stream', 'encounters', 'road', 'settings'];
+        const validDepts: readonly MobileRemoteDepartmentChoice[] = ['generalist', 'creative', 'finance', 'legal', 'distribution', 'road', 'marketing'];
+
+        const tabAns = result.data.answers?.recommended_tab;
+        const deptAns = result.data.answers?.recommended_department;
+        const tabChoice = whitelistedChoice(tabAns, validTabs);
+        const deptChoice = whitelistedChoice(deptAns, validDepts);
+        const tabConf = boundedConfidenceValue(tabAns);
+        const deptConf = boundedConfidenceValue(deptAns);
+
+        if (tabChoice === null || (tabConf !== null && tabConf < 0.5)) {
+            return fallback;
+        }
+
+        const resolvedDept = deptChoice !== null && (deptConf === null || deptConf >= 0.5)
+            ? deptChoice
+            : fallback.recommendedDepartment;
+
+        return {
+            ...fallback,
+            recommendedTab: tabChoice,
+            recommendedDepartment: resolvedDept,
+            source: 'jev',
+        };
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'mobile remote intent judgment', 'judgeMobileRemoteIntent');
+        return fallback;
+    }
+}
+
 
 
 

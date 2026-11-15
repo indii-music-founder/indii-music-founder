@@ -25,4 +25,19 @@ describe('StreamView desktop handoff', () => {
         await screen.findByText('This track is not in Cloud Vault');
         expect(screen.queryByRole('button', { name: 'Stream to Phone' })).not.toBeInTheDocument();
     });
+
+    it('renders JevRemoteHintBar and sends focused track to Studio on click', async () => {
+        const onSendToStudio = vi.fn();
+        render(
+            <StreamView
+                desktopState={{ activeTrackId: 'track-1', activeTrackTitle: 'New Master' } as DesktopState}
+                onSendToStudio={onSendToStudio}
+            />
+        );
+
+        const hintBar = await screen.findByTestId('jev-remote-hint-bar');
+        expect(hintBar).toHaveTextContent(/Jev/i);
+        fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
+        expect(onSendToStudio).toHaveBeenCalledWith(expect.stringContaining('New Master'));
+    });
 });
