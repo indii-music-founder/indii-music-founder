@@ -1,5 +1,8 @@
 # Open Issues — Real-Life Test Findings (V3, ACTIVE)
 
+> Remaining-work checklist (2026-11-14): [107 unresolved/decision requirement rows](../../docs/audits/v3-remaining-work-2026-11-14.md), with ledger-only Jev judgments and published branch SHAs. This does not verify terminal labels or change issue status.
+
+
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
@@ -3253,6 +3256,8 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1442: UI-first backwards redundancy audit — Stage 1+1b executed (dead code deleted, registry defects fixed)
 
+- **Dashboard evidence-label follow-up (2026-11-14):** Live Home in the existing `wiil` production Studio session exposed hard-coded dynamic-card inspection/delivery labels and `100% Safe`; no new account was created and tier was not shown. Source traced the dynamic cards to invented fallback `hasPendingSplits: true` and a default release type. Dynamic modules now require supplied layout evidence or explicit module keys; no-evidence inference is skipped. Explicit cards label unassessed inspection/delivery honestly, and missing campaign counts remain not loaded. Supplied layout context is passed to rendered cards. Approval Gates reports its local queue instead of global safety or readiness. Nineteen focused structural/component checks, renderer typecheck, and diff checks pass. Scoped lint: zero errors, four existing fast-refresh warnings. Jev `jev-1.14.0` advisory unproven-claim-removal score: 0.89. These repairs are branch source, not a deployed acceptance claim; real provider telemetry and post-deployment UI verification remain unverified.
+
 - **Status:** ✅ FIXED (Stage 1 + 1b; Stages 2–3 remain open)
 - **Severity:** 🟡 MEDIUM
 - **Module:** renderer module registry / orphaned modules+services / cloud functions
@@ -3434,6 +3439,8 @@ PRs. Full phase/product acceptance is not established by those facts. See
 - **DO NOT:** Publish private data, infer signature execution from an empty task list, create assumed clearance, or jump to DISTRIBUTION_READY to satisfy the plan.
 
 ### ISSUE-1450 progress update — 2026-10-01
+
+- **Production read / current-source correction (2026-11-14):** Normal navigation from `https://indii.music/` into the linked production Studio reached Legal → Claims Inbox in the existing `wiil` session. Loading completed with 0 claims/0 conflicts and the explicit no-clearance/no-external-completeness notice. No account was created, plan was not shown, no claims or persisted state were changed. This proves only that account’s empty-inbox read; intake/response/reload and isolation acceptance remain unverified. Current main already exports and calls the owner-declared response workflow, whose bounded status transitions and event writes are transactional; the older no-response-workflow statement below is historical. External partner intake remains absent. See `docs/audits/issue-1450-live-claims-read-2026-11-14.md`; Jev advisory evidence-scope score 0.96. No additional issue closure is claimed.
 
 - **Status:** 🟡 PARTIAL
 - **Delivered:** Added `getCanonicalClaimsInbox` and `declareCanonicalRightsClaim` callables using the existing App Check, entitlement and request-admission boundary. The server store reads only the authenticated owner scope. Owner intake forces `USER_DECLARED` provenance and `ASSERTED` status, and commits the claim plus its `claim.received` event in one Firestore transaction. The Legal Dashboard now loads persisted claims, shows separate loading/unavailable/empty states, labels the empty state as internal-only, and provides an owner-declared intake form. Bounded reads expose a truncation flag rather than implying the projection is complete.
@@ -4162,6 +4169,8 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Evidence:** `packages/renderer/src/services/finance/FinanceService.integration.test.ts` (4/4 passed), `execution/finance/test_waterfall_payout.py` (3/3 passed).
 
 ### ISSUE-1510: Issue #413 Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration
+
+- **Preview audio connection (2026-11-14):** `NLEPreviewAudio` now routes active audio clips and explicitly audio-bearing videos through Web Audio media-element sources. NLE play/pause/seek, decoder errors, clip boundaries, and cleanup control those sources. Timeline mapping includes source trims, constant speed with native pitch preservation, volume, fades, track mute/solo, and half-open ends. Only active clips retain media readers; closed/removed readers disconnect and release their URLs. Audio startup/load errors pause preview visibly. Eight pure timing/legacy structural transport checks, scoped lint, and renderer typecheck pass. These do not prove real audible playback. Jev `jev-1.14.0` advisory scores: connected audio path 0.90; full precision unproven 0.89. This is an interim audible-preview transport with an 80ms correction threshold, not sample-accurate scheduling or fulfillment of the sub-5ms drift requirement. Native pitch fidelity, actual media playback, boundary accuracy, drift under load, long-project memory, audio worklet/sample scheduling, and genuine editor acceptance remain outstanding. ISSUE-1510 stays PARTIAL.
 - **Status:** 🟡 PARTIAL
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Suite / Video Editor (NLE Engine Architecture)
@@ -6424,6 +6433,7 @@ outcome. Reproduce against current source before implementation or closure.
 ### ISSUE-1589: Client-side Storage `deleteObject` calls across `CloudStorageService`, `StorageService`, `LikenessService`, `FontLibrary`, and `AccountDeletionService` always fail with `storage/unauthorized` because `storage.rules` sets `allow delete: if false` on `users/{userId}/{topLevel}/{allPaths=**}`, leaving deleted images, audio, likeness references, and fonts orphaned in Cloud Storage
 
 - **Deletion failure repair (2026-11-14):** Likeness removal now returns failure and retains its document when Storage deletion fails, except for the exact `storage/object-not-found` idempotency case. Font deletion preserves metadata/cache until Storage and document deletion succeed; metadata lookup errors propagate instead of guessing a fallback extension. Generic `StorageService.deleteFile` now propagates permission/network failures. Font metadata reference is captured before asynchronous work. Shared error-code classification has pure tests; 11 focused pure/legacy structural checks and renderer typecheck pass. Scoped lint: zero errors, one existing `any` warning. Jev `jev-1.14.0` advisory retry-record-preservation score: 0.82. Genuine owner deletion and deployed cleanup remain unverified; status stays PARTIAL.
+- **Likeness removal UI (2026-11-14):** `LikenessFusionPanel` now exposes Delete selected selfie, explains permanent stored-reference removal, disables fusion/selection/reload during deletion, and removes the card only after `LikenessService.remove` succeeds. Failure retains the card and exposes an alert for retry. Reload selects a valid remaining ID or clears selection. Service metadata is retained for all Storage failures except exact object-not-found; its metadata reference is captured before awaiting deletion. This minimal service guard overlaps the already-published `codex/v3-storage-deletion-failures` repair and is included because the UI must not treat failed file deletion as success. Five existing component structural checks pass, scoped lint has zero errors and one existing `any` warning, renderer typecheck passes. These checks do not exercise genuine deletion. Jev `jev-1.14.0` advisory deletion-lifecycle score: 0.93. Genuine owner removal, reload, stored-object absence, and retained-reference retry remain unverified; status stays PARTIAL.
 - **Status:** 🟡 PARTIAL (2026-11-08; allowed owner deletion on assets, thumbnails, audio, likeness, and brandKit in storage.rules, added font-woff to media types, verified 37 storage rules tests and 9 account deletion tests passing, awaiting exact-SHA CI)
 - **Severity:** 🟠 HIGH
 - **Module:** Cloud Storage Deletion Lifecycle (`packages/renderer/src/services/CloudStorageService.ts`, `packages/renderer/src/services/StorageService.ts`, `packages/renderer/src/services/image/LikenessService.ts`, `packages/renderer/src/services/typography/FontLibrary.ts`, `packages/renderer/src/services/account/AccountDeletionService.ts`, `packages/firebase/storage.rules`)

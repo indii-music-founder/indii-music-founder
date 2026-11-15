@@ -33,6 +33,8 @@ export default function LikenessFusionPanel({
     const [isLoadingHeadshots, setIsLoadingHeadshots] = useState<boolean>(true);
     const [isUploadingSelfie, setIsUploadingSelfie] = useState<boolean>(false);
     const [selfieConsent, setSelfieConsent] = useState(false);
+    const [isDeletingSelfie, setIsDeletingSelfie] = useState(false);
+    const [removalStatus, setRemovalStatus] = useState('');
     const [isFusing, setIsFusing] = useState<boolean>(false);
     const [fusionResult, setFusionResult] = useState<FusionResult | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,9 @@ export default function LikenessFusionPanel({
             const list = await LikenessService.getAll();
             setHeadshots(list || []);
             if (list && list.length > 0) {
-                setSelectedHeadshotId(prev => prev || list[0].id);
+                setSelectedHeadshotId(prev => list.some(item => item.id === prev) ? prev : list[0].id);
+            } else {
+                setSelectedHeadshotId('');
             }
         } catch (err) {
             logger.error('[LikenessFusionPanel] Failed to load headshots:', err);
@@ -85,6 +89,27 @@ export default function LikenessFusionPanel({
             setError(err instanceof Error ? err.message : 'Failed to enroll likeness selfie.');
         } finally {
             setIsUploadingSelfie(false);
+        }
+    };
+
+    const handleDeleteSelfie = async () => {
+        const selected = headshots.find(item => item.id === selectedHeadshotId);
+        if (!selected || isDeletingSelfie || isFusing || isUploadingSelfie) return;
+        setIsDeletingSelfie(true);
+        setError(null);
+        setRemovalStatus('');
+        try {
+            const removed = await LikenessService.remove(selected.id, selected.storageRef);
+            if (!removed) throw new Error('Selfie deletion failed. The reference is retained so you can retry.');
+            const remaining = headshots.filter(item => item.id !== selected.id);
+            setHeadshots(remaining);
+            setSelectedHeadshotId(remaining[0]?.id || '');
+            setSelfieConsent(false);
+            setRemovalStatus('Selected selfie deleted. Previously generated images are unchanged.');
+        } catch (cause: unknown) {
+            setError(cause instanceof Error ? cause.message : 'Could not delete this selfie. Please retry.');
+        } finally {
+            setIsDeletingSelfie(false);
         }
     };
 
@@ -163,6 +188,7 @@ export default function LikenessFusionPanel({
             {error && (
                 <div
                     data-testid="fusion-error-banner"
+                    role="alert"
                     className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-2"
                 >
                     <AlertCircle size={14} className="mt-0.5 shrink-0" />
@@ -177,6 +203,7 @@ export default function LikenessFusionPanel({
                     <button
                         type="button"
                         onClick={loadHeadshots}
+                        disabled={isDeletingSelfie || isFusing}
                         className="p-1 hover:text-white transition-colors text-gray-500"
                         title="Reload Headshots"
                     >
@@ -228,6 +255,8 @@ export default function LikenessFusionPanel({
                                     key={h.id}
                                     type="button"
                                     onClick={() => setSelectedHeadshotId(h.id)}
+                                    disabled={isDeletingSelfie || isFusing}
+                                    aria-pressed={isSelected}
                                     data-testid={`headshot-card-${h.id}`}
                                     className={`relative rounded-lg overflow-hidden border aspect-square transition-all ${
                                         isSelected
@@ -255,6 +284,16 @@ export default function LikenessFusionPanel({
                     </div>
                 )}
             </div>
+
+            {headshots.length > 0 && <div className="space-y-1">
+                <button type="button" onClick={handleDeleteSelfie}
+                    disabled={isDeletingSelfie || isFusing || isUploadingSelfie || !selectedHeadshotId}
+                    className="text-xs text-red-300 underline disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isDeletingSelfie ? 'Deleting selfie…' : 'Delete selected selfie'}
+                </button>
+                <p className="text-[10px] text-gray-500">Permanently removes the selected stored reference photo.</p>
+            </div>}
+            {removalStatus && <p role="status" className="text-xs text-gray-300">{removalStatus}</p>}
 
             {/* Target Subject Preview */}
             <div className="flex flex-col gap-1.5">
@@ -316,7 +355,7 @@ export default function LikenessFusionPanel({
             <button
                 type="button"
                 onClick={handleFuse}
-                disabled={isFusing || !activeTarget || (headshots.length === 0 && !selectedHeadshotId)}
+                disabled={isFusing || isDeletingSelfie || !activeTarget || (headshots.length === 0 && !selectedHeadshotId)}
                 data-testid="fuse-likeness-btn"
                 className="w-full py-2 px-3 rounded-lg bg-green-600 hover:bg-green-500 disabled:bg-gray-800 disabled:text-gray-600 font-medium text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >

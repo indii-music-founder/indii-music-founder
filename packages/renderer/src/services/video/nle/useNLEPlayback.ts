@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { IndiiVideoProject } from '@indii/shared';
+import { NLEPreviewAudio } from './NLEPreviewAudio';
 import { MasterAudioClock } from './MasterAudioClock';
 import { NLEFrameRenderer } from './NLEFrameRenderer';
 import { WebGL2Compositor } from './WebGL2Compositor';
@@ -40,6 +41,7 @@ export function useNLEPlayback({
   const currentSeconds = currentFrame / fps;
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const previewAudioRef = useRef<NLEPreviewAudio | null>(null);
   const clockRef = useRef<MasterAudioClock | null>(null);
   const compositorRef = useRef<WebGL2Compositor | null>(null);
   const frameRendererRef = useRef<NLEFrameRenderer | null>(null);
@@ -64,6 +66,7 @@ export function useNLEPlayback({
           if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = null;
           clockRef.current?.pause();
+          previewAudioRef.current?.pause();
           setIsPlaying(false);
         });
         frameRendererRef.current.request(BigInt(Math.round(currentFrameRef.current * 60000 / fps)));
@@ -86,11 +89,22 @@ export function useNLEPlayback({
       try {
         audioCtx = new AudioContextClass();
         audioCtxRef.current = audioCtx;
+        previewAudioRef.current = new NLEPreviewAudio(project, audioCtx, (cause) => {
+          setError(cause instanceof Error ? cause.message : 'Audio preview failed.');
+          clockRef.current?.pause();
+          previewAudioRef.current?.pause();
+          if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+          setIsPlaying(false);
+        });
       } catch {
         // Fall back to software timing if hardware audio context throws
       }
     }
 
+    if (!audioCtx && project.clips.some(clip => clip.type === 'audio' || clip.hasAudio === true)) {
+      setError('Web Audio is unavailable. Audio preview cannot start in this browser.');
+    }
     const fallbackCtx = {
       get currentTime() {
         return typeof performance !== 'undefined' ? performance.now() / 1000 : Date.now() / 1000;
@@ -106,6 +120,8 @@ export function useNLEPlayback({
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
       }
+      previewAudioRef.current?.close();
+      previewAudioRef.current = null;
       frameRendererRef.current?.close();
       frameRendererRef.current = null;
       if (compositorRef.current) {
@@ -133,6 +149,7 @@ export function useNLEPlayback({
     if (clockRef.current) {
       clockRef.current.pause();
     }
+    previewAudioRef.current?.pause();
     setIsPlaying(false);
   }, []);
 
@@ -143,11 +160,15 @@ export function useNLEPlayback({
     if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
 
     if (audioCtx && audioCtx.state === 'suspended') {
-      void audioCtx.resume();
+      void audioCtx.resume().catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : 'Audio playback could not start.');
+        pause();
+      });
     }
 
     const startPts = BigInt(Math.round((currentFrameRef.current * 60000) / fps));
     clock.play(startPts);
+    previewAudioRef.current?.sync(currentFrameRef.current, true, true);
     setIsPlaying(true);
 
     const tick = () => {
@@ -165,6 +186,7 @@ export function useNLEPlayback({
 
       setCurrentFrame(frame);
       onFrameUpdate?.(frame);
+      previewAudioRef.current?.sync(Number(pts) * fps / 60000, true);
       renderAtPts(pts);
 
       rafIdRef.current = requestAnimationFrame(tick);
@@ -180,6 +202,7 @@ export function useNLEPlayback({
       currentFrameRef.current = clamped;
       onFrameUpdate?.(clamped);
 
+      previewAudioRef.current?.sync(clamped, isPlaying, true);
       const targetPts = BigInt(Math.round((clamped * 60000) / fps));
 
       if (isPlaying && clockRef.current) {

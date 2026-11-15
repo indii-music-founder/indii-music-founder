@@ -17,9 +17,9 @@ function StemInspectorWidget(props: Record<string, unknown>) {
         <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-white tracking-wide uppercase">Stem Audio Inspector</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">WAV 48kHz</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">Not inspected</span>
             </div>
-            <p className="text-xs text-slate-400">Pre-flight stem loudness, phase alignment, and headroom verification ready.</p>
+            <p className="text-xs text-slate-400">No stem inspection result is attached to this card.</p>
             {Boolean(props.activeReleaseType) && (
                 <div className="text-[10px] text-slate-500 mt-1">Release Type: {String(props.activeReleaseType)}</div>
             )}
@@ -33,11 +33,11 @@ function RoyaltySplitTableWidget(props: Record<string, unknown>) {
             <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-200 tracking-wide uppercase">Royalty Split Sheet Escrow</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
-                    {Number(props.unmatchedRoyaltiesCount || 0) > 0 ? `${props.unmatchedRoyaltiesCount} Unmatched` : 'Action Required'}
+                    {Number(props.unmatchedRoyaltiesCount || 0) > 0 ? `${props.unmatchedRoyaltiesCount} Unmatched` : props.hasPendingSplits === true ? 'Pending splits' : 'Not assessed'}
                 </span>
             </div>
             <p className="text-xs text-slate-300">
-                Pending split contracts require approval before DSP earnings distribution can release.
+                Review recorded split agreements and unmatched royalty entries before making release decisions.
             </p>
         </div>
     );
@@ -49,10 +49,11 @@ function CampaignMonitorWidget(props: Record<string, unknown>) {
             <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-white tracking-wide uppercase">Active Campaign Monitor</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
-                    {Number(props.activeAdCampaigns || 0)} Running
+                    {typeof props.activeAdCampaigns === 'number' && Number.isFinite(props.activeAdCampaigns)
+                        ? `${props.activeAdCampaigns} Running` : 'Not loaded'}
                 </span>
             </div>
-            <p className="text-xs text-slate-400">Live TikTok & Meta ad budget pacing, listener acquisition cost, and CTR tracking.</p>
+            <p className="text-xs text-slate-400">Campaign count reflects the supplied workspace context; provider delivery and performance are not verified here.</p>
         </div>
     );
 }
@@ -62,9 +63,9 @@ function ReleaseTimelineWidget(_props: Record<string, unknown>) {
         <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-white tracking-wide uppercase">Release Delivery Timeline</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">DDEX Scheduled</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Not assessed</span>
             </div>
-            <p className="text-xs text-slate-400">Master delivery countdown, pre-save campaign milestones, and editorial pitch locks.</p>
+            <p className="text-xs text-slate-400">Open your release to review its actual delivery and milestone records.</p>
         </div>
     );
 }
@@ -144,6 +145,7 @@ export function useDynamicDashboardLayout(
 
     useEffect(() => {
         let isMounted = true;
+        if (availableKeys.length === 0) return;
 
         async function resolveJevLayout() {
             const decision = await judgeDynamicDashboardLayout({
@@ -179,6 +181,8 @@ export function useDynamicDashboardLayout(
 // Hydrates and renders validated React components with error isolation & Suspense
 // ---------------------------------------------------------------------------
 
+const NO_DYNAMIC_MODULE_KEYS: DynamicComponentKey[] = [];
+
 export interface DynamicModuleContainerProps {
     moduleKeys?: DynamicComponentKey[];
     contextData?: Record<string, unknown>;
@@ -195,15 +199,16 @@ export function DynamicModuleContainer({
     layoutContext,
 }: DynamicModuleContainerProps) {
     const fallbackContext: LayoutContextData = layoutContext || {
-        activeReleaseType: 'single',
-        hasPendingSplits: true,
+        hasPendingSplits: false,
         unmatchedRoyaltiesCount: 0,
         activeAdCampaigns: 0,
     };
 
-    const resolved = useDynamicDashboardLayout(fallbackContext);
+    const resolved = useDynamicDashboardLayout(fallbackContext, layoutContext ? ALL_DYNAMIC_MODULE_KEYS : NO_DYNAMIC_MODULE_KEYS);
     const keys = propModuleKeys || resolved.orderedModules;
     const variant = propLayoutVariant || resolved.layoutVariant;
+    if (keys.length === 0) return null;
+    const widgetContext = { ...layoutContext, ...contextData };
 
     return (
         <div
@@ -228,7 +233,7 @@ export function DynamicModuleContainer({
                             />
                         }
                     >
-                        <Component {...contextData} artistId={artistId} />
+                        <Component {...widgetContext} artistId={artistId} />
                     </Suspense>
                 );
             })}
