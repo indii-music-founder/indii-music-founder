@@ -171,7 +171,7 @@ export const BrandAgent: AgentConfig = {
         },
         fetch_brand_kit: McpTools.fetch_brand_kit
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'scan_brand_compliance', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
+    authorizedTools: ['save_memory', 'recall_memories', 'verify_output', 'analyze_brand_consistency', 'scan_brand_compliance', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
             ...brandRetrievalDeclarations,
