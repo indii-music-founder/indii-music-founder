@@ -3,10 +3,10 @@
  * through the relay and are resolved only by the matching Studio request.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
 import { Check, X, Shield, Fingerprint } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 interface ApprovalQueueProps {
     approval: NonNullable<DesktopState['pendingApproval']>;
@@ -14,31 +14,65 @@ interface ApprovalQueueProps {
 }
 
 export default function ApprovalQueue({ approval, onDecision }: ApprovalQueueProps) {
+    const prefersReducedMotion = useReducedMotion();
+    const isMountedRef = useRef(true);
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // Track outcome keyed to approval.id so rotating requests never inherit stale status.
+    const [decisionOutcome, setDecisionOutcome] = useState<{
+        approvalId: string;
+        sent: boolean;
+        error: string | null;
+    }>({ approvalId: approval.id, sent: false, error: null });
 
-    // Compute elapsed seconds in an effect
-    const [timeAgo, setTimeAgo] = useState(0);
     useEffect(() => {
-        const updateTime = () =>
-            setTimeAgo(Math.round((Date.now() - approval.timestamp) / 1000));
-        updateTime();
-        const interval = setInterval(updateTime, 1000);
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    // Track live elapsed & expiry state in an effect; stop ticking once expired.
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        if (Date.now() >= approval.expiresAt) return;
+        const interval = setInterval(() => {
+            const current = Date.now();
+            setNowMs(current);
+            if (current >= approval.expiresAt) {
+                clearInterval(interval);
+            }
+        }, 1000);
         return () => clearInterval(interval);
-    }, [approval.timestamp]);
+    }, [approval.id, approval.timestamp, approval.expiresAt]);
+
+    const timeAgo = Math.max(0, Math.round((nowMs - approval.timestamp) / 1000));
+    const isExpired = nowMs >= approval.expiresAt;
+    const isCurrentOutcome = decisionOutcome.approvalId === approval.id;
+    const sent = isCurrentOutcome && decisionOutcome.sent;
+    const error = isCurrentOutcome ? decisionOutcome.error : null;
 
     const decide = async (action: 'approve' | 'reject') => {
         if (sending || Date.now() >= approval.expiresAt) return;
+        const targetId = approval.id;
         setSending(true);
-        setError(null);
+        setDecisionOutcome({ approvalId: targetId, sent: false, error: null });
         try {
-            await onDecision(action, approval.id);
-            setSent(true);
+            await onDecision(action, targetId);
+            if (isMountedRef.current) {
+                setDecisionOutcome({ approvalId: targetId, sent: true, error: null });
+            }
         } catch {
-            setError('Studio did not accept the decision. Retry while connected.');
+            if (isMountedRef.current) {
+                setDecisionOutcome({
+                    approvalId: targetId,
+                    sent: false,
+                    error: 'Studio did not accept the decision. Retry while connected.',
+                });
+            }
         } finally {
-            setSending(false);
+            if (isMountedRef.current) {
+                setSending(false);
+            }
         }
     };
 
@@ -48,9 +82,9 @@ export default function ApprovalQueue({ approval, onDecision }: ApprovalQueuePro
                 {(
                     <motion.div 
                         key="pending"
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: -20, scale: 0.95 }}
                         className="relative overflow-hidden rounded-[32px] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#1a1512] to-red-500/10 shadow-[0_32px_64px_-16px_rgba(251,191,36,0.15)] backdrop-blur-xl"
                     >
                         {/* Status Header */}
@@ -61,7 +95,9 @@ export default function ApprovalQueue({ approval, onDecision }: ApprovalQueuePro
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-white uppercase tracking-tight">Authorization</h3>
-                                    <p className="text-[10px] font-bold text-amber-400/60 uppercase tracking-widest">Required Action</p>
+                                    <p className="text-[10px] font-bold text-amber-400/60 uppercase tracking-widest">
+                                        {isExpired ? 'Expired Request' : 'Required Action'}
+                                    </p>
                                 </div>
                             </div>
                             <div className="text-right">
@@ -90,26 +126,33 @@ export default function ApprovalQueue({ approval, onDecision }: ApprovalQueuePro
                             {/* Action Buttons */}
                             <div className="grid grid-cols-2 gap-4">
                                 <motion.button
-                                    whileTap={{ scale: 0.95 }}
+                                    type="button"
+                                    whileTap={!sending && !isExpired && !prefersReducedMotion ? { scale: 0.95 } : undefined}
                                     onClick={() => void decide('reject')}
-                                    disabled={sending}
-                                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 text-white/60 text-xs font-bold uppercase tracking-widest hover:bg-red-500/10 hover:text-red-400 transition-all border border-white/5"
+                                    disabled={sending || isExpired}
+                                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 text-white/60 text-xs font-bold uppercase tracking-widest hover:bg-red-500/10 hover:text-red-400 transition-all border border-white/5 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                                 >
                                     <X className="w-4 h-4" />
                                     Reject
                                 </motion.button>
                                 <motion.button
-                                    whileTap={{ scale: 0.95 }}
+                                    type="button"
+                                    whileTap={!sending && !isExpired && !prefersReducedMotion ? { scale: 0.95 } : undefined}
                                     onClick={() => void decide('approve')}
-                                    disabled={sending}
-                                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white text-black text-xs font-bold uppercase tracking-widest shadow-lg shadow-white/10"
+                                    disabled={sending || isExpired}
+                                    className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white text-black text-xs font-bold uppercase tracking-widest shadow-lg shadow-white/10 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                                 >
                                     <Check className="w-4 h-4" />
                                     Approve
                                 </motion.button>
                             </div>
+                            {isExpired && (
+                                <p role="status" className="mt-3 text-xs text-amber-300">
+                                    Authorization expired — check Desktop Studio for the current request.
+                                </p>
+                            )}
                             {error && <p role="alert" className="mt-3 text-xs text-red-300">{error}</p>}
-                            {sent && !error && <p role="status" className="mt-3 text-xs text-amber-200">Decision sent. Waiting for Studio confirmation. You can retry if it stays here.</p>}
+                            {sent && !error && !isExpired && <p role="status" className="mt-3 text-xs text-amber-200">Decision sent. Waiting for Studio confirmation. You can retry if it stays here.</p>}
                         </div>
 
                         {/* Ambient Background Decoration */}

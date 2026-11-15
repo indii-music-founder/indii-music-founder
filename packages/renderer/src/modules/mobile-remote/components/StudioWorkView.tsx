@@ -52,22 +52,26 @@ export default function StudioWorkView({
     const [isGenerating, setIsGenerating] = useState(false);
     const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
 
+    const studioSignal = flyerPrompt.trim() || activeDesktopModule || '';
+
     useEffect(() => {
-        const signal = flyerPrompt.trim() || activeDesktopModule || '';
-        if (!signal) {
-            setJevHint(null);
-            return;
-        }
+        if (!studioSignal) return;
         let cancelled = false;
-        void judgeMobileRemoteIntent({
-            tab: 'studio',
-            text: signal,
-            desktopModule: activeDesktopModule,
-        }).then((judgment) => {
-            if (!cancelled) setJevHint(judgment);
-        });
-        return () => { cancelled = true; };
-    }, [flyerPrompt, activeDesktopModule]);
+        const delayMs = flyerPrompt.trim().length > 0 ? 200 : 0;
+        const timer = setTimeout(() => {
+            void judgeMobileRemoteIntent({
+                tab: 'studio',
+                text: studioSignal,
+                desktopModule: activeDesktopModule,
+            }).then((judgment) => {
+                if (!cancelled) setJevHint(judgment);
+            });
+        }, delayMs);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [studioSignal, flyerPrompt, activeDesktopModule]);
 
     useEffect(() => {
         if (pendingChatAttachment || pendingChatCommandId) {
@@ -203,7 +207,7 @@ export default function StudioWorkView({
             </div>
 
             {/* TypeSafe Jev Contextual Hint (non-chat subtabs) */}
-            {subTab !== 'chat' && jevHint && (
+            {subTab !== 'chat' && studioSignal && jevHint && (
                 <JevRemoteHintBar
                     judgment={jevHint}
                     className="mx-4 mb-2 shrink-0"

@@ -136,8 +136,10 @@ function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResul
             {/* Header — back button + title */}
             <div className="flex items-center gap-3 mb-4">
                 <button
+                    type="button"
+                    aria-label="Back to Road actions"
                     onClick={onClose}
-                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                 >
                     <ArrowLeft size={16} />
                 </button>
@@ -159,6 +161,7 @@ function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResul
                     {results.places.map((place, idx) => (
                         <motion.button
                             key={place.placeId || idx}
+                            type="button"
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.05 }}
@@ -274,21 +277,25 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
         (s) => new Date(s.date) >= today
     ) || itinerary?.stops[0];
 
+    const roadSignal = manualInput.trim() || nextStop?.city || '';
+
     useEffect(() => {
-        const signal = manualInput.trim() || nextStop?.city || '';
-        if (!signal) {
-            setJevHint(null);
-            return;
-        }
+        if (!roadSignal) return;
         let cancelled = false;
-        void judgeMobileRemoteIntent({
-            tab: 'road',
-            text: signal,
-        }).then((judgment) => {
-            if (!cancelled) setJevHint(judgment);
-        });
-        return () => { cancelled = true; };
-    }, [manualInput, nextStop?.city]);
+        const delayMs = manualInput.trim().length > 0 ? 200 : 0;
+        const timer = setTimeout(() => {
+            void judgeMobileRemoteIntent({
+                tab: 'road',
+                text: roadSignal,
+            }).then((judgment) => {
+                if (!cancelled) setJevHint(judgment);
+            });
+        }, delayMs);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [roadSignal, manualInput]);
 
     // Submit a prompt to the agent — forces native orchestrator mode for tool access
     const handleSubmitPrompt = useCallback(async (prompt: string) => {
@@ -511,7 +518,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                     >
                         <JevRemoteHintBar
                             className="mb-4"
-                            judgment={jevHint}
+                            judgment={roadSignal ? jevHint : null}
                             onAction={(judgment) => {
                                 if (judgment.roadPlacesAction) {
                                     const match = QUICK_ACTIONS.find((a) => a.id === judgment.roadPlacesAction);
@@ -530,6 +537,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                             {QUICK_ACTIONS.map((action) => (
                                 <motion.button
                                     key={action.id}
+                                    type="button"
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => handleQuickAction(action)}
                                     disabled={isSubmitting && lastAction === action.id}
@@ -559,7 +567,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                             >
                                 <ShieldAlert size={14} />
                                 <span>{searchError}</span>
-                                <button onClick={() => setSearchError(null)} className="ml-auto">
+                                <button type="button" aria-label="Dismiss search error" onClick={() => setSearchError(null)} className="ml-auto">
                                     <X size={12} />
                                 </button>
                             </motion.div>
@@ -604,9 +612,11 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                                     autoFocus
                                 />
                                 <button
+                                    type="button"
+                                    aria-label="Send road prompt"
                                     onClick={handleManualSubmit}
                                     disabled={!manualInput.trim()}
-                                    className="p-3 bg-[#00ff66] text-black font-bold rounded-xl hover:bg-[#00ff66]/90 disabled:opacity-30 transition-all cursor-pointer"
+                                    className="p-3 bg-[#00ff66] text-black font-bold rounded-xl hover:bg-[#00ff66]/90 disabled:opacity-30 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                                 >
                                     <Send size={18} />
                                 </button>
@@ -618,13 +628,15 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                 <div className="flex items-center gap-4">
                     {/* Type toggle */}
                     <button
+                        type="button"
+                        aria-label={showInput ? 'Hide road text input' : 'Show road text input'}
                         onClick={() => {
                             setShowInput(!showInput);
                             if (!showInput) {
                                 setTimeout(() => inputRef.current?.focus(), 100);
                             }
                         }}
-                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors"
+                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                     >
                         <ChevronUp
                             size={18}
@@ -634,6 +646,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
 
                     {/* Main mic button */}
                     <motion.button
+                        type="button"
                         whileTap={{ scale: 0.95 }}
                         onClick={toggleRoadListening}
                         className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold font-display text-sm transition-all cursor-pointer ${isListening

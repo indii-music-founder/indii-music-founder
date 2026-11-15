@@ -11575,7 +11575,8 @@ export function heuristicMobileRemoteIntent(input: MobileRemoteIntentInput): Mob
 }
 
 export async function judgeMobileRemoteIntent(
-    input: MobileRemoteIntentInput
+    input: MobileRemoteIntentInput,
+    admission?: SemanticCallAdmission,
 ): Promise<MobileRemoteIntentJudgment> {
     const fallback = heuristicMobileRemoteIntent(input);
     const signalText = `${input.text || ''} ${input.desktopModule || ''} ${input.attachmentType || ''}`.trim();
@@ -11589,7 +11590,7 @@ export async function judgeMobileRemoteIntent(
             { answers: Record<string, unknown> }
         >(getFunctions(), 'typesafeJudge');
 
-        const result = await judgeFn({
+        const invoke = async () => (await judgeFn({
             state: {
                 activeTab: input.tab,
                 text: input.text.slice(0, 400),
@@ -11623,13 +11624,20 @@ export async function judgeMobileRemoteIntent(
                     },
                 },
             },
-        });
+        }))?.data;
+
+        const data = admission
+            ? await runBudgetedSemanticCall(admission, invoke)
+            : await invoke();
+        if (!data || !data.answers || typeof data.answers !== 'object') {
+            return fallback;
+        }
 
         const validTabs: readonly MobileRemoteTabChoice[] = ['home', 'studio', 'stream', 'encounters', 'road', 'settings'];
         const validDepts: readonly MobileRemoteDepartmentChoice[] = ['generalist', 'creative', 'finance', 'legal', 'distribution', 'road', 'marketing'];
 
-        const tabAns = result.data.answers?.recommended_tab;
-        const deptAns = result.data.answers?.recommended_department;
+        const tabAns = data.answers.recommended_tab;
+        const deptAns = data.answers.recommended_department;
         const tabChoice = whitelistedChoice(tabAns, validTabs);
         const deptChoice = whitelistedChoice(deptAns, validDepts);
         const tabConf = boundedConfidenceValue(tabAns);
@@ -11650,6 +11658,10 @@ export async function judgeMobileRemoteIntent(
             source: 'jev',
         };
     } catch (err: unknown) {
+        if (err instanceof SemanticCallCheckpointError) {
+            logger.warn('[typesafeJudgments] Mobile remote judgment skipped because budget checkpoint failed.');
+            return fallback;
+        }
         noteJudgmentFailure(err, 'mobile remote intent judgment', 'judgeMobileRemoteIntent');
         return fallback;
     }

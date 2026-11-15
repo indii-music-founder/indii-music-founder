@@ -14,6 +14,7 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
 
 vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
+    useReducedMotion: () => false,
     motion: {
         button: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <button {...filterDomProps(props)}>{children}</button>,
         div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...filterDomProps(props)}>{children}</div>,
