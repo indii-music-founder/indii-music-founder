@@ -24,5 +24,8 @@
   },
   "dependencies": {
     "@indii/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.8.2"
   }
 }

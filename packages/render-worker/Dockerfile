@@ -22,9 +22,10 @@ COPY packages/shared/src packages/shared/src
 COPY packages/video-compiler/src packages/video-compiler/src
 COPY packages/render-worker/src packages/render-worker/src
 COPY packages/shared/tsconfig.json packages/shared/
+COPY packages/shared/tsconfig.runtime.json packages/shared/
 COPY packages/video-compiler/tsconfig.json packages/video-compiler/
 COPY packages/render-worker/tsconfig.json packages/render-worker/
-RUN npm run build --workspace=@indii/shared && \
+RUN npm run build:runtime --workspace=@indii/shared && \
     npm run build --workspace=@indii/video-compiler && \
     npm run build --workspace=@indii/render-worker
 
