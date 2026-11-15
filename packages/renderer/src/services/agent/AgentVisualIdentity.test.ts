@@ -135,5 +135,14 @@ describe('AgentVisualIdentity', () => {
         expect(conductor.accent).toBe(generalist.accent);
         expect(conductor.initials).toBe('IC');
     });
+
+    it('resolves the system coordination identity cleanly instead of Unknown Agent', () => {
+        const system = resolveAgentVisualIdentity('system');
+
+        expect(system.displayName).toBe('indii System');
+        expect(system.initials).toBe('IS');
+        expect(system.iconKey).toBe('sparkles');
+        expect(system.role).toBe('independent');
+    });
 });
 

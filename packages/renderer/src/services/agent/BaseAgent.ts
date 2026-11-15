@@ -931,19 +931,65 @@ export class BaseAgent implements SpecializedAgent {
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
 
-        const SUPERPOWER_PROMPT = `
-        ## CAPABILITIES & PROTOCOLS
-        You have access to the following advanced capabilities ("Superpowers"):
-        - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
-        - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
-        - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
-        - **Collaboration:** Within a department, only a manager may delegate work to that department's employees. In Boardroom, share facts with the share_note tool; managers never assign work to peer managers or another department's employees.
-        - **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
+        // Tool gathering logic via ToolPoolAssembler (computed before prompt construction
+        // so SUPERPOWER_PROMPT only advertises capabilities this agent is authorized to invoke)
+        const specialistTools = (this.tools || []).flatMap(t => t.functionDeclarations || []);
+        let activeModule = 'unknown';
+        if (context) {
+            const ctxParams = context as Record<string, unknown>;
+            activeModule = (ctxParams.currentModule as string | undefined)
+                || (ctxParams.route as string | undefined)
+                || 'unknown';
+        }
 
+        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
+            specialistTools,
+            {
+                agentId: this.id,
+                moduleContext: activeModule,
+                localToolNames: new Set(Object.keys(this.functions)),
+                authorizedTools: this.authorizedTools,
+                isReadOnly: context?.isReadOnly === true,
+                conversationMode: context?.conversationMode,
+            }
+        );
+        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
+        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
+            || boardroomSideEffectOwner === this.id;
+        const allFunctions = mayExecuteBoardroomSideEffects
+            ? assembledFunctions
+            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
+
+        const availableToolNames = new Set(allFunctions.map(fn => fn.name));
+        const superpowerLines: string[] = [];
+        if (availableToolNames.has('save_memory') || availableToolNames.has('recall_memories')) {
+            superpowerLines.push("- **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.");
+        }
+        if (availableToolNames.has('verify_output')) {
+            superpowerLines.push("- **Reflection:** Call 'verify_output' to critique your own work if the task is complex.");
+        }
+        if (availableToolNames.has('request_approval')) {
+            superpowerLines.push("- **Approval:** Call 'request_approval' for any action that publishes content or spends money.");
+        }
+        if (availableToolNames.has('share_note') || availableToolNames.has('delegate_task')) {
+            superpowerLines.push("- **Collaboration:** Within a department, only a manager may delegate work to that department's employees. In Boardroom, share facts with the share_note tool; managers never assign work to peer managers or another department's employees.");
+        }
+        if (availableToolNames.has('speak')) {
+            superpowerLines.push("- **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a \"generate\", \"create\", or \"make\" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.");
+        }
+        const capabilitiesBlock = superpowerLines.length > 0
+            ? `        ## CAPABILITIES & PROTOCOLS\n        You have access to the following advanced capabilities ("Superpowers"):\n        ${superpowerLines.join('\n        ')}\n`
+            : '';
+
+        const SUPERPOWER_PROMPT = `
+${capabilitiesBlock}
         ## COLLABORATION PROTOCOL
         - If you are receiving a delegated task (check context.traceId), be extremely concise and data-oriented.
         - When delegating, provide full context so the next agent doesn't need to ask follow-up questions.
-        - Use share_note to make a relevant fact available to another seated manager; it is information, never an instruction.
+        ${availableToolNames.has('share_note') ? '- Use share_note to make a relevant fact available to another seated manager; it is information, never an instruction.\n' : ''}
+        ## TOOL DISCIPLINE
+        - Call ONLY tools explicitly declared in your active tool schema when concrete execution or inspection is required.
+        - For direct questions about system status, features, or behavior, answer directly from verified runtime context and conversation history without speculative tool calls.
 
         ## TONE & STYLE
         - Act with the authority of your role (${this.name}).
@@ -1081,35 +1127,6 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             delegationScopeSection,
             capabilityTruthSection
         );
-
-        // Tool gathering logic via ToolPoolAssembler
-        const specialistTools = (this.tools || []).flatMap(t => t.functionDeclarations || []);
-
-        // Ensure context has needed module properties, dynamically trying to get currentModule
-        let activeModule = 'unknown';
-        if (context) {
-            const ctxRecord = context as Record<string, unknown>;
-            activeModule = (ctxRecord.currentModule as string | undefined)
-                || (ctxRecord.route as string | undefined)
-                || 'unknown';
-        }
-
-        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
-            specialistTools,
-            {
-                agentId: this.id,
-                moduleContext: activeModule,
-                localToolNames: new Set(Object.keys(this.functions)),
-                isReadOnly: context?.isReadOnly === true,
-                conversationMode: context?.conversationMode,
-            }
-        );
-        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
-        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
-            || boardroomSideEffectOwner === this.id;
-        const allFunctions = mayExecuteBoardroomSideEffects
-            ? assembledFunctions
-            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
 
         // IMPORTANT: Tools must be deep-cloned on EACH iteration because model gateways may
         // freeze (Object.freeze) tool declaration objects while normalizing requests.

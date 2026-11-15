@@ -16,6 +16,7 @@ describe('TextEffect', () => {
     const value = 'First line\nSecond line';
     const { container } = render(<TextEffect per='line'>{value}</TextEffect>);
     expect(container.querySelector('.sr-only')?.textContent).toBe(value);
+    expect(container.querySelector('.sr-only')).toHaveClass('select-none');
     expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent('First lineSecond line');
   });
 

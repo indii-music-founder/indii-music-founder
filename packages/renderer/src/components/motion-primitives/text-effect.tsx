@@ -279,7 +279,7 @@ export function TextEffect({
           onAnimationStart={onAnimationStart}
           style={style}
         >
-          <span className='sr-only'>{children}</span>
+          <span className='sr-only select-none'>{children}</span>
           <span aria-hidden='true'>
             {segments.map((segment, index) => (
               <AnimationComponent
