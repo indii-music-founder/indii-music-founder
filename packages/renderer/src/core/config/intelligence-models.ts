@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger';
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
     TEXT_CONDUCTOR: 'gemini-4-argon',            // Founder-approved Conductor reasoning target
-    TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
+    TEXT_AGENT: 'gemini-3.8-flash',              // Default agent intelligence; Conductor remains Argon
     TEXT_FAST: 'gemini-3.8-flash',               // Workhorse agentic & fast tasks (GA) — per MODEL_POLICY.md
     TEXT_FLASH_3_8: 'gemini-3.8-flash',          // Gemini 3.8 Flash GA (September 2026)
     TEXT_FLASH_PREVIEW: 'gemini-3-flash-preview', // Legacy fast preview reference
@@ -142,8 +142,10 @@ export const INTELLIGENCE_CONFIG = {
  * Model Pricing (USD per 1M tokens for text; per second for video)
  *
  * gemini-2.5-pro:   $1.25 input / $10.00 output per 1M tokens
- * gemini-2.5-flash: $0.15 input /  $0.60 output per 1M tokens
+ * Gemini 3.8 Flash uses the conservative non-global standard rate below.
  */
+import { GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING } from '@indii/shared';
+
 export const MODEL_PRICING = {
     // Argon: non-global Standard list price, excluding promotional credits.
     // Conservative admission estimate; https://cloud.google.com/model-garden/pricing (2026-11-05).
@@ -151,7 +153,10 @@ export const MODEL_PRICING = {
     'gemini-2.5-pro': { input: 1.25, output: 10.00 },
     'gemini-2.5-flash': { input: 0.15, output: 0.60 },
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
-    'gemini-3.8-flash': { input: 0.15, output: 0.60 },
+    'gemini-3.8-flash': {
+        input: GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING.inputPerMillion,
+        output: GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING.outputPerMillion,
+    },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'gemini-3.1-flash-lite': { input: 0.04, output: 0.20 },
     'veo-3.1-generate-001': {

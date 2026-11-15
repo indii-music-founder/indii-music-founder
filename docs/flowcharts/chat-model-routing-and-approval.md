@@ -44,7 +44,7 @@ ID or that each agent invokes it in production.
 
 | Source and role | Configured reference | Routing implication |
 | --- | --- | --- |
-| Renderer `TEXT_AGENT` | `gemini-3.1-pro-preview` | Current client default for recognized agent capability keys; a Remote Config override can replace it. This literal is absent from the inspected server text-stream allowlist. |
+| Renderer `TEXT_AGENT` | `gemini-3.8-flash` | Default for recognized agent capability keys; a Remote Config override can replace it. The server stream admission path supports this model. |
 | Renderer `TEXT_FAST` | `gemini-3.8-flash` | Configured workhorse reference, present in the server allowlist. |
 | Server `TEXT.PRO` | `gemini-4-argon` | Server default when the stream request omits a model; present in the allowlist. It does not rewrite a supplied tuned endpoint. |
 | Server `TEXT.FAST` | `gemini-3.8-flash` | Configured server workhorse reference. |

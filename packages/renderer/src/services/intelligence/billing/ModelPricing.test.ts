@@ -12,6 +12,13 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 describe('ModelPricing', () => {
+    it('uses the approved Gemini 3.8 Flash standard rates for actual cost estimates', () => {
+        expect(estimateCostUsd('gemini-3.8-flash', {
+            inputTokens: 1_000_000,
+            outputTokens: 1_000_000,
+        })).toBeCloseTo(9.9, 6);
+    });
+
     describe('estimateCostUsd — token models', () => {
         it('prices input and output tokens separately', () => {
             // gemini-3.1-pro-preview: $1.25/1M input, $10.00/1M output

@@ -39,6 +39,15 @@ describe('agent-stream cost admission', () => {
             .toBe(minimumTextStreamReservationCost(contents, config, 'gemini-3.1-pro-preview'));
     });
 
+    it('reserves against the conservative Gemini 3.8 Flash standard rates', () => {
+        const cost = minimumTextStreamReservationCost(
+            [{ role: 'user', parts: [{ text: 'prompt' }] }],
+            { maxOutputTokens: 1_000_000 },
+            'gemini-3.8-flash',
+        );
+        expect(cost).toBeGreaterThan(8.25);
+    });
+
     it.each([undefined, NaN, Infinity, -1, '0.1'])('rejects malformed reservation amounts (%s)', amount => {
         expect(reservationCoversTextStreamCost(amount, 0.01)).toBe(false);
     });

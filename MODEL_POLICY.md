@@ -210,9 +210,9 @@ The founder explicitly authorizes Argon, superseding the previous Gemini-3-only 
 | Boundary | Inspected source state | Remaining requirement |
 | --- | --- | --- |
 | Backend selection | `packages/firebase/src/config/models.ts` sets TEXT.PRO to Argon; `config/textStreamModels.ts` allows Argon | Verify actual project access and submitted model |
-| Renderer selection | `packages/renderer/src/core/config/intelligence-models.ts` still sets TEXT_AGENT to 3.1 Pro | Coordinate migration with pricing and supported request configuration |
+| Renderer selection | `TEXT_AGENT` now defaults to `gemini-3.8-flash`; Conductor remains Argon | Verify project access and actual submitted model in live traffic |
 | Agent execution | `BaseAgent.ts` defaults to getFineTunedModel; `IndiiNucleus.ts` explicitly selects the generalist tuned endpoint | Add the intelligence layer and explicit specialty delegation without deleting trained workers |
-| Cost admission | Renderer and backend now have explicit Argon admission rates | Verify current provider rates by location, actual usage, and settlement before switching traffic |
+| Cost admission | Gemini 3.8 Flash uses one shared conservative non-global standard rate for renderer estimates and backend admission | Verify provider billing location and settlement before production claims |
 | Acceptance | Charts define the intended hierarchy | Verify genuine direct and Boardroom turns, specialty boundaries, approval continuation, artifacts, and retained media capabilities |
 
 See [routing and hierarchy chart](docs/flowcharts/chat-model-routing-and-approval.md). These gaps are open work, not evidence of a completed migration.

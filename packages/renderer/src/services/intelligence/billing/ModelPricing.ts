@@ -1,3 +1,4 @@
+import { GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING } from '@indii/shared';
 import { logger } from '@/utils/logger';
 
 /**
@@ -78,7 +79,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     'gemini-4-argon': { kind: 'token', inputPerMillion: 4.40, outputPerMillion: 22.00 },
     // ── Text ────────────────────────────────────────────────────────────────
     'gemini-3.1-pro-preview': { kind: 'token', inputPerMillion: 1.25, outputPerMillion: 10.0 },
-    'gemini-3.8-flash': { kind: 'token', inputPerMillion: 0.30, outputPerMillion: 2.50 },
+    'gemini-3.8-flash': { kind: 'token', ...GEMINI_38_FLASH_STANDARD_NON_GLOBAL_PRICING },
     'gemini-3-flash-preview': { kind: 'token', inputPerMillion: 0.30, outputPerMillion: 2.50 },
     'gemini-3.1-flash-lite': { kind: 'token', inputPerMillion: 0.10, outputPerMillion: 0.40 },
 
