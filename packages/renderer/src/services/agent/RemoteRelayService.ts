@@ -940,33 +940,26 @@ class RemoteRelayService {
      * Call periodically to prevent unbounded Firestore growth.
      */
     async cleanupOld(maxAgeHours = 24): Promise<number> {
+        if (!Number.isFinite(maxAgeHours) || maxAgeHours <= 0) {
+            return 0;
+        }
         const uid = getUserId();
         if (!uid) return 0;
 
         const cutoff = Timestamp.fromMillis(Date.now() - maxAgeHours * 60 * 60 * 1000);
         let deleted = 0;
 
-        // Clean commands
-        const cmdsRef = getCommandsRef();
-        if (cmdsRef) {
-            const q = query(cmdsRef, where('createdAt', '<', cutoff));
-            const snap = await getDocs(q);
-            for (const d of snap.docs) {
-                await deleteDoc(d.ref);
-                deleted++;
+        const purgeQuery = async (colRef: ReturnType<typeof getCommandsRef>, field: 'createdAt' | 'timestamp') => {
+            if (!colRef) return;
+            const snap = await getDocs(query(colRef, where(field, '<', cutoff)));
+            const results = await Promise.allSettled(snap.docs.map((d) => deleteDoc(d.ref)));
+            for (const res of results) {
+                if (res.status === 'fulfilled') deleted++;
             }
-        }
+        };
 
-        // Clean responses
-        const resRef = getResponsesRef();
-        if (resRef) {
-            const q = query(resRef, where('timestamp', '<', cutoff));
-            const snap = await getDocs(q);
-            for (const d of snap.docs) {
-                await deleteDoc(d.ref);
-                deleted++;
-            }
-        }
+        await purgeQuery(getCommandsRef(), 'createdAt');
+        await purgeQuery(getResponsesRef(), 'timestamp');
 
         if (deleted > 0) {
             logger.info(`[RemoteRelay] Cleaned up ${deleted} old relay documents`);

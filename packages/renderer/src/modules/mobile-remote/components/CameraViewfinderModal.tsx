@@ -146,6 +146,17 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
     };
 
     useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                stopCamera();
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose, stopCamera]);
+
+    useEffect(() => {
         const onHidden = () => {
             if (document.visibilityState === 'hidden') {
                 stopCamera();

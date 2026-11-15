@@ -459,8 +459,11 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
 
     it('restart recovery: stop→start re-arms heartbeat and rescans the backlog', async () => {
         const backlog = [cmd({ id: 'backlog-1', text: 'queued earlier' })];
-        const scanPending = vi.fn(async () => backlog.splice(0));
+        // A real pending query is non-destructive: a command stays pending until completed.
+        let completed: string[] = [];
+        const scanPending = vi.fn(async () => backlog.filter(c => !completed.includes(c.id)));
         const { core, relay, adapter } = build({ scanPending });
+        completed = relay.completions;
 
         core.start();
         await core.stop();
@@ -543,5 +546,43 @@ describe('StudioExecutorCore lifecycle (G1 sweep)', () => {
         const { core } = build();
         expect(core.instanceId).toMatch(/^[A-Za-z0-9_-]{16,128}$/);
         expect(new StudioExecutorCore(build().deps).instanceId).not.toBe(core.instanceId);
+    });
+
+    it('releases late presence if pushDesktopState resolves after stop()', async () => {
+        let finishPush: (() => void) | undefined;
+        const { core, relay } = build();
+        relay.relay.pushDesktopState = vi.fn(() => new Promise<void>((res) => { finishPush = res; }));
+
+        core.start();
+        await core.stop();
+        expect(relay.released).toHaveLength(0);
+
+        finishPush?.();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(relay.released).toEqual([core.instanceId]);
+    });
+
+    it('stops backlog sweeps and ignores late commands/dispatch tasks once stopped', async () => {
+        const stopRef: { current?: () => Promise<void> } = {};
+        const { core, relay, adapter, deps } = build({
+            scanPending: vi.fn(async () => [
+                cmd({ id: 'first', text: 'one' }),
+                cmd({ id: 'second', text: 'two' }),
+            ]),
+        });
+        vi.mocked(adapter.executeCommand).mockImplementation(async () => {
+            await stopRef.current?.();
+            return { relays: [{ text: 'done' }], queuedBehindActiveRun: false };
+        });
+        stopRef.current = () => core.stop();
+
+        core.start();
+        await vi.waitFor(() => expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1));
+
+        expect(deps.lease.claim).not.toHaveBeenCalledWith('second', expect.anything());
+        await relay.emitCommand(cmd({ id: 'late-cmd', text: 'late' }));
+        expect(vi.mocked(adapter.executeCommand)).toHaveBeenCalledTimes(1);
     });
 });

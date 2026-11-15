@@ -69,7 +69,8 @@ export class StudioExecutorCore {
     }
 
     private async publishPresence(): Promise<void> {
-        if (!this.running || !this.studioInstanceId) return;
+        const instanceId = this.studioInstanceId;
+        if (!this.running || !instanceId) return;
         if (!this.presenceGate.tryBegin((this.deps.now ?? Date.now)())) return;
         try {
             const snapshot = this.deps.adapter.presenceSnapshot();
@@ -87,12 +88,18 @@ export class StudioExecutorCore {
                 online: true,
                 sleepMode: snapshot.sleepMode,
                 role: 'studio',
-                studioInstanceId: this.studioInstanceId,
+                studioInstanceId: instanceId,
                 listenerReady: true,
                 capabilities: snapshot.capabilities,
             });
-            this.hasPublishedPresence = true;
             this.presenceGate.succeed();
+            if (!this.running) {
+                void this.deps.relay.releaseStudioPresence(instanceId).catch((err: unknown) => {
+                    logger.warn('[ExecutorCore] Failed to release late presence after stop:', err);
+                });
+                return;
+            }
+            this.hasPublishedPresence = true;
         } catch (error: unknown) {
             this.presenceGate.fail((this.deps.now ?? Date.now)());
             logger.warn('[ExecutorCore] Presence publish failed:', error);
@@ -150,7 +157,7 @@ export class StudioExecutorCore {
             timer = setTimeout(() => {
                 if (timer !== null) this.watchdogTimers.delete(timer);
                 timer = null;
-                if (cancelled || !this.processing) return;
+                if (cancelled || !this.processing || !this.running) return;
 
                 const agentBusy = this.deps.adapter.isAgentBusy();
                 logger.info(
@@ -323,7 +330,7 @@ export class StudioExecutorCore {
         try {
             const pending = await this.deps.scanPending();
             for (const data of pending) {
-                if (this.processing) break;
+                if (!this.running || this.processing) break;
                 if (!this.deps.shouldProcess(data)) continue;
                 await this.processSingleCommand(data);
             }
@@ -335,6 +342,7 @@ export class StudioExecutorCore {
     private wireCommandListener(): void {
         this.unsubscribers.push(
             this.deps.relay.onCommand(async (command) => {
+                if (!this.running) return;
                 if (!command.text) {
                     logger.info(`[ExecutorCore] ⏭️ Ignoring empty command ${command.id}`);
                     return;
@@ -353,6 +361,7 @@ export class StudioExecutorCore {
 
         this.unsubscribers.push(
             this.deps.relay.onDispatchTask(async (task) => {
+                if (!this.running) return;
                 logger.info(`[ExecutorCore] 📱→🖥️ Processing Dispatch Task: [${task.type}] ${task.id}`);
 
                 // Atomic claim — first listener to win processes; others bail.
