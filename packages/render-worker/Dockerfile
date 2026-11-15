@@ -24,10 +24,12 @@ COPY packages/render-worker/src packages/render-worker/src
 COPY packages/shared/tsconfig.json packages/shared/
 COPY packages/shared/tsconfig.runtime.json packages/shared/
 COPY packages/video-compiler/tsconfig.json packages/video-compiler/
+COPY packages/video-compiler/tsconfig.runtime.json packages/video-compiler/
 COPY packages/render-worker/tsconfig.json packages/render-worker/
+COPY packages/render-worker/tsconfig.runtime.json packages/render-worker/
 RUN npm run build:runtime --workspace=@indii/shared && \
-    npm run build --workspace=@indii/video-compiler && \
-    npm run build --workspace=@indii/render-worker
+    npm run build:runtime --workspace=@indii/video-compiler && \
+    npm run build:runtime --workspace=@indii/render-worker
 
 FROM node:24-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \

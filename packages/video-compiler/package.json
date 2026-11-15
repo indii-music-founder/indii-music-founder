@@ -20,7 +20,8 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "build:runtime": "tsc -p tsconfig.runtime.json"
   },
   "dependencies": {
     "@indii/shared": "*"
