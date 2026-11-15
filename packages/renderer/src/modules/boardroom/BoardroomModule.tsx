@@ -9,12 +9,11 @@ import { BoardroomConversationPanel } from './components/BoardroomConversationPa
 import { useMobile } from '@/hooks/useMobile';
 import { BoardroomJourney } from './components/BoardroomJourney';
 
-import { ArrowLeft, Users, Layers, Bot, Network, Globe, LayoutGrid, Radio } from 'lucide-react';
+import { ArrowLeft, Users, Layers, Network, Globe, LayoutGrid, Radio } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
 import { BoardroomWorkspacePane } from './components/BoardroomWorkspacePane';
-import { getColorForModule } from '@/core/theme/moduleColors';
 import { cn } from '@/lib/utils';
 
 import { useToast } from '@/core/context/ToastContext';
@@ -261,34 +260,6 @@ export function BoardroomModule() {
                                 <Radio size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed' ? "text-white" : "text-cyan-400"} />
                                 <span className="hidden lg:inline">Feed</span>
                             </button>
-                        </div>
-
-                        <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
-                            <button
-                                onClick={() => setIsSwarmFeedOpen(true)}
-                                data-testid="boardroom-swarm-feed-btn"
-                                className="flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider text-indigo-300 hover:text-white hover:bg-indigo-500/15"
-                                title="View Swarm Collaboration Feed"
-                                aria-label="Swarm Feed"
-                            >
-                                <Bot size={11} className="text-indigo-400" />
-                                <span className="hidden sm:inline">Swarm Feed</span>
-                            </button>
-                            <button
-                                onClick={() => setIsTrackerOpen(true)}
-                                data-testid="boardroom-living-plans-btn"
-                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider ${getColorForModule('agent').text} hover:bg-white/8`}
-                                title="View Active Plans"
-                                aria-label="Living Plans"
-                            >
-                                <Layers size={11} />
-                                <span className="hidden sm:inline">Living Plans</span>
-                            </button>
-                        </div>
-
-                        <div className="hidden 2xl:flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0" title="Executive Swarm Status">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
-                            <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest">ONLINE</span>
                         </div>
                     </div>
                 </div>
