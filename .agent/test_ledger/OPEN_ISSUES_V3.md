@@ -6292,6 +6292,8 @@ outcome. Reproduce against current source before implementation or closure.
 - **Acceptance:** Unit tests verify `APIHealthService` reports `'unhealthy'` / `'degraded'` when Firestore/Functions probes reject and `LicensingService.getCatalogTracksForSync()` returns user-owned tracks from `proprietaryIngestionReleases`.
 
 ### ISSUE-1582: `EntryCommandSyncService` defects — `EntryCommandSyncService.saveCustomCommand` silently swallows Firestore sync errors while reporting `{ ok: true }`, `hydrateCustomCommands` permanently caches `hydratedKeys` even when Firestore queries fail (preventing retry), and `saveToTeamScope` overwrites `ownerId` with the editor's UID (causing `PERMISSION_DENIED` on team command updates)
+
+- **Account-lifetime repair (2026-11-14):** Account cleanup now resets the command hydration cache and invalidates in-flight read generations. `hydrateCustomCommands` verifies the original account, organization context, and generation before marking completion or merging results, so clearing local commands does not leave a stale already-hydrated marker and old reads cannot repopulate the cleared registry. Two pure cache bookkeeping tests plus seven existing structural sync/cleanup checks pass (9 total). Scoped lint and renderer typecheck pass. Jev `jev-1.14.0` advisory lifetime-isolation score: 0.88. Genuine logout/login hydration, cross-member editing, and offline retry remain unverified; status stays PARTIAL.
 - **Status:** 🟡 PARTIAL (2026-11-01; source repair awaiting genuine team and retry acceptance)
 - **Severity:** 🟠 HIGH
 - **Module:** Custom Slash Command Sync (`packages/renderer/src/services/commands/EntryCommandSyncService.ts`, `packages/firebase/firestore.rules`)

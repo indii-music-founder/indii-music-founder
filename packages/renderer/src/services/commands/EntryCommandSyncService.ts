@@ -1,3 +1,4 @@
+import { entryCommandHydrationCache } from './EntryCommandHydrationCache';
 import {
   collection,
   doc,
@@ -32,15 +33,16 @@ type PersistedEntryCommand = EntryCommandDefinition & {
 };
 
 class EntryCommandSyncService {
-  private hydratedKeys = new Set<string>();
 
   async hydrateCustomCommands(options: SyncOptions = {}): Promise<EntryCommandDefinition[]> {
     const user = auth.currentUser;
     if (!user?.uid) return getCustomEntryCommands();
 
-    const orgId = options.orgId || getCurrentOrganizationId();
+    const organizationAtStart = getCurrentOrganizationId();
+    const generation = entryCommandHydrationCache.begin();
+    const orgId = options.orgId || organizationAtStart;
     const cacheKey = `${user.uid}:${orgId || 'personal'}`;
-    if (this.hydratedKeys.has(cacheKey)) {
+    if (entryCommandHydrationCache.has(cacheKey)) {
       return getCustomEntryCommands();
     }
 
@@ -51,7 +53,11 @@ class EntryCommandSyncService {
       logger.warn('[EntryCommandSyncService] Cloud hydration failed; retry remains available.', error);
       return getCustomEntryCommands();
     }
-    this.hydratedKeys.add(cacheKey);
+    if (auth.currentUser?.uid !== user.uid
+      || getCurrentOrganizationId() !== organizationAtStart
+      || !entryCommandHydrationCache.complete(cacheKey, generation)) {
+      return getCustomEntryCommands();
+    }
     if (cloudCommands.length === 0) return getCustomEntryCommands();
 
     return mergeCustomEntryCommands(cloudCommands);
