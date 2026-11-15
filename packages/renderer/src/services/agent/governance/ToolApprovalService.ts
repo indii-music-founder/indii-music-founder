@@ -57,6 +57,8 @@ export interface PendingToolApproval {
     resolvedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
     /** Persisted before a non-computer implementation is called. */
     claimedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    /** Consent and dispatch claim are committed together before side effects start. */
+    approvedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
     denyReason?: string;
     /** Populated after execution; absence is ambiguous if the renderer stopped after dispatch. */
     result?: { success: boolean; error?: string };
@@ -272,40 +274,38 @@ class ToolApprovalService {
             if (isComputerApproval) {
                 if (candidate.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${candidate.status})`);
                 approval = candidate;
-            } else approval = await runTransaction(db, async transaction => {
-                const snap = await transaction.get(approvalDocRef);
-                requireApprovalOwner(uid);
-                if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
-                const current = snap.data() as PendingToolApproval;
-                if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
-                if (!matchesBinding(current) && !isRecoverableBugReport(current)) {
-                    throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+            } else {
+                try {
+                    approval = await runTransaction(db, async transaction => {
+                        const snap = await transaction.get(approvalDocRef);
+                        requireApprovalOwner(uid);
+                        if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
+                        const current = snap.data() as PendingToolApproval;
+                        if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
+                        if (!matchesBinding(current) && !isRecoverableBugReport(current)) {
+                            throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                        }
+                        // Atomically record consent and claim this one-shot dispatch.
+                        // Keeping both timestamps in the same conditional transaction
+                        // closes the approved-to-claimed race between separate writes.
+                        const now = serverTimestamp();
+                        transaction.update(approvalDocRef, {
+                            status: 'claimed',
+                            approvedAt: now,
+                            resolvedAt: now,
+                            claimedAt: now,
+                        });
+                        return current;
+                    });
+                } catch (error) {
+                    if (error instanceof ApprovalOwnerChangedError) throw error;
+                    const detail = error instanceof Error ? error.message : String(error);
+                    throw new Error(`Tool was not run because its approval could not be claimed atomically. ${detail}`);
                 }
-                transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
-                return current;
-            });
-        } catch (error: unknown) {
-            return { success: false, error: error instanceof Error ? error.message : String(error) };
-        }
-
-        if (!isComputerApproval) {
-            try {
-                // A durable claim separates approval from the point where a side effect may start.
-                requireApprovalOwner(uid);
-                await updateDoc(approvalDocRef, { status: 'claimed', claimedAt: serverTimestamp() });
-                requireApprovalOwner(uid);
-            } catch (error) {
-                if (error instanceof ApprovalOwnerChangedError) {
-                    this.boundCalls.delete(approvalId);
-                    return { success: false, error: error.message };
-                }
-                this.boundCalls.delete(approvalId);
-                logger.error(`[ToolApprovalService] Approval ${approvalId} dispatch claim could not be recorded; tool was not run`);
-                return {
-                    success: false,
-                    error: 'Tool was not run because its dispatch claim could not be saved. Review the approval state before requesting it again.',
-                };
             }
+        } catch (error: unknown) {
+            if (!isComputerApproval) this.boundCalls.delete(approvalId);
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
 
         let result: ToolFunctionResult;
