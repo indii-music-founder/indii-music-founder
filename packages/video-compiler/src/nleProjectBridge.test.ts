@@ -116,6 +116,17 @@ describe('NLE Project Model Bridge (Issue #413 Phase 4)', () => {
     expect(reconstructedA1?.volume).toBe(0.75);
   });
 
+  it('preserves the saved source trim and scales its timeline duration', () => {
+    const ast = projectToTimelineAST({
+      ...sampleProject,
+      clips: [{ ...sampleProject.clips[0], sourceInUs: 500_001, sourceOutUs: 2_500_001, playbackRate: 2 }],
+    });
+    const clip = ast.tracks[0].clips[0];
+    expect(clip.sourceRange.start).toEqual({ pts: 500_001n, timescale: 1_000_000 });
+    expect(clip.sourceRange.duration.pts).toBe(2_000_000n);
+    expect(clip.timelineRange.duration.pts).toBe(60_000n);
+  });
+
   it('correctly handles fractional frame rates such as 23.976 fps without drift', () => {
     const ntscProject: IndiiVideoProject = {
       ...sampleProject,

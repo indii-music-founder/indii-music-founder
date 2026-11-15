@@ -1,3 +1,4 @@
+import { clipDurationSeconds } from './compiler.js';
 import type {
   IndiiVideoProject,
   IndiiVideoClip,
@@ -28,7 +29,7 @@ export function projectToTimelineAST(
     const convertedClips: (VideoClip | AudioClip)[] = trackClips.map((clip) => {
       const startPts = BigInt(Math.round((clip.startFrame * timebase) / fps));
       const durationPts = BigInt(
-        Math.max(1, Math.round((clip.durationInFrames * timebase) / fps))
+        Math.max(1, Math.round(clipDurationSeconds(clip, fps) * timebase))
       );
 
       const timelineRange = {
@@ -36,12 +37,16 @@ export function projectToTimelineAST(
         duration: { pts: durationPts, timescale: timebase },
       };
 
-      const sourceRange = {
-        start: { pts: 0n, timescale: timebase },
-        duration: { pts: durationPts, timescale: timebase },
-      };
+      const speed = Number.isFinite(clip.playbackRate)
+        ? Math.min(4, Math.max(0.25, clip.playbackRate ?? 1))
+        : 1;
 
-      const speed = clip.playbackRate && clip.playbackRate > 0 ? clip.playbackRate : 1.0;
+      const sourceRange = {
+        start: { pts: BigInt(clip.sourceInUs ?? 0), timescale: 1_000_000 },
+        duration: clip.sourceOutUs !== undefined
+          ? { pts: BigInt(clip.sourceOutUs - (clip.sourceInUs ?? 0)), timescale: 1_000_000 }
+          : { pts: BigInt(Math.round(Number(durationPts) * speed)), timescale: timebase },
+      };
 
       if (isAudio || clip.type === 'audio') {
         const audioClip: AudioClip = {

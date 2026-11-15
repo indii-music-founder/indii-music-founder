@@ -82,7 +82,7 @@ describe('nleFFmpegCompiler - Headless FFmpeg Filtergraph Generator', () => {
     expect(cmd).toContain('color=c=black:s=1920x1080');
     expect(cmd).toContain('trim=start=0.5:duration=2');
     expect(cmd).toContain('scale=1920:-1');
-    expect(cmd).toContain('overlay=enable=\'between(t,0,2)\':x=0:y=0');
+    expect(cmd).toContain('overlay=eof_action=pass:enable=\'between(t,0,2)\':x=0:y=0');
     expect(cmd).toContain('atrim=start=0.5:duration=2');
     expect(cmd).toContain('volume=0.8');
     expect(cmd).toContain('amix=inputs=1:normalize=0');

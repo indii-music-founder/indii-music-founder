@@ -5,6 +5,7 @@
  * for headless background render workers or native Electron environments.
  */
 
+import { ptsToSeconds } from './nleTimelineMath.js';
 import type { TimelineAST, VideoClip, AudioClip } from '@indii/shared';
 
 export interface FFmpegCompilerOptions {
@@ -70,9 +71,10 @@ export function compileFfmpegCommand(
       const inIdx = inputIndices.get(clip.assetId);
       if (inIdx === undefined) continue;
 
-      const trimStart = Number(clip.sourceRange.start.pts) / ast.timebase;
-      const trimDur = Number(clip.timelineRange.duration.pts) / ast.timebase;
-      const targetStart = Number(clip.timelineRange.start.pts) / ast.timebase;
+      const trimStart = ptsToSeconds(clip.sourceRange.start);
+      const trimDur = ptsToSeconds(clip.sourceRange.duration);
+      const targetStart = ptsToSeconds(clip.timelineRange.start);
+      const targetEnd = targetStart + ptsToSeconds(clip.timelineRange.duration);
 
       const clipLabel = `v_${clip.id}`;
       const scaledLabel = `scaled_${clip.id}`;
@@ -80,13 +82,13 @@ export function compileFfmpegCommand(
 
       // Trim -> Scale -> Position Overlay
       filterChains.push(
-        `[${inIdx}:v]trim=start=${trimStart}:duration=${trimDur},setpts=PTS-STARTPTS[${clipLabel}]`
+        `[${inIdx}:v]trim=start=${trimStart}:duration=${trimDur},setpts=(PTS-STARTPTS)/${clip.speed}+${targetStart}/TB[${clipLabel}]`
       );
       filterChains.push(
         `[${clipLabel}]scale=${ast.dimensions.width}:-1[${scaledLabel}]`
       );
       filterChains.push(
-        `[${currentVideoOutput}][${scaledLabel}]overlay=enable='between(t,${targetStart},${targetStart + trimDur})':x=0:y=0[${nextOutput}]`
+        `[${currentVideoOutput}][${scaledLabel}]overlay=eof_action=pass:enable='between(t,${targetStart},${targetEnd})':x=0:y=0[${nextOutput}]`
       );
 
       currentVideoOutput = nextOutput;
@@ -102,13 +104,13 @@ export function compileFfmpegCommand(
       const inIdx = inputIndices.get(clip.assetId);
       if (inIdx === undefined) continue;
 
-      const trimStart = Number(clip.sourceRange.start.pts) / ast.timebase;
-      const trimDur = Number(clip.timelineRange.duration.pts) / ast.timebase;
-      const delayMs = Math.round((Number(clip.timelineRange.start.pts) / ast.timebase) * 1000);
+      const trimStart = ptsToSeconds(clip.sourceRange.start);
+      const trimDur = ptsToSeconds(clip.sourceRange.duration);
+      const delaySamples = Math.round(ptsToSeconds(clip.timelineRange.start) * 48000);
       const aLabel = `a_${clip.id}`;
 
       filterChains.push(
-        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,adelay=${delayMs}|${delayMs},aresample=48000,volume=${clip.gain}[${aLabel}]`
+        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,atempo=${Math.sqrt(clip.speed)},atempo=${Math.sqrt(clip.speed)},aresample=48000,adelay=${delaySamples}S:all=1,volume=${clip.gain}[${aLabel}]`
       );
       audioLabels.push(`[${aLabel}]`);
     }

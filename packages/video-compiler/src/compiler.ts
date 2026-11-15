@@ -177,7 +177,7 @@ interface CompiledTrack {
     isHidden: boolean;
 }
 
-const clipDurationSeconds = (clip: IndiiVideoClip, fps: number): number => {
+export const clipDurationSeconds = (clip: IndiiVideoClip, fps: number): number => {
     const sourceInUs = clip.sourceInUs;
     const sourceOutUs = clip.sourceOutUs;
     const hasSourceIn = sourceInUs !== undefined;
