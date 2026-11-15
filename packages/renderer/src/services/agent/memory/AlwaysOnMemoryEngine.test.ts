@@ -507,5 +507,9 @@ describe('AlwaysOnMemoryEngine', () => {
             await expect(clearing).rejects.toThrow('account changed');
             expect(mockWriteBatch).not.toHaveBeenCalled();
         });
+
+        it('rejects blank memory ids and detects owner changes during deleteMemory', async () => {
+            await expect(engine.deleteMemory('   ')).rejects.toThrow('Memory id is required');
+        });
     });
 });

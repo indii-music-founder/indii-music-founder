@@ -89,4 +89,18 @@ describe('MemoryBankService', () => {
         expect(scoped.scopeMessage).toContain('were not checked');
         search.mockRestore();
     });
+
+    it('returns an explicit receipt when indexing a graph execution succeeds or fails', async () => {
+        const add = vi.spyOn(memoryBankService, 'addMemory')
+            .mockResolvedValueOnce([{ id: 'mem-graph-1', memory: 'indexed report' }])
+            .mockRejectedValueOnce(new Error('proxy offline'));
+
+        const ok = await memoryBankService.indexGraphExecution('user-1', 'exec-1', 'q', 'r');
+        expect(ok).toEqual({ indexed: true });
+
+        const failed = await memoryBankService.indexGraphExecution('user-1', 'exec-2', 'q', 'r');
+        expect(failed).toEqual({ indexed: false, reason: 'proxy offline' });
+
+        add.mockRestore();
+    });
 });

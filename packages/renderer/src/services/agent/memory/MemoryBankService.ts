@@ -115,17 +115,27 @@ class MemoryBankService {
     /**
      * Indexes a completed graph execution as a long-term episodic memory.
      */
-    async indexGraphExecution(userId: string, executionId: string, query: string, report: string): Promise<void> {
+    async indexGraphExecution(
+        userId: string,
+        executionId: string,
+        query: string,
+        report: string
+    ): Promise<{ indexed: boolean; reason?: string }> {
         try {
             const content = `[Graph Execution ${executionId}]\nQuery: ${query}\nFinal Report: ${report}`;
             const results = await this.addMemory(userId, content);
             if (results && results.length > 0) {
                 logger.info(`[MemoryBank] Indexed graph execution ${executionId}`);
-            } else {
-                logger.warn(`[MemoryBank] Failed to index graph execution ${executionId} (addMemory returned no results)`);
+                return { indexed: true };
             }
+            logger.warn(`[MemoryBank] Failed to index graph execution ${executionId} (addMemory returned no results)`);
+            return { indexed: false, reason: 'addMemory returned no results' };
         } catch (error) {
             logger.error(`[MemoryBank] Failed to index graph ${executionId}:`, error);
+            return {
+                indexed: false,
+                reason: error instanceof Error ? error.message : 'Unable to index graph execution',
+            };
         }
     }
 }
