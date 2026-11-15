@@ -76,6 +76,10 @@ vi.mock('../OrganizationService', () => ({
     }
 }));
 
+vi.mock('@/utils/e2eMode', () => ({
+    isFirebaseE2EMockEnabled: vi.fn(() => false),
+}));
+
 vi.mock('./SessionAttachmentStorage', () => ({
     storeSessionAttachments: firestoreMocks.storeAttachments,
     restoreSessionAttachments: firestoreMocks.restoreAttachments,
@@ -84,6 +88,7 @@ vi.mock('./SessionAttachmentStorage', () => ({
 
 // 4. Import System Under Test
 import { getDocs, getDocsFromServer, writeBatch } from 'firebase/firestore';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { sessionService } from './SessionService';
 import { ConversationSession } from '@/core/store/slices/agent';
 
@@ -93,6 +98,7 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(isFirebaseE2EMockEnabled).mockReturnValue(false);
         vi.mocked(getDocs).mockResolvedValue({ empty: true, docs: [] } as Awaited<ReturnType<typeof getDocs>>);
         vi.mocked(getDocsFromServer).mockResolvedValue({ empty: true, docs: [] } as unknown as Awaited<ReturnType<typeof getDocsFromServer>>);
         firestoreMocks.transactionUpdate.mockReset();
@@ -100,7 +106,7 @@ describe('SessionService Persistence (Dual Write)', () => {
         firestoreMocks.transactionGet.mockImplementation(async (ref: { path: string }) => ref.path.includes('/messages/')
             ? { exists: () => false }
             : { exists: () => true, data: () => ({ messageStorage: 'array', messages: [{ id: 'legacy', role: 'user', text: 'Earlier', timestamp: 1 }] }) });
-        firestoreMocks.runTransaction.mockImplementation(async (_db: unknown, callback: (transaction: unknown) => Promise<void>) => callback({
+        firestoreMocks.runTransaction.mockImplementation(async (_db: unknown, callback: (transaction: unknown) => Promise<unknown>) => callback({
             get: firestoreMocks.transactionGet,
             set: firestoreMocks.transactionSet,
             delete: firestoreMocks.transactionDelete,
@@ -124,6 +130,7 @@ describe('SessionService Persistence (Dual Write)', () => {
     });
 
     it('createSession should save to Firestore AND Electron', async () => {
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => false });
         const session: ConversationSession = {
             id: 'session-123',
             title: 'Test Chat',
@@ -136,13 +143,63 @@ describe('SessionService Persistence (Dual Write)', () => {
         await sessionService.createSession(session);
 
         // Verify Firestore (Cloud)
-        expect(mockSet).toHaveBeenCalledWith('session-123', expect.objectContaining({
+        expect(firestoreMocks.transactionSet).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({
             userId: 'test-user-id',
             orgId: 'test-org-id'
         }));
+        expect(mockSet).not.toHaveBeenCalled();
 
         // Verify Electron (Local)
         expect(mockElectronSave).toHaveBeenCalledWith('session-123', session);
+    });
+
+    it('does not overwrite a session when its create acknowledgement is retried', async () => {
+        firestoreMocks.transactionGet.mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({
+                userId: 'test-user-id',
+                orgId: 'test-org-id',
+                messageStorage: 'subcollection',
+                messages: [],
+                title: 'Newer title',
+            }),
+        });
+        const staleSession: ConversationSession = {
+            id: 'session-123', title: 'Original title', createdAt: 1000, updatedAt: 1000,
+            messages: [], participants: ['indii'],
+        };
+
+        await expect(sessionService.createSession(staleSession)).resolves.toBe('session-123');
+
+        expect(firestoreMocks.transactionSet).not.toHaveBeenCalled();
+        expect(mockElectronSave).not.toHaveBeenCalled();
+    });
+
+    it('rejects a create retry when the existing session belongs to another owner', async () => {
+        firestoreMocks.transactionGet.mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({ userId: 'another-user', orgId: 'test-org-id' }),
+        });
+
+        await expect(sessionService.createSession({
+            id: 'session-123', title: 'Test Chat', createdAt: 1000, updatedAt: 1000,
+            messages: [], participants: ['indii'],
+        })).rejects.toThrow('already owned');
+
+        expect(firestoreMocks.transactionSet).not.toHaveBeenCalled();
+        expect(mockElectronSave).not.toHaveBeenCalled();
+    });
+
+    it('keeps E2E mock mode on the in-memory FirestoreService path', async () => {
+        vi.mocked(isFirebaseE2EMockEnabled).mockReturnValue(true);
+
+        await sessionService.createSession({
+            id: 'mock-session', title: 'Test Chat', createdAt: 1000, updatedAt: 1000,
+            messages: [], participants: ['indii'],
+        });
+
+        expect(mockSet).toHaveBeenCalledWith('mock-session', expect.objectContaining({ userId: 'test-user-id' }));
+        expect(firestoreMocks.runTransaction).not.toHaveBeenCalled();
     });
 
     it('updateSession should update Firestore AND Electron', async () => {
@@ -177,6 +234,7 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     it('retries a local save when desktop IPC reports failure', async () => {
         vi.useFakeTimers();
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => false });
         mockElectronSave.mockResolvedValueOnce({ success: false, error: 'disk busy' });
         await sessionService.createSession({
             id: 'session-123', title: 'Test Chat', createdAt: 1000, updatedAt: 1000,
@@ -189,6 +247,7 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     it('waits for an in-flight local save before deleting its cache', async () => {
         let finish!: (result: { success: boolean }) => void;
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => false });
         mockElectronSave.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
         await sessionService.createSession({
             id: 'pending-local-write', title: 'Test', createdAt: 1000, updatedAt: 1000,
@@ -204,6 +263,7 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     it('cancels a scheduled local save retry after deletion starts', async () => {
         vi.useFakeTimers();
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => false });
         mockElectronSave.mockResolvedValueOnce({ success: false, error: 'disk busy' });
         await sessionService.createSession({
             id: 'pending-local-retry', title: 'Test', createdAt: 1000, updatedAt: 1000,
@@ -287,6 +347,7 @@ describe('SessionService Persistence (Dual Write)', () => {
     });
 
     it('should handle missing electronAPI gracefully', async () => {
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => false });
         // Remove electronAPI from window
         vi.stubGlobal('window', {});
 
@@ -302,7 +363,7 @@ describe('SessionService Persistence (Dual Write)', () => {
         // Should not throw error
         await expect(sessionService.createSession(session)).resolves.not.toThrow();
 
-        expect(mockSet).toHaveBeenCalled();
+        expect(firestoreMocks.transactionSet).toHaveBeenCalled();
         expect(mockElectronSave).not.toHaveBeenCalled();
     });
 
