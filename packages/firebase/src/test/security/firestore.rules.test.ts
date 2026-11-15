@@ -636,6 +636,52 @@ describe('Firestore Security Rules', () => {
             await assertSucceeds(getDoc(ref));
         });
 
+        it('allows the graph runner transaction sequence from lease claim through finalization and release', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'graphExecutions', 'execution-1');
+            await assertSucceeds(setDoc(ref, execution));
+
+            await assertSucceeds(runTransaction(db, async tx => {
+                await tx.get(ref);
+                tx.update(ref, {
+                    'metadata.lease': { holderId: 'runner-1', acquiredAt: Date.now(), expiresAt: Date.now() + 20_000 },
+                    updatedAt: serverTimestamp(),
+                });
+            }));
+            await assertSucceeds(runTransaction(db, async tx => {
+                await tx.get(ref);
+                tx.update(ref, {
+                    'nodeStates.prepare.status': 'EXECUTING_GENERATION',
+                    'nodeStates.prepare.startedAt': Date.now(),
+                    status: 'EXECUTING',
+                });
+            }));
+            await assertSucceeds(runTransaction(db, async tx => {
+                await tx.get(ref);
+                tx.update(ref, {
+                    'nodeStates.prepare.status': 'STEP_COMPLETE',
+                    'nodeStates.prepare.completedAt': Date.now(),
+                    'nodeStates.prepare.output': 'Prepared media brief',
+                    updatedAt: serverTimestamp(),
+                });
+            }));
+            await assertSucceeds(runTransaction(db, async tx => {
+                await tx.get(ref);
+                tx.update(ref, { status: 'COMPLETED', updatedAt: serverTimestamp() });
+            }));
+            expect((await getDoc(ref)).data()?.metadata?.lease?.holderId).toBe('runner-1');
+
+            await assertSucceeds(runTransaction(db, async tx => {
+                await tx.get(ref);
+                tx.update(ref, { 'metadata.lease': null, updatedAt: serverTimestamp() });
+            }));
+            const finalized = (await getDoc(ref)).data();
+            expect(finalized?.status).toBe('COMPLETED');
+            expect(finalized?.nodeStates.prepare).toMatchObject({ status: 'STEP_COMPLETE', output: 'Prepared media brief' });
+            expect(finalized?.metadata?.lease).toBeNull();
+        });
+
         it('rejects cross-owner access, identity rewrites, and oversized node maps', async () => {
             if (requireEmulator()) return;
             const alice = verifiedCtx(ALICE_UID).firestore();
