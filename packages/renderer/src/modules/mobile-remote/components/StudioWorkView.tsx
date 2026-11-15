@@ -11,7 +11,13 @@ const AgentChat = lazy(() => import('./AgentChat'));
 const GenerationMonitor = lazy(() => import('./GenerationMonitor'));
 const CommandPad = lazy(() => import('./CommandPad'));
 
+type StudioSubTab = 'outputs' | 'generate' | 'actions' | 'chat';
+
 interface StudioWorkViewProps {
+    initialSubTab?: StudioSubTab;
+    activeDesktopModule?: string | null;
+    onOpenChatCommand?: (commandId?: string) => void;
+    onNavigateRemoteTab?: (tab: 'home' | 'road' | 'stream' | 'encounters' | 'settings') => void;
     pendingChatCommandId?: string | null;
     onClearPendingCommand?: () => void;
     isPaired: boolean;
@@ -22,6 +28,10 @@ interface StudioWorkViewProps {
 }
 
 export default function StudioWorkView({
+    initialSubTab = 'outputs',
+    activeDesktopModule,
+    onOpenChatCommand,
+    onNavigateRemoteTab,
     isPaired,
     onSendCommand,
     pendingChatAttachment,
@@ -30,7 +40,9 @@ export default function StudioWorkView({
     onClearPendingAttachment,
 }: StudioWorkViewProps) {
     const toast = useToast();
-    const [subTab, setSubTab] = useState<'outputs' | 'generate' | 'actions' | 'chat'>('outputs');
+    const [subTab, setSubTab] = useState<StudioSubTab>(
+        pendingChatAttachment || pendingChatCommandId ? 'chat' : initialSubTab
+    );
     const [relayCommands, setRelayCommands] = useState<RemoteCommand[]>([]);
     const [relayResponses, setRelayResponses] = useState<RemoteResponse[]>([]);
     const [selectedImage, setSelectedImage] = useState<{ url: string; prompt: string } | null>(null);
@@ -40,8 +52,10 @@ export default function StudioWorkView({
     useEffect(() => {
         if (pendingChatAttachment || pendingChatCommandId) {
             setSubTab('chat');
+            return;
         }
-    }, [pendingChatAttachment, pendingChatCommandId]);
+        setSubTab(initialSubTab);
+    }, [initialSubTab, pendingChatAttachment, pendingChatCommandId]);
 
     useEffect(() => {
         const unsubCmds = remoteRelayService.onAllCommands((cmds) => {
@@ -191,7 +205,16 @@ export default function StudioWorkView({
             ) : subTab === 'actions' ? (
                 <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-28 custom-scrollbar">
                     <Suspense fallback={<Loader2 className="w-6 h-6 animate-spin text-[#00ff66]" />}>
-                        <CommandPad isPaired={isPaired} onSendCommand={onSendCommand || (() => {})} />
+                        <CommandPad
+                            isPaired={isPaired}
+                            onSendCommand={onSendCommand || (() => {})}
+                            activeDesktopModule={activeDesktopModule}
+                            onOpenChat={(commandId) => {
+                                onOpenChatCommand?.(commandId);
+                                setSubTab('chat');
+                            }}
+                            onNavigateRemoteTab={onNavigateRemoteTab}
+                        />
                     </Suspense>
                 </div>
             ) : (

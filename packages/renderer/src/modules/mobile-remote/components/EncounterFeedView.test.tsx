@@ -111,4 +111,34 @@ describe('EncounterFeedView Component', () => {
         expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
         expect(screen.getByText(/capture saved/)).toBeDefined();
     });
+
+    it('filters Field Feed items cleanly across Contacts, Media, and Memos', () => {
+        setEncounters([
+            baseEncounter,
+            {
+                id: 'enc_media_only',
+                userId: 'u1',
+                status: 'completed',
+                title: 'Stage Lighting Photo',
+                assets: [{ id: 'p2', type: 'photo', downloadUrl: 'https://cdn.example.com/stage.jpg', mimeType: 'image/jpeg', createdAt: '2026-09-17T12:05:00Z' }],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            },
+        ]);
+        render(<EncounterFeedView />);
+
+        expect(screen.getByText('Marcus Vance')).toBeDefined();
+        expect(screen.getByText('Stage Lighting Photo')).toBeDefined();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Contacts' }));
+        expect(screen.getByText('Marcus Vance')).toBeDefined();
+        expect(screen.queryByText('Stage Lighting Photo')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Memos' }));
+        expect(screen.getByText('Marcus Vance')).toBeDefined();
+        expect(screen.queryByText('Stage Lighting Photo')).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: 'All' }));
+        expect(screen.getByText('Stage Lighting Photo')).toBeDefined();
+    });
 });

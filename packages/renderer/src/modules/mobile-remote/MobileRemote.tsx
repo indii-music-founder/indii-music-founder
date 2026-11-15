@@ -31,7 +31,7 @@ import { logger } from '@/utils/logger';
 import {
   Navigation,
   LucideIcon, WifiOff, AlertCircle, RefreshCw,
-  Settings, Sparkles, Mic, Users, Music2, Pause, Play
+  Settings, Sparkles, Mic, Layers, Music2, Pause, Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,7 @@ const TABS: Tab[] = [
   { id: 'home', icon: Mic, label: 'Capture' },
   { id: 'studio', icon: Sparkles, label: 'Studio' },
   { id: 'stream', icon: Music2, label: 'Vault' },
-  { id: 'encounters', icon: Users, label: 'Contacts' },
+  { id: 'encounters', icon: Layers, label: 'Feed' },
   { id: 'road', icon: Navigation, label: 'Road' },
   { id: 'settings', icon: Settings, label: 'More' },
 ];
@@ -596,6 +596,12 @@ export default function MobileRemote() {
             <StudioWorkView
               isPaired={isPaired}
               onSendCommand={sendCommand}
+              initialSubTab={activeTab === 'boardroom' ? 'chat' : 'outputs'}
+              activeDesktopModule={desktopState?.currentModule}
+              onOpenChatCommand={(commandId) => {
+                if (commandId) setPendingChatCommandId(commandId);
+              }}
+              onNavigateRemoteTab={(tab) => setActiveTab(tab)}
               pendingChatCommandId={pendingChatCommandId}
               onClearPendingCommand={() => setPendingChatCommandId(null)}
               pendingChatAttachment={pendingChatAttachment}

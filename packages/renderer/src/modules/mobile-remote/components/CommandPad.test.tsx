@@ -1,11 +1,12 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CommandPad from './CommandPad';
 
-const { mockSetModule, mockSendCommand } = vi.hoisted(() => ({
+const { mockSetModule, mockSendCommand, mockRelaySendCommand } = vi.hoisted(() => ({
     mockSetModule: vi.fn(),
     mockSendCommand: vi.fn(),
+    mockRelaySendCommand: vi.fn(async () => 'cmd-hub-1'),
 }));
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -28,7 +29,7 @@ vi.mock('zustand/react/shallow', () => ({
 
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     remoteRelayService: {
-        sendCommand: vi.fn(),
+        sendCommand: mockRelaySendCommand,
     },
 }));
 
@@ -83,5 +84,25 @@ describe('CommandPad', () => {
         fireEvent.click(roadButton);
         expect(mockSendCommand).not.toHaveBeenCalled();
         expect(screen.queryByText('CPU 12%')).not.toBeInTheDocument();
+    });
+
+    it('dispatches a Hub Control Centre card via relay and opens Boardroom Agent Chat', async () => {
+        const onOpenChat = vi.fn();
+        render(<CommandPad onSendCommand={mockSendCommand} isPaired={true} onOpenChat={onOpenChat} activeDesktopModule="music" />);
+
+        const audioButton = screen.getByRole('button', { name: /audio/i });
+        expect(audioButton).toHaveAttribute('aria-pressed', 'true');
+
+        fireEvent.click(screen.getByRole('button', { name: /next release/i }));
+
+        await waitFor(() => {
+            expect(mockRelaySendCommand).toHaveBeenCalledWith(
+                expect.stringContaining('Auditing pre-release readiness checks'),
+                undefined,
+                { conversationMode: 'boardroom', source: 'mobile-remote' },
+                'studio'
+            );
+            expect(onOpenChat).toHaveBeenCalledWith('cmd-hub-1');
+        });
     });
 });

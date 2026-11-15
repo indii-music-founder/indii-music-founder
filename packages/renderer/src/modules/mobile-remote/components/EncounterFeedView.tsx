@@ -13,9 +13,19 @@ import { auth } from '@/services/firebase';
 import { StorageService } from '@/services/StorageService';
 import ArtistShareCardModal from './ArtistShareCardModal';
 
+type FeedFilter = 'all' | 'contacts' | 'media' | 'memos';
+
+const FEED_FILTERS: ReadonlyArray<{ id: FeedFilter; label: string }> = [
+    { id: 'all', label: 'All' },
+    { id: 'contacts', label: 'Contacts' },
+    { id: 'media', label: 'Media' },
+    { id: 'memos', label: 'Memos' },
+];
+
 export default function EncounterFeedView({ isPaired = false }: { isPaired?: boolean }) {
     const [openingId, setOpeningId] = useState<string | null>(null);
     const [encounters, setEncounters] = useState<FieldEncounter[]>([]);
+    const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -156,31 +166,67 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
         }
     };
 
+    const filteredEncounters = encounters.filter((enc) => {
+        if (activeFilter === 'contacts') return Boolean(enc.extractedContact?.name || enc.contactId);
+        if (activeFilter === 'media') return enc.assets.some((a) => a.type === 'photo' || a.type === 'video' || a.type === 'document');
+        if (activeFilter === 'memos') return Boolean(enc.audioTranscript || enc.assets.some((a) => a.type === 'audio'));
+        return true;
+    });
+
     const contactHeader = <>
         <div className="flex items-center justify-between px-1">
-            <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Recent Encounters</span>
+            <span className="text-xs uppercase tracking-widest font-mono text-stone-400">Field Feed</span>
             <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono">Live Synced</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-            <button type="button" disabled={!canShare} onClick={() => setShareOpen(true)} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-200 disabled:opacity-40">
+            <button type="button" disabled={!canShare} onClick={() => setShareOpen(true)} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs font-bold text-emerald-200 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]">
                 <QrCode size={16} /> Share My Card
             </button>
-            <button type="button" disabled={isScanningCard} onClick={() => cardInputRef.current?.click()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white disabled:opacity-40">
+            <button type="button" disabled={isScanningCard} onClick={() => cardInputRef.current?.click()} className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-xs font-bold text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]">
                 <Camera size={16} /> {isScanningCard ? 'Scanning…' : 'Scan Card'}
             </button>
             <input ref={cardInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" aria-label="Business card photo" onChange={event => void scanCard(event.target.files?.[0])} />
         </div>
+        {!canShare && (
+            <p className="text-[11px] text-stone-400 px-1">Set your display name in Profile to share your card.</p>
+        )}
+        <div className="grid grid-cols-4 gap-1 bg-[#181411] p-1 rounded-2xl border border-white/[0.08]" role="group" aria-label="Filter feed captures">
+            {FEED_FILTERS.map((filter) => {
+                const isSelected = activeFilter === filter.id;
+                return (
+                    <button
+                        key={filter.id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => { triggerHaptic(10); setActiveFilter(filter.id); }}
+                        className={`min-h-[36px] rounded-xl text-[11px] font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66] ${
+                            isSelected
+                                ? 'bg-[#00ff66] text-black shadow-lg'
+                                : 'text-stone-400 hover:text-white'
+                        }`}
+                    >
+                        {filter.label}
+                    </button>
+                );
+            })}
+        </div>
         {shareOpen && canShare && <ArtistShareCardModal name={profile.displayName} email={profile.email} onClose={() => setShareOpen(false)} />}
     </>;
 
-    if (encounters.length === 0) {
+    if (filteredEncounters.length === 0) {
         return (
             <div className="w-full flex flex-col space-y-4 px-3 pb-24">
                 {contactHeader}
                 <div className="flex flex-col items-center justify-center p-8 text-center text-stone-400 space-y-3 bg-[#1c1815] border border-white/10 rounded-2xl">
-                    <Clock className="w-8 h-8 text-stone-600 animate-pulse" />
-                    <p className="text-sm font-medium text-stone-300">No encounters captured yet.</p>
-                    <p className="text-xs text-stone-500">Record a voice note, snap a photo, or shoot video in Quick Capture to start.</p>
+                    <Clock className="w-8 h-8 text-stone-600 motion-safe:animate-pulse" />
+                    <p className="text-sm font-medium text-stone-300">
+                        {encounters.length === 0 ? 'No captures in your feed yet.' : `No ${activeFilter} captures yet.`}
+                    </p>
+                    <p className="text-xs text-stone-500">
+                        {encounters.length === 0
+                            ? 'Record a voice note, snap a photo, or shoot video in Capture to start.'
+                            : 'Switch to All or capture a new item in Capture.'}
+                    </p>
                 </div>
             </div>
         );
@@ -190,7 +236,7 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
         <div className="w-full flex flex-col space-y-4 px-3 pb-24">
             {contactHeader}
 
-            {encounters.map((enc) => {
+            {filteredEncounters.map((enc) => {
                 const photoAsset = enc.assets.find((a) => a.type === 'photo');
                 const videoAsset = enc.assets.find((a) => a.type === 'video');
                 const audioAsset = enc.assets.find((a) => a.type === 'audio');
@@ -240,7 +286,7 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
                                     </span>
                                 )}
                                 {enc.status === 'analyzing' && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-mono animate-pulse">
+                                    <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-mono motion-safe:animate-pulse">
                                         <Clock className="w-3 h-3" /> Analyzing
                                     </span>
                                 )}
@@ -267,8 +313,10 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
                                 <div className="mt-2 flex items-center justify-between bg-black/40 border border-white/5 rounded-xl p-2.5">
                                     <div className="flex items-center gap-2">
                                         <button
+                                            type="button"
+                                            aria-label={playingAudioId === audioAsset.id ? 'Pause voice note' : 'Play voice note'}
                                             onClick={() => togglePlayAudio(audioAsset.id, audioAsset.downloadUrl)}
-                                            className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-md active:scale-95 transition-transform"
+                                            className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-md active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                                         >
                                             {playingAudioId === audioAsset.id ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                                         </button>
@@ -276,8 +324,10 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
                                     </div>
                                     {enc.audioTranscript && (
                                         <button
+                                            type="button"
+                                            aria-expanded={isExpanded}
                                             onClick={() => setExpandedId(isExpanded ? null : enc.id)}
-                                            className="text-[11px] text-stone-400 flex items-center gap-1 underline"
+                                            className="text-[11px] text-stone-400 flex items-center gap-1 underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                                         >
                                             {isExpanded ? 'Hide transcript' : 'Read transcript'}
                                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -375,11 +425,16 @@ export default function EncounterFeedView({ isPaired = false }: { isPaired?: boo
                                 <span className="text-[11px] text-stone-500 font-mono">{enc.noteId ? 'Saved to Notes' : 'Capture saved'}</span>
                             )}
 
-                            {enc.extractedContact?.name && <button onClick={() => startReview(enc)} className="text-xs text-emerald-300">Review / edit contact</button>}
+                            {enc.extractedContact?.name && (
+                                <button type="button" onClick={() => startReview(enc)} className="text-xs text-emerald-300 rounded px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]">
+                                    Review / edit contact
+                                </button>
+                            )}
                             {enc.extractedContact?.name && enc.contactReviewStatus !== 'needs_review' && (
                                 <button
+                                    type="button"
                                     onClick={() => handleSaveToIPhone(enc)}
-                                    className="flex items-center gap-1.5 text-xs font-semibold text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-lg shadow active:scale-95 transition-transform"
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-black bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-lg shadow active:scale-95 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                                 >
                                     <UserPlus className="w-3.5 h-3.5" />
                                     Add to iPhone

@@ -321,7 +321,7 @@ describe('MobileRemote', () => {
             { name: 'Capture', content: 'Quick Capture' },
             { name: 'Studio', content: 'Studio Work & Chat' },
             { name: 'Vault', content: 'Stream View' },
-            { name: 'Contacts', content: 'Encounter Feed' },
+            { name: 'Feed', content: 'Encounter Feed' },
             { name: 'Road', content: 'Road Mode Surface' },
             { name: 'More', content: 'Settings View' },
         ];

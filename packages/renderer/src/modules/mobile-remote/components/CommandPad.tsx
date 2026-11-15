@@ -9,17 +9,16 @@
  * Every button is explicitly designed to meet or exceed the 44x44px safety grid.
  */
 
+import { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
   Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity, Image as ImageIcon,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
+  CheckSquare, ThumbsUp, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Layers, Settings, FileText, Globe, BarChart3, Shield,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  MessageSquare, Package, Wand2, Play, Pause, Navigation, AudioLines
+  MessageSquare, Package, Wand2, Play, Navigation, AudioLines
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'motion/react';
@@ -30,6 +29,9 @@ import { liveConversationService } from '@/services/intelligence/LiveConversatio
 interface CommandPadProps {
   onSendCommand: (command: { type: string; payload: unknown }) => void;
   isPaired: boolean;
+  activeDesktopModule?: string | null;
+  onOpenChat?: (commandId?: string) => void;
+  onNavigateRemoteTab?: (tab: 'home' | 'road' | 'stream' | 'encounters' | 'settings') => void;
 }
 
 interface QuickAction {
@@ -52,28 +54,75 @@ interface DashboardHubCard {
   glow: string;
 }
 
-export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps) {
+export default function CommandPad({
+  onSendCommand,
+  isPaired,
+  activeDesktopModule,
+  onOpenChat,
+  onNavigateRemoteTab,
+}: CommandPadProps) {
   const { setModule } = useStore(
     useShallow(state => ({
       setModule: state.setModule,
     }))
   );
+  const [statusFeedback, setStatusFeedback] = useState<{ kind: 'info' | 'error'; message: string } | null>(null);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
-  const navigateTo = (moduleId: ModuleId) => {
+  const navigateTo = (moduleId: ModuleId, label?: string) => {
     triggerHaptic(40);
     setModule(moduleId);
     onSendCommand({ type: 'navigate', payload: { module: moduleId } });
+    if (label) {
+      setStatusFeedback({ kind: 'info', message: `Switched Desktop Studio to ${label}.` });
+    }
   };
 
-  // Dual action: navigate to module + fire targeted agent research query
-  const triggerHubAction = (moduleId: ModuleId, prompt: string) => {
-    triggerHaptic([40, 60]);
-    navigateTo(moduleId);
-    if (isPaired) {
-      remoteRelayService.sendCommand(prompt, undefined, undefined, 'studio').catch(err => {
-        logger.error(`[CommandPad] Failed to trigger agent action:`, err);
-      });
+  const dispatchRelayPrompt = async (
+    actionId: string,
+    prompt: string,
+    options?: {
+      agentId?: string;
+      metadata?: Record<string, unknown>;
+      successMessage?: string;
+      openChatOnDispatch?: boolean;
     }
+  ) => {
+    if (!isPaired || pendingActionId) return;
+    setPendingActionId(actionId);
+    setStatusFeedback(null);
+    try {
+      const commandId = await remoteRelayService.sendCommand(
+        prompt,
+        options?.agentId,
+        options?.metadata ?? { conversationMode: 'boardroom', source: 'mobile-remote' },
+        'studio'
+      );
+      if (options?.openChatOnDispatch !== false) {
+        onOpenChat?.(commandId);
+      }
+      if (options?.successMessage) {
+        setStatusFeedback({ kind: 'info', message: options.successMessage });
+      }
+    } catch (err) {
+      logger.error(`[CommandPad] Action "${actionId}" failed:`, err);
+      setStatusFeedback({
+        kind: 'error',
+        message: err instanceof Error ? err.message : 'Unable to reach Desktop Studio.',
+      });
+    } finally {
+      setPendingActionId(null);
+    }
+  };
+
+  // Dual action: navigate desktop to module + dispatch Boardroom/agent query + open Chat on phone
+  const triggerHubAction = (card: DashboardHubCard) => {
+    triggerHaptic([40, 60]);
+    navigateTo(card.moduleId);
+    void dispatchRelayPrompt(card.id, card.agentPrompt, {
+      successMessage: `Sent "${card.label}" to Boardroom.`,
+      openChatOnDispatch: true,
+    });
   };
 
   const quickActions: QuickAction[] = [
@@ -87,6 +136,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
         triggerHaptic(50);
         void liveConversationService.startSession({ source: 'mobile-remote' });
         onSendCommand({ type: 'agent_action', payload: { action: 'open_chat' } });
+        onOpenChat?.();
       },
     },
     {
@@ -97,12 +147,15 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       glow: 'shadow-violet-500/15 hover:shadow-violet-500/30',
       action: () => {
         navigateTo('creative');
-        remoteRelayService.sendCommand(
+        void dispatchRelayPrompt(
+          'generate-image',
           '[GENERATE_IMAGE] Create a stunning visual — cinematic lighting, bold composition',
-          undefined,
-          { aspectRatio: '1:1', type: 'generate_image' },
-          'studio'
-        ).catch(err => logger.error('[CommandPad] Generate failed:', err));
+          {
+            metadata: { aspectRatio: '1:1', type: 'generate_image', source: 'mobile-remote' },
+            successMessage: 'Visual generation sent to Studio.',
+            openChatOnDispatch: true,
+          }
+        );
       },
     },
     {
@@ -113,10 +166,10 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       glow: 'shadow-fuchsia-500/15 hover:shadow-fuchsia-500/30',
       action: () => {
         triggerHaptic(40);
-        // ISSUE-REMOTE-SHOW-20260622: surface the latest desktop visual artifact on the phone.
-        remoteRelayService.sendCommand('[SHOW]', undefined, undefined, 'studio').catch(err =>
-          logger.error('[CommandPad] Show Me failed:', err)
-        );
+        void dispatchRelayPrompt('show-me', '[SHOW]', {
+          successMessage: 'Requested latest visual from Studio.',
+          openChatOnDispatch: true,
+        });
       },
     },
     {
@@ -126,7 +179,9 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       color: 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20',
       glow: 'shadow-blue-500/15 hover:shadow-blue-500/30',
       action: () => {
+        triggerHaptic(40);
         onSendCommand({ type: 'agent_action', payload: { action: 'open_chat' } });
+        onOpenChat?.();
       },
     },
     {
@@ -137,7 +192,11 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
       action: () => {
         triggerHaptic(40);
-        navigateTo('capture' as ModuleId);
+        if (onNavigateRemoteTab) {
+          onNavigateRemoteTab('home');
+        } else {
+          setStatusFeedback({ kind: 'info', message: 'Use the Capture tab to record a Live Moment.' });
+        }
       },
     },
     {
@@ -147,7 +206,8 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
       glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
       action: () => {
-        navigateTo('road');
+        navigateTo('road', 'Road Mode');
+        onNavigateRemoteTab?.('road');
       },
     },
     {
@@ -159,6 +219,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       action: () => {
         triggerHaptic(60);
         onSendCommand({ type: 'daw_control', payload: { action: 'toggle_playback' } });
+        setStatusFeedback({ kind: 'info', message: 'Sent playback toggle to Desktop Studio.' });
       },
     },
     {
@@ -168,12 +229,15 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       color: 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20',
       glow: 'shadow-amber-500/15 hover:shadow-amber-500/30',
       action: () => {
-        remoteRelayService.sendCommand(
+        triggerHaptic(40);
+        void dispatchRelayPrompt(
+          'quick-sparkle',
           "Let's brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.",
-          undefined,
-          undefined,
-          'studio'
-        ).catch(err => logger.error('[CommandPad] Brainstorm failed:', err));
+          {
+            successMessage: 'Started Boardroom brainstorm.',
+            openChatOnDispatch: true,
+          }
+        );
       },
     },
   ];
@@ -285,7 +349,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   const moduleButtons = [
     { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'video', icon: Video, label: 'Video', accent: 'text-pink-400 border-pink-500/15 hover:bg-pink-500/5' },
-    { id: 'analytics', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
+    { id: 'music', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
     { id: 'distribution', icon: Globe, label: 'Distro', accent: 'text-blue-400 border-blue-500/15 hover:bg-blue-500/5' },
     { id: 'finance', icon: BarChart3, label: 'Finance', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'legal', icon: Shield, label: 'Legal', accent: 'text-red-400 border-red-500/15 hover:bg-red-500/5' },
@@ -299,13 +363,27 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
 
   return (
     <div className="space-y-8 pb-12">
+      {statusFeedback && (
+        <div
+          role={statusFeedback.kind === 'error' ? 'alert' : 'status'}
+          className={cn(
+            "px-4 py-2.5 rounded-2xl border text-xs font-medium",
+            statusFeedback.kind === 'error'
+              ? "bg-red-500/10 border-red-500/30 text-red-200"
+              : "bg-[#00ff66]/10 border-[#00ff66]/30 text-[#00ff66]"
+          )}
+        >
+          {statusFeedback.message}
+        </div>
+      )}
+
       {/* ─── Section: Express Actions ─── */}
       <section>
         <div className="flex items-center justify-between mb-4 px-1">
           <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8e8e93]">Express Actions</h3>
           <div className="flex gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse delay-75" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 motion-safe:animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse delay-75" />
           </div>
         </div>
         
@@ -313,14 +391,15 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           {quickActions.map((action, idx) => (
             <motion.button
               key={action.id}
-              disabled={!isPaired}
+              type="button"
+              disabled={!isPaired || pendingActionId === action.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={action.action}
               className={cn(
-                "relative overflow-hidden flex flex-col items-start gap-3 p-4 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer shrink-0 snap-center",
+                "relative overflow-hidden flex flex-col items-start gap-3 p-4 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer shrink-0 snap-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]",
                 !isPaired && 'opacity-40 cursor-not-allowed',
                 action.color,
                 action.glow
@@ -355,14 +434,15 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           {dashboardHubCards.map((card, idx) => (
             <motion.button
               key={card.id}
-              disabled={!isPaired}
+              type="button"
+              disabled={!isPaired || pendingActionId === card.id}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + idx * 0.03 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => triggerHubAction(card.moduleId, card.agentPrompt)}
+              onClick={() => triggerHubAction(card)}
               className={cn(
-                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border border-t-white/10 border-l-white/5 bg-white/[0.01] backdrop-blur-3xl transition-all duration-300 shadow-2xl cursor-pointer text-left",
+                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border border-t-white/10 border-l-white/5 bg-white/[0.01] backdrop-blur-3xl transition-all duration-300 shadow-2xl cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]",
                 !isPaired && 'opacity-40 cursor-not-allowed',
                 card.color,
                 card.glow
@@ -394,28 +474,40 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
         </div>
         
         <div className="grid grid-cols-3 gap-3">
-          {moduleButtons.map((mod, idx) => (
-            <motion.button
-              key={mod.id}
-              disabled={!isPaired}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + (idx * 0.02) }}
-              whileTap={{ scale: 0.92 }}
-              onClick={() => navigateTo(mod.id as ModuleId)}
-              className={cn(
-                "flex flex-col items-center justify-center gap-3 py-4.5 rounded-[24px] bg-white/[0.02] border hover:bg-white/[0.05] border-white/5 hover:border-white/10 transition-all duration-300 cursor-pointer shadow-md",
-                !isPaired && 'opacity-40 cursor-not-allowed',
-                mod.accent
-              )}
-              style={{ minHeight: '88px', minWidth: '44px' }}
-            >
-              <div className="p-2 rounded-xl bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors duration-300">
-                <mod.icon className="w-4.5 h-4.5" />
-              </div>
-              <span className="text-[9px] font-extrabold tracking-wider uppercase text-white/70">{mod.label}</span>
-            </motion.button>
-          ))}
+          {moduleButtons.map((mod, idx) => {
+            const isActiveModule = activeDesktopModule === mod.id;
+            return (
+              <motion.button
+                key={mod.id}
+                type="button"
+                disabled={!isPaired}
+                aria-pressed={isActiveModule}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 + (idx * 0.02) }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => navigateTo(mod.id as ModuleId, mod.label)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-3 py-4.5 rounded-[24px] bg-white/[0.02] border hover:bg-white/[0.05] border-white/5 hover:border-white/10 transition-all duration-300 cursor-pointer shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]",
+                  isActiveModule && "border-[#00ff66]/40 bg-[#00ff66]/[0.06]",
+                  !isPaired && 'opacity-40 cursor-not-allowed',
+                  mod.accent
+                )}
+                style={{ minHeight: '88px', minWidth: '44px' }}
+              >
+                {isActiveModule && (
+                  <span
+                    aria-label="Active on desktop"
+                    className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#00ff66] shadow-[0_0_8px_rgba(0,255,102,0.8)]"
+                  />
+                )}
+                <div className="p-2 rounded-xl bg-white/5 border border-white/5 group-hover:bg-white/10 transition-colors duration-300">
+                  <mod.icon className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[9px] font-extrabold tracking-wider uppercase text-white/70">{mod.label}</span>
+              </motion.button>
+            );
+          })}
         </div>
       </section>
 
