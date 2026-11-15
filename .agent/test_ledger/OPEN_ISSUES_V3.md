@@ -3653,6 +3653,8 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 
 ### ISSUE-1459: Creative controls lack labels, selected-state semantics and setup navigation
 
+- **Studio Controls update (2026-11-14):** Create/History, Image/Video/Both, Flash/Pro, and Precise reference matching now expose their actual state through `aria-pressed`. The panel collapse button has an explicit accessible name. Existing structural tests now query names/pressed state and verify tab changes rather than finding the collapse control through an icon. Focused suite: 19/19; full repository typecheck passed; scoped ESLint: zero errors, two existing unused-import warnings. Jev `jev-1.14.0` scored the accessible-state improvement 0.94. Genuine keyboard/screen-reader acceptance remains pending; status stays PARTIAL.
+
 - **Status:** 🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)
 - **Severity:** MEDIUM
 - **Module:** Creative / accessibility / wayfinding
