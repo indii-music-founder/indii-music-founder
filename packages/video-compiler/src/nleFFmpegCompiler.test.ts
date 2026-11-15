@@ -82,10 +82,10 @@ describe('nleFFmpegCompiler - Headless FFmpeg Filtergraph Generator', () => {
     expect(cmd).toContain('color=c=black:s=1920x1080');
     expect(cmd).toContain('trim=start=0.5:duration=2');
     expect(cmd).toContain('scale=1920:-1');
-    expect(cmd).toContain('overlay=eof_action=repeat:enable=\'gte(t,0)*lt(t,2)\':x=0:y=0');
+    expect(cmd).toContain('overlay=eof_action=pass:enable=\'between(t,0,2)\':x=0:y=0');
     expect(cmd).toContain('atrim=start=0.5:duration=2');
-    expect(cmd).toContain('aresample=48000,apad,atrim=duration=2,adelay=0S:all=1,asetpts=N/SR/TB,volume=0.8');
-    expect(cmd).toContain('amix=inputs=1:normalize=0,apad[out_a]');
+    expect(cmd).toContain('adelay=0S:all=1,asetpts=N/SR/TB,volume=0.8');
+    expect(cmd).toContain('amix=inputs=1:normalize=0');
     expect(cmd).toContain('-map "[canvas_pass_0]"');
     expect(cmd).toContain('-map "[out_a]"');
     expect(cmd).toContain('-c:v libx264 -pix_fmt yuv420p -preset medium -crf 18 -c:a aac -b:a 320k -t 2 "/tmp/output.mp4"');

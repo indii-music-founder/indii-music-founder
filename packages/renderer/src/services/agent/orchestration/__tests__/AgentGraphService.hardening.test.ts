@@ -62,13 +62,24 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
     });
 
     it('preserves a lease permission error instead of claiming another runner owns the job', async () => {
+        (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ executionId: 'exec-denied', graphId: mockGraph.id });
         vi.mocked(runTransaction).mockRejectedValueOnce(new Error('Missing or insufficient permissions.'));
         await expect(agentGraphService.executeGraph(mockGraph, mockContext, 'Test', 'exec-denied'))
             .rejects.toThrow('Missing or insufficient permissions.');
     });
 
+    it('rejects a mismatched existing execution before acquiring a lease', async () => {
+        (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            executionId: 'exec-mismatch', graphId: 'other-graph',
+        });
+        await expect(agentGraphService.executeGraph(mockGraph, mockContext, undefined, 'exec-mismatch'))
+            .rejects.toThrow('Saved graph execution does not match');
+        expect(runTransaction).not.toHaveBeenCalled();
+    });
+
     it('rejects execution if execution is actively leased by another runner', async () => {
         const executionId = 'exec-leased';
+        (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ executionId, graphId: mockGraph.id });
 
         // Transaction mock returns an existing, active lease from another runner
         vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) => cb({
@@ -96,6 +107,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
 
     it('successfully acquires lease if existing lease is expired', async () => {
         const executionId = 'exec-expired-lease';
+        (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ executionId, graphId: 'graph-single' });
         let lease = { holderId: 'stale-runner-id', expiresAt: Date.now() - 5000, acquiredAt: Date.now() - 25000 };
         const mockUpdate = vi.fn((_ref: unknown, fields: Record<string, typeof lease>) => {
             lease = fields['metadata.lease'] ?? lease;
@@ -181,6 +193,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
 
     it('caps memory bank search to top 5 memories', async () => {
         const executionId = 'exec-mem-cap';
+        (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ executionId, graphId: 'graph-single-mem' });
         let lease: unknown;
 
         const singleNodeGraph: AgentGraph = {

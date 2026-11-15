@@ -784,7 +784,7 @@ export class BaseAgent implements SpecializedAgent {
                                     text: fullText,
                                     tool_calls: [],
                                     agentId: this.id,
-                                }),
+                                }, executionTokenBudget(context, 1_500_000)),
                                 new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
                             ]);
                             if (guardrailResult && guardrailResult.wasModified) {
@@ -1979,7 +1979,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 text: finalResponse,
                                 tool_calls: toolCalls,
                                 agentId: this.id,
-                            }),
+                            }, tokenBudget),
                             new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
                         ]);
                         if (guardrailResult && guardrailResult.wasModified) {

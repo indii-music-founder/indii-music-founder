@@ -27,8 +27,23 @@ describe('AgentEventBus', () => {
         try {
             AgentEventBus.emitSessionEvent('AGENT_SESSION_FAILED', { agentId: 'agent-1', sessionId: 'session-1', durationMs: 0, reason: 'cancelled' });
             AgentEventBus.emitNodeEvent('GRAPH_NODE_COMPLETED', 'graph-1', 'node-1', 'execution-1');
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', 'graph-1', 'execution-1');
             expect(received[0]).toMatchObject({ sessionId: 'session-1', durationMs: 0, timestamp: expect.any(Number), errorMessage: 'cancelled' });
-            expect(received[1]).toMatchObject({ graphId: 'graph-1', nodeId: 'node-1', executionId: 'execution-1' });
+            expect(received[1]).toMatchObject({ graphId: 'graph-1', nodeId: 'node-1', executionId: 'execution-1', timestamp: expect.any(Number) });
+            expect(received[2]).toMatchObject({ graphId: 'graph-1', executionId: 'execution-1', timestamp: expect.any(Number) });
+        } finally {
+            off();
+        }
+    });
+
+    it('exposes graph and node failure reasons without parsing display text', () => {
+        const received: AgentActionEvent[] = [];
+        const off = events.on<AgentActionEvent>('AGENT_ACTION', event => received.push(event));
+        try {
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_STARTED', 'graph', 'run', 'Graph name');
+            AgentEventBus.emitNodeEvent('GRAPH_NODE_FAILED', 'graph', 'node', 'run', 'Node failed');
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', 'graph', 'run', 'Run failed');
+            expect(received.map(event => event.errorMessage)).toEqual([undefined, 'Node failed', 'Run failed']);
         } finally {
             off();
         }

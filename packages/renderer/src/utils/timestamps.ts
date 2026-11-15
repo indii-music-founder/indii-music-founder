@@ -8,15 +8,19 @@
 export function toMillisSafe(value: unknown, fallback: number = 0): number {
     let millis: unknown = value;
     if (value && typeof value === 'object') {
-        const timestamp = value as { toMillis?: () => number; seconds?: number; nanoseconds?: number };
-        if (typeof timestamp.toMillis === 'function') {
-            millis = timestamp.toMillis();
-        } else {
-            const { seconds, nanoseconds } = timestamp;
-            if (typeof seconds !== 'number' || !Number.isSafeInteger(seconds) ||
-                typeof nanoseconds !== 'number' || !Number.isInteger(nanoseconds) ||
-                nanoseconds < 0 || nanoseconds >= 1_000_000_000) return fallback;
-            millis = seconds * 1000 + nanoseconds / 1_000_000;
+        try {
+            const timestamp = value as { toMillis?: () => number; seconds?: number; nanoseconds?: number };
+            if (typeof timestamp.toMillis === 'function') {
+                millis = timestamp.toMillis();
+            } else {
+                const { seconds, nanoseconds } = timestamp;
+                if (typeof seconds !== 'number' || !Number.isSafeInteger(seconds) ||
+                    typeof nanoseconds !== 'number' || !Number.isInteger(nanoseconds) ||
+                    nanoseconds < 0 || nanoseconds >= 1_000_000_000) return fallback;
+                millis = seconds * 1000 + nanoseconds / 1_000_000;
+            }
+        } catch {
+            return fallback;
         }
     }
     return typeof millis === 'number' && Number.isFinite(millis) && Math.abs(millis) <= 8.64e15

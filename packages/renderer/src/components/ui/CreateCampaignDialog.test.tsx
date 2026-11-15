@@ -16,21 +16,7 @@ vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
 }));
 
-// Mock motion to simplify DOM transitions in JSDOM tests
-vi.mock('motion/react', () => ({
-    motion: {
-        div: ({ children, ...props }: any) => {
-            const cleanProps = { ...props };
-            delete cleanProps.initial;
-            delete cleanProps.animate;
-            delete cleanProps.exit;
-            delete cleanProps.transition;
-            return <div {...cleanProps}>{children}</div>;
-        }
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
-}));
-
+// Structural component checks with a stubbed campaign store.
 describe('CreateCampaignDialog', () => {
     const mockCreateCampaign = vi.fn();
 

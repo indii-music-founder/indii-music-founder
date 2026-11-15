@@ -1,3 +1,5 @@
+import type { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
+import { reportedSemanticTokens } from '../governance/SemanticCallBudget';
 import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
@@ -120,9 +122,10 @@ export class JevGuardrailService {
    * renderer bundle, or browser-side SDK client.
    *
    * Returns the original response unmodified on timeout, upstream failure, or
-   * unavailable service.
+   * unavailable service. The execution allowance remains reserved while the
+   * provider is unresolved; missing usage retains that hold.
    */
-  async screen(input: GuardrailInput): Promise<GuardrailResult> {
+  async screen(input: GuardrailInput, budget: ExecutionTokenBudget): Promise<GuardrailResult> {
     const passthrough: GuardrailResult = {
       text: input.text,
       wasModified: false,
@@ -136,7 +139,7 @@ export class JevGuardrailService {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const result = await Promise.race([
-        this.runEvaluation(input.text, toolNames, toolResults, Math.max(0, (input.tool_calls?.length ?? 0) - toolResults.length)),
+        this.runEvaluation(input.text, toolNames, toolResults, Math.max(0, (input.tool_calls?.length ?? 0) - toolResults.length), budget),
         new Promise<null>((resolve) => {
           timer = setTimeout(() => resolve(null), GUARDRAIL_TIMEOUT_MS);
         }),
@@ -175,6 +178,7 @@ export class JevGuardrailService {
     toolNames: string,
     toolResults: ReturnType<typeof projectGuardrailToolEvidence>,
     omittedToolResults: number,
+    budget: ExecutionTokenBudget,
   ): Promise<GuardrailResult | null> {
     const state = {
       response: {
@@ -187,18 +191,27 @@ export class JevGuardrailService {
 
     const questionsDef = GUARDRAIL_QUESTIONS;
 
+    // This call belongs to BaseAgent's active execution. A UI timeout does
+    // not cancel provider work, so settle only when that work returns a receipt.
+    const allowance = budget.remaining;
+    if (allowance === 0) return null;
+    const reservation = budget.reserve(allowance);
+    if (reservation === null) return null;
+    let settled = false;
     let rawAnswers: Record<string, unknown> | undefined;
 
     try {
       const judgeFn = httpsCallable<
         { state: Record<string, unknown>; questions: Record<string, unknown>; model?: string },
-        { answers: Record<string, unknown> }
+        { answers: Record<string, unknown>; usage?: unknown }
       >(functions, 'typesafeJudge');
       const res = await judgeFn({
         state,
         questions: questionsDef,
         model: JEV_MODEL,
       });
+      budget.settle(reservation, reportedSemanticTokens(res.data?.usage));
+      settled = true;
       rawAnswers = res.data?.answers;
     } catch (proxyErr) {
       if (!this.hasLoggedProxyStatus) {
@@ -206,6 +219,8 @@ export class JevGuardrailService {
         this.hasLoggedProxyStatus = true;
       }
       return null;
+    } finally {
+      if (!settled) budget.settle(reservation, undefined);
     }
 
     if (!rawAnswers) return null;

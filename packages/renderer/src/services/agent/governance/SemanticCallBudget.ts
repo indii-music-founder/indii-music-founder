@@ -7,7 +7,7 @@ export interface SemanticCallAdmission {
 
 export class SemanticCallCheckpointError extends Error {}
 
-function reportedTokens(usage: unknown): number | undefined {
+export function reportedSemanticTokens(usage: unknown): number | undefined {
     if (!usage || typeof usage !== 'object') return undefined;
     const { inputTokens, outputTokens, totalTokens } = usage as Record<string, unknown>;
     if (typeof inputTokens !== 'number' || !Number.isSafeInteger(inputTokens) || inputTokens < 0 ||
@@ -42,7 +42,7 @@ export async function runBudgetedSemanticCall<T extends { usage?: unknown }>(
     try {
         await checkpoint();
         const result = await call();
-        admission.budget.settle(reservation, reportedTokens(result.usage));
+        admission.budget.settle(reservation, reportedSemanticTokens(result.usage));
         settled = true;
         await checkpoint();
         return result;

@@ -39,19 +39,23 @@ export interface SystemAlertEvent {
 }
 
 class EventBus {
-    private listeners: { [key in EventType]?: EventCallback[] } = {};
+    private listeners: { [key in EventType]?: { callback: EventCallback<any> }[] } = {};
 
     on<T>(event: EventType, callback: EventCallback<T>): () => void {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
         }
-        this.listeners[event]?.push(callback as EventCallback<any>);
-        return () => this.off(event, callback);
+        const subscription = { callback };
+        this.listeners[event]?.push(subscription);
+        return () => {
+            const index = this.listeners[event]?.indexOf(subscription) ?? -1;
+            if (index !== -1) this.listeners[event]?.splice(index, 1);
+        };
     }
 
     off<T>(event: EventType, callback: EventCallback<T>): void {
         if (!this.listeners[event]) return;
-        this.listeners[event] = this.listeners[event]?.filter(cb => cb !== callback);
+        this.listeners[event] = this.listeners[event]?.filter(subscription => subscription.callback !== callback);
     }
 
     emit<T>(event: EventType, data: T): void {
@@ -61,7 +65,7 @@ class EventBus {
             const errorType = error instanceof Error ? error.name : typeof error;
             logger.warn(`[EventBus] ${event} listener failed (${errorType})`);
         };
-        for (const callback of [...(this.listeners[event] || [])]) {
+        for (const { callback } of [...(this.listeners[event] || [])]) {
             try {
                 const result = callback(data);
                 if (result && typeof result === 'object' && 'then' in result &&
