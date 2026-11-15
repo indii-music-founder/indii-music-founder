@@ -45,6 +45,7 @@ jobs:
         with:
           node-version: '24.x'
           cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Cache node_modules
         id: cache-node-modules
@@ -53,7 +54,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -61,7 +62,7 @@ jobs:
           npm config set fetch-retries 5
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
-          npm install --prefer-offline --no-audit --no-fund
+          npm ci --prefer-offline --no-audit --no-fund
 
       - name: Sanity check - Duplicate identifiers (Item 342)
         run: |
@@ -128,7 +129,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Expose pinned FFmpeg tools
         shell: bash
@@ -185,7 +186,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Build shared package
         run: npx tsc -b packages/shared packages/video-compiler
@@ -224,7 +225,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       # Item 252: Security audit — non-blocking
       - name: Audit dependencies for vulnerabilities (Item 252)
@@ -375,7 +376,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -473,14 +474,14 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ hashFiles('package-lock.json') }}
+          key: playwright-chromium-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
@@ -535,7 +536,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
-          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4

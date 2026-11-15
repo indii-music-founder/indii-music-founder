@@ -18,6 +18,10 @@ on:
       - '.github/workflows/issue-ledger-integrity.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
