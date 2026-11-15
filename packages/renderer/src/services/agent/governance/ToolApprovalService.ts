@@ -35,6 +35,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth, functions, appCheck } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { recordToolOutcome } from './ToolOutcomeAudit';
 import { getToken } from 'firebase/app-check';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
@@ -363,6 +364,15 @@ class ToolApprovalService {
                 // The claim is durable, but the tool may have completed an external
                 // effect before its response was lost. Leave it unresolved.
                 this.boundCalls.delete(approvalId);
+                if (getUserId() === uid) {
+                    await recordToolOutcome({
+                        userId: uid,
+                        agentId: approval.agentId || 'approved-tool',
+                        toolName: approval.toolName,
+                        toolCallId: approvalId,
+                        success: false,
+                    });
+                }
                 logger.warn(`[ToolApprovalService] Approval ${approvalId} dispatched without a verifiable result`);
                 return {
                     success: false,
@@ -408,6 +418,13 @@ class ToolApprovalService {
             }
         }
 
+        await recordToolOutcome({
+            userId: uid,
+            agentId: approval.agentId || 'approved-tool',
+            toolName: approval.toolName,
+            toolCallId: approvalId,
+            success: result.success,
+        });
         logger.info(`[ToolApprovalService] Approval ${approvalId} executed (${approval.toolName}): success=${result.success}`);
         return result;
     }
