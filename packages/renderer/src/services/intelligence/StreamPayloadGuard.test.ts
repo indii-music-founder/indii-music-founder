@@ -219,6 +219,16 @@ describe('elideBase64Payloads', () => {
         expect(elideBase64Payloads(text)).toBe(text);
         expect(elideBase64Payloads('')).toBe('');
     });
+
+    it('elides raw JSON "base64" fields that do not carry a data-URL prefix', () => {
+        const rawPayload = 'A'.repeat(1_800_000);
+        const serializedContext = JSON.stringify({
+            attachments: [{ mimeType: 'image/png', base64: rawPayload }],
+        });
+        const output = elideBase64Payloads(serializedContext);
+        expect(output).not.toContain(rawPayload);
+        expect(output).toContain('[elided ');
+    });
 });
 
 describe('sanitizeObjectForPrompt', () => {
@@ -248,5 +258,14 @@ describe('sanitizeObjectForPrompt', () => {
         expect(result.plainNumber).toBe(42);
         expect(result.plainBoolean).toBe(true);
         expect(result.nullable).toBeNull();
+    });
+
+    it('elides raw base64 attachment properties without a data-URL prefix', () => {
+        const rawBase64 = 'A'.repeat(1_800_000);
+        const result = sanitizeObjectForPrompt({
+            attachments: [{ mimeType: 'image/png', base64: rawBase64 }],
+        });
+        expect(result.attachments[0]?.base64).toContain('[elided ');
+        expect(result.attachments[0]?.base64).not.toContain(rawBase64);
     });
 });

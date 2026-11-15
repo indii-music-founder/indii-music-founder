@@ -35,6 +35,89 @@ interface PromptAreaProps {
     isDocked?: boolean;
 }
 
+const ATTACHMENT_EXTENSION_MIME_TYPES: Readonly<Record<string, string>> = Object.freeze({
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+    aiff: 'audio/aiff',
+    aif: 'audio/aiff',
+    m4a: 'audio/mp4',
+    ogg: 'audio/ogg',
+    aac: 'audio/aac',
+    opus: 'audio/opus',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    svg: 'image/svg+xml',
+    pdf: 'application/pdf',
+    txt: 'text/plain',
+    md: 'text/markdown',
+    csv: 'text/csv',
+    json: 'application/json',
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+});
+
+/**
+ * Infers a valid MIME type when macOS/Electron leaves `file.type` blank or generic.
+ */
+function inferAttachmentMimeType(file: File): string {
+    const declaredType = file.type.trim();
+    if (declaredType && declaredType !== 'application/octet-stream') {
+        return declaredType;
+    }
+    const dotIndex = file.name.lastIndexOf('.');
+    const ext = dotIndex >= 0 ? file.name.slice(dotIndex + 1).toLowerCase() : '';
+    return ATTACHMENT_EXTENSION_MIME_TYPES[ext] || declaredType || 'application/octet-stream';
+}
+
+/**
+ * Registers uploaded image, video, and audio attachments in the Creative Library slice when available.
+ */
+function registerUploadedAttachments(
+    attachments: { mimeType: string; base64: string; filename?: string }[]
+): void {
+    const storeState = useStore.getState();
+    const projectId = storeState.currentProjectId || 'default';
+
+    for (const att of attachments) {
+        if (!att.base64) {
+            continue;
+        }
+        const isAudio = att.mimeType.startsWith('audio/');
+        const isVideo = att.mimeType.startsWith('video/');
+        const isImage = att.mimeType.startsWith('image/');
+        if (!isAudio && !isVideo && !isImage) {
+            continue;
+        }
+
+        const item = {
+            id: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                ? crypto.randomUUID()
+                : `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            type: (isAudio ? 'music' : isVideo ? 'video' : 'image') as 'music' | 'video' | 'image',
+            url: att.base64.startsWith('data:') ? att.base64 : `data:${att.mimeType};base64,${att.base64}`,
+            prompt: att.filename || 'Uploaded file',
+            timestamp: Date.now(),
+            projectId,
+            origin: 'uploaded' as const,
+        };
+
+        if (isAudio && typeof storeState.addUploadedAudio === 'function') {
+            void Promise.resolve(storeState.addUploadedAudio(item)).catch((regErr: unknown) => {
+                logger.warn('PromptArea: could not register uploaded audio:', regErr);
+            });
+        } else if ((isImage || isVideo) && typeof storeState.addUploadedImage === 'function') {
+            void Promise.resolve(storeState.addUploadedImage(item)).catch((regErr: unknown) => {
+                logger.warn('PromptArea: could not register uploaded media:', regErr);
+            });
+        }
+    }
+}
+
 export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -253,11 +336,19 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
 
 
+    const focusPromptInput = useCallback(() => {
+        const input = document.querySelector<HTMLTextAreaElement>('[data-testid="main-prompt-input"]');
+        input?.focus();
+    }, []);
+
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setCommandBarAttachments([...(commandBarAttachments || []), ...Array.from(e.target.files!)]);
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        e.target.value = '';
+        if (files.length > 0) {
+            setCommandBarAttachments([...(commandBarAttachments || []), ...files]);
+            focusPromptInput();
         }
-    }, [commandBarAttachments, setCommandBarAttachments]);
+    }, [commandBarAttachments, focusPromptInput, setCommandBarAttachments]);
 
     const removeAttachment = useCallback((index: number) => {
         setCommandBarAttachments((commandBarAttachments || []).filter((_, i) => i !== index));
@@ -276,20 +367,27 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        if (e.dataTransfer.files) {
-            setCommandBarAttachments([...(commandBarAttachments || []), ...Array.from(e.dataTransfer.files)]);
+        const files = e.dataTransfer.files ? Array.from(e.dataTransfer.files) : [];
+        if (files.length > 0) {
+            setCommandBarAttachments([...(commandBarAttachments || []), ...files]);
+            focusPromptInput();
         }
-    }, [commandBarAttachments, setCommandBarAttachments]);
+    }, [commandBarAttachments, focusPromptInput, setCommandBarAttachments]);
 
     const processAttachments = useCallback(async (files: File[]) => {
         return Promise.all(files.map(file =>
             new Promise<{ mimeType: string; base64: string; filename?: string }>((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve({
-                    mimeType: file.type,
-                    filename: file.name,
-                    base64: (reader.result as string).split(',')[1]!
-                });
+                reader.onload = () => {
+                    const result = typeof reader.result === 'string' ? reader.result : '';
+                    const commaIndex = result.indexOf(',');
+                    const base64 = commaIndex >= 0 ? result.slice(commaIndex + 1) : result;
+                    resolve({
+                        mimeType: inferAttachmentMimeType(file),
+                        filename: file.name,
+                        base64,
+                    });
+                };
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             })
@@ -381,6 +479,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
             try {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
+                if (processedAttachments && processedAttachments.length > 0) {
+                    registerUploadedAttachments(processedAttachments);
+                }
 
                 // ISSUE-479: when the Creative editor canvas is open, attach its flattened
                 // view (base image + the user's colored highlights) so the agent can actually

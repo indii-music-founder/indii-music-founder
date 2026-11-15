@@ -1,9 +1,137 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
-import type { AnyToolFunction } from '../types';
+import type { AgentContext, AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
+
+function isUsableAssetUrl(url: string | undefined): url is string {
+    if (typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed.startsWith('[elided ')) return false;
+    if (trimmed.startsWith('data:')) {
+        const commaIdx = trimmed.indexOf(',');
+        const payload = commaIdx >= 0 ? trimmed.slice(commaIdx + 1).trim() : '';
+        if (!payload || payload.startsWith('[elided ')) return false;
+    }
+    return true;
+}
+
+function attachmentToDataUrl(att: { mimeType?: string; base64?: string } | undefined): string | undefined {
+    if (!att || typeof att.base64 !== 'string') return undefined;
+    const raw = att.base64.trim();
+    if (!raw || raw.startsWith('[elided ')) return undefined;
+    if (raw.startsWith('data:')) {
+        return isUsableAssetUrl(raw) ? raw : undefined;
+    }
+    const mimeType = typeof att.mimeType === 'string' && att.mimeType.trim() ? att.mimeType.trim() : 'image/png';
+    return `data:${mimeType};base64,${raw}`;
+}
+
+/**
+ * Resolves an agent asset reference (alias such as `attachment-0`, `upload-0`,
+ * `gallery-0`, `boardroom-asset-0`, `brand-asset-0`, `ref-image-0`, an asset ID,
+ * a direct `data:` / `https:` / `gs:` URL, or fallback context attachments)
+ * into a concrete image URL or data URL.
+ */
+export async function resolveAgentAssetUrl(
+    candidateUri: string | undefined,
+    context?: AgentContext,
+    artworkIndex?: number,
+): Promise<string | undefined> {
+    const rawCandidate = (candidateUri?.trim() || context?.boardroomExecution?.sourceId?.trim() || '');
+    const normalized = rawCandidate.toLowerCase();
+
+    if (rawCandidate) {
+        if (rawCandidate.startsWith('[elided ')) return undefined;
+
+        const fromContextRef = context?.assetReferences?.find(
+            asset =>
+                asset.id.toLowerCase() === normalized ||
+                asset.alias?.toLowerCase() === normalized ||
+                asset.url === rawCandidate,
+        );
+        if (isUsableAssetUrl(fromContextRef?.url)) return fromContextRef.url;
+
+        const attachmentMatch = /^attachment-(\d+)$/i.exec(rawCandidate);
+        if (attachmentMatch) {
+            const idx = Number(attachmentMatch[1]);
+            return attachmentToDataUrl(context?.attachments?.[idx]);
+        }
+    }
+
+    const { useStore } = await importWithRetry(() => import('@/core/store'));
+    const store = useStore.getState();
+
+    if (rawCandidate) {
+        const uploadMatch = /^(?:upload|boardroom-asset)-(\d+)$/i.exec(rawCandidate);
+        if (uploadMatch) {
+            const idx = Number(uploadMatch[1]);
+            const url = store.uploadedImages?.[idx]?.url;
+            if (isUsableAssetUrl(url)) return url;
+        }
+        const galleryMatch = /^gallery-(\d+)$/i.exec(rawCandidate);
+        if (galleryMatch) {
+            const idx = Number(galleryMatch[1]);
+            const url = store.generatedHistory?.[idx]?.url;
+            if (isUsableAssetUrl(url)) return url;
+        }
+        const brandAssetMatch = /^brand-asset-(\d+)$/i.exec(rawCandidate);
+        if (brandAssetMatch) {
+            const idx = Number(brandAssetMatch[1]);
+            const url = store.userProfile?.brandKit?.brandAssets?.[idx]?.url;
+            if (isUsableAssetUrl(url)) return url;
+        }
+        const refImageMatch = /^ref-image-(\d+)$/i.exec(rawCandidate);
+        if (refImageMatch) {
+            const idx = Number(refImageMatch[1]);
+            const url = store.userProfile?.brandKit?.referenceImages?.[idx]?.url;
+            if (isUsableAssetUrl(url)) return url;
+        }
+
+        const byId = [...(store.uploadedImages || []), ...(store.generatedHistory || [])].find(
+            item => item.id?.toLowerCase() === normalized || item.url === rawCandidate,
+        );
+        if (isUsableAssetUrl(byId?.url)) return byId.url;
+
+        if (
+            (rawCandidate.startsWith('data:') ||
+            /^https?:\/\//i.test(rawCandidate) ||
+            rawCandidate.startsWith('gs://')) &&
+            isUsableAssetUrl(rawCandidate)
+        ) {
+            return rawCandidate;
+        }
+
+        return undefined;
+    }
+
+    if (artworkIndex !== undefined) {
+        const indexedUrl = store.generatedHistory?.[artworkIndex]?.url ?? store.uploadedImages?.[artworkIndex]?.url;
+        return isUsableAssetUrl(indexedUrl) ? indexedUrl : undefined;
+    }
+
+    if (context?.assetReferences?.length === 1 && isUsableAssetUrl(context.assetReferences[0]?.url)) {
+        return context.assetReferences[0].url;
+    }
+    const firstImageAttachment = context?.attachments?.find(
+        att => att?.mimeType?.startsWith('image/') && attachmentToDataUrl(att) !== undefined,
+    );
+    if (firstImageAttachment) {
+        return attachmentToDataUrl(firstImageAttachment);
+    }
+
+    return undefined;
+}
+
+function explicitArtworkSourceLabel(artworkUrl?: string, artworkIndex?: number, context?: AgentContext): string | undefined {
+    if (typeof artworkUrl === 'string' && artworkUrl.trim().length > 0) return artworkUrl.trim();
+    if (artworkIndex !== undefined) return `artworkIndex ${artworkIndex}`;
+    if (typeof context?.boardroomExecution?.sourceId === 'string' && context.boardroomExecution.sourceId.trim().length > 0) {
+        return context.boardroomExecution.sourceId.trim();
+    }
+    return undefined;
+}
 
 export const CommerceTools = {
     /**
@@ -19,12 +147,14 @@ export const CommerceTools = {
         artworkIndex?: number;
         scene?: 'studio' | 'lifestyle' | 'flat';
         aspectRatio?: string;
-    }) => {
-        let artworkUrl = args.artworkUrl;
-        if (!artworkUrl && args.artworkIndex !== undefined) {
-            const { useStore } = await importWithRetry(() => import('@/core/store'));
-            const store = useStore.getState();
-            artworkUrl = store.generatedHistory?.[args.artworkIndex]?.url ?? store.uploadedImages?.[args.artworkIndex]?.url;
+    }, context?: AgentContext) => {
+        const explicitSource = explicitArtworkSourceLabel(args.artworkUrl, args.artworkIndex, context);
+        const artworkUrl = await resolveAgentAssetUrl(args.artworkUrl, context, args.artworkIndex);
+        if (explicitSource && !artworkUrl) {
+            return toolError(
+                `Could not resolve requested artwork source "${explicitSource}". Verify the asset alias or upload the image first.`,
+                'INVALID_INPUT'
+            );
         }
         const productType = args.productType || args.kind || 'poster';
         const designIdea = args.designIdea || `Photorealistic mockup of ${productType}`;
@@ -34,21 +164,31 @@ export const CommerceTools = {
             artworkUrl,
             scene: args.scene,
             aspectRatio: args.aspectRatio
-        });
+        }, context);
     }),
 
-    mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string; artworkUrl?: string; scene?: 'studio' | 'lifestyle' | 'flat'; aspectRatio?: string }) => {
+    mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string; artworkUrl?: string; scene?: 'studio' | 'lifestyle' | 'flat'; aspectRatio?: string }, context?: AgentContext) => {
+        const explicitSource = explicitArtworkSourceLabel(args.artworkUrl, undefined, context);
+        const resolvedArtworkUrl = await resolveAgentAssetUrl(args.artworkUrl, context);
+        if (explicitSource && !resolvedArtworkUrl) {
+            return toolError(
+                `Could not resolve requested artwork source "${explicitSource}". Verify the asset alias or upload the image first.`,
+                'INVALID_INPUT'
+            );
+        }
         // F1 extension (plan §11): when real artwork is supplied, route through
         // MockupService — the artwork crosses as a sourceImages reference with
         // a fidelity-locked template, never re-described in prose alone.
         // Results become history items (meta 'mockup') + H1 version records.
-        if (args.artworkUrl) {
+        if (resolvedArtworkUrl) {
             const kindByProduct: Record<string, string> = {
                 't-shirt': 'tee', 'tee': 'tee', 'hoodie': 'hoodie',
-                'vinyl': 'vinyl-12', '12-inch vinyl': 'vinyl-12',
-                'poster': 'poster', 'cassette': 'cassette', 'cd': 'cd-jewel'
+                'vinyl': 'vinyl-12', 'vinyl-12': 'vinyl-12', '12-inch vinyl': 'vinyl-12',
+                'poster': 'poster', 'cassette': 'cassette',
+                'cd': 'cd-jewel', 'cd-jewel': 'cd-jewel',
+                'story-card': 'story-card', 'story card': 'story-card'
             };
-            const kind = kindByProduct[args.productType.toLowerCase()] ?? 'poster';
+            const kind = kindByProduct[(args.productType || 'poster').toLowerCase()] ?? 'poster';
             const { generateMockup, MOCKUP_PROMPTS } = await importWithRetry(() => import('@/services/mockup/MockupService'));
             if (!(kind in MOCKUP_PROMPTS)) {
                 return toolError(`No mockup template for product type "${args.productType}". Supported artwork mockups: tee, hoodie, vinyl, poster, cassette, cd.`, 'INVALID_INPUT');
@@ -56,7 +196,7 @@ export const CommerceTools = {
 
             try {
                 const mockup = await generateMockup({
-                    artworkUrl: args.artworkUrl,
+                    artworkUrl: resolvedArtworkUrl,
                     kind: kind as Parameters<typeof generateMockup>[0]['kind'],
                     scene: args.scene,
                     aspectRatio: args.aspectRatio

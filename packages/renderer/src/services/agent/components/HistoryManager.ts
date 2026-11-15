@@ -29,7 +29,8 @@ export class HistoryManager {
     private cleanHistory(history: AgentMessage[]): AgentMessage[] {
         return history.filter(m =>
             (m.role === 'user' || m.role === 'model') &&
-            m.text && m.text.trim() !== ''
+            ((typeof m.text === 'string' && m.text.trim() !== '') ||
+                (Array.isArray(m.attachments) && m.attachments.length > 0))
         );
     }
 
@@ -55,6 +56,21 @@ export class HistoryManager {
 
         return messages.map(msg => {
             const role = msg.role === 'user' ? 'User' : 'Assistant';
+            const trimmedText = typeof msg.text === 'string' ? msg.text.trim() : '';
+            const attachmentSummary = Array.isArray(msg.attachments) && msg.attachments.length > 0
+                ? `[Attached: ${msg.attachments.map(att => (
+                    att.filename
+                        ? `${att.filename} (${att.mimeType || 'file'})`
+                        : (att.mimeType || 'file')
+                )).join(', ')}]`
+                : '';
+
+            if (trimmedText && attachmentSummary) {
+                return `${role}: ${msg.text} ${attachmentSummary}`;
+            }
+            if (attachmentSummary) {
+                return `${role}: ${attachmentSummary}`;
+            }
             return `${role}: ${msg.text}`;
         }).join('\n');
     }

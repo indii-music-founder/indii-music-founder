@@ -14,6 +14,7 @@ import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
 import { PrintCropCancelledError, printGalleryReference } from '@/services/upscale/PrintPreparationControl';
 import { AppErrorCode } from '@/shared/types/errors';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -110,6 +111,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
+        let referenceUris: string[] | undefined;
 
         // Handle Reference Images
         if (args.referenceImageIndex !== undefined) {
@@ -139,6 +141,26 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 const match = upload.url.match(/^data:(.+);base64,(.+)$/);
                 if (match) {
                     sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
+                }
+            }
+        } else if (context?.assetReferences?.length || context?.attachments?.length || context?.boardroomExecution?.sourceId) {
+            const { resolveAgentAssetUrl } = await importWithRetry(() => import('./CommerceTools'));
+            const resolvedUrl = await resolveAgentAssetUrl(context?.boardroomExecution?.sourceId, context);
+            if (resolvedUrl && !resolvedUrl.startsWith('[elided ')) {
+                const match = resolvedUrl.match(/^data:([^;]+);base64,(.+)$/);
+                if (match && !match[2]!.trim().startsWith('[elided ')) {
+                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
+                } else if (resolvedUrl.startsWith('gs://')) {
+                    referenceUris = [resolvedUrl];
+                } else if (/^https?:\/\//i.test(resolvedUrl)) {
+                    try {
+                        const fetched = await fetchAsBase64(resolvedUrl);
+                        if (fetched.base64 && !fetched.base64.trim().startsWith('[elided ')) {
+                            sourceImages = [{ mimeType: fetched.mimeType, data: fetched.base64 }];
+                        }
+                    } catch (fetchErr) {
+                        logger.warn('[DirectorTools] Failed to fetch referenced HTTPS asset as source image:', fetchErr);
+                    }
                 }
             }
         }
@@ -189,6 +211,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 seed: args.seed,
                 personGeneration: { 'allow_adult': 'ALLOW_ADULT', 'dont_allow': 'ALLOW_NONE', 'allow_all': 'ALLOW_ALL' }[studioControls.personGeneration] ?? 'ALLOW_ADULT',
                 sourceImages,
+                referenceUris,
                 userProfile,
                 boardroomDispatchLeaseId: context?.boardroomDispatchPlan?.leaseId || undefined,
                 boardroomAgentId: context?.boardroomDispatchPlan?.leaseId
@@ -683,9 +706,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         artworkIndex?: number;
         scene?: 'studio' | 'lifestyle' | 'flat';
         aspectRatio?: string;
-    }) => {
+    }, context) => {
         const { CommerceTools } = await import('./CommerceTools');
-        return CommerceTools.generate_mockup!(args);
+        return CommerceTools.generate_mockup!(args, context);
     }),
 
     render_distribution_bundle: wrapTool('render_distribution_bundle', async (args: {

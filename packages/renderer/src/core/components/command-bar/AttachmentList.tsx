@@ -1,9 +1,18 @@
 import React, { memo } from 'react';
-import { Image, Paperclip, X } from 'lucide-react';
+import { Image, Music, Paperclip, X } from 'lucide-react';
 
 interface AttachmentListProps {
     attachments: File[];
     onRemove: (index: number) => void;
+}
+
+const AUDIO_FILENAME_PATTERN = /\.(mp3|wav|flac|aiff|aif|m4a|ogg|aac)$/i;
+
+/**
+ * Returns true when an attached file should be represented as an audio track.
+ */
+function isAudioAttachment(file: File): boolean {
+    return file.type.startsWith('audio/') || AUDIO_FILENAME_PATTERN.test(file.name);
 }
 
 export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListProps) => {
@@ -12,7 +21,7 @@ export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListPro
         <ul className="px-4 pb-2 flex gap-2 flex-wrap m-0 list-none" aria-label="Attached files">
             {attachments.map((file, index) => (
                 <li key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
-                    {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
+                    {file.type.startsWith('image/') ? <Image size={12} /> : isAudioAttachment(file) ? <Music size={12} /> : <Paperclip size={12} />}
                     <span className="max-w-[150px] truncate">{file.name}</span>
                     <button
                         type="button"

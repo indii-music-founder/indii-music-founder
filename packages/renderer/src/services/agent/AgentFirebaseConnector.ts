@@ -76,7 +76,18 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
             if (msg.source) docData.source = msg.source;
             if (msg.metadata) docData.metadata = msg.metadata;
             if (msg.planId) docData.planId = msg.planId;
-            if (msg.attachments) docData.attachments = msg.attachments;
+            if (msg.attachments) {
+                docData.attachments = msg.attachments.map(att => {
+                    if (att && typeof att.base64 === 'string' && att.base64.length > 65_536) {
+                        const approxKb = Math.max(1, Math.round((att.base64.length * 3) / 4 / 1024));
+                        return {
+                            ...att,
+                            base64: `[elided ${approxKb}KB for Firestore document limit]`,
+                        };
+                    }
+                    return att;
+                });
+            }
             if (msg.rating !== undefined) docData.rating = msg.rating;
 
             // Save using merge set to ensure updates to existing messages do not destroy fields

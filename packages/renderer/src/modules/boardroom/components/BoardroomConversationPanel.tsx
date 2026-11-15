@@ -13,6 +13,7 @@ import {
     Camera,
     Clapperboard,
     CloudCog,
+    FileText,
     GraduationCap,
     Handshake,
     Landmark,
@@ -22,6 +23,7 @@ import {
     MessageSquare,
     Music2,
     Palette,
+    Paperclip,
     PenLine,
     Route,
     Scale,
@@ -82,6 +84,52 @@ interface BoardroomConversationPanelProps {
 // bounded batches when the user asks for it.
 export const BOARDROOM_MESSAGE_BATCH_SIZE = 75;
 
+const ATTACHMENT_MIME_EXTENSIONS: Readonly<Record<string, string>> = Object.freeze({
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'application/pdf': 'pdf',
+    'application/json': 'json',
+    'text/plain': 'txt',
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+    'audio/mp4': 'm4a',
+    'audio/flac': 'flac',
+    'audio/ogg': 'ogg',
+    'audio/aac': 'aac',
+    'audio/aiff': 'aiff',
+});
+
+/**
+ * Resolves a safe download filename for a message attachment.
+ */
+function attachmentDownloadName(index: number, mimeType: string, filename?: string): string {
+    const safeName = filename && Array.from(filename, character => {
+        const code = character.charCodeAt(0);
+        return code < 32 || code === 127 || character === '/' || character === '\\' ? '_' : character;
+    }).join('').trim().slice(0, 200);
+    if (safeName && safeName !== '.' && safeName !== '..') {
+        return safeName;
+    }
+    const normalizedMime = mimeType.toLowerCase().split(';')[0]?.trim() || '';
+    const extension = ATTACHMENT_MIME_EXTENSIONS[normalizedMime];
+    return `attachment-${index + 1}${extension ? `.${extension}` : ''}`;
+}
+
+/**
+ * Formats an attachment payload as a browser-usable data URI when base64 content exists.
+ */
+function buildAttachmentDataUri(base64: string | undefined, mimeType: string): string {
+    if (!base64) {
+        return '';
+    }
+    if (base64.startsWith('data:')) {
+        return base64;
+    }
+    return `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
+}
+
 /**
  * BoardroomConversationPanel — Persistent, scrollable conversation feed
  * for the Boardroom split-panel layout.
@@ -105,7 +153,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     );
     const latestMessage = messages[messages.length - 1];
     const latestMessageSignature = latestMessage
-        ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
+        ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}:${latestMessage.attachments?.length || 0}`
         : 'empty';
     const firstVisibleMessageIndex = Math.max(0, messages.length - visibleMessageCount);
     const visibleMessages = messages.slice(firstVisibleMessageIndex);
@@ -359,6 +407,82 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                              {displayText}
                                         </ReactMarkdown>
                                     </div>
+
+                                    {/* User/model message attachments (tracks, images, documents) */}
+                                    {msg.attachments && msg.attachments.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-3">
+                                            {msg.attachments.map((att, i) => {
+                                                const mimeType = att.mimeType || '';
+                                                const dataUri = buildAttachmentDataUri(att.base64, mimeType);
+                                                const displayName = att.filename || attachmentDownloadName(i, mimeType, att.filename);
+                                                const mimeSubtype = (mimeType.split('/')[1] || 'file').split(';')[0] || 'file';
+
+                                                return (
+                                                    <div
+                                                        key={`${msg.id}-att-${i}`}
+                                                        className="rounded-xl border border-white/10 bg-black/30 p-2.5 flex flex-col gap-1.5 max-w-[280px]"
+                                                    >
+                                                        {att.loadFailed ? (
+                                                            <p role="alert" className="text-xs text-amber-200">
+                                                                Attachment could not be loaded. Reopen this conversation to retry.
+                                                            </p>
+                                                        ) : mimeType.startsWith('image/') && dataUri ? (
+                                                            <img
+                                                                src={dataUri}
+                                                                alt={att.filename || `attachment ${i + 1}`}
+                                                                className="max-w-[240px] max-h-[240px] object-cover rounded-lg border border-white/10"
+                                                            />
+                                                        ) : mimeType.startsWith('audio/') ? (
+                                                            <div className="flex flex-col gap-2 min-w-[220px]">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <Music2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                                                    <span className="text-xs text-white/90 truncate" title={displayName}>
+                                                                        {displayName}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-mono uppercase text-white/40 ml-auto shrink-0">
+                                                                        {mimeSubtype}
+                                                                    </span>
+                                                                </div>
+                                                                {dataUri && (
+                                                                    <audio
+                                                                        controls
+                                                                        preload="metadata"
+                                                                        src={dataUri}
+                                                                        className="w-full h-8"
+                                                                        aria-label={displayName}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                {mimeType === 'application/pdf' || mimeType.startsWith('text/') ? (
+                                                                    <FileText className="w-4 h-4 text-sky-400 shrink-0" />
+                                                                ) : (
+                                                                    <Paperclip className="w-4 h-4 text-white/60 shrink-0" />
+                                                                )}
+                                                                <span className="text-xs text-white/90 truncate" title={displayName}>
+                                                                    {displayName}
+                                                                </span>
+                                                                <span className="text-[10px] font-mono uppercase text-white/40 ml-auto shrink-0">
+                                                                    {mimeSubtype}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {!att.loadFailed && dataUri && (
+                                                            <a
+                                                                href={dataUri}
+                                                                download={attachmentDownloadName(i, mimeType, att.filename)}
+                                                                className="text-[11px] text-amber-200 hover:text-amber-100 underline self-start"
+                                                            >
+                                                                Download attachment {i + 1}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
 
                                     {/* Streaming indicator */}
                                     {msg.isStreaming && (

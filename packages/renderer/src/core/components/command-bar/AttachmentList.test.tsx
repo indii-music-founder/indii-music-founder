@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 vi.mock('lucide-react', async (importOriginal) => ({
   ...(await importOriginal<typeof import('lucide-react')>()),
   Image: () => <span data-testid="icon-image" />,
+  Music: () => <span data-testid="icon-music" />,
   Paperclip: () => <span data-testid="icon-paperclip" />,
   X: () => <span data-testid="icon-x" />,
 }));
@@ -50,5 +51,13 @@ describe('AttachmentList', () => {
     fireEvent.click(removeButtons[0]!);
 
     expect(mockOnRemove).toHaveBeenCalledWith(0);
+  });
+
+  it('renders a music icon for audio tracks even when file.type is empty', () => {
+    const audioFile = new File(['audio-bytes'], 'master-mix.wav', { type: '' });
+    render(<AttachmentList attachments={[audioFile]} onRemove={mockOnRemove} />);
+
+    expect(screen.getByText('master-mix.wav')).toBeInTheDocument();
+    expect(screen.getByTestId('icon-music')).toBeInTheDocument();
   });
 });

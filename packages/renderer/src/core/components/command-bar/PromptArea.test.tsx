@@ -210,4 +210,58 @@ describe('PromptArea State Feedback', () => {
     expect(lastCall).toContain('draft take');
     vi.useRealTimers();
   });
+
+  it('selects an audio track with empty MIME type, resets the input for re-selection, focuses input, and sends attachment-only on Enter', async () => {
+    mockSendMessage.mockResolvedValue(undefined);
+    storeState.commandBarInput = '';
+    storeState.commandBarAttachments = [];
+    storeState.setCommandBarAttachments.mockImplementation((files: File[]) => {
+      storeState.commandBarAttachments = files;
+    });
+    const addUploadedAudio = vi.fn().mockResolvedValue(true);
+    (storeState as Record<string, unknown>).addUploadedAudio = addUploadedAudio;
+    (storeState as Record<string, unknown>).currentProjectId = 'proj-1';
+
+    const { rerender } = render(<PromptArea />);
+    const fileInput = screen.getByLabelText('Upload files') as HTMLInputElement;
+    const track = new File(['RIFF'], 'midnight-demo.wav', { type: '' });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [track] } });
+    });
+
+    expect(fileInput.value).toBe('');
+    expect(storeState.commandBarAttachments).toEqual([track]);
+    expect(document.activeElement).toBe(screen.getByTestId('main-prompt-input'));
+
+    rerender(<PromptArea className="with-attachment" />);
+
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId('main-prompt-input'), { key: 'Enter', shiftKey: false });
+    });
+
+    await vi.waitFor(() => {
+      expect(mockSendMessage).toHaveBeenCalledWith(
+        '',
+        [
+          expect.objectContaining({
+            mimeType: 'audio/wav',
+            filename: 'midnight-demo.wav',
+            base64: expect.any(String),
+          }),
+        ],
+        undefined,
+      );
+    });
+    expect(addUploadedAudio).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'music',
+        prompt: 'midnight-demo.wav',
+        origin: 'uploaded',
+      }),
+    );
+
+    delete (storeState as Record<string, unknown>).addUploadedAudio;
+    delete (storeState as Record<string, unknown>).currentProjectId;
+  });
 });

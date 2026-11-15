@@ -629,6 +629,106 @@ export const BOARDROOM_INTENT_QUESTION = {
     },
 };
 export const BOARDROOM_INTENT_MIN_CONFIDENCE = 0.80;
+export const SPECIALIST_ROUTE_MIN_CONFIDENCE = 0.70;
+
+export const SPECIALIST_ROUTE_QUESTION = {
+    type: 'choice' as const,
+    instructions:
+        'Route the artist or founder request to the single best specialist department agent. ' +
+        'IMPORTANT: Visual artwork generation, image editing, upscaling, print preparation (prepare_print_file), ' +
+        'and compositing a logo or artwork onto a product/garment mockup (generate_mockup for a t-shirt, hoodie, ' +
+        'vinyl sleeve, poster, cassette, or CD) belong to "creative" (Creative Director). ' +
+        'Route to "merchandise" only for garment manufacturing specs, print-on-demand fulfillment, SKU pricing, ' +
+        'or storefront drop configuration when the visual mockup is not the primary visual compositing task. ' +
+        'Bug reports, GitHub issue filing, and feature requests belong to "generalist".',
+    criteria: {
+        generalist: 'General coordination, multi-domain questions, bug reports, issue filing, or feature requests.',
+        creative: 'Visual art generation, image editing, print/DPI preparation, and visual product/apparel mockups (placing a logo or artwork onto a t-shirt, hoodie, vinyl, poster, cassette, or CD).',
+        merchandise: 'Merchandise pricing, manufacturing orders, SKU inventory, print-on-demand production specs, and limited drop campaigns.',
+        legal: 'Contracts, split sheets, copyright, PRO/registration, licensing, and legal agreements.',
+        music: 'Audio analysis, songwriting, lyrics, stems, mastering, and music production.',
+        video: 'Video generation, storyboards, treatments, and timeline editing.',
+        marketing: 'Social media posts, campaign strategy, audience growth, and release marketing.',
+        finance: 'Royalties, accounting, budgets, recoupment, and tax/expense tracking.',
+        publishing: 'Publishing administration, sync licensing, PRO catalogs, and mechanicals.',
+        distribution: 'DSP delivery, ISRC/UPC metadata, release scheduling, and distributor operations.',
+        road: 'Touring, live routing, venue advancing, and hospitality/technical riders.',
+        publicist: 'Press releases, EPKs, media pitches, and PR campaigns.',
+        licensing: 'Sync clearances, master/publishing quotes, and license agreements.',
+        brand: 'Artist identity, brand bible, visual guidelines, and positioning.',
+        social: 'Community engagement, short-form social content, and platform scheduling.',
+        producer: 'Record production, DAW/Ableton sessions, arrangement, sound design, stems, and studio session management.',
+        director: 'Creative visual direction, shoot concepts, treatment pitches, and multi-scene visual oversight.',
+        screenwriter: 'Scriptwriting, dialogue, narrative treatments, screenplay formatting, and music video scripts.',
+        hospitality: 'Artist hospitality riders, green room logistics, travel catering, and guest accommodations.',
+        'event-planner': 'Live showcases, launch parties, listening events, pop-ups, and event production timelines.',
+        security: 'Digital and account security audits, access control, artist/venue safety, and compliance posture.',
+        devops: 'Build systems, CI/CD pipelines, infrastructure reliability, deployments, and cloud operations.',
+        analytics: 'Streaming analytics, audience metrics, chart performance, KPI tracking, and data reporting.',
+        rights: 'Master and composition rights, sample clearance tracking, neighboring rights, and catalog ownership.',
+        curriculum: 'Music education materials, artist academy workshops, lesson plans, and training syllabi.',
+        keeper: 'Catalog archiving, metadata preservation, historical version records, and institutional memory.',
+    },
+};
+
+export const RAG_CORPUS_ROUTE_QUESTION = {
+    type: 'choice' as const,
+    instructions: 'Select the most relevant knowledge-base corpus for this music-business request.',
+    criteria: {
+        general: 'General or cross-domain music business query.',
+        visual: 'Visual art, image editing, print prep, or visual mockup composition.',
+        merchandise: 'Merchandise manufacturing, pricing, or print-on-demand.',
+        contracts: 'Contracts, split sheets, or legal agreements.',
+        registration: 'Copyright, PRO, MLC, or SoundExchange registration.',
+        production: 'Music production, audio analysis, or songwriting.',
+        marketing: 'Marketing campaigns, PR, or social strategy.',
+        finance: 'Finance, accounting, expenses, or budgets.',
+        royalties: 'Royalty statements, splits, or payout calculation.',
+        deals: 'Record label, distribution, or publishing deal terms.',
+        publishing: 'Music publishing and composition rights.',
+        licensing: 'Sync or master licensing.',
+        touring: 'Live touring, venues, or road management.',
+        career: 'Artist career development and brand strategy.',
+    },
+};
+
+export async function judgeSpecialistAgentRoute(
+    query: string,
+    activeModule?: string,
+    hasSourceAssets = false,
+): Promise<{ targetAgentId: string; ragCorpus: string; confidence: number } | null> {
+    if (!judgmentsAvailable('judgeSpecialistAgentRoute') || !query.trim()) return null;
+    try {
+        const result = await httpsCallable<
+            { state: Record<string, unknown>; questions: Record<string, unknown> },
+            { answers: Record<string, unknown> }
+        >(getFunctions(), 'typesafeJudge')({
+            state: {
+                query: query.slice(0, 2000),
+                activeModule: activeModule || 'none',
+                hasSourceAssets,
+            },
+            questions: {
+                specialist: SPECIALIST_ROUTE_QUESTION,
+                corpus: RAG_CORPUS_ROUTE_QUESTION,
+            },
+        });
+        const allowedAgents = Object.keys(SPECIALIST_ROUTE_QUESTION.criteria);
+        const allowedCorpora = Object.keys(RAG_CORPUS_ROUTE_QUESTION.criteria);
+        const targetAgentId = confidentDeclaredChoice(
+            result.data.answers?.specialist,
+            allowedAgents,
+            SPECIALIST_ROUTE_MIN_CONFIDENCE,
+        );
+        if (!targetAgentId) return null;
+        const confidence = boundedConfidenceValue(result.data.answers?.specialist) ?? SPECIALIST_ROUTE_MIN_CONFIDENCE;
+        const ragCorpus = whitelistedChoice(result.data.answers?.corpus, allowedCorpora) ?? 'general';
+        return { targetAgentId, ragCorpus, confidence };
+    } catch (error) {
+        noteJudgmentFailure(error, 'specialist agent route judgment', 'judgeSpecialistAgentRoute');
+        return null;
+    }
+}
 
 export async function judgeBoardroomIntent(query: string, recentConversation: string, attachedImageCount = 0): Promise<BoardroomIntent | null> {
     if (!judgmentsAvailable("judgeBoardroomIntent") || !query.trim()) return null;

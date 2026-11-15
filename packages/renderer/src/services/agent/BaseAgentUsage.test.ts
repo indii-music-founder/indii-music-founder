@@ -534,4 +534,288 @@ describe('BaseAgent completion audit ordering', () => {
         expect(recordToolOutcome).toHaveBeenCalledTimes(1);
     });
 
+    it('breaks repeated identical read-tool loops without exhausting MAX_ITERATIONS', async () => {
+        const agent = new BaseAgent({
+            id: 'merchandise',
+            name: 'Merchandise Specialist',
+            description: 'Merch',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'test',
+            tools: [{
+                functionDeclarations: [{
+                    name: 'list_domain_records',
+                    description: 'Read records',
+                    parameters: { type: 'OBJECT', properties: { collectionName: { type: 'STRING' } } },
+                }],
+            }],
+            authorizedTools: ['list_domain_records'],
+        });
+        const listRecords = vi.fn(async () => ({
+            success: true,
+            data: { records: [], count: 0 },
+            message: 'No records found in merchandise.',
+        }));
+        (agent as unknown as { functions: Record<string, typeof listRecords> }).functions.list_domain_records = listRecords;
+
+        vi.mocked(AI.generateContentStream)
+            .mockResolvedValue({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'list_domain_records', args: { collectionName: 'merchandise' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+        const response = await agent.execute('Check my merchandise records');
+
+        expect(listRecords).toHaveBeenCalledTimes(1);
+        expect(response.error).toBeUndefined();
+        expect(response.text).toContain('No records found in merchandise.');
+        expect(AI.generateContentStream).toHaveBeenCalledTimes(3);
+    });
+
+    it('excludes raw attachment base64 from # CONTEXT while keeping compressed inlineData under budget', async () => {
+        const agent = new BaseAgent({
+            id: 'creative',
+            name: 'Creative Director',
+            description: 'Creative',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'test',
+            tools: [],
+            authorizedTools: [],
+        });
+        const rawBase64 = 'A'.repeat(200_000);
+        vi.mocked(AI.generateContentStream).mockResolvedValueOnce({
+            stream: new ReadableStream({ start(controller) { controller.close(); } }),
+            response: Promise.resolve({
+                text: () => 'Mockup ready.',
+                functionCalls: () => [],
+            }),
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+        const response = await agent.execute(
+            'Put this logo on a black t-shirt',
+            { attachments: [{ mimeType: 'image/png', base64: rawBase64 }] },
+            undefined,
+            undefined,
+            [{ mimeType: 'image/png', base64: rawBase64 }],
+        );
+
+        expect(response.error).toBeUndefined();
+        expect(response.text).toBe('Mockup ready.');
+        const sentContents = vi.mocked(AI.generateContentStream).mock.calls[0]?.[0];
+        const firstContent = Array.isArray(sentContents) ? sentContents[0] : undefined;
+        const promptPartText = (firstContent && typeof firstContent === 'object' && 'parts' in firstContent
+            ? (firstContent.parts?.[0] as { text?: string } | undefined)?.text
+            : '') ?? '';
+        expect(promptPartText).not.toContain(rawBase64);
+        expect(promptPartText).toContain('attachment-0');
+    });
+
+    it('delivers context.attachments when positional attachments are omitted and strips elided placeholders', async () => {
+        const agent = new BaseAgent({
+            id: 'creative',
+            name: 'Creative Director',
+            description: 'Creative',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'test',
+            tools: [],
+            authorizedTools: [],
+        });
+        vi.mocked(AI.generateContentStream).mockResolvedValueOnce({
+            stream: new ReadableStream({ start(controller) { controller.close(); } }),
+            response: Promise.resolve({
+                text: () => 'Mockup ready.',
+                functionCalls: () => [],
+            }),
+        } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+        await agent.execute('Use this logo', {
+            attachments: [
+                { mimeType: 'image/png', base64: '[elided 95KB for Firestore document limit]' },
+                { mimeType: 'image/png', base64: 'bGl2ZS1pbWFnZS1ieXRlcw==' },
+            ],
+        });
+
+        const sentContents = vi.mocked(AI.generateContentStream).mock.calls[0]?.[0] as Array<{
+            parts?: Array<{ inlineData?: { mimeType: string; data: string }; text?: string }>;
+        }>;
+        const inlineParts = sentContents[0]?.parts?.filter(part => 'inlineData' in part) || [];
+        expect(inlineParts).toHaveLength(1);
+        expect(inlineParts[0]?.inlineData).toEqual({
+            mimeType: 'image/png',
+            data: 'bGl2ZS1pbWFnZS1ieXRlcw==',
+        });
+    });
+
+    it('applies output guardrails on withheld-tool early returns and never executes uncompleted tools when tools are withheld', async () => {
+        const { ModelArmor } = await import('@/services/agent/governance/ModelArmor');
+        const scanOutputMock = vi.mocked(ModelArmor.scanOutput);
+        scanOutputMock.mockResolvedValueOnce({
+            allowed: true,
+            redactedResponse: 'Sanitized lookup response.',
+        });
+
+        try {
+            const dupAgent = new BaseAgent({
+                id: 'merchandise',
+                name: 'Merchandise Specialist',
+                description: 'Merch',
+                color: '#fff',
+                category: 'specialist',
+                systemPrompt: 'test',
+                tools: [{
+                    functionDeclarations: [{
+                        name: 'list_domain_records',
+                        description: 'Read records',
+                        parameters: { type: 'OBJECT', properties: { collectionName: { type: 'STRING' } } },
+                    }],
+                }],
+                authorizedTools: ['list_domain_records'],
+            });
+            const listRecords = vi.fn(async () => ({
+                success: true,
+                data: { records: [], count: 0 },
+                message: 'Raw secret lookup result.',
+            }));
+            (dupAgent as unknown as { functions: Record<string, typeof listRecords> }).functions.list_domain_records = listRecords;
+
+            vi.mocked(AI.generateContentStream)
+                .mockResolvedValue({
+                    stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                    response: Promise.resolve({
+                        text: () => '',
+                        functionCalls: () => [{ name: 'list_domain_records', args: { collectionName: 'merchandise' } }],
+                    }),
+                } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+            const guardedResponse = await dupAgent.execute('Check my records');
+            expect(scanOutputMock).toHaveBeenCalledTimes(1);
+            expect(guardedResponse.text).toBe('Sanitized lookup response.');
+            expect(listRecords).toHaveBeenCalledTimes(1);
+        } finally {
+            scanOutputMock.mockResolvedValue({ allowed: true, violations: [] });
+        }
+
+        const cappedAgent = new BaseAgent({
+            id: 'generalist',
+            name: 'Generalist',
+            description: 'Test',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'test',
+            maxIterations: 2,
+            tools: [{
+                functionDeclarations: [{
+                    name: 'generate_image',
+                    description: 'Classified test tool',
+                    parameters: { type: 'OBJECT', properties: { prompt: { type: 'STRING' } } },
+                }],
+            }],
+            authorizedTools: ['generate_image'],
+        });
+        const genImage = vi.fn(async () => ({ success: false, message: 'failed' }));
+        (cappedAgent as unknown as { functions: Record<string, typeof genImage> }).functions.generate_image = genImage;
+        let step = 0;
+        vi.mocked(AI.generateContentStream).mockImplementation(async () => {
+            step += 1;
+            return {
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'generate_image', args: { prompt: `step-${step}` } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>;
+        });
+
+        const cappedResult = await cappedAgent.execute('Run uncached tool twice');
+        expect(genImage).toHaveBeenCalledTimes(1);
+        expect(cappedResult.error).toBe('Max iterations reached');
+    });
+
+    it('invalidates cached read-tool results after an intervening non-read tool execution', async () => {
+        const agent = new BaseAgent({
+            id: 'generalist',
+            name: 'Generalist',
+            description: 'Test',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'test',
+            tools: [{
+                functionDeclarations: [
+                    {
+                        name: 'list_domain_records',
+                        description: 'Read records',
+                        parameters: { type: 'OBJECT', properties: { collectionName: { type: 'STRING' } } },
+                    },
+                    {
+                        name: 'generate_image',
+                        description: 'Mutating generation tool',
+                        parameters: { type: 'OBJECT', properties: { prompt: { type: 'STRING' } } },
+                    },
+                ],
+            }],
+            authorizedTools: ['list_domain_records', 'generate_image'],
+        });
+        let version = 0;
+        const listRecords = vi.fn(async () => {
+            version += 1;
+            return {
+                success: true,
+                data: { version },
+                message: `Records version ${version}`,
+            };
+        });
+        const genImage = vi.fn(async () => ({
+            success: true,
+            data: { urls: ['https://example.test/out.png'] },
+            message: 'Generated image',
+        }));
+        const agentWithFns = agent as unknown as {
+            functions: Record<string, (...args: unknown[]) => Promise<unknown>>;
+        };
+        agentWithFns.functions.list_domain_records = listRecords;
+        agentWithFns.functions.generate_image = genImage;
+
+        vi.mocked(AI.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'list_domain_records', args: { collectionName: 'merchandise' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'generate_image', args: { prompt: 'new asset' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'list_domain_records', args: { collectionName: 'merchandise' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => 'Verified updated listing.',
+                    functionCalls: () => [],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
+
+        const response = await agent.execute('Check records, generate an image, and re-check records');
+
+        expect(listRecords).toHaveBeenCalledTimes(2);
+        expect(genImage).toHaveBeenCalledTimes(1);
+        expect(response.error).toBeUndefined();
+        expect(response.text).toBe('Verified updated listing.');
+    });
+
 });

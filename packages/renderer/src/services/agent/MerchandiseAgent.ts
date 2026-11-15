@@ -67,7 +67,7 @@ const MERCHANDISE_TOOLS: FunctionDeclaration[] = [
             properties: {
                 assetUrl: {
                     type: 'STRING',
-                    description: 'URL or base64 data of the design/logo to apply'
+                    description: 'URL, data URL, or Studio/Boardroom asset alias (e.g., "attachment-0", "upload-0", "gallery-0") of the design/logo to apply'
                 },
                 productType: {
                     type: 'STRING',
@@ -91,12 +91,97 @@ const MERCHANDISE_TOOLS: FunctionDeclaration[] = [
             required: ['assetUrl', 'productType', 'placement', 'sceneDescription']
         },
         schema: z.object({
-            assetUrl: z.string().url('Must be a valid URL or data URL').or(z.string().startsWith('data:', 'Must be URL or base64 data URL')),
+            assetUrl: z.string().min(1, 'Must be a valid URL, data URL, or asset alias (e.g., attachment-0, upload-0, gallery-0)'),
             productType: z.enum(['t-shirt', 'hoodie', 'mug', 'bottle', 'phone', 'poster']),
             placement: z.string().min(1, 'Placement required'),
             sceneDescription: z.string().min(10, 'Scene description should be descriptive'),
             purpose: z.enum(['store-listing', 'marketing', '3d-visualization', 'product-catalog']).optional()
         })
+    },
+    {
+        name: 'generate_mockup',
+        description: 'Generate a photorealistic merchandise/media mockup (t-shirt, hoodie, vinyl, poster, cassette, cd) preserving 1:1 artwork fidelity from an attached image, upload alias (attachment-0, upload-0, gallery-0), or URL.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                productType: {
+                    type: 'STRING',
+                    description: 'Product type (e.g., "t-shirt", "tee", "hoodie", "vinyl", "poster", "cassette", "cd")'
+                },
+                kind: {
+                    type: 'STRING',
+                    description: 'Optional template kind alias ("tee", "hoodie", "vinyl-12", "poster", "cassette", "cd-jewel")'
+                },
+                designIdea: {
+                    type: 'STRING',
+                    description: 'Optional scene or styling description for the mockup'
+                },
+                artworkUrl: {
+                    type: 'STRING',
+                    description: 'Artwork URL, data URL, or alias (e.g., "attachment-0", "upload-0", "gallery-0")'
+                },
+                artworkIndex: {
+                    type: 'NUMBER',
+                    description: 'Optional numeric index into gallery/uploaded images'
+                },
+                scene: {
+                    type: 'STRING',
+                    enum: ['studio', 'lifestyle', 'flat'],
+                    description: 'Staging style'
+                },
+                aspectRatio: {
+                    type: 'STRING',
+                    description: 'Optional aspect ratio (e.g., "1:1", "4:5")'
+                }
+            }
+        },
+        schema: z.object({
+            productType: z.string().optional(),
+            kind: z.string().optional(),
+            designIdea: z.string().optional(),
+            artworkUrl: z.string().optional(),
+            artworkIndex: z.number().int().min(0).optional(),
+            scene: z.enum(['studio', 'lifestyle', 'flat']).optional(),
+            aspectRatio: z.string().optional(),
+        }),
+    },
+    {
+        name: 'mockup_merchandise',
+        description: 'Generate a merchandise mockup preview for a product type with artwork or a design description.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                productType: {
+                    type: 'STRING',
+                    description: 'Product type (e.g., "t-shirt", "hoodie", "vinyl", "poster")'
+                },
+                designIdea: {
+                    type: 'STRING',
+                    description: 'Description of the design or mockup staging'
+                },
+                artworkUrl: {
+                    type: 'STRING',
+                    description: 'Optional artwork URL, data URL, or alias (e.g., "attachment-0", "upload-0", "gallery-0")'
+                },
+                scene: {
+                    type: 'STRING',
+                    enum: ['studio', 'lifestyle', 'flat'],
+                    description: 'Optional staging style'
+                },
+                aspectRatio: {
+                    type: 'STRING',
+                    description: 'Optional aspect ratio'
+                }
+            },
+            required: ['productType', 'designIdea']
+        },
+        schema: z.object({
+            productType: z.string().min(1, 'Product type is required'),
+            designIdea: z.string().min(1, 'Design idea is required'),
+            artworkUrl: z.string().optional(),
+            scene: z.enum(['studio', 'lifestyle', 'flat']).optional(),
+            aspectRatio: z.string().optional(),
+        }),
     },
     {
         name: 'generate_product_video',
@@ -214,11 +299,19 @@ export class MerchandiseAgent extends BaseAgent {
             color: 'bg-yellow-400',
             category: 'specialist',
             systemPrompt,
-            authorizedTools: ['list_domain_records', 'search_assets', 'create_product_mockup', 'generate_product_video',
+            authorizedTools: ['list_domain_records', 'search_assets', 'create_product_mockup', 'generate_mockup', 'mockup_merchandise', 'generate_product_video',
                 'submit_to_production', 'ask_clarification', 'list_product_types'],
             tools: [{ functionDeclarations: [...merchandiseRetrievalDeclarations, ...MERCHANDISE_TOOLS] }],
             functions: {
                 ...merchandiseRetrievalTools,
+                generate_mockup: async (args, context) => {
+                    const { CommerceTools } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    return CommerceTools.generate_mockup(args as Parameters<typeof CommerceTools.generate_mockup>[0], context);
+                },
+                mockup_merchandise: async (args, context) => {
+                    const { CommerceTools } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    return CommerceTools.mockup_merchandise(args as Parameters<typeof CommerceTools.mockup_merchandise>[0], context);
+                },
                 search_assets: async (args, _context) => {
                     const { query, projectId, limit = 10 } = args as { query: string; projectId?: string; limit?: number };
                     const { useStore } = await importWithRetry(() => import('@/core/store'));
@@ -262,7 +355,7 @@ export class MerchandiseAgent extends BaseAgent {
                         message: `Found ${matches.length} assets matching "${query}"`
                     };
                 },
-                create_product_mockup: async (args, _context) => {
+                create_product_mockup: async (args, context) => {
                     const { assetUrl, productType, placement, sceneDescription, purpose = 'store-listing' } = args as {
                         assetUrl: string;
                         productType: string;
@@ -274,18 +367,20 @@ export class MerchandiseAgent extends BaseAgent {
                     if (!assetUrl || typeof assetUrl !== 'string' || !assetUrl.trim()) {
                         return {
                             success: false,
-                            error: 'A valid assetUrl (data: URL or http(s):// URL) is required to create a product mockup.',
+                            error: 'A valid assetUrl (data: URL, http(s):// URL, or asset alias) is required to create a product mockup.',
                         };
                     }
 
-                    const trimmedUrl = assetUrl.trim();
+                    const { resolveAgentAssetUrl } = await importWithRetry(() => import('./tools/CommerceTools'));
+                    const resolvedAssetUrl = (await resolveAgentAssetUrl(assetUrl, context)) ?? assetUrl.trim();
+                    const trimmedUrl = resolvedAssetUrl.trim();
                     const isDataUrl = trimmedUrl.startsWith('data:');
                     const isHttpUrl = /^https?:\/\//i.test(trimmedUrl);
                     const isGsUrl = trimmedUrl.startsWith('gs://');
                     if (!isDataUrl && !isHttpUrl && !isGsUrl) {
                         return {
                             success: false,
-                            error: `Unsupported assetUrl scheme: "${trimmedUrl}". Expected a data: URL, gs:// URI, or http(s):// URL.`,
+                            error: `Unsupported assetUrl scheme: "${trimmedUrl}". Expected a data: URL, gs:// URI, http(s):// URL, or valid Studio/Boardroom asset alias.`,
                         };
                     }
 
