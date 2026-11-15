@@ -129,6 +129,17 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         vi.restoreAllMocks();
     });
 
+    it('does not let a late heartbeat recreate a released lease (structural)', async () => {
+        const transaction = claimTx(() => 'PLANNED');
+        vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) => cb(transaction as never));
+        const renew = (agentGraphService as unknown as {
+            acquireGraphLease(userId: string, executionId: string, runnerId: string, renewOnly: boolean): Promise<boolean>;
+        }).acquireGraphLease.bind(agentGraphService);
+
+        await expect(renew('u1', 'exec-1', 'finished-runner', true)).resolves.toBe(false);
+        expect(transaction.update).not.toHaveBeenCalled();
+    });
+
     it('does not claim a lease when the execution document disappears (structural)', async () => {
         wireHappyPath();
         const update = vi.fn();

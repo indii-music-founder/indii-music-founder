@@ -194,7 +194,7 @@ export class AgentGraphService {
 
             // Arm 5-second lease heartbeat
             heartbeatTimer = setInterval(() => {
-                this.acquireGraphLease(userId, executionId, runnerId, 20000).catch(err => {
+                this.acquireGraphLease(userId, executionId, runnerId, true).catch(err => {
                     logger.warn(`[AgentGraph] Heartbeat lease renewal failed for ${executionId}:`, err);
                 });
             }, 5000);
@@ -219,7 +219,7 @@ export class AgentGraphService {
         userId: string,
         executionId: string,
         runnerId: string,
-        leaseDurationMs = 20000
+        renewOnly = false
     ): Promise<boolean> {
         const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
         try {
@@ -230,6 +230,10 @@ export class AgentGraphService {
                 const now = Date.now();
                 const existingLease = currentGraphLease(data);
 
+                if (renewOnly && (existingLease?.holderId !== runnerId || existingLease.expiresAt <= now)) {
+                    return false;
+                }
+
                 if (existingLease && existingLease.expiresAt > now && existingLease.holderId !== runnerId) {
                     logger.warn(`[AgentGraph] Execution ${executionId} is actively leased by ${existingLease.holderId} until ${new Date(existingLease.expiresAt).toISOString()}`);
                     return false;
@@ -239,7 +243,7 @@ export class AgentGraphService {
                     'metadata.lease': {
                         holderId: runnerId,
                         acquiredAt: existingLease?.holderId === runnerId ? existingLease.acquiredAt : now,
-                        expiresAt: now + leaseDurationMs,
+                        expiresAt: now + 20000,
                     },
                     updatedAt: serverTimestamp(),
                 });
