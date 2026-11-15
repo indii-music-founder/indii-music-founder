@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand';
 import { SessionPersistenceConflict } from '@/services/agent/SessionPersistenceConflict';
-import { buildAgentSessionState, type AgentSessionSlice } from './agentSessionSlice';
+import { buildAgentSessionState, type AgentMessage, type AgentSessionSlice } from './agentSessionSlice';
 
 describe('new session persistence ordering', () => {
     it('waits for creation and the first message before deleting the conversation', async () => {
@@ -55,5 +55,43 @@ describe('new session persistence ordering', () => {
         ]), { timeout: 4500 });
         expect(service.createSession).toHaveBeenCalledTimes(1);
         expect(service.appendMessage).not.toHaveBeenCalled();
+    });
+
+    it('preserves in-memory attachment payload when snapshot update reports loadFailed', async () => {
+        let onMessages!: (messages: AgentMessage[]) => void;
+        const service = {
+            createSession: vi.fn().mockResolvedValue('created'),
+            appendMessage: vi.fn().mockResolvedValue(undefined),
+            deleteSession: vi.fn().mockResolvedValue(undefined),
+            subscribeToMessages: vi.fn((_sessionId: string, onUpdate: (messages: AgentMessage[]) => void) => {
+                onMessages = onUpdate;
+                return () => {};
+            }),
+        };
+        const store = createStore<AgentSessionSlice>()((set, get) => buildAgentSessionState(set, get, async () => service));
+        store.getState().createSession('New', ['indii']);
+        await vi.waitFor(() => expect(onMessages).toBeDefined());
+
+        store.getState().addAgentMessage({
+            id: 'att-msg-1',
+            role: 'user',
+            text: '',
+            timestamp: 100,
+            attachments: [{ mimeType: 'audio/wav', base64: 'UklGRg==', filename: 'demo.wav' }],
+        });
+
+        onMessages([
+            {
+                id: 'att-msg-1',
+                role: 'user',
+                text: '',
+                timestamp: 100,
+                attachments: [{ mimeType: 'audio/wav', base64: '', loadFailed: true }],
+            },
+        ]);
+
+        expect(store.getState().agentHistory[0]?.attachments).toEqual([
+            { mimeType: 'audio/wav', base64: 'UklGRg==', filename: 'demo.wav' },
+        ]);
     });
 });
