@@ -65,4 +65,15 @@ describe('ChatOverlay clean active header and minimize behavior', () => {
         fireEvent.click(screen.getByLabelText('Minimize chat'));
         expect(screen.getByRole('button', { name: /Social Media Director/i })).toBeInTheDocument();
     });
+
+    it('suppresses itself in boardroom mode so only one conversation panel is active', () => {
+        const previousMode = state.conversationMode;
+        state.conversationMode = 'boardroom';
+        try {
+            const { container } = render(<ChatOverlay onClose={vi.fn()} />);
+            expect(container).toBeEmptyDOMElement();
+        } finally {
+            state.conversationMode = previousMode;
+        }
+    });
 });

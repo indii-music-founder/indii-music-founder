@@ -13,7 +13,6 @@ import { PromptArea } from './command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
 import { AgentSwitcherStrip } from './AgentSwitcherStrip';
-import { AgentCanvasToggle } from './AgentCanvasToggle';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -26,6 +25,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         messages,
         isProcessing,
         chatChannel,
+        conversationMode,
         isCommandBarDetached,
         setCommandBarDetached,
         windowSize,
@@ -36,6 +36,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
             messages: state.agentHistory,
             isProcessing: state.isAgentProcessing,
             chatChannel: state.chatChannel,
+            conversationMode: state.conversationMode,
             isCommandBarDetached: state.isCommandBarDetached,
             setCommandBarDetached: state.setCommandBarDetached,
             windowSize: state.agentWindowSize,
@@ -47,9 +48,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
     const dragControls = useDragControls();
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
-    // Resize & Stealth State
+    // Resize & Minimize State
     const [isMinimized, setIsMinimized] = useState(false);
-    const [isStealth, setIsStealth] = useState(false);
     const [localSize, setLocalSize] = useState(windowSize);
     const isResizing = useRef(false);
     const [sourceFilter, setSourceFilter] = useState<'all' | 'desktop' | 'mobile-remote'>('all');
@@ -105,7 +105,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
     }, [localSize, setAgentWindowSize]);
 
     // Visibility Toggles
-    const toggleStealth = useCallback(() => setIsStealth(prev => !prev), []);
     const toggleLocalMinimize = useCallback(() => {
         setIsMinimized(prev => !prev);
         if (onToggleMinimize) onToggleMinimize();
@@ -217,6 +216,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         </>
     ), [handleResize]);
 
+    // Boardroom renders its own unified conversation panel — never stack a second chat overlay on top
+    if (conversationMode === 'boardroom') {
+        return null;
+    }
+
     return (
         <>
             <AnimatePresence>
@@ -225,7 +229,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                         key="chat-overlay"
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{
-                            opacity: isStealth ? 0.15 : 1,
+                            opacity: 1,
                             scale: 1,
                             y: 0,
                             width: isDesktop ? localSize.width : '100vw',
@@ -275,13 +279,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-1 relative z-10">
-                                    <AgentCanvasToggle variant="compact" />
                                     <AgentSwitcherStrip />
                                     <div className="w-px h-4 bg-white/10 mx-1 hidden md:block" />
-                                    <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"} title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={14} /></button>
-                                    <button onClick={toggleLocalMinimize} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Minimize chat" data-testid="minimize-chat-btn"><Minimize2 size={14} /></button>
-                                    <button onClick={toggleStealth} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Toggle Stealth Mode" title="Stealth Mode"><Bot size={14} className="opacity-50" /></button>
-                                    <button onClick={onClose} className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all text-gray-400" aria-label="Close Agent"><X size={14} /></button>
+                                    <button type="button" onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70" aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"} title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={14} /></button>
+                                    <button type="button" onClick={toggleLocalMinimize} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70" aria-label="Minimize chat" data-testid="minimize-chat-btn"><Minimize2 size={14} /></button>
+                                    <button type="button" onClick={onClose} className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70" aria-label="Close Agent"><X size={14} /></button>
                                 </div>
                             </div>
 
@@ -398,15 +400,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                 </div>
                             )}
 
-                            {/* Branding Footer — desktop only, saves space on phone */}
-                            {isDesktop && (
-                                <div className="px-4 py-1.5 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30 shrink-0">
-                                    <span className="text-[10px] text-white/20 font-medium">
-                                        Powered by <span className="font-semibold text-white/30">indii</span>
-                                    </span>
-                                </div>
-                            )}
-
                             {/* Resize Handles (desktop only) */}
                             {isDesktop && ResizeHandles}
                         </ErrorBoundary>
@@ -417,6 +410,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
             {/* Minimized Bar */}
             {isMinimized && (
                 <motion.button
+                    type="button"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={toggleLocalMinimize}

@@ -655,7 +655,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
                 <AgentCanvasPanel />
 
-                {isAgentOpen && (
+                {isAgentOpen && conversationMode !== 'boardroom' && (
                     <ErrorBoundary>
                         <ChatOverlay onClose={toggleAgentWindow} />
                     </ErrorBoundary>
