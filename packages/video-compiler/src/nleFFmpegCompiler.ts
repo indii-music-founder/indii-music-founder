@@ -88,7 +88,7 @@ export function compileFfmpegCommand(
         `[${clipLabel}]scale=${ast.dimensions.width}:-1[${scaledLabel}]`
       );
       filterChains.push(
-        `[${currentVideoOutput}][${scaledLabel}]overlay=eof_action=pass:enable='between(t,${targetStart},${targetEnd})':x=0:y=0[${nextOutput}]`
+        `[${currentVideoOutput}][${scaledLabel}]overlay=eof_action=repeat:enable='gte(t,${targetStart})*lt(t,${targetEnd})':x=0:y=0[${nextOutput}]`
       );
 
       currentVideoOutput = nextOutput;
