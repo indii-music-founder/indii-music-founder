@@ -8,6 +8,7 @@ import { auth } from '../firebase';
 import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId, doc, serverTimestamp, writeBatch, runTransaction, getDocFromServer, getDocsFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 import { platformBridge } from '../platform/PlatformBridgeService';
@@ -73,7 +74,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             throw new Error('User must be authenticated to create an agent session.');
         }
 
-        const doc: SessionDocument = {
+        const sessionDocument: SessionDocument = {
             ...session,
             createdAt: Timestamp.fromMillis(session.createdAt),
             updatedAt: Timestamp.fromMillis(session.updatedAt),
@@ -81,11 +82,37 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             orgId
         };
 
-        // We use set since we already generated an ID in the store
-        await this.set(session.id, cleanFirestoreData(doc));
+        // E2E mock mode intentionally avoids Firestore transactions because
+        // its test backend may be offline. Keep its in-memory persistence path.
+        if (isFirebaseE2EMockEnabled()) {
+            await this.set(session.id, cleanFirestoreData(sessionDocument));
+            this.saveToLocal(session.id, session);
+            return session.id;
+        }
+
+        const sessionRef = doc(db, 'sessions', session.id);
+        const created = await runTransaction(db, async transaction => {
+            const existing = await transaction.get(sessionRef);
+            if (existing.exists()) {
+                const saved = existing.data();
+                if (saved.userId !== userId || saved.orgId !== orgId) {
+                    throw new SessionPersistenceConflict('Session ID is already owned by a different account or organization.');
+                }
+                if (saved.deletingAt != null || saved.clearingOperation != null) {
+                    throw new SessionPersistenceConflict('Cannot recreate a conversation while it is being deleted or cleared.');
+                }
+                // Creation may be retried after a lost acknowledgement. Preserve
+                // the existing session, including messages and attachment state.
+                return false;
+            }
+            transaction.set(sessionRef, cleanFirestoreData(sessionDocument));
+            return true;
+        });
 
         // KEEPER: Dual Write for Electron Local Persistence
-        this.saveToLocal(session.id, session);
+        // A duplicate create carries a stale snapshot; never let it replace the
+        // local copy of a session that has since received messages or edits.
+        if (created) this.saveToLocal(session.id, session);
 
         return session.id;
     }
