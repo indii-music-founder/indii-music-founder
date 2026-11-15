@@ -124,15 +124,49 @@ function markMessagePending(sessionId: string, messageId: string): void {
     pendingMessageIds.set(sessionId, pending);
 }
 
+/**
+ * Preserves already-loaded in-memory attachment payloads when a remote snapshot
+ * omits attachment bytes or reports a transient Storage load failure.
+ */
+function preserveLocalLoadedAttachments(
+    localMessages: AgentMessage[],
+    incomingMessages: AgentMessage[],
+): AgentMessage[] {
+    if (localMessages.length === 0 || incomingMessages.length === 0) {
+        return incomingMessages;
+    }
+    const localById = new Map(localMessages.map(message => [message.id, message]));
+    return incomingMessages.map(incoming => {
+        const local = localById.get(incoming.id);
+        if (!local?.attachments?.length) {
+            return incoming;
+        }
+        if (!incoming.attachments?.length) {
+            return { ...incoming, attachments: local.attachments };
+        }
+        let changed = false;
+        const mergedAttachments = incoming.attachments.map((att, index) => {
+            const localAtt = local.attachments?.[index];
+            if ((att.loadFailed || !att.base64) && localAtt?.base64 && !localAtt.loadFailed) {
+                changed = true;
+                return localAtt;
+            }
+            return att;
+        });
+        return changed ? { ...incoming, attachments: mergedAttachments } : incoming;
+    });
+}
+
 function mergePendingMessages(
     sessionId: string,
     localMessages: AgentMessage[],
     synchronizedMessages: AgentMessage[]
 ): AgentMessage[] {
+    const hydratedSynchronized = preserveLocalLoadedAttachments(localMessages, synchronizedMessages);
     const pending = pendingMessageIds.get(sessionId);
-    if (!pending?.size) return synchronizedMessages;
+    if (!pending?.size) return hydratedSynchronized;
 
-    const synchronizedIds = new Set(synchronizedMessages.map(message => message.id));
+    const synchronizedIds = new Set(hydratedSynchronized.map(message => message.id));
     for (const messageId of synchronizedIds) {
         pending.delete(messageId);
     }
@@ -145,7 +179,7 @@ function mergePendingMessages(
         pendingMessageIds.delete(sessionId);
     }
 
-    return [...synchronizedMessages, ...optimisticMessages]
+    return [...hydratedSynchronized, ...optimisticMessages]
         .sort((a, b) => a.timestamp - b.timestamp);
 }
 
