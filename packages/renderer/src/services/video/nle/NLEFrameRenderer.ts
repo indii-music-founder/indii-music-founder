@@ -74,7 +74,7 @@ export class NLEFrameRenderer {
               this.sources.set(clip.id, source);
             }
             const seconds =
-              Number(getSourceOffsetPts(pts, clip, 60000)) / 60000;
+              Number(getSourceOffsetPts(pts, clip, this.ast.timebase, 1_000_000)) / 1_000_000;
             const frame = await source.getFrameAt(seconds);
             if (frame) {
               layers.push({

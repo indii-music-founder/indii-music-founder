@@ -109,12 +109,13 @@ export function snapToFrame(
 export function getSourceOffsetPts(
   playheadPts: bigint,
   clip: VideoClip | AudioClip,
-  timescale = DEFAULT_TIMESCALE
+  timescale = DEFAULT_TIMESCALE,
+  sourceTimescale = timescale
 ): bigint {
   const startPts = rescaleTime(clip.timelineRange.start, timescale).pts;
   const elapsedTimelinePts = playheadPts - startPts;
-  const scaledElapsed = BigInt(Math.round(Number(elapsedTimelinePts) * clip.speed));
-  const sourceStartPts = rescaleTime(clip.sourceRange.start, timescale).pts;
+  const scaledElapsed = BigInt(Math.round(Number(elapsedTimelinePts) * clip.speed * sourceTimescale / timescale));
+  const sourceStartPts = rescaleTime(clip.sourceRange.start, sourceTimescale).pts;
   return sourceStartPts + scaledElapsed;
 }
 

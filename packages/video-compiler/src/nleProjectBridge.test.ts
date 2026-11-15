@@ -1,3 +1,4 @@
+import { getSourceOffsetPts } from './nleTimelineMath.js';
 import { describe, it, expect } from 'vitest';
 import { projectToTimelineAST, timelineASTToProject } from './nleProjectBridge.js';
 import type { IndiiVideoProject } from '@indii/shared';
@@ -124,6 +125,8 @@ describe('NLE Project Model Bridge (Issue #413 Phase 4)', () => {
     const clip = ast.tracks[0].clips[0];
     expect(clip.sourceRange.start).toEqual({ pts: 500_001n, timescale: 1_000_000 });
     expect(clip.sourceRange.duration.pts).toBe(2_000_000n);
+    expect(getSourceOffsetPts(0n, clip, ast.timebase, 1_000_000)).toBe(500_001n);
+    expect(getSourceOffsetPts(15_000n, clip, ast.timebase, 1_000_000)).toBe(1_000_001n);
     expect(clip.timelineRange.duration.pts).toBe(60_000n);
     expect(timelineASTToProject(ast, 30).clips[0]).toMatchObject({
       sourceInUs: 500_001,
