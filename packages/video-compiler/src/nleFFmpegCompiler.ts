@@ -46,16 +46,16 @@ export function compileFfmpegCommand(
   }
 
   // Calculate total timeline duration in seconds to bound base canvas
-  let maxEndPts = 0n;
+  let maxEndSeconds = 0;
   for (const track of ast.tracks) {
     for (const clip of track.clips) {
-      const endPts = clip.timelineRange.start.pts + clip.timelineRange.duration.pts;
-      if (endPts > maxEndPts) {
-        maxEndPts = endPts;
+      const endSeconds = ptsToSeconds(clip.timelineRange.start) + ptsToSeconds(clip.timelineRange.duration);
+      if (endSeconds > maxEndSeconds) {
+        maxEndSeconds = endSeconds;
       }
     }
   }
-  const totalDurationSeconds = maxEndPts > 0n ? Math.ceil(Number(maxEndPts) / ast.timebase) : 60;
+  const totalDurationSeconds = maxEndSeconds > 0 ? maxEndSeconds : 60;
 
   // 2. Base canvas setup
   const baseCanvas = `color=c=black:s=${ast.dimensions.width}x${ast.dimensions.height}:r=60:d=${totalDurationSeconds}[base]`;
@@ -128,5 +128,5 @@ export function compileFfmpegCommand(
 
   // 5. Final CLI assembly
   const filterGraph = filterChains.join('; ');
-  return `ffmpeg -y ${inputs.join(' ')} -filter_complex "${filterGraph}" -map "[${currentVideoOutput}]" -map "[${finalAudioOutput}]" -c:v libx264 -pix_fmt ${pixelFormat} -preset ${preset} -crf ${crf} -c:a aac -b:a ${audioBitrate} "${outputFilePath}"`;
+  return `ffmpeg -y ${inputs.join(' ')} -filter_complex "${filterGraph}" -map "[${currentVideoOutput}]" -map "[${finalAudioOutput}]" -c:v libx264 -pix_fmt ${pixelFormat} -preset ${preset} -crf ${crf} -c:a aac -b:a ${audioBitrate} -t ${totalDurationSeconds} "${outputFilePath}"`;
 }

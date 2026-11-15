@@ -88,7 +88,7 @@ describe('nleFFmpegCompiler - Headless FFmpeg Filtergraph Generator', () => {
     expect(cmd).toContain('amix=inputs=1:normalize=0');
     expect(cmd).toContain('-map "[canvas_pass_0]"');
     expect(cmd).toContain('-map "[out_a]"');
-    expect(cmd).toContain('-c:v libx264 -pix_fmt yuv420p -preset medium -crf 18 -c:a aac -b:a 320k "/tmp/output.mp4"');
+    expect(cmd).toContain('-c:v libx264 -pix_fmt yuv420p -preset medium -crf 18 -c:a aac -b:a 320k -t 2 "/tmp/output.mp4"');
   });
 
   it('omits clips on muted tracks and falls back to anullsrc if no audio', () => {
@@ -103,6 +103,19 @@ describe('nleFFmpegCompiler - Headless FFmpeg Filtergraph Generator', () => {
     const cmd = compileFfmpegCommand(videoOnlyAst, '/tmp/muted.mp4');
     expect(cmd).toContain('anullsrc=channel_layout=stereo:sample_rate=48000[out_a]');
     expect(cmd).not.toContain('volume=0.8');
+  });
+
+  it('bounds a silent export to the fractional timeline end across timebases', () => {
+    const track = sampleAst.tracks[0];
+    const clip = track.clips[0];
+    const videoOnly = {
+      ...sampleAst,
+      tracks: [{ ...track, clips: [{ ...clip, timelineRange: {
+        start: { pts: 250n, timescale: 1000 },
+        duration: { pts: 36000n, timescale: 60000 },
+      } }] }],
+    };
+    expect(compileFfmpegCommand(videoOnly, '/tmp/silent.mp4')).toContain('-t 0.85 "/tmp/silent.mp4"');
   });
 
   it('respects custom compiler options', () => {
