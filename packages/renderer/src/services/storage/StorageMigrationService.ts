@@ -7,80 +7,57 @@ const STORE_NAME = 'assets';
 
 export class StorageMigrationService {
     private static instance: StorageMigrationService;
-
     private constructor() { }
 
     public static getInstance(): StorageMigrationService {
-        if (!StorageMigrationService.instance) {
-            StorageMigrationService.instance = new StorageMigrationService();
-        }
-        return StorageMigrationService.instance;
+        return StorageMigrationService.instance ??= new StorageMigrationService();
     }
 
     async migrateAllData(): Promise<void> {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User must be logged in to migrate data");
-
-        // Starting migration for user: user.uid
-
-        await this.migrateAssets(user.uid);
-        await this.migrateWorkflows(user.uid);
-
-        // Migration complete
-    }
-
-    private async migrateAssets(userId: string): Promise<void> {
-        const db = await initDB();
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-
-        let cursor = await store.openCursor();
-
-        while (cursor) {
-            const assetId = cursor.key as string;
-            const blob = cursor.value as Blob;
-
-            // Check if already in cloud (optimization)
-            // For now, easier to just try upload or check existence if metadata exists
-            // We'll upload blindly for "last write wins" or if missing
-
-            try {
-                const storageRef = ref(storage, `users/${userId}/assets/${assetId}`);
-                await uploadBytes(storageRef, blob, { contentType: blob.type || 'image/png' });
-                // Migrated asset: ${assetId}
-            } catch (_e: unknown) {
-                // Failed to migrate asset ${assetId}
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('User must be logged in to migrate data');
+        const localDb = await initDB();
+        const failures: Error[] = [];
+        // Enumerate keys, not Blob values, so migration does not retain all media
+        // in memory. Every get below uses its own short-lived IDB transaction;
+        // no cursor or transaction survives a network await.
+        for (const storeName of [STORE_NAME, WORKFLOWS_STORE]) {
+            this.requireSameUser(userId);
+            const keys = await localDb.getAllKeys(storeName);
+            for (const key of keys) {
+                this.requireSameUser(userId);
+                try {
+                    const value = await localDb.get(storeName, key);
+                    if (value === undefined) continue; // Removed locally after enumeration.
+                    this.requireSameUser(userId);
+                    if (storeName === STORE_NAME) {
+                        const blob = value as Blob;
+                        await uploadBytes(ref(storage, `users/${userId}/assets/${String(key)}`), blob, {
+                            contentType: blob.type || 'image/png',
+                        });
+                    } else {
+                        const workflowRef = doc(db, 'workflows', value.id);
+                        await setDoc(workflowRef, {
+                            ...value,
+                            userId,
+                            updatedAt: new Date().toISOString(),
+                            synced: true,
+                        }, { merge: true });
+                    }
+                } catch (cause: unknown) {
+                    failures.push(new Error(`Failed to migrate ${storeName}/${String(key)}`, { cause }));
+                }
             }
-
-            cursor = await cursor.continue();
+        }
+        this.requireSameUser(userId);
+        if (failures.length) {
+            throw new AggregateError(failures, `${failures.length} local records could not be migrated. Local copies were retained; retry migration.`);
         }
     }
 
-    private async migrateWorkflows(userId: string): Promise<void> {
-        const localDb = await initDB();
-        const tx = localDb.transaction(WORKFLOWS_STORE, 'readonly');
-        const store = tx.objectStore(WORKFLOWS_STORE);
-
-        let cursor = await store.openCursor();
-
-        while (cursor) {
-            const workflow = cursor.value;
-            const workflowId = workflow.id;
-
-            try {
-                const workflowRef = doc(db, 'workflows', workflowId);
-                await setDoc(workflowRef, {
-                    ...workflow,
-                    userId,
-                    updatedAt: new Date().toISOString(),
-                    synced: true
-                }, { merge: true });
-                // Migrated workflow: ${workflowId}
-            } catch (_e: unknown) {
-                // Failed to migrate workflow
-            }
-
-            cursor = await cursor.continue();
+    private requireSameUser(userId: string): void {
+        if (auth.currentUser?.uid !== userId) {
+            throw new Error('Account changed during migration. Sign in to the original account and retry.');
         }
     }
 }
