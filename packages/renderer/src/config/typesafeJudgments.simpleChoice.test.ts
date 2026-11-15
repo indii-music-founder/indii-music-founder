@@ -2,7 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ call: vi.fn() }));
 vi.mock('firebase/functions', () => ({ getFunctions: () => ({}), httpsCallable: () => mocks.call }));
 vi.mock('@/config/featureFlags', () => ({ featureFlags: { isEnabled: () => true }, FEATURE_FLAG_NAMES: { TYPESAFE_JUDGMENTS: 'enable_typesafe_judgments' } }));
-import { judgeSkillIntent, judgePreviewErrorGuidance, judgeUpscaleModel, __resetJudgmentCooldownForTests } from './typesafeJudgments';
+import {
+    judgeSkillIntent,
+    judgePreviewErrorGuidance,
+    judgeUpscaleModel,
+    judgeBoardroomIntent,
+    judgeCreativeJourneyIntent,
+    judgeCatalogCollisionRisk,
+    invokeTypesafeJudge,
+    __resetJudgmentCooldownForTests,
+} from './typesafeJudgments';
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 // Boundary/abstention checks, not semantic accuracy or production acceptance.
 describe.each([
@@ -23,5 +33,52 @@ describe.each([
         const answer = shape === 'bare' ? choice : shape === 'array' ? [choice] : { type: shape === 'wrong-type' ? 'score' : 'choice', choice: shape === 'unknown' ? 'not-declared' : choice, confidence: 0.99 };
         mocks.call.mockResolvedValue({ data: { answers: { [key]: answer } } });
         expect(await run()).toBeNull();
+    });
+});
+
+describe('invokeTypesafeJudge & answer shape hardening', () => {
+    beforeEach(() => { vi.clearAllMocks(); __resetJudgmentCooldownForTests(); });
+
+    it('returns null without throwing when result.data or answers is missing', async () => {
+        mocks.call.mockResolvedValue({});
+        expect(await invokeTypesafeJudge({ state: {}, questions: {} })).toBeNull();
+        expect(await judgeBoardroomIntent('check split', '')).toBeNull();
+    });
+
+    it('skips the remote judge call when SemanticCallAdmission budget is exhausted', async () => {
+        const budget = new ExecutionTokenBudget(10);
+        budget.reserve(10);
+        const result = await judgeSkillIntent(
+            'release',
+            [{ id: 'distribution', name: 'Distribution', description: 'Release music' }],
+            { budget, checkpoint: async () => {} },
+        );
+        expect(result).toBeNull();
+        expect(mocks.call).not.toHaveBeenCalled();
+    });
+
+    it('rejects wrong types and zero confidence in whitelistedChoice', async () => {
+        mocks.call.mockResolvedValueOnce({ data: { answers: { intent: { type: 'score', choice: 'music_video', confidence: 0.9 } } } });
+        expect((await judgeCreativeJourneyIntent({ prompt: 'make cover art' })).intent).toBe('album_artwork');
+
+        mocks.call.mockResolvedValueOnce({ data: { answers: { intent: { choice: 'music_video', confidence: 0 } } } });
+        expect((await judgeCreativeJourneyIntent({ prompt: 'make cover art' })).intent).toBe('album_artwork');
+    });
+
+    it('rejects wrong types in oneIndexedScore', async () => {
+        mocks.call.mockResolvedValueOnce({
+            data: {
+                answers: {
+                    disposition: { type: 'choice', choice: 'DELUXE_EDITION', confidence: 0.95 },
+                    confidence: { type: 'choice', score: 0 },
+                },
+            },
+        });
+        const res = await judgeCatalogCollisionRisk({
+            incomingTitle: 'Lunar Eclipse (Deluxe)',
+            incomingIsrc: 'USABC2600077',
+            existingCatalog: [{ id: 'trk_1', title: 'Lunar Eclipse', isrc: 'USABC2600001' }],
+        });
+        expect(res.collisionConfidence).toBe(5);
     });
 });

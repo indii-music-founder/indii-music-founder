@@ -33,21 +33,18 @@ function confidentDeclaredChoice(answer: unknown, allowed: readonly string[], mi
 }
 
 function whitelistedChoice<T extends string>(answer: unknown, allowed: readonly T[] | ReadonlySet<string>): T | null {
-    const raw = typeof answer === 'string'
-        ? answer
-        : answer !== null && typeof answer === 'object' && !Array.isArray(answer)
-            ? (answer as { choice?: unknown }).choice
-            : undefined;
-    if (typeof raw !== 'string') return null;
-    const valid = Array.isArray(allowed) ? allowed.includes(raw as T) : (allowed as ReadonlySet<string>).has(raw);
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return null;
+    const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
+    if ('type' in value && value.type !== undefined && value.type !== 'choice') return null;
+    if (typeof value.choice !== 'string') return null;
+    const valid = Array.isArray(allowed) ? allowed.includes(value.choice as T) : (allowed as ReadonlySet<string>).has(value.choice);
     if (!valid) return null;
-    if (answer !== null && typeof answer === 'object' && !Array.isArray(answer) && 'confidence' in answer) {
-        const conf = (answer as { confidence?: unknown }).confidence;
-        if (conf !== undefined && (typeof conf !== 'number' || !Number.isFinite(conf) || conf < 0 || conf > 1)) {
+    if ('confidence' in value && value.confidence !== undefined) {
+        if (typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) || value.confidence <= 0 || value.confidence > 1) {
             return null;
         }
     }
-    return raw as T;
+    return value.choice as T;
 }
 
 function boundedConfidenceValue(answer: unknown): number | null {
@@ -86,27 +83,25 @@ function skillIntentQuestion(candidates: SkillCandidate[]) {
 export async function judgeSkillIntent(
     query: string,
     candidates: SkillCandidate[],
+    admission?: SemanticCallAdmission,
 ): Promise<string | null> {
     if (!judgmentsAvailable("judgeSkillIntent") || candidates.length === 0) return null;
 
     try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
-
-        const result = await judgeFn({
-            state: {
-                query,
-                candidates: candidates.map(c => ({ id: c.id, name: c.name, description: c.description.slice(0, 160) })),
+        const answers = await invokeTypesafeJudge(
+            {
+                state: {
+                    query,
+                    candidates: candidates.map(c => ({ id: c.id, name: c.name, description: c.description.slice(0, 160) })),
+                },
+                questions: {
+                    skill: skillIntentQuestion(candidates),
+                },
             },
-            questions: {
-                skill: skillIntentQuestion(candidates),
-            },
-        });
+            admission,
+        );
 
-        return confidentDeclaredChoice(result.data.answers?.skill,
+        return confidentDeclaredChoice(answers?.skill,
             candidates.map(candidate => candidate.id).filter(id => id !== SKILL_INTENT_NONE), SKILL_INTENT_MIN_CONFIDENCE);
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'skill intent judgment', "judgeSkillIntent");
@@ -155,23 +150,24 @@ export type InjectionVerdict = 'block' | 'flag' | 'allow' | null;
  * 'flag' (ambiguous — keep), or null when judgments are unavailable.
  * Static-critical/block verdicts never reach this — policy keeps them blocked.
  */
-export async function refineInjectionRisk(input: string): Promise<InjectionVerdict> {
+export async function refineInjectionRisk(
+    input: string,
+    admission?: SemanticCallAdmission,
+): Promise<InjectionVerdict> {
     if (!judgmentsAvailable("refineInjectionRisk")) return null;
 
     try {
-        const functions = getFunctions();
-        const judgeFn = httpsCallable<
-            { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
-        >(functions, 'typesafeJudge');
+        const answers = await invokeTypesafeJudge(
+            {
+                state: { input },
+                questions: INJECTION_HAZARD_QUESTIONS,
+            },
+            admission,
+        );
+        if (!answers) return null;
 
-        const result = await judgeFn({
-            state: { input },
-            questions: INJECTION_HAZARD_QUESTIONS,
-        });
-
-        const override = boundedJudgmentNumber(result.data.answers?.instruction_override, 'noul', 1);
-        const exfil = boundedJudgmentNumber(result.data.answers?.credential_exfiltration, 'noul', 1);
+        const override = boundedJudgmentNumber(answers.instruction_override, 'noul', 1);
+        const exfil = boundedJudgmentNumber(answers.credential_exfiltration, 'noul', 1);
         if (override === null || exfil === null) {
             logger.warn('[typesafeJudgments] injection refinement returned invalid hazards — keeping flag.');
             return 'flag';
@@ -231,9 +227,43 @@ export function typesafeJudgmentsEnabled(): boolean {
     return featureFlags.isEnabled(FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS);
 }
 
+export interface TypesafeJudgeRequest {
+    model?: string;
+    state: unknown;
+    questions: Record<string, unknown>;
+}
+
+/**
+ * Shared proxy invocation helper for TypeSafe judgments.
+ * Guards against missing/malformed `result.data?.answers` and enforces
+ * `SemanticCallAdmission` budget reservations when provided.
+ */
+export async function invokeTypesafeJudge(
+    request: TypesafeJudgeRequest,
+    admission?: SemanticCallAdmission,
+): Promise<Record<string, unknown> | null> {
+    const call = httpsCallable<TypesafeJudgeRequest, { answers?: Record<string, unknown>; usage?: unknown }>(
+        getFunctions(),
+        'typesafeJudge',
+    );
+    const result = admission
+        ? await runBudgetedSemanticCall(admission, () => call(request))
+        : await call(request);
+    if (!result || typeof result !== 'object') return null;
+    const answers = result.data?.answers;
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return null;
+    return answers;
+}
+
 /** TypeSafe Score returns zero-based weighted levels; these consumers expose a 1–5 scale. */
 function oneIndexedScore(answer: unknown, fallback: number): number {
-    const raw = typeof answer === 'number' ? answer : (answer as { score?: unknown } | null)?.score;
+    if (typeof answer === 'number') {
+        return Number.isFinite(answer) && answer >= 0 && answer <= 4 ? answer + 1 : fallback;
+    }
+    if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return fallback;
+    const value = answer as { type?: unknown; score?: unknown };
+    if ('type' in value && value.type !== undefined && value.type !== 'score') return fallback;
+    const raw = value.score;
     return typeof raw === 'number' && Number.isFinite(raw) && raw >= 0 && raw <= 4
         ? raw + 1
         : fallback;
@@ -440,7 +470,7 @@ export async function judgeColumnSemantics(
                 };
             }
             const result = await judgeFn({ state, questions });
-            for (const [ref, answer] of Object.entries(result.data.answers ?? {})) {
+            for (const [ref, answer] of Object.entries(result.data?.answers ?? {})) {
                 if (typeof answer !== 'object' || answer === null) continue;
                 const a = answer as { choice?: unknown; confidence?: unknown };
                 if (typeof a.choice !== 'string' || typeof a.confidence !== 'number' || !Number.isFinite(a.confidence) || a.confidence > 1) continue;
@@ -515,7 +545,7 @@ export async function judgeMemoryImportance(text: string, category: string): Pro
             questions: MEMORY_IMPORTANCE_QUESTIONS,
         });
 
-        const answers = result.data.answers;
+        const answers = result.data?.answers;
         const scoreOf = (q: string): number | null =>
             boundedJudgmentNumber(answers?.[q], 'score', IMPORTANCE_LEVELS.length - 1);
         const actionability = scoreOf('actionability');
@@ -584,7 +614,7 @@ export async function judgePreviewErrorGuidance(error: string): Promise<PreviewE
         });
 
         const known: PreviewErrorAction[] = ['trim_timeline', 'fix_media', 'retry'];
-        return confidentDeclaredChoice(result.data.answers?.guidance, known, PREVIEW_GUIDANCE_MIN_CONFIDENCE) as PreviewErrorAction | null;
+        return confidentDeclaredChoice(result.data?.answers?.guidance, known, PREVIEW_GUIDANCE_MIN_CONFIDENCE) as PreviewErrorAction | null;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'preview error guidance judgment', "judgePreviewErrorGuidance");
         return null;
@@ -716,13 +746,13 @@ export async function judgeSpecialistAgentRoute(
         const allowedAgents = Object.keys(SPECIALIST_ROUTE_QUESTION.criteria);
         const allowedCorpora = Object.keys(RAG_CORPUS_ROUTE_QUESTION.criteria);
         const targetAgentId = confidentDeclaredChoice(
-            result.data.answers?.specialist,
+            result.data?.answers?.specialist,
             allowedAgents,
             SPECIALIST_ROUTE_MIN_CONFIDENCE,
         );
         if (!targetAgentId) return null;
-        const confidence = boundedConfidenceValue(result.data.answers?.specialist) ?? SPECIALIST_ROUTE_MIN_CONFIDENCE;
-        const ragCorpus = whitelistedChoice(result.data.answers?.corpus, allowedCorpora) ?? 'general';
+        const confidence = boundedConfidenceValue(result.data?.answers?.specialist) ?? SPECIALIST_ROUTE_MIN_CONFIDENCE;
+        const ragCorpus = whitelistedChoice(result.data?.answers?.corpus, allowedCorpora) ?? 'general';
         return { targetAgentId, ragCorpus, confidence };
     } catch (error) {
         noteJudgmentFailure(error, 'specialist agent route judgment', 'judgeSpecialistAgentRoute');
@@ -736,7 +766,7 @@ export async function judgeBoardroomIntent(query: string, recentConversation: st
         const result = await httpsCallable<{ state: Record<string, unknown>; questions: Record<string, unknown> }, { answers: Record<string, unknown> }>(
             getFunctions(), 'typesafeJudge',
         )({ state: { query: query.slice(0, 6000), recentConversation: recentConversation.slice(-6000), attachedImageCount }, questions: { intent: BOARDROOM_INTENT_QUESTION } });
-        return parseBoardroomIntentDecision(result.data.answers.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
+        return parseBoardroomIntentDecision(result.data?.answers?.intent, BOARDROOM_INTENT_MIN_CONFIDENCE);
     } catch (error) { noteJudgmentFailure(error, 'Boardroom intent', "judgeBoardroomIntent"); return null; }
 }
 
@@ -762,7 +792,7 @@ export async function judgeOrchestrationComplexity(
             questions: { complexity: ORCHESTRATION_COMPLEXITY_QUESTION },
         });
 
-        const answer = result.data.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.complexity as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer !== 'object') return null;
 
         const choice = answer.choice;
@@ -851,8 +881,8 @@ export async function judgeCollaboratorRoleSemantics(
             },
         });
 
-        const catAns = result.data.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
-        const agreeAns = result.data.answers?.requires_agreement;
+        const catAns = result.data?.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const agreeAns = result.data?.answers?.requires_agreement;
 
         if (!catAns || typeof catAns.choice !== 'string') return null;
 
@@ -953,8 +983,8 @@ export async function judgeExpenseCategorization(
             },
         });
 
-        const catAns = result.data.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
-        const taxAns = result.data.answers?.is_tax_deductible;
+        const catAns = result.data?.answers?.category as { choice?: unknown; confidence?: unknown } | undefined;
+        const taxAns = result.data?.answers?.is_tax_deductible;
 
         if (!catAns || typeof catAns.choice !== 'string') return null;
 
@@ -1045,7 +1075,7 @@ export async function judgeBrandMarkCandidate(
             },
         });
 
-        const answer = result.data.answers?.logo_mark as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.logo_mark as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string'
             || typeof answer.confidence !== 'number'
             || !Number.isFinite(answer.confidence)
@@ -1138,8 +1168,8 @@ export async function judgeCommandIntent(
             },
         });
 
-        const modAns = result.data.answers?.target_module as { choice?: unknown; confidence?: unknown } | undefined;
-        const actAns = result.data.answers?.intent_action as { choice?: unknown } | undefined;
+        const modAns = result.data?.answers?.target_module as { choice?: unknown; confidence?: unknown } | undefined;
+        const actAns = result.data?.answers?.intent_action as { choice?: unknown } | undefined;
 
         if (!modAns || typeof modAns.choice !== 'string' ||
             !Object.hasOwn(COMMAND_TARGET_MODULE_QUESTION.criteria, modAns.choice)) return null;
@@ -1230,7 +1260,7 @@ export async function judgeVideoTreatmentPreset(
             questions: { preset: VIDEO_TREATMENT_QUESTION },
         });
 
-        const answer = result.data.answers?.preset as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.preset as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
@@ -1285,7 +1315,7 @@ export async function judgeVideoAspectRatioIntent(
             questions: { aspectRatio: VIDEO_ASPECT_RATIO_QUESTION },
         });
 
-        const answer = result.data.answers?.aspectRatio as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.aspectRatio as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
@@ -1357,7 +1387,7 @@ export async function judgeStreamVelocityAnomaly(
             },
         });
 
-        const answer = result.data.answers?.context_signal as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.context_signal as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string' ||
             !Object.prototype.hasOwnProperty.call(STREAM_ANOMALY_CONTEXT_QUESTION.criteria, answer.choice) ||
             typeof answer.confidence !== 'number' || !Number.isFinite(answer.confidence) ||
@@ -1425,7 +1455,7 @@ export async function judgeFanToMerchSku(
             },
         });
 
-        const answer = result.data.answers?.matched_sku as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.matched_sku as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string') return null;
 
         const choice = answer.choice;
@@ -1499,7 +1529,7 @@ export async function judgeAestheticMoodTagging(
             questions: { aesthetic_tag: AESTHETIC_TAG_QUESTION },
         });
 
-        const answer = result.data.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
+        const answer = result.data?.answers?.aesthetic_tag as { choice?: unknown; confidence?: unknown } | undefined;
         if (!answer || typeof answer.choice !== 'string' ||
             !Object.prototype.hasOwnProperty.call(AESTHETIC_TAG_QUESTION.criteria, answer.choice)) return null;
 
@@ -1569,7 +1599,7 @@ export async function judgeUploadCopyrightRisk(
             questions: COPYRIGHT_RISK_QUESTIONS,
         });
 
-        const answers = result.data.answers;
+        const answers = result.data?.answers;
         const hazardAns = answers?.unauthorized_or_spam_hazard;
         const provAns = answers?.documentation_provenance;
 
@@ -1666,8 +1696,8 @@ export async function judgeDynamicDashboardLayout(
             },
         });
 
-        const primAns = result.data.answers?.primary_module as { choice?: unknown } | undefined;
-        const varAns = result.data.answers?.layout_variant as { choice?: unknown } | undefined;
+        const primAns = result.data?.answers?.primary_module as { choice?: unknown } | undefined;
+        const varAns = result.data?.answers?.layout_variant as { choice?: unknown } | undefined;
 
         if (typeof primAns?.choice !== 'string' ||
             !availableModules.includes(primAns.choice as DynamicComponentKey) ||
@@ -1739,7 +1769,7 @@ export async function judgeSemanticCatalogFilter(
             questions,
         });
 
-        const answers = result.data.answers;
+        const answers = result.data?.answers;
         if (!answers) return null;
 
         const matchedIds: string[] = [];
@@ -1852,7 +1882,7 @@ export async function judgeAestheticThemeDerivation(
             questions: { palette: THEME_PALETTE_QUESTION },
         });
 
-        const ans = result.data.answers?.palette as { choice?: unknown } | undefined;
+        const ans = result.data?.answers?.palette as { choice?: unknown } | undefined;
         if (!ans || typeof ans.choice !== 'string') return null;
 
         const choice = ans.choice;
@@ -1909,7 +1939,7 @@ export async function judgeSubmissionTriage(
             questions: { triage: TRIAGE_DECISION_QUESTION },
         });
 
-        const ans = result.data.answers?.triage as { choice?: unknown } | undefined;
+        const ans = result.data?.answers?.triage as { choice?: unknown } | undefined;
         if (!ans || typeof ans.choice !== 'string') return null;
 
         const valid: TriageDecision[] = ['AUTO_APPROVE', 'FLAG_FOR_AUDIT', 'REJECT_SILENT'];
@@ -1975,7 +2005,7 @@ export async function judgeCandidatePreselect(
             questions: { bestCandidate: CANDIDATE_PRESELECT_QUESTION },
         });
 
-        const ans = result.data.answers?.bestCandidate as { choice?: unknown; confidence?: unknown } | undefined;
+        const ans = result.data?.answers?.bestCandidate as { choice?: unknown; confidence?: unknown } | undefined;
         if (!ans || typeof ans.choice !== 'string') return null;
 
         const match = ans.choice.match(/^candidate_(\d+)$/);
@@ -2060,7 +2090,7 @@ export async function judgeVideoReshootRequirement(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const choice = ans?.defect as { choice?: unknown } | undefined;
 
         const reshootProb = boundedJudgmentNumber(ans?.reshootNeeded, 'noul', 1);
@@ -2167,7 +2197,7 @@ export async function judgeCrashTriage(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const causeAns = ans?.cause as { choice?: unknown } | undefined;
         const retryAns = ans?.retryable as { noul?: unknown } | undefined;
         const actionAns = ans?.action as { choice?: unknown } | undefined;
@@ -2269,7 +2299,7 @@ export async function judgeSplitSheetVerification(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const scopeAns = ans?.scope as { choice?: unknown } | undefined;
         const prodAns = ans?.producerReq as { noul?: unknown } | undefined;
         const riskAns = ans?.risk as { score?: unknown } | undefined;
@@ -2426,7 +2456,7 @@ export async function judgeCampaignBidAction(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const actAns = ans?.action as { choice?: unknown; confidence?: unknown } | undefined;
         const evidenceAns = ans?.evidence as { score?: unknown } | undefined;
         const action = actAns?.choice;
@@ -2499,7 +2529,7 @@ export async function judgeAdCreativeBatchCompliance(
         });
 
         const approved: string[] = [];
-        const answers = result.data.answers || {};
+        const answers = result.data?.answers || {};
 
         batch.forEach((c) => {
             const probability = boundedJudgmentNumber(answers[`approved_${c.id}`], 'noul', 1);
@@ -2651,7 +2681,7 @@ export async function judgeAudioToVisualTokens(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const motAns = ans?.motion as { choice?: unknown } | undefined;
         const typoAns = ans?.typography as { choice?: unknown } | undefined;
         const palAns = ans?.palette as { choice?: unknown } | undefined;
@@ -2759,7 +2789,7 @@ export async function judgeCuratorPlaylistAlignment(
             },
         });
 
-        const matchScore = boundedJudgmentNumber(result.data.answers?.fitProbability, 'noul', 1);
+        const matchScore = boundedJudgmentNumber(result.data?.answers?.fitProbability, 'noul', 1);
         if (matchScore === null) {
             return { curatorId, matchScore: 0, dispatchPitch: false,
                 rationale: 'Curator alignment assessment is unavailable. Review the pitch before dispatch.' };
@@ -2879,7 +2909,7 @@ export async function judgeAgentActionRisk(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const verdAns = ans?.verdict as { choice?: unknown } | undefined;
         const hazAns = ans?.hazard;
         const choice = verdAns?.choice;
@@ -2983,7 +3013,7 @@ export async function judgeVisualQualityInspection(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const defectAns = ans?.defect_detected as { noul?: unknown } | undefined;
         const qualityAns = ans?.aesthetic_quality as { score?: unknown } | undefined;
         const recAns = ans?.recommendation as { choice?: unknown } | undefined;
@@ -3080,7 +3110,7 @@ export async function judgeSoftBrandAestheticAlignment(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const violAns = ans?.violation_detected as { noul?: unknown } | undefined;
         const vibeAns = ans?.vibe_score as { score?: unknown } | undefined;
 
@@ -3196,7 +3226,7 @@ export async function judgeReceiptDataVerification(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const catAns = ans?.category as { choice?: unknown; confidence?: unknown } | undefined;
         const choice = catAns?.choice;
         const capProb = boundedJudgmentNumber(ans?.is_capital, 'noul', 1);
@@ -3332,7 +3362,7 @@ export async function judgeStatementAnomalyTriage(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedClassifications: readonly StatementAnomalyType[] = [
             'BOT_STREAM_SPIKE',
             'DSP_CLAWBACK',
@@ -3461,7 +3491,7 @@ export async function judgeNextBestAction(
         };
         const allowedModules = Object.keys(ctaMap) as IndiiModuleTarget[];
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const modAns = ans?.next_module;
         const choice = whitelistedChoice(modAns, allowedModules);
         const conf = boundedConfidenceValue(modAns);
@@ -3580,7 +3610,7 @@ export async function judgeArtistCareerDNA(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const archAns = ans?.archetype as { choice?: unknown } | undefined;
         const monAns = ans?.monetization as { choice?: unknown } | undefined;
 
@@ -3738,7 +3768,7 @@ export async function judgeSessionChunkTriage(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const actAns = ans?.action as { choice?: unknown } | undefined;
         const usableAns = ans?.is_usable as { noul?: unknown } | number | undefined;
         const hookAns = ans?.hook_energy as { score?: unknown } | number | undefined;
@@ -3881,7 +3911,7 @@ export async function judgeVideoBeatCutPacing(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const freqAns = ans?.cut_frequency as { choice?: unknown } | undefined;
         const styleAns = ans?.transition_style as { choice?: unknown } | undefined;
         const snapAns = ans?.snap_transients as { noul?: unknown } | number | undefined;
@@ -4023,7 +4053,7 @@ export async function judgeLyricVisualPromptSynthesis(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const catAns = ans?.category as { choice?: unknown } | undefined;
         const clicheAns = ans?.avoid_cliche as { noul?: unknown } | number | undefined;
         const densAns = ans?.density as { score?: unknown } | number | undefined;
@@ -4155,7 +4185,7 @@ export async function judgeAudioStemSeparationPriority(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const recAns = ans?.recipe as { choice?: unknown } | undefined;
         const salvAns = ans?.is_salvageable as { noul?: unknown } | number | undefined;
         const phaseAns = ans?.phase_risk as { score?: unknown } | number | undefined;
@@ -4329,7 +4359,7 @@ export async function judgeMusicVideoContinuity(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const statAns = ans?.status as { choice?: unknown } | undefined;
         const covAns = ans?.coverage as { noul?: unknown } | number | undefined;
         const flowAns = ans?.flow_score as { score?: unknown } | number | undefined;
@@ -4489,7 +4519,7 @@ export async function judgeSocialAudioSnippetSelection(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const secAns = ans?.section as { choice?: unknown } | undefined;
         const candidateAns = ans?.candidate as { choice?: unknown } | undefined;
         const vocAns = ans?.immediate_vocal as { noul?: unknown } | number | undefined;
@@ -4641,7 +4671,7 @@ export async function judgeMerchPrintViability(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const techAns = ans?.technique as { choice?: unknown } | undefined;
         const safeAns = ans?.is_safe as { noul?: unknown } | number | undefined;
         const contAns = ans?.contrast as { score?: unknown } | number | undefined;
@@ -4948,7 +4978,7 @@ export async function judgeSyncLicensingMoodFit(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const sceAns = ans?.scene as { choice?: unknown } | undefined;
         const hazAns = ans?.hazard as { noul?: unknown } | number | undefined;
         const fitAns = ans?.fit_score as { score?: unknown } | number | undefined;
@@ -5108,7 +5138,7 @@ export async function judgeCameraAngleContinuity(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedAngles: readonly ShotAngle[] = [
             'EYE_LEVEL',
             'LOW_ANGLE_HEROIC',
@@ -5258,7 +5288,7 @@ export async function judgeVideoColorGradeMood(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const preAns = ans?.preset as { choice?: unknown } | undefined;
         const claAns = ans?.clash_hazard as { noul?: unknown } | number | undefined;
         const synAns = ans?.synergy_score as { score?: unknown } | number | undefined;
@@ -5420,7 +5450,7 @@ export async function judgeStatementCatalogDisambiguation(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const matAns = ans?.match as { choice?: unknown } | undefined;
         const cerAns = ans?.master_certainty as { noul?: unknown } | number | undefined;
         const conAns = ans?.confidence_score as { score?: unknown } | number | undefined;
@@ -5570,7 +5600,7 @@ export async function judgeSplitSheetRightsClearance(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedStreams: readonly RightsStreamType[] = [
             'MASTER_SOUND_RECORDING_ONLY',
             'COMPOSITION_PUBLISHING_ONLY',
@@ -5733,7 +5763,7 @@ export async function judgeUniversalErrorRemediation(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const remAns = ans?.remedy as { choice?: unknown } | undefined;
         const traAns = ans?.transient as { noul?: unknown } | number | undefined;
         const sevAns = ans?.severity_score as { score?: unknown } | number | undefined;
@@ -5884,7 +5914,7 @@ export async function judgeLikenessEnrolmentSuitability(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const staAns = ans?.status as { choice?: unknown } | undefined;
         const obsAns = ans?.obstructed as { noul?: unknown } | number | undefined;
         const claAns = ans?.clarity_score as { score?: unknown } | number | undefined;
@@ -6023,7 +6053,7 @@ export async function judgePersonaPosturePreset(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const preAns = ans?.preset as { choice?: unknown } | undefined;
         const aliAns = ans?.alignment as { score?: unknown } | number | undefined;
 
@@ -6169,7 +6199,7 @@ export async function judgeTaxFormCompliance(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const staAns = ans?.status as { choice?: unknown } | undefined;
         const tinAns = ans?.missing_tin as { noul?: unknown } | number | undefined;
         const comAns = ans?.compliance_score as { score?: unknown } | number | undefined;
@@ -6350,7 +6380,7 @@ export async function judgeDistributionBlocker(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const bloAns = ans?.blocker as { choice?: unknown } | undefined;
         const reaAns = ans?.readiness_score as { score?: unknown } | number | undefined;
 
@@ -6541,7 +6571,7 @@ export async function judgeDdexGenreAndSubculture(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedGenres: readonly DdexPrimaryGenre[] = [
             'Electronic', 'Hip-Hop/Rap', 'Alternative Rock', 'R&B/Soul', 'Pop', 'Rock',
             'Country', 'Jazz', 'Folk/Singer-Songwriter', 'Dance', 'Metal', 'Ambient/Experimental',
@@ -6695,7 +6725,7 @@ export async function judgeAudioDrivenMerchSku(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const skuAns = ans?.recommended_sku as { choice?: unknown } | undefined;
         const scAns = ans?.conversion_score as { score?: unknown } | number | undefined;
 
@@ -6847,7 +6877,7 @@ export async function judgeAudioMasterNormalization(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedStatuses: readonly NormalizationStatus[] = [
             'PASSED_COMPLIANT', 'NEEDS_ATTENUATION', 'NEEDS_LIMITER_BOOST', 'CLIPPING_HAZARD',
         ];
@@ -6996,7 +7026,7 @@ export async function judgeTargetSpecialistAgent(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedTargets: readonly SpecialistAgentTarget[] = [
             'creative', 'legal', 'marketing', 'finance', 'distribution', 'publishing', 'road', 'producer', 'generalist',
         ];
@@ -7123,7 +7153,7 @@ export async function judgePromptActionability(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const specAns = ans?.specificity as { score?: unknown } | number | undefined;
         const delAns = ans?.has_deliverable as { noul?: unknown } | undefined;
 
@@ -7315,7 +7345,7 @@ export async function judgeArtistDnaOnboarding(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const arcAns = ans?.archetype_choice as { choice?: unknown } | undefined;
         const aesAns = ans?.aesthetic_choice as { choice?: unknown } | undefined;
         const matAns = ans?.maturity_score as { score?: unknown } | number | undefined;
@@ -7439,7 +7469,7 @@ export async function judgeStemSeparationAcousticPurity(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const purAns = ans?.purity_rating as { score?: unknown } | number | undefined;
         const phsAns = ans?.severe_phase_hazard as { noul?: unknown } | undefined;
 
@@ -7618,7 +7648,7 @@ export async function judgeDirectToFanEmailSubjectLine(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const scAns = ans?.copy_quality as { score?: unknown } | undefined;
         const spAns = ans?.spam_style_signal as { noul?: unknown } | undefined;
         const rawScore = scAns?.score;
@@ -7799,7 +7829,7 @@ export async function judgeVideoChunkQuality(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedClasses: readonly VideoChunkVerdict['classification'][] = [
             'KEEP_LEAD_TAKE', 'KEEP_BROLL', 'DISCARD_SHAKY', 'DISCARD_POOR_LIGHTING', 'DISCARD_DEAD_AIR',
         ];
@@ -7900,7 +7930,7 @@ export async function judgeTopImageVariationCandidate(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const bestAns = ans?.best_pick as { choice?: unknown } | undefined;
         const scoreAns = ans?.score as { score?: unknown } | undefined;
 
@@ -8008,7 +8038,7 @@ export async function judgeNextBestModule(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const actionAns = ans?.best_action;
         const urgencyAns = ans?.urgency;
 
@@ -8128,7 +8158,7 @@ export async function judgeVideoTreatmentIntent(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const ratioAns = ans?.ratio as { choice?: unknown } | undefined;
         const styleAns = ans?.style as { choice?: unknown } | undefined;
 
@@ -8259,7 +8289,7 @@ export async function judgeExpenseDeductibility(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const catAns = ans?.tax_cat as { choice?: unknown } | undefined;
         const scoreAns = ans?.audit_strength as { score?: unknown } | undefined;
 
@@ -8383,7 +8413,7 @@ export async function judgeTourStopFeasibility(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedStatuses: readonly TourStopFeasibilityVerdict['status'][] = [
             'OPTIMAL', 'TIGHT_TURNAROUND', 'LOGISTIC_RISK', 'INEFFICIENT_BACKTRACK',
         ];
@@ -8456,7 +8486,7 @@ export async function judgeUpscaleModel(prompt: string): Promise<UpscaleModelCho
             },
         });
 
-        return confidentDeclaredChoice(result.data.answers?.model,
+        return confidentDeclaredChoice(result.data?.answers?.model,
             ['realesrgan-x4plus', 'realesrgan-x4plus-anime'], UPSCALE_MODEL_MIN_CONFIDENCE) as UpscaleModelChoice | null;
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'upscale model judgment', "judgeUpscaleModel");
@@ -8548,7 +8578,7 @@ export async function judgeMotionIntensityPreset(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedPresets: readonly MotionIntensityPreset[] = [
             'SLOW_DRIFT', 'DYNAMIC_TRACKING', 'KINETIC_WHIP', 'STATIC_LOCK',
         ];
@@ -8678,7 +8708,7 @@ export async function judgeStemSeparationRecipe(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedRecipes: readonly StemSeparationRecipe[] = [
             'TWO_STEM_VOCAL_INST', 'FOUR_STEM_CLASSIC', 'FIVE_STEM_DETAILED', 'PASS_THROUGH',
         ];
@@ -8820,7 +8850,7 @@ export async function judgeDawTitleSanitization(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const versionRaw = ans?.version;
         const explicitRaw = ans?.explicit;
 
@@ -8971,7 +9001,7 @@ export async function judgeCatalogCollisionRisk(
             },
         });
 
-        const ans = result.data.answers;
+        const ans = result.data?.answers;
         const allowedDispositions: readonly CatalogCollisionDisposition[] = [
             'IDENTICAL_COLLISION', 'INTENTIONAL_REMASTER', 'DELUXE_EDITION', 'NEW_CANONICAL_TRACK',
         ];
@@ -8980,15 +9010,9 @@ export async function judgeCatalogCollisionRisk(
 
         const dispChoice = whitelistedChoice(dispRaw, allowedDispositions);
 
-        const confScore = typeof confRaw === 'number'
-            ? confRaw
-            : (typeof (confRaw as { score?: unknown })?.score === 'number'
-                ? (confRaw as { score: number }).score
-                : undefined);
-
         const resolvedDisp = dispChoice ?? disposition;
-        const resolvedConf = typeof confScore === 'number' && Number.isFinite(confScore)
-            ? Math.round(oneIndexedScore(confScore, confidence))
+        const resolvedConf = confRaw !== undefined
+            ? Math.round(oneIndexedScore(confRaw, confidence))
             : confidence;
 
         return {
@@ -9062,7 +9086,7 @@ export async function judgeCanvasTextCandidates(regions: CanvasTextRegion[]): Pr
         const result = await judge({ state, questions });
         const approved: Record<string, number> = {};
         for (const region of eligible) {
-            const index = canvasTextCandidateIndex(result.data.answers?.[region.id], region.candidates.length);
+            const index = canvasTextCandidateIndex(result.data?.answers?.[region.id], region.candidates.length);
             if (index !== undefined) approved[region.id] = index;
         }
         return approved;
@@ -9133,7 +9157,7 @@ export async function judgeStatementColumnLoss(
             },
         });
 
-        const ans = result.data.answers?.is_critical_loss;
+        const ans = result.data?.answers?.is_critical_loss;
         const prob = boundedJudgmentNumber(ans, 'noul', 1);
         if (prob === null) return null;
 
@@ -9219,8 +9243,8 @@ export async function judgeEventRetentionTier(
             },
         });
 
-        const permAns = result.data.answers?.permanence;
-        const bizAns = result.data.answers?.is_business_record;
+        const permAns = result.data?.answers?.permanence;
+        const bizAns = result.data?.answers?.is_business_record;
 
         const permScore = boundedJudgmentNumber(permAns, 'score', EVENT_PERMANENCE_QUESTION.criteria.length - 1);
         const bizProb = boundedJudgmentNumber(bizAns, 'noul', 1);
@@ -9294,7 +9318,7 @@ export async function judgeWorkflowCondition(
             },
         });
 
-        const ans = result.data.answers?.matches_condition;
+        const ans = result.data?.answers?.matches_condition;
         const prob = boundedJudgmentNumber(ans, 'noul', 1);
         if (prob === null) return null;
 
@@ -9426,7 +9450,7 @@ export async function judgeCreativePromptModeIntent(
             },
         });
 
-        const ans = result.data.answers?.target_mode;
+        const ans = result.data?.answers?.target_mode;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
         const confidence = ambientJudgmentConfidence(ans, 'choice', CREATIVE_PROMPT_MODE_MIN_CONFIDENCE);
 
@@ -9579,7 +9603,7 @@ export async function judgeGalleryAssetBrandFit(
             },
         });
 
-        const ans = result.data.answers?.brand_fit;
+        const ans = result.data?.answers?.brand_fit;
         const confidence = ambientJudgmentConfidence(ans, 'score', GALLERY_PROMPT_FIT_MIN_CONFIDENCE);
         const rawScore = ans && typeof ans === 'object' ? (ans as { score?: unknown }).score : undefined;
         if (confidence !== null && typeof rawScore === 'number' && Number.isFinite(rawScore) && rawScore >= 0 && rawScore <= 4) {
@@ -9730,7 +9754,7 @@ export async function judgePlpVariantAdFormat(
             },
         });
 
-        const ans = result.data.answers?.ad_format;
+        const ans = result.data?.answers?.ad_format;
         const choice = typeof ans === 'string' ? ans : (ans as { choice?: unknown })?.choice;
         const confidence = ambientJudgmentConfidence(ans, 'choice', PLP_FORMAT_MIN_CONFIDENCE);
 
@@ -9863,7 +9887,7 @@ export async function judgeCreativeJourneyIntent(
                 },
             },
         });
-        const answer = result.data.answers?.intent;
+        const answer = result.data?.answers?.intent;
         const validIntents = Object.keys(CREATIVE_JOURNEY_ACTIONS) as CreativeJourneyIntent[];
         const resolvedIntent = whitelistedChoice(answer, validIntents);
         if (!resolvedIntent) return fallback;
@@ -9965,7 +9989,7 @@ export async function judgeContractAIClauseProtection(
             questions: CONTRACT_AI_CLAUSE_QUESTIONS,
         });
 
-        const answers = result.data.answers;
+        const answers = result.data?.answers;
         const trainProb = boundedJudgmentNumber(answers?.grants_unrestricted_ai_training, 'noul', 1);
         const cloneProb = boundedJudgmentNumber(answers?.grants_unrestricted_voice_likeness_clone, 'noul', 1);
         const protectProb = boundedJudgmentNumber(answers?.contains_artist_protective_prohibition, 'noul', 1);
@@ -10109,8 +10133,8 @@ export async function judgeCreatorIncidentClassification(input: {
             questions: CREATOR_INCIDENT_CLASSIFICATION_QUESTIONS,
         });
 
-        const typeAns = result.data.answers?.incident_type;
-        const routeAns = result.data.answers?.takedown_route;
+        const typeAns = result.data?.answers?.incident_type;
+        const routeAns = result.data?.answers?.takedown_route;
         const typeChoice = typeof typeAns === 'string' ? typeAns : (typeAns as { choice?: unknown } | null)?.choice;
         const routeChoice = typeof routeAns === 'string' ? routeAns : (routeAns as { choice?: unknown } | null)?.choice;
 
@@ -10310,7 +10334,7 @@ export async function judgeBoardroomExecutiveIntent(
             },
         });
 
-        const answer = result.data.answers?.mission;
+        const answer = result.data?.answers?.mission;
         const validMissions = Object.keys(BOARDROOM_MISSION_DETAILS) as BoardroomExecutiveMission[];
         const resolvedMission = whitelistedChoice(answer, validMissions);
         if (!resolvedMission) return fallback;
@@ -10557,7 +10581,7 @@ export async function judgeDepartmentJourneyIntent(
             },
         });
 
-        const answer = result.data.answers?.journey;
+        const answer = result.data?.answers?.journey;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
         const rawConfidence =
             typeof answer === 'object' && answer !== null
@@ -10818,7 +10842,7 @@ export async function judgeCreativeStudioConfigPreset(
             },
         });
 
-        const answer = result.data.answers?.preset;
+        const answer = result.data?.answers?.preset;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
 
         const confidence = creativeChoiceConfidence(answer, CREATIVE_CONFIG_PRESET_MIN_CONFIDENCE);
@@ -10937,7 +10961,7 @@ export async function judgePromptImprovementIntent(
             },
         });
 
-        const answer = result.data.answers?.archetype;
+        const answer = result.data?.answers?.archetype;
         const choice = typeof answer === 'string' ? answer : (answer as { choice?: unknown } | null)?.choice;
 
         const validArchetypes: PromptVisualArchetype[] = [
@@ -11027,7 +11051,7 @@ export async function judgeCreativePromptAdditiveSuggestions(
             },
         });
 
-        const answer = result.data.answers?.bestFit;
+        const answer = result.data?.answers?.bestFit;
         if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return baseline;
         const value = answer as { type?: unknown; choice?: unknown; confidence?: unknown };
         if (value.type !== 'choice' || typeof value.confidence !== 'number' || !Number.isFinite(value.confidence) ||
@@ -11234,7 +11258,7 @@ export async function judgeBoardroomWebpageSemantics(
             },
         });
 
-        const answers = result.data.answers;
+        const answers = result.data?.answers;
         const categoryAns = answers?.industry_category;
         const categoryChoice = (typeof categoryAns === 'string' ? categoryAns : (categoryAns as { choice?: unknown } | null)?.choice) as BoardroomWebpageCategory;
 
@@ -11415,11 +11439,11 @@ export async function judgeBoardroomWorkspaceRecommendation(
             'creative', 'publishing', 'finance', 'legal', 'marketing', 'social', 'distribution'
         ];
 
-        const tabAns = result.data.answers?.recommended_tab;
+        const tabAns = result.data?.answers?.recommended_tab;
         const tabChoice = whitelistedChoice(tabAns, validTabs);
         const tabConf = boundedConfidenceValue(tabAns);
 
-        const modAns = result.data.answers?.recommended_module;
+        const modAns = result.data?.answers?.recommended_module;
         const modChoice = whitelistedChoice(modAns, validMods);
         const modConf = boundedConfidenceValue(modAns);
 

@@ -1,5 +1,6 @@
 import { httpsCallable, getFunctions } from 'firebase/functions';
 import { judgmentsAvailable, noteJudgmentFailure } from '@/config/typesafeJudgments';
+import { runBudgetedSemanticCall, type SemanticCallAdmission } from '@/services/agent/governance/SemanticCallBudget';
 
 const INTENT_MIN_CONFIDENCE = 0.5;
 const SPECIALIST_MIN_CONFIDENCE = 0.5;
@@ -155,6 +156,7 @@ export function deterministicSpokenIntentFallback(
 export async function judgeSpokenConversationIntent(
     spokenText: string,
     currentAgentId?: string,
+    admission?: SemanticCallAdmission,
 ): Promise<SpokenConversationIntentVerdict> {
     const fallback = deterministicSpokenIntentFallback(spokenText);
     if (fallback.action === 'barge_in_stop' || !judgmentsAvailable('judgeSpokenConversationIntent')) {
@@ -164,10 +166,10 @@ export async function judgeSpokenConversationIntent(
     try {
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
+            { answers?: Record<string, unknown>; usage?: unknown }
         >(getFunctions(), 'typesafeJudge');
 
-        const result = await judgeFn({
+        const invoke = () => judgeFn({
             state: {
                 utterance: spokenText.slice(0, 300),
                 currentAgentId: currentAgentId || 'generalist',
@@ -208,8 +210,11 @@ export async function judgeSpokenConversationIntent(
                 },
             },
         });
+        const result = admission
+            ? await runBudgetedSemanticCall(admission, invoke)
+            : await invoke();
 
-        return parseSpokenIntentAnswers(result.data.answers, fallback);
+        return parseSpokenIntentAnswers(result?.data?.answers, fallback);
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'spoken conversation intent judgment', 'judgeSpokenConversationIntent');
     }
