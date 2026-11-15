@@ -225,7 +225,7 @@ export class AgentGraphService {
         try {
             return await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return false;
+                if (!snap.exists()) return false;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 const now = Date.now();
                 const existingLease = currentGraphLease(data);
@@ -260,7 +260,7 @@ export class AgentGraphService {
         try {
             await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return;
+                if (!snap.exists()) return;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 if (currentGraphLease(data)?.holderId === runnerId) {
                     tx.update(ref, {
@@ -292,7 +292,7 @@ export class AgentGraphService {
         try {
             return await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return 'LEASE_LOST';
+                if (!snap.exists()) return 'LEASE_LOST';
                 const data = snap.data() as {
                     nodeStates?: Record<string, { status?: string }>;
                     metadata?: { lease?: GraphExecutionState['lease'] };

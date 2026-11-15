@@ -69,7 +69,7 @@ let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null = 
 let legacyLease: typeof lease = null;
 const claimTx = (nodeStatus: () => string) => ({
     get: vi.fn(async () => ({
-        exists: true,
+        exists: () => true,
         data: () => ({ status: 'PLANNED', metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
     })),
     set: vi.fn(),
@@ -127,6 +127,19 @@ describe('AgentGraphService loop guard and atomic claims', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('does not claim a lease when the execution document disappears (structural)', async () => {
+        wireHappyPath();
+        const update = vi.fn();
+        vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) =>
+            cb({ get: async () => ({ exists: () => false, data: () => undefined }), update } as never)
+        );
+
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/locked by another runner/);
+        expect(update).not.toHaveBeenCalled();
+        expect(mocks.delegateTask).not.toHaveBeenCalled();
     });
 
     it('refuses a second loop for an execution that already has one running', async () => {
