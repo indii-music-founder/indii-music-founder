@@ -120,7 +120,7 @@ describe('AudioIntelligenceService (ISSUE-962)', () => {
         expect(mockMapEmotionalArc).not.toHaveBeenCalled();
     });
 
-    it('successfully processes compressed proxy MP3 with Gemini 3 Pro when provided', async () => {
+    it('successfully processes compressed proxy MP3 with the configured agent model', async () => {
         const file = new File(['fake audio bytes'], 'track.mp3', { type: 'audio/mp3' });
         mockAudioAnalyze.mockResolvedValue({
             features: TECHNICAL_FEATURES,
@@ -136,8 +136,8 @@ describe('AudioIntelligenceService (ISSUE-962)', () => {
         expect(mockGenerateStructuredData).toHaveBeenCalledTimes(1);
 
         const callArgs = mockGenerateStructuredData.mock.calls[0];
-        // Model argument must be Gemini 3 Pro (INTELLIGENCE_MODELS.TEXT.AGENT)
-        expect(callArgs[4]).toBe('gemini-3.1-pro-preview');
+        // Agent analysis follows the configured default (Gemini 3.8 Flash).
+        expect(callArgs[4]).toBe('gemini-3.8-flash');
         // Proxy audio should be passed in payload
         expect(callArgs[0][1].inlineData.mimeType).toBe('audio/mpeg');
         expect(callArgs[0][1].inlineData.data).toBe('fake-compressed-proxy-base64');

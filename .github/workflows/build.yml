@@ -110,6 +110,9 @@ jobs:
       contents: read
     env:
       NODE_OPTIONS: '--max-old-space-size=4096'
+      # Structural E2E requests are intercepted by the test fixture; Firebase
+      # still needs a non-empty project ID to construct valid document paths.
+      VITE_FIREBASE_PROJECT_ID: mock-project
     strategy:
       fail-fast: false
       matrix:

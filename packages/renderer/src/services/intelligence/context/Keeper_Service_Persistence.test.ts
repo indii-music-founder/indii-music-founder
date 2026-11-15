@@ -96,9 +96,11 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'doc-id', path: args.join('/') })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         getDoc: vi.fn(),
-        // Structural-only transaction fixture for the session deletion fence.
+        // This persistence suite creates new sessions, so Firestore must report
+        // that the session ID is unused.
         runTransaction: vi.fn(async (_db, operation) => operation({
-            get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
+            get: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }),
+            set: vi.fn(),
             update: vi.fn(),
         })),
         collection: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'col-id', path: args.join('/') })),
@@ -169,6 +171,7 @@ const mockDeleteHistory = vi.fn().mockResolvedValue({ success: true });
 // Test Suite
 // ----------------------------------------------------------------------------
 
+import { runTransaction } from 'firebase/firestore';
 import { sessionService } from '@/services/agent/SessionService';
 
 describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
@@ -248,6 +251,11 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
 
     it('should delete session from Local File System when deleting a session in Electron', async () => {
         const sessionId = 'session-123';
+        vi.mocked(runTransaction).mockImplementationOnce(async (_db, operation) => operation({
+            get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
+            set: vi.fn(),
+            update: vi.fn(),
+        } as unknown as Parameters<Parameters<typeof runTransaction>[1]>[0]));
 
         // Act
         await sessionService.deleteSession(sessionId);
