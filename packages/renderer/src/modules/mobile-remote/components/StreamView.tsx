@@ -13,11 +13,20 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import { logger } from '@/utils/logger';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from './JevRemoteHintBar';
 
-export default function StreamView({ desktopState }: { desktopState?: DesktopState | null }) {
+export default function StreamView({
+    desktopState,
+    onSendToStudio,
+}: {
+    desktopState?: DesktopState | null;
+    onSendToStudio?: (prompt: string) => void;
+}) {
     const [tracks, setTracks] = useState<HistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -45,6 +54,20 @@ export default function StreamView({ desktopState }: { desktopState?: DesktopSta
         return tracks.find(t => t.id === activeTrackId) || null;
     }, [tracks, activeTrackId]);
     const desktopTrack = tracks.find(track => track.id === desktopState?.activeTrackId);
+
+    const focusedTrackTitle = activeTrack?.prompt || activeTrack?.subject || desktopState?.activeTrackTitle || '';
+
+    useEffect(() => {
+        if (!focusedTrackTitle) return;
+        let cancelled = false;
+        void judgeMobileRemoteIntent({
+            tab: 'vault',
+            text: focusedTrackTitle,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [focusedTrackTitle]);
 
     const handlePlayTrack = (track: HistoryItem) => {
         triggerHaptic(30);
@@ -86,6 +109,11 @@ export default function StreamView({ desktopState }: { desktopState?: DesktopSta
                     {desktopTrack && <button type="button" onClick={() => handlePlayTrack(desktopTrack)} className="min-h-11 rounded-xl bg-[#00ff66] px-3 text-xs font-bold text-black">Stream to Phone</button>}
                 </div>
             )}
+
+            <JevRemoteHintBar
+                judgment={focusedTrackTitle ? jevHint : null}
+                onAction={focusedTrackTitle && onSendToStudio ? () => onSendToStudio(`Help prepare release assets and distribution notes for track "${focusedTrackTitle}"`) : undefined}
+            />
 
             <div className="flex-1 bg-[#1a1512]/80 backdrop-blur-md border border-white/10 rounded-3xl p-4 min-h-[300px] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
                 {isLoading ? (

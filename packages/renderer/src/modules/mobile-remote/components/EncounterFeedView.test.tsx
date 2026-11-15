@@ -141,4 +141,16 @@ describe('EncounterFeedView Component', () => {
         fireEvent.click(screen.getByRole('button', { name: 'All' }));
         expect(screen.getByText('Stage Lighting Photo')).toBeDefined();
     });
+
+    it('renders JevRemoteHintBar for lead encounter items and navigates on action click', async () => {
+        const onNavigateTab = vi.fn();
+        setEncounters([baseEncounter]);
+        render(<EncounterFeedView onNavigateTab={onNavigateTab} />);
+
+        const hintBar = await screen.findByTestId('jev-remote-hint-bar');
+        expect(hintBar).toHaveTextContent(/Jev/i);
+
+        fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
+        expect(onNavigateTab).toHaveBeenCalledWith('studio');
+    });
 });

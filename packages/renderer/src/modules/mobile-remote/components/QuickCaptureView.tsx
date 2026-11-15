@@ -12,6 +12,8 @@ import { useStore } from '@/core/store';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import QuickContactModal from './QuickContactModal';
 import CameraViewfinderModal from './CameraViewfinderModal';
+import { judgeMobileRemoteIntent, type MobileRemoteIntentJudgment } from '@/config/typesafeJudgments';
+import { JevRemoteHintBar } from './JevRemoteHintBar';
 
 export interface QuickCaptureAttachment {
     url: string;
@@ -72,10 +74,12 @@ const MIN_RECORDING_DURATION_MS = 300;
 export default function QuickCaptureView({
     isPaired,
     onNavigateToChat,
+    onNavigateTab,
     shortcutAction,
 }: {
     isPaired: boolean;
     onNavigateToChat?: (attachment: QuickCaptureAttachment) => void;
+    onNavigateTab?: (tab: 'home' | 'studio' | 'stream' | 'encounters' | 'road' | 'settings') => void;
     shortcutAction?: 'photo' | 'voice';
 }) {
     const toast = useToast();
@@ -97,6 +101,7 @@ export default function QuickCaptureView({
     const [geoError, setGeoError] = useState<string | null>(null);
     const [showContactModal, setShowContactModal] = useState(false);
     const [cameraMode, setCameraMode] = useState<'photo' | 'video' | null>(null);
+    const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
     const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +126,23 @@ export default function QuickCaptureView({
                     : capturedVideoBlob
                         ? 'video'
                         : null;
+
+    useEffect(() => {
+        const signal = momentText.trim() || reviewKind || '';
+        if (signal.length < 4) {
+            setJevHint(null);
+            return;
+        }
+        let cancelled = false;
+        void judgeMobileRemoteIntent({
+            tab: 'capture',
+            text: signal,
+            attachmentType: reviewKind,
+        }).then((judgment) => {
+            if (!cancelled) setJevHint(judgment);
+        });
+        return () => { cancelled = true; };
+    }, [momentText, reviewKind]);
 
     const downloadReviewCopy = () => {
         const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
@@ -819,7 +841,11 @@ export default function QuickCaptureView({
             </div>
 
             {/* Silent Text Command */}
-            <div className="w-full max-w-sm font-sans mt-2">
+            <div className="w-full max-w-sm font-sans mt-2 space-y-2">
+                <JevRemoteHintBar
+                    judgment={jevHint}
+                    onAction={onNavigateTab ? (judgment) => onNavigateTab(judgment.recommendedTab) : undefined}
+                />
                 <form onSubmit={handleTextSubmit} className="relative flex items-center">
                     <div className="absolute left-4 text-stone-400">
                         <Keyboard className="w-4 h-4" />

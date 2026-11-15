@@ -153,6 +153,18 @@ export default function MobileRemote() {
     setActiveTab('studio');
   }, [isPaired]);
 
+  const handleVaultToStudio = useCallback(async (prompt: string) => {
+    if (!isPaired) {
+      setActiveTab('studio');
+      return;
+    }
+    const commandId = await remoteRelayService.sendCommand(prompt, 'creative', {
+      source: 'mobile-remote', conversationMode: 'department',
+    }, 'studio');
+    if (commandId) setPendingChatCommandId(commandId);
+    setActiveTab('studio');
+  }, [isPaired]);
+
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -586,7 +598,12 @@ export default function MobileRemote() {
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <QuickCaptureView isPaired={isPaired} onNavigateToChat={handleNavigateToChat} shortcutAction={shortcutAction === 'photo' || shortcutAction === 'voice' ? shortcutAction : undefined} />
+            <QuickCaptureView
+              isPaired={isPaired}
+              onNavigateToChat={handleNavigateToChat}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+              shortcutAction={shortcutAction === 'photo' || shortcutAction === 'voice' ? shortcutAction : undefined}
+            />
           </Suspense>
         );
       case 'studio':
@@ -612,7 +629,7 @@ export default function MobileRemote() {
       case 'encounters':
         return (
           <Suspense fallback={<TabFallback />}>
-            <EncounterFeedView isPaired={isPaired} />
+            <EncounterFeedView isPaired={isPaired} onNavigateTab={(tab) => setActiveTab(tab)} />
           </Suspense>
         );
       case 'road':
@@ -624,13 +641,13 @@ export default function MobileRemote() {
       case 'stream':
         return (
           <Suspense fallback={<TabFallback />}>
-            <StreamView desktopState={desktopState} />
+            <StreamView desktopState={desktopState} onSendToStudio={handleVaultToStudio} />
           </Suspense>
         );
       case 'settings':
         return (
           <Suspense fallback={<TabFallback />}>
-            <SettingsView desktopState={desktopState} isPaired={isPaired} />
+            <SettingsView desktopState={desktopState} isPaired={isPaired} onNavigateTab={(tab) => setActiveTab(tab)} />
           </Suspense>
         );
       default:
