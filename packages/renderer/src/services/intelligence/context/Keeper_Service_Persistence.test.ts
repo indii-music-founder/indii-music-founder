@@ -96,9 +96,11 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         doc: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'doc-id', path: args.join('/') })),
         setDoc: vi.fn().mockResolvedValue(undefined),
         getDoc: vi.fn(),
-        // Structural-only transaction fixture for the session deletion fence.
+        // Structural-only transaction fixture: this persistence suite creates
+        // new sessions, so Firestore must report that the session ID is unused.
         runTransaction: vi.fn(async (_db, operation) => operation({
-            get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({}) }),
+            get: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }),
+            set: vi.fn(),
             update: vi.fn(),
         })),
         collection: vi.fn((_db: unknown, ...args: string[]) => ({ id: 'col-id', path: args.join('/') })),
