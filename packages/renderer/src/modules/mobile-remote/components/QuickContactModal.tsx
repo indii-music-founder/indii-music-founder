@@ -143,7 +143,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         };
     }, [isOpen, cleanupMedia]);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         cleanupMedia();
         setName('');
         setPhone('');
@@ -156,7 +156,18 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         setMode('voice');
         (document.activeElement as HTMLElement)?.blur();
         onClose();
-    };
+    }, [cleanupMedia, onClose]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !isSaving) {
+                handleClose();
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [isOpen, isSaving, handleClose]);
 
     // ── Voice Recording Controls ──────────────────────────────────────────────
 
@@ -480,6 +491,9 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     return (
         <AnimatePresence>
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="quick-contact-modal-title"
                 className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
                 onPointerDown={(e) => {
                     if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
@@ -502,7 +516,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                 {mode === 'voice' ? <Mic className="w-4 h-4" /> : <User className="w-4 h-4" />}
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-white font-display">
+                                <h3 id="quick-contact-modal-title" className="text-base font-bold text-white font-display">
                                     {mode === 'voice' ? 'Voice Contact' : 'Manual Contact'}
                                 </h3>
                                 <p className="text-[10px] text-stone-400 font-mono">
@@ -545,8 +559,9 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
                             <button
                                 type="button"
+                                aria-label="Close contact modal"
                                 onClick={handleClose}
-                                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors cursor-pointer"
+                                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                             >
                                 <X className="w-4 h-4" />
                             </button>
