@@ -37,6 +37,8 @@ vi.mock('../../governance/AgentEventBus', () => ({
 }));
 
 describe('AgentGraphService', () => {
+    const transactionWrites: Record<string, unknown>[] = [];
+    let transactionStatus = 'PLANNED';
     let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null;
     const mockUserId = 'user-123';
     const mockContext: AgentContext = { userId: mockUserId };
@@ -59,6 +61,8 @@ describe('AgentGraphService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         lease = null;
+        transactionWrites.length = 0;
+        transactionStatus = 'PLANNED';
         // Nodes are now claimed through a Firestore transaction before
         // execution. The global setup's transaction mock reads an empty doc,
         // which would fail every claim; grant claims so the readiness
@@ -73,11 +77,14 @@ describe('AgentGraphService', () => {
                 exists: () => true,
                 data: () => ({
                     metadata: { lease },
+                    status: transactionStatus,
                     nodeStates,
                 }),
             })),
             set: vi.fn(),
             update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
+                transactionWrites.push(patch);
+                if (typeof patch.status === 'string') transactionStatus = patch.status;
                 if (Object.prototype.hasOwnProperty.call(patch, 'metadata.lease')) {
                     lease = patch['metadata.lease'] as typeof lease;
                 }
@@ -308,9 +315,7 @@ describe('AgentGraphService', () => {
         await expect(agentGraphService.executeGraph(simpleGraph, mockContext))
             .rejects.toThrow('Graph node node-1 failed: Agent Crash');
 
-        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, mockExecutionId, 'FAILED'
-        );
+        expect(transactionWrites).toContainEqual(expect.objectContaining({ status: 'FAILED' }));
     });
 
     it('fails instead of completing when a planned node is unreachable', async () => {
@@ -335,9 +340,7 @@ describe('AgentGraphService', () => {
 
         await expect(agentGraphService.executeGraph(unreachableGraph, mockContext))
             .rejects.toThrow('stuck with unreachable node(s): orphan');
-        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, 'exec-stuck', 'FAILED'
-        );
+        expect(transactionWrites).toContainEqual(expect.objectContaining({ status: 'FAILED' }));
         expect(agentGraphStateService.finalizeStatus).not.toHaveBeenCalledWith(
             mockUserId, 'exec-stuck', 'COMPLETED'
         );
@@ -357,9 +360,7 @@ describe('AgentGraphService', () => {
 
         await expect(agentGraphService.executeGraph(mockGraph, mockContext))
             .rejects.toThrow('failed at node(s): node-2');
-        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, 'exec-partial-failure', 'FAILED'
-        );
+        expect(transactionWrites).toContainEqual(expect.objectContaining({ status: 'FAILED' }));
     });
 
     it.each([
@@ -423,8 +424,6 @@ describe('AgentGraphService', () => {
 
         expect(agentService.delegateTask).toHaveBeenCalledTimes(1);
         expect((agentService.delegateTask as any).mock.calls[0][1]).toBe('Task 2');
-        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
-            mockUserId, mockExecutionId, 'COMPLETED'
-        );
+        expect(transactionWrites).toContainEqual(expect.objectContaining({ status: 'COMPLETED' }));
     });
 });

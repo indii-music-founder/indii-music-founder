@@ -284,6 +284,33 @@ export class AgentGraphService {
         }
     }
 
+    private async finalizeOwnedGraph(
+        userId: string,
+        executionId: string,
+        runnerId: string,
+        status: 'COMPLETED' | 'FAILED',
+    ): Promise<void> {
+        const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
+        try {
+            await runTransaction(db, async tx => {
+                const snap = await tx.get(ref);
+                const state = snap.exists() ? snap.data() as GraphExecutionState : undefined;
+                const lease = state && currentGraphLease(state);
+                if (!state || lease?.holderId !== runnerId || !Number.isFinite(lease.expiresAt) ||
+                    lease.expiresAt <= Date.now() ||
+                    (state.status !== status &&
+                        (state.status === 'CANCELLED' || state.status === 'FAILED' || state.status === 'COMPLETED'))) {
+                    throw new GraphResultCheckpointError(`Graph execution ${executionId} lost ownership before finalization.`);
+                }
+                if (state.status === status) return;
+                tx.update(ref, { status, updatedAt: serverTimestamp() });
+            });
+        } catch (error) {
+            if (error instanceof GraphResultCheckpointError) throw error;
+            throw new GraphResultCheckpointError(`Graph execution ${executionId} final status could not be verified.`, { cause: error });
+        }
+    }
+
     private async saveClaimedNodeResult(
         userId: string,
         executionId: string,
@@ -398,13 +425,13 @@ export class AgentGraphService {
 
             if (now - startTime > MAX_EXECUTION_TIME_MS) {
                 logger.error(`[AgentGraph] Execution ${executionId} exceeded 270s maximum execution deadline.`);
-                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                 throw new Error('Maximum graph execution time exceeded (270s)');
             }
 
             if (iteration > MAX_ITERATIONS) {
                 logger.error(`[AgentGraph] Execution ${executionId} exceeded MAX_ITERATIONS (${MAX_ITERATIONS}). Potential cycle detected.`);
-                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                 throw new Error('Maximum graph iterations exceeded');
             }
 
@@ -539,23 +566,23 @@ export class AgentGraphService {
 
                 if (!hasPlanned && !hasExecuting) {
                     if (failedNodeIds.length > 0) {
-                        await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                        await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                         throw new Error(`Graph execution ${executionId} failed at node(s): ${failedNodeIds.join(', ')}.`);
                     }
                     logger.info(`[AgentGraph] Execution ${executionId} complete (all reachable nodes resolved).`);
-                    await agentGraphStateService.finalizeStatus(userId, executionId, 'COMPLETED');
+                    await this.finalizeOwnedGraph(userId, executionId, runnerId, 'COMPLETED');
                     running = false;
                 } else if (!hasExecuting) {
                     const plannedNodeIds = graph.nodes
                         .filter(n => state.nodeStates[n.id]?.status === 'PLANNED')
                         .map(n => n.id);
                     logger.error(`[AgentGraph] Graph execution ${executionId} stuck: unreachable planned nodes ${plannedNodeIds.join(', ')}.`);
-                    await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                    await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                     throw new Error(`Graph execution ${executionId} is stuck with unreachable node(s): ${plannedNodeIds.join(', ')}.`);
                 } else {
                     if (now - lastProgressTime > MAX_IDLE_TIME_MS) {
                         logger.error(`[AgentGraph] Execution ${executionId} exceeded 60s idle limit with background tasks pending.`);
-                        await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                        await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                         throw new Error('Graph execution idle timeout exceeded (60s)');
                     }
                     // Wait for background tasks to complete
@@ -694,7 +721,7 @@ export class AgentGraphService {
 
                             if (!hasActiveNodes) {
                                 logger.error(`[AgentGraph] No successful path remains after node ${res.nodeId} failed.`);
-                                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                                await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                                 throw new Error(`Graph node ${res.nodeId} failed: ${res.error || 'Unknown error'}`);
                             }
                             continue;
@@ -705,7 +732,7 @@ export class AgentGraphService {
                 const error = err instanceof Error ? err : new Error(String(err));
                 if (error instanceof GraphResultCheckpointError) throw error;
                 logger.error(`[AgentGraph] Critical loop failure in ${executionId}:`, error);
-                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                await this.finalizeOwnedGraph(userId, executionId, runnerId, 'FAILED');
                 throw error;
             }
 
