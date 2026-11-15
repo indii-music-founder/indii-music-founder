@@ -67,10 +67,10 @@ const makeContext = (): AgentContext => ({ userId: 'u1', traceId: 't1' });
 
 let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null = null;
 let legacyLease: typeof lease = null;
-const claimTx = (nodeStatus: () => string) => ({
+const claimTx = (nodeStatus: () => string, graphStatus = 'PLANNED') => ({
     get: vi.fn(async () => ({
         exists: () => true,
-        data: () => ({ status: 'PLANNED', metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
+        data: () => ({ status: graphStatus, metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
     })),
     set: vi.fn(),
     update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
@@ -170,6 +170,18 @@ describe('AgentGraphService loop guard and atomic claims', () => {
 
         releaseDelegate('done');
         await expect(first).resolves.toContain('Final output snippet');
+    });
+
+    it('refuses dispatch if the graph is cancelled between readiness and claim', async () => {
+        wireHappyPath();
+        vi.mocked(runTransaction).mockImplementation(async (_db, cb) =>
+            cb(claimTx(() => 'PLANNED', lease ? 'CANCELLED' : 'PLANNED') as never),
+        );
+
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/lost its lease before node dispatch/);
+        expect(mocks.delegateTask).not.toHaveBeenCalled();
+        expect(mocks.finalizeStatus).not.toHaveBeenCalled();
     });
 
     it('never executes a node whose atomic claim lost to another loop', async () => {

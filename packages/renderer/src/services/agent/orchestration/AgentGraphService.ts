@@ -298,10 +298,14 @@ export class AgentGraphService {
                 const snap = await tx.get(ref);
                 if (!snap.exists()) return 'LEASE_LOST';
                 const data = snap.data() as {
+                    status?: GraphExecutionState['status'];
                     nodeStates?: Record<string, { status?: string }>;
                     metadata?: { lease?: GraphExecutionState['lease'] };
                     lease?: GraphExecutionState['lease'];
                 };
+                if (data.status === 'CANCELLED' || data.status === 'FAILED' || data.status === 'COMPLETED') {
+                    return 'LEASE_LOST';
+                }
                 const lease = currentGraphLease(data);
                 if (lease?.holderId !== runnerId || !Number.isFinite(lease.expiresAt) || lease.expiresAt <= Date.now()) {
                     return 'LEASE_LOST';
