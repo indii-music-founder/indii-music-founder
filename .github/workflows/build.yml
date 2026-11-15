@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [ main ]
     paths-ignore:
-      - '**.md'
+      - '**/*.md'
+      - '.gitignore'
       - 'docs/**'
       - 'artifacts/**'
       - '.agent/**'
@@ -38,14 +39,10 @@ jobs:
             echo 'matrix=["ubuntu-latest"]' >> "$GITHUB_OUTPUT"
           fi
 
-  test:
+  lint-and-format:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      checks: write
-      pull-requests: read
-      actions: read
-
     steps:
     - uses: actions/checkout@v5
 
@@ -54,17 +51,10 @@ jobs:
       with:
         node-version: '24.x'
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
 
-    - name: Install system dependencies (Linux)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libpangocairo-1.0-0 libxss1 libgtk-3-0 libsecret-1-dev
-        sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
     - name: Install dependencies
       run: npm ci
-
-    - name: Canonical music unit tests
-      run: npx vitest run packages/shared/src/schemas/musicEntity.test.ts packages/shared/src/schemas/musicEntityCompatibility.test.ts packages/shared/src/schemas/musicRelationship.test.ts packages/shared/src/distribution/ddexStandardsRegistry.test.ts packages/shared/src/distribution/ecmContracts.test.ts
 
     - name: Lint
       run: npm run lint
@@ -72,13 +62,81 @@ jobs:
     - name: Frontend API boundary guard
       run: npm run security:frontend-api-boundary
 
+  typecheck:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Use Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '24.x'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Install dependencies
+      run: npm ci
+
     - name: Typecheck
       run: npm run typecheck
       env:
         NODE_OPTIONS: "--max-old-space-size=4096"
 
+  unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Use Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '24.x'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Canonical music unit tests
+      run: npx vitest run packages/shared/src/schemas/musicEntity.test.ts packages/shared/src/schemas/musicEntityCompatibility.test.ts packages/shared/src/schemas/musicRelationship.test.ts packages/shared/src/distribution/ddexStandardsRegistry.test.ts packages/shared/src/distribution/ecmContracts.test.ts
+
+  e2e-and-integration:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      NODE_OPTIONS: '--max-old-space-size=4096'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci
+      - name: Build shared packages
+        run: npx tsc -b packages/shared packages/video-compiler
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run local Playwright structural tests
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 2
+
   build:
-    needs: [test, setup-matrix]
+    needs: [lint-and-format, typecheck, unit-tests, setup-matrix]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -93,6 +151,7 @@ jobs:
       with:
         node-version: '24.x'
         cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
 
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
@@ -119,6 +178,15 @@ jobs:
         [System.IO.File]::WriteAllBytes("win_cert.pfx", $certBytes)
         Import-PfxCertificate -FilePath win_cert.pfx -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText)
         Remove-Item win_cert.pfx -Force
+
+    - name: Restore frontend build caches
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules/.vite
+          packages/*/node_modules/.vite
+          packages/*/.next/cache
+        key: frontend-build-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/package-lock.json') }}
 
     - name: Build Electron App
       run: npm run build

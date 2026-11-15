@@ -10,19 +10,21 @@
 # set HYPERFRAMES_BROWSER_PATH=/usr/bin/chromium (already the image default).
 
 FROM node:24-bookworm-slim AS build
+ENV NODE_OPTIONS=--max-old-space-size=4096
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/video-compiler/package.json packages/video-compiler/
 COPY packages/render-worker/package.json packages/render-worker/
+RUN npm ci --ignore-scripts --no-audit --no-fund \
+    --workspace=@indii/shared --workspace=@indii/video-compiler --workspace=@indii/render-worker
 COPY packages/shared/src packages/shared/src
 COPY packages/video-compiler/src packages/video-compiler/src
 COPY packages/render-worker/src packages/render-worker/src
 COPY packages/shared/tsconfig.json packages/shared/
 COPY packages/video-compiler/tsconfig.json packages/video-compiler/
 COPY packages/render-worker/tsconfig.json packages/render-worker/
-RUN npm install --ignore-scripts --no-audit --no-fund && \
-    npm run build --workspace=@indii/shared && \
+RUN npm run build --workspace=@indii/shared && \
     npm run build --workspace=@indii/video-compiler && \
     npm run build --workspace=@indii/render-worker
 
