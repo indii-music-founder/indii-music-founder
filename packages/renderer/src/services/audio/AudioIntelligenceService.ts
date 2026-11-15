@@ -132,7 +132,7 @@ export class AudioIntelligenceService {
     /**
      * Orchestrates full audio analysis:
      * 1. Technical (local WASM)
-     * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
+     * 2. Semantic (configured agent model - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
     async analyze(file: File | string, _signal?: AbortSignal): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
