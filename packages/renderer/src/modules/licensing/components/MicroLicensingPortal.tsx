@@ -446,12 +446,13 @@ export function MicroLicensingPortal() {
                     </div>
 
                     {contractHTML ? (
-                        <div className="flex-1 bg-white/[0.02] rounded-lg border border-white/5 p-4 overflow-y-auto max-h-[500px]">
+                        <div className="flex-1 bg-white/[0.02] rounded-lg border border-white/5 p-3 overflow-hidden">
                             <iframe
                                 title="Rendered contract draft"
                                 srcDoc={contractHTML}
                                 sandbox=""
-                                className="w-full min-h-[460px] rounded bg-white"
+                                referrerPolicy="no-referrer"
+                                className="w-full h-[500px] border-0 rounded bg-white block"
                             />
                         </div>
                     ) : (

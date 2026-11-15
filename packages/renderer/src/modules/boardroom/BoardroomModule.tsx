@@ -327,7 +327,9 @@ export function BoardroomModule() {
                             className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden"
                             data-testid="boardroom-workspace-container"
                         >
-                            <BoardroomWorkspacePane />
+                            <BoardroomWorkspacePane
+                                hasOverlayOpen={isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen}
+                            />
                         </motion.div>
                     )}
 

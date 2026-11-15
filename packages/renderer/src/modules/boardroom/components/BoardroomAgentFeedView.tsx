@@ -6,47 +6,50 @@ import {
     Radio,
     ShieldAlert,
     ExternalLink,
-    Play,
     CheckCircle2,
     Clock,
-    AlertCircle,
     Activity,
     Scale,
     Cpu,
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
-import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 export function BoardroomAgentFeedView() {
     const toast = useToast();
     const {
         activeGraphExecution,
         a2aMessages,
-        activeAgents,
         openBoardroomBrowser,
     } = useStore(
         useShallow(state => ({
             activeGraphExecution: state.activeGraphExecution,
             a2aMessages: state.a2aMessages || [],
-            activeAgents: state.activeAgents || [],
             openBoardroomBrowser: state.openBoardroomBrowser,
         }))
     );
 
     const [isAborting, setIsAborting] = useState(false);
     const [killSwitchActive, setKillSwitchActive] = useState(false);
-    const [latestScreenshot, setLatestScreenshot] = useState<string | null>(null);
 
     // Check kill switch state
     useEffect(() => {
+        let isMounted = true;
         if (typeof window !== 'undefined' && window.electronAPI?.computer?.getAbortState) {
-            void window.electronAPI.computer.getAbortState().then(res => {
-                if (res.success && res.data) {
-                    setKillSwitchActive(res.data.aborted);
-                }
-            });
+            void window.electronAPI.computer
+                .getAbortState()
+                .then(res => {
+                    if (isMounted && res.success && res.data) {
+                        setKillSwitchActive(res.data.aborted);
+                    }
+                })
+                .catch(() => {
+                    // Best-effort poll on mount
+                });
         }
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const handleEmergencyAbort = async () => {
@@ -243,8 +246,8 @@ export function BoardroomAgentFeedView() {
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        {a2aMessages.slice(-5).reverse().map(msg => (
-                            <div key={msg.id} className="p-3 rounded-xl bg-white/5 border border-white/5 text-xs space-y-1.5">
+                        {a2aMessages.slice(-5).reverse().map((msg, idx) => (
+                            <div key={msg.id || `${msg.timestamp}-${idx}`} className="p-3 rounded-xl bg-white/5 border border-white/5 text-xs space-y-1.5">
                                 <div className="flex items-center justify-between text-[10px] font-mono">
                                     <span className="text-indigo-400 font-bold uppercase">
                                         {msg.fromAgent} ➔ {msg.toAgent}
