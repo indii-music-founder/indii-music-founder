@@ -17,7 +17,7 @@ import { logger } from '@/utils/logger';
  *   - Audit log
  *
  * The data is returned as a JSON blob that can be downloaded as a .json file.
- * File downloads (images, audio) are provided as signed URLs with 24h expiry.
+ * File downloads (images, audio) use Firebase Storage download URLs.
  *
  * GDPR requires this to be fulfilled within 30 days of request.
  */
@@ -131,7 +131,7 @@ async function exportTopLevelCollection(userId: string, colName: string, ownerFi
 /**
  * Recursively list all files in a Storage directory to arbitrary depth.
  */
-async function collectStorageFiles(storageRef: StorageReference): Promise<{ path: string; url: string }[]> {
+async function collectStorageFiles(storageRef: StorageReference, errors: string[]): Promise<{ path: string; url: string }[]> {
     const urls: { path: string; url: string }[] = [];
     const result = await listAll(storageRef);
 
@@ -139,17 +139,18 @@ async function collectStorageFiles(storageRef: StorageReference): Promise<{ path
         try {
             const url = await getDownloadURL(itemRef);
             urls.push({ path: itemRef.fullPath, url });
-        } catch {
-            // File may have restricted access
+        } catch (error: unknown) {
+            errors.push(`Failed to export Storage file ${itemRef.fullPath}: ${error}`);
             urls.push({ path: itemRef.fullPath, url: '[access_restricted]' });
         }
     }
 
     for (const prefixRef of result.prefixes) {
         try {
-            const nestedUrls = await collectStorageFiles(prefixRef);
+            const nestedUrls = await collectStorageFiles(prefixRef, errors);
             urls.push(...nestedUrls);
         } catch (error: unknown) {
+            errors.push(`Failed to list Storage directory ${prefixRef.fullPath}: ${error}`);
             logger.warn(`[DataExport] Storage listing error in ${prefixRef.fullPath}: ${error}`);
         }
     }
@@ -158,17 +159,13 @@ async function collectStorageFiles(storageRef: StorageReference): Promise<{ path
 }
 
 /**
- * Get signed URLs for all files in a user's Storage directory, recursing through all subdirectories.
- * Returns paths and download URLs for the user to download their files.
+ * Get download URLs for files in a user's Storage directory.
+ * Root listing failures propagate to the export result; nested failures are
+ * recorded while preserving files successfully discovered in other branches.
  */
-async function exportUserStorageUrls(userId: string): Promise<{ path: string; url: string }[]> {
-    try {
-        const userStorageRef = ref(storage, `users/${userId}`);
-        return await collectStorageFiles(userStorageRef);
-    } catch (error: unknown) {
-        logger.warn(`[DataExport] Storage listing error: ${error}`);
-        return [];
-    }
+async function exportUserStorageUrls(userId: string, errors: string[]): Promise<{ path: string; url: string }[]> {
+    const userStorageRef = ref(storage, `users/${userId}`);
+    return collectStorageFiles(userStorageRef, errors);
 }
 
 /**
@@ -229,7 +226,7 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
 
     // Step 4: Get Storage file URLs
     try {
-        result.storageFileUrls = await exportUserStorageUrls(userId);
+        result.storageFileUrls = await exportUserStorageUrls(userId, result.errors);
         logger.info(`[DataExport] Found ${result.storageFileUrls.length} storage files`);
     } catch (error: unknown) {
         result.errors.push(`Storage export error: ${error}`);
@@ -242,6 +239,8 @@ export async function exportUserData(userId: string): Promise<DataExportResult> 
         version: '1.0',
         format: 'indii-GDPR-export',
         storageFileCount: result.storageFileUrls.length,
+        complete: result.errors.length === 0,
+        errors: [...result.errors],
         collections: Object.keys(result.data).filter(k => k !== '_export_metadata'),
     };
 
@@ -259,6 +258,11 @@ export function exportToBlob(result: DataExportResult): Blob {
     const exportData = {
         ...result.data,
         _storage_files: result.storageFileUrls,
+        _export_status: {
+            complete: result.success,
+            exportedAt: result.exportedAt,
+            errors: result.errors,
+        },
     };
 
     return new Blob(

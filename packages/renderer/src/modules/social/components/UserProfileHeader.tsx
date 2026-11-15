@@ -14,6 +14,13 @@ interface UserProfileHeaderProps {
 }
 
 export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
+    const viewerId = useStore((state: StoreState) => state.user?.uid);
+    const ownProfileId = useStore((state: StoreState) => state.userProfile?.id);
+    // A different viewer/target gets independent state and pending handlers.
+    return <ProfileHeaderContent key={JSON.stringify([viewerId, userId || ownProfileId])} userId={userId} />;
+}
+
+function ProfileHeaderContent({ userId }: UserProfileHeaderProps) {
     const currentUser = useStore(useShallow((state: StoreState) => state.userProfile));
     const setModule = useStore((state: StoreState) => state.setModule);
     const targetId = userId || currentUser?.id;
@@ -23,68 +30,64 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     const [loading, setLoading] = useState(true);
     const [followLoading, setFollowLoading] = useState(false);
 
+    const [followStateReady, setFollowStateReady] = useState(false);
+    const [error, setError] = useState('');
+    const [reload, setReload] = useState(0);
+    const viewerId = currentUser?.id;
+
     useEffect(() => {
+        let cancelled = false;
+        setProfile(null);
+        setLoading(Boolean(targetId));
+        setIsFollowing(false);
+        setFollowStateReady(false);
+        setError('');
         if (!targetId) return;
-        loadProfile();
-        checkFollowStatus();
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- loadProfile/checkFollowStatus are not stable; only re-run when targetId changes
-    }, [targetId]);
 
-    const loadProfile = async () => {
-        if (!targetId) return;
-        setLoading(true);
-        try {
-            const data = (currentUser?.id === targetId)
-                ? await UserService.getUserProfile(targetId)
-                : await UserService.getPublicProfile(targetId);
-            setProfile(data);
-        } catch (error: unknown) {
-            logger.error("Failed to load profile", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const checkFollowStatus = async () => {
-        if (targetId && currentUser && targetId !== currentUser.id) {
-            const status = await SocialService.isFollowing(targetId);
-            setIsFollowing(status);
-        }
-    };
+        const load = async () => {
+            try {
+                const data = viewerId === targetId
+                    ? await UserService.getUserProfile(targetId)
+                    : await UserService.getPublicProfile(targetId);
+                if (!cancelled) setProfile(data);
+            } catch (cause: unknown) {
+                logger.error('Failed to load profile', cause);
+                if (!cancelled) setError('Unable to load this profile. Please retry.');
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        const loadFollowState = async () => {
+            if (!viewerId || viewerId === targetId) return;
+            try {
+                const following = await SocialService.isFollowing(targetId);
+                if (!cancelled) {
+                    setIsFollowing(following);
+                    setFollowStateReady(true);
+                }
+            } catch (cause: unknown) {
+                logger.error('Failed to load follow status', cause);
+                if (!cancelled) setError('Unable to check follow status. Please retry before changing it.');
+            }
+        };
+        void load();
+        void loadFollowState();
+        return () => { cancelled = true; };
+    }, [targetId, viewerId, reload]);
 
     const handleFollowToggle = async () => {
-        if (!targetId || followLoading) return;
+        if (!targetId || followLoading || !followStateReady) return;
         setFollowLoading(true);
+        setError('');
         try {
-            if (isFollowing) {
-                await SocialService.unfollowUser(targetId);
-                setIsFollowing(false);
-                // Optimistic update of stats
-                if (profile && profile.socialStats) {
-                    setProfile({
-                        ...profile,
-                        socialStats: {
-                            ...profile.socialStats,
-                            followers: Math.max(0, profile.socialStats.followers - 1)
-                        }
-                    });
-                }
-            } else {
-                await SocialService.followUser(targetId);
-                setIsFollowing(true);
-                // Optimistic update of stats
-                if (profile) {
-                    setProfile({
-                        ...profile,
-                        socialStats: {
-                            ...(profile.socialStats || { followers: 0, following: 0, posts: 0, drops: 0 }),
-                            followers: (profile.socialStats?.followers || 0) + 1
-                        }
-                    });
-                }
-            }
-        } catch (error: unknown) {
-            logger.error("Failed to toggle follow", error);
+            if (isFollowing) await SocialService.unfollowUser(targetId);
+            else await SocialService.followUser(targetId);
+            // Re-read persisted relationship and counts; repeated idempotent
+            // follows must not manufacture a local follower-count increment.
+            setReload(value => value + 1);
+        } catch (cause: unknown) {
+            logger.error('Failed to toggle follow', cause);
+            setError('Unable to change follow status. Please retry.');
         } finally {
             setFollowLoading(false);
         }
@@ -95,7 +98,10 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     }
 
     if (!profile) {
-        return <div className="p-8 text-center text-gray-500">User not found</div>;
+        return <div className="p-8 text-center text-gray-500">
+            <p role="status">{error || 'Profile unavailable'}</p>
+            {targetId && <button className="mt-2 underline" onClick={() => setReload(value => value + 1)}>Retry profile</button>}
+        </div>;
     }
 
     const { displayName, bio, photoURL, brandKit, socialStats, accountType } = profile;
@@ -151,6 +157,9 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                         </div>
                     </div>
 
+                    {error && <div role="alert" className="text-sm text-red-400">
+                        {error} <button className="underline" onClick={() => setReload(value => value + 1)}>Retry</button>
+                    </div>}
                     {/* Actions */}
                     <div className="flex gap-3 mb-2">
                         {isOwnProfile ? (
@@ -164,8 +173,8 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                         ) : (
                             <button
                                 onClick={handleFollowToggle}
-                                disabled={followLoading}
-                                className={`px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg ${isFollowing
+                                disabled={followLoading || !followStateReady || !viewerId}
+                                className={`px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isFollowing
                                     ? 'bg-gray-800 hover:bg-red-900/40 text-gray-300 hover:text-red-400 border border-gray-700 hover:border-red-800'
                                     : 'bg-white hover:bg-gray-100 text-black'
                                     }`}

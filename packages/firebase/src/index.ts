@@ -3006,6 +3006,7 @@ export const requestAccountDeletion = onCall(
  */
 export const healthCheck = onRequest(
     {
+        cors: true,
         secrets: [arcjetKey],
         timeoutSeconds: 60, memory: "512MiB",
         cpu: 'gcf_gen1',

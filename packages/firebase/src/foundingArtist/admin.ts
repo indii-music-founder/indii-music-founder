@@ -12,7 +12,7 @@ import {
 
 export const FOUNDING_ARTIST_COMMUNICATIONS_COLLECTION = 'foundingArtistCommunications';
 export const FOUNDING_ARTIST_CAMPAIGNS_COLLECTION = 'foundingArtistCampaigns';
-export const FOUNDING_ARTIST_INVITE_URL = 'https://app.indii.music/';
+export const FOUNDING_ARTIST_INVITE_URL = 'https://indii.music/accept-invitation';
 export const FOUNDING_ARTIST_QUEUE_SCAN_LIMIT = 1000;
 const FOUNDING_ARTIST_INVITE_SCAN_LIMIT = 25;
 

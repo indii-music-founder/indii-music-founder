@@ -11,6 +11,7 @@ import { AuthProvider } from './components/auth/AuthProvider';
 import AuthLayout from './components/layouts/AuthLayout';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import AcceptFoundingArtistInvitation from './pages/AcceptFoundingArtistInvitation';
 import FieldRecorder from './pages/FieldRecorder';
 import ArtistPassportPage from './pages/ArtistPassportPage';
 import RainGlassOverlay from './components/effects/RainGlassOverlay';
@@ -18,6 +19,7 @@ import RainGlassOverlay from './components/effects/RainGlassOverlay';
 const FounderRoutes = () => (
   <Routes>
     <Route path="/" element={<><Home /><RainGlassOverlay /></>} />
+    <Route path="/accept-invitation" element={<AuthLayout><AcceptFoundingArtistInvitation /></AuthLayout>} />
     <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
@@ -34,6 +36,7 @@ const FounderRoutes = () => (
 const GeneralRoutes = () => (
   <Routes>
     <Route path="/" element={<><Home founder={false} /><RainGlassOverlay /></>} />
+    <Route path="/accept-invitation" element={<AuthLayout><AcceptFoundingArtistInvitation /></AuthLayout>} />
     <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />

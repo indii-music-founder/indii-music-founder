@@ -6,11 +6,8 @@ import { storage } from '@/services/firebase';
  * path (the path WITHIN the bucket). Handles a leading slash and returns
  * `{ bucket, path: '' }` for a bare bucket with no object.
  *
- * This is the path passed to `ref(storage, path)` — the app configures one
- * default bucket, so cross-bucket URIs can't be resolved via the Web SDK and
- * are left to the caller's fallback. (The old `split('/').slice(3)` cut the
- * bucket AND the first path segment incorrectly when the path had no bucket
- * prefix; `parseGcsObjectPath` is the single, testable source of truth.)
+ * Parsing is used to reject malformed or bucket-only inputs. Resolution must
+ * retain the original bucket: Firebase Storage accepts a complete gs:// URI.
  */
 export function parseGcsObjectPath(uri: string): { bucket: string; path: string } | null {
     const m = /^gs:\/\/([^/]+)\/(.*)$/.exec(uri);
@@ -30,7 +27,7 @@ export async function resolveStorageUrl(uri: string): Promise<string> {
         if (!parsed || !parsed.path) {
             return uri;
         }
-        return await getDownloadURL(ref(storage, parsed.path));
+        return await getDownloadURL(ref(storage, uri));
     } catch (error) {
         console.warn('[resolveStorageUrl] Failed to resolve Firebase Storage URI:', error);
         return uri;

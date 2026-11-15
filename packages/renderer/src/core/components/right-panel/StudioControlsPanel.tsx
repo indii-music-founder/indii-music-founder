@@ -175,6 +175,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                     <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setActiveTab('create')}
+                            aria-label="Create"
+                            aria-pressed={activeTab === 'create'}
                             className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="Create"
                         >
@@ -182,13 +184,15 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
+                            aria-label="History"
+                            aria-pressed={activeTab === 'history'}
                             className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="History"
                         >
                             <History size={14} />
                         </button>
                     </div>
-                    <button onClick={toggleRightPanel} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <button aria-label="Collapse Studio Controls" onClick={toggleRightPanel} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
                         <ChevronRight size={16} />
                     </button>
                 </div>
@@ -481,6 +485,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>
                                     <button
                                         onClick={() => setPreciseReference(!whiskState.preciseReference)}
+                                        aria-label="Precise reference matching"
+                                        aria-pressed={whiskState.preciseReference}
                                         className={`w-8 h-4 rounded-full relative transition-all ${whiskState.preciseReference
                                             ? 'bg-green-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
                                             : 'bg-gray-800'
@@ -499,6 +505,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             <div className="flex items-center gap-1 p-1 bg-black/40 rounded-lg mb-2">
                                 <button
                                     onClick={() => setTargetMedia('image')}
+                                    aria-pressed={whiskState.targetMedia === 'image'}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
                                         ? 'bg-green-500/30 text-green-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
                                         : 'text-gray-500 hover:text-gray-300'
@@ -509,6 +516,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </button>
                                 <button
                                     onClick={() => setTargetMedia('video')}
+                                    aria-pressed={whiskState.targetMedia === 'video'}
                                     data-testid="target-media-video"
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'video'
                                         ? 'bg-blue-500/30 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
@@ -520,6 +528,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </button>
                                 <button
                                     onClick={() => setTargetMedia('both')}
+                                    aria-pressed={whiskState.targetMedia === 'both'}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'both'
                                         ? 'bg-linear-to-r from-green-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
                                         : 'text-gray-500 hover:text-gray-300'
@@ -758,6 +767,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     />
                                     <button
                                         onClick={() => setStudioControls({ model: 'fast' })}
+                                        aria-pressed={studioControls.model === 'fast'}
                                         className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'fast' ? 'text-white' : 'text-gray-500'}`}
                                         title="Nano Banana 2 (Gemini 3.1 Flash) — Speed + quality"
                                     >
@@ -765,6 +775,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </button>
                                     <button
                                         onClick={() => setStudioControls({ model: 'pro' })}
+                                        aria-pressed={studioControls.model === 'pro'}
                                         className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-green-300' : 'text-gray-500'}`}
                                         title="Nano Banana Pro (Gemini 3 Pro) — Max quality, 14 refs, 5 chars"
                                     >
