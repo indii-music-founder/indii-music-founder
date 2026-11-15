@@ -5,6 +5,7 @@ import { httpsCallable } from "firebase/functions";
 import { CostControlService } from '@/services/billing/CostControlService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { GenerateImageSchema } from '@indii/shared';
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
@@ -302,6 +303,32 @@ describe("ImageGenerationService", () => {
         referenceUri: 'gs://mock-bucket/creative/test-user/reference.png',
         referenceUris: ['gs://mock-bucket/creative/test-user/reference.png'],
       }));
+    });
+
+    it('sends saved artwork mockup references in the current generateImageV3 contract (ISSUE-1623)', async () => {
+      mockGenerateImage.mockResolvedValue({
+        data: { images: [{ bytesBase64Encoded: 'mock-image-bytes', mimeType: 'image/png' }] },
+      });
+
+      await ImageGeneration.generateImages({
+        prompt: 'Mock up the supplied artwork as a studio poster.',
+        model: 'gemini-3-pro-image',
+        aspectRatio: '2:3',
+        referenceUris: ['gs://mock-bucket/users/test-user/artworks/poster-source.png'],
+      });
+
+      const payload = mockGenerateImage.mock.calls[0]?.[0] as Record<string, unknown>;
+      const parsed = GenerateImageSchema.safeParse(payload);
+      expect(parsed.success).toBe(true);
+      if (!parsed.success) return;
+      expect(parsed.data).toMatchObject({
+        prompt: 'Mock up the supplied artwork as a studio poster.',
+        model: 'pro',
+        aspectRatio: '2:3',
+        referenceUri: 'gs://mock-bucket/users/test-user/artworks/poster-source.png',
+        referenceUris: ['gs://mock-bucket/users/test-user/artworks/poster-source.png'],
+        costReservationId: 'test-cost-reservation',
+      });
     });
 
     it("leaves a failed reservation for server-side reconciliation on generation failure", async () => {
