@@ -179,9 +179,17 @@ export default function AgentChat({
 
     // Track the in-flight command's response listener + timeout so we can
     // tear them down on completion or unmount (no leaks, no stale closures).
+    const isMountedRef = useRef(true);
     const responseUnsubRef = useRef<(() => void) | null>(null);
     const responseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     // Tear down any active response listener + timeout. Safe to call repeatedly.
     const teardownResponseWatch = useCallback(() => {
@@ -223,8 +231,10 @@ export default function AgentChat({
         // Explicit, user-visible timeout instead of a silent spinner death.
         responseTimeoutRef.current = setTimeout(() => {
             teardownResponseWatch();
+            if (!isMountedRef.current) return;
             setIsWaiting(false);
             void remoteRelayService.cancelCommand(commandId).then((cancelled) => {
+                if (!isMountedRef.current) return;
                 setSystemNotices(prev => [
                     ...prev,
                     {
@@ -238,6 +248,7 @@ export default function AgentChat({
                     },
                 ]);
             }).catch(() => {
+                if (!isMountedRef.current) return;
                 setSystemNotices(prev => [
                     ...prev,
                     {

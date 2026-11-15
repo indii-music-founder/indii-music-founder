@@ -20,6 +20,7 @@ import {
     judgeMobileRemoteIntent,
     __resetJudgmentCooldownForTests,
 } from './typesafeJudgments';
+import { ExecutionTokenBudget } from '@/services/agent/governance/ExecutionTokenBudget';
 
 describe('TypeSafe Mobile Remote Jev Judgments', () => {
     beforeEach(() => {
@@ -191,6 +192,39 @@ describe('TypeSafe Mobile Remote Jev Judgments', () => {
 
             expect(result.source).toBe('deterministic');
             expect(result.roadPlacesAction).toBe('gas');
+        });
+
+        it('handles malformed nullish callable payloads without throwing', async () => {
+            const mockJudge = vi.fn().mockResolvedValue({ data: null });
+            mocks.httpsCallable.mockReturnValue(mockJudge);
+
+            const result = await judgeMobileRemoteIntent({
+                tab: 'capture',
+                text: 'Split sheet draft for vocalist',
+            });
+
+            expect(result.source).toBe('deterministic');
+            expect(result.recommendedDepartment).toBe('legal');
+        });
+
+        it('threads SemanticCallAdmission budget and degrades gracefully when checkpoint fails', async () => {
+            const budget = new ExecutionTokenBudget(100);
+            const mockJudge = vi.fn();
+            mocks.httpsCallable.mockReturnValue(mockJudge);
+
+            const result = await judgeMobileRemoteIntent(
+                { tab: 'capture', text: 'Receipt from guitar shop $45' },
+                {
+                    budget,
+                    checkpoint: async () => {
+                        throw new Error('Budget checkpoint unavailable');
+                    },
+                },
+            );
+
+            expect(mockJudge).not.toHaveBeenCalled();
+            expect(result.source).toBe('deterministic');
+            expect(result.recommendedDepartment).toBe('finance');
         });
     });
 });

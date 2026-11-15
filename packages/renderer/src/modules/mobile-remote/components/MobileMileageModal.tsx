@@ -4,9 +4,9 @@
  * Records miles with a date-bounded optional business-rate estimate for review.
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Car, X, MapPin, DollarSign, ArrowRightLeft, Check, Receipt, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { triggerHaptic } from "../haptics";
 import { useStore } from "@/core/store";
@@ -40,11 +40,31 @@ export default function MobileMileageModal({
   onOpenReceiptCapture,
 }: MobileMileageModalProps) {
   const toast = useToast();
+  const prefersReducedMotion = useReducedMotion();
+  const isMountedRef = useRef(true);
   const [destination, setDestination] = useState("");
   const [miles, setMiles] = useState("");
   const [isRoundTrip, setIsRoundTrip] = useState(true);
   const [purpose, setPurpose] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -99,6 +119,7 @@ export default function MobileMileageModal({
       });
 
       // 3. Dispatch to Studio Executor if paired
+      let relaySynced = true;
       if (isPaired) {
         try {
           await remoteRelayService.dispatchTask({
@@ -106,12 +127,19 @@ export default function MobileMileageModal({
             payload: { noteText: `[Mileage Logged] ${tripSummary}` },
           });
         } catch (relayErr) {
+          relaySynced = false;
           logger.warn("[MobileMileage] Failed to dispatch task to studio executor:", relayErr);
         }
       }
 
       triggerHaptic([50, 50, 50]);
-      toast.success(`Logged ${totalMiles.toFixed(1)} miles for review`);
+      if (isPaired && !relaySynced) {
+        toast.info(`Logged ${totalMiles.toFixed(1)} miles locally — Studio sync pending.`);
+      } else {
+        toast.success(`Logged ${totalMiles.toFixed(1)} miles for review`);
+      }
+
+      if (!isMountedRef.current) return;
 
       // Reset state
       setDestination("");
@@ -127,18 +155,25 @@ export default function MobileMileageModal({
       toast.error("Failed to log mileage. Please try again.");
       triggerHaptic([100, 200, 100]);
     } finally {
-      setIsSaving(false);
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
     }
   };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-mileage-modal-title"
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md"
+      >
         <motion.div
-          initial={{ opacity: 0, y: 100 }}
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 100 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 100 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          exit={prefersReducedMotion ? undefined : { opacity: 0, y: 100 }}
+          transition={prefersReducedMotion ? undefined : { type: "spring", damping: 25, stiffness: 300 }}
           className="w-full max-w-lg bg-[#0d0d12] border border-white/10 rounded-t-[32px] sm:rounded-[32px] p-6 shadow-2xl flex flex-col gap-5 max-h-[92vh] overflow-y-auto"
         >
           {/* Header */}
@@ -148,16 +183,18 @@ export default function MobileMileageModal({
                 <Car className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white tracking-tight">Track Miles & Run</h3>
+                <h3 id="mobile-mileage-modal-title" className="text-lg font-bold text-white tracking-tight">Track Miles & Run</h3>
                 <p className="text-xs text-white/50 font-medium">Business mileage estimate for review</p>
               </div>
             </div>
             <button
+              type="button"
+              aria-label="Close mileage modal"
               onClick={() => {
                 triggerHaptic(30);
                 onClose();
               }}
-              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
               <X className="w-4 h-4" />
             </button>

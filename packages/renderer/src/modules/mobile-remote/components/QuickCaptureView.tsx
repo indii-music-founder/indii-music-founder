@@ -127,22 +127,26 @@ export default function QuickCaptureView({
                         ? 'video'
                         : null;
 
+    const captureSignal = momentText.trim() || reviewKind || '';
+
     useEffect(() => {
-        const signal = momentText.trim() || reviewKind || '';
-        if (signal.length < 4) {
-            setJevHint(null);
-            return;
-        }
+        if (captureSignal.length < 4) return;
         let cancelled = false;
-        void judgeMobileRemoteIntent({
-            tab: 'capture',
-            text: signal,
-            attachmentType: reviewKind,
-        }).then((judgment) => {
-            if (!cancelled) setJevHint(judgment);
-        });
-        return () => { cancelled = true; };
-    }, [momentText, reviewKind]);
+        const delayMs = momentText.trim().length > 0 ? 200 : 0;
+        const timer = setTimeout(() => {
+            void judgeMobileRemoteIntent({
+                tab: 'capture',
+                text: captureSignal,
+                attachmentType: reviewKind,
+            }).then((judgment) => {
+                if (!cancelled) setJevHint(judgment);
+            });
+        }, delayMs);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [captureSignal, momentText, reviewKind]);
 
     const downloadReviewCopy = () => {
         const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
@@ -843,7 +847,7 @@ export default function QuickCaptureView({
             {/* Silent Text Command */}
             <div className="w-full max-w-sm font-sans mt-2 space-y-2">
                 <JevRemoteHintBar
-                    judgment={jevHint}
+                    judgment={captureSignal.length >= 4 ? jevHint : null}
                     onAction={onNavigateTab ? (judgment) => onNavigateTab(judgment.recommendedTab) : undefined}
                 />
                 <form onSubmit={handleTextSubmit} className="relative flex items-center">
