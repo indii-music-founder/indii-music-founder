@@ -16,6 +16,7 @@
  */
 
 import { judgeSkillIntent } from '@/config/typesafeJudgments';
+import type { SemanticCallAdmission } from '@/services/agent/governance/SemanticCallBudget';
 
 export interface ProductSkill {
     /** Canonical skill identifier, typically matching the directory name (e.g. 'digital_distribution') */
@@ -379,7 +380,10 @@ class ProductSkillRegistryImpl {
      * judgment picks the best-skilling candidate (or none) when the
      * enable_typesafe_judgments flag is on (ISSUE-1442 pilot).
      */
-    public async searchProductSkillByIntentAsync(query: string): Promise<ProductSkill | undefined> {
+    public async searchProductSkillByIntentAsync(
+        query: string,
+        admission?: SemanticCallAdmission,
+    ): Promise<ProductSkill | undefined> {
         const deterministic = this.searchProductSkillByIntent(query);
         if (deterministic) return deterministic;
 
@@ -388,7 +392,7 @@ class ProductSkillRegistryImpl {
             .map(s => ({
                 id: s.id, name: s.name, description: s.description,
             }));
-        const judgedId = await judgeSkillIntent(query, candidates);
+        const judgedId = await judgeSkillIntent(query, candidates, admission);
         if (!judgedId) return undefined;
         const matched = this.getProductSkill(judgedId);
         return matched && !matched.disableModelInvocation ? matched : undefined;
