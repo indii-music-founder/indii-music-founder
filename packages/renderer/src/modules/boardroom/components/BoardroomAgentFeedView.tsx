@@ -128,7 +128,7 @@ export function BoardroomAgentFeedView() {
                     onClick={handleEmergencyAbort}
                     disabled={isAborting || killSwitchActive}
                     className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border shrink-0",
+                        "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70",
                         killSwitchActive
                             ? "bg-rose-500/20 border-rose-400 text-rose-300 cursor-not-allowed"
                             : "bg-rose-600/30 hover:bg-rose-600/50 text-rose-200 border-rose-500/40 shadow-lg"
@@ -143,7 +143,7 @@ export function BoardroomAgentFeedView() {
 
             {/* Rights Copilot Quick Launch Gateways */}
             <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-bold uppercase tracking-wider text-white/80 flex items-center gap-2">
                         <Scale size={14} className="text-amber-400" />
                         Official Music Rights Assisted Portals
@@ -162,7 +162,7 @@ export function BoardroomAgentFeedView() {
                             key={p.id}
                             type="button"
                             onClick={() => void handleLaunchRightsCopilot(p.id)}
-                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all hover:scale-[1.02] group"
+                            className="p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left transition-all hover:scale-[1.02] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                         >
                             <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors block">
                                 {p.name}

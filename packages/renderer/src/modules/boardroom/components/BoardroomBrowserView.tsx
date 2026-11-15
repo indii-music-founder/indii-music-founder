@@ -97,6 +97,38 @@ function matchesBookmark(activeUrl: string, bookmarkUrl: string): boolean {
     }
 }
 
+const FRAME_BLOCKED_DOMAINS = [
+    'spotify.com',
+    'apple.com',
+    'ascap.com',
+    'bmi.com',
+    'themlc.com',
+    'soundexchange.com',
+    'copyright.gov',
+    'instagram.com',
+    'youtube.com',
+    'youtu.be',
+    'github.com',
+    'x.com',
+    'twitter.com',
+    'tiktok.com',
+    'facebook.com',
+    'distrokid.com',
+    'tunecore.com',
+    'cdbaby.com',
+] as const;
+
+function isKnownFrameBlockedUrl(rawInput: string): boolean {
+    try {
+        const hostname = new URL(rawInput).hostname.toLowerCase();
+        return FRAME_BLOCKED_DOMAINS.some(
+            domain => hostname === domain || hostname.endsWith(`.${domain}`)
+        );
+    } catch {
+        return false;
+    }
+}
+
 export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewProps) {
     const toast = useToast();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -121,6 +153,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const [pageTitle, setPageTitle] = useState('');
     const [isPinned, setIsPinned] = useState(false);
     const [isReaderMode, setIsReaderMode] = useState(false);
+    const [allowFrameAnyway, setAllowFrameAnyway] = useState(false);
     const [extractedText, setExtractedText] = useState<string | null>(null);
     const [lastSemanticJudgment, setLastSemanticJudgment] = useState<BoardroomWebpageSemantics | null>(null);
 
@@ -135,6 +168,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         setIsPinned(false);
         setExtractedText(null);
         setIsReaderMode(false);
+        setAllowFrameAnyway(false);
         setPageTitle('');
     }, []);
 
@@ -216,6 +250,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
         invalidatePage(safeUrl);
         setPageLoadFailed(false);
+        setAllowFrameAnyway(false);
         setBoardroomBrowserUrl(safeUrl);
         setInputUrl(safeUrl);
         setIsPinned(false);
@@ -362,6 +397,16 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         'https://artists.spotify.com';
     const isSecureUrl = isHttpsUrl(committedUrl);
     const isBlockedSelfEmbed = !isNativeElectron && isSameOriginUrl(committedUrl);
+    const matchedBookmark = BOARDROOM_BOOKMARKS.find(bookmark => matchesBookmark(committedUrl, bookmark.url));
+    const portalHost = (() => {
+        try {
+            return new URL(committedUrl).hostname.replace(/^www\./, '');
+        } catch {
+            return committedUrl;
+        }
+    })();
+    const portalTitle = matchedBookmark?.title || portalHost;
+    const isFrameBlockedPortal = !isNativeElectron && !allowFrameAnyway && isKnownFrameBlockedUrl(committedUrl);
 
     return (
         <div data-testid="boardroom-browser-view" className="@container h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
@@ -491,7 +536,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             </div>
 
             {/* Quick Industry Bookmarks Bar */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
+            <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-white/5 shrink-0">
                 <Bookmark size={11} className="text-indigo-400/70 shrink-0 ml-0.5 mr-1" />
                 {BOARDROOM_BOOKMARKS.map((bookmark) => (
                     <button
@@ -499,7 +544,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         type="button"
                         onClick={() => handleNavigate(bookmark.url)}
                         className={cn(
-                            "flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium transition-all whitespace-nowrap shrink-0",
+                            "flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                             matchesBookmark(committedUrl, bookmark.url)
                                 ? "bg-indigo-500/25 text-indigo-200 border border-indigo-400/40 font-bold"
                                 : "bg-white/5 hover:bg-white/10 text-white/70 border border-white/5"
@@ -610,10 +655,79 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         <button
                             type="button"
                             onClick={handleOpenExternal}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-400/40 text-xs font-semibold text-indigo-200 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-400/40 text-xs font-semibold text-indigo-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                         >
                             Open in New Tab <ExternalLink size={12} />
                         </button>
+                    </div>
+                ) : isFrameBlockedPortal ? (
+                    // Clean Portal Launch Card for X-Frame-Options / CSP frame-ancestors portals in web mode
+                    <div
+                        data-testid="boardroom-frame-blocked-card"
+                        className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-zinc-950 via-[#08080e] to-zinc-950 overflow-y-auto custom-scrollbar"
+                    >
+                        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl space-y-4">
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
+                                    <Globe size={20} />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-center gap-2 flex-wrap">
+                                    <h3 className="text-sm font-bold text-white">{portalTitle}</h3>
+                                    {matchedBookmark?.badge && (
+                                        <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/30 text-indigo-200">
+                                            {matchedBookmark.badge}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-[11px] font-mono text-white/40 truncate">{committedUrl}</p>
+                                <p className="text-xs text-white/65 leading-relaxed pt-1">
+                                    {portalTitle} blocks inline web iframe embedding (<code className="text-white/80">X-Frame-Options</code>). Open it directly in a browser tab, extract via Reader Mode, or use the Desktop App for native view.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={handleOpenExternal}
+                                    data-testid="boardroom-portal-open-tab-btn"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                                >
+                                    <span>Open {portalTitle} in New Tab</span>
+                                    <ExternalLink size={12} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExtractReader}
+                                    data-testid="boardroom-portal-reader-btn"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                                >
+                                    <BookOpen size={12} />
+                                    <span>Reader Mode</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handlePinToContext}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                                >
+                                    <Pin size={12} />
+                                    <span>Pin to Swarm</span>
+                                </button>
+                            </div>
+                            <div className="pt-1 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAllowFrameAnyway(true);
+                                        setIsLoading(true);
+                                    }}
+                                    data-testid="boardroom-portal-try-embed-btn"
+                                    className="text-[11px] text-white/45 hover:text-white/80 underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 rounded px-1"
+                                >
+                                    Try Embed Frame Anyway
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     // Standard Web Iframe Fallback

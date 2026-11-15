@@ -98,7 +98,7 @@ describe('BoardroomWorkspacePane', () => {
 
         const pill = screen.getByTestId('boardroom-workspace-jev-suggestion');
         expect(pill).toHaveTextContent(/Jev Suggests:/i);
-        expect(pill).toHaveTextContent(/WORKBENCH/i);
+        expect(pill).toHaveTextContent(/Asset Workbench/i);
 
         fireEvent.click(pill);
         expect(mockStoreState.setBoardroomWorkspaceTab).toHaveBeenCalledWith('workbench');
