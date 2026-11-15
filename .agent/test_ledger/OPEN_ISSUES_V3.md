@@ -4169,6 +4169,8 @@ Evidence for the entries below: `/Volumes/X SSD 2025/Users/narrowchannel/Desktop
 - **Evidence:** `packages/renderer/src/services/finance/FinanceService.integration.test.ts` (4/4 passed), `execution/finance/test_waterfall_payout.py` (3/3 passed).
 
 ### ISSUE-1510: Issue #413 Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration
+
+- **Preview audio connection (2026-11-14):** `NLEPreviewAudio` now routes active audio clips and explicitly audio-bearing videos through Web Audio media-element sources. NLE play/pause/seek, decoder errors, clip boundaries, and cleanup control those sources. Timeline mapping includes source trims, constant speed with native pitch preservation, volume, fades, track mute/solo, and half-open ends. Only active clips retain media readers; closed/removed readers disconnect and release their URLs. Audio startup/load errors pause preview visibly. Eight pure timing/legacy structural transport checks, scoped lint, and renderer typecheck pass. These do not prove real audible playback. Jev `jev-1.14.0` advisory scores: connected audio path 0.90; full precision unproven 0.89. This is an interim audible-preview transport with an 80ms correction threshold, not sample-accurate scheduling or fulfillment of the sub-5ms drift requirement. Native pitch fidelity, actual media playback, boundary accuracy, drift under load, long-project memory, audio worklet/sample scheduling, and genuine editor acceptance remain outstanding. ISSUE-1510 stays PARTIAL.
 - **Status:** 🟡 PARTIAL
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Suite / Video Editor (NLE Engine Architecture)
