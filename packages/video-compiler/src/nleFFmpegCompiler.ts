@@ -106,11 +106,12 @@ export function compileFfmpegCommand(
 
       const trimStart = ptsToSeconds(clip.sourceRange.start);
       const trimDur = ptsToSeconds(clip.sourceRange.duration);
+      const clipDuration = ptsToSeconds(clip.timelineRange.duration);
       const delaySamples = Math.round(ptsToSeconds(clip.timelineRange.start) * 48000);
       const aLabel = `a_${clip.id}`;
 
       filterChains.push(
-        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,atempo=${Math.sqrt(clip.speed)},atempo=${Math.sqrt(clip.speed)},aresample=48000,adelay=${delaySamples}S:all=1,asetpts=N/SR/TB,volume=${clip.gain}[${aLabel}]`
+        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,atempo=${Math.sqrt(clip.speed)},atempo=${Math.sqrt(clip.speed)},aresample=48000,apad,atrim=duration=${clipDuration},adelay=${delaySamples}S:all=1,asetpts=N/SR/TB,volume=${clip.gain}[${aLabel}]`
       );
       audioLabels.push(`[${aLabel}]`);
     }
@@ -120,7 +121,7 @@ export function compileFfmpegCommand(
   const finalAudioOutput = 'out_a';
   if (audioLabels.length > 0) {
     filterChains.push(
-      `${audioLabels.join('')}amix=inputs=${audioLabels.length}:normalize=0[${finalAudioOutput}]`
+      `${audioLabels.join('')}amix=inputs=${audioLabels.length}:normalize=0,apad[${finalAudioOutput}]`
     );
   } else {
     filterChains.push(`anullsrc=channel_layout=stereo:sample_rate=48000[${finalAudioOutput}]`);
