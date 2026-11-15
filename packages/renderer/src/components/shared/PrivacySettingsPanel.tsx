@@ -17,7 +17,7 @@ import { ShieldCheck, Download, Trash2, AlertTriangle, Loader2, CheckCircle2 } f
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ExportState = 'idle' | 'loading' | 'done' | 'error';
+type ExportState = 'idle' | 'loading' | 'done' | 'partial' | 'error';
 type DeleteState = 'idle' | 'confirming' | 'loading' | 'done' | 'error';
 
 // ── Export Section ─────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ function DataExportSection() {
         try {
             const result = await exportUserData(uid);
             downloadExport(result);
-            setState('done');
+            setState(result.success ? 'done' : 'partial');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Export failed. Please try again.');
             setState('error');
@@ -51,7 +51,7 @@ function DataExportSection() {
                 <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-white">Export My Data</h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                        Download a complete copy of all your indii.music data as a JSON file.
+                        Download your available indii.music data as a JSON file.
                         Includes your profile, releases, contracts, campaigns, and analytics.
                         Required under GDPR Article 20 (Right to Data Portability).
                     </p>
@@ -61,7 +61,13 @@ function DataExportSection() {
             {state === 'done' && (
                 <div className="flex items-center gap-2 text-green-400 text-xs bg-green-400/10 border border-green-400/20 rounded-lg px-3 py-2">
                     <CheckCircle2 size={12} aria-hidden="true" />
-                    Export downloaded successfully. Check your Downloads folder.
+                    Export download started. Check your Downloads folder.
+                </div>
+            )}
+            {state === 'partial' && (
+                <div role="alert" className="flex items-center gap-2 text-amber-400 text-xs bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2">
+                    <AlertTriangle size={12} aria-hidden="true" />
+                    Partial export download started. Some data could not be exported. The file lists the missing items and errors. Please try again.
                 </div>
             )}
             {state === 'error' && (
