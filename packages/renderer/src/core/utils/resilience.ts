@@ -36,27 +36,35 @@ export async function retryWithBackoff<T>(
     options: RetryOptions = {}
 ): Promise<T> {
     const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
-    let lastError: Error;
+    if (!Number.isFinite(opts.maxAttempts) || opts.maxAttempts < 1) {
+        throw new Error(`maxAttempts must be at least 1 (received ${opts.maxAttempts})`);
+    }
+    const maxAttempts = Math.floor(opts.maxAttempts);
+    let lastError: Error | undefined;
 
-    for (let attempt = 1; attempt <= opts.maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
             return await fn();
         } catch (error: unknown) {
             lastError = error instanceof Error ? error : new Error(String(error));
+            const errorCode = (error as { code?: unknown } | null)?.code;
 
-            // Check if error is retryable
+            // Check if error is retryable by message substring or error.code
             const isRetryable = opts.retryableErrors.some((errCode) =>
-                lastError.message.includes(errCode)
+                lastError!.message.includes(errCode) || errorCode === errCode
             );
 
-            if (!isRetryable || attempt === opts.maxAttempts) {
+            if (!isRetryable || attempt === maxAttempts) {
                 throw lastError;
             }
 
             // Calculate delay with exponential backoff
-            const delay = Math.min(
-                opts.initialDelayMs * Math.pow(opts.backoffMultiplier, attempt - 1),
-                opts.maxDelayMs
+            const delay = Math.max(
+                0,
+                Math.min(
+                    opts.initialDelayMs * Math.pow(opts.backoffMultiplier, attempt - 1),
+                    opts.maxDelayMs
+                )
             );
 
             opts.onRetry(attempt, lastError);
@@ -66,7 +74,7 @@ export async function retryWithBackoff<T>(
         }
     }
 
-    throw lastError!;
+    throw lastError ?? new Error('Retry failed without error');
 }
 
 /**
@@ -77,24 +85,35 @@ export function withTimeout<T>(
     timeoutMs: number,
     timeoutMessage = 'Operation timed out'
 ): AbortablePromise<T> {
-    let timeoutId: NodeJS.Timeout;
-    let aborted = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
+    let rejectTimeout: ((reason?: unknown) => void) | undefined;
 
     const timeoutPromise = new Promise<never>((_, reject) => {
+        rejectTimeout = reject;
+        const safeTimeoutMs = Number.isFinite(timeoutMs) ? Math.max(0, timeoutMs) : 0;
         timeoutId = setTimeout(() => {
-            if (!aborted) {
+            if (!settled) {
+                settled = true;
                 reject(new Error(timeoutMessage));
             }
-        }, timeoutMs);
+        }, safeTimeoutMs);
     });
 
     const wrappedPromise = Promise.race([promise, timeoutPromise]).finally(() => {
-        clearTimeout(timeoutId);
+        settled = true;
+        if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+        }
     }) as AbortablePromise<T>;
 
     wrappedPromise.abort = () => {
-        aborted = true;
-        clearTimeout(timeoutId);
+        if (settled) return;
+        settled = true;
+        if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+        }
+        rejectTimeout?.(new Error('Operation aborted'));
     };
 
     return wrappedPromise;
@@ -118,7 +137,7 @@ export class CircuitBreaker {
 
     async execute<T>(fn: () => Promise<T>): Promise<T> {
         if (this.state === 'open') {
-            if (Date.now() - this.lastFailureTime! >= this.timeout) {
+            if (this.lastFailureTime !== null && Date.now() - this.lastFailureTime >= this.timeout) {
                 this.state = 'half-open';
                 this.successCount = 0;
             } else {
@@ -152,8 +171,9 @@ export class CircuitBreaker {
         this.failureCount++;
         this.lastFailureTime = Date.now();
 
-        if (this.failureCount >= this.threshold) {
+        if (this.state === 'half-open' || this.failureCount >= this.threshold) {
             this.state = 'open';
+            this.successCount = 0;
         }
     }
 
@@ -180,19 +200,33 @@ export class CancellationToken {
     abort(): void {
         if (this.aborted) return;
         this.aborted = true;
-        this.abortCallbacks.forEach((cb) => cb());
+        const callbacks = [...this.abortCallbacks];
+        this.abortCallbacks = [];
+        for (const cb of callbacks) {
+            try {
+                cb();
+            } catch {
+                // Isolate abort listeners so one failing callback does not block cleanup of others
+            }
+        }
     }
 
     isAborted(): boolean {
         return this.aborted;
     }
 
-    onAbort(callback: () => void): void {
+    onAbort(callback: () => void): () => void {
         if (this.aborted) {
             callback();
-        } else {
-            this.abortCallbacks.push(callback);
+            return () => {};
         }
+        this.abortCallbacks.push(callback);
+        return () => {
+            const index = this.abortCallbacks.indexOf(callback);
+            if (index !== -1) {
+                this.abortCallbacks.splice(index, 1);
+            }
+        };
     }
 
     throwIfAborted(): void {
