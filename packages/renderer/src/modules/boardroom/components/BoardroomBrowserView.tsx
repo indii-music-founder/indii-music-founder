@@ -364,9 +364,9 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const isBlockedSelfEmbed = !isNativeElectron && isSameOriginUrl(committedUrl);
 
     return (
-        <div data-testid="boardroom-browser-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
+        <div data-testid="boardroom-browser-view" className="@container h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
             {/* Top Navigation & URL Bar */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-black/60 border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-1.5 px-2.5 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0 overflow-hidden">
                 <button
                     type="button"
                     onClick={handleBack}
@@ -455,7 +455,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     data-testid="boardroom-browser-pin-btn"
                 >
                     {isPinned ? <Check size={12} /> : <Pin size={12} />}
-                    <span className="hidden sm:inline">{isPinned ? 'Pinned' : 'Pin to Swarm'}</span>
+                    <span className="hidden @[500px]:inline">{isPinned ? 'Pinned' : 'Pin to Swarm'}</span>
                 </button>
 
                 {/* Web Fallback Reader Mode Toggle */}
@@ -473,7 +473,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         aria-label="Reader mode"
                     >
                         <BookOpen size={12} />
-                        <span className="hidden md:inline">Reader</span>
+                        <span className="hidden @[580px]:inline">Reader</span>
                     </button>
                 )}
 

@@ -181,9 +181,14 @@ describe('BoardroomModule', () => {
         mockStoreState.boardroomWorkspaceTab = 'browser';
 
         render(<BoardroomModule />);
-        expect(screen.getByTestId('boardroom-workspace-container')).toBeInTheDocument();
+        const orbitalPanel = screen.getByTestId('boardroom-orbital-panel');
+        const workspaceContainer = screen.getByTestId('boardroom-workspace-container');
+        const conversationContainer = screen.getByTestId('boardroom-conversation-container');
+
+        expect(orbitalPanel).toHaveClass('min-w-0', 'overflow-hidden');
+        expect(workspaceContainer).toHaveClass('min-w-0', 'overflow-hidden', 'isolate', 'z-10');
+        expect(conversationContainer).toHaveClass('min-w-0', 'overflow-hidden', 'isolate', 'z-20');
         expect(screen.getByTestId('boardroom-workspace-pane')).toBeInTheDocument();
-        expect(screen.getByTestId('boardroom-orbital-panel')).toBeInTheDocument();
     });
 
     it('hides orbital table when in stage layout to maximize workspace focus', () => {

@@ -378,7 +378,7 @@ export function BoardroomJourney() {
                     onClick={() => launchMission(recommendation.mission)}
                     title={recommendation.headline}
                     data-testid="boardroom-journey-recommendation"
-                    className="hidden min-w-0 max-w-[16rem] items-center gap-1.5 rounded-lg border border-indigo-400/25 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-medium text-indigo-100 transition-colors hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 lg:inline-flex"
+                    className="hidden min-w-0 max-w-[11rem] 2xl:max-w-[16rem] items-center gap-1.5 rounded-lg border border-indigo-400/25 bg-indigo-500/10 px-2.5 py-1 text-[11px] font-medium text-indigo-100 transition-colors hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 xl:inline-flex"
                 >
                     <Sparkles size={11} aria-hidden="true" className="shrink-0 text-indigo-300" />
                     <span className="truncate">{recommendation.actionLabel}</span>

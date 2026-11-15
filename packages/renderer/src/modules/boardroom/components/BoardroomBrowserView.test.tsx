@@ -139,4 +139,12 @@ describe('Boardroom page classification', () => {
         expect(screen.getByTestId('boardroom-same-origin-guard')).toBeInTheDocument();
         expect(screen.queryByTestId('boardroom-web-iframe')).not.toBeInTheDocument();
     });
+
+    it('uses container-bounded classes on browser view and toolbar so split panes cannot overflow', () => {
+        render(<BoardroomBrowserView />);
+        const browserView = screen.getByTestId('boardroom-browser-view');
+        expect(browserView).toHaveClass('@container', 'min-w-0', 'overflow-hidden');
+        const urlInput = screen.getByTestId('boardroom-browser-url-input');
+        expect(urlInput.parentElement?.parentElement).toHaveClass('min-w-0', 'overflow-hidden');
+    });
 });

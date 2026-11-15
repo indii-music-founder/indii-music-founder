@@ -84,10 +84,10 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
     return (
         <section
             data-testid="boardroom-workspace-pane"
-            className="h-full flex flex-col bg-zinc-950 border-r border-white/5 min-h-0 min-w-0 flex-1 overflow-hidden relative z-10"
+            className="@container h-full flex flex-col bg-zinc-950 border-r border-white/5 min-h-0 min-w-0 flex-1 overflow-hidden relative"
         >
             {/* Top Workspace Bar */}
-            <div className="flex items-center justify-between px-3 py-2 bg-[#09090d] border-b border-white/10 shrink-0 gap-2 select-none min-w-0">
+            <div className="flex items-center justify-between px-3 py-2 bg-[#09090d] border-b border-white/10 shrink-0 gap-2 select-none min-w-0 overflow-hidden">
                 {/* Left: 4 Tab Switchers */}
                 <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-xl border border-white/5 min-w-0 overflow-x-auto custom-scrollbar">
                     {tabs.map(t => {
@@ -102,7 +102,7 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                                 aria-pressed={isActive}
                                 data-testid={`boardroom-tab-${t.id}`}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
+                                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap shrink-0",
                                     isActive
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-white/60 hover:text-white hover:bg-white/5"
@@ -126,7 +126,7 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                             }
                         }}
                         data-testid="boardroom-workspace-jev-suggestion"
-                        className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[10px] text-indigo-200 transition-all shadow-sm group animate-fadeIn min-w-0 max-w-56 overflow-hidden"
+                        className="hidden @[560px]:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[10px] text-indigo-200 transition-all shadow-sm group animate-fadeIn min-w-0 max-w-56 overflow-hidden"
                         title={jevRecommendation.reasoningHint}
                     >
                         <Sparkles size={11} className="text-indigo-400 group-hover:rotate-12 transition-transform shrink-0" />
