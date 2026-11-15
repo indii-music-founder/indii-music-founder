@@ -1,3 +1,4 @@
+import { isStorageObjectNotFound } from '@/utils/storageErrors';
 /**
  * LikenessService — Manages persistent "My Likeness" selfie images.
  *
@@ -149,14 +150,14 @@ class LikenessServiceImpl {
      */
     async remove(id: string, storagePath: string): Promise<boolean> {
         try {
+            const docRef = doc(this.getCollectionRef(), id);
             // Delete from Storage
             const storageRefObj = ref(storage, storagePath);
-            await deleteObject(storageRefObj).catch(() => {
-                logger.warn('[LikenessService] Storage file not found during delete — continuing');
+            await deleteObject(storageRefObj).catch((error: unknown) => {
+                if (!isStorageObjectNotFound(error)) throw error;
             });
 
-            // Delete from Firestore
-            const docRef = doc(this.getCollectionRef(), id);
+            // Delete from Firestore only after Storage deletion succeeds.
             await deleteDoc(docRef);
 
             logger.info('[LikenessService] Removed likeness image', { id });

@@ -1,3 +1,4 @@
+import { isStorageObjectNotFound } from '@/utils/storageErrors';
 /**
  * FontLibrary.ts
  *
@@ -147,31 +148,20 @@ class FontLibraryImpl {
 
     async deleteFont(id: string): Promise<void> {
         const uid = this.requireUid();
-        this.parsedFonts.delete(`${uid}/${id}`);
-        let storagePath: string | undefined;
-
-        try {
-            const metaDoc = await getDoc(doc(this.metadataCollection(), id));
-            if (metaDoc.exists()) {
-                const data = metaDoc.data() as Partial<RegisteredFont>;
-                storagePath = data.storageRef;
-            }
-        } catch {
-            // Proceed to delete by fallback path
-        }
-
+        const metadataRef = doc(this.metadataCollection(), id);
+        const metaDoc = await getDoc(metadataRef);
+        const storagePath = metaDoc.exists()
+            ? (metaDoc.data() as Partial<RegisteredFont>).storageRef
+            : undefined;
         const path = storagePath || `users/${uid}/brandKit/fonts/${id}.ttf`;
         try {
             await deleteObject(ref(storage, path));
-        } catch (err) {
-            logger.warn('[FontLibrary] storage delete failed', err);
+        } catch (error: unknown) {
+            if (!isStorageObjectNotFound(error)) throw error;
         }
 
-        try {
-            await deleteDoc(doc(this.metadataCollection(), id));
-        } catch (err) {
-            logger.warn('[FontLibrary] firestore metadata delete failed', err);
-        }
+        await deleteDoc(metadataRef);
+        this.parsedFonts.delete(`${uid}/${id}`);
     }
 
     private toDataUrl(file: File, buf: ArrayBuffer): string {

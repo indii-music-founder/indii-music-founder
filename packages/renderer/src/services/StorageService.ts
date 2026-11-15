@@ -1,3 +1,4 @@
+import { isStorageObjectNotFound } from '@/utils/storageErrors';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 
@@ -150,8 +151,8 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 : path;
             const storageRef = ref(storage, storagePath);
             await deleteObject(storageRef);
-        } catch (_error: unknown) {
-            // Silently fail storage cleanup if file missing
+        } catch (error: unknown) {
+            if (!isStorageObjectNotFound(error)) throw error;
         }
     }
 
