@@ -65,7 +65,7 @@ describe('AgentGraphService', () => {
         // progression driven by the getExecution mock decides execution.
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) => cb({
             get: vi.fn(async () => ({
-                exists: true,
+                exists: () => true,
                 data: () => ({
                     metadata: { lease },
                     nodeStates: {

@@ -22,6 +22,9 @@ export class ModuleErrorBoundary extends Component<Props, State> {
         triage: null,
     };
 
+    private _isMounted = false;
+    private _retryTimer: ReturnType<typeof setTimeout> | null = null;
+
     public static getDerivedStateFromError(error: Error): Partial<State> {
         return { hasError: true, error };
     }
@@ -32,11 +35,15 @@ export class ModuleErrorBoundary extends Component<Props, State> {
 
         // Auto-reload once for chunk load errors (Vite lazy loading failures)
         if (error.message && error.message.includes('Failed to fetch dynamically imported module')) {
-            const hasReloaded = sessionStorage.getItem('chunk_load_error_reloaded');
-            if (!hasReloaded) {
-                sessionStorage.setItem('chunk_load_error_reloaded', 'true');
-                window.location.reload();
-                return;
+            try {
+                const hasReloaded = sessionStorage.getItem('chunk_load_error_reloaded');
+                if (!hasReloaded) {
+                    sessionStorage.setItem('chunk_load_error_reloaded', 'true');
+                    window.location.reload();
+                    return;
+                }
+            } catch {
+                // Ignore sessionStorage failures in restricted environments
             }
         }
 
@@ -46,7 +53,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
             errorMessage: error.message || 'Unknown runtime error',
             componentStack: errorInfo.componentStack || undefined,
         }).then((triage) => {
-            if (triage) {
+            if (triage && this._isMounted && this.state.hasError) {
                 this.setState({ triage });
             }
         }).catch(() => {});
@@ -73,11 +80,24 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     };
 
     public componentDidMount() {
+        this._isMounted = true;
         // If we successfully mounted without error, clear the retry flag after a delay
         // to allow future navigation to recover from temporary network drops
-        setTimeout(() => {
-            sessionStorage.removeItem('chunk_load_error_reloaded');
+        this._retryTimer = setTimeout(() => {
+            try {
+                sessionStorage.removeItem('chunk_load_error_reloaded');
+            } catch {
+                // Ignore storage errors
+            }
         }, 2000);
+    }
+
+    public componentWillUnmount() {
+        this._isMounted = false;
+        if (this._retryTimer !== null) {
+            clearTimeout(this._retryTimer);
+            this._retryTimer = null;
+        }
     }
 
     public render() {
@@ -107,7 +127,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
                         </h2>
                         {triage && (
                             <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded bg-white/10 text-gray-300 font-mono">
-                                {triage.rootCause.replace('_', ' ')}
+                                {triage.rootCause.replace(/_/g, ' ')}
                             </span>
                         )}
                     </div>

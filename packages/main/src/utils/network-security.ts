@@ -127,27 +127,32 @@ export function isPrivateIP(ip: string): boolean {
 export async function validateSafeHostAsync(hostInput: string): Promise<void> {
     if (!hostInput) throw new Error('Invalid host');
 
-    let hostname = hostInput;
+    let hostname = hostInput.trim();
 
     // Normalize using URL parser if possible, to handle IPv6 brackets [::1] correctly and ports
     try {
-        const u = new URL('https://' + hostInput);
+        const u = new URL('https://' + hostname);
         hostname = u.hostname;
-    } catch (_e) {
+    } catch {
         // Fallback to raw input if URL parsing fails
     }
 
+    const bareHost = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+
     // 1. Initial Blocklist (Defense in Depth)
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '0.0.0.0' || hostname === '::1') {
+    if (bareHost === 'localhost' || bareHost === '127.0.0.1' || bareHost === '::1' || bareHost === '0.0.0.0') {
         throw new Error(`Security Violation: Access to localhost is denied.`);
     }
-    if (hostname === '169.254.169.254') {
+    if (bareHost === '169.254.169.254') {
         throw new Error(`Security Violation: Access to Cloud Metadata services is denied.`);
+    }
+    if (net.isIP(bareHost) !== 0 && isPrivateIP(bareHost)) {
+        throw new Error(`Security Violation: Access to private IP ${bareHost} is denied.`);
     }
 
     // 2. Resolve DNS
     try {
-        const addresses = await dns.promises.lookup(hostname, { all: true });
+        const addresses = await dns.promises.lookup(bareHost, { all: true });
 
         // 3. Validate ALL Resolved IPs
         for (const { address } of addresses) {
@@ -170,7 +175,7 @@ export async function validateSafeUrlAsync(urlString: string): Promise<void> {
     let url: URL;
     try {
         url = new URL(urlString);
-    } catch (_e) {
+    } catch {
         throw new Error('Invalid URL format');
     }
 
@@ -191,14 +196,22 @@ export function validateSafeUrl(urlString: string): void {
     let url: URL;
     try {
         url = new URL(urlString);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) { throw new Error('Invalid URL'); }
+    } catch {
+        throw new Error('Invalid URL');
+    }
 
-    const hostname = url.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '[::1]') {
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error(`Security Violation: Protocol '${url.protocol}' is not allowed. Only HTTP/HTTPS are permitted.`);
+    }
+
+    const bareHost = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    if (bareHost === 'localhost' || bareHost === '127.0.0.1' || bareHost === '0.0.0.0' || bareHost === '::1') {
         throw new Error('Security Violation: Access to localhost is denied.');
     }
-    if (hostname === '169.254.169.254') {
+    if (bareHost === '169.254.169.254') {
         throw new Error('Security Violation: Access to Cloud Metadata services is denied.');
+    }
+    if (net.isIP(bareHost) !== 0 && isPrivateIP(bareHost)) {
+        throw new Error(`Security Violation: Access to private IP ${bareHost} is denied.`);
     }
 }

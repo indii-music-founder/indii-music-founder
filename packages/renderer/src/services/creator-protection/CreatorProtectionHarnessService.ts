@@ -235,6 +235,11 @@ export class CreatorProtectionHarnessService {
     evidenceRefs?: HarnessEvidenceRef[];
   }): Promise<ReplicaIncident> {
     const baseline = this.classifyIncident(input);
+    // TypeSafe safety invariant: deterministic NCII / TAKE IT DOWN triggers must never be downgraded by semantic judgment.
+    if (input.nonconsensualIntimateImagery || baseline.incidentType === 'take_it_down_ncii') {
+      return baseline;
+    }
+
     const jevVerdict = await judgeCreatorIncidentClassification({
       description: input.description,
       suspectedUrl: input.suspectedUrl,

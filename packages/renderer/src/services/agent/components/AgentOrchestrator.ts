@@ -39,9 +39,28 @@ async function generateRoutingResponse(
 }
 
 export class AgentOrchestrator {
+    private async evaluateSecurityGate(userQuery: string): Promise<{ shouldBlock: boolean; detectedPatterns: string[] }> {
+        const security = InputSanitizer.securityCheck(userQuery);
+        let shouldBlock = security.shouldBlock;
+
+        if (!shouldBlock && security.shouldFlag) {
+            const refined = await refineInjectionRisk(userQuery);
+            if (refined === 'allow') {
+                logger.info('[indii:Orchestrator] Injection flag downgraded to allow by judgment:', security.analysis.detectedPatterns);
+            } else if (refined === 'block') {
+                logger.warn('[indii:Orchestrator] Injection flag escalated to block by judgment.');
+                shouldBlock = true;
+            }
+        }
+
+        return { shouldBlock, detectedPatterns: security.analysis.detectedPatterns };
+    }
+
     async determineBoardroomIntent(context: AgentContext, userQuery: string, attachedImageCount = 0): Promise<BoardroomIntent | null> {
         const validation = InputSanitizer.validate(userQuery);
-        if (!validation.valid || InputSanitizer.securityCheck(userQuery).shouldBlock) throw new Error('Request blocked by input validation.');
+        if (!validation.valid) throw new Error('Request blocked by input validation.');
+        const security = await this.evaluateSecurityGate(userQuery);
+        if (security.shouldBlock) throw new Error('Request blocked by input validation.');
         const query = InputSanitizer.sanitize(userQuery);
         const recentConversation = (context.chatHistoryString ?? '').slice(-6000);
         const judgment = await judgeBoardroomIntent(query, recentConversation, attachedImageCount);
@@ -80,24 +99,10 @@ export class AgentOrchestrator {
 
         // 2. Security check — block injection attempts before any Autonomous processing.
         //    Static-critical verdicts block unconditionally (explicit policy rule).
-        const security = InputSanitizer.securityCheck(userQuery);
-        let shouldBlock = security.shouldBlock;
+        const security = await this.evaluateSecurityGate(userQuery);
 
-        // ISSUE-1442: regex-flagged inputs get a TypeSafe hazard-Noul refinement —
-        // confidently benign flags downgrade to allow (logged); confidently confirmed
-        // attacks escalate to block; ambiguous stays flagged. Zero calls on clean input.
-        if (!shouldBlock && security.shouldFlag) {
-            const refined = await refineInjectionRisk(userQuery);
-            if (refined === 'allow') {
-                logger.info('[indii:Orchestrator] Injection flag downgraded to allow by judgment:', security.analysis.detectedPatterns);
-            } else if (refined === 'block') {
-                logger.warn('[indii:Orchestrator] Injection flag escalated to block by judgment.');
-                shouldBlock = true;
-            }
-        }
-
-        if (shouldBlock) {
-            logger.warn('[indii:Orchestrator] Input blocked:', security.analysis.detectedPatterns);
+        if (security.shouldBlock) {
+            logger.warn('[indii:Orchestrator] Input blocked:', security.detectedPatterns);
             await TraceService.failTrace(traceId, 'Blocked: injection pattern detected');
             throw new Error('Request blocked by security filter.');
         }
@@ -267,6 +272,11 @@ These are gallery/upload references, not desktop files. Match the requested labe
     ): Promise<Array<{ agentId: string; subtask: string }>> {
         const validation = InputSanitizer.validate(userQuery);
         if (!validation.valid) return [{ agentId: 'generalist', subtask: userQuery }];
+        const security = await this.evaluateSecurityGate(userQuery);
+        if (security.shouldBlock) {
+            logger.warn('[indii:Orchestrator] Fan-out input blocked:', security.detectedPatterns);
+            throw new Error('Request blocked by security filter.');
+        }
 
         const specializedAgents = agentRegistry.getAll().map(a => ({
             id: a.id,
@@ -360,9 +370,9 @@ These are gallery/upload references, not desktop files. Match the requested labe
             logger.warn('[indii:Orchestrator] Invalid orchestration query:', validation.error);
             throw new Error(`Invalid request: ${validation.error}`);
         }
-        const security = InputSanitizer.securityCheck(userQuery);
+        const security = await this.evaluateSecurityGate(userQuery);
         if (security.shouldBlock) {
-            logger.warn('[indii:Orchestrator] Orchestration input blocked:', security.analysis.detectedPatterns);
+            logger.warn('[indii:Orchestrator] Orchestration input blocked:', security.detectedPatterns);
             throw new Error('Request blocked by security filter.');
         }
         const sanitizedQuery = InputSanitizer.sanitize(userQuery);

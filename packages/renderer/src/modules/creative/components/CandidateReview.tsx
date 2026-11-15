@@ -26,25 +26,32 @@ interface CandidateReviewProps {
  * review → select → apply workflow per Flowchart 1.
  */
 export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: CandidateReviewProps) {
-    const [selected, setSelected] = useState<Set<string>>(new Set());
-    const [recommendedId, setRecommendedId] = useState<string | null>(null);
-    const [previewId, setPreviewId] = useState<string | null>(null);
+    const [rawSelected, setSelected] = useState<Set<string>>(new Set());
+    const [rawRecommendedId, setRecommendedId] = useState<string | null>(null);
+    const [rawPreviewId, setPreviewId] = useState<string | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    const validCandidateIds = new Set(candidates.map(c => c.id));
+    const selected = new Set([...rawSelected].filter(id => validCandidateIds.has(id)));
+    const recommendedId = rawRecommendedId && validCandidateIds.has(rawRecommendedId) ? rawRecommendedId : null;
+    const previewId = rawPreviewId && validCandidateIds.has(rawPreviewId) ? rawPreviewId : null;
 
     // Fast-path Jev System One candidate recommendation
     useEffect(() => {
         if (!candidates || candidates.length <= 1) return;
         let active = true;
+        const batchIds = new Set(candidates.map(c => c.id));
         const prompt = candidates[0]?.prompt || '';
         judgeCandidatePreselect(prompt, candidates).then((res) => {
             if (!active || !res) return;
             setRecommendedId(res.recommendedId);
             setSelected((prev) => {
-                // If user has not manually selected any candidate yet, pre-select the recommended top pick
-                if (prev.size === 0) {
+                // If user has not manually selected any candidate in the current batch yet, pre-select the recommended top pick
+                const activeInBatch = [...prev].filter(id => batchIds.has(id));
+                if (activeInBatch.length === 0) {
                     return new Set([res.recommendedId]);
                 }
-                return prev;
+                return new Set(activeInBatch);
             });
         }).catch(() => {});
         return () => { active = false; };
@@ -52,7 +59,8 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
 
     const toggleSelection = useCallback((id: string) => {
         setSelected(prev => {
-            const next = new Set(prev);
+            const validIds = new Set(candidates.map(c => c.id));
+            const next = new Set([...prev].filter(existingId => validIds.has(existingId)));
             if (next.has(id)) {
                 next.delete(id);
             } else {
@@ -60,7 +68,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
             }
             return next;
         });
-    }, []);
+    }, [candidates]);
 
     const selectAll = useCallback(() => {
         setSelected(new Set(candidates.map(c => c.id)));
@@ -71,10 +79,10 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
     }, []);
 
     const handleApply = useCallback(() => {
-        const selectedCandidates = candidates.filter(c => selected.has(c.id));
+        const selectedCandidates = candidates.filter(c => rawSelected.has(c.id));
         if (selectedCandidates.length === 0) return;
         onApply(selectedCandidates);
-    }, [candidates, selected, onApply]);
+    }, [candidates, rawSelected, onApply]);
 
     if (candidates.length === 0) return null;
 

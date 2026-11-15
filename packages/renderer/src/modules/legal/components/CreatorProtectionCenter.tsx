@@ -95,7 +95,7 @@ export function CreatorProtectionCenter() {
 
   const handleClassifyIncident = async () => {
     if (!userId) return;
-    const nextIncident = creatorProtectionHarnessService.classifyIncident({
+    const nextIncident = await creatorProtectionHarnessService.classifyIncidentWithJev({
       userId,
       profileId: profile?.id,
       suspectedUrl: incidentUrl || undefined,

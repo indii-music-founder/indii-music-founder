@@ -52,70 +52,75 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
         }
 
         setIsAnalyzing(true);
-        const segmentCount = Math.max(1, Math.floor(videoDurationSeconds / chunkDuration));
-        const generatedChunks: SlicedChunkItem[] = [];
+        try {
+            const segmentCount = Math.max(1, Math.floor(videoDurationSeconds / chunkDuration));
+            const generatedChunks: SlicedChunkItem[] = [];
 
-        for (let i = 0; i < segmentCount; i++) {
-            const start = i * chunkDuration;
-            const end = Math.min(videoDurationSeconds, (i + 1) * chunkDuration);
+            for (let i = 0; i < segmentCount; i++) {
+                const start = i * chunkDuration;
+                const end = Math.min(videoDurationSeconds, (i + 1) * chunkDuration);
 
-            const metric = frameMetrics?.[i];
-            if (metric) {
-                const verdict = await judgeVideoChunkQuality({
-                    chunkId: `chunk_${i + 1}`,
-                    startSeconds: start,
-                    endSeconds: end,
-                    averageMotionScore: metric.motionScore,
-                    brightnessScore: metric.brightnessScore,
-                    hasSubjectInFrame: metric.hasSubject,
-                    audioEnergyRms: metric.audioRms,
-                    description: `Footage segment ${start}s-${end}s`,
-                });
+                const metric = frameMetrics?.[i];
+                if (metric) {
+                    const verdict = await judgeVideoChunkQuality({
+                        chunkId: `chunk_${i + 1}`,
+                        startSeconds: start,
+                        endSeconds: end,
+                        averageMotionScore: metric.motionScore,
+                        brightnessScore: metric.brightnessScore,
+                        hasSubjectInFrame: metric.hasSubject,
+                        audioEnergyRms: metric.audioRms,
+                        description: `Footage segment ${start}s-${end}s`,
+                    });
 
-                generatedChunks.push({
-                    id: `chunk_${i + 1}`,
-                    startSeconds: start,
-                    endSeconds: end,
-                    motionScore: metric.motionScore,
-                    brightnessScore: metric.brightnessScore,
-                    hasSubject: metric.hasSubject,
-                    audioRms: metric.audioRms,
-                    verdict,
-                    manuallyIncluded: verdict.isKeep,
-                });
-            } else {
-                // When automated vision extraction is unavailable for this source:
-                // Never fabricate fake camera shake, underexposure, or motion scores.
-                // Prepare clean segments ready for timeline editing and manual review.
-                const verdict: VideoChunkVerdict = {
-                    classification: 'KEEP_BROLL',
-                    usableScore: 3,
-                    isKeep: true,
-                    reason: 'Footage segment ready for timeline placement (Manual Review)',
-                };
+                    generatedChunks.push({
+                        id: `chunk_${i + 1}`,
+                        startSeconds: start,
+                        endSeconds: end,
+                        motionScore: metric.motionScore,
+                        brightnessScore: metric.brightnessScore,
+                        hasSubject: metric.hasSubject,
+                        audioRms: metric.audioRms,
+                        verdict,
+                        manuallyIncluded: verdict.isKeep,
+                    });
+                } else {
+                    // When automated vision extraction is unavailable for this source:
+                    // Never fabricate fake camera shake, underexposure, or motion scores.
+                    // Prepare clean segments ready for timeline editing and manual review.
+                    const verdict: VideoChunkVerdict = {
+                        classification: 'KEEP_BROLL',
+                        usableScore: 3,
+                        isKeep: true,
+                        reason: 'Footage segment ready for timeline placement (Manual Review)',
+                    };
 
-                generatedChunks.push({
-                    id: `chunk_${i + 1}`,
-                    startSeconds: start,
-                    endSeconds: end,
-                    motionScore: 0,
-                    brightnessScore: 0,
-                    hasSubject: true,
-                    audioRms: 0,
-                    verdict,
-                    manuallyIncluded: true,
-                });
+                    generatedChunks.push({
+                        id: `chunk_${i + 1}`,
+                        startSeconds: start,
+                        endSeconds: end,
+                        motionScore: 0,
+                        brightnessScore: 0,
+                        hasSubject: true,
+                        audioRms: 0,
+                        verdict,
+                        manuallyIncluded: true,
+                    });
+                }
             }
-        }
 
-        setChunks(generatedChunks);
-        setIsAnalyzing(false);
+            setChunks(generatedChunks);
 
-        if (frameMetrics && frameMetrics.length > 0) {
-            const keptCount = generatedChunks.filter((c) => c.verdict?.isKeep).length;
-            toast.success(`Smart Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
-        } else {
-            toast.success(`Sliced footage into ${generatedChunks.length} segments (${chunkDuration}s each). Ready for timeline placement.`);
+            if (frameMetrics && frameMetrics.length > 0) {
+                const keptCount = generatedChunks.filter((c) => c.verdict?.isKeep).length;
+                toast.success(`Smart Vision: Analyzed ${generatedChunks.length} chunks. ${keptCount} gold takes identified!`);
+            } else {
+                toast.success(`Sliced footage into ${generatedChunks.length} segments (${chunkDuration}s each). Ready for timeline placement.`);
+            }
+        } catch {
+            toast.error('Failed to analyze video footage chunks.');
+        } finally {
+            setIsAnalyzing(false);
         }
     }, [hasFootage, videoDurationSeconds, chunkDuration, frameMetrics]);
 

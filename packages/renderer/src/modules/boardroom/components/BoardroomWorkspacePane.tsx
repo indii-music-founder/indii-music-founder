@@ -49,14 +49,17 @@ export function BoardroomWorkspacePane() {
         }))
     );
 
-    const [jevRecommendation, setJevRecommendation] = useState<BoardroomWorkspaceRecommendation | null>(null);
+    const [rawJevRecommendation, setJevRecommendation] = useState<BoardroomWorkspaceRecommendation | null>(null);
+    const jevRecommendation = agentHistory.length > 0 ? rawJevRecommendation : null;
 
     useEffect(() => {
         let isMounted = true;
         if (agentHistory.length > 0) {
-            void judgeBoardroomWorkspaceRecommendation(agentHistory).then(rec => {
-                if (isMounted) setJevRecommendation(rec);
-            });
+            void judgeBoardroomWorkspaceRecommendation(agentHistory)
+                .then(rec => {
+                    if (isMounted) setJevRecommendation(rec);
+                })
+                .catch(() => {});
         }
         return () => {
             isMounted = false;

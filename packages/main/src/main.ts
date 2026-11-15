@@ -271,17 +271,29 @@ const createWindow = async () => {
 
     // Security Gate for WebNavigation
     win.webContents.on('will-navigate', (event, navigationUrl) => {
-        const parsedUrl = new URL(navigationUrl);
-        const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
+        try {
+            const parsedUrl = new URL(navigationUrl);
+            const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indii.music', 'https://indii-music-founder.firebaseapp.com'];
 
-        if (navigationUrl.startsWith(devServerUrl)) return;
-
-        if (!allowedOrigins.some(origin => parsedUrl.origin === origin)) {
-            event.preventDefault();
-            log.info(`[Security] Blocked navigation to: ${navigationUrl}`);
-            if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-                shell.openExternal(navigationUrl);
+            if (devServerUrl) {
+                try {
+                    const devOrigin = new URL(devServerUrl).origin;
+                    if (parsedUrl.origin === devOrigin) return;
+                } catch {
+                    if (navigationUrl.startsWith(devServerUrl)) return;
+                }
             }
+
+            if (!allowedOrigins.some(origin => parsedUrl.origin === origin)) {
+                event.preventDefault();
+                log.info(`[Security] Blocked navigation to: ${navigationUrl}`);
+                if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+                    void shell.openExternal(navigationUrl);
+                }
+            }
+        } catch {
+            event.preventDefault();
+            log.warn(`[Security] Blocked navigation to malformed URL: ${navigationUrl}`);
         }
     });
 

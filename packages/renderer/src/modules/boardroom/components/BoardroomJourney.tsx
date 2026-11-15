@@ -158,11 +158,13 @@ export function BoardroomJourney() {
     useEffect(() => {
         let current = true;
         const timer = window.setTimeout(() => {
-            void judgeBoardroomExecutiveIntent(context).then(result => {
-                if (current) {
-                    setJudgedContext({ key: contextKey, verdict: result });
-                }
-            });
+            void judgeBoardroomExecutiveIntent(context)
+                .then(result => {
+                    if (current) {
+                        setJudgedContext({ key: contextKey, verdict: result });
+                    }
+                })
+                .catch(() => {});
         }, 350);
         return () => {
             current = false;

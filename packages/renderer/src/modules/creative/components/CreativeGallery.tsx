@@ -206,7 +206,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
             if (isCurrent) {
                 setBrandFit(verdict);
             }
-        });
+        }).catch(() => {});
 
         return () => {
             isCurrent = false;
@@ -948,9 +948,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     const {
         generatedHistory, removeItemFromProject, uploadedImages, addUploadedImage, removeUploadedImage,
         uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
-        playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
+        setVideoInput, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
+        playTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
         pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError, openImage,
         isRightPanelOpen, toggleRightPanel
     } = useStore(useShallow(state => ({

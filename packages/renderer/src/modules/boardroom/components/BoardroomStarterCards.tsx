@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Music2, Scale, DollarSign, PackageCheck, Sparkles, type LucideIcon } from 'lucide-react';
 import {
     deterministicBoardroomExecutiveFallback,
+    judgeBoardroomExecutiveIntent,
     type BoardroomExecutiveMission,
 } from '@/config/typesafeJudgments';
 
@@ -82,7 +83,17 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
         }))
     );
 
-    const topPickMission = useMemo(() => {
+    const contextKey = JSON.stringify({
+        prompt: (commandBarInput || '').trim(),
+        activeAgents: activeAgents || [],
+        hasReferencedAssets: (referencedAssets || []).length > 0,
+    });
+    const [judgedMission, setJudgedMission] = useState<{
+        key: string;
+        mission: BoardroomExecutiveMission | null;
+    } | null>(null);
+
+    const baselineTopMission = useMemo(() => {
         const verdict = deterministicBoardroomExecutiveFallback({
             prompt: commandBarInput || '',
             activeAgents: activeAgents || [],
@@ -91,6 +102,39 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
         });
         return verdict.confidence >= 0.5 ? verdict.mission : null;
     }, [commandBarInput, activeAgents, referencedAssets]);
+
+    useEffect(() => {
+        const promptText = (commandBarInput || '').trim();
+        const hasAssets = (referencedAssets || []).length > 0;
+        const agents = activeAgents || [];
+        if (!promptText && !hasAssets && agents.length === 0) {
+            return;
+        }
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            void judgeBoardroomExecutiveIntent({
+                prompt: promptText,
+                activeAgents: agents,
+                hasReferencedAssets: hasAssets,
+                messageCount: 0,
+            })
+                .then((verdict) => {
+                    if (!cancelled) {
+                        setJudgedMission({
+                            key: contextKey,
+                            mission: verdict.confidence >= 0.5 ? verdict.mission : null,
+                        });
+                    }
+                })
+                .catch(() => {});
+        }, 250);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [commandBarInput, activeAgents, referencedAssets, contextKey]);
+
+    const topPickMission = judgedMission?.key === contextKey ? judgedMission.mission : baselineTopMission;
 
     const handleSelectCard = (card: StarterCardItem) => {
         // Seat required agents for this business domain

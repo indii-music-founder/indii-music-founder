@@ -18,15 +18,17 @@ export class CompatibilityDriftMonitor {
     if (report.hasMissingColumns && report.missingColumns.length > 0) {
       const judgment = await judgeStatementColumnLoss(report.missingColumns, report.formatId);
       if (judgment) {
-        const severity = judgment.isCriticalLoss ? 'breaking' : 'benign';
-        const quarantineRequired = judgment.isCriticalLoss;
+        // TypeSafe invariant: a semantic judgment may add a safety gate or flag,
+        // never remove a quarantine that a deterministic rule (syntax mutation or ISRC/earnings loss) already fired.
+        const quarantineRequired = report.quarantineRequired || judgment.isCriticalLoss;
+        const severity = report.severity === 'breaking' || judgment.isCriticalLoss ? 'breaking' : report.severity;
         return {
           ...report,
           severity,
           quarantineRequired,
           semanticAnalysisSource: 'jev',
           dataLossAssessed: true,
-          suggestedPatchNotes: judgment.isCriticalLoss
+          suggestedPatchNotes: quarantineRequired
             ? `CRITICAL (Jev): ${judgment.explanation} Statement quarantined.`
             : `BENIGN (Jev): ${judgment.explanation}`,
         };

@@ -69,7 +69,7 @@ export function DepartmentJourneyBar({
                 if (current) {
                     setJudged({ key: contextKey, verdict: res });
                 }
-            });
+            }).catch(() => {});
         }, 350);
         return () => {
             current = false;
@@ -202,7 +202,7 @@ export function DepartmentJourneyBar({
             )}
 
             {/* Self-dismissing Contextual Hint Toast */}
-            {hint && (
+            {hint && !isOpen && (
                 <div
                     role="status"
                     aria-live="polite"

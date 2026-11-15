@@ -1,6 +1,6 @@
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { HarnessCompiler, HarnessContext } from '../business-harness/HarnessCompiler';
-import type { IdentityProtectionProfile, CreatorProtectionRun } from './types';
+import type { IdentityProtectionProfile, CreatorProtectionRun, CreatorProtectionReadinessOutput } from './types';
 import { creatorProtectionHarnessService } from './CreatorProtectionHarnessService';
 import type { UserProfile } from '@/types/User';
 
@@ -12,8 +12,7 @@ export interface CreatorProtectionInput {
   userProfile?: UserProfile;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class CreatorProtectionCompiler implements HarnessCompiler<CreatorProtectionInput, any> {
+export class CreatorProtectionCompiler implements HarnessCompiler<CreatorProtectionInput, CreatorProtectionReadinessOutput> {
   readonly domain = 'creator_protection';
 
   compile(input: CreatorProtectionInput, ctx: HarnessContext): CreatorProtectionRun {

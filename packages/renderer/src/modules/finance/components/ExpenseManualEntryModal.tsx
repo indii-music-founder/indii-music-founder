@@ -25,6 +25,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
     const [taxDeductibleHint, setTaxDeductibleHint] = useState<boolean | null>(null);
+    const [hasManualCategory, setHasManualCategory] = useState(false);
     const toast = useToast();
 
     // Fast Jev auto-categorization whenever vendor changes
@@ -42,7 +43,9 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                 const { judgeExpenseCategorization } = await import('@/config/typesafeJudgments');
                 const result = await judgeExpenseCategorization(vendor, manualForm.description, manualForm.amount);
                 if (!cancelled && result) {
-                    setManualForm(prev => ({ ...prev, category: result.category }));
+                    if (!hasManualCategory) {
+                        setManualForm(prev => ({ ...prev, category: result.category }));
+                    }
                     setTaxDeductibleHint(result.isTaxDeductible);
                 }
             } catch (e) {
@@ -56,7 +59,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [manualForm.vendor, manualForm.description, manualForm.amount]);
+    }, [manualForm.vendor, manualForm.description, manualForm.amount, hasManualCategory]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,6 +81,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
             onClose();
         } catch (error: unknown) {
             logger.error("Failed to add expense:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to save expense.");
         } finally {
             setIsSubmitting(false);
         }
@@ -120,7 +124,10 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-teal-500 focus:bg-white/10 outline-none transition-all placeholder:text-gray-600"
                                     placeholder="e.g. Sweetwater"
                                     value={manualForm.vendor || ''}
-                                    onChange={e => setManualForm({ ...manualForm, vendor: e.target.value })}
+                                    onChange={e => {
+                                        setHasManualCategory(false);
+                                        setManualForm({ ...manualForm, vendor: e.target.value });
+                                    }}
                                 />
                             </div>
 
@@ -144,7 +151,10 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-emerald-500 outline-none transition-all placeholder:text-gray-600"
                                         placeholder="0.00"
                                         value={manualForm.amount || ''}
-                                        onChange={e => setManualForm({ ...manualForm, amount: parseFloat(e.target.value) })}
+                                        onChange={e => {
+                                            const parsed = parseFloat(e.target.value);
+                                            setManualForm({ ...manualForm, amount: Number.isFinite(parsed) ? parsed : 0 });
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -182,7 +192,10 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                                     <select
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
                                         value={manualForm.category || 'Other'}
-                                        onChange={e => setManualForm({ ...manualForm, category: e.target.value })}
+                                        onChange={e => {
+                                            setHasManualCategory(true);
+                                            setManualForm({ ...manualForm, category: e.target.value });
+                                        }}
                                     >
                                         <option className="bg-[#1a1a1a]">Equipment</option>
                                         <option className="bg-[#1a1a1a]">Software / Plugins</option>

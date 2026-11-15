@@ -47,8 +47,7 @@ export function UnifiedCommandMenu() {
     // (appSlice `_navigationHistory`). Read defensively: some tests install a flat
     // store mock, so never assume this selector returns an array.
     const navigationHistory = useStore(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (state: any) => state._navigationHistory
+        (state: { _navigationHistory?: unknown }) => state._navigationHistory
     );
 
     const gatedModules = useGatedModules();
@@ -102,12 +101,16 @@ export function UnifiedCommandMenu() {
         let active = true;
         setSuggestedIntent(null);
         const timer = setTimeout(async () => {
-            const verdict = await judgeCommandIntent(trimmed);
-            if (!active) return;
-            if (verdict && verdict.targetModule && verdict.targetModule !== 'none') {
-                setSuggestedIntent(verdict);
-            } else {
-                setSuggestedIntent(null);
+            try {
+                const verdict = await judgeCommandIntent(trimmed);
+                if (!active) return;
+                if (verdict && verdict.targetModule && verdict.targetModule !== 'none') {
+                    setSuggestedIntent(verdict);
+                } else {
+                    setSuggestedIntent(null);
+                }
+            } catch {
+                if (active) setSuggestedIntent(null);
             }
         }, 200);
 

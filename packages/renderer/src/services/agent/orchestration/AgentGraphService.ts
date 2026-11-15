@@ -198,7 +198,7 @@ export class AgentGraphService {
 
             // Arm 5-second lease heartbeat
             heartbeatTimer = setInterval(() => {
-                this.acquireGraphLease(userId, executionId, runnerId, 20000).catch(err => {
+                this.acquireGraphLease(userId, executionId, runnerId, true).catch(err => {
                     logger.warn(`[AgentGraph] Heartbeat lease renewal failed for ${executionId}:`, err);
                 });
             }, 5000);
@@ -223,16 +223,20 @@ export class AgentGraphService {
         userId: string,
         executionId: string,
         runnerId: string,
-        leaseDurationMs = 20000
+        renewOnly = false
     ): Promise<boolean> {
         const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
         try {
             return await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return false;
+                if (!snap.exists()) return false;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 const now = Date.now();
                 const existingLease = currentGraphLease(data);
+
+                if (renewOnly && (existingLease?.holderId !== runnerId || existingLease.expiresAt <= now)) {
+                    return false;
+                }
 
                 if (existingLease && existingLease.expiresAt > now && existingLease.holderId !== runnerId) {
                     logger.warn(`[AgentGraph] Execution ${executionId} is actively leased by ${existingLease.holderId} until ${new Date(existingLease.expiresAt).toISOString()}`);
@@ -243,7 +247,7 @@ export class AgentGraphService {
                     'metadata.lease': {
                         holderId: runnerId,
                         acquiredAt: existingLease?.holderId === runnerId ? existingLease.acquiredAt : now,
-                        expiresAt: now + leaseDurationMs,
+                        expiresAt: now + 20000,
                     },
                     updatedAt: serverTimestamp(),
                 });
@@ -264,7 +268,7 @@ export class AgentGraphService {
         try {
             await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return;
+                if (!snap.exists()) return;
                 const data = (typeof (snap as any).data === 'function' ? (snap as any).data() : (snap as any).data) as GraphExecutionState;
                 if (currentGraphLease(data)?.holderId === runnerId) {
                     tx.update(ref, {
@@ -296,12 +300,16 @@ export class AgentGraphService {
         try {
             return await runTransaction(db, async (tx) => {
                 const snap = await tx.get(ref);
-                if (!snap.exists) return 'LEASE_LOST';
+                if (!snap.exists()) return 'LEASE_LOST';
                 const data = snap.data() as {
+                    status?: GraphExecutionState['status'];
                     nodeStates?: Record<string, { status?: string }>;
                     metadata?: { lease?: GraphExecutionState['lease'] };
                     lease?: GraphExecutionState['lease'];
                 };
+                if (data.status === 'CANCELLED' || data.status === 'FAILED' || data.status === 'COMPLETED') {
+                    return 'LEASE_LOST';
+                }
                 const lease = currentGraphLease(data);
                 if (lease?.holderId !== runnerId || !Number.isFinite(lease.expiresAt) || lease.expiresAt <= Date.now()) {
                     return 'LEASE_LOST';

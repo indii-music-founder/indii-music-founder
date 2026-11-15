@@ -270,12 +270,21 @@ describe('BoardroomBrowser IPC Handlers', () => {
         expect(mocks.mockWebContents.loadURL).not.toHaveBeenCalled();
     });
 
-    it('opens URL in external OS browser', async () => {
+    it('opens URL in external OS browser and blocks non-HTTP(S) protocols', async () => {
         const openExternalHandler = mocks.ipcMainHandlers.get('boardroom-browser:open-external')!;
         const mockGoodEvent = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
 
         const result = (await openExternalHandler(mockGoodEvent, 'https://ascap.com')) as { success: boolean };
         expect(result.success).toBe(true);
-        expect(mocks.shellOpenExternal).toHaveBeenCalledWith('https://ascap.com');
+        expect(mocks.shellOpenExternal).toHaveBeenCalledWith('https://ascap.com/');
+
+        mocks.shellOpenExternal.mockClear();
+        const fileResult = (await openExternalHandler(mockGoodEvent, 'file:///etc/passwd')) as { success: boolean };
+        expect(fileResult.success).toBe(false);
+        expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
+
+        const jsResult = (await openExternalHandler(mockGoodEvent, 'javascript:alert(1)')) as { success: boolean };
+        expect(jsResult.success).toBe(false);
+        expect(mocks.shellOpenExternal).not.toHaveBeenCalled();
     });
 });

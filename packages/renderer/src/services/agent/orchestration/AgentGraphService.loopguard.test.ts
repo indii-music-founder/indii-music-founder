@@ -67,10 +67,10 @@ const makeContext = (): AgentContext => ({ userId: 'u1', traceId: 't1' });
 
 let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null = null;
 let legacyLease: typeof lease = null;
-const claimTx = (nodeStatus: () => string) => ({
+const claimTx = (nodeStatus: () => string, graphStatus = 'PLANNED') => ({
     get: vi.fn(async () => ({
-        exists: true,
-        data: () => ({ status: 'PLANNED', metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
+        exists: () => true,
+        data: () => ({ status: graphStatus, metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
     })),
     set: vi.fn(),
     update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
@@ -129,6 +129,30 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         vi.restoreAllMocks();
     });
 
+    it('does not let a late heartbeat recreate a released lease (structural)', async () => {
+        const transaction = claimTx(() => 'PLANNED');
+        vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) => cb(transaction as never));
+        const renew = (agentGraphService as unknown as {
+            acquireGraphLease(userId: string, executionId: string, runnerId: string, renewOnly: boolean): Promise<boolean>;
+        }).acquireGraphLease.bind(agentGraphService);
+
+        await expect(renew('u1', 'exec-1', 'finished-runner', true)).resolves.toBe(false);
+        expect(transaction.update).not.toHaveBeenCalled();
+    });
+
+    it('does not claim a lease when the execution document disappears (structural)', async () => {
+        wireHappyPath();
+        const update = vi.fn();
+        vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) =>
+            cb({ get: async () => ({ exists: () => false, data: () => undefined }), update } as never)
+        );
+
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/locked by another runner/);
+        expect(update).not.toHaveBeenCalled();
+        expect(mocks.delegateTask).not.toHaveBeenCalled();
+    });
+
     it('refuses a second loop for an execution that already has one running', async () => {
         wireHappyPath();
         let releaseDelegate: (value: string) => void = () => { };
@@ -146,6 +170,18 @@ describe('AgentGraphService loop guard and atomic claims', () => {
 
         releaseDelegate('done');
         await expect(first).resolves.toContain('Final output snippet');
+    });
+
+    it('refuses dispatch if the graph is cancelled between readiness and claim', async () => {
+        wireHappyPath();
+        vi.mocked(runTransaction).mockImplementation(async (_db, cb) =>
+            cb(claimTx(() => 'PLANNED', lease ? 'CANCELLED' : 'PLANNED') as never),
+        );
+
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/lost its lease before node dispatch/);
+        expect(mocks.delegateTask).not.toHaveBeenCalled();
+        expect(mocks.finalizeStatus).not.toHaveBeenCalled();
     });
 
     it('never executes a node whose atomic claim lost to another loop', async () => {

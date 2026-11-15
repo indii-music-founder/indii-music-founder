@@ -44,6 +44,25 @@ interface BoardroomBrowserViewProps {
     isVisible?: boolean;
 }
 
+function normalizeExternalHttpUrl(rawInput: string): string | null {
+    const trimmed = rawInput.trim();
+    if (!trimmed) return null;
+    const candidate = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)
+        ? trimmed
+        : trimmed.includes('.') && !trimmed.includes(' ')
+            ? `https://${trimmed}`
+            : `https://www.google.com/search?q=${encodeURIComponent(trimmed)}`;
+    try {
+        const parsed = new URL(candidate);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+            return null;
+        }
+        return parsed.toString();
+    } catch {
+        return null;
+    }
+}
+
 export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewProps) {
     const toast = useToast();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -144,18 +163,21 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     }, [isNativeElectron, isVisible, setBoardroomBrowserUrl, invalidatePage]);
 
     const handleNavigate = (targetUrl: string) => {
-        const trimmed = targetUrl.trim();
-        if (!trimmed) return;
+        const safeUrl = normalizeExternalHttpUrl(targetUrl);
+        if (!safeUrl) {
+            toast.error('Only valid HTTP/HTTPS URLs are supported in the Boardroom browser.');
+            return;
+        }
 
-        invalidatePage(trimmed);
+        invalidatePage(safeUrl);
         setPageLoadFailed(false);
-        setBoardroomBrowserUrl(trimmed);
-        setInputUrl(trimmed);
+        setBoardroomBrowserUrl(safeUrl);
+        setInputUrl(safeUrl);
         setIsPinned(false);
         setExtractedText(null);
 
         if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.navigate(trimmed);
+            void window.electronAPI.boardroomBrowser.navigate(safeUrl);
         }
     };
 
@@ -185,7 +207,11 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     };
 
     const handleOpenExternal = () => {
-        const target = inputUrl || boardroomBrowserUrl || 'https://artists.spotify.com';
+        const target = normalizeExternalHttpUrl(inputUrl || boardroomBrowserUrl || 'https://artists.spotify.com');
+        if (!target) {
+            toast.error('Cannot open invalid or non-HTTP(S) URL externally.');
+            return;
+        }
         if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
             void window.electronAPI.boardroomBrowser.openExternal(target);
         } else {
@@ -248,7 +274,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             } else {
                 toast.info('Page URL pinned, but its text could not be captured.');
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to capture webpage context.');
         } finally {
             setIsLoading(false);
@@ -501,7 +527,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     // Standard Web Iframe Fallback
                     <div className="w-full h-full relative flex flex-col">
                         <iframe
-                            src={boardroomBrowserUrl || 'https://artists.spotify.com'}
+                            src={normalizeExternalHttpUrl(boardroomBrowserUrl || 'https://artists.spotify.com') || 'https://artists.spotify.com'}
                             title="Boardroom Embedded Browser"
                             className="w-full h-full border-none flex-1"
                             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

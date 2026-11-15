@@ -129,8 +129,18 @@ export function useDynamicDashboardLayout(
     availableKeys: DynamicComponentKey[] = ALL_DYNAMIC_MODULE_KEYS
 ) {
     const baseline = getDeterministicLayout(context, availableKeys);
-    const [layout, setLayout] = useState(baseline);
     const { activeReleaseType, hasPendingSplits, unmatchedRoyaltiesCount, activeAdCampaigns } = context;
+    const contextKey = JSON.stringify({
+        activeReleaseType,
+        hasPendingSplits,
+        unmatchedRoyaltiesCount,
+        activeAdCampaigns,
+        availableKeys,
+    });
+    const [judgedLayout, setJudgedLayout] = useState<{
+        key: string;
+        value: ReturnType<typeof getDeterministicLayout>;
+    } | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -141,13 +151,13 @@ export function useDynamicDashboardLayout(
                 hasPendingSplits,
                 unmatchedRoyaltiesCount,
                 activeAdCampaigns,
-            }, availableKeys);
+            }, availableKeys).catch(() => null);
             if (isMounted && decision) {
-                setLayout(decision);
+                setJudgedLayout({ key: contextKey, value: decision });
             }
         }
 
-        resolveJevLayout();
+        void resolveJevLayout();
 
         return () => {
             isMounted = false;
@@ -158,9 +168,10 @@ export function useDynamicDashboardLayout(
         unmatchedRoyaltiesCount,
         activeAdCampaigns,
         availableKeys,
+        contextKey,
     ]);
 
-    return layout;
+    return judgedLayout?.key === contextKey ? judgedLayout.value : baseline;
 }
 
 // ---------------------------------------------------------------------------

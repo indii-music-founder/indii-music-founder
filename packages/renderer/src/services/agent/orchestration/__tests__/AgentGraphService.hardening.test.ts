@@ -84,7 +84,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
         // Transaction mock returns an existing, active lease from another runner
         vi.mocked(runTransaction).mockImplementationOnce(async (_db, cb) => cb({
             get: vi.fn(async () => ({
-                exists: true,
+                exists: () => true,
                 data: () => ({
                     executionId,
                     lease: {
@@ -126,7 +126,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) => {
             return cb({
                 get: vi.fn(async () => ({
-                    exists: true,
+                    exists: () => true,
                     data: () => ({
                         executionId,
                         metadata: { lease },
@@ -208,7 +208,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
 
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) => cb({
             get: vi.fn(async () => ({
-                exists: true,
+                exists: () => true,
                 data: () => ({
                     executionId,
                     metadata: { lease },
