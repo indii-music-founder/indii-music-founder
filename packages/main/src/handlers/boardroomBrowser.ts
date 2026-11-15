@@ -241,7 +241,7 @@ class BoardroomBrowserController {
         return { success: true, url: targetUrl };
     }
 
-    public goBack(event: IpcMainInvokeEvent): { success: boolean } {
+    public goBack(_event: IpcMainInvokeEvent): { success: boolean } {
         if (this.view && this.view.webContents.canGoBack()) {
             this.view.webContents.goBack();
             return { success: true };
@@ -249,7 +249,7 @@ class BoardroomBrowserController {
         return { success: false };
     }
 
-    public goForward(event: IpcMainInvokeEvent): { success: boolean } {
+    public goForward(_event: IpcMainInvokeEvent): { success: boolean } {
         if (this.view && this.view.webContents.canGoForward()) {
             this.view.webContents.goForward();
             return { success: true };
@@ -257,7 +257,7 @@ class BoardroomBrowserController {
         return { success: false };
     }
 
-    public reload(event: IpcMainInvokeEvent): { success: boolean } {
+    public reload(_event: IpcMainInvokeEvent): { success: boolean } {
         if (this.view) {
             this.view.webContents.reload();
             return { success: true };
@@ -265,7 +265,7 @@ class BoardroomBrowserController {
         return { success: false };
     }
 
-    public async captureContext(event: IpcMainInvokeEvent): Promise<{ success: boolean; data: { url: string; title: string; text: string } }> {
+    public async captureContext(_event: IpcMainInvokeEvent): Promise<{ success: boolean; data: { url: string; title: string; text: string } }> {
         if (!this.view) {
             throw new Error('Boardroom browser view is not active.');
         }
@@ -290,7 +290,7 @@ class BoardroomBrowserController {
         return { success: true, data };
     }
 
-    public detach(event: IpcMainInvokeEvent): { success: boolean } {
+    public detach(_event: IpcMainInvokeEvent): { success: boolean } {
         if (this.view && this.ownerWindow && !this.ownerWindow.isDestroyed()) {
             try {
                 this.view.setVisible(false);
@@ -305,13 +305,23 @@ class BoardroomBrowserController {
         return { success: true };
     }
 
-    public openExternal(event: IpcMainInvokeEvent, rawUrl?: string): { success: boolean } {
+    public openExternal(_event: IpcMainInvokeEvent, rawUrl?: string): { success: boolean } {
         const target = rawUrl?.trim() || this.currentState.url;
-        if (target) {
-            void shell.openExternal(target);
-            return { success: true };
+        if (!target) {
+            return { success: false };
         }
-        return { success: false };
+        try {
+            const parsed = new URL(target);
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+                log.warn(`[BoardroomBrowser] Blocked openExternal for non-HTTP(S) protocol: ${parsed.protocol}`);
+                return { success: false };
+            }
+            void shell.openExternal(parsed.toString());
+            return { success: true };
+        } catch {
+            log.warn('[BoardroomBrowser] Blocked openExternal for invalid URL');
+            return { success: false };
+        }
     }
 }
 

@@ -40,10 +40,13 @@ export function sanitizeToolParameters(params: ToolParameters): ToolParameters {
     };
 }
 
+const UNIVERSAL_TRASH_TOOLS = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
+
 export interface ToolPoolContext {
     agentId: string;
     moduleContext: string;
     localToolNames?: ReadonlySet<string>;
+    authorizedTools?: readonly string[];
     isReadOnly?: boolean;
     conversationMode?: 'direct' | 'department' | 'boardroom';
 }
@@ -91,6 +94,13 @@ export class ToolPoolAssembler {
             tool.name,
             context.localToolNames?.has(tool.name) ? tool : undefined,
         ) !== undefined);
+
+        // Enforce agent-level authorization before truncation so unauthorized tools
+        // are never declared to the model (nor consume slots from the maxTools budget).
+        if (context.authorizedTools) {
+            const allowedTools = new Set(context.authorizedTools);
+            pool = pool.filter(tool => allowedTools.has(tool.name) || UNIVERSAL_TRASH_TOOLS.has(tool.name));
+        }
 
         // Avoid offering tools that the hierarchy will reject. In Boardroom,
         // managers coordinate with information notes; no peer manager executes

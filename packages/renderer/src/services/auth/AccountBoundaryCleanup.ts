@@ -1,3 +1,4 @@
+import { entryCommandHydrationCache } from '../commands/EntryCommandHydrationCache';
 import { clearAllAccountBoundOAuthSessions } from './AccountBoundOAuthSession';
 import { logger } from '@/utils/logger';
 
@@ -112,6 +113,7 @@ async function clearKnownAccountOwnedDatabases(): Promise<void> {
 }
 
 function clearSynchronousAccountOwnedStorage(): void {
+    entryCommandHydrationCache.reset();
     removeMatchingStorageEntries(
         localStorage,
         ACCOUNT_OWNED_LOCAL_STORAGE_KEYS,

@@ -4,7 +4,9 @@ import React from 'react';
 
 // Mock child view components
 vi.mock('./BoardroomBrowserView', () => ({
-    BoardroomBrowserView: () => <div data-testid="mock-browser-view">Browser View</div>,
+    BoardroomBrowserView: ({ isVisible }: { isVisible?: boolean }) => (
+        <div data-testid="mock-browser-view" data-visible={String(isVisible ?? true)}>Browser View</div>
+    ),
 }));
 
 vi.mock('./BoardroomModulePreview', () => ({
@@ -118,5 +120,17 @@ describe('BoardroomWorkspacePane', () => {
         fireEvent.click(closeBtn);
 
         expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('closed');
+    });
+
+    it('hides the embedded browser viewport when overlays or command menu open', () => {
+        const view = render(<BoardroomWorkspacePane hasOverlayOpen={false} />);
+        expect(screen.getByTestId('mock-browser-view')).toHaveAttribute('data-visible', 'true');
+
+        view.rerender(<BoardroomWorkspacePane hasOverlayOpen={true} />);
+        expect(screen.getByTestId('mock-browser-view')).toHaveAttribute('data-visible', 'false');
+
+        mockStoreState.isCommandMenuOpen = true;
+        view.rerender(<BoardroomWorkspacePane hasOverlayOpen={false} />);
+        expect(screen.getByTestId('mock-browser-view')).toHaveAttribute('data-visible', 'false');
     });
 });

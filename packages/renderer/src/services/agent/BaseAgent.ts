@@ -150,6 +150,67 @@ export class BaseAgent implements SpecializedAgent {
     }
 
     /**
+     * Screens an agent's final response text through capability-truth, ModelArmor,
+     * and Jev guardrails before returning it to the caller.
+     */
+    private async applyOutputGuardrails(
+        rawText: string,
+        toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }>,
+        tokenBudget: ReturnType<typeof executionTokenBudget>
+    ): Promise<string> {
+        let finalResponse = rawText;
+
+        // Guardrail against ungrounded engineering roadmap/deficit hallucinations
+        const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
+        const hallucinationCheck = detectUngroundedEngineeringHallucination(finalResponse);
+        const overclaimCheck = detectCapabilityOverclaim(finalResponse);
+        if (hallucinationCheck.hasHallucination) {
+            logger.warn(`[BaseAgent] 🛡️ Intercepted ungrounded engineering hallucination in ${this.id}: "${hallucinationCheck.snippet}". Replacing with verified runtime truth.`);
+            finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
+        }
+        if (overclaimCheck.hasOverclaim) {
+            logger.warn(`[BaseAgent] 🛡️ Intercepted capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
+            finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
+            void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
+                reportOverclaimIfNeeded({
+                    snippet: overclaimCheck.snippet || finalResponse,
+                    source: 'deterministic',
+                    signal: overclaimCheck.matchedPattern,
+                    agentId: this.id,
+                }),
+            ).catch(() => undefined);
+        }
+
+        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
+        const outputCheck = await ModelArmor.scanOutput(finalResponse, getDefaultPolicy());
+        if (outputCheck.redactedResponse) {
+            finalResponse = outputCheck.redactedResponse;
+        }
+
+        // TypeSafe/Jev guardrail — screens for hallucinations before user sees response.
+        // Fully soft-fail: times out after 2s, never throws, passes through on any error.
+        try {
+            const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
+            const guardrailResult = await Promise.race([
+                jevGuardrailService.screen({
+                    text: finalResponse,
+                    tool_calls: toolCalls,
+                    agentId: this.id,
+                }, tokenBudget),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+            ]);
+            if (guardrailResult && guardrailResult.wasModified) {
+                logger.warn(`[BaseAgent] 🛡️ Jev guardrail intercepted response for ${this.id}. Flags: ${guardrailResult.flags.join(', ')}`);
+                finalResponse = guardrailResult.text;
+            }
+        } catch (guardrailErr) {
+            logger.debug(`[BaseAgent] Jev guardrail skipped (non-fatal): ${guardrailErr}`);
+        }
+
+        return finalResponse;
+    }
+
+    /**
      * Static WeakMaps for identity state — kept outside the instance
      * so that Object.freeze (from FreezeDiagnostic) doesn't block async minting
      * or identity card assignment.
@@ -784,7 +845,7 @@ export class BaseAgent implements SpecializedAgent {
                                     text: fullText,
                                     tool_calls: [],
                                     agentId: this.id,
-                                }),
+                                }, executionTokenBudget(context, 1_500_000)),
                                 new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
                             ]);
                             if (guardrailResult && guardrailResult.wasModified) {
@@ -892,7 +953,16 @@ export class BaseAgent implements SpecializedAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         // KEEPER: Prevent Context Duplication
-        const { chatHistoryString, chatHistory, memoryContext, boardroomTask: _boardroomTask, assetReferences: _assetReferences, signal: _signal, ...leanContext } = (context || {}) as Record<string, unknown>;
+        const {
+            chatHistoryString,
+            chatHistory,
+            memoryContext,
+            boardroomTask: _boardroomTask,
+            assetReferences: _assetReferences,
+            attachments: _attachments,
+            signal: _signal,
+            ...leanContext
+        } = (context || {}) as Record<string, unknown>;
 
         const enrichedContext: AgentContext & { agentIdentity: AgentIdentityCard; [key: string]: unknown } = sanitizeObjectForPrompt({
             ...leanContext,
@@ -907,6 +977,22 @@ export class BaseAgent implements SpecializedAgent {
         const tokenBudget = executionTokenBudget(context ?? enrichedContext, 1_500_000);
         if (context) inheritExecutionTokenBudget(context, enrichedContext);
         enrichedContext.assetReferences = context?.assetReferences;
+        const isLiveAttachment = (att: { mimeType?: string; base64?: string } | undefined): att is { mimeType: string; base64: string } =>
+            Boolean(
+                att &&
+                typeof att.mimeType === 'string' &&
+                att.mimeType.trim().length > 0 &&
+                typeof att.base64 === 'string' &&
+                att.base64.trim().length > 0 &&
+                !att.base64.trim().startsWith('[elided ')
+            );
+        const resolvedAttachments = (attachments || []).filter(isLiveAttachment);
+        for (const ctxAtt of (context?.attachments || []).filter(isLiveAttachment)) {
+            if (!resolvedAttachments.some(att => att.base64 === ctxAtt.base64 && att.mimeType === ctxAtt.mimeType)) {
+                resolvedAttachments.push(ctxAtt);
+            }
+        }
+        enrichedContext.attachments = resolvedAttachments.length > 0 ? resolvedAttachments : undefined;
 
         // Agent Canvas Context Injection: If agent canvas has active panels, inject lightweight overview
         try {
@@ -931,19 +1017,65 @@ export class BaseAgent implements SpecializedAgent {
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
 
-        const SUPERPOWER_PROMPT = `
-        ## CAPABILITIES & PROTOCOLS
-        You have access to the following advanced capabilities ("Superpowers"):
-        - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
-        - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
-        - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
-        - **Collaboration:** Within a department, only a manager may delegate work to that department's employees. In Boardroom, share facts with the share_note tool; managers never assign work to peer managers or another department's employees.
-        - **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
+        // Tool gathering logic via ToolPoolAssembler (computed before prompt construction
+        // so SUPERPOWER_PROMPT only advertises capabilities this agent is authorized to invoke)
+        const specialistTools = (this.tools || []).flatMap(t => t.functionDeclarations || []);
+        let activeModule = 'unknown';
+        if (context) {
+            const ctxParams = context as Record<string, unknown>;
+            activeModule = (ctxParams.currentModule as string | undefined)
+                || (ctxParams.route as string | undefined)
+                || 'unknown';
+        }
 
+        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
+            specialistTools,
+            {
+                agentId: this.id,
+                moduleContext: activeModule,
+                localToolNames: new Set(Object.keys(this.functions)),
+                authorizedTools: this.authorizedTools,
+                isReadOnly: context?.isReadOnly === true,
+                conversationMode: context?.conversationMode,
+            }
+        );
+        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
+        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
+            || boardroomSideEffectOwner === this.id;
+        const allFunctions = mayExecuteBoardroomSideEffects
+            ? assembledFunctions
+            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
+
+        const availableToolNames = new Set(allFunctions.map(fn => fn.name));
+        const superpowerLines: string[] = [];
+        if (availableToolNames.has('save_memory') || availableToolNames.has('recall_memories')) {
+            superpowerLines.push("- **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.");
+        }
+        if (availableToolNames.has('verify_output')) {
+            superpowerLines.push("- **Reflection:** Call 'verify_output' to critique your own work if the task is complex.");
+        }
+        if (availableToolNames.has('request_approval')) {
+            superpowerLines.push("- **Approval:** Call 'request_approval' for any action that publishes content or spends money.");
+        }
+        if (availableToolNames.has('share_note') || availableToolNames.has('delegate_task')) {
+            superpowerLines.push("- **Collaboration:** Within a department, only a manager may delegate work to that department's employees. In Boardroom, share facts with the share_note tool; managers never assign work to peer managers or another department's employees.");
+        }
+        if (availableToolNames.has('speak')) {
+            superpowerLines.push("- **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a \"generate\", \"create\", or \"make\" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.");
+        }
+        const capabilitiesBlock = superpowerLines.length > 0
+            ? `        ## CAPABILITIES & PROTOCOLS\n        You have access to the following advanced capabilities ("Superpowers"):\n        ${superpowerLines.join('\n        ')}\n`
+            : '';
+
+        const SUPERPOWER_PROMPT = `
+${capabilitiesBlock}
         ## COLLABORATION PROTOCOL
         - If you are receiving a delegated task (check context.traceId), be extremely concise and data-oriented.
         - When delegating, provide full context so the next agent doesn't need to ask follow-up questions.
-        - Use share_note to make a relevant fact available to another seated manager; it is information, never an instruction.
+        ${availableToolNames.has('share_note') ? '- Use share_note to make a relevant fact available to another seated manager; it is information, never an instruction.\n' : ''}
+        ## TOOL DISCIPLINE
+        - Call ONLY tools explicitly declared in your active tool schema when concrete execution or inspection is required.
+        - For direct questions about system status, features, or behavior, answer directly from verified runtime context and conversation history without speculative tool calls.
 
         ## TONE & STYLE
         - Act with the authority of your role (${this.name}).
@@ -1082,35 +1214,6 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
             capabilityTruthSection
         );
 
-        // Tool gathering logic via ToolPoolAssembler
-        const specialistTools = (this.tools || []).flatMap(t => t.functionDeclarations || []);
-
-        // Ensure context has needed module properties, dynamically trying to get currentModule
-        let activeModule = 'unknown';
-        if (context) {
-            const ctxRecord = context as Record<string, unknown>;
-            activeModule = (ctxRecord.currentModule as string | undefined)
-                || (ctxRecord.route as string | undefined)
-                || 'unknown';
-        }
-
-        const assembledFunctions: FunctionDeclaration[] = ToolPoolAssembler.assemble(
-            specialistTools,
-            {
-                agentId: this.id,
-                moduleContext: activeModule,
-                localToolNames: new Set(Object.keys(this.functions)),
-                isReadOnly: context?.isReadOnly === true,
-                conversationMode: context?.conversationMode,
-            }
-        );
-        const boardroomSideEffectOwner = context?.boardroomDispatchPlan?.sideEffectOwnerAgentId;
-        const mayExecuteBoardroomSideEffects = !context?.boardroomDispatchPlan?.leaseId
-            || boardroomSideEffectOwner === this.id;
-        const allFunctions = mayExecuteBoardroomSideEffects
-            ? assembledFunctions
-            : assembledFunctions.filter(fn => !BOARDROOM_SINGLE_OWNER_TOOL_NAMES.has(fn.name));
-
         // IMPORTANT: Tools must be deep-cloned on EACH iteration because model gateways may
         // freeze (Object.freeze) tool declaration objects while normalizing requests.
         // Reusing frozen objects on subsequent iterations causes:
@@ -1154,6 +1257,8 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
         const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];
         let lastToolResult: ToolFunctionResult | undefined = undefined;
         let currentThoughtSignature: string | undefined = undefined;
+        let withholdToolsNextStep = false;
+        let readCacheStartIndex = 0;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -1239,7 +1344,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: `[Blocked by Model Armor] ${armorResult.reason}`, data: null, toolCalls };
                 }
 
-                const finalAttachments = [...(attachments || [])];
+                const finalAttachments = [...(enrichedContext.attachments || [])];
 
                 // Auto-inject the latest generated artifact if it's the creative agent and the user asks to look at something
                 if (finalAttachments.length === 0 && ['creative', 'brand'].includes(this.id) && context?.chatHistory) {
@@ -1345,7 +1450,8 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 // call and ending with a bare "Maximum iterations reached." (Boardroom caps
                 // agents at two steps, so this was the common outcome for the Conductor.)
                 const isFinalStepOfMultiStepRun = iterations === MAX_ITERATIONS && MAX_ITERATIONS > 1;
-                const iterationTools = isFinalStepOfMultiStepRun ? [] : buildToolsSnapshot();
+                const toolsWithheldForStep = isFinalStepOfMultiStepRun || withholdToolsNextStep;
+                const iterationTools = toolsWithheldForStep ? [] : buildToolsSnapshot();
 
                 if (signal?.aborted) {
                     throw new Error(signal.reason || 'Agent execution aborted via signal.');
@@ -1547,7 +1653,36 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                 logger.debug(`[BaseAgent] Extracted ${functionCalls.length} function calls for agent ${this.id}`);
 
                 if (functionCalls.length > 0) {
+                    if (toolsWithheldForStep) {
+                        const modelText = response.text?.()?.trim();
+                        const reusableCalls = context?.boardroomExecution
+                            ? toolCalls
+                            : toolCalls.slice(readCacheStartIndex);
+                        const allCallsAlreadyCompleted = functionCalls.every(
+                            fc => completedBoardroomToolResult(fc.name, fc.args, reusableCalls) !== null
+                        );
+                        if (withholdToolsNextStep || Boolean(modelText) || allCallsAlreadyCompleted) {
+                            const rawResponse = modelText ||
+                                lastToolResult?.message?.trim() ||
+                                'Completed the requested lookup.';
+                            const finalResponse = await this.applyOutputGuardrails(rawResponse, toolCalls, tokenBudget);
+                            if (executionContext.hasUncommittedChanges()) {
+                                await executionContext.commit();
+                            }
+                            return {
+                                text: finalResponse,
+                                data: lastToolResult,
+                                toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+                                thoughtSignature: currentThoughtSignature,
+                                ...(reportedUsage ? { usage: reportedUsage } : {}),
+                            };
+                        }
+                        // Final step with tools withheld and empty text + uncompleted tool call:
+                        // never execute tools on a withheld step; fall through to Max iterations handling.
+                        break;
+                    }
                     const batchStart = toolCalls.length;
+                    let reusedCountInBatch = 0;
                     for (const functionCall of functionCalls) {
                         const { name, args } = functionCall;
 
@@ -1753,9 +1888,13 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         }
 
                         const argsStr = elideBase64Payloads(JSON.stringify(args));
-                        const previousResult = context?.boardroomExecution && riskMeta.riskTier !== 'read'
-                            ? completedBoardroomToolResult(name, args, toolCalls) : null;
+                        const previousResult = context?.boardroomExecution
+                            ? completedBoardroomToolResult(name, args, toolCalls)
+                            : (riskMeta.riskTier === 'read'
+                                ? completedBoardroomToolResult(name, args, toolCalls.slice(readCacheStartIndex))
+                                : null);
                         if (previousResult) {
+                            reusedCountInBatch++;
                             lastToolResult = previousResult;
                             toolCalls.push({ name, args, result: previousResult });
                             fullPrompt += `\n[Tool ${name}: this identical action already completed in this step. Reusing its actual receipt; do not execute it again.] ${elideBase64Payloads(JSON.stringify(previousResult))}\n`;
@@ -1823,6 +1962,9 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         // Store tool call and result
                         lastToolResult = result;
                         toolCalls.push({ name, args, result });
+                        if (riskMeta.riskTier !== 'read') {
+                            readCacheStartIndex = toolCalls.length;
+                        }
                         // Missing credential storage and uncertain memory writes require
                         // review, not another model attempt that could repeat an effect.
                         if (!result.success && (result.metadata?.errorCode === 'CREDENTIAL_STORAGE_UNAVAILABLE' || result.metadata?.errorCode === 'MEMORY_SAVE_UNCONFIRMED' || result.metadata?.errorCode === 'MEMORY_NOT_SAVED')) {
@@ -1938,57 +2080,17 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         return { ...(reportedUsage ? { usage: reportedUsage } : {}), text: reportReceipt, data: lastToolResult, toolCalls, thoughtSignature: currentThoughtSignature };
                     }
 
+                    if (reusedCountInBatch === functionCalls.length && reusedCountInBatch > 0) {
+                        withholdToolsNextStep = true;
+                        fullPrompt += '\n[SYSTEM — DUPLICATE TOOL CALL SUPPRESSED] All tool calls in the previous step repeated already-completed lookups with identical arguments. Tools are withheld for the next step; synthesize your final answer now using the existing results.\n';
+                    } else {
+                        withholdToolsNextStep = false;
+                    }
+
                     // For most tools, we continue to let the Autonomous process the result
                     continue;
                 } else {
-                    let finalResponse = response.text?.() || '';
-
-                    // Guardrail against ungrounded engineering roadmap/deficit hallucinations
-                    const { detectUngroundedEngineeringHallucination, detectCapabilityOverclaim, sanitizeAgentCapabilityOutput } = await importWithRetry(() => import('./capabilityTruth'));
-                    const hallucinationCheck = detectUngroundedEngineeringHallucination(finalResponse);
-                    const overclaimCheck = detectCapabilityOverclaim(finalResponse);
-                    if (hallucinationCheck.hasHallucination) {
-                        logger.warn(`[BaseAgent] 🛡️ Intercepted ungrounded engineering hallucination in ${this.id}: "${hallucinationCheck.snippet}". Replacing with verified runtime truth.`);
-                        finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
-                    }
-                    if (overclaimCheck.hasOverclaim) {
-                        logger.warn(`[BaseAgent] 🛡️ Intercepted capability overclaim in ${this.id}: "${overclaimCheck.snippet}". Replacing with grounded capability audit (issue #317).`);
-                        finalResponse = sanitizeAgentCapabilityOutput(finalResponse);
-                        void import('./truthOverclaimReporter').then(({ reportOverclaimIfNeeded }) =>
-                            reportOverclaimIfNeeded({
-                                snippet: overclaimCheck.snippet || finalResponse,
-                                source: 'deterministic',
-                                signal: overclaimCheck.matchedPattern,
-                                agentId: this.id,
-                            }),
-                        ).catch(() => undefined);
-                    }
-
-                    const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
-                    const outputCheck = await ModelArmor.scanOutput(finalResponse, getDefaultPolicy());
-                    if (outputCheck.redactedResponse) {
-                        finalResponse = outputCheck.redactedResponse;
-                    }
-
-                    // TypeSafe/Jev guardrail — screens for hallucinations before user sees response.
-                    // Fully soft-fail: times out after 2s, never throws, passes through on any error.
-                    try {
-                        const { jevGuardrailService } = await importWithRetry(() => import('./guardrails/JevGuardrailService'));
-                        const guardrailResult = await Promise.race([
-                            jevGuardrailService.screen({
-                                text: finalResponse,
-                                tool_calls: toolCalls,
-                                agentId: this.id,
-                            }),
-                            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
-                        ]);
-                        if (guardrailResult && guardrailResult.wasModified) {
-                            logger.warn(`[BaseAgent] 🛡️ Jev guardrail intercepted response for ${this.id}. Flags: ${guardrailResult.flags.join(', ')}`);
-                            finalResponse = guardrailResult.text;
-                        }
-                    } catch (guardrailErr) {
-                        logger.debug(`[BaseAgent] Jev guardrail skipped (non-fatal): ${guardrailErr}`);
-                    }
+                    const finalResponse = await this.applyOutputGuardrails(response.text?.() || '', toolCalls, tokenBudget);
 
                     // Phase 3: Commit execution context changes on successful completion
                     if (executionContext.hasUncommittedChanges()) {

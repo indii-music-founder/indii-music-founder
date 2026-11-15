@@ -121,10 +121,12 @@ export class AgentEventBus {
     ): void {
         events.emit('AGENT_ACTION', {
             agentId: 'graph-orchestrator',
+            timestamp: Date.now(),
             action: type,
             details: `Graph: ${graphId} | Exec: ${executionId}${details ? ` | ${details}` : ''}`,
             graphId,
             executionId,
+            errorMessage: type === 'GRAPH_EXECUTION_FAILED' ? details : undefined,
         });
     }
 
@@ -140,11 +142,13 @@ export class AgentEventBus {
     ): void {
         events.emit('AGENT_ACTION', {
             agentId: 'graph-orchestrator',
+            timestamp: Date.now(),
             action: type,
             details: `Node: ${nodeId} (Graph: ${graphId}) | Exec: ${executionId}${details ? ` | ${details}` : ''}`,
             graphId,
             nodeId,
             executionId,
+            errorMessage: type === 'GRAPH_NODE_FAILED' ? details : undefined,
         });
     }
 

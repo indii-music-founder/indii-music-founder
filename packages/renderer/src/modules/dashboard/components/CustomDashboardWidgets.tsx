@@ -1423,7 +1423,7 @@ function ApprovalGatesWidget() {
                         <div>
                             <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] block">Approval Gates</span>
                             <span className="text-xs font-bold text-white tracking-tight">
-                                {hasPending ? `${approvals.length} Gate${approvals.length > 1 ? 's' : ''} Pending` : 'All Gates Clear'}
+                                {hasPending ? `${approvals.length} Gate${approvals.length > 1 ? 's' : ''} Pending` : 'No pending approvals'}
                             </span>
                         </div>
                     </div>
@@ -1433,7 +1433,7 @@ function ApprovalGatesWidget() {
                             ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     }`}>
-                        {hasPending ? 'Action Required' : 'Enforced'}
+                        {hasPending ? 'Action Required' : 'Approval queue'}
                     </span>
                 </div>
 
@@ -1505,9 +1505,9 @@ function ApprovalGatesWidget() {
                     </div>
                 ) : (
                     <div className="space-y-1.5 py-1">
-                        <p className="text-xs font-semibold text-gray-300">Autonomous safeguards active</p>
+                        <p className="text-xs font-semibold text-gray-300">No approvals are waiting in this queue</p>
                         <p className="text-[10px] text-gray-500 leading-relaxed">
-                            Irreversible operations (DSP submissions, ad spend, contract signatures, file deletes) pause here for 1-click confirmation.
+                            Requests sent to this approval queue appear here for review. An empty queue does not verify release readiness or operation safety.
                         </p>
                     </div>
                 )}
@@ -1515,7 +1515,7 @@ function ApprovalGatesWidget() {
 
             <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[9px] text-gray-400">
                 <span>Governance: <strong>Strict Gate</strong></span>
-                <span className="text-emerald-400 font-bold">100% Safe</span>
+                <span className="text-gray-400">Review each action</span>
             </div>
         </div>
     );

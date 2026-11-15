@@ -75,7 +75,7 @@ export default function VideoPopout() {
         return () => channel.close();
     }, [html, project.fps, setPreviewArtifactUrl, setProject]);
 
-    const aspectRatio = project.width / project.height;
+    const aspectRatio = project.width && project.height ? project.width / project.height : 16 / 9;
 
     return (
         <div className="w-screen h-screen bg-black flex items-center justify-center">

@@ -80,9 +80,9 @@ export class AgentGraphService {
             const result = await this.runGraphLoop(userId, graph, executionId, context, traceId, initialInput);
             AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_COMPLETED', graph.id, executionId);
             return result;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, error.message);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Graph execution failed.';
+            AgentEventBus.emitGraphEvent('GRAPH_EXECUTION_FAILED', graph.id, executionId, message);
             throw error;
         }
     }
@@ -107,6 +107,10 @@ export class AgentGraphService {
 
         const graphToUse = graph;
         if (!graphToUse) throw new Error(`Graph definition required to resume execution ${executionId}`);
+
+        if (state.executionId !== executionId || state.graphId !== graphToUse.id) {
+            throw new Error('Saved graph execution does not match the requested graph and execution.');
+        }
 
         return await this.runGraphLoop(userId, graphToUse, executionId, context, context.traceId || uuidv4());
     }

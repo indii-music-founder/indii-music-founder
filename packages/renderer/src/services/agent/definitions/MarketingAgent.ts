@@ -45,7 +45,7 @@ export const MarketingAgent: AgentConfig = {
             record_attribution_conversion: MarketingTools.record_attribution_conversion,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi', 'dispatch_multi_platform_campaign', 'record_attribution_conversion'],
+    authorizedTools: ['save_memory', 'recall_memories', 'verify_output', 'list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'web_extract', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi', 'dispatch_multi_platform_campaign', 'record_attribution_conversion'],
     tools: [{
         functionDeclarations: [
             ...marketingRetrievalDeclarations,

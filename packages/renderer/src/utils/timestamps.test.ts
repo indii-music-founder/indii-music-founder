@@ -7,3 +7,13 @@ it('reads legacy serialized Firestore timestamps and rejects invalid dates', () 
     expect(toMillisSafe({ seconds: 0, nanoseconds: 1e9 }, -1)).toBe(-1);
     expect(toMillisSafe({ toMillis: () => Infinity }, -1)).toBe(-1);
 });
+
+it('uses the fallback when a timestamp converter throws', () => {
+    const brokenTimestamp = {
+        toMillis() {
+            throw new TypeError('Invalid timestamp');
+        },
+    };
+
+    expect([brokenTimestamp, 123].map(value => toMillisSafe(value, -1))).toEqual([-1, 123]);
+});

@@ -92,5 +92,24 @@ describe('ToolPoolAssembler & Tool Schema Validation', () => {
                 }
             }
         });
+
+        it('filters out unauthorized superpower tools when authorizedTools is specified while keeping trash recovery tools', () => {
+            const assembled = ToolPoolAssembler.assemble([], {
+                agentId: 'generalist',
+                moduleContext: 'boardroom',
+                localToolNames: new Set(['save_memory', 'recall_memories', 'audit_architecture', 'save_note', 'list_trash']),
+                authorizedTools: ['save_memory', 'recall_memories'],
+                isReadOnly: false,
+                conversationMode: 'direct',
+            });
+
+            const names = assembled.map(t => t.name);
+            expect(names).toContain('save_memory');
+            expect(names).toContain('recall_memories');
+            expect(names).toContain('list_trash');
+            expect(names).not.toContain('audit_architecture');
+            expect(names).not.toContain('save_note');
+            expect(names).not.toContain('speak');
+        });
     });
 });

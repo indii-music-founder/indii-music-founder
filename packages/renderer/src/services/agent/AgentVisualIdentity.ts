@@ -113,6 +113,7 @@ const WORKER_ALIASES: Readonly<Record<string, VisualAlias>> = Object.freeze({
 const INDEPENDENT_ALIASES: Readonly<Record<string, VisualAlias>> = Object.freeze({
     generalist: { displayName: 'indii Conductor', iconKey: 'sparkles' },
     conductor: { displayName: 'indii Conductor', iconKey: 'sparkles' },
+    system: { displayName: 'indii System', iconKey: 'sparkles' },
     analytics: { displayName: 'Analytics Director', iconKey: 'calculator' },
     rights: { displayName: 'Rights & Registration Director', iconKey: 'shield-check' },
 });
@@ -169,6 +170,7 @@ const DEPARTMENT_PALETTE: Readonly<Record<string, PaletteKey>> = Object.freeze({
 const INDEPENDENT_PALETTE: Readonly<Record<string, PaletteKey>> = Object.freeze({
     generalist: 'default',
     conductor: 'default',
+    system: 'default',
     analytics: 'distribution',
     rights: 'licensing',
 });

@@ -364,4 +364,49 @@ describe('BoardroomConversationPanel', () => {
         });
         expect(vi.mocked(Element.prototype.scrollTo).mock.calls.length).toBeGreaterThan(callsAfterInitialAnchor);
     });
+
+    // --- Attachments ---
+
+    it('renders user image and audio track attachments including attachment-only messages', () => {
+        const messages = [
+            {
+                id: 'msg-att-only',
+                role: 'user' as const,
+                text: '',
+                timestamp: Date.now(),
+                attachments: [
+                    {
+                        mimeType: 'audio/mpeg',
+                        base64: 'SUQzAw==',
+                        filename: 'late-night-demo.mp3',
+                    },
+                    {
+                        mimeType: 'image/png',
+                        base64: 'iVBORw0KGgo=',
+                        filename: 'cover-art.png',
+                    },
+                ],
+            },
+        ];
+
+        render(<BoardroomConversationPanel messages={messages} />);
+
+        expect(screen.getByText('late-night-demo.mp3')).toBeInTheDocument();
+        expect(screen.getByLabelText('late-night-demo.mp3')).toHaveAttribute(
+            'src',
+            'data:audio/mpeg;base64,SUQzAw==',
+        );
+        expect(screen.getByAltText('cover-art.png')).toHaveAttribute(
+            'src',
+            'data:image/png;base64,iVBORw0KGgo=',
+        );
+        expect(screen.getByRole('link', { name: 'Download attachment 1' })).toHaveAttribute(
+            'download',
+            'late-night-demo.mp3',
+        );
+        expect(screen.getByRole('link', { name: 'Download attachment 2' })).toHaveAttribute(
+            'download',
+            'cover-art.png',
+        );
+    });
 });

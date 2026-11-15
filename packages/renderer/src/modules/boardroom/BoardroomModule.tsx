@@ -141,7 +141,7 @@ export function BoardroomModule() {
                                 data-testid="boardroom-back-btn"
                             >
                                 <ArrowLeft size={13} />
-                                <span className="hidden sm:inline">Back to Studio</span>
+                                <span className="hidden 2xl:inline">Back to Studio</span>
                             </button>
                         </div>
 
@@ -184,7 +184,7 @@ export function BoardroomModule() {
                                 }}
                                 data-testid="boardroom-workspace-toggle-browser"
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
                                     boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'browser'
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-gray-300 hover:text-white hover:bg-white/10"
@@ -206,7 +206,7 @@ export function BoardroomModule() {
                                 }}
                                 data-testid="boardroom-workspace-toggle-module"
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
                                     boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'module'
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-gray-300 hover:text-white hover:bg-white/10"
@@ -228,7 +228,7 @@ export function BoardroomModule() {
                                 }}
                                 data-testid="boardroom-workspace-toggle-workbench"
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
                                     boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'workbench'
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-gray-300 hover:text-white hover:bg-white/10"
@@ -250,7 +250,7 @@ export function BoardroomModule() {
                                 }}
                                 data-testid="boardroom-workspace-toggle-feed"
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider",
                                     boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed'
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-gray-300 hover:text-white hover:bg-white/10"
@@ -267,7 +267,7 @@ export function BoardroomModule() {
                             <button
                                 onClick={() => setIsSwarmFeedOpen(true)}
                                 data-testid="boardroom-swarm-feed-btn"
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider text-indigo-300 hover:text-white hover:bg-indigo-500/15"
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider text-indigo-300 hover:text-white hover:bg-indigo-500/15"
                                 title="View Swarm Collaboration Feed"
                                 aria-label="Swarm Feed"
                             >
@@ -277,7 +277,7 @@ export function BoardroomModule() {
                             <button
                                 onClick={() => setIsTrackerOpen(true)}
                                 data-testid="boardroom-living-plans-btn"
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider ${getColorForModule('agent').text} hover:bg-white/8`}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider ${getColorForModule('agent').text} hover:bg-white/8`}
                                 title="View Active Plans"
                                 aria-label="Living Plans"
                             >
@@ -286,7 +286,7 @@ export function BoardroomModule() {
                             </button>
                         </div>
 
-                        <div className="hidden lg:flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0" title="Executive Swarm Status">
+                        <div className="hidden 2xl:flex items-center gap-1.5 px-1.5 py-0.5 bg-white/3 rounded-md border border-white/6 shrink-0" title="Executive Swarm Status">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
                             <span className="text-[8px] font-mono text-white/40 uppercase tracking-widest">ONLINE</span>
                         </div>
@@ -294,7 +294,7 @@ export function BoardroomModule() {
                 </div>
 
                 {/* Split-Panel Content */}
-                <div className="flex-1 flex min-h-0 overflow-hidden">
+                <div className="flex-1 flex min-h-0 min-w-0 w-full overflow-hidden">
                     {/* Left: Orbital Visualization — rendered when not on mobile and not full-stage */}
                     {!isAnyPhone && boardroomWorkspaceLayout !== 'stage' && (
                         <motion.div
@@ -302,7 +302,7 @@ export function BoardroomModule() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 200 }}
                             className={cn(
-                                "relative shrink-0 flex items-center justify-center p-6 transition-all duration-300",
+                                "relative shrink-0 flex items-center justify-center p-4 lg:p-5 transition-all duration-300 min-w-0 overflow-hidden",
                                 boardroomWorkspaceLayout === 'split' ? "w-[28%]" : "w-[55%]"
                             )}
                             data-testid="boardroom-orbital-panel"
@@ -324,10 +324,12 @@ export function BoardroomModule() {
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.2 }}
-                            className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden"
+                            className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden relative z-10 isolate"
                             data-testid="boardroom-workspace-container"
                         >
-                            <BoardroomWorkspacePane />
+                            <BoardroomWorkspacePane
+                                hasOverlayOpen={isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen}
+                            />
                         </motion.div>
                     )}
 
@@ -337,7 +339,7 @@ export function BoardroomModule() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
                         className={cn(
-                            "flex flex-col min-h-0 min-w-0 bg-white/1 overflow-hidden transition-all duration-300",
+                            "flex flex-col min-h-0 min-w-0 bg-white/1 overflow-hidden transition-all duration-300 relative z-20 isolate",
                             isAnyPhone ? "flex-1" :
                             boardroomWorkspaceLayout === 'closed' ? "flex-1 border-l border-white/5" :
                             boardroomWorkspaceLayout === 'stage' ? "w-[36%] shrink-0 border-l border-white/5" :

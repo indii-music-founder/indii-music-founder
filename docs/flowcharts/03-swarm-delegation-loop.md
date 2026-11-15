@@ -120,3 +120,18 @@ The provider exposes no per-call token ceiling: actual overages are recorded and
 close further admission. This is execution token accounting, not proof of a
 provider-side hard monetary ceiling. Other semantic consumers still require
 integration with this execution-scoped admission mechanism.
+
+## Final-response guardrail accounting
+
+`BaseAgent` passes its active execution ledger to `JevGuardrailService`. Screening
+reserves the remaining allowance before invoking `typesafeJudge`, and complete
+usage receipts settle the ledger before the returned probabilities are read.
+Exhausted allowance skips this optional judgment. Missing or malformed usage and
+transport errors retain the reservation through the existing ledger policy.
+
+The two-second display deadline can return the original response while provider
+work remains pending. The reservation stays held during that work, and a late
+complete receipt settles the active ledger. This path updates the in-memory
+ledger. AgentLoop checkpoints capture the balance when they are written; a late
+receipt does not automatically reconcile a checkpoint written earlier. Durable
+late-receipt reconciliation remains follow-up work.

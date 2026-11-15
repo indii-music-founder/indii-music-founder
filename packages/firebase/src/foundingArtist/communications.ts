@@ -3,6 +3,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions/v2';
 import { resendApiKey, sendTransactionalEmail } from '../lib/notify';
 import {
+  FOUNDING_ARTIST_INVITE_URL,
   FOUNDING_ARTIST_CAMPAIGNS_COLLECTION,
   FOUNDING_ARTIST_COMMUNICATIONS_COLLECTION,
 } from './admin';
@@ -35,7 +36,7 @@ function invitationContent(actionUrl: string): { html: string; text: string } {
           <p style="color:#fbbf24;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Founding Artist Beta</p>
           <h1 style="font-size:26px;line-height:1.2">Your access is ready.</h1>
           <p style="color:#c7c7c7;line-height:1.7">You joined the indii.music waitlist, and your place is ready. Sign in with the verified email address you used to join.</p>
-          <p><a href="${safeUrl}" style="display:inline-block;background:#fbbf24;color:#111;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:700">Open indii.music</a></p>
+          <p><a href="${safeUrl}" style="display:inline-block;background:#fbbf24;color:#111;padding:14px 22px;border-radius:10px;text-decoration:none;font-weight:700">Accept beta invitation</a></p>
           <p style="color:#777;font-size:13px;line-height:1.6">indii.music is working software that is still being refined. Founding Artists are asked to report bugs they encounter.</p>
         </div>
       </div>`,
@@ -125,9 +126,10 @@ export async function deliverFoundingArtistInvitation(
   const subject = typeof communication.subject === 'string'
     ? communication.subject
     : 'Your Founding Artist Beta access is ready';
-  const actionUrl = typeof communication.actionUrl === 'string'
+  const actionUrl = typeof communication.actionUrl === 'string' &&
+    !/^https:\/\/app\.indii\.music\/?$/.test(communication.actionUrl)
     ? communication.actionUrl
-    : 'https://app.indii.music/';
+    : FOUNDING_ARTIST_INVITE_URL;
   const content = invitationContent(actionUrl);
   const result = await send(recipientEmail, subject, content.html, {
     text: content.text,

@@ -221,20 +221,18 @@ describe('StudioControlsPanel', () => {
     it('toggles the right panel when close button is clicked', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
         
-        // Find close button using the mocked Lucide ChevronRight icon
-        const closeIcon = screen.getByTestId('icon-ChevronRight');
-        const closeBtn = closeIcon.closest('button');
-        expect(closeBtn).toBeInTheDocument();
-        
-        fireEvent.click(closeBtn!);
+        fireEvent.click(screen.getByRole('button', { name: 'Collapse Studio Controls' }));
         expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 
     it('switches to gallery/history tab', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
-        const historyTabBtn = screen.getByTitle('History');
+        expect(screen.getByRole('button', { name: 'Create', pressed: true })).toBeInTheDocument();
+        const historyTabBtn = screen.getByRole('button', { name: 'History', pressed: false });
         fireEvent.click(historyTabBtn);
 
+        expect(screen.getByRole('button', { name: 'History', pressed: true })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Create', pressed: false })).toBeInTheDocument();
         expect(screen.getByTestId('creative-gallery')).toBeInTheDocument();
         expect(screen.queryByTestId('whisk-drop-subject')).not.toBeInTheDocument();
     });
@@ -255,7 +253,7 @@ describe('StudioControlsPanel', () => {
 
     it('sets precise reference mode toggle', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
-        const preciseBtn = screen.getByTitle('Precise: OFF');
+        const preciseBtn = screen.getByRole('button', { name: 'Precise reference matching', pressed: false });
         fireEvent.click(preciseBtn);
 
         expect(mockSetPreciseReference).toHaveBeenCalledWith(true);
@@ -263,7 +261,8 @@ describe('StudioControlsPanel', () => {
 
     it('changes target media between image, video, and both', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
-        const videoMediaBtn = screen.getByText('Video');
+        expect(screen.getByRole('button', { name: 'Image', pressed: true })).toBeInTheDocument();
+        const videoMediaBtn = screen.getByRole('button', { name: 'Video', pressed: false });
         fireEvent.click(videoMediaBtn);
 
         expect(mockSetTargetMedia).toHaveBeenCalledWith('video');
@@ -324,7 +323,8 @@ describe('StudioControlsPanel', () => {
         expect(advancedBtn).toBeInTheDocument();
         fireEvent.click(advancedBtn!);
         
-        const proBtn = screen.getByTitle('Nano Banana Pro (Gemini 3 Pro) — Max quality, 14 refs, 5 chars');
+        expect(screen.getByRole('button', { name: 'Flash', pressed: true })).toBeInTheDocument();
+        const proBtn = screen.getByRole('button', { name: 'Pro', pressed: false });
         fireEvent.click(proBtn);
 
         expect(mockSetStudioControls).toHaveBeenCalledWith({ model: 'pro' });

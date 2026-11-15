@@ -14,13 +14,13 @@ import { UserProfile } from '@/types/User';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { updateProfile } from 'firebase/auth';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { SectionHeader } from './SettingsShared';
 import { StorageService } from '@/services/StorageService';
+import { UserService } from '@/services/UserService';
 
 const MAX_BIO_LENGTH = 280;
 
@@ -56,7 +56,11 @@ const ProfileSection: React.FC = () => {
                 await updateProfile(user, { displayName });
             }
             
-            // Systematically update the userProfile through setUserProfile store action
+            // Await both private persistence and its public identity projection.
+            await UserService.updateProfile(user.uid, { displayName, bio, photoURL: user.photoURL || null });
+            if (auth.currentUser?.uid !== user.uid) throw new Error('Account changed while saving profile');
+
+            // Update the local store only after persistence succeeds.
             const updatedProfile = {
                 ...(userProfile || {}),
                 id: user.uid,
@@ -66,7 +70,7 @@ const ProfileSection: React.FC = () => {
                 bio,
             };
 
-            await setUserProfile(updatedProfile as unknown as UserProfile);
+            setUserProfile(updatedProfile as unknown as UserProfile);
 
             setDirty(false);
             showToast('Profile updated', 'success');
@@ -94,7 +98,9 @@ const ProfileSection: React.FC = () => {
             const photoURL = await StorageService.uploadFile(file, path);
             
             await updateProfile(user, { photoURL });
-            await setUserProfile({ ...userProfile, photoURL } as unknown as UserProfile);
+            await UserService.updateProfile(user.uid, { photoURL, displayName: user.displayName || '', bio: userProfile?.bio || '' });
+            if (auth.currentUser?.uid !== user.uid) throw new Error('Account changed while saving avatar');
+            setUserProfile({ ...userProfile, photoURL } as unknown as UserProfile);
             
             showToast('Avatar updated successfully', 'success');
         } catch (err) {

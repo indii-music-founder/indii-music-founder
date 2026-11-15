@@ -353,12 +353,27 @@ export class AgentPromptBuilder {
             founderDiagnostics: isFounderUserProfile(context?.userProfile),
         });
 
+        const promptContextSnapshot: Record<string, unknown> = { ...(enrichedContext || {}) };
+        if (Array.isArray(promptContextSnapshot.attachments) && promptContextSnapshot.attachments.length > 0) {
+            promptContextSnapshot.attachments = promptContextSnapshot.attachments.map((att: unknown, idx: number) => {
+                if (!att || typeof att !== 'object') return att;
+                const record = att as { mimeType?: unknown; base64?: unknown };
+                const base64Len = typeof record.base64 === 'string' ? record.base64.length : 0;
+                return {
+                    alias: `attachment-${idx}`,
+                    mimeType: typeof record.mimeType === 'string' ? record.mimeType : 'application/octet-stream',
+                    approxSizeKB: base64Len > 0 ? Math.max(1, Math.round((base64Len * 3) / 4 / 1024)) : 0,
+                    note: 'Delivered as inlineData and addressable via attachment-' + idx,
+                };
+            });
+        }
+
         return cleanPrompt(`
 # MISSION
 ${systemPrompt}
 
 # CONTEXT
-${elideBase64Payloads(JSON.stringify(enrichedContext, null, 2))}
+${elideBase64Payloads(JSON.stringify(promptContextSnapshot, null, 2))}
 
 ${temporalContext}
 

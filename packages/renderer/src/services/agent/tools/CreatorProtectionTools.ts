@@ -94,7 +94,7 @@ export const CreatorProtectionTools: Record<string, AnyToolFunction> = {
   }) => {
     const userId = auth.currentUser?.uid;
     if (!userId) return toolError('Authentication required', 'AUTH_REQUIRED');
-    const incident = creatorProtectionHarnessService.classifyIncident({ ...args, userId });
+    const incident = await creatorProtectionHarnessService.classifyIncidentWithJev({ ...args, userId });
     const savedIncidentId = args.save ? await saveReplicaIncident(incident) : undefined;
     return toolSuccess({ incident, savedIncidentId }, 'Replica incident classified and routed. No notice was sent.');
   }),
@@ -148,7 +148,7 @@ export const CreatorProtectionTools: Record<string, AnyToolFunction> = {
   }) => {
     const userId = auth.currentUser?.uid;
     if (!userId) return toolError('Authentication required', 'AUTH_REQUIRED');
-    const incident = creatorProtectionHarnessService.classifyIncident({
+    const incident = await creatorProtectionHarnessService.classifyIncidentWithJev({
       userId,
       suspectedUrl: args.suspectedUrl,
       platform: args.platform,
@@ -185,7 +185,7 @@ export const CreatorProtectionTools: Record<string, AnyToolFunction> = {
     contractText: string;
   }) => {
     if (!args.contractText?.trim()) return toolError('contractText is required', 'VALIDATION_ERROR');
-    const review = creatorProtectionHarnessService.reviewAIVoiceLikenessClause(args.contractText);
+    const review = await creatorProtectionHarnessService.reviewAIVoiceLikenessClauseWithJev(args.contractText);
     return toolSuccess(review, 'AI voice/likeness clause reviewed. Attorney review remains required for final legal advice.');
   }),
 

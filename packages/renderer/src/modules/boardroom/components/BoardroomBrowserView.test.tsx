@@ -89,4 +89,62 @@ describe('Boardroom page classification', () => {
         expect(mocks.add).not.toHaveBeenCalled();
         expect(screen.queryByTestId('boardroom-browser-jev-badge')).not.toBeInTheDocument();
     });
+
+    it('updates native bounds visibility when isVisible toggles without reattaching', () => {
+        const attach = vi.fn().mockResolvedValue({ success: true });
+        const setBounds = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+        vi.stubGlobal('electronAPI', {
+            boardroomBrowser: {
+                attach,
+                setBounds,
+                onStateChange: vi.fn(() => vi.fn()),
+            },
+        });
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+            left: 100,
+            top: 80,
+            width: 600,
+            height: 500,
+            right: 700,
+            bottom: 580,
+            x: 100,
+            y: 80,
+            toJSON: () => ({}),
+        });
+
+        const view = render(<BoardroomBrowserView isVisible={true} />);
+        expect(attach).toHaveBeenCalledTimes(1);
+        expect(setBounds).toHaveBeenLastCalledWith(expect.objectContaining({ visible: true }));
+
+        view.rerender(<BoardroomBrowserView isVisible={false} />);
+        expect(attach).toHaveBeenCalledTimes(1);
+        expect(setBounds).toHaveBeenLastCalledWith(expect.objectContaining({ visible: false }));
+    });
+
+    it('hardens the web fallback iframe and reloads it cleanly', () => {
+        render(<BoardroomBrowserView />);
+        const initialFrame = screen.getByTestId('boardroom-web-iframe');
+        expect(initialFrame).toHaveAttribute('allow', "focus-without-user-activation 'none'");
+        expect(initialFrame).toHaveAttribute('referrerPolicy', 'strict-origin-when-cross-origin');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+        const reloadedFrame = screen.getByTestId('boardroom-web-iframe');
+        expect(reloadedFrame).not.toBe(initialFrame);
+    });
+
+    it('blocks same-origin recursive iframe embedding in web mode', () => {
+        mocks.url = window.location.origin;
+        render(<BoardroomBrowserView />);
+        expect(screen.getByTestId('boardroom-same-origin-guard')).toBeInTheDocument();
+        expect(screen.queryByTestId('boardroom-web-iframe')).not.toBeInTheDocument();
+    });
+
+    it('uses container-bounded classes on browser view and toolbar so split panes cannot overflow', () => {
+        render(<BoardroomBrowserView />);
+        const browserView = screen.getByTestId('boardroom-browser-view');
+        expect(browserView).toHaveClass('@container', 'min-w-0', 'overflow-hidden');
+        const urlInput = screen.getByTestId('boardroom-browser-url-input');
+        expect(urlInput.parentElement?.parentElement).toHaveClass('min-w-0', 'overflow-hidden');
+    });
 });

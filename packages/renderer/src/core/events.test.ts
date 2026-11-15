@@ -54,3 +54,18 @@ describe('EventBus', () => {
         }
     });
 });
+
+it('unsubscribes only the registration that owns the cleanup', () => {
+    let calls = 0;
+    const callback = () => { calls++; };
+    const first = events.on('SYSTEM_ALERT', callback);
+    const second = events.on('SYSTEM_ALERT', callback);
+    try {
+        first();
+        first();
+        events.emit('SYSTEM_ALERT', { level: 'info', message: 'Test' });
+        expect(calls).toBe(1);
+    } finally {
+        second();
+    }
+});

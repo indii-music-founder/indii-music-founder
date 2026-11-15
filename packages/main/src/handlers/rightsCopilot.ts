@@ -279,13 +279,22 @@ class RightsCopilotController {
             }
         });
 
-        // Block popup windows outside allowed domains; open external links in system browser
+        // Block popup windows outside allowed domains; open external links in system browser only for http/https
         copilotWindow.webContents.setWindowOpenHandler(({ url }) => {
             if (this.isUrlAllowedForPortal(url, portalTarget)) {
                 return { action: 'allow' };
             }
-            log.info(`[RightsCopilot] Opening external link in OS browser: ${url}`);
-            void shell.openExternal(url);
+            try {
+                const parsedUrl = new URL(url);
+                if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+                    log.info(`[RightsCopilot] Opening external link in OS browser: ${url}`);
+                    void shell.openExternal(parsedUrl.toString());
+                } else {
+                    log.warn(`[RightsCopilot] Blocked non-HTTP(S) external link protocol: ${parsedUrl.protocol}`);
+                }
+            } catch {
+                log.warn(`[RightsCopilot] Blocked malformed external link URL: ${url}`);
+            }
             return { action: 'deny' };
         });
 

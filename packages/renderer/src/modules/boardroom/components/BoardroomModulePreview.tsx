@@ -15,13 +15,11 @@ import {
     FileText,
     ExternalLink,
     ChevronDown,
-    Sparkles,
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { cn } from '@/lib/utils';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 // Lazy-loaded departmental modules for in-place Boardroom preview
 const CreativeStudio = lazy(() => import('@/modules/creative/CreativeStudio'));
@@ -77,6 +75,30 @@ export function BoardroomModulePreview() {
     );
 
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+    const menuContainerRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        if (!isMenuOpen) return;
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (menuContainerRef.current && !menuContainerRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('pointerdown', handlePointerDown);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isMenuOpen]);
 
     const activeOption = PREVIEW_MODULES.find(m => m.id === boardroomPreviewModuleId) || PREVIEW_MODULES[0];
     const ActiveIcon = activeOption.icon;
@@ -113,10 +135,12 @@ export function BoardroomModulePreview() {
             <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     {/* Module Dropdown Trigger */}
-                    <div className="relative">
+                    <div className="relative" ref={menuContainerRef}>
                         <button
                             type="button"
                             onClick={() => setIsMenuOpen(prev => !prev)}
+                            aria-expanded={isMenuOpen}
+                            aria-haspopup="menu"
                             className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-all"
                             data-testid="boardroom-module-picker-btn"
                         >
@@ -206,7 +230,7 @@ export function BoardroomModulePreview() {
             </div>
 
             {/* In-Place Module Viewport */}
-            <div className="flex-1 relative min-h-0 min-w-0 bg-[#06060a] overflow-y-auto custom-scrollbar">
+            <div className="flex-1 relative min-h-0 min-w-0 bg-[#06060a] overflow-auto custom-scrollbar">
                 <ModuleErrorBoundary moduleName={boardroomPreviewModuleId}>
                     <Suspense fallback={<LoadingFallback />}>
                         {renderActiveModuleComponent()}

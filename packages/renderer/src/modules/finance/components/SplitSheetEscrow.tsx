@@ -41,7 +41,6 @@ export function SplitSheetEscrow() {
     const [signingSelf, setSigningSelf] = useState(false);
     // Item 412: Split Sheet PDF Export state
     const [exporting, setExporting] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [exportUrl, setExportUrl] = useState<string | null>(null);
 
     // Fast-path Jev legal rights & split verification
@@ -73,7 +72,10 @@ export function SplitSheetEscrow() {
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (snapshot.empty) {
-                // No active escrow
+                setEscrowDocId(null);
+                setEscrowAmount(0);
+                setReleased(false);
+                setCollaborators([]);
                 return;
             }
             
@@ -115,8 +117,11 @@ export function SplitSheetEscrow() {
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
     const totalSplitPct = collaborators.reduce((sum, c) => sum + (c.splitPct || 0), 0);
-    // Splits are valid only if we have collaborators AND their splits sum to 100
-    const splitsValid = totalCount > 0 && totalSplitPct === 100;
+    // Splits are valid only if we have collaborators, each split is in [0, 100], and their splits sum to 100
+    const splitsValid =
+        totalCount > 0 &&
+        collaborators.every(c => Number.isFinite(c.splitPct) && c.splitPct >= 0 && c.splitPct <= 100) &&
+        Math.abs(totalSplitPct - 100) < 0.01;
     const allHavePayoutAccounts = totalCount > 0 && collaborators.every(c => c.accountId);
     // Release requires: amount > 0, at least one collaborator, all signed, valid splits, all have payout accounts
     const allSigned = escrowAmount > 0 && totalCount > 0 && signedCount === totalCount && splitsValid && allHavePayoutAccounts;
@@ -224,15 +229,27 @@ export function SplitSheetEscrow() {
                 </div>
                 {/* Item 412: Export split sheet as printable HTML/PDF */}
                 {collaborators.length > 0 && (
-                    <button
-                        onClick={handleExportSplitSheet}
-                        disabled={exporting}
-                        title="Export split sheet as printable document"
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-gray-300 transition-colors disabled:opacity-50"
-                    >
-                        {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                        {exporting ? 'Exporting…' : 'Export PDF'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {exportUrl && (
+                            <a
+                                href={exportUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] text-emerald-400 hover:underline font-semibold"
+                            >
+                                Open Exported Split Sheet
+                            </a>
+                        )}
+                        <button
+                            onClick={handleExportSplitSheet}
+                            disabled={exporting}
+                            title="Export split sheet as printable document"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-gray-300 transition-colors disabled:opacity-50"
+                        >
+                            {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                            {exporting ? 'Exporting…' : 'Export PDF'}
+                        </button>
+                    </div>
                 )}
             </div>
 

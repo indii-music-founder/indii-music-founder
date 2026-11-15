@@ -152,8 +152,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `index.ts:2684` | `exportUserData` | `onCall` | Present | Present |
 | `index.ts:2776` | `requestAccountDeletion` | `onCall` | Present | Present |
 | `index.ts:3007` | `healthCheck` | `onRequest` | Present | Present |
-| `index.ts:3050` | `healthCheckWest1` | `onRequest` | Present | Present |
-| `index.ts:3092` | `enrichFanData` | `onCall` | Present | Present |
+| `index.ts:3051` | `healthCheckWest1` | `onRequest` | Present | Present |
+| `index.ts:3093` | `enrichFanData` | `onCall` | Present | Present |
 | `legal/analyzeContract.ts:20` | `analyzeContract` | `onCall` | Present | Present |
 | `legal/digitalSignature.ts:11` | `sendForDigitalSignature` | `onCall` | Present | Present |
 | `legal/exportSplitSheet.ts:206` | `exportSplitSheet` | `onCall` | Present | Present |

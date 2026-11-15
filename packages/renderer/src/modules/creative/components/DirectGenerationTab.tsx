@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Loader2, Image as ImageIcon, Video, Send, Settings2, Download, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ChevronDown, ChevronUp, Film, MoreHorizontal, Cpu, Wand2, Globe, Shield, RefreshCw, Layers, Compass, Pin
+    ChevronDown, ChevronUp, Film, MoreHorizontal, Wand2, Globe, Shield, Layers, Compass, Pin
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { IngredientDropZone } from './IngredientDropZone';
 import { CreativeVideoPlayer } from './CreativeVideoPlayer';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { IntelligencePromptInput } from './veo/IntelligencePromptInput';
 import { useDirectGeneration } from '../hooks/useDirectGeneration';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -168,7 +165,7 @@ export default function DirectGenerationTab() {
                 if (isCurrent && verdict) {
                     setConfigPresetVerdict(verdict);
                 }
-            });
+            }).catch(() => {});
         }, 220);
 
         return () => {
@@ -195,7 +192,7 @@ export default function DirectGenerationTab() {
                 } else {
                     setPromptModeVerdict(null);
                 }
-            });
+            }).catch(() => {});
         }, 300);
 
         return () => {
@@ -215,8 +212,7 @@ export default function DirectGenerationTab() {
 
     const handleApplyJevPreset = () => {
         const patch = configPresetVerdict.controlsPatch;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setStudioControls(patch as any);
+        setStudioControls(patch as Parameters<typeof setStudioControls>[0]);
         toast.info(`Applied ${configPresetVerdict.label}`);
     };
 

@@ -5,6 +5,7 @@ import { agentRegistry } from '../registry';
 import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
+import * as typesafeJudgments from '@/config/typesafeJudgments';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -45,6 +46,8 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock agent list
 const mockAgents = [
+    { id: 'creative', name: 'Creative Director', description: 'Visual assets and mockups' },
+    { id: 'merchandise', name: 'Merchandise Specialist', description: 'Merch specs and production' },
     { id: 'legal', name: 'Legal Agent', description: 'Handles contracts and legal documents' },
     { id: 'music', name: 'Music Agent', description: 'Audio analysis and production' },
     { id: 'video', name: 'Video Agent', description: 'Video editing and storyboards' },
@@ -285,6 +288,26 @@ describe('AgentOrchestrator', () => {
                 })
             );
         });
+
+        it('uses TypeSafe Jev specialist routing first and skips generative fallback when confident', async () => {
+            const spy = vi.spyOn(typesafeJudgments, 'judgeSpecialistAgentRoute').mockResolvedValueOnce({
+                targetAgentId: 'creative',
+                ragCorpus: 'visual',
+                confidence: 0.92,
+            });
+            const context = createMockContext();
+            try {
+                const result = await orchestrator.determineAgent(
+                    context,
+                    'Put this attached logo on a black t-shirt'
+                );
+                expect(result).toBe('creative');
+                expect(context.ragCorpus).toBe('visual');
+                expect(AI.generateContent).not.toHaveBeenCalled();
+            } finally {
+                spy.mockRestore();
+            }
+        });
     });
 
     describe('determineOrchestrationPath', () => {
@@ -329,6 +352,46 @@ describe('AgentOrchestrator', () => {
             for (const call of vi.mocked(AI.generateContent).mock.calls) {
                 expect(JSON.stringify(call[0])).not.toContain('not-for-the-model');
                 expect(JSON.stringify(call[0])).toContain('[REDACTED_SECRET]');
+            }
+        });
+    });
+
+    describe('JEV specialist routing criteria completeness', () => {
+        it('includes every registered top-level department head in SPECIALIST_ROUTE_QUESTION.criteria', async () => {
+            const { listHeadIds } = await import('@/services/agent/departments');
+            const criteriaKeys = Object.keys(typesafeJudgments.SPECIALIST_ROUTE_QUESTION.criteria);
+            for (const headId of listHeadIds()) {
+                expect(criteriaKeys).toContain(headId);
+            }
+        });
+
+        it('bypasses JEV early return for registration intent aliases such as eCO portal and Mechanical Licensing Collective', async () => {
+            const jevSpy = vi.spyOn(typesafeJudgments, 'judgeSpecialistAgentRoute').mockResolvedValue({
+                targetAgentId: 'legal',
+                ragCorpus: 'registration',
+                confidence: 0.95,
+            });
+            vi.mocked(AI.generateContent).mockResolvedValue({
+                response: {
+                    text: () => JSON.stringify({
+                        targetAgentId: 'legal',
+                        ragCorpus: 'registration',
+                        confidence: 0.98,
+                        reasoning: 'Registration Center query',
+                        registrationIntent: 'loc',
+                    }),
+                },
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+
+            try {
+                const ecoRoute = await orchestrator.determineAgent(createMockContext(), 'Open the eCO portal');
+                const mlcRoute = await orchestrator.determineAgent(createMockContext(), 'Help me join the Mechanical Licensing Collective');
+
+                expect(ecoRoute).toBe('legal');
+                expect(mlcRoute).toBe('legal');
+                expect(jevSpy).not.toHaveBeenCalled();
+            } finally {
+                jevSpy.mockRestore();
             }
         });
     });

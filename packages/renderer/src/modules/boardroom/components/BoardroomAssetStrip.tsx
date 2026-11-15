@@ -27,6 +27,15 @@ function AssetIcon({ type }: { type: HistoryItem['type'] }) {
     }
 }
 
+function isSafeExternalAssetUrl(rawUrl: string): boolean {
+    try {
+        const parsed = new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'https://localhost');
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'blob:';
+    } catch {
+        return false;
+    }
+}
+
 export const BoardroomAssetStrip: React.FC = () => {
     const { generatedHistory, openImageInStudio, openBoardroomWorkbench } = useStore(
         useShallow(state => ({
@@ -57,7 +66,11 @@ export const BoardroomAssetStrip: React.FC = () => {
         }
         // Non-image assets: open the URL in a new tab (docs/videos are
         // browser-renderable download URLs).
-        window.open(item.url, '_blank', 'noopener,noreferrer');
+        if (item.url && isSafeExternalAssetUrl(item.url)) {
+            window.open(item.url, '_blank', 'noopener,noreferrer');
+        } else {
+            toast.error('Blocked unsupported asset URL scheme.');
+        }
         setPreviewItem(null);
     }, [openImageInStudio, toast]);
 

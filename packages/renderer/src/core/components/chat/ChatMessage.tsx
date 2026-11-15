@@ -741,6 +741,11 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                                                 </svg>
                                             )}
                                         </div>
+                                        {att.filename && (
+                                            <div className="text-[10px] text-gray-200 truncate w-full mt-1" title={att.filename}>
+                                                {att.filename}
+                                            </div>
+                                        )}
                                         <div className="text-[9px] text-gray-400 font-mono tracking-tighter truncate w-full uppercase mt-1">
                                             {att.mimeType.split('/')[1] || 'FILE'}
                                         </div>

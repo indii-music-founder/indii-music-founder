@@ -115,5 +115,16 @@ describe('reviewAIVoiceLikenessClause — ISSUE-1443 severity derivation', () =>
         expect(exploitative.severity).toBe('high');
         expect(exploitative.flags.length).toBeGreaterThan(0);
     });
+
+    it('preserves deterministic take_it_down_ncii classification in classifyIncidentWithJev', async () => {
+        const incident = await svc.classifyIncidentWithJev({
+            userId: 'user-1',
+            description: 'Nonconsensual intimate deepfake posted online.',
+            nonconsensualIntimateImagery: true,
+        });
+        expect(incident.incidentType).toBe('take_it_down_ncii');
+        expect(incident.route).toBe('take_it_down_ftc');
+        expect(incident.severity).toBe('critical');
+    });
 });
 

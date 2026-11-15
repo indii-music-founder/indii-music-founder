@@ -143,6 +143,19 @@ describe('🛡️ Shield: Network IPC Security (SSRF & Fuzzing)', () => {
             expect(result).toBe('Safe Content');
             expect(global.fetch).toHaveBeenCalledWith('https://example.com/api/data', expect.objectContaining({ redirect: 'error' }));
         });
+
+        it('should BLOCK oversized responses exceeding MAX_FETCH_BYTES', async () => {
+            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+                ok: true,
+                headers: {
+                    get: (name: string) => (name === 'content-length' ? String(30 * 1024 * 1024) : null),
+                },
+                text: async () => 'Oversized Content',
+            });
+
+            await expect(invokeHandler('net:fetch-url', 'https://example.com/huge.txt'))
+                .rejects.toThrow(/HTTP Response too large/);
+        });
     });
 
     describe('Protocol Guard', () => {

@@ -39,7 +39,7 @@ export default function PlpBatchStatus({ batch, isProjectActive, onRetry, onLaun
                 if (isCurrent) {
                     setVerdicts(prev => ({ ...prev, [slot.index]: verdict }));
                 }
-            });
+            }).catch(() => {});
         });
 
         return () => {

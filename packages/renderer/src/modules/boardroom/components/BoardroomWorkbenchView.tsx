@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -9,12 +9,7 @@ import {
     Download,
     Pin,
     ExternalLink,
-    Layers,
-    Table2,
     BarChart3,
-    Check,
-    ZoomIn,
-    RotateCw,
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import ReactMarkdown from 'react-markdown';
@@ -22,12 +17,21 @@ import remarkGfm from 'remark-gfm';
 import type { HistoryItem } from '@/core/types/history';
 import { cn } from '@/lib/utils';
 
+function isSafeExternalAssetUrl(rawUrl: string): boolean {
+    try {
+        const parsed = new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'https://localhost');
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'blob:';
+    } catch {
+        return false;
+    }
+}
+
 export function BoardroomWorkbenchView() {
     const toast = useToast();
+    const artifactRequestIdRef = useRef(0);
     const {
         generatedHistory,
         boardroomWorkbenchTarget,
-        setBoardroomWorkbenchTarget,
         addReferencedAsset,
         openImageInStudio,
         canvasPanels,
@@ -35,7 +39,6 @@ export function BoardroomWorkbenchView() {
         useShallow(state => ({
             generatedHistory: state.generatedHistory || [],
             boardroomWorkbenchTarget: state.boardroomWorkbenchTarget,
-            setBoardroomWorkbenchTarget: state.setBoardroomWorkbenchTarget,
             addReferencedAsset: state.addReferencedAsset,
             openImageInStudio: state.openImageInStudio,
             canvasPanels: state.canvasPanels || [],
@@ -47,14 +50,39 @@ export function BoardroomWorkbenchView() {
     const [activeArtifactContent, setActiveArtifactContent] = useState<string | null>(null);
     const [selectedArtifactFile, setSelectedArtifactFile] = useState<string | null>(null);
 
-    // Selected asset from history
-    const [selectedAssetId, setSelectedAssetId] = useState<string | null>(
+    // Selected asset from history: sync cleanly whenever store target changes while mounted
+    const targetAssetKey =
         boardroomWorkbenchTarget?.kind === 'asset'
             ? boardroomWorkbenchTarget.itemId
-            : generatedHistory[0]?.id || null
-    );
+            : null;
+    const [userAssetOverride, setUserAssetOverride] = useState<{
+        forTargetKey: string | null;
+        itemId: string;
+    } | null>(null);
+    const selectedAssetId =
+        userAssetOverride && userAssetOverride.forTargetKey === targetAssetKey
+            ? userAssetOverride.itemId
+            : targetAssetKey || generatedHistory[0]?.id || null;
 
     const activeAsset = generatedHistory.find(i => i.id === selectedAssetId) || generatedHistory[0] || null;
+
+    const handleSelectArtifact = useCallback(async (filename: string) => {
+        const requestId = ++artifactRequestIdRef.current;
+        setSelectedArtifactFile(filename);
+        setActiveArtifactContent(null);
+        if (window.electronAPI?.agent?.readArtifact) {
+            try {
+                const res = await window.electronAPI.agent.readArtifact(filename);
+                if (requestId !== artifactRequestIdRef.current) return;
+                if (res.success && res.data) {
+                    setActiveArtifactContent(res.data);
+                }
+            } catch {
+                if (requestId !== artifactRequestIdRef.current) return;
+                toast.error(`Failed to read artifact ${filename}`);
+            }
+        }
+    }, [toast]);
 
     // Load artifacts if electron API is available
     useEffect(() => {
@@ -65,7 +93,7 @@ export function BoardroomWorkbenchView() {
                     const res = await window.electronAPI.agent.listArtifacts();
                     if (isMounted && res.success && res.data) {
                         setArtifacts(res.data);
-                        if (res.data.length > 0 && !selectedArtifactFile) {
+                        if (res.data.length > 0) {
                             void handleSelectArtifact(res.data[0].filename);
                         }
                     }
@@ -76,21 +104,7 @@ export function BoardroomWorkbenchView() {
         };
         void load();
         return () => { isMounted = false; };
-    }, []);
-
-    const handleSelectArtifact = async (filename: string) => {
-        setSelectedArtifactFile(filename);
-        if (window.electronAPI?.agent?.readArtifact) {
-            try {
-                const res = await window.electronAPI.agent.readArtifact(filename);
-                if (res.success && res.data) {
-                    setActiveArtifactContent(res.data);
-                }
-            } catch {
-                toast.error(`Failed to read artifact ${filename}`);
-            }
-        }
-    };
+    }, [handleSelectArtifact]);
 
     const handleExport = useCallback(async (item: HistoryItem) => {
         try {
@@ -132,20 +146,24 @@ export function BoardroomWorkbenchView() {
             });
             toast.success(`Sent to Creative Studio!`);
         } else {
-            window.open(item.url, '_blank', 'noopener,noreferrer');
+            if (item.url && isSafeExternalAssetUrl(item.url)) {
+                window.open(item.url, '_blank', 'noopener,noreferrer');
+            } else {
+                toast.error('Blocked unsupported asset URL scheme.');
+            }
         }
     };
 
     return (
         <div data-testid="boardroom-workbench-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
             {/* Workbench Sub-Tab Switcher */}
-            <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0">
-                <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0">
+                <div className="flex items-center gap-1 min-w-0 overflow-x-auto custom-scrollbar">
                     <button
                         type="button"
                         onClick={() => setSubTab('assets')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
                             subTab === 'assets'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -158,7 +176,7 @@ export function BoardroomWorkbenchView() {
                         type="button"
                         onClick={() => setSubTab('artifacts')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
                             subTab === 'artifacts'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -172,7 +190,7 @@ export function BoardroomWorkbenchView() {
                             type="button"
                             onClick={() => setSubTab('canvas')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all",
+                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
                                 subTab === 'canvas'
                                     ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                     : "text-white/60 hover:text-white hover:bg-white/5"
@@ -197,7 +215,7 @@ export function BoardroomWorkbenchView() {
                                 <button
                                     key={item.id}
                                     type="button"
-                                    onClick={() => setSelectedAssetId(item.id)}
+                                    onClick={() => setUserAssetOverride({ forTargetKey: targetAssetKey, itemId: item.id })}
                                     className={cn(
                                         "flex items-center gap-2 p-2 rounded-xl text-left transition-all border shrink-0 md:w-full",
                                         selectedAssetId === item.id
@@ -267,7 +285,7 @@ export function BoardroomWorkbenchView() {
                                 )}
 
                                 {/* Action Toolbar */}
-                                <div className="flex items-center gap-2 pt-2">
+                                <div className="flex flex-wrap items-center gap-2 pt-2">
                                     <button
                                         type="button"
                                         onClick={() => handlePinToTable(activeAsset)}
@@ -343,9 +361,11 @@ export function BoardroomWorkbenchView() {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            if (activeArtifactContent) {
-                                                void navigator.clipboard.writeText(activeArtifactContent);
-                                                toast.success('Document copied to clipboard!');
+                                            if (activeArtifactContent && navigator.clipboard?.writeText) {
+                                                void navigator.clipboard
+                                                    .writeText(activeArtifactContent)
+                                                    .then(() => toast.success('Document copied to clipboard!'))
+                                                    .catch(() => toast.error('Failed to copy document.'));
                                             }
                                         }}
                                         className="text-xs px-2.5 py-1 bg-white/10 hover:bg-white/15 rounded-lg text-white/80 transition-colors"

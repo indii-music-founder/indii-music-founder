@@ -118,25 +118,21 @@ export class UserService {
         await updateDoc(userRef, updateData);
 
         // Project public fields into public_profiles collection
-        try {
-            const publicData: Record<string, unknown> = {
-                id: uid,
-                uid,
-                userId: uid,
-                updatedAt: serverTimestamp(),
-            };
-            if (data.displayName !== undefined) publicData.displayName = data.displayName;
-            if (data.photoURL !== undefined) publicData.photoURL = data.photoURL;
-            if (data.bio !== undefined) publicData.bio = data.bio;
-            if (data.brandKit !== undefined) publicData.brandKit = data.brandKit;
-            if (data.accountType !== undefined) publicData.accountType = data.accountType;
-            if (data.artistType !== undefined) publicData.artistType = data.artistType;
-            if (data.location !== undefined) publicData.location = data.location;
+        const publicData: Record<string, unknown> = {
+            id: uid,
+            uid,
+            userId: uid,
+            updatedAt: serverTimestamp(),
+        };
+        if (data.displayName !== undefined) publicData.displayName = data.displayName;
+        if (data.photoURL !== undefined) publicData.photoURL = data.photoURL;
+        if (data.bio !== undefined) publicData.bio = data.bio;
+        if (data.brandKit !== undefined) publicData.brandKit = data.brandKit;
+        if (data.accountType !== undefined) publicData.accountType = data.accountType;
+        if (data.artistType !== undefined) publicData.artistType = data.artistType;
+        if (data.location !== undefined) publicData.location = data.location;
 
-            const publicRef = doc(db, this.PUBLIC_COLLECTION, uid);
-            await setDoc(publicRef, publicData, { merge: true });
-        } catch (error) {
-            logger.warn('Failed to sync public profile projection', error);
-        }
+        const publicRef = doc(db, this.PUBLIC_COLLECTION, uid);
+        await setDoc(publicRef, publicData, { merge: true });
     }
 }

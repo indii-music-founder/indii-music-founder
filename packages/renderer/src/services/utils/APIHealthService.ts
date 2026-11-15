@@ -71,10 +71,10 @@ class APIHealthService {
     private async checkFirestore() {
         const start = Date.now();
         try {
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { doc, getDocFromServer } = await import('firebase/firestore');
             const probeRef = doc(db, '_health_check', 'probe');
             await Promise.race([
-                getDoc(probeRef),
+                getDocFromServer(probeRef),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore probe timeout')), 5000))
             ]);
             this.updateStatus('firestore', 'healthy', Date.now() - start);
@@ -85,21 +85,32 @@ class APIHealthService {
 
     private async checkFunctions() {
         const start = Date.now();
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
         try {
-            const { httpsCallable } = await import('firebase/functions');
-            const pingFn = httpsCallable(functions, 'healthCheck');
-            await Promise.race([
-                pingFn(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Functions probe timeout')), 5000))
-            ]);
-            this.updateStatus('functions', 'healthy', Date.now() - start);
-        } catch (e: unknown) {
-            const errMsg = e instanceof Error ? e.message : String(e);
-            if (errMsg.includes('not-found') || errMsg.includes('unauthenticated')) {
+            const projectId = functions.app.options.projectId;
+            const baseUrl = import.meta.env.VITE_FUNCTIONS_URL
+                || (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true'
+                    ? `http://127.0.0.1:5001/${projectId}/us-central1`
+                    : `https://us-central1-${projectId}.cloudfunctions.net`);
+            if (!projectId && !import.meta.env.VITE_FUNCTIONS_URL) throw new Error('Functions project is not configured');
+            const response = await fetch(`${baseUrl.replace(/\/$/, '')}/healthCheck`, {
+                method: 'GET', signal: controller.signal,
+            });
+            if (!response.ok) throw new Error(`Functions health check returned HTTP ${response.status}`);
+            const result: unknown = await response.json();
+            const status = result && typeof result === 'object' && 'status' in result ? result.status : undefined;
+            if (status === 'ok') {
                 this.updateStatus('functions', 'healthy', Date.now() - start);
+            } else if (status === 'degraded') {
+                this.updateStatus('functions', 'unstable', Date.now() - start, 'Functions health endpoint reported degraded service');
             } else {
-                this.updateStatus('functions', 'offline', undefined, errMsg);
+                throw new Error('Functions health endpoint returned an invalid response');
             }
+        } catch (error: unknown) {
+            this.updateStatus('functions', 'offline', undefined, error instanceof Error ? error.message : String(error));
+        } finally {
+            clearTimeout(timer);
         }
     }
 

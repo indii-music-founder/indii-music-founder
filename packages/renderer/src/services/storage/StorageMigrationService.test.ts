@@ -1,3 +1,4 @@
+// Legacy structural-only contract checks; no genuine migration acceptance.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StorageMigrationService } from './StorageMigrationService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -118,13 +119,19 @@ describe('StorageMigrationService', () => {
     };
 
     mockIDB.transaction.mockReturnValue(mockTx);
+    mockIDB.getAllKeys = vi.fn().mockImplementation((storeName: string) => Promise.resolve([
+      storeName === 'assets' ? assetCursor.key : workflowCursor.key,
+    ]));
+    mockIDB.get = vi.fn().mockImplementation((storeName: string) => Promise.resolve(
+      storeName === 'assets' ? assetCursor.value : workflowCursor.value,
+    ));
 
     // Run migration
     await StorageMigrationService.getInstance().migrateAllData();
 
     // Verify Asset Migration
-    expect(mockIDB.transaction).toHaveBeenCalledWith('assets', 'readonly');
-    expect(mockAssetStore.openCursor).toHaveBeenCalled();
+    expect(mockIDB.getAllKeys).toHaveBeenCalledWith('assets');
+    expect(mockIDB.get).toHaveBeenCalledWith('assets', assetCursor.key);
     expect(uploadBytes).toHaveBeenCalled();
     // We can check if it was called with the right blob
     // The first argument is the storageRef, which we mocked as undefined result of `ref` call.
@@ -136,8 +143,8 @@ describe('StorageMigrationService', () => {
     });
 
     // Verify Workflow Migration
-    expect(mockIDB.transaction).toHaveBeenCalledWith('workflows', 'readonly');
-    expect(mockWorkflowStore.openCursor).toHaveBeenCalled();
+    expect(mockIDB.getAllKeys).toHaveBeenCalledWith('workflows');
+    expect(mockIDB.get).toHaveBeenCalledWith('workflows', workflowCursor.key);
     expect(setDoc).toHaveBeenCalled();
     expect(setDoc).toHaveBeenCalledWith(
       undefined,

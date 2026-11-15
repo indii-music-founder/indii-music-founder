@@ -363,6 +363,20 @@ describe('AgentGraphService', () => {
         expect(transactionWrites).toContainEqual(expect.objectContaining({ status: 'FAILED' }));
     });
 
+    it.each([
+        { executionId: 'other-run', graphId: mockGraph.id },
+        { executionId: 'requested-run', graphId: 'other-graph' },
+    ])('rejects a mismatched saved graph identity before dispatch (structural)', async identity => {
+        vi.mocked(agentGraphStateService.getExecution).mockResolvedValueOnce({
+            ...identity, status: 'EXECUTING', nodeStates: {},
+        } as NonNullable<Awaited<ReturnType<typeof agentGraphStateService.getExecution>>>);
+
+        await expect(agentGraphService.resumeGraph('requested-run', mockContext, mockGraph))
+            .rejects.toThrow('Saved graph execution does not match');
+        expect(agentService.delegateTask).not.toHaveBeenCalled();
+        expect(agentGraphStateService.finalizeStatus).not.toHaveBeenCalled();
+    });
+
     it('should resume a previously interrupted graph execution', async () => {
         const resumeGraphDef: AgentGraph = {
             ...mockGraph,

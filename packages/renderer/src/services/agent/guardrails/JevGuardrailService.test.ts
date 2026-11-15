@@ -17,6 +17,7 @@ vi.mock('../truthOverclaimReporter', () => ({
   reportOverclaimIfNeeded: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { JevGuardrailService, parseGuardrailProbability, projectGuardrailToolEvidence } from './JevGuardrailService';
 
 describe('guardrail probability contract (pure parser)', () => {
@@ -62,11 +63,92 @@ describe('guardrail tool evidence (structural projection)', () => {
 
 describe('JevGuardrailService', () => {
   let service: JevGuardrailService;
+  let budget: ExecutionTokenBudget;
 
   beforeEach(() => {
     vi.clearAllMocks();
     httpsCallableMock.mockReturnValue(judgeInvoke);
     service = new JevGuardrailService();
+    budget = new ExecutionTokenBudget(100);
+  });
+
+  it('accounts for the usage receipt before interpreting the judgment (structural)', async () => {
+    judgeInvoke.mockResolvedValue({ data: {
+      answers: { is_actionable_response: 'invalid' },
+      usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 },
+    } });
+    await service.screen({ text: 'Response' }, budget);
+    expect(budget.spent).toBe(20);
+    expect(budget.remaining).toBe(80);
+  });
+
+  it('skips the proxy when the execution allowance is exhausted (structural)', async () => {
+    budget.reserve(100);
+    judgeInvoke.mockResolvedValue({ data: { answers: {} } });
+    const result = await service.screen({ text: 'Response' }, budget);
+    expect(result.text).toBe('Response');
+    expect(judgeInvoke).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, { totalTokens: 2 }, { inputTokens: 1, outputTokens: 1, totalTokens: 3 }])(
+    'retains the reservation for missing or malformed usage %j (structural)', async usage => {
+      judgeInvoke.mockResolvedValue({ data: { answers: {}, usage } });
+      await service.screen({ text: 'Response' }, budget);
+      expect(budget.remaining).toBe(0);
+    },
+  );
+
+  it('keeps the reservation during a display timeout and settles a late receipt (structural)', async () => {
+    vi.useFakeTimers();
+    let finish!: (response: unknown) => void;
+    judgeInvoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const receipt = { data: { answers: {}, usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 } } };
+    try {
+      const screening = service.screen({ text: 'Response' }, budget);
+      await vi.advanceTimersByTimeAsync(2000);
+      expect((await screening).text).toBe('Response');
+      expect(budget.remaining).toBe(0);
+      finish(receipt);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(budget.spent).toBe(20);
+    } finally {
+      finish?.(receipt);
+      await vi.advanceTimersByTimeAsync(0);
+      vi.useRealTimers();
+    }
+  });
+
+  it('shares admission within a run and keeps separate runs independent (structural)', async () => {
+    let finish!: (response: unknown) => void;
+    judgeInvoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }))
+      .mockResolvedValue({ data: { answers: {}, usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 } } });
+    const first = service.screen({ text: 'First' }, budget);
+    try {
+      await service.screen({ text: 'Same run' }, budget);
+      expect(judgeInvoke).toHaveBeenCalledOnce();
+      const otherBudget = new ExecutionTokenBudget(100);
+      await service.screen({ text: 'Other run' }, otherBudget);
+      expect(judgeInvoke).toHaveBeenCalledTimes(2);
+      expect(otherBudget.spent).toBe(20);
+      expect(budget.remaining).toBe(0);
+    } finally {
+      finish({ data: { answers: {}, usage: { inputTokens: 8, outputTokens: 2, totalTokens: 10 } } });
+      await first;
+    }
+    expect(budget.spent).toBe(10);
+  });
+
+  it('retains the hold when the transport fails without a receipt (structural)', async () => {
+    judgeInvoke.mockRejectedValueOnce(new Error('Unavailable'));
+    expect((await service.screen({ text: 'Response' }, budget)).text).toBe('Response');
+    expect(budget.remaining).toBe(0);
+  });
+
+  it('records actual usage above the remaining allowance (structural)', async () => {
+    judgeInvoke.mockResolvedValue({ data: { answers: {}, usage: { inputTokens: 120, outputTokens: 30, totalTokens: 150 } } });
+    await service.screen({ text: 'Response' }, budget);
+    expect(budget.spent).toBe(150);
+    expect(budget.remaining).toBe(0);
   });
 
   it('evaluates an actionable response without modification through the server proxy', async () => {
@@ -86,7 +168,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.text).toBe(input.text);
     expect(result.wasModified).toBe(false);
@@ -98,7 +180,7 @@ describe('JevGuardrailService', () => {
     judgeInvoke.mockResolvedValue({ data: { answers: {} } });
     await service.screen({ text: 'The bug report was filed.', tool_calls: [{
       name: 'report_bug', result: { success: false, status: 'PAUSED', error: 'Approval required' },
-    }] });
+    }] }, budget);
     expect(judgeInvoke.mock.calls[0]?.[0]?.state.response.tool_results).toEqual([{
       name: 'report_bug', reportedSuccess: false, status: 'PAUSED', error: 'Approval required',
     }]);
@@ -106,7 +188,7 @@ describe('JevGuardrailService', () => {
 
   it('replaces a flagged completion claim rather than retaining it behind a caution', async () => {
     judgeInvoke.mockResolvedValue({ data: { answers: { confident_action_no_evidence: 0.95 } } });
-    const result = await service.screen({ text: 'Your post was successfully published.' });
+    const result = await service.screen({ text: 'Your post was successfully published.' }, budget);
     expect(result.text).not.toContain('successfully published');
     expect(result.text).toContain('cannot confirm');
   });
@@ -127,7 +209,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.wasModified).toBe(true);
     expect(result.flags).toContain('unactionable_response');
@@ -150,7 +232,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.wasModified).toBe(false);
     expect(result.text).toBe(input.text);
@@ -160,7 +242,7 @@ describe('JevGuardrailService', () => {
     const input = { text: 'Here is your daily overview.' };
     judgeInvoke.mockRejectedValue(new Error('Jev unavailable'));
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result).toEqual({
       text: input.text,
@@ -189,7 +271,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.wasModified).toBe(true);
     expect(result.flags).toEqual(['claims_verified_readiness_without_evidence']);
@@ -214,7 +296,7 @@ describe('JevGuardrailService', () => {
       },
     });
     const hugeText = 'A'.repeat(25_000);
-    const result = await service.screen({ text: hugeText });
+    const result = await service.screen({ text: hugeText }, budget);
     expect(result.wasModified).toBe(false);
     expect(result.text.length).toBe(25_000);
     expect((judgeInvoke.mock.calls[0]?.[0]?.state.response.text as string).length).toBe(16_000);
@@ -233,7 +315,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.flags).toContain('claims_verified_readiness_without_evidence');
     expect(result.text).toContain('cannot verify');
@@ -259,7 +341,7 @@ describe('JevGuardrailService', () => {
       },
     });
 
-    const result = await service.screen(input);
+    const result = await service.screen(input, budget);
 
     expect(result.flags).not.toContain('unactionable_response');
     expect(result.text).toBe(input.text);

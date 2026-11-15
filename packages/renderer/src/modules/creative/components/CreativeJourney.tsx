@@ -77,7 +77,7 @@ export default function CreativeJourney() {
         const timer = window.setTimeout(() => {
             void judgeCreativeJourneyIntent(context).then(result => {
                 if (current) setJudgedContext({ key: contextKey, verdict: result });
-            });
+            }).catch(() => {});
         }, 350);
         return () => {
             current = false;
@@ -241,7 +241,7 @@ export default function CreativeJourney() {
                 </button>
             )}
 
-            {showGuidance && (
+            {showGuidance && !isJourneysOpen && (
                 <div
                     role="region"
                     aria-label="Journey guidance"
