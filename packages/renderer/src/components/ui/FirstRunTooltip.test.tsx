@@ -1,6 +1,6 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { useFirstRunTip } from './FirstRunTooltip';
+import { FirstRunTooltip, resetAllTips, useFirstRunTip } from './FirstRunTooltip';
 
 afterEach(() => {
     vi.useRealTimers();
@@ -34,4 +34,17 @@ it('hides the previous tip when the ID changes to a dismissed tip', () => {
     expect(result.current.shouldShow).toBe(true);
     rerender({ id: 'dismissed' });
     expect(result.current.shouldShow).toBe(false);
+});
+
+it('dismisses FirstRunTooltip when Escape is pressed and handles resetAllTips storage errors safely', () => {
+    const onDismiss = vi.fn();
+    render(<FirstRunTooltip message="Tip" onDismiss={onDismiss} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onDismiss).toHaveBeenCalledOnce();
+
+    const removeSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+        throw new Error('storage disabled');
+    });
+    expect(() => resetAllTips()).not.toThrow();
+    removeSpy.mockRestore();
 });

@@ -74,4 +74,27 @@ describe('ThreeDButton', () => {
     expect(button).toHaveClass('active:translate-y-0')
     expect(button).toHaveClass('active:border-b-4')
   })
+
+  it('forwards ref and defaults to type="button" unless explicitly overridden', () => {
+    const ref = React.createRef<HTMLButtonElement>()
+    const onSubmit = vi.fn((e: React.FormEvent) => e.preventDefault())
+
+    const { rerender } = render(
+      <form onSubmit={onSubmit}>
+        <ThreeDButton ref={ref}>Safe Action</ThreeDButton>
+      </form>
+    )
+
+    expect(ref.current).toBeInstanceOf(HTMLButtonElement)
+    expect(ref.current).toHaveAttribute('type', 'button')
+    fireEvent.click(ref.current!)
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    rerender(
+      <form onSubmit={onSubmit}>
+        <ThreeDButton ref={ref} type="submit">Submit Action</ThreeDButton>
+      </form>
+    )
+    expect(ref.current).toHaveAttribute('type', 'submit')
+  })
 })

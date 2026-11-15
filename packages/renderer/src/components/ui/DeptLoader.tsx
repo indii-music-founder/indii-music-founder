@@ -150,7 +150,7 @@ export function DeptSkeleton({
  */
 export function DeptCardSkeleton({ moduleId }: { moduleId?: ModuleId }) {
     return (
-        <div className="bg-bg-dark/50 rounded-xl p-5 dept-border-top space-y-3">
+        <div aria-hidden="true" className="bg-bg-dark/50 rounded-xl p-5 dept-border-top space-y-3">
             <DeptSkeleton width="w-10" height="h-10" moduleId={moduleId} className="rounded-lg" />
             <DeptSkeleton width="w-3/4" height="h-4" moduleId={moduleId} />
             <DeptSkeleton width="w-1/2" height="h-3" moduleId={moduleId} />

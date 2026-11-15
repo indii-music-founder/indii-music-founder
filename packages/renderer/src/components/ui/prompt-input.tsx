@@ -140,6 +140,7 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
   className,
   onKeyDown,
   onChange,
+  onFocus,
   disabled: inputDisabled,
   disableAutosize = false,
   ...props
@@ -205,13 +206,14 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
 
   return (
     <Textarea
+      {...props}
       ref={handleRef}
       value={value}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       onFocus={(e) => {
         adjustHeight(e.target)
-        props.onFocus?.(e)
+        onFocus?.(e)
       }}
       className={cn(
         "text-primary min-h-[44px] w-full resize-none border-none bg-transparent shadow-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -220,7 +222,6 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
       rows={1}
       disabled={disabled}
       data-testid="prompt-input"
-      {...props}
     />
   )
 })
@@ -255,13 +256,21 @@ const PromptInputAction = memo(function PromptInputAction({
 }: PromptInputActionProps) {
   // Bolt Optimization: Only subscribe to state context (disabled), ignoring value changes
   const { disabled } = usePromptState()
-  const ariaLabel = typeof tooltip === "string" ? tooltip : undefined
+  const childProps = React.isValidElement<{
+    disabled?: boolean
+    "aria-label"?: string
+  }>(children)
+    ? children.props
+    : undefined
+  const effectiveDisabled = disabled || Boolean(childProps?.disabled)
+  const ariaLabel =
+    childProps?.["aria-label"] ?? (typeof tooltip === "string" ? tooltip : undefined)
 
   return (
     <Tooltip {...props}>
       <TooltipTrigger
         asChild
-        disabled={disabled}
+        disabled={effectiveDisabled}
         onClick={(event) => event.stopPropagation()}
         aria-label={ariaLabel}
       >
