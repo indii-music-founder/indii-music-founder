@@ -141,7 +141,7 @@ export function BoardroomModulePreview() {
                             onClick={() => setIsMenuOpen(prev => !prev)}
                             aria-expanded={isMenuOpen}
                             aria-haspopup="menu"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-all"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                             data-testid="boardroom-module-picker-btn"
                         >
                             <ActiveIcon size={14} className="text-indigo-400 shrink-0" />
@@ -150,7 +150,7 @@ export function BoardroomModulePreview() {
                         </button>
 
                         {isMenuOpen && (
-                            <div className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0e0e14] border border-white/15 p-1 shadow-2xl z-50 backdrop-blur-xl">
+                            <div role="menu" className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-[#0e0e14] border border-white/15 p-1 shadow-2xl z-50 backdrop-blur-xl">
                                 <div className="px-2 py-1 text-[9px] font-mono font-bold uppercase text-white/40 tracking-wider">
                                     Studio Department Modules
                                 </div>
@@ -164,12 +164,13 @@ export function BoardroomModulePreview() {
                                             <button
                                                 key={m.id}
                                                 type="button"
+                                                role="menuitem"
                                                 onClick={() => {
                                                     setBoardroomPreviewModuleId(m.id);
                                                     setIsMenuOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors",
+                                                    "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                                                     isSelected
                                                         ? "bg-indigo-600/30 text-indigo-200 font-bold"
                                                         : "text-white/70 hover:text-white hover:bg-white/5"
@@ -201,7 +202,7 @@ export function BoardroomModulePreview() {
                                     type="button"
                                     onClick={() => setBoardroomPreviewModuleId(m.id)}
                                     className={cn(
-                                        "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap shrink-0",
+                                        "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                                         isSelected
                                             ? "bg-indigo-500/25 text-indigo-200 border border-indigo-400/50 shadow-xs"
                                             : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10 border border-white/5"
@@ -220,7 +221,7 @@ export function BoardroomModulePreview() {
                 <button
                     type="button"
                     onClick={handleExitToStudio}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-xs font-semibold transition-all shrink-0"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-xs font-semibold transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                     title="Open this module full-screen in Studio"
                     data-testid="boardroom-module-exit-btn"
                 >

@@ -158,12 +158,18 @@ export function BoardroomWorkbenchView() {
         <div data-testid="boardroom-workbench-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
             {/* Workbench Sub-Tab Switcher */}
             <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-white/10 shrink-0 min-w-0">
-                <div className="flex items-center gap-1 min-w-0 overflow-x-auto custom-scrollbar">
+                <div
+                    role="tablist"
+                    aria-label="Asset Workbench sections"
+                    className="flex flex-wrap items-center gap-1 min-w-0"
+                >
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={subTab === 'assets'}
                         onClick={() => setSubTab('assets')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                             subTab === 'assets'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -174,9 +180,11 @@ export function BoardroomWorkbenchView() {
                     </button>
                     <button
                         type="button"
+                        role="tab"
+                        aria-selected={subTab === 'artifacts'}
                         onClick={() => setSubTab('artifacts')}
                         className={cn(
-                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
+                            "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                             subTab === 'artifacts'
                                 ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                 : "text-white/60 hover:text-white hover:bg-white/5"
@@ -188,9 +196,11 @@ export function BoardroomWorkbenchView() {
                     {canvasPanels.length > 0 && (
                         <button
                             type="button"
+                            role="tab"
+                            aria-selected={subTab === 'canvas'}
                             onClick={() => setSubTab('canvas')}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0",
+                                "flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70",
                                 subTab === 'canvas'
                                     ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/40"
                                     : "text-white/60 hover:text-white hover:bg-white/5"
@@ -353,10 +363,10 @@ export function BoardroomWorkbenchView() {
                     <div className="flex-1 p-6 overflow-y-auto custom-scrollbar min-h-0 min-w-0">
                         {selectedArtifactFile ? (
                             <div className="max-w-3xl mx-auto space-y-4">
-                                <div className="border-b border-white/10 pb-3 flex items-center justify-between">
-                                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                                        <FileText size={15} className="text-indigo-400" />
-                                        {selectedArtifactFile}
+                                <div className="border-b border-white/10 pb-3 flex flex-wrap items-center justify-between gap-2">
+                                    <h2 className="text-sm font-bold text-white flex items-center gap-2 min-w-0 truncate">
+                                        <FileText size={15} className="text-indigo-400 shrink-0" />
+                                        <span className="truncate">{selectedArtifactFile}</span>
                                     </h2>
                                     <button
                                         type="button"
@@ -368,7 +378,7 @@ export function BoardroomWorkbenchView() {
                                                     .catch(() => toast.error('Failed to copy document.'));
                                             }
                                         }}
-                                        className="text-xs px-2.5 py-1 bg-white/10 hover:bg-white/15 rounded-lg text-white/80 transition-colors"
+                                        className="text-xs px-2.5 py-1 bg-white/10 hover:bg-white/15 rounded-lg text-white/80 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                                     >
                                         Copy Markdown
                                     </button>

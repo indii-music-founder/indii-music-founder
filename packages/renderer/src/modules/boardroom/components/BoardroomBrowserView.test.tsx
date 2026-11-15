@@ -123,6 +123,7 @@ describe('Boardroom page classification', () => {
     });
 
     it('hardens the web fallback iframe and reloads it cleanly', () => {
+        mocks.url = 'https://example.com';
         render(<BoardroomBrowserView />);
         const initialFrame = screen.getByTestId('boardroom-web-iframe');
         expect(initialFrame).toHaveAttribute('allow', "focus-without-user-activation 'none'");
@@ -131,6 +132,18 @@ describe('Boardroom page classification', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
         const reloadedFrame = screen.getByTestId('boardroom-web-iframe');
         expect(reloadedFrame).not.toBe(initialFrame);
+    });
+
+    it('renders a Portal Launch Card instead of a broken iframe for frame-blocked portals in web mode', () => {
+        mocks.url = 'https://artists.spotify.com';
+        render(<BoardroomBrowserView />);
+
+        expect(screen.getByTestId('boardroom-frame-blocked-card')).toBeInTheDocument();
+        expect(screen.queryByTestId('boardroom-web-iframe')).not.toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-portal-open-tab-btn')).toHaveTextContent(/Open Spotify for Artists in New Tab/i);
+
+        fireEvent.click(screen.getByTestId('boardroom-portal-try-embed-btn'));
+        expect(screen.getByTestId('boardroom-web-iframe')).toBeInTheDocument();
     });
 
     it('blocks same-origin recursive iframe embedding in web mode', () => {
