@@ -146,6 +146,16 @@ export function timelineASTToProject(
         maxEndFrame = endFrame;
       }
 
+      const sourceInUs = Math.round(Number(clip.sourceRange.start.pts) / clip.sourceRange.start.timescale * 1_000_000);
+      const sourceDurationUs = Math.round(Number(clip.sourceRange.duration.pts) / clip.sourceRange.duration.timescale * 1_000_000);
+      const expectedSourceDurationUs = durSec * clip.speed * 1_000_000;
+      const roundingToleranceUs = 1_000_000 * Math.max(1, clip.speed) / ast.timebase;
+      const editedRange = sourceInUs !== 0 ||
+        Math.abs(sourceDurationUs - expectedSourceDurationUs) > roundingToleranceUs;
+      const trim = editedRange && sourceDurationUs > 0
+        ? { sourceInUs, sourceOutUs: sourceInUs + sourceDurationUs }
+        : {};
+
       if (clip.type === 'video') {
         const vClip = clip as VideoClip;
         clips.push({
@@ -164,6 +174,7 @@ export function timelineASTToProject(
           anchorX: vClip.transform.origin.x,
           anchorY: vClip.transform.origin.y,
           playbackRate: vClip.speed,
+          ...trim,
         });
       } else {
         const aClip = clip as AudioClip;
@@ -177,6 +188,7 @@ export function timelineASTToProject(
           trackId: track.id,
           volume: aClip.gain,
           playbackRate: aClip.speed,
+          ...trim,
         });
       }
     }

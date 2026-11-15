@@ -125,6 +125,12 @@ describe('NLE Project Model Bridge (Issue #413 Phase 4)', () => {
     expect(clip.sourceRange.start).toEqual({ pts: 500_001n, timescale: 1_000_000 });
     expect(clip.sourceRange.duration.pts).toBe(2_000_000n);
     expect(clip.timelineRange.duration.pts).toBe(60_000n);
+    expect(timelineASTToProject(ast, 30).clips[0]).toMatchObject({
+      sourceInUs: 500_001,
+      sourceOutUs: 2_500_001,
+      durationInFrames: 30,
+      playbackRate: 2,
+    });
   });
 
   it('correctly handles fractional frame rates such as 23.976 fps without drift', () => {
