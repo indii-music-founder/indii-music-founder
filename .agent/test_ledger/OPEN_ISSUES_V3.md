@@ -2851,10 +2851,10 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1414: Audit claim "six scheduled workers swallow top-level errors" — LARGELY NOT REPRODUCIBLE
 
-- **Status:** 🟢 WONTFIX for the surveyed sites (recorded with survey evidence); 🟡 the unsurveyed remainder stays on the backlog until a concrete silent failure is observed
+- **Status:** 🟢 WONTFIX — current-source survey complete (2026-11-14); alleged silent top-level suppression does not reproduce
 - **Module:** packages/firebase/src/{devops/storageMaintenance,social/deliverScheduledPosts,marketing/flushConversionEvents,distribution/pollDeliveryStatus}.ts
 - **Survey evidence (2026-08-28):** deliverScheduledPosts propagates (`async () => handler()` — uncaught errors hit Cloud Logging/Error Reporting); flushConversionEvents catches but logs via `logger.error` (Error Reporting-visible) and the next tick retries; storageMaintenance has an unguarded top-level config read (errors propagate) plus per-item errorCount accounting; pollDeliveryStatus has no top-level swallow catch. Scheduled-tick catch-and-log with a retrying next tick is the correct topology here — "fixing" it by rethrowing adds nothing.
-- **Unsurveyed remainder:** retention-daemon, pulseTick, cleanupVideoSessions, agentLoopCron, enforceOperationCost.
+- **Completed remainder survey (2026-11-14):** `retention-daemon`, `pulseTick`, `cleanupVideoSessions`, `agentLoopCron`, and `enforceOperationCost` propagate scheduler-wide failures. Intentional per-record catches log failures and retain retryable records; missing GCS objects and duplicate loop creates are explicit idempotency cases. See `docs/audits/ISSUE-1414-scheduled-worker-errors.md` for individual boundaries and limits. Existing structural suites passed 68/68; retention/pulse control flow was inspected directly. Jev advisory silent-suppression score: 0.12. No deployed health claim or runtime change.
 
 ### ISSUE-1415: CI red on main @ 8dab863b3 — Arcjet retry test + Firestore owner-rewrite rules test (soundtrack delivery awaiting green containing c7fbcce39)
 
