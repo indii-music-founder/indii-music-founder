@@ -54,7 +54,7 @@ export interface BrandKit {
     colors: string[];
     fonts: string;
     brandDescription: string;
-    aestheticStyle?: string; // Visual aesthetic (e.g., "Cyberpunk", "Minimalist", "Retro 80s")
+    aestheticStyle?: string; // Visual aesthetic (e.g., "Cinematic", "Minimalist", "Retro 80s")
     negativePrompt: string;
     socials: SocialLinks;
     brandAssets: BrandAsset[];
@@ -63,7 +63,7 @@ export interface BrandKit {
     visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
     targetAudience?: string; // Target demographic for marketing
     visualIdentity?: string; // Brand visual style/vibe
-    digitalAura?: string[]; // Array of visual vibe tags (e.g. ['Cyberpunk', 'Luxury'])
+    digitalAura?: string[]; // Array of visual vibe tags (e.g. ['Dreamlike', 'Luxury'])
     healthHistory?: Array<{
         id: string;
         date: string;

@@ -179,8 +179,8 @@ export const STUDIO_TAGS: Record<string, Record<string, string[]> | string[]> = 
         "Emotional Aura": ["Nocturnal Melancholy", "Radiant Triumph", "Cryptic Enigma", "Primal Raw Heat"]
     },
     "Cultural Motif": {
-        "Visual Subculture": ["Harajuku Cyberpunk", "Berlin Underground Techno", "London Grime Concrete", "LA Sunset Strip Synth"],
-        "Futuristic Traditions": ["Afrofuturism Neon Tribal", "Neo-Nordic Minimalism", "Latin Cyber-Futurism", "Silk Road Retro-Futurism"],
+        "Visual Subculture": ["Harajuku Street Fashion", "Berlin Underground Techno", "London Grime Concrete", "LA Sunset Strip Synth"],
+        "Futuristic Traditions": ["Afrofuturism Neon Tribal", "Neo-Nordic Minimalism", "Latin Futurism", "Silk Road Retro-Futurism"],
         "Counter-Culture": ["Acid House Rave Flyer", "DIY Cassette Zine", "80s Skate Punk", "90s Warehouse Ambient"]
     },
     "Digital FX": {

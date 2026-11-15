@@ -9,13 +9,13 @@ import type {
 export const FALLBACK_TEMPLATES: BlenderTemplateInfo[] = [
     {
         id: 'audio_reactive_tunnel',
-        name: 'Audio-Reactive Cyber Tunnel',
-        description: 'Infinite geometric warp tunnel flying forward synced to song BPM. Neon rings and walls pulse with sub-bass.',
+        name: 'Atmospheric Light Tunnel',
+        description: 'An atmospheric geometric tunnel with soft directional light and restrained motion synced to the song BPM.',
         recommendedAspectRatio: '16:9',
         defaultDurationSeconds: 30,
         supportsCoverArt: false,
         supportsCustomText: true,
-        tags: ['cyberpunk', 'neon', 'electronic', 'visualizer']
+        tags: ['atmospheric', 'geometric', 'audio-reactive', 'visualizer']
     },
     {
         id: 'vinyl_turntable',

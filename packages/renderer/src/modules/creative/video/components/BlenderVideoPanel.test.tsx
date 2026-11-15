@@ -3,36 +3,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BlenderVideoPanel } from './BlenderVideoPanel';
 import { blenderService, FALLBACK_TEMPLATES } from '@/services/blender/BlenderService';
+import { STUDIO_TAGS } from '@/modules/creative/constants';
 
-vi.mock('@/services/blender/BlenderService', () => ({
-    blenderService: {
-        getStatus: vi.fn(),
-        listTemplates: vi.fn(),
-        renderMusicVideo: vi.fn()
-    },
-    FALLBACK_TEMPLATES: [
-        {
-            id: 'audio_reactive_tunnel',
-            name: 'Audio-Reactive Cyber Tunnel',
-            description: 'Infinite geometric warp tunnel',
-            recommendedAspectRatio: '16:9',
-            defaultDurationSeconds: 30,
-            supportsCoverArt: false,
-            supportsCustomText: true,
-            tags: ['neon']
+vi.mock('@/services/blender/BlenderService', async importOriginal => {
+    const actual = await importOriginal<typeof import('@/services/blender/BlenderService')>();
+    return {
+        ...actual,
+        blenderService: {
+            getStatus: vi.fn(),
+            listTemplates: vi.fn(),
+            renderMusicVideo: vi.fn()
         },
-        {
-            id: 'vinyl_turntable',
-            name: '3D Vinyl Record Turntable Showcase',
-            description: 'Photorealistic vinyl record',
-            recommendedAspectRatio: '16:9',
-            defaultDurationSeconds: 30,
-            supportsCoverArt: true,
-            supportsCustomText: true,
-            tags: ['vinyl']
-        }
-    ]
-}));
+    };
+});
 
 // Legacy doubles remain structural-only; this suite is not render/customer acceptance.
 describe('BlenderVideoPanel structural guards', () => {
@@ -49,19 +32,26 @@ describe('BlenderVideoPanel structural guards', () => {
         vi.mocked(blenderService.listTemplates).mockResolvedValue([
             {
                 id: 'audio_reactive_tunnel',
-                name: 'Audio-Reactive Cyber Tunnel',
-                description: 'Infinite geometric warp tunnel',
+                name: 'Atmospheric Light Tunnel',
+                description: 'An atmospheric geometric tunnel with soft directional light.',
                 recommendedAspectRatio: '16:9',
                 defaultDurationSeconds: 30,
                 supportsCoverArt: false,
                 supportsCustomText: true,
-                tags: ['neon']
+                tags: ['atmospheric', 'geometric']
             }
         ]);
         vi.mocked(blenderService.renderMusicVideo).mockResolvedValue({
             success: true,
             outputPath: '/renders/music_video.mp4'
         });
+    });
+
+    it('keeps fallback and creative style choices aligned with the founder’s visual direction', () => {
+        const tunnel = FALLBACK_TEMPLATES.find(template => template.id === 'audio_reactive_tunnel');
+        expect(tunnel?.name).toBe('Atmospheric Light Tunnel');
+        expect(JSON.stringify(FALLBACK_TEMPLATES)).not.toMatch(/cyberpunk|neon/i);
+        expect(JSON.stringify(STUDIO_TAGS)).not.toMatch(/cyberpunk/i);
     });
 
     it('renders the header and requires the desktop bridge even if legacy status says installed', async () => {
@@ -85,7 +75,7 @@ describe('BlenderVideoPanel structural guards', () => {
 
         expect(screen.getByRole('button', { name: /3D Vinyl Record Turntable Showcase/i }).className)
             .toContain('border-cyan-500');
-        expect(screen.getByRole('button', { name: /Audio-Reactive Cyber Tunnel/i }).className)
+        expect(screen.getByRole('button', { name: /Atmospheric Light Tunnel/i }).className)
             .not.toContain('border-cyan-500');
         expect(screen.getByRole('button', { name: /Choose cover art/i })).toBeInTheDocument();
     });
