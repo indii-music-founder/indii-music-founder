@@ -46,6 +46,8 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true, secrets: [arcj
       userId: request.auth.uid,
       policy: 'verified-free',
       operationId: `query-knowledge-base:${randomUUID()}`,
+      mode: 'local-rate-limit',
+      rateLimit: { bucket: 'knowledge-query', maxRequests: 60, windowMs: 60_000 },
     });
     if (!protection.allowed) {
       throw new HttpsError(

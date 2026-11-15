@@ -3013,7 +3013,10 @@ export const healthCheck = onRequest(
         concurrency: 1,
     },
     async (req, res) => {
-        const protection = await protectAnonymousSignupRequest(req as never, 'health-check', 'allow-low-risk-read');
+        const protection = await protectAnonymousSignupRequest(req as never, 'health-check', 'allow-low-risk-read', {
+            mode: 'local-rate-limit',
+            rateLimit: { bucket: 'health-check', maxRequests: 120, windowMs: 60_000 },
+        });
         if (!protection.allowed) {
             res.status(protection.status || 429).json({ error: protection.message || 'Too Many Requests' });
             return;
@@ -3057,7 +3060,10 @@ export const healthCheckWest1 = onRequest(
         concurrency: 1,
     },
     async (req, res) => {
-        const protection = await protectAnonymousSignupRequest(req as never, 'health-check-west1', 'allow-low-risk-read');
+        const protection = await protectAnonymousSignupRequest(req as never, 'health-check-west1', 'allow-low-risk-read', {
+            mode: 'local-rate-limit',
+            rateLimit: { bucket: 'health-check', maxRequests: 120, windowMs: 60_000 },
+        });
         if (!protection.allowed) {
             res.status(protection.status || 429).json({ error: protection.message || 'Too Many Requests' });
             return;

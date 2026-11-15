@@ -304,4 +304,97 @@ describe("Arcjet request protection", () => {
             operationId: "typesafe-judge:user_123",
         })).resolves.toMatchObject({ allowed: false, status: 429, code: "RATE_LIMITED" });
     });
+
+    it("enforces Firestore rate limiting without calling Arcjet when mode is local-rate-limit", async () => {
+        mocks.enforceRateLimit.mockResolvedValue(undefined);
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_local",
+            policy: "verified-free",
+            operationId: "relay:heartbeat",
+            mode: "local-rate-limit",
+            rateLimit: { bucket: "studio-relay-session", maxRequests: 60, windowMs: 60_000 },
+        });
+
+        expect(result).toEqual({ allowed: true });
+        expect(mocks.freeProtect).not.toHaveBeenCalled();
+        expect(mocks.enforceRateLimit).toHaveBeenCalledWith("user_local", "studio-relay-session", {
+            maxRequests: 60,
+            windowMs: 60_000,
+        });
+    });
+
+    it("returns 429 when local-rate-limit Firestore limiter throws resource-exhausted", async () => {
+        mocks.enforceRateLimit.mockRejectedValue(Object.assign(new Error("Rate limit exceeded"), { code: "resource-exhausted" }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_local",
+            policy: "verified-free",
+            operationId: "relay:lease",
+            mode: "local-rate-limit",
+            rateLimit: { bucket: "studio-relay-lease", maxRequests: 20, windowMs: 60_000 },
+        });
+
+        expect(result).toEqual({
+            allowed: false,
+            status: 429,
+            code: "RATE_LIMITED",
+            message: "Too many requests. Please slow down.",
+            retryAfterSeconds: 60,
+        });
+        expect(mocks.freeProtect).not.toHaveBeenCalled();
+    });
+
+    it("fails closed with 503 when local-rate-limit Firestore limiter errors", async () => {
+        mocks.enforceRateLimit.mockRejectedValue(new Error("firestore offline"));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_local",
+            policy: "verified-free",
+            operationId: "read:sub",
+            mode: "local-rate-limit",
+        });
+
+        expect(result).toMatchObject({ allowed: false, status: 503, code: "SECURITY_UNAVAILABLE" });
+        expect(mocks.freeProtect).not.toHaveBeenCalled();
+    });
+
+    it("degrades allow-low-risk-read anonymous local-rate-limit checks without calling Arcjet", async () => {
+        mocks.enforceRateLimit.mockRejectedValue(new Error("firestore offline"));
+        const { protectAnonymousSignupRequest } = await loadArcjetModule();
+
+        const result = await protectAnonymousSignupRequest(
+            { ...request, ip: "203.0.113.5" } as never,
+            "health-check",
+            "allow-low-risk-read",
+            { mode: "local-rate-limit", rateLimit: { bucket: "health-check", maxRequests: 120, windowMs: 60_000 } },
+        );
+
+        expect(result).toEqual({ allowed: true, degraded: true });
+        expect(mocks.anonymousProtect).not.toHaveBeenCalled();
+        expect(mocks.enforceRateLimit).toHaveBeenCalledWith("anon:203.0.113.5", "health-check", {
+            maxRequests: 120,
+            windowMs: 60_000,
+        });
+    });
+
+    it("falls back to Firestore quota continuity when client.protect throws provider quota error", async () => {
+        mocks.freeProtect.mockRejectedValue(
+            new Error("[resource_exhausted] quota exceeded: protected_requests (28365/10000 requests)"),
+        );
+        mocks.enforceRateLimit.mockResolvedValue(undefined);
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        });
+
+        expect(result).toEqual({ allowed: true, degraded: true });
+        expect(mocks.freeProtect).toHaveBeenCalledTimes(1);
+    });
 });

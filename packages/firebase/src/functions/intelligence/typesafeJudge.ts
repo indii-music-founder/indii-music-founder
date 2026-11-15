@@ -105,6 +105,8 @@ export const typesafeJudge = onCall(
                 policy: 'verified-free',
                 operationId: `typesafe-judge:${request.auth.uid}`,
                 ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth.token),
+                mode: 'local-rate-limit',
+                rateLimit: { bucket: 'typesafe-judge-admission', maxRequests: 60, windowMs: 60_000 },
             });
             if (!protection.allowed) {
                 const code = protection.status === 429 ? 'resource-exhausted'

@@ -36,6 +36,10 @@ async function admitStudioRelayCaller(
     policy: request.auth.token?.admin === true ? 'admin' : 'verified-free',
     operationId: `studio-relay:${operation}:${randomUUID()}`,
     ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth.token),
+    mode: 'local-rate-limit',
+    rateLimit: operation === 'issueStudioExecutorLease'
+      ? { bucket: 'studio-relay-lease', maxRequests: 20, windowMs: 60_000 }
+      : { bucket: 'studio-relay-session', maxRequests: 60, windowMs: 60_000 },
   });
   if (!protection.allowed) {
     const code = protection.status === 429

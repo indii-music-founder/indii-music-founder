@@ -37,6 +37,8 @@ export const getUsageStats = onCall({
       userId,
       policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
       operationId: `get-usage-stats:${randomUUID()}`,
+      mode: 'local-rate-limit',
+      rateLimit: { bucket: 'read-usage-stats', maxRequests: 60, windowMs: 60_000 },
     });
     if (!protection.allowed) {
       throw new HttpsError(

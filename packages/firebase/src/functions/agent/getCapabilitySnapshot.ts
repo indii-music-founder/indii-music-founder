@@ -258,23 +258,19 @@ export async function admitCapabilitySnapshotRequest(
     if (!request.rawRequest) {
         throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
+    const protectionOptions = {
+        userId: uid,
+        policy: policyForEntitlement({
+            tier: entitlement.tier,
+            isAdmin: request.auth?.token.admin === true,
+        }),
+        operationId: `capability-snapshot:${randomUUID()}`,
+        mode: 'local-rate-limit' as const,
+        rateLimit: { bucket: 'read-capability-snapshot', maxRequests: 60, windowMs: 60_000 },
+    };
     const protection = dependencies.protect
-        ? await dependencies.protect(request.rawRequest, {
-            userId: uid,
-            policy: policyForEntitlement({
-                tier: entitlement.tier,
-                isAdmin: request.auth?.token.admin === true,
-            }),
-            operationId: `capability-snapshot:${randomUUID()}`,
-        })
-        : await protectAuthenticatedApiRequest(request.rawRequest, {
-            userId: uid,
-            policy: policyForEntitlement({
-                tier: entitlement.tier,
-                isAdmin: request.auth?.token.admin === true,
-            }),
-            operationId: `capability-snapshot:${randomUUID()}`,
-        });
+        ? await dependencies.protect(request.rawRequest, protectionOptions)
+        : await protectAuthenticatedApiRequest(request.rawRequest, protectionOptions);
     if (!protection.allowed) {
         const code = protection.status === 429
             ? 'resource-exhausted'

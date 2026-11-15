@@ -32,6 +32,8 @@ export const getSubscription = onCall({
       userId,
       policy: request.auth?.token?.admin ? 'admin' : 'verified-free',
       operationId: `get-subscription:${randomUUID()}`,
+      mode: 'local-rate-limit',
+      rateLimit: { bucket: 'read-subscription', maxRequests: 60, windowMs: 60_000 },
     });
     if (!protection.allowed) {
       throw new HttpsError(

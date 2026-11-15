@@ -24,12 +24,31 @@ export interface ServerOwnedArcjetPolicyInput {
     bringYourOwnApiEnabled?: boolean;
 }
 
+export interface LocalRateLimitConfig {
+    /** Stable per-user rate limit bucket name; must never include random per-request IDs. */
+    bucket: string;
+    maxRequests: number;
+    windowMs: number;
+}
+
 export interface AuthenticatedArcjetRequestContext {
     userId: string;
     policy: AuthenticatedArcjetPolicyClass;
     operationId: string;
     /** Set only from verified Firebase token claims, never request data. */
     ownerQuotaContinuity?: boolean;
+    /**
+     * Defaults to `"arcjet"`. Callers already gated by Firebase Auth, App Check,
+     * and server-verified leases or ownership can use `"local-rate-limit"` to
+     * enforce the Firestore distributed limiter without consuming Arcjet quota.
+     */
+    mode?: "arcjet" | "local-rate-limit";
+    rateLimit?: LocalRateLimitConfig;
+}
+
+export interface AnonymousArcjetRequestOptions {
+    mode?: "arcjet" | "local-rate-limit";
+    rateLimit?: LocalRateLimitConfig;
 }
 
 export type ArcjetProtectionResult =
@@ -245,32 +264,93 @@ function mapDecision(
 // distributed Firestore rate limiter rather than failing closed with 503.
 let quotaUnavailableUntil = 0;
 
+function defaultLocalRateLimit(policy: AuthenticatedArcjetPolicyClass): LocalRateLimitConfig {
+    switch (policy) {
+        case "paid":
+        case "byo-api":
+        case "admin":
+            return { bucket: `local:${policy}`, maxRequests: 60, windowMs: 60_000 };
+        case "founder":
+            return { bucket: "local:founder", maxRequests: 120, windowMs: 60_000 };
+        case "verified-free":
+        default:
+            return { bucket: "local:verified-free", maxRequests: 30, windowMs: 60_000 };
+    }
+}
+
+async function enforceLocalRateLimitResult(params: {
+    subjectKey: string;
+    policy: ArcjetPolicyClass;
+    operationId: string;
+    rateLimit: LocalRateLimitConfig;
+    failureMode: ArcjetFailureMode;
+    degradedOnAllow?: boolean;
+    limiterLabel: string;
+}): Promise<ArcjetProtectionResult> {
+    try {
+        await enforceRateLimit(params.subjectKey, params.rateLimit.bucket, {
+            maxRequests: params.rateLimit.maxRequests,
+            windowMs: params.rateLimit.windowMs,
+        });
+        return params.degradedOnAllow ? { allowed: true, degraded: true } : { allowed: true };
+    } catch (error) {
+        if ((error as { code?: string })?.code === "resource-exhausted") {
+            const retryAfterSeconds = Math.max(1, Math.ceil(params.rateLimit.windowMs / 1000));
+            logger.warn(`[Security] ${params.limiterLabel} rate limit exceeded`, {
+                operationId: params.operationId,
+                policy: params.policy,
+                bucket: params.rateLimit.bucket,
+                retryAfterSeconds,
+            });
+            return {
+                allowed: false,
+                status: 429,
+                code: "RATE_LIMITED",
+                message: "Too many requests. Please slow down.",
+                retryAfterSeconds,
+            };
+        }
+        logger.error(`[Security] ${params.limiterLabel} unavailable`, {
+            operationId: params.operationId,
+            policy: params.policy,
+            bucket: params.rateLimit.bucket,
+        });
+        return securityUnavailableResult(params.policy, params.operationId, params.failureMode, "decision_error");
+    }
+}
+
 async function protectDuringQuotaOutage(
     context: AuthenticatedArcjetRequestContext,
     continuityEligible: boolean,
 ): Promise<ArcjetProtectionResult> {
-    const bucket = continuityEligible ? 'owner-quota-continuity' : 'provider-quota-continuity';
-    try {
-        // Shared per-user budget across all functions and instances.
-        // Never key this counter by random per-request operationId.
-        await enforceRateLimit(context.userId, bucket, {
-            maxRequests: 30,
-            windowMs: 60_000,
-        });
-        return { allowed: true, degraded: true };
-    } catch (error) {
-        if ((error as { code?: string })?.code === 'resource-exhausted') {
-            return { allowed: false, status: 429, code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.', retryAfterSeconds: 60 };
-        }
-        logger.error('[Security] Quota continuity limiter unavailable', { operationId: context.operationId, bucket });
-        return securityUnavailableResult(context.policy, context.operationId, 'fail-closed', 'decision_error');
-    }
+    // Shared per-user budget across all functions and instances.
+    // Never key this counter by random per-request operationId.
+    const bucket = continuityEligible ? "owner-quota-continuity" : "provider-quota-continuity";
+    return enforceLocalRateLimitResult({
+        subjectKey: context.userId,
+        policy: context.policy,
+        operationId: context.operationId,
+        rateLimit: { bucket, maxRequests: 30, windowMs: 60_000 },
+        failureMode: "fail-closed",
+        degradedOnAllow: true,
+        limiterLabel: "Quota continuity limiter",
+    });
 }
 
 export async function protectAuthenticatedApiRequest(
     req: Request,
     context: AuthenticatedArcjetRequestContext,
 ): Promise<ArcjetProtectionResult> {
+    if (context.mode === "local-rate-limit") {
+        return enforceLocalRateLimitResult({
+            subjectKey: context.userId,
+            policy: context.policy,
+            operationId: context.operationId,
+            rateLimit: context.rateLimit ?? defaultLocalRateLimit(context.policy),
+            failureMode: "fail-closed",
+            limiterLabel: "Local rate limiter",
+        });
+    }
     const client = authenticatedClient(context.policy);
     if (!client) {
         return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "missing_configuration");
@@ -334,11 +414,20 @@ export async function protectAuthenticatedApiRequest(
                 err_cause: (error as { cause?: unknown })?.cause !== undefined ? String((error as { cause?: unknown }).cause) : undefined,
                 err_stack: error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
             });
+            const message = error instanceof Error ? error.message : String(error);
+            if (isProviderQuotaExhaustion(message)) {
+                quotaUnavailableUntil = Date.now() + 5 * 60_000;
+                logger.warn("[Security] Provider quota exhausted; using distributed rate-limit fallback", {
+                    operationId: context.operationId,
+                    policy: context.policy,
+                    continuityEligible,
+                });
+                return protectDuringQuotaOutage(context, continuityEligible);
+            }
             if (attempt < attempts - 1) {
                 // Transient timeout/connectivity blip: retry with backoff.
                 // Non-transient errors (bad key, malformed request) fail
                 // immediately without burning the retries.
-                const message = error instanceof Error ? error.message : String(error);
                 if (!isTransientArcjetFailure(message)) return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
                 await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
                 continue;
@@ -358,7 +447,20 @@ export async function protectAnonymousSignupRequest(
     req: Request,
     operationId: string,
     failureMode: ArcjetFailureMode = "fail-closed",
+    options?: AnonymousArcjetRequestOptions,
 ): Promise<ArcjetProtectionResult> {
+    if (options?.mode === "local-rate-limit") {
+        const rawIp = typeof req?.ip === "string" && req.ip.trim().length > 0 ? req.ip.trim() : "anonymous";
+        const clientIp = rawIp.replace(/[^a-zA-Z0-9.:_-]/g, "_");
+        return enforceLocalRateLimitResult({
+            subjectKey: `anon:${clientIp}`,
+            policy: "anonymous-signup",
+            operationId,
+            rateLimit: options.rateLimit ?? { bucket: "anonymous-local", maxRequests: 60, windowMs: 60_000 },
+            failureMode,
+            limiterLabel: "Anonymous local rate limiter",
+        });
+    }
     if (!anonymousSignupArcjet) {
         return securityUnavailableResult("anonymous-signup", operationId, failureMode, "missing_configuration");
     }

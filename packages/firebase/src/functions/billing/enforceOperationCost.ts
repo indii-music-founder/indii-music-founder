@@ -142,6 +142,8 @@ async function requireCostCallableAdmission(
     }),
     operationId: `${operation}:${crypto.randomUUID()}`,
     ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth?.token),
+    mode: 'local-rate-limit',
+    rateLimit: { bucket: 'cost-ledger', maxRequests: 120, windowMs: 60_000 },
   });
   if (!protection.allowed) {
     const code = protection.status === 429
