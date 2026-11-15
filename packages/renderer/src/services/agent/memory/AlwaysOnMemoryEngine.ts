@@ -707,10 +707,14 @@ If appropriate, suggest that the user can ingest relevant information to build a
      */
     public async deleteMemory(memoryId: string): Promise<void> {
         if (!this.userId) throw new Error('Engine not started');
+        if (!memoryId?.trim()) throw new Error('Memory id is required');
         if (this.isE2EMode) return;
+        const userId = this.userId;
+        const ownerVersion = this.ownerVersion;
 
-        const ref = firestoreDoc(db, 'users', this.userId, 'alwaysOnMemories', memoryId);
+        const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', memoryId);
         await deleteDoc(ref);
+        this.requireCurrentOwner(userId, ownerVersion);
         logger.info(`[AlwaysOnMemoryEngine] 🗑️ Deleted memory ${memoryId}`);
     }
 
