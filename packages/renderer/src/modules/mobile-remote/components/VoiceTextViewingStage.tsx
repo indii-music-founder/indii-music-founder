@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Send, Loader2, Sparkles, X, Edit3, ChevronDown, ChevronUp, Paperclip } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useRef } from 'react';
+import { Mic, MicOff, Send, Loader2, Sparkles, X, Paperclip } from 'lucide-react';
+import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../haptics';
 import { useStore } from '@/core/store';
@@ -79,10 +79,7 @@ export default function VoiceTextViewingStage({
     startOptions,
 }: VoiceTextViewingStageProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const viewingTextareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isEditingInViewingStage, setIsEditingInViewingStage] = useState(false);
-    const [isManualExpanded, setIsManualExpanded] = useState(false);
 
     const { isLiveActive, activeSpeakingAgentId, directTargetAgentId, activeDepartmentId } = useStore(useShallow(state => ({
         isLiveActive: state?.isLiveConversationActive ?? false,
@@ -94,30 +91,17 @@ export default function VoiceTextViewingStage({
     const effectiveAgentId = activeSpeakingAgentId || directTargetAgentId || activeDepartmentId || 'generalist';
     const activeIdentity = resolveAgentVisualIdentity(effectiveAgentId);
 
-    // Dictation automatically opens the Viewing Stage
-    const showViewingStage = isListening || isManualExpanded || (value.length > 80 && !isWaiting);
-
-    // Auto-focus the viewing textarea if user clicks "Edit Text"
-    useEffect(() => {
-        if (isEditingInViewingStage && viewingTextareaRef.current) {
-            viewingTextareaRef.current.focus();
-        }
-    }, [isEditingInViewingStage]);
-
     const handleSend = () => {
         const hasContent = value.trim() || (attachments && attachments.length > 0);
         if (!hasContent || isWaiting || isUploading || !isPaired) return;
         triggerHaptic(40);
-        setIsEditingInViewingStage(false);
-        setIsManualExpanded(false);
         onSubmit();
     };
 
     const handleClear = () => {
         triggerHaptic(25);
         onChange('');
-        setIsEditingInViewingStage(false);
-        setIsManualExpanded(false);
+        textareaRef.current?.focus();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -129,173 +113,7 @@ export default function VoiceTextViewingStage({
 
     return (
         <div className={cn('relative w-full z-30 font-sans', className)}>
-            {/* ─── Expandable Live Viewing Stage ───────────────────────────────── */}
-            <AnimatePresence>
-                {showViewingStage && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-                        className="mb-3 overflow-hidden rounded-[26px] bg-[#1a1512]/95 border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
-                    >
-                        {/* Stage Header */}
-                        <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-white/[0.02]">
-                            <div className="flex items-center gap-2.5">
-                                {isListening ? (
-                                    <span className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/25">
-                                        <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                                        <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
-                                            Live Dictation
-                                        </span>
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#00ff66]/15 border border-[#00ff66]/25">
-                                        <Sparkles className="w-3 h-3 text-[#00ff66]" />
-                                        <span className="text-[10px] font-bold text-[#00ff66] uppercase tracking-widest font-mono">
-                                            Viewing Stage
-                                        </span>
-                                    </span>
-                                )}
-                                <span className="text-[11px] font-medium text-stone-400">
-                                    to <strong className="text-white font-semibold">{targetLabel}</strong>
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-mono text-stone-500 mr-1">
-                                    {value.length} chars
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        triggerHaptic(20);
-                                        setIsManualExpanded(!isManualExpanded);
-                                    }}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                                    aria-label="Toggle stage view"
-                                >
-                                    {isManualExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleClear}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-stone-400 hover:text-red-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-                                    aria-label="Clear text"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Viewing Area Body */}
-                        <div className="p-5">
-                            {isEditingInViewingStage ? (
-                                <textarea
-                                    ref={viewingTextareaRef}
-                                    value={value}
-                                    onChange={(e) => onChange(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    rows={4}
-                                    placeholder="Type your message here…"
-                                    className="w-full bg-transparent border border-white/10 rounded-xl p-3 text-base text-stone-100 placeholder:text-stone-500 focus:outline-none focus:border-[#00ff66]/40 resize-none font-sans leading-relaxed custom-scrollbar"
-                                />
-                            ) : (
-                                <div
-                                    onClick={() => setIsEditingInViewingStage(true)}
-                                    className="min-h-[72px] max-h-48 overflow-y-auto pr-1 text-base text-stone-100 font-sans leading-relaxed cursor-text select-text custom-scrollbar"
-                                >
-                                    {value ? (
-                                        <span>
-                                            {value}
-                                            {isListening && (
-                                                <span className="inline-block w-2 h-4 bg-[#00ff66] animate-pulse ml-1 align-middle rounded-xs" />
-                                            )}
-                                        </span>
-                                    ) : (
-                                        <span className="text-stone-500 italic text-sm">
-                                            {isListening ? 'Listening… speak clearly into your phone' : 'Empty draft'}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Live Audio Waveform Visualizer */}
-                            {isListening && (
-                                <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-center gap-1.5 h-8">
-                                    {[0.4, 0.8, 0.6, 1, 0.7, 0.9, 0.5, 0.85, 0.65, 0.45, 0.75, 0.35, 0.8, 0.6, 0.95, 0.5, 0.7].map((h, idx) => (
-                                        <motion.div
-                                            key={idx}
-                                            animate={{
-                                                scaleY: [h * 0.3, h * 1.2, h * 0.4],
-                                                opacity: [0.6, 1, 0.6],
-                                            }}
-                                            transition={{
-                                                repeat: Infinity,
-                                                duration: 0.6 + (idx % 4) * 0.15,
-                                                ease: 'easeInOut',
-                                                delay: idx * 0.04,
-                                            }}
-                                            className="w-1 rounded-full bg-linear-to-t from-amber-400 via-[#00ff66] to-[#12C6D4] h-7 origin-center"
-                                        />
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Stage Action Controls */}
-                            <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            triggerHaptic(20);
-                                            setIsEditingInViewingStage(!isEditingInViewingStage);
-                                        }}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-stone-300 border border-white/5 transition-colors cursor-pointer"
-                                    >
-                                        <Edit3 className="w-3.5 h-3.5 text-stone-400" />
-                                        {isEditingInViewingStage ? 'Done Editing' : 'Edit Text'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleClear}
-                                        className="px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
-                                    >
-                                        Clear
-                                    </button>
-                                </div>
-
-                                <motion.button
-                                    type="button"
-                                    whileTap={{ scale: 0.96 }}
-                                    onClick={handleSend}
-                                    disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || isUploading || !isPaired}
-                                    className={cn(
-                                        'flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg',
-                                        (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && !isUploading && isPaired
-                                            ? 'bg-[#00ff66] text-[#061806] shadow-[#00ff66]/20 hover:bg-[#36D96F]'
-                                            : 'bg-white/5 text-stone-500 cursor-not-allowed border border-white/5'
-                                    )}
-                                >
-                                    {isWaiting ? (
-                                        <>
-                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            <span>Sending</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="w-3.5 h-3.5" />
-                                            <span>{submitLabel}</span>
-                                        </>
-                                    )}
-                                </motion.button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ─── Docked Input Bar ────────────────────────────────────────────── */}
+            {/* ─── Single Unified Docked Composer ────────────────────────────── */}
             <div className="relative">
                 {/* Ambient Faded Light Glow Aura */}
                 <div
@@ -308,7 +126,41 @@ export default function VoiceTextViewingStage({
                         background: `radial-gradient(ellipse at 50% 50%, ${activeIdentity.glow} 0%, transparent 72%)`,
                     }}
                 />
-                <div className="flex flex-col p-2 rounded-[26px] bg-[#1a1512]/90 border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+                <div className={cn(
+                    "flex flex-col p-2 rounded-[26px] bg-[#1a1512]/90 border shadow-[0_16px_36px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-colors",
+                    isListening ? "border-red-500/35" : "border-white/10"
+                )}>
+                {/* Inline Dictation / Draft Status Strip (replaces separate stacked popup card) */}
+                {(isListening || value.length > 80) && (
+                    <div
+                        data-testid="composer-inline-status"
+                        className="flex items-center justify-between gap-2 px-2.5 pt-1 pb-1.5 mb-1 border-b border-white/5 text-[11px]"
+                    >
+                        <div className="flex items-center gap-2 min-w-0">
+                            {isListening && (
+                                <span className="inline-flex items-center gap-1.5 text-red-400 font-semibold shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                                    Dictating
+                                </span>
+                            )}
+                            <span className="text-stone-400 truncate">
+                                to <strong className="text-stone-200 font-semibold">{targetLabel}</strong>
+                            </span>
+                        </div>
+                        {value.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={handleClear}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium text-stone-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 shrink-0"
+                                aria-label="Clear text"
+                            >
+                                <X className="w-3 h-3" />
+                                <span>Clear</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Staged Attachment Chips */}
                 {attachments && attachments.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 px-2 pt-1 pb-2 border-b border-white/5 mb-1.5">
@@ -366,10 +218,10 @@ export default function VoiceTextViewingStage({
                             value={value}
                             onChange={(e) => onChange(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            rows={Math.min(3, Math.max(1, value.split('\n').length))}
+                            rows={Math.min(5, Math.max(1, value.split('\n').length))}
                             placeholder={isListening ? 'Listening… speak now' : placeholder}
                             disabled={isWaiting || !isPaired}
-                            className="w-full bg-transparent border-none p-2 text-sm text-stone-100 placeholder:text-stone-500 focus:ring-0 focus:outline-none resize-none max-h-28 custom-scrollbar leading-snug"
+                            className="w-full bg-transparent border-none p-2 text-sm text-stone-100 placeholder:text-stone-500 focus:ring-0 focus:outline-none resize-none max-h-36 custom-scrollbar leading-snug"
                         />
                     </div>
 
@@ -436,7 +288,7 @@ export default function VoiceTextViewingStage({
                             whileTap={{ scale: 0.9 }}
                             onClick={handleSend}
                             disabled={(!value.trim() && (!attachments || attachments.length === 0)) || isWaiting || isUploading || !isPaired}
-                            aria-label="Send message"
+                            aria-label={`${submitLabel} message`}
                             className={cn(
                                 'w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer',
                                 (value.trim() || (attachments && attachments.length > 0)) && !isWaiting && !isUploading && isPaired

@@ -605,28 +605,6 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                                 : 'Say: "Alex Morgan, booking manager at Live Nation, 313-555-0199, alex@livenation.com"'}
                                     </p>
                                 </div>
-
-                                {/* Active Recording Waveform Visualizer */}
-                                {isRecording && (
-                                    <div className="flex items-center justify-center gap-1.5 h-8 mt-2">
-                                        {[0.4, 0.8, 0.6, 1, 0.7, 0.9, 0.5, 0.85, 0.65, 0.45, 0.75, 0.35, 0.8, 0.6, 0.95, 0.5, 0.7].map((h, idx) => (
-                                            <motion.div
-                                                key={idx}
-                                                animate={{
-                                                    scaleY: [h * 0.3, h * 1.3, h * 0.4],
-                                                    opacity: [0.6, 1, 0.6],
-                                                }}
-                                                transition={{
-                                                    repeat: Infinity,
-                                                    duration: 0.6 + (idx % 4) * 0.15,
-                                                    ease: 'easeInOut',
-                                                    delay: idx * 0.04,
-                                                }}
-                                                className="w-1 rounded-full bg-gradient-to-t from-red-500 via-[#00ff66] to-[#12C6D4] h-7 origin-center"
-                                            />
-                                        ))}
-                                    </div>
-                                )}
                             </div>
 
                             {/* Audio Playback pill when recorded */}
