@@ -63,22 +63,27 @@ describe('AgentGraphService', () => {
         // execution. The global setup's transaction mock reads an empty doc,
         // which would fail every claim; grant claims so the readiness
         // progression driven by the getExecution mock decides execution.
+        const nodeStates: Record<string, { status: string }> = {
+            'node-1': { status: 'PLANNED' },
+            'node-2': { status: 'PLANNED' },
+            'node-3': { status: 'PLANNED' },
+        };
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) => cb({
             get: vi.fn(async () => ({
                 exists: () => true,
                 data: () => ({
                     metadata: { lease },
-                    nodeStates: {
-                        'node-1': { status: 'PLANNED' },
-                        'node-2': { status: 'PLANNED' },
-                        'node-3': { status: 'PLANNED' },
-                    },
+                    nodeStates,
                 }),
             })),
             set: vi.fn(),
             update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
                 if (Object.prototype.hasOwnProperty.call(patch, 'metadata.lease')) {
                     lease = patch['metadata.lease'] as typeof lease;
+                }
+                for (const [field, value] of Object.entries(patch)) {
+                    const match = /^nodeStates\.([^.]+)\.status$/.exec(field);
+                    if (match && typeof value === 'string') nodeStates[match[1]] = { status: value };
                 }
             }),
             delete: vi.fn(),

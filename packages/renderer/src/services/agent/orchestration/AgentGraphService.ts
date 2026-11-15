@@ -19,6 +19,8 @@ function currentGraphLease(data: Pick<GraphExecutionState, 'metadata' | 'lease'>
         : data.lease;
 }
 
+class GraphResultCheckpointError extends Error {}
+
 /**
  * AgentGraphService — Directed Acyclic Graph (DAG) Runner
  *
@@ -275,6 +277,44 @@ export class AgentGraphService {
             });
         } catch (error) {
             logger.warn(`[AgentGraph] Failed to release lease for ${executionId}:`, error);
+        }
+    }
+
+    private async saveClaimedNodeResult(
+        userId: string,
+        executionId: string,
+        runnerId: string,
+        nodeId: string,
+        result: { status: 'STEP_COMPLETE'; output: string } | { status: 'FAILED'; error: string },
+    ): Promise<void> {
+        const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
+        try {
+            await runTransaction(db, async tx => {
+                const snap = await tx.get(ref);
+                const state = snap.exists() ? snap.data() as GraphExecutionState : undefined;
+                const lease = state && currentGraphLease(state);
+                if (!state || lease?.holderId !== runnerId || !Number.isFinite(lease.expiresAt) ||
+                    lease.expiresAt <= Date.now() ||
+                    state.status === 'CANCELLED' || state.status === 'FAILED' || state.status === 'COMPLETED' ||
+                    state.nodeStates?.[nodeId]?.status !== 'EXECUTING_GENERATION') {
+                    throw new GraphResultCheckpointError(`Graph execution ${executionId} lost its lease before saving node ${nodeId}.`);
+                }
+                const path = `nodeStates.${nodeId}`;
+                tx.update(ref, {
+                    [`${path}.status`]: result.status,
+                    [`${path}.completedAt`]: Date.now(),
+                    ...(result.status === 'STEP_COMPLETE'
+                        ? { [`${path}.output`]: result.output }
+                        : { [`${path}.error`]: result.error }),
+                    updatedAt: serverTimestamp(),
+                });
+            });
+        } catch (error) {
+            if (error instanceof GraphResultCheckpointError) throw error;
+            throw new GraphResultCheckpointError(
+                `Graph node ${nodeId} result could not be verified; reconcile the saved outcome before retrying.`,
+                { cause: error },
+            );
         }
     }
 
@@ -605,12 +645,8 @@ export class AgentGraphService {
                 const results = await Promise.all(tasks.map(async (task) => {
                     try {
                         const response = await agentService.delegateTask(task.agentId, task.prompt, task.context);
-
-                        // GEAP Pillar 2: SCALE - Commit output to Memory Bank
-                        try {
-                            await memoryBankService.addMemory(userId, `[Graph Node: ${task.nodeId}] Result: ${response.slice(0, 500)}`);
-                        } catch (memErr) {
-                            logger.warn(`[AgentGraph] Memory storage failed for node ${task.nodeId}`, memErr);
+                        if (typeof response !== 'string') {
+                            throw new Error('Graph node returned an invalid text result.');
                         }
 
                         return { nodeId: task.nodeId, success: true, output: response };
@@ -624,19 +660,20 @@ export class AgentGraphService {
                 // 6. Update states and resolve next steps
                 for (const res of results) {
                     if (res.success) {
-                        await agentGraphStateService.updateNodeStatus(userId, executionId, res.nodeId, {
-                            status: 'STEP_COMPLETE',
-                            output: res.output,
-                            completedAt: Date.now()
+                        await this.saveClaimedNodeResult(userId, executionId, runnerId, res.nodeId, {
+                            status: 'STEP_COMPLETE', output: res.output ?? '',
                         });
+                        try {
+                            await memoryBankService.addMemory(userId, `[Graph Node: ${res.nodeId}] Result: ${res.output?.slice(0, 500) ?? ''}`);
+                        } catch (memErr) {
+                            logger.warn(`[AgentGraph] Memory storage failed for node ${res.nodeId}`, memErr);
+                        }
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_COMPLETED', graph.id, res.nodeId, executionId);
                         lastOutput = res.output || '';
                         lastProgressTime = Date.now();
                     } else {
-                        await agentGraphStateService.updateNodeStatus(userId, executionId, res.nodeId, {
-                            status: 'FAILED',
-                            error: res.error,
-                            completedAt: Date.now()
+                        await this.saveClaimedNodeResult(userId, executionId, runnerId, res.nodeId, {
+                            status: 'FAILED', error: res.error ?? 'Unknown error',
                         });
                         AgentEventBus.emitNodeEvent('GRAPH_NODE_FAILED', graph.id, res.nodeId, executionId, res.error);
                         lastProgressTime = Date.now();
@@ -662,6 +699,7 @@ export class AgentGraphService {
                 }
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
+                if (error instanceof GraphResultCheckpointError) throw error;
                 logger.error(`[AgentGraph] Critical loop failure in ${executionId}:`, error);
                 await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
                 throw error;

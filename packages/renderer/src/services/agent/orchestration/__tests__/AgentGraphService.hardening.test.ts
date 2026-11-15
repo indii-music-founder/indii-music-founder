@@ -42,6 +42,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
     const mockUserId = 'user-123';
     const mockContext: AgentContext = { userId: mockUserId };
 
+    let transactionNodeStatus = 'PLANNED';
     const mockGraph: AgentGraph = {
         id: 'graph-hardening',
         name: 'Hardening Test Graph',
@@ -59,6 +60,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
 
     beforeEach(() => {
         vi.clearAllMocks();
+        transactionNodeStatus = 'PLANNED';
     });
 
     it('preserves a lease permission error instead of claiming another runner owns the job', async () => {
@@ -93,7 +95,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
                         acquiredAt: Date.now() - 5000,
                     },
                     nodeStates: {
-                        'node-1': { status: 'PLANNED' },
+                        'node-1': { status: transactionNodeStatus },
                     },
                 }),
             })),
@@ -109,8 +111,10 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
         const executionId = 'exec-expired-lease';
         (agentGraphStateService.getExecution as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ executionId, graphId: 'graph-single' });
         let lease = { holderId: 'stale-runner-id', expiresAt: Date.now() - 5000, acquiredAt: Date.now() - 25000 };
-        const mockUpdate = vi.fn((_ref: unknown, fields: Record<string, typeof lease>) => {
-            lease = fields['metadata.lease'] ?? lease;
+        const mockUpdate = vi.fn((_ref: unknown, fields: Record<string, unknown>) => {
+            lease = (fields['metadata.lease'] ?? lease) as typeof lease;
+            const status = fields['nodeStates.node-1.status'];
+            if (typeof status === 'string') transactionNodeStatus = status;
         });
 
         const singleNodeGraph: AgentGraph = {
@@ -131,7 +135,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
                         executionId,
                         metadata: { lease },
                         nodeStates: {
-                            'node-1': { status: 'PLANNED' },
+                            'node-1': { status: transactionNodeStatus },
                         },
                     }),
                 })),
@@ -143,7 +147,7 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
             executionId,
             status: 'EXECUTING',
             nodeStates: {
-                'node-1': { status: 'PLANNED' },
+                'node-1': { status: transactionNodeStatus },
             },
         }).mockResolvedValueOnce({
             executionId,
@@ -212,18 +216,20 @@ describe('AgentGraphService Hardening & Concurrency Protection (structural only)
                 data: () => ({
                     executionId,
                     metadata: { lease },
-                    nodeStates: { 'node-1': { status: 'PLANNED' } },
+                    nodeStates: { 'node-1': { status: transactionNodeStatus } },
                 }),
             })),
             update: vi.fn((_ref: unknown, fields: Record<string, unknown>) => {
-                lease = fields['metadata.lease'] ?? lease;
+                lease = (fields['metadata.lease'] ?? lease) as typeof lease;
+                const status = fields['nodeStates.node-1.status'];
+                if (typeof status === 'string') transactionNodeStatus = status;
             }),
         } as any));
 
         (agentGraphStateService.getExecution as any).mockResolvedValueOnce({
             executionId,
             status: 'EXECUTING',
-            nodeStates: { 'node-1': { status: 'PLANNED' } },
+            nodeStates: { 'node-1': { status: transactionNodeStatus } },
         }).mockResolvedValueOnce({
             executionId,
             status: 'COMPLETED',
