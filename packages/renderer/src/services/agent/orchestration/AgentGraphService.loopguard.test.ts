@@ -105,6 +105,7 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         // The claim transaction sees whatever the last write left.
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) =>
             cb(claimTx(() => execState.nodeStates.n1.status, execState.status, patch => {
+                if (typeof patch.status === 'string') execState.status = patch.status;
                 const status = patch['nodeStates.n1.status'];
                 if (typeof status === 'string') execState.nodeStates.n1.status = status;
             }) as never)
@@ -264,6 +265,31 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         expect(transactionWrites.some(patch => patch['nodeStates.n1.status'] === 'STEP_COMPLETE')).toBe(false);
         expect(mocks.addMemory).not.toHaveBeenCalled();
     });
+
+    it.each(['another holder', 'expired lease', 'cancelled graph', 'completed by another holder', 'final status unavailable'])(
+        'keeps the saved graph unchanged when finalization sees %s (structural)', async failure => {
+            wireHappyPath();
+            mocks.delegateTask.mockResolvedValueOnce('Confirmed result');
+            mocks.addMemory.mockImplementationOnce(async () => {
+                if (failure === 'another holder') lease = { ...lease!, holderId: 'new-runner' };
+                if (failure === 'expired lease') lease = { ...lease!, expiresAt: Date.now() - 1 };
+                if (failure === 'final status unavailable') {
+                    vi.mocked(runTransaction).mockRejectedValueOnce(new Error('Final write unavailable'));
+                }
+                if (failure === 'cancelled graph' || failure === 'completed by another holder') {
+                    vi.mocked(runTransaction).mockImplementationOnce(async (_db, callback) => {
+                        execState.status = failure === 'cancelled graph' ? 'CANCELLED' : 'COMPLETED';
+                        if (failure === 'completed by another holder') lease = { ...lease!, holderId: 'new-runner' };
+                        return callback(claimTx(() => execState.nodeStates.n1.status, execState.status) as never);
+                    });
+                }
+            });
+            await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+                .rejects.toThrow(/lost ownership before finalization|final status could not be verified/);
+            expect(transactionWrites.some(patch => patch.status === 'FAILED' || patch.status === 'COMPLETED')).toBe(false);
+            expect(mocks.indexGraphExecution).not.toHaveBeenCalled();
+        },
+    );
 
     it('completes a graph when its claimed node succeeds', async () => {
         wireHappyPath();
