@@ -4,8 +4,8 @@ import type { AgentGraph, AgentContext } from '@/services/agent/types';
 import { runTransaction } from 'firebase/firestore';
 
 // ----------------------------------------------------------------------------
-// Mocks — the graph loop needs the state service, the agent runner, memory,
-// and a controllable Firestore transaction to prove exactly-once claims.
+// Structural-only tests of the graph protocol using deterministic state and
+// transaction adapters. Live Firestore recovery remains unverified.
 // The global test setup mocks firebase/firestore; runTransaction is
 // overridden per test below.
 // ----------------------------------------------------------------------------
@@ -65,18 +65,21 @@ const makeGraph = (): AgentGraph => ({
 
 const makeContext = (): AgentContext => ({ userId: 'u1', traceId: 't1' });
 
+const transactionWrites: Record<string, unknown>[] = [];
 let lease: { holderId: string; acquiredAt: number; expiresAt: number } | null = null;
 let legacyLease: typeof lease = null;
-const claimTx = (nodeStatus: () => string, graphStatus = 'PLANNED') => ({
+const claimTx = (nodeStatus: () => string, graphStatus = 'PLANNED', onUpdate: (patch: Record<string, unknown>) => void = () => {}) => ({
     get: vi.fn(async () => ({
         exists: () => true,
         data: () => ({ status: graphStatus, metadata: { lease }, lease: legacyLease, nodeStates: { n1: { status: nodeStatus() } } }),
     })),
     set: vi.fn(),
     update: vi.fn((_ref: unknown, patch: Record<string, unknown>) => {
+        transactionWrites.push(patch);
         if (Object.prototype.hasOwnProperty.call(patch, 'metadata.lease')) {
             lease = patch['metadata.lease'] as typeof lease;
         }
+        onUpdate(patch);
     }),
     delete: vi.fn(),
 });
@@ -101,7 +104,10 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         });
         // The claim transaction sees whatever the last write left.
         vi.mocked(runTransaction).mockImplementation(async (_db, cb) =>
-            cb(claimTx(() => execState.nodeStates.n1.status) as never)
+            cb(claimTx(() => execState.nodeStates.n1.status, execState.status, patch => {
+                const status = patch['nodeStates.n1.status'];
+                if (typeof status === 'string') execState.nodeStates.n1.status = status;
+            }) as never)
         );
     };
 
@@ -114,6 +120,7 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         execState.nodeStates.n1.status = 'PLANNED';
         lease = null;
         legacyLease = null;
+        transactionWrites.length = 0;
 
         mocks.searchMemories.mockResolvedValue({ results: [] });
         mocks.addMemory.mockResolvedValue(undefined);
@@ -224,6 +231,38 @@ describe('AgentGraphService loop guard and atomic claims', () => {
         await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
             .rejects.toThrow(/lost its lease before node dispatch/);
         expect(mocks.delegateTask).not.toHaveBeenCalled();
+    });
+
+    it.each(['another holder', 'expired lease', 'cancelled graph', 'changed node state', 'result storage unavailable'])(
+        'refuses result and memory writes after %s (structural)', async failure => {
+            wireHappyPath();
+            mocks.delegateTask.mockImplementationOnce(async () => {
+                if (failure === 'another holder') lease = { ...lease!, holderId: 'replacement-runner' };
+                if (failure === 'expired lease') lease = { ...lease!, expiresAt: Date.now() - 1 };
+                if (failure === 'cancelled graph') execState.status = 'CANCELLED';
+                if (failure === 'changed node state') execState.nodeStates.n1.status = 'FAILED';
+                if (failure === 'result storage unavailable') {
+                    vi.mocked(runTransaction).mockRejectedValueOnce(new Error('Result write unavailable'));
+                }
+                return 'Late result';
+            });
+
+            await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+                .rejects.toThrow(/before saving node|result could not be verified/);
+            expect(transactionWrites.some(patch => patch['nodeStates.n1.status'] === 'STEP_COMPLETE')).toBe(false);
+            expect(mocks.addMemory).not.toHaveBeenCalled();
+            expect(mocks.indexGraphExecution).not.toHaveBeenCalled();
+            expect(mocks.finalizeStatus).not.toHaveBeenCalled();
+        },
+    );
+
+    it('rejects a malformed delegated result before storing it as output or memory (structural)', async () => {
+        wireHappyPath();
+        mocks.delegateTask.mockResolvedValueOnce({ unexpected: 'body' });
+        await expect(agentGraphService.executeGraph(makeGraph(), makeContext(), 'input', 'exec-1'))
+            .rejects.toThrow(/invalid text result/);
+        expect(transactionWrites.some(patch => patch['nodeStates.n1.status'] === 'STEP_COMPLETE')).toBe(false);
+        expect(mocks.addMemory).not.toHaveBeenCalled();
     });
 
     it('completes a graph when its claimed node succeeds', async () => {
