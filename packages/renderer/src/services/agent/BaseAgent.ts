@@ -50,6 +50,7 @@ import { artistOperatingProfileService } from './governance/ArtistOperatingProfi
 import { hasAutonomousComputerControl } from '@indii/shared';
 import { agentNoteService } from './AgentNoteService';
 import { AppErrorCode } from '@/shared/types/errors';
+import { recordToolCapabilityOutcome } from './capabilityTruth';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
@@ -1944,6 +1945,8 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                                 result = { success: false, error: `Tool '${name}' not found.` };
                             }
                         }
+
+                        recordToolCapabilityOutcome(name, result);
 
                         // Record every completed invocation before any terminal-result return.
                         // Audit uncertainty must never turn a completed external action into a retry.

@@ -12,6 +12,7 @@ import {
     isCapabilityQuestion,
     isDepartmentAuditOrReadinessQuestion,
     recordCapabilityHealth,
+    recordToolCapabilityOutcome,
     resetCapabilityHealthForTests,
     sanitizeAgentCapabilityOutput,
 } from './capabilityTruth';
@@ -109,12 +110,12 @@ describe('Boardroom capability truthfulness', () => {
         });
 
         expect(noServerEvidence).not.toContain('Available now');
-        expect(noServerEvidence).toContain('Not verified right now');
+        expect(noServerEvidence).toContain('Configured but not verified in this session');
         expect(noRegisteredTool).not.toContain('create images');
         expect(noRegisteredTool).not.toContain('save and recall');
     });
 
-    it('claims only capabilities that are both server-attested and locally usable', () => {
+    it('separates recent media evidence from capabilities checked in the current session', () => {
         const output = buildCapabilitySummary({
             authorizedTools: ['generate_image', 'save_memory', 'recall_memories', 'unregistered_tool'],
             registeredSpecialistIds: [],
@@ -124,17 +125,17 @@ describe('Boardroom capability truthfulness', () => {
             }),
         });
 
-        expect(output).toContain('Available now');
-        expect(output).toContain('create images');
+        expect(output).toContain('Available now: save and recall approved workspace context');
+        expect(output).toContain('Recently demonstrated (successful use in the last 7 days; not checked this session): create images');
         expect(output).toContain('save and recall approved workspace context');
         expect(output).not.toContain('unregistered_tool');
         expect(output).not.toContain('generate_image');
         expect(output).not.toContain('save_memory');
     });
 
-    it('claims Blender 3D rendering when authorized and attested by video capability', () => {
+    it('does not treat a recent video generation as proof that Blender is available', () => {
         const output = buildCapabilitySummary({
-            authorizedTools: ['blender_render_music_video', 'consult_specialist'],
+            authorizedTools: ['blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command', 'consult_specialist'],
             registeredSpecialistIds: ['video'],
             snapshot: snapshot({
                 video_generation: 'available',
@@ -142,9 +143,55 @@ describe('Boardroom capability truthfulness', () => {
             }),
         });
 
-        expect(output).toContain('Available now');
-        expect(output).toContain('render 3D music videos & visualizers with Blender');
-        expect(output).toContain('video production & Blender 3D rendering');
+        expect(output).toContain('Configured but not verified in this session: Blender 3D rendering (local backend)');
+        expect(output).not.toContain('Available now: Blender 3D rendering');
+        expect(output).toContain('Through qualified specialists: video production.');
+        expect(output).not.toContain('video production & Blender 3D rendering');
+    });
+
+    it('reports Blender available only after a live Blender status or render result', () => {
+        const beforeCheck = buildCapabilitySummary({
+            authorizedTools: ['blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'],
+            registeredSpecialistIds: [],
+            snapshot: snapshot({ video_generation: 'available' }),
+        });
+        expect(beforeCheck).toContain('Configured but not verified in this session');
+
+        recordToolCapabilityOutcome('blender_get_status', {
+            success: true,
+            data: { installed: true },
+        }, NOW);
+        const afterCheck = buildCapabilitySummary({
+            authorizedTools: ['blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'],
+            registeredSpecialistIds: [],
+            snapshot: snapshot({ video_generation: 'available' }),
+            health: getCapabilityHealth(NOW),
+        });
+        expect(afterCheck).toContain('Available now: Blender 3D rendering (local backend)');
+        expect(afterCheck).not.toContain('Configured but not verified in this session: Blender');
+    });
+
+    it('reports live video success separately from recent success and schema configuration', () => {
+        recordToolCapabilityOutcome('generate_video', { success: true }, NOW);
+        const output = buildCapabilitySummary({
+            authorizedTools: ['generate_video'],
+            registeredSpecialistIds: [],
+            snapshot: snapshot({ video_generation: 'available' }),
+            health: getCapabilityHealth(NOW),
+        });
+        expect(output).toContain('Available now: create videos');
+        expect(output).not.toContain('Recently demonstrated');
+    });
+
+    it('reports Creative-owned print preparation and unverified live specialist routing', () => {
+        const output = buildCapabilitySummary({
+            authorizedTools: ['consult_specialist'],
+            registeredSpecialistIds: ['creative'],
+            snapshot: snapshot({ specialist_routing: 'unverified' }),
+        });
+        expect(output).toContain('Print preparation is owned by Creative and routed through that specialist');
+        expect(output).toContain('Conductor does not run the print tool directly');
+        expect(output).toContain('Specialist routing is configured, but its live route has not been verified in this session.');
     });
 
     it('does not overstate a grouped capability when only part of its tool set is registered', () => {

@@ -8,7 +8,8 @@ import type {
 export type CapabilityHealthKey =
     | 'image_generation'
     | 'video_generation'
-    | 'specialist_routing';
+    | 'specialist_routing'
+    | 'blender_3d';
 export type CapabilityHealthStatus = 'available' | 'degraded' | 'unavailable';
 
 export interface CapabilityHealth {
@@ -40,6 +41,32 @@ export function getCapabilityHealth(now = Date.now()): Partial<Record<Capability
 
 export function resetCapabilityHealthForTests(): void {
     healthByCapability.clear();
+}
+
+/** Records live tool evidence; declarations and recent server jobs alone are not live verification. */
+export function recordToolCapabilityOutcome(
+    toolName: string,
+    result: { success?: unknown; data?: unknown },
+    observedAt = Date.now(),
+): void {
+    if (result.success !== true) return;
+    if (toolName === 'generate_image' || toolName === 'indii_image_gen') {
+        recordCapabilityHealth('image_generation', { status: 'available', observedAt });
+    } else if (toolName === 'generate_video' || toolName === 'indii_video_gen') {
+        recordCapabilityHealth('video_generation', { status: 'available', observedAt });
+    } else if (toolName === 'blender_get_status') {
+        const data = result.data as { installed?: unknown } | undefined;
+        if (typeof data?.installed === 'boolean') {
+            recordCapabilityHealth('blender_3d', {
+                status: data.installed ? 'available' : 'unavailable',
+                observedAt,
+            });
+        }
+    } else if (toolName === 'blender_render_music_video' || toolName === 'blender_live_command') {
+        recordCapabilityHealth('blender_3d', { status: 'available', observedAt });
+    } else if (toolName === 'consult_specialist' || toolName === 'delegate_task') {
+        recordCapabilityHealth('specialist_routing', { status: 'available', observedAt });
+    }
 }
 
 export function isDepartmentAuditOrReadinessQuestion(task: string): boolean {
@@ -114,22 +141,30 @@ export function isCapabilityQuestion(task: string): boolean {
 
 const SAFE_DIRECT_CAPABILITIES: Array<{
     tools: string[];
-    key: CapabilityKey;
+    key: CapabilityKey | 'blender_3d';
     label: string;
+    evidence: 'current' | 'recent' | 'runtime';
 }> = [
     {
         tools: ['create_project', 'list_projects', 'list_files', 'search_files', 'search_knowledge', 'canvas_inspect', 'canvas_push'],
         key: 'durable_workspace',
         label: 'organize projects, inspect canvas, and find workspace material',
+        evidence: 'current',
     },
     {
         tools: ['save_memory', 'recall_memories'],
         key: 'durable_memory',
         label: 'save and recall approved workspace context',
+        evidence: 'current',
     },
-    { tools: ['generate_image'], key: 'image_generation', label: 'create images' },
-    { tools: ['generate_video'], key: 'video_generation', label: 'create videos' },
-    { tools: ['blender_render_music_video'], key: 'video_generation', label: 'render 3D music videos & visualizers with Blender' },
+    { tools: ['generate_image'], key: 'image_generation', label: 'create images', evidence: 'recent' },
+    { tools: ['generate_video'], key: 'video_generation', label: 'create videos', evidence: 'recent' },
+    {
+        tools: ['blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'],
+        key: 'blender_3d',
+        label: 'Blender 3D rendering (local backend)',
+        evidence: 'runtime',
+    },
 ];
 
 const SAFE_SPECIALIST_LABELS: Record<string, string> = {
@@ -139,7 +174,7 @@ const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     marketing: 'marketing planning',
     brand: 'brand identity & compliance',
     music: 'music and metadata review',
-    video: 'video production & Blender 3D rendering',
+    video: 'video production',
     social: 'social scheduling & strategy',
     publicist: 'PR & media outreach',
     publishing: 'publishing & PRO catalog review',
@@ -182,28 +217,40 @@ export function buildCapabilitySummary(input: {
     const authorized = new Set(input.authorizedTools);
     const health = input.health ?? {};
     const available: string[] = [];
+    const recentlyDemonstrated: string[] = [];
     const degraded: string[] = [];
     const blocked: string[] = [];
     const unverified: string[] = [];
 
-    const effectiveStatus = (key: CapabilityKey): CapabilityStatus => {
-        const serverStatus = input.snapshot.capabilities[key].status;
-        if (serverStatus !== 'available') return serverStatus;
-        if (key !== 'image_generation' && key !== 'video_generation' && key !== 'specialist_routing') {
-            return serverStatus;
+    const effectiveStatus = (key: CapabilityKey | 'blender_3d', evidence: 'current' | 'recent' | 'runtime'): CapabilityStatus | 'recently_demonstrated' => {
+        const local = health[key as CapabilityHealthKey];
+        if (evidence === 'runtime') {
+            if (local?.status === 'available') return 'available';
+            if (local?.status === 'degraded') return 'degraded';
+            if (local?.status === 'unavailable') return 'blocked';
+            return 'unverified';
         }
-        const local = health[key];
+        const serverStatus: CapabilityStatus = key === 'blender_3d'
+            ? 'unverified'
+            : input.snapshot.capabilities[key].status;
+        if (serverStatus === 'blocked') return 'blocked';
         if (local?.status === 'unavailable') return 'blocked';
         if (local?.status === 'degraded') return 'degraded';
-        return serverStatus;
+        if (local?.status === 'available') return 'available';
+        if (serverStatus !== 'available') return serverStatus;
+        if (evidence === 'current' || (key !== 'image_generation' && key !== 'video_generation' && key !== 'specialist_routing')) {
+            return serverStatus;
+        }
+        return 'recently_demonstrated';
     };
 
     for (const definition of SAFE_DIRECT_CAPABILITIES) {
         if (!definition.tools.every(tool => authorized.has(tool))) continue;
-        const status = effectiveStatus(definition.key);
+        const status = effectiveStatus(definition.key, definition.evidence);
         if (status === 'available') available.push(definition.label);
+        if (status === 'recently_demonstrated') recentlyDemonstrated.push(definition.label);
         if (status === 'degraded') {
-            const local = definition.key === 'image_generation' || definition.key === 'video_generation'
+            const local = definition.key === 'image_generation' || definition.key === 'video_generation' || definition.key === 'blender_3d'
                 ? health[definition.key]
                 : undefined;
             const retry = local?.retryAfterSeconds
@@ -220,17 +267,32 @@ export function buildCapabilitySummary(input: {
         .filter((label): label is string => Boolean(label));
     const canRouteSpecialists = (
         authorized.has('consult_specialist') || authorized.has('delegate_task')
-    ) && effectiveStatus('specialist_routing') === 'available';
+    ) && effectiveStatus('specialist_routing', 'current') === 'available';
 
 
     const lines = ['Here’s what I can do in this Boardroom right now:'];
     if (available.length > 0) lines.push(`- Available now: ${available.join(', ')}.`);
+    if (recentlyDemonstrated.length > 0) {
+        lines.push(`- Recently demonstrated (successful use in the last 7 days; not checked this session): ${recentlyDemonstrated.join(', ')}.`);
+    }
     if (specialists.length > 0 && canRouteSpecialists) {
         lines.push(`- Through qualified specialists: ${specialists.join(', ')}.`);
     }
     if (degraded.length > 0) lines.push(`- Temporarily unavailable: ${degraded.join(' ')}`);
     if (blocked.length > 0) lines.push(`- Not active right now: ${blocked.join(', ')}.`);
-    if (unverified.length > 0) lines.push(`- Not verified right now: ${unverified.join(', ')}.`);
+    if (unverified.length > 0) lines.push(`- Configured but not verified in this session: ${unverified.join(', ')}.`);
+    if (
+        input.registeredSpecialistIds.includes('creative')
+        && (authorized.has('consult_specialist') || authorized.has('delegate_task'))
+    ) {
+        lines.push('- Print preparation is owned by Creative and routed through that specialist; Conductor does not run the print tool directly.');
+        const routeStatus = effectiveStatus('specialist_routing', 'current');
+        if (routeStatus === 'unverified') {
+            lines.push('- Specialist routing is configured, but its live route has not been verified in this session.');
+        } else if (routeStatus === 'blocked') {
+            lines.push('- Specialist routing is not active right now.');
+        }
+    }
     if (
         input.snapshot.capabilities.social_publishing.status === 'available'
         && SOCIAL_PUBLISHING_TOOLS.some(tool => authorized.has(tool))

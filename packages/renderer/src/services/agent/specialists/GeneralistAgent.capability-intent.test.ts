@@ -115,7 +115,7 @@ describe('GeneralistAgent Boardroom capability intent boundary', () => {
             conversationMode: 'direct',
         });
 
-        expect(result.text).toContain('Available now: create images');
+        expect(result.text).toContain('Recently demonstrated (successful use in the last 7 days; not checked this session): create images');
         expect(loadCapabilitySnapshot).toHaveBeenCalledOnce();
         expect(normalExecute).not.toHaveBeenCalled();
     });

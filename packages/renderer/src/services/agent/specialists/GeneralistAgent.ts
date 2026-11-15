@@ -17,7 +17,6 @@ import {
     buildCapabilitySummary,
     getCapabilityHealth,
     isCapabilityQuestion,
-    recordCapabilityHealth,
 } from '../capabilityTruth';
 import { loadCapabilitySnapshot } from '../CapabilitySnapshotService';
 
@@ -138,18 +137,9 @@ export class GeneralistAgent extends BaseAgent {
             };
         }
 
-        const response = await super.execute(task, context, onProgress, signal, attachments);
-        if (response.error && /\b(image|picture|artwork|visual)\b/i.test(task)) {
-            const retryMatch = response.text.match(/(\d+)\s*(?:seconds?|s)\b/i);
-            recordCapabilityHealth('image_generation', {
-                status: 'degraded',
-                retryAfterSeconds: retryMatch ? Number(retryMatch[1]) : undefined,
-            });
-        }
-        if (response.error && /\bvideo\b/i.test(task)) {
-            recordCapabilityHealth('video_generation', { status: 'degraded' });
-        }
-        return response;
+        // Capability health is recorded from the actual tool result in BaseAgent.
+        // A later response-summary failure must not overwrite that evidence.
+        return super.execute(task, context, onProgress, signal, attachments);
     }
 
 
