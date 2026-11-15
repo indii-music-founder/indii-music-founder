@@ -1,0 +1,1832 @@
+{
+  "base": "97e21ec404a3efb06c4df9634be3401a0c580951",
+  "scope": "Ledger triage, not source or live acceptance proof. Terminal labels are not audited by this artifact.",
+  "counts": {
+    "numberedEntries": 378,
+    "uniqueIds": 374,
+    "terminalLabels": 267,
+    "nonterminal": 106,
+    "decisions": 1,
+    "ambiguous": 0
+  },
+  "records": [
+    {
+      "id": "1158",
+      "title": "Generated-audio library service writes to an unruled path while rules authorize a different collection",
+      "status": "🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)",
+      "acceptance": "Emulator tests allow an authenticated user to list/create/read/delete only their own generated-audio metadata, reject cross-user access and owner/type/URI spoofing, and cover the exact path the service calls; successful generation survives a clean reload with a playable authorized URL; forced metadata/storage failures retain a retryable pending result with no saved claim; delete either removes both metadata and owned storage object or exposes a durable cleanup-retry state.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1159",
+      "title": "PLP counts queued video jobs with empty URLs as generated variants and can deploy them as ad creatives",
+      "status": "🟡 PARTIAL (2026-07-17 — lifecycle/UI/retry coverage complete; live provider/emulator proof remains)",
+      "acceptance": "A PLP fixture with five queued video jobs reports 10 completed images plus 5 queued videos—not 15 generated—and adds no empty-URL history item or campaign creative; completed videos become eligible only after a terminal job record supplies a validated URL; failed/completed-without-URL/cancelled jobs remain visible with retry and never enter ad deployment; mixed completion order, project switching, and duplicate listener events yield one immutable asset record per job and an accurate batch summary.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1163",
+      "title": "GitHub Release Missing Updater Manifest Files",
+      "status": "⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1168",
+      "title": "Production AI generation depended on prepaid AI Studio credits — hard cutoff with no alerting, no postpaid path, no dev/prod spend isolation",
+      "status": "🟡 PARTIAL (2026-07-17 — code + cloud alerting complete; prod rollout on next deploy)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1169",
+      "title": "Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target",
+      "status": "🟡 PARTIAL (2026-07-17 — code and local proof complete; Cloud Run/Cloud Tasks provisioning and live receipt pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1173",
+      "title": "Build PLP Meta Ads backend (4 cloud functions) — BLOCKED on Meta Business account",
+      "status": "🟡 PARTIAL (2026-10-29; access verified, integration acceptance pending) — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1182",
+      "title": "Agent-assisted PRO/SoundExchange/rights-org guidance for artists",
+      "status": "🟢 RESEARCH COMPLETE / FOUNDER DIRECTION RECORDED — implementation remains separately gated",
+      "acceptance": "",
+      "classification": "decision"
+    },
+    {
+      "id": "1354",
+      "title": "[Evolas] Independently-built T1 control, measurement, and feedback modules were absent from the response pipeline",
+      "status": "🟡 IMPLEMENTED / RUNTIME-PATH WIRED — PRODUCTION VERIFICATION PENDING (2026-08-09)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1372",
+      "title": "Production Stripe checkout is non-functional — mock secret + missing price IDs (2026-08-19, founder real-world task)",
+      "status": "🔴 FOUNDER-GATED (real-world config; cannot be fixed in code — documented with proof and exact steps)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1373",
+      "title": "30/39 Secret Manager values are mock/placeholder — third-party integration readiness table (2026-08-19, founder real-world task)",
+      "status": "🔴 FOUNDER-GATED (real-world config; documented with proof)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1383",
+      "title": "chat_tokens usage never recorded — meter stuck at 0 (2026-08-19, root cause proven)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1390",
+      "title": "painting-save \"Failed to create file/folder\" + no way out of the creative editor (2026-08-19, founder-live)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1391",
+      "title": "editor DOM crash + naming + direct editor→canvas asset path (2026-08-19/20, founder-live)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1392",
+      "title": "TTS generation broken — model rejects interactions.create (2026-08-20, live-probe discovered)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1394",
+      "title": "batchEmbedText callable defined but NEVER exported — agent-memory semantic recall silently empty in production (2026-08-20, perfection sweep round 2)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1395",
+      "title": "editor \"Canvas\" button dumped the user into the Creative Hub instead of putting the image on the canvas (2026-08-20, founder-live)",
+      "status": "🟡 PARTIAL — evidence reconciliation pending (2026-10-29); no new defect or closure asserted.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1399",
+      "title": "Admin magic-link email delivery unproven",
+      "status": "🟡 PARTIAL — 2026-08-22: admin-API sendOobCode(EMAIL_SIGNIN) returned HTTP 200 GetOobConfirmationCodeResponse for wiil@indii.music — Firebase accepted and dispatched. Remaining unknown is downstream mail filtering (spam/sender reputation), which only an inbox check can close.",
+      "acceptance": "Founder completes one real magic-link sign-in, or root cause of non-delivery is documented.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1406",
+      "title": "No refund/dispute webhook handling",
+      "status": "🟡 PARTIAL (31788705e) — credit packs closed; marketplace/licensing refund flows open",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1407",
+      "title": "pod_printfulCreateOrder has no payment gate",
+      "status": "🟡 PARTIAL (31788705e) — containment shipped; paid binding open",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1413",
+      "title": "cleanupOrphanedVideos deletion safety — rails present, live-fire probe still required before enabling",
+      "status": "🟡 PARTIAL (safe by configuration today; unresolved if the config flag is ever switched on)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1420",
+      "title": "Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow",
+      "status": "🟡 PARTIAL — verified enrollment is deployed; administrator invitation and consent-respecting milestone delivery are implemented with local structural proof; genuine delivery/acceptance and legacy promotion remain open",
+      "acceptance": "A genuine user verifies once, receives one account and ordered waitlist record, cannot forge invitation priority, and can receive an auditable invite/update.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1424",
+      "title": "Founding Owner checkout, permanent entitlement, recognition, usage boundary, and post-beta migration are incomplete",
+      "status": "🟡 PARTIAL",
+      "acceptance": "A genuine eligible purchaser pays the disclosed amount once, receives non-forgeable permanent access/recognition, sees accurate usage terms, and keeps rights after renaming.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1426",
+      "title": "Homepage lifecycle timeline needs real capture and deployment proof",
+      "status": "🟡 PARTIAL — lifecycle UI implemented and responsive interaction verified in deployed browser (2026-08-30); real clips (ISSUE-1427) and domain alignment (ISSUE-1419) pending",
+      "acceptance": "A new visitor follows all eight stages, understands the five promises and shared context, and sees no department-count or unproven delivery pitch.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1427",
+      "title": "Eight founder-narrated real-product clips and accessible playback are missing",
+      "status": "🔴 OPEN",
+      "acceptance": "Eight clips show matching real behavior, meet duration, include synchronized captions/transcripts, do not autoplay with sound, and preserve source/version/approval records.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1428",
+      "title": "Social account ownership, security, brand, and integration inventory is missing",
+      "status": "🔴 OPEN",
+      "acceptance": "Every claimed account is opened and ownership-verified, missing channels are explicitly create/decline, and indii resolves the correct destination without exposing secrets.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1430",
+      "title": "Deal comparison and distributor/royalty calculator contain unverified or overbroad claims",
+      "status": "🟡 PARTIAL — unsafe component quarantined from the rendered page",
+      "acceptance": "Every named value is current and traceable, calculations are reproducible, stale/unverified rows cannot render, indii uses proven capabilities only, and legal/financial review precedes restoration.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1431",
+      "title": "Creative artist journey needs verified phone-to-social and song-video delivery",
+      "status": "🟡 PARTIAL — local implementation; release acceptance blocked",
+      "acceptance": "Genuine artist signs in at the approved live domain; imports/resumes a long iPhone recording; reviews orientation/color/audio; trims and exports; creates independent social clips before/after music-video creation; uses a finished song/photos/footage within the configurable duration ceiling; optionally selects named band-member references and reviews resulting likenesses; refreshes/switches projects without lost or cross-account work; downloads the real completed MP4. Verify the social-post handoff and production rendering with the real configured services.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1434",
+      "title": "Cloud Functions deployment blocked in Cloud Build by npm Arborist edgesOut null pointer bug on local directory file:./shared-pkg",
+      "status": "🟡 ISOLATED TO WARNING OUTPUT",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1437",
+      "title": "Phantom module IDs and mobile/desktop gating drift route users to the wrong places",
+      "status": "🟡 PARTIAL (2026-09-22 — nav surfaces fixed in `8e64e3ab9`: gating filter, phantom entry removal, phone Workspace access. Orphan surfacing/cutting decisions remain Tier 3 product calls)",
+      "acceptance": "No nav entry on any surface leads to a gated/redirected module without disclosure; every reachable module has ≥1 discoverable entry on desktop AND phone; orphans are deliberately surfaced or deleted.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1448",
+      "title": "Road Manager maps/waypoints fix — code complete; Distance Matrix key enablement + live-user validation outstanding",
+      "status": "🟠 CODE COMPLETE, LIVE-PROVIDER STEPS OUTSTANDING (2026-09-26)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1449",
+      "title": "Boardroom structural browser tests poll a non-existent store field and time out",
+      "status": "🟡 PARTIAL — stream completion event and typesafe intent resolution landed; e2e/boardroom-swarm.spec.ts 4/4 passed (2026-10-28)",
+      "acceptance": "The four Boardroom swarm browser tests pass or report a specific, valid blocked condition; assertions read real store/UI state; asset-context coverage inspects the submitted context; no tests are skipped or weakened, and no claim of real-user verification is made.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1452",
+      "title": "Post-mastering runbook and semantic catalog remain unconnected",
+      "status": "🟡 PARTIAL (2026-10-01)",
+      "acceptance": "Idempotent receipt/runbook projection from verified canonical inputs; authenticated owner visibility control with private default; public-only entity/feed reads; SDK consumer; approved distribution path advances the FSM only after its deterministic prerequisites. Demonstrate reload/downstream retrieval with a genuine owner and no synthetic rights or signatures.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1458",
+      "title": "Image save/download and social-clip operations lack verified terminal result",
+      "status": "🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)",
+      "acceptance": "Structural renderer/main-process tests cover implementation. Genuine saved/downloaded artifact delivery, reopen and reload acceptance remain unverified. Cancellation requests stop subsequent steps but cannot abort a persistence request already in progress.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1459",
+      "title": "Creative controls lack labels, selected-state semantics and setup navigation",
+      "status": "🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)",
+      "acceptance": "Structural tests cover labels and prerequisite controls. Genuine keyboard/screen-reader navigation and owner setup acceptance remain unverified.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1460",
+      "title": "Timeline treatment preset remains unchanged after selection",
+      "status": "🟡 PARTIAL (2026-10-07 — persisted selected-state fix implemented; CI/deployed preview acceptance remains)",
+      "acceptance": "With an eligible video clip selected, choosing a named treatment visibly updates selection/state; undo/reload behavior is clear; a real preview/render later confirms the treatment without mock evidence.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1461",
+      "title": "Create Last Frame silently fails image-remix validation",
+      "status": "🟡 PARTIAL (2026-10-07 — callable payload and empty-result feedback fixed locally; CI/deployed acceptance remains)",
+      "acceptance": "On a test image, Create Last Frame produces a visible, reviewable final-frame assignment or a useful error; no silent failure; operation ledger accurately reports cost/settlement; verify a genuinely rendered output separately before claiming video success.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1510",
+      "title": "Issue #413 Technical Specification: Open-Source Non-Linear Editing (NLE) Engine Integration",
+      "status": "🟡 PARTIAL",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1553",
+      "title": "Inngest durable execution split-brain across 3 client IDs (`indii-music-functions`, `indii-api`, `indii-os-timeline-poller`), missing `inngestEventKey` / `resendApiKey` secret bindings on `workflowOrchestrator` and `inngestApi`, and outer `try/catch` step-interrupt swallowing in `canvasRenderFn` and `stitchVideoFn`",
+      "status": "🟡 PARTIAL (2026-11-07; source repair, unified Inngest client, secret bindings, and onFailure lifecycle hooks verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `workflowOrchestrator` binds `inngestEventKey` and sends events via `inngestClient`, `inngestApi` includes `resendApiKey`, all Inngest workers share the unified `indii-music-functions` client, and `canvasRenderFn` / `stitchVideoFn` propagate step interrupts while executing failure cleanup only in `onFailure`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1554",
+      "title": "11 client-accessed Firestore collections/subcollections are missing from `firestore.rules` (hitting default-deny `403 Permission Denied`), `agentLoopCron` writes orphaned `IDLE` executions with no consumer, and 3 scheduled jobs use unchunked `db.batch()` writes that crash above 500 documents",
+      "status": "🟡 PARTIAL (2026-11-07; 11 client collection security rules, ChunkedBatch safety rails across storageMaintenance/agentLoopCron/retention-daemon, and IDLE loop pickup verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Firestore security rules unit tests verify owner-scoped read/write access and cross-tenant denial across all 11 collections, `AgentLoopService` processes scheduled loop executions end-to-end, and batch-commit tests verify $>500$ operations are chunked without throwing `INVALID_ARGUMENT`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1555",
+      "title": "Server-Side Request Forgery (SSRF) in `createWebhook` / `deliverWebhook` (`dispatcher.ts`), unvalidated endpoint fetch in `SecurityTools.check_api_status`, and BigQuery event pipeline watermark data loss & `table.insert` return-type bug (`bigquery-pipeline.ts`)",
+      "status": "🟡 PARTIAL (2026-11-07; SSRF guards, deterministic BigQuery sampling, and composite watermark pagination verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `createWebhook`, `deliverWebhook`, `retentionDaemon`, and `SecurityTools.check_api_status` reject `http://`, `localhost`, `127.0.0.1`, `169.254.169.254`, `metadata.google.internal`, and RFC 1918 addresses; and `bigquery-pipeline.test.ts` verifies deterministic sampling, zero duplicate inserts between real-time and batch sync, and zero lost events across $>100$ identical-timestamp boundary events.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1556",
+      "title": "Legal contract analysis is broken across Agent tools (`analyzeContract` Cloud Function does not exist), `PublishingAgent` (ignores `_args.file_data`), and `LegalDashboard.tsx` (corrupts PDFs with `FileReader.readAsText`), while `CreatorProtectionHarnessService` uses negation-blind substring regexes",
+      "status": "🟡 PARTIAL (2026-11-07; `analyzeContract` callable, PDF base64 `inlineData`, negation-aware clause review, and TypeSafe Jev Judgment 82 verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `LegalDashboard` sends PDF uploads as base64 `inlineData`, `AnalysisTools.analyze_contract` and `PublishingAgent.analyze_contract` pass the actual contract content/bytes and return structured risk assessments, and `CreatorProtectionHarnessService` accurately distinguishes permissive vs. prohibitive AI voice/training clauses.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1557",
+      "title": "9 DevOps and Storage agent tools invoke unimplemented Firebase `httpsCallable` functions (`runChaosMeshTests`, `configureCircuitBreaker`, `configureWebSocketKeepalive`, `runContentionTest`, `configureSentryCrashReporting`, `triggerWatchdogRecovery`, `configureLogicalSharding`, `provisionQASandbox`, `scrubOrphanedMedia`)",
+      "status": "🟡 PARTIAL (2026-11-07; source repair, all 9 Cloud Functions implemented with admin/Arcjet validation, and automated parity contract test verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Every `httpsCallable(functions, '<name>')` referenced in `packages/renderer/src/services/agent/tools/` has a matching exported function in `packages/firebase/src/index.ts` (verified by an automated contract test), and `DevOpsTools` / `StorageTools` unit tests pass without hitting missing callables.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1558",
+      "title": "Electron Main `KNOWN_IPC_CHANNELS` security allowlist omits `computer:click`, `computer:key`, and `computer:scroll`, and untracked `.orig` merge backup files remain in `packages/renderer/src/modules/debug/`",
+      "status": "🟡 PARTIAL (2026-11-07; source repair and automated IPC allowlist parity test verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Automated IPC allowlist parity test passes with 100% coverage of `computer:*` and all other `ipcMain.handle` channels, and zero `.orig` files exist in `packages/`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1559",
+      "title": "Firestore Security Rules (`firestore.rules`) allow unauthenticated `founder-demo-uid` cross-tenant access in `projects/{projectId}` subcollections, arbitrary `members` UID injection on organization `create`, role escalation in `organization_invites`, and unauthenticated PII read / email hijack in `prospect_assessments`",
+      "status": "🟡 PARTIAL (2026-11-07; cross-tenant founder-demo-uid bypass removal, organization member injection guard, invite role immutability, and prospect assessment PII protection verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Emulator security rule tests verify that unauthenticated or non-collaborator writes/reads to `founder-demo-uid` project subcollections fail with `PERMISSION_DENIED`, `organizations` creation with extra UIDs in `members` fails, non-admin org members cannot modify `organization_invites.role`, and unauthenticated callers cannot overwrite `prospect_assessments.email`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1560",
+      "title": "Arbitrary-price Stripe Checkout creation in `createOneTimeCheckout` (client-controlled `item.amount` & `item.quantity`), unvalidated open-redirect `successUrl` / `cancelUrl` / `returnUrl` across 5 Stripe callables, and unverified `email` / unbounded Express account creation in `createStripeConnectAccount`",
+      "status": "🟡 PARTIAL (2026-11-07; Stripe redirect allowlist across all 5 callables, integer/catalog price bounds in `createOneTimeCheckout` & `createMicroTransaction`, and verified-email/idempotent Connect account binding in `connect.ts` verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `createOneTimeCheckout` ignores/rejects client-tampered prices, all 5 Stripe callables reject non-allowlisted `successUrl`/`cancelUrl`/`returnUrl` origins with `invalid-argument`, `createMicroTransaction` rejects non-integer `credits`, and `createStripeAccountLink` rejects `accountId` values not owned by `request.auth.uid`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1561",
+      "title": "Path-traversal and SSRF injection in Printful (`pod/printful.ts`), PandaDoc (`legal/pandadocProxy.ts`, `legal/digitalSignature.ts`), and Instagram Graph API (`social/instagramMessaging.ts`) callables",
+      "status": "🟡 PARTIAL (2026-11-07; path-segment and external HTTPS URL validation enforced across Printful, PandaDoc, and Instagram callables and verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests confirm `../` or slash-containing IDs in Printful, PandaDoc, and Instagram callables are rejected with `invalid-argument`, cross-tenant PandaDoc `documentId` access is rejected with `permission-denied`, and non-HTTPS/private `designUrl` and `mediaUrl` values are blocked.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1562",
+      "title": "Cross-Desktop authentication token exposure & pre-transaction custom-token minting in `auth/handoff.ts` (`createHandoffCode` / `redeemHandoffCode`) and shared Arcjet rate-limit bucket DoS in `mcpEndpoint` and `ragProxy`",
+      "status": "🟡 PARTIAL (2026-11-07; token exposure removed, post-consume custom token minting + PKCE enforced, fail-secure rate-limiting applied, per-UID + pre-auth Arcjet rate limiting implemented across mcpEndpoint and ragProxy, verified locally in handoff.test.ts, infraUtilityAdmission.test.ts, and semanticAgentAdmission.test.ts, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `mintCustomToken` is never called when `consume()` rejects an expired/used handoff code, `isRateLimited` fails closed on transaction errors, and `mcpEndpoint` / `ragProxy` key rate limits per authenticated user or client IP rather than a global constant string.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1563",
+      "title": "Unbounded fan batch size in `enrichFanData` causes third-party API quota exhaustion & optional `orgId` check bypass, and `requestAccountDeletion` leaves orphaned user data across >25 subcollections, root collections, and Cloud Storage buckets",
+      "status": "🟡 PARTIAL (2026-11-07; MAX_FANS_PER_BATCH enforced with bounded concurrency, requestAccountDeletion upgraded to recursive Firestore deletion across all subcollections + query deletion of user-owned root collections + Cloud Storage user prefixes deletion + guarded Auth deletion, verified locally in infraUtilityAdmission.test.ts and image_gen.test.ts, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `enrichFanData` rejects arrays exceeding `MAX_FANS_PER_BATCH` with `invalid-argument`, and `requestAccountDeletion` recursively deletes `users/{userId}` (including `socialTokens`, `analyticsTokens`, `tax_collaborators`, and >500 doc collections) plus Storage prefixes before deleting the Firebase Auth user.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1564",
+      "title": "Electron Main `agent:multi-replace-file-content` allows arbitrary source/config file modification inside `process.cwd()`, `security:rotate-credentials` has path injection on GitHub `repo`/`secret_name`, and `fs:read-text-file` / `fs:read-binary-file` lack file-size caps (IPC OOM DoS)",
+      "status": "🟡 PARTIAL (2026-11-07; source repair and unit tests verified locally across all 3 sub-defects, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `agent:multi-replace-file-content` rejects attempts to modify `.env` or source files outside the sandboxed agent workspace, `security:rotate-credentials` rejects malformed `repo`/`secret_name` strings before calling `fetch`, and `fs:read-text-file` / `fs:read-binary-file` reject files exceeding the size threshold with a clear error.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1565",
+      "title": "Broken SSE streaming API contract between `AgentStreamingService.ts` (uses `EventSource` GET and drops `requestBody` + `idToken`) and `agentStreamResponse` (`streaming/agentStream.ts`, which requires `POST`, `Authorization: Bearer`, and `X-Firebase-AppCheck`), plus `res.status()` crash after SSE headers are flushed and bypass of cost-reservation/usage metering",
+      "status": "🟡 PARTIAL (2026-11-07; client fetch POST with Authorization & AppCheck headers + fail-fast 4xx verified in AgentStreamingService.test.ts; backend agentStreamResponse email_verified, enforceRateLimit, claimOperationReservation, SETTLED/VOIDED lifecycle, recordUsage, and headersSent-safe SSE error frame verified in socialStreamingAdmission.test.ts, awaiting exact-SHA CI)",
+      "acceptance": "Unit and integration tests verify `AgentStreamingService.stream()` sends an authenticated `POST` with `Authorization` and `X-Firebase-AppCheck` headers, `agentStreamResponse` cleanly emits an SSE `error` event on mid-stream failure without throwing `ERR_HTTP_HEADERS_SENT`, and unverified/unreserved requests are rejected before invoking Vertex AI.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1566",
+      "title": "Dead/unimplemented Mechanical Licensing & PRO Rights API endpoints (`MechanicalRoyaltyService` calls non-existent `/searchSongfile` and `/requestMechanicalLicense` HTTP endpoints; `PRORightsService.verifyCoverSongLicense` calls `verifyMechanicalLicense` which always throws `HttpsError('unimplemented')`)",
+      "status": "🟡 PARTIAL (2026-11-07; verifyMechanicalLicense structured return + searchSongfile/requestMechanicalLicense callables in packages/firebase/src/legal/mechanicalLicense.ts verified in legalPodAdmission.test.ts; unified users/{userId}/mechanical_licenses owner security rule verified in firestore.rules.test.ts; MechanicalRoyaltyService and PRORightsService callables and shared path verified in unit tests, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `verifyMechanicalLicense` returns the structured `MechanicalLicenseResponse` payload with statutory rates and clearance links, `PRORightsService` and `MechanicalRoyaltyService` read/write the same authorized Firestore path, and zero dead `fetch` calls remain to `/searchSongfile` or `/requestMechanicalLicense`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1567",
+      "title": "Platform Analytics & OAuth API defects — `InstagramAnalyticsService` data methods (`getUserProfile`, `getReels`, `getReelInsights`, `getAccountDailyInsights`, `buildPlatformData`, `buildStreamHistory`) unconditionally throw via `_getValidToken(): Promise<never>`, `SpotifyService` / `TikTokAnalyticsService` leak unencoded IDs & trigger redundant token refresh RPCs on every API call, `YouTubeAnalyticsService` switches active auth sessions on popup fallback, and `platformTokenExchange` lacks `redirectUri` validation & timeouts",
+      "status": "🟡 PARTIAL (2026-11-07; implemented authenticated instagramAnalyticsProxy callable in packages/firebase/src/analytics/platformTokenExchange.ts and index.ts; added origin allowlist and AbortSignal timeouts across platformTokenExchange, instagramGraphConnection, and email/tokenManager; client-side InstagramAnalyticsService routed to proxy; in-memory token caching and URL-encoded IDs in SpotifyService and TikTokAnalyticsService; YouTubeAnalyticsService popup fallback removed; verified in 11 test suites and clean typechecks, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `InstagramAnalyticsService` fetches profile/reels/insights via a server proxy without throwing, `SpotifyService`/`TikTokAnalyticsService` reuse cached tokens until expiry and URL-encode IDs, `YouTubeAnalyticsService` never calls `signInWithPopup` when a user is already signed in, and `platformTokenExchange` rejects untrusted `redirectUri` origins and enforces fetch timeouts.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1568",
+      "title": "Stripe Split Escrow API (`initiateSplitEscrow`) creates unconfirmed manual-capture `PaymentIntent`s that falsely report `fundsHeld: true` (`status: 'requires_payment_method'`) and cannot be captured in `releaseEscrow`, plus `handleEscrowWebhook` uses non-timing-safe HMAC comparison on a legacy `escrows` collection",
+      "status": "🟡 PARTIAL (2026-11-07; validated integer holdAmount, accurate fundsHeld & clientSecret lifecycle in initiateSplitEscrow, added retrieve-check on AWAITING_FUNDING escrows in signEscrow, bound escrowWebhookSecret, updated handleEscrowWebhook to constant-time timingSafeEqual and split_escrows targeting; verified in unit tests and clean typechecks, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `initiateSplitEscrow` rejects non-integer `holdAmount`, accurately sets `fundsHeld` based on `intent.status === 'requires_capture'`, returns `clientSecret` when client confirmation is required, and `handleEscrowWebhook` verifies signatures in constant time against `split_escrows`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1569",
+      "title": "Third-party social & distributor API bugs — Bluesky `deliverToBluesky` fails on expired `accessToken` without refreshing or falling back to `appPassword`, `pollDeliveryStatus` interpolates unencoded `distributorReleaseId` and makes sequential unbatched HTTP calls, and `alignSessionMaster` has no timeout on `fetch(${workerUrl}/align)`",
+      "status": "🟡 PARTIAL (2026-11-07; implemented Bluesky session refresh on expiry & retry on ExpiredToken, URL-encoded igUserId, containerId & distributorReleaseId, bounded concurrent distributor polling in chunks of 10, added 45s AbortSignal timeout to DSP worker fetch; verified in unit tests and clean typechecks, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `deliverToBluesky` re-authenticates via `createSession` when `accessToken` is expired, `pollDeliveryStatus` URL-encodes `distributorReleaseId` and polls in bounded concurrent batches, and `alignSessionMaster` passes `AbortSignal.timeout` to `fetch`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1570",
+      "title": "Cloud Function HTTP/Callable API gateway defects — `defineCallable` and `defineHttps` in `factory.ts` ignore `protectAuthenticatedApiRequest` results (fail-open) and use shared `'anonymous'` / `'anonymous-http'` buckets, `inngestApi` uses a shared `'inngest-dispatcher'` Arcjet bucket before signature verification, `getProfile` in `api/router.ts` lacks CORS & App Check, and `typesafeJudge` bypasses per-user AI cost/quota accounting",
+      "status": "🟡 PARTIAL (2026-11-07; verified Arcjet admission rejection & IP buckets in defineCallable, defineHttps, and inngestApi, added CORS preflight & validateAppCheckHttp to getProfile and router endpoints, enforced per-user rate limiting & token usage recording in typesafeJudge; verified in unit tests and clean typechecks, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `defineCallable` and `defineHttps` block requests when `protectAuthenticatedApiRequest` returns `allowed: false`, unauthenticated flood requests to `inngestApi` cannot starve signed Inngest Cloud requests, `getProfile` handles CORS preflight and App Check, and `typesafeJudge` enforces per-user rate limits and logs token usage.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1571",
+      "title": "Broken Autonomous Computer Control (`computer:*`) lifecycle — `FirebaseComputerAuthorizationBackend.claimApproval` calls `claimComputerApproval` via raw `fetch` without `X-Firebase-AppCheck` (guaranteed 401/403), `tool_approvals` stay stuck in `'claimed'` forever after execution, and kill switch (`computer:abort`) has no reset path without restarting the app",
+      "status": "🟡 PARTIAL (2026-11-08: AppCheck header & timeout in claimApproval, completeComputerApproval Cloud Function callable, native reset-abort dialog, DEFAULT_MUSIC_APPS allowlist, KNOWN_IPC_CHANNELS)",
+      "acceptance": "Unit and integration tests verify `FirebaseComputerAuthorizationBackend.claimApproval` succeeds against `validateAppCheckV2`, `tool_approvals` transition from `'claimed'` to `'executed'`/`'failed'`, `resetAbort` can be triggered via native user confirmation without renderer bypass, and `KNOWN_IPC_CHANNELS` includes all registered computer and video IPC channels.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1572",
+      "title": "Format Foundry & Task Scheduler IPC/persistence disconnects — `FormatFoundryModule` (\"Approve & Book Statement\") only toggles React state (`setIsBooked(true)`) without calling `foundry:book-statement`, `preload.ts` never exposes 6 of 8 `foundry:*` IPC handlers (and `foundry:grant-session` trusts renderer-supplied `ownerUserId`), and all 4 built-in background `SchedulerService` tasks (`scheduler:royalty-sync`, `scheduler:distribution-health`, `scheduler:finance-snapshot`, `scheduler:workflow-flush`) fire into the void with zero listeners",
+      "status": "🟡 PARTIAL (2026-11-08: FormatFoundry bookStatement IPC & Firestore persistence, complete 8-method foundry bridge, sanitized statementId regex, authStorage owner check, built-in scheduler task execution handlers & IPC subscriptions)",
+      "acceptance": "End-to-end tests verify `FormatFoundryModule` persists booked statements via `foundry:book-statement` and Firestore, `statementId` rejects path traversal, and all 5 built-in `SchedulerService` tasks execute real handlers before recording `result: 'success'`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1573",
+      "title": "Client–Firestore security rules path & schema mismatches break `SocialService` (`followUser`, `getFeed('following')`, `isFollowing`, `recalculateStats`), `auditLogChain` (`writeAuditLog`, `verifyAuditChain`), `MarketingTools.track_performance`, and `SecurityTools.check_api_status`",
+      "status": "🟡 PARTIAL (2026-11-08) — Canonicalized `social_follows` in `SocialService.ts` (`followUser`, `unfollowUser`, `isFollowing`, `getFeed`, `recalculateStats`) and removed invalid `socialStats` user document mutations; added owner-scoped append-only `match /auditLogs/{logId}` and owner-scoped read-only `match /api_inventory/{apiId}` under `match /users/{userId}` in `firestore.rules` via firestore-rules-author subagent; added SSRF protection and `AbortSignal.timeout(10000)` in `SecurityTools.check_api_status`; added graceful owner-scoped fallbacks in `MarketingTools.track_performance` and `SecurityTools.check_api_status`; 330/330 firestore rules tests and 9/9 SocialService tests passed.",
+      "acceptance": "Firestore rules unit tests verify `SocialService` follow/unfollow/feed queries, `auditLogChain` read/write operations, `MarketingTools.track_performance`, and `SecurityTools.check_api_status` succeed for authenticated owners and reject cross-tenant access.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1574",
+      "title": "Rights Copilot (`rightsCopilot.ts` & `RightsCopilotModal.tsx`) defects — `RightsCopilotModal` never persists recorded official filing confirmations (`onFilingRecorded` is unpassed and no Firestore write occurs), `launchSession` silently falls back to `PORTAL_DEFAULT_URLS` when `isUrlAllowedForPortal` rejects a malicious `targetUrl`, and `executeActionStep` credential guard blocks non-password inputs on any page containing a hidden `input[type=password]`",
+      "status": "🟡 PARTIAL (2026-11-08) — Persisted `RegistrationFilingRecord` to Firestore `users/{uid}/rights_filings/{record.id}` in `RightsCopilotService.recordFilingConfirmation`; added owner-scoped `match /rights_filings/{filingId}` security rules in `firestore.rules` via firestore-rules-author subagent; added explicit disallowed `targetUrl` rejection and manifest validation in `RightsCopilotController.launchSession`; scoped credential isolation in `executeActionStep` to target element and its enclosing form rather than document-wide password query; 43/43 copilot tests and 333/333 firestore rules tests passed.",
+      "acceptance": "Unit tests verify `recordFilingConfirmation` persists filing records to Firestore, `launchSession` throws on disallowed `targetUrl` values, and `executeActionStep` blocks filling credential inputs while allowing work-metadata autofill when an unrelated hidden password input exists in the DOM.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1575",
+      "title": "Native media & Web3 IPC handler defects — `RawConverterService` never stores spawned child processes (`cancel()` cannot terminate `indii-raw`), hardcodes `'SONY' / 'Sony Alpha'` metadata on all converted DNGs, and `verifyDiskSpace` is a no-op; `upscale:run` leaks child processes when a renderer tab closes; `PublicistTools.write_press_release` reads `pdfResult?.path` instead of `filePath`; and `web3:set-rpc-url` allows arbitrary SSRF URLs",
+      "status": "🟡 PARTIAL (2026-11-08) — Stored spawned child process on activeJobs with timeout and stdout cap in RawConverterService, implemented verifyDiskSpace via fs.statfs, and added non-Sony camera make metadata fallback by extension; attached sender destroyed listener and duplicate requestId rejection in upscale:run; persisted filePath from electron publicist in PublicistTools; and added SSRF validation via validateSafeUrlAsync and timeout in web3 setRpcUrl and rpcCall; 26 unit tests passing across all affected suites.",
+      "acceptance": "Unit tests verify `RawConverterService.cancel()` kills the active `ChildProcess`, `verifyDiskSpace` rejects insufficient free bytes via `fs.statfs`, `upscale:run` aborts on window destruction, `PublicistTools.write_press_release` persists `filePath`, and `web3:set-rpc-url` rejects private/loopback/metadata URLs.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1576",
+      "title": "Audio, Sonic Bridge & MCP Desktop Bridge defects — `sonic-bridge:watch-folder` never grants `accessControlService` permission to detected DAW bounces (causing immediate `Security Violation: Access denied` when `audio:analyze` or `distribution:run-forensics` is called on a new bounce), `audio:analyze` uses a deterministic `${hash}_proxy.mp3` temp path (concurrent race collision & leaked temp file on FFmpeg failure), and `MCPClientService` / `daw.ts` leave crashed stdio clients and `EADDRINUSE` unhandled",
+      "status": "🟡 PARTIAL (2026-11-08) — Granted accessControlService permission to selected folder and new bounce files in sonic-bridge:watch-folder with window close listener cleanup; added UUID to tempProxyPath and cleanup in finally in audio:analyze; attached onclose and onerror handlers to local and harness MCP transports in MCPClientService to reset state and enable clean reconnection; and registered persistent dawServer error listener in daw.ts to prevent uncaught EventEmitter exception crashes; 18 unit tests passing.",
+      "acceptance": "Unit tests verify `sonic-bridge:watch-folder` grants `accessControlService` access to the selected folder so `audio:analyze` succeeds on new bounces, concurrent `audio:analyze` calls use distinct temp files and always clean up in `finally`, `MCPClientService` reconnects after transport close, and `dawServer` handles `EADDRINUSE` without throwing an unhandled error event.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1577",
+      "title": "Business Harness Registry & `HarnessTools.compile_harness` breakdown — 17 of 22 cataloged `BUSINESS_HARNESS_CATALOG` domains (including `'publishing_rights'`, `'finance'`, `'legal_compliance'`, `'collaboration_splits'`, `'licensing_sync'`, `'royalty_revenue'`, `'creative_production'`, `'security_trust'`) are never registered in `HarnessRegistry`, `HarnessTools.compile_harness` wraps inputs inside `{ payload }` instead of passing domain compiler inputs directly (crashing `merch_pod`), and `RegistrationForm.tsx` permanently blocks all 6 Rights Registration forms (`loc`, `ascap`, `bmi`, `sesac`, `soundexchange`, `mlc`)",
+      "status": "🟡 PARTIAL (2026-11-08) — Registered 18 domain compilers in HarnessRegistry, unwrapped payload in HarnessTools.compile_harness without duplicate saves, and connected RegistrationForm with writer share mapping and sequential pause gate progression; 24 unit tests passing.",
+      "acceptance": "Unit tests verify `compileHarness` succeeds across all registered domains in `business-harness/index.ts`, `HarnessTools.compile_harness` compiles `merch_pod` payloads without throwing, and `RegistrationForm.tsx` completes Pause Gate 1 → Pause Gate 2 → submission for all 6 registration orgs.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1578",
+      "title": "Agent Governance, Loop & Memory Engine lifecycle breaks — `DigitalHandshake`, `DirectiveService`, `AgentLoopService`, and `AlwaysOnMemoryEngine.clearAll` all fail against `firestore.rules` (`agentAuditTrails`, `directives`, `agentLoopExecutions`, and `delete` on `alwaysOnMemories`/`consolidationInsights`/`ingestionEvents` are denied), and approving a `memoryInbox` item never resumes the paused `WAITING_ON_HANDSHAKE` directive",
+      "status": "🟡 PARTIAL (2026-11-08) — Authored owner-scoped Firestore rules for agentAuditTrails, directives, and agentLoopExecutions, allowed owner deletions for always-on memory collections, transitioned linked directive in memoryAgentSlice on inbox status changes, and updated AgentLoopService evaluation temperature to 1.0; 36 unit tests and 338 rules tests passing.",
+      "acceptance": "Emulator security rules and unit tests verify `DigitalHandshake.require()`, `DirectiveService`, `AgentLoopService`, and `AlwaysOnMemoryEngine.deleteMemory/clearAll` succeed for the authenticated owner, approving a `DIGITAL_HANDSHAKE_REQUEST` transitions the linked directive out of `WAITING_ON_HANDSHAKE`, and `AgentLoopService.evaluateOutcome` uses `temperature: 1.0`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1579",
+      "title": "10 Agent Tools across `AnalysisTools`, `DevOpsTools`, and `StorageTools` invoke non-existent Cloud Functions (`analyzeContract`, `runChaosMeshTests`, `configureCircuitBreaker`, `configureWebSocketKeepalive`, `runContentionTest`, `configureSentryCrashReporting`, `triggerWatchdogRecovery`, `configureLogicalSharding`, `provisionQASandbox`, `scrubOrphanedMedia`), and `configure_sentry_crash_reporting` fabricates fake success in Electron",
+      "status": "🟡 PARTIAL (2026-11-08) — Routed AnalysisTools.analyze_contract through AutonomousIntelligence fine-tuned legal model and reviewAIVoiceLikenessClause, removed fabricated Electron success in configure_sentry_crash_reporting, and added unit tests; 12 unit tests passing.",
+      "acceptance": "Unit tests verify `AnalysisTools.analyze_contract` completes contract analysis and runs `reviewAIVoiceLikenessClause` without calling a non-existent Cloud Function, and `DevOpsTools` / `StorageTools` do not invoke undeployed `httpsCallable` targets or fabricate Electron IPC success.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1580",
+      "title": "Unruled Firestore collections & rule mismatches across Distribution, Publishing, Merchandise, Touring & Legal modules — root `releases` has no rule in `firestore.rules` (breaking 4 `DistributionTools` methods), `RegistrationPersistence.persistOrgRecord` is blocked by `firestore.rules` whenever a confirmation number exists or on second save, and 9 client collections (`roster`, `merch_config`, `users/{uid}/analytics`, `users/{uid}/payouts`, `mechanical_license_checks`, `id3_operations`, `contract_snippets`, `legal_agreements`, `feature_requests`) are denied by default",
+      "status": "🟡 PARTIAL (2026-11-08) — Added root releases rule, updated registrations rule for submitted status and confirmationNumber, added rules for user analytics, payouts, contract_snippets, legal_agreements, and feature_requests, and stopped fake feature request success in BugReportTools; 7 unit tests and 347 rules tests passing.",
+      "acceptance": "Firestore emulator rule tests verify authenticated owners can read/write their own documents across all 11 collections and `RegistrationPersistence.persistOrgRecord` succeeds both with and without a `confirmationNumber`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1581",
+      "title": "`APIHealthService` and `LicensingService` silent/broken behavior — `APIHealthService` reports `'healthy'` for `firestore` and `functions` without making any network/RPC call (only constructing an in-memory `DocumentReference` `doc(db, '_system/heartbeat')`) and never checks `stripe`, while `LicensingService.getCatalogTracksForSync` queries `where('orgId', '==', userProfile.id)` which misses user-owned releases and violates `proprietaryIngestionReleases` security rules when `userProfile.id !== auth.uid`",
+      "status": "🟡 PARTIAL (2026-11-08) — Implemented real network probes for Firestore, Functions, and Stripe in APIHealthService with timeout, updated LicensingService.getCatalogTracksForSync to query user-owned releases, and added unit tests; 10 unit tests passing.",
+      "acceptance": "Unit tests verify `APIHealthService` reports `'unhealthy'` / `'degraded'` when Firestore/Functions probes reject and `LicensingService.getCatalogTracksForSync()` returns user-owned tracks from `proprietaryIngestionReleases`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1582",
+      "title": "`EntryCommandSyncService` defects — `EntryCommandSyncService.saveCustomCommand` silently swallows Firestore sync errors while reporting `{ ok: true }`, `hydrateCustomCommands` permanently caches `hydratedKeys` even when Firestore queries fail (preventing retry), and `saveToTeamScope` overwrites `ownerId` with the editor's UID (causing `PERMISSION_DENIED` on team command updates)",
+      "status": "🟡 PARTIAL (2026-11-01; source repair awaiting genuine team and retry acceptance)",
+      "acceptance": "Unit tests verify `hydrateCustomCommands` retries after a failed `loadCloudCommands` call, `saveToTeamScope` preserves `ownerId` on team command updates, and `saveCustomCommand` surfaces cloud sync errors to the caller.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1583",
+      "title": "`SocialService` & `UserProfileHeader` social graph breakdown — `followUser`, `unfollowUser`, `getFeed('following')`, `isFollowing`, and `recalculateStats` target unruled `users/{uid}/following` and `users/{targetId}/followers` (instead of `social_follows`) and attempt cross-user writes on `users/{targetId}`, while `UserProfileHeader` reads `users/{targetId}` directly (blocked by owner-only `firestore.rules`)",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Emulator and unit tests verify a signed-in user can follow/unfollow another user via `social_follows`, load the `\"following\"` feed, check `isFollowing`, and render another user's public profile header without `PERMISSION_DENIED`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1584",
+      "title": "GDPR Article 17 `AccountDeletionService` & Tamper-Evident `auditLogChain` failures — `writeAuditLog`/`verifyAuditChain` target unruled `users/{userId}/auditLogs`, and `deleteUserAccount()` targets 11 non-existent/misnamed subcollections, leaves 35+ real user subcollections untouched, and calls `deleteDoc(doc(db, 'users', userId))` where `firestore.rules` explicitly sets `allow delete: if false`",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Unit and emulator tests verify `writeAuditLog` and `verifyAuditChain` succeed for the authenticated owner, and `deleteUserAccount` erases the user's Firestore tree, Storage objects, and Auth record without orphaning data or returning `PERMISSION_DENIED`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1585",
+      "title": "Creative Asset Rights, Cover Song License Verification & Legal Template Versioning blocked by `firestore.rules` — `AssetRightsService` (`users/{uid}/assetRights`), `PRORightsService.verifyCoverSongLicense` (`users/{uid}/coverLicenses`), and `ContractVersioningService.publishNewVersion` (`legal_templates/{id}/versions`) all fail with `PERMISSION_DENIED`",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Emulator security rule tests verify authenticated owners can read/write `users/{uid}/assetRights/{assetId}` and `users/{uid}/coverLicenses/{isrc}`, `verifyCoverSongLicense` returns `isVerified: true` when a confirmed license doc exists, and `ContractVersioningService.publishNewVersion` succeeds for authenticated users.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1586",
+      "title": "Marketing stats, campaign performance & security API inventory persistence failures — `MarketingService.updateMarketingStats` writes to read-only `users/{uid}/stats/marketing` (`allow write: if false` and `updateDoc` on missing doc), `MarketingTools.track_performance` reads unruled `campaign_metrics`, and `SecurityTools.check_api_status` reads unruled `api_inventory` (and performs unvalidated `fetch(data.endpointUrl)`)",
+      "status": "🟡 PARTIAL (2026-11-08; added owner create/update rule for users/{userId}/stats/marketing, authenticated read rule for api_inventory/{apiKey}, updated MarketingService.updateMarketingStats to use setDoc with merge, verified 354 security tests and 21 unit tests passing, awaiting exact-SHA CI)",
+      "acceptance": "Unit and emulator tests verify `track_performance` reads owner-scoped `campaign_metrics`, `check_api_status` reads `api_inventory` with safe `https:` URL validation, and marketing stats updates persist without `PERMISSION_DENIED` or `NOT_FOUND`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1587",
+      "title": "Widespread Gemini 3 temperature policy violations (`temperature < 1.0`) across 10 Renderer & Cloud Function services, plus a schema bug in `MemorySummarizer.generateInsight` (`parsed.confidence` is always `undefined`) that causes memory consolidation insights to return `null` 100% of the time",
+      "status": "🟡 PARTIAL (2026-11-07; `MemorySummarizer.generateInsight` top-level `confidence` derivation, `onWhiteGloveAssetUploaded` `config` wrapper, and `temperature: 1.0` across all 10 services verified locally, awaiting exact-SHA CI)",
+      "acceptance": "Unit tests verify `MemorySummarizer.generateInsight()` returns a valid `ConsolidationInsight` with numeric `confidence`, `onWhiteGloveAssetUploaded` passes `config: { responseMimeType: 'application/json', temperature: 1.0 }`, and all non-RAG Gemini 3 calls use `temperature: 1.0`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1588",
+      "title": "Firebase Storage rules block 4 core upload pipelines — `DesktopRenderRelayService` (`video-render-jobs/{uid}/...`), `CEOSyncService` (`ceo_sync/{uid}/...`), `WhiteGloveIngestionService` (`ingest/white-glove/{artistId}/...`), and `DistributionService` delivery receipts (`distribution/receipts/{releaseId}/...`) all upload to unruled Storage paths that fail with `storage/unauthorized`",
+      "status": "🟡 PARTIAL (2026-11-08; added owner storage rules for video-render-jobs, ceo_sync, ingest/white-glove, and distribution/receipts, aligned CEOSyncService with ruled collections, verified 34 storage rules tests and 9 unit tests passing, awaiting exact-SHA CI)",
+      "acceptance": "Firebase Storage rules unit tests verify authenticated owner uploads/reads succeed for all 4 paths and cross-tenant accesses are denied.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1589",
+      "title": "Client-side Storage `deleteObject` calls across `CloudStorageService`, `StorageService`, `LikenessService`, `FontLibrary`, and `AccountDeletionService` always fail with `storage/unauthorized` because `storage.rules` sets `allow delete: if false` on `users/{userId}/{topLevel}/{allPaths=**}`, leaving deleted images, audio, likeness references, and fonts orphaned in Cloud Storage",
+      "status": "🟡 PARTIAL (2026-11-08; allowed owner deletion on assets, thumbnails, audio, likeness, and brandKit in storage.rules, added font-woff to media types, verified 37 storage rules tests and 9 account deletion tests passing, awaiting exact-SHA CI)",
+      "acceptance": "Integration tests verify `LikenessService.remove()`, `CloudStorageService.deleteImage()`, `CloudStorageService.deleteAudio()`, `FontLibrary.deleteFont()`, and account deletion remove the underlying Storage objects without `storage/unauthorized`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1590",
+      "title": "`FontLibrary` custom typography persistence is 100% broken — `users/{uid}/brandKit/fonts/items/{id}` has no rule in `firestore.rules` (`PERMISSION_DENIED` on `registerFont`, `listFonts`, `fetchOpenTypeFont`, `deleteFont`), and `.woff` font uploads fail `storage.rules` when browsers report `application/font-woff` or empty `file.type`",
+      "status": "🟡 PARTIAL (2026-11-08; added owner rule for users/{userId}/brandKit/fonts/items/{fontId} in firestore.rules, verified 357 security tests and 6 font library tests passing, awaiting exact-SHA CI)",
+      "acceptance": "Rules and service tests verify `registerFont`, `listFonts`, `loadOpenTypeFont`, and `deleteFont` succeed end-to-end for `.ttf`, `.otf`, `.woff`, and `.woff2` files.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1591",
+      "title": "Local-to-Cloud Repository & Storage Migration failures — `repository.ts` and `StorageMigrationService.ts` sync workflows to unruled `users/{userId}/workflows/{workflowId}` (failing `firestore.rules` which only defines top-level `/workflows/{flowId}`) and upload raw IndexedDB `Blob`s without fallback `contentType` metadata when `blob.type` is empty",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Unit and rules tests verify `syncWorkflows()` and `StorageMigrationService.migrateAll()` persist workflows and assets to Firestore/Storage without `PERMISSION_DENIED` or `storage/unauthorized`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1592",
+      "title": "GDPR Article 20 `DataExportService.exportUserData` fails with `PERMISSION_DENIED` on 9 of 11 `EXPORTABLE_COLLECTIONS`, misses 35+ real user collections, and only exports 1 level of subdirectories in Firebase Storage (`users/{uid}/{topLevel}/{file}`), omitting deeper nested files",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Integration tests verify `DataExportService.exportUserData()` completes with `result.success === true`, `result.errors.length === 0`, and includes both multi-level Storage URLs and all ruled user collections.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1593",
+      "title": "Remote MCP Server (`packages/firebase/src/mcp`) cross-tenant IDOR in `auditSampleClearance`, 5 unregistered/mismatched tools in `McpTools.ts`, ownerless campaign writes in `scheduleCampaignWaterfall`, and shared global rate-limit bucket / localhost fallback (`McpClientService.ts`)",
+      "status": "🟡 PARTIAL (2026-10-29; track-read ownership repaired locally, other MCP contracts and deployed acceptance pending)",
+      "acceptance": "Unit and integration tests verify cross-tenant `audit_sample_clearance` requests are rejected with `PERMISSION_DENIED`, all `McpTools.ts` tools resolve without `MethodNotFound`, `schedule_campaign_waterfall` writes `userId: actorUid`, and per-user rate limiting is enforced.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1594",
+      "title": "Collaborative Canvas WebRTC P2P mesh (`WebRTCPresenceMesh.ts`) signaling fails to clean up consumed SDP/ICE signal documents for non-owner org collaborators because `firestore.rules` blocks recipient `deleteDoc` calls",
+      "status": "🟡 PARTIAL (2026-11-08)",
+      "acceptance": "Firestore rules tests verify both the sender (`fromUserId == request.auth.uid`) and the recipient (`toUserId == request.auth.uid`) of a WebRTC signal in `projects/{projectId}/canvases/{canvasId}/signals/{signalId}` can delete the consumed signal document.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1596",
+      "title": "Legal, Merchandise & Publishing persistence failures — `ContractSnippetStore` (`contract_snippets`), `LegalArchiverService` (`legal_agreements`), and `usePricingConfig` (`merch_config`) target completely unruled Firestore collections, while `pandadocWebhook`, `iswcMapper`, and MCP tools write to unruled `career_events`, `users/{uid}/career_timeline`, `split_sheets`, `users/{uid}/cwrDrafts`, and `users/{uid}/splits`",
+      "status": "🟡 PARTIAL (2026-11-14; Firestore rules for `merch_config`, `contract_snippets`, `legal_agreements`, `career_events`, `split_sheets`, and user subcollections `career_timeline`/`cwrDrafts`/`splits` plus Storage owner read rules for `users/{userId}/{topLevel}` and `users/{userId}/rights/{category}` verified on `origin/main`; deployed acceptance pending)",
+      "acceptance": "Firestore and Storage rules tests verify authenticated owners can read/write `contract_snippets`, `legal_agreements`, and `merch_config/{userId}`, and can read their own `career_events`, `career_timeline`, `split_sheets`, `cwrDrafts`, `splits`, and corresponding Storage files while cross-tenant access is denied.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1597",
+      "title": "Distribution `BankPanel.tsx` and `Escrow` webhook (`escrow.ts` vs `splitEscrow.ts`) defects — `handleEscrowWebhook` mutates unruled `escrows/{txId}` (`status === 'LOCKED'`) instead of `split_escrows/{escrowId}` using non-timing-safe HMAC comparison, while `BankPanel` hardcodes placeholder IDs (`'user_123'`, `'artist_01'`) and produces `NaN` split totals on empty input",
+      "status": "🟡 PARTIAL (2026-11-14; `BankPanel.tsx` authenticated UID and finite split/NaN guards plus `handleEscrowWebhook` `crypto.timingSafeEqual` HMAC verification and retirement on `origin/main` verified across 16 test files / 145 passing unit tests; deployed acceptance pending)",
+      "acceptance": "Unit tests verify `handleEscrowWebhook` validates HMAC signatures in constant time and transitions `split_escrows/{escrowId}`, and component tests verify `BankPanel.tsx` uses the authenticated user's UID and handles empty percentage inputs without `NaN`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1598",
+      "title": "Local MCP Server (`packages/mcp-server-local`) & Blender Live 3D Bridge (`indii_blender_addon.py`) unauthenticated localhost Python `exec()` RCE, arbitrary filesystem read (`read_pdf_contracts`, `read_wav_tags`), and URL path injection (`get_github_pr_comments`, `get_sentry_issues`)",
+      "status": "🟡 PARTIAL (2026-11-14; Blender loopback token HMAC auth & `exec_code`/`customScriptPath` removal, MCP roots file canonicalization in `read_wav_tags`/`read_pdf_contracts`, and GitHub/Sentry URL validation verified on `origin/main` with 5/5 Vitest files [21 tests] + 11/11 Python Blender tests passing; installed desktop/live Blender acceptance pending)",
+      "acceptance": "Security tests confirm unauthenticated TCP payloads and `exec_code` actions are rejected on port `9876`, `read_pdf_contracts` and `read_wav_tags` reject paths outside approved directories, and `../` segments in GitHub/Sentry MCP tool arguments are rejected before `fetch`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1599",
+      "title": "Electron Main Process (`packages/main`) arbitrary file modification & packaged-app failures — `agent:multi-replace-file-content` overwrites any file under `process.cwd()` without `AccessControlService`, `agent:create-artifact` / `update-knowledge` / `get-capability-registry` use read-only `process.cwd()` in packaged builds, `ElectronRenderService` hardcodes `/tmp` and bypasses `AccessControlService` on `clip.src`, and `DawServer` (`ws://localhost:8081`) lacks origin/auth checks",
+      "status": "🟡 PARTIAL (2026-10-29; local boundaries implemented, packaged/DAW and live acceptance pending)",
+      "acceptance": "Unit and integration tests verify `agent:multi-replace-file-content` and `video:render` reject paths not approved in `AccessControlService`, packaged-mode path resolution uses `app.getPath('userData')` / `process.resourcesPath` and `os.tmpdir()`, and `DawServer` rejects unauthenticated or browser-origin WebSocket upgrades.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1600",
+      "title": "Admin Dashboard backend (`packages/admin-dashboard/server.ts`) security & functional defects — non-constant-time webhook secret check (`!==`), unescaped HTML injection in `cleanSubject` (`send-direct-email`), missing `email_verified` check in `requireAdminAuth`, and broken `/api/deliveries/list` & `/api/nexus/logs` queries (`orderBy('time')` on non-existent collections/fields)",
+      "status": "🟡 PARTIAL (2026-10-31; admin admission source gate added, live sign-in and data routes pending)",
+      "acceptance": "Server unit tests verify constant-time webhook secret comparison, rejection of `email_verified: false` tokens, HTML escaping of `cleanSubject`, and non-empty query alignment for `/api/deliveries/list` and `/api/nexus/logs`.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1601",
+      "title": "Rights Session Broker (`packages/rights-session-broker/src/index.ts`) resource leak & denial-of-service — `pairs` Map and two Firestore `onSnapshot` listeners (`ref.onSnapshot` and `commands.onSnapshot`) are never cleaned up when client/worker WebSockets disconnect without sending `{ type: 'ended' }`, plus unvalidated `navigation` event forwarding",
+      "status": "🟡 PARTIAL (2026-10-31; source lifetime repair merged, hosted-session acceptance pending)",
+      "acceptance": "Broker unit tests verify that closing client and worker sockets without `{ type: 'ended' }` invokes `unsub()` and `commandsUnsub()` and removes `sessionId` from `pairs`, and malformed `navigation` events are rejected.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1602",
+      "title": "Official TypeScript SDK (`packages/sdk/src/client.ts`) is 100% incompatible with the deployed REST API (`packages/firebase/src/api/routes.ts`) — wrong base URL prefix (`/api/...` vs Cloud Function `/v1/...`), 11 of 13 SDK methods call non-existent REST routes (`404 Not Found`), and response envelope unwrapping (`data.data`) crashes on `/v1/catalog`",
+      "status": "🟡 PARTIAL (2026-10-30; SDK metadata routes prepared, delivery and live acceptance pending)",
+      "acceptance": "Contract integration tests mounting the Express router from `packages/firebase/src/api/routes.ts` against `indiiClient` in `packages/sdk/src/client.ts` pass end-to-end for tracks, releases/distributions, analytics, and JSON-LD catalog feeds.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1603",
+      "title": "Boardroom bug reporting delegates to an unauthorized role and repeats terminal tool denials",
+      "status": "🟡 PARTIAL (2026-10-29; source repair awaiting publication and genuine app acceptance)",
+      "acceptance": "After release, use the genuine signed-in app to request one authorized bug report and verify its durable GitHub/Firestore receipt. Verify a denied role produces one explicit capability failure without a retry storm or false completion. Local structural suites are not customer acceptance. See [repair evidence](../../docs/audits/issue-1603-boardroom-report-recovery-2026-10-29.md).",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1604",
+      "title": "Marketing Cinematic Reel always calls the retired direct-video facade and returns a generic generation failure",
+      "status": "🟡 PARTIAL (2026-11-08; secured video gateway integration verified, live deployed generation pending)",
+      "acceptance": "With a genuine signed-in account and real displayed plan, complete the exact Marketing flow through a real backend job; play the actual clip, export and inspect it, reload and retrieve/reuse it. Reject failure/empty URL without a success screen. Test supported duration and vertical aspect ratio; expose an actionable error when admission/provider calls fail. Mock-backed service/UI tests do not establish this acceptance.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1605",
+      "title": "Merchandise Showroom mockup generation sends an image model to the text-only gateway and fails with an unauthorized-model error",
+      "status": "🟡 PARTIAL (2026-11-08; secured image gateway composite pipeline verified, live deployed generation pending)",
+      "acceptance": "Repeat the genuine UI journey; inspect the real mockup for the input artwork, save/reload/retrieve the artifact, and use it to generate, play and export a real product video. Include clear failure and retry feedback; a toast alone is not acceptance.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1606",
+      "title": "Saved merchandise drafts are not restored on reload, while Version History hides a missing-index failure as an empty library",
+      "status": "🟡 PARTIAL (2026-11-08; composite index defined, error feedback and draft id recovery wired, live index deployment pending)",
+      "acceptance": "Save a new genuinely authored design with two layers, reload, recover its name/content through the advertised UI, edit and resave, then reload again. When history retrieval fails, show a retryable error and retain current work rather than saying there are no versions. Test cross-owner isolation. No mock-backed persistence proof.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1607",
+      "title": "Classic Tour Poster template is clipped in the editor and exported PNG because template coordinates exceed the fixed canvas",
+      "status": "🟡 PARTIAL (2026-11-14; template coordinates scaled to 800×1000 artboard, live deployed export check pending)",
+      "acceptance": "Apply this template to a genuinely blank design and confirm all five layers are visible in the editor and the actual exported PNG with correct aspect ratio; reload/reopen and export again after editing the dates. Repeat with square cover and vertical social templates as separate checks; inspect SVG/JPEG/WebP outputs rather than trusting export toasts.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1608",
+      "title": "Autonomous merchandise image generation aborts when the Interactions API rejects its image model instead of taking the supported fallback",
+      "status": "🟡 PARTIAL (2026-11-02; source fallback repair merged, genuine image/design acceptance pending)",
+      "acceptance": "Real request succeeds after supported routing/error classification repair; inspect the returned image, add it to a design, verify persistence and downstream handoff, and prove rejection handling does not mask unrelated provider/auth errors. Structural tests alone do not close it.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1609",
+      "title": "Marketing image batch marks its last failed post Complete with no image and offers Apply & Save",
+      "status": "🟡 PARTIAL (2026-11-02; source progress repair merged, genuine image/save acceptance pending)",
+      "acceptance": "Distinguish batch completion from each post’s outcome, reconcile status from actual `imageUrl`, require at least one real image to offer Save, show actionable per-post errors, and verify a real image can be generated, rendered, saved, reloaded and reused in a campaign.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1610",
+      "title": "Home Connect Mobile Remote opens Settings Profile instead of pairing and connection status",
+      "status": "🟡 PARTIAL (2026-11-14; URL section preservation repaired and tested, genuine device pairing acceptance pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1611",
+      "title": "Boardroom image request terminates with an unrelated historical response and no media",
+      "status": "🟡 PARTIAL — `bbdb121b8` bounds delegated Boardroom history and explicitly prioritizes the current request. Production acceptance still requires a fresh image request in a conversation with older unrelated messages and a rendered image from that request.",
+      "acceptance": "Repeat the explicit image request in the existing conversation and a normally created fresh conversation; verify the correct prompt reaches the tool, a real image is rendered, and export/reload/reuse work, or an accurate actionable failure appears.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1612",
+      "title": "Merchandise Showroom browser AI Upscale completes without enlarging the design asset",
+      "status": "🟡 PARTIAL (2026-11-14; dimension enlargement check, persistent inline error alert, and unit tests verified; live browser acceptance pending)",
+      "acceptance": "In a genuine browser session, successfully enlarge a UI-created design at 2× and 4×, inspect actual output dimensions/transparency, verify the preview source is replaced, and prove the enlarged source is consumed by the next mockup. Capture actionable failure text when processing fails.",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1613",
+      "title": "Regional Tour Booking workflow treats an unsupported department fallback as a processed result",
+      "status": "🟡 PARTIAL (2026-11-14; unsupported-department error and output-aggregation guard verified in unit tests; live UI acceptance pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1614",
+      "title": "Workflow Tweet branch creates a global in-app post despite draft-only/no-post instructions",
+      "status": "🟡 PARTIAL (2026-11-02; source side effect removed, genuine no-post acceptance and QA-post cleanup pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1615",
+      "title": "Workflow Architect cannot create a requested media-only video graph",
+      "status": "🟡 PARTIAL (2026-11-14; structured JSON recovery, graph validation, and error surfacing verified in unit tests; live AI generation acceptance pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1616",
+      "title": "Workflow context panel removes access to node inspector and library without explaining how to restore them",
+      "status": "🟡 PARTIAL (2026-11-14; responsive Inspector & Library drawer toggle and node-selection auto-open verified in unit tests; live viewport acceptance pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1617",
+      "title": "Workflow Growth Protocol executor fails before media work while UI remains Running",
+      "status": "🟡 PARTIAL (2026-11-14; lease `metadata.lease`/`serverTimestamp()`, `activeLoops` cleanup, TDZ interval guard, and `maestroAdapter` department mapping verified in unit tests; live protocol acceptance pending)",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1618",
+      "title": "Boardroom text-to-video request loops through failing image generation and denied record lookups",
+      "status": "🟡 PARTIAL — PR #827 (codex/issue-1618-video-loop): routed text-to-video directly to generate_video and bounded failing tool retries (3/3 tests passed).",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1619",
+      "title": "Merchandise Specialist mockup request fails to fetch and returns unrelated social advice",
+      "status": "🟡 PARTIAL — `bbdb121b8` added support for stored artwork references in the merchandise mockup path. A deployed Direct-mode request still needs to return a mockup using the supplied artwork and a relevant final response.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1620",
+      "title": "Expanded Your Creations hides selected video player below a non-scrolling panel",
+      "status": "🟡 PARTIAL — bounded gallery scrolling and preview placement above the grid are on main. Live video playback and Studio handoff remain unverified.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1621",
+      "title": "Direct Video extension fails on the actual generated playable QA clip",
+      "status": "🟡 PARTIAL — PR #839 (codex/issue-1621-video-extend): validated inputs and set explicit 8s duration in extend_video (30/30 tests passed).",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1622",
+      "title": "Manual Workflow input connection handle is covered/clipped, preventing wiring a media node",
+      "status": "🟡 PARTIAL — Start Trigger handle layout repaired on main in `bbdb121b8`. Production pointer verification pending.",
+      "acceptance": "",
+      "classification": "nonterminal"
+    },
+    {
+      "id": "1623",
+      "title": "Saved-artwork mockup route returns gateway payload-validation rejection",
+      "status": "🟡 PARTIAL — PR #840 (codex/issue-1623-artwork-mockup): included exact Zod validation details in generateImageV3 errors (66/66 tests passed).",
+      "acceptance": "",
+      "classification": "nonterminal"
+    }
+  ],
+  "judgments": [
+    {
+      "offset": 0,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1158": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "live_1158": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "source_1159": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "live_1159": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "source_1163": {
+          "type": "noul",
+          "noul": 0.75
+        },
+        "live_1163": {
+          "type": "noul",
+          "noul": 0.54
+        },
+        "source_1168": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "live_1168": {
+          "type": "noul",
+          "noul": 0.55
+        },
+        "source_1169": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "live_1169": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "source_1173": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "live_1173": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "source_1182": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "live_1182": {
+          "type": "noul",
+          "noul": 0.36
+        },
+        "source_1354": {
+          "type": "noul",
+          "noul": 0.5
+        },
+        "live_1354": {
+          "type": "noul",
+          "noul": 0.69
+        }
+      },
+      "usage": {
+        "input_tokens": 1961,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 8,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1372": {
+          "type": "noul",
+          "noul": 0.53
+        },
+        "live_1372": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "source_1373": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "live_1373": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "source_1383": {
+          "type": "noul",
+          "noul": 0.18
+        },
+        "live_1383": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "source_1390": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "live_1390": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "source_1391": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "live_1391": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "source_1392": {
+          "type": "noul",
+          "noul": 0.33
+        },
+        "live_1392": {
+          "type": "noul",
+          "noul": 0.77
+        },
+        "source_1394": {
+          "type": "noul",
+          "noul": 0.43
+        },
+        "live_1394": {
+          "type": "noul",
+          "noul": 0.66
+        },
+        "source_1395": {
+          "type": "noul",
+          "noul": 0.28
+        },
+        "live_1395": {
+          "type": "noul",
+          "noul": 0.7
+        }
+      },
+      "usage": {
+        "input_tokens": 1811,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 16,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1399": {
+          "type": "noul",
+          "noul": 0.21
+        },
+        "live_1399": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "source_1406": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "live_1406": {
+          "type": "noul",
+          "noul": 0.45
+        },
+        "source_1407": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "live_1407": {
+          "type": "noul",
+          "noul": 0.56
+        },
+        "source_1413": {
+          "type": "noul",
+          "noul": 0.66
+        },
+        "live_1413": {
+          "type": "noul",
+          "noul": 0.33
+        },
+        "source_1420": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "live_1420": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "source_1424": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "live_1424": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "source_1426": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "live_1426": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "source_1427": {
+          "type": "noul",
+          "noul": 0.86
+        },
+        "live_1427": {
+          "type": "noul",
+          "noul": 0.88
+        }
+      },
+      "usage": {
+        "input_tokens": 1846,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 24,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1428": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "live_1428": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "source_1430": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "live_1430": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "source_1431": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "live_1431": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "source_1434": {
+          "type": "noul",
+          "noul": 0.2
+        },
+        "live_1434": {
+          "type": "noul",
+          "noul": 0.16
+        },
+        "source_1437": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "live_1437": {
+          "type": "noul",
+          "noul": 0.31
+        },
+        "source_1448": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "live_1448": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "source_1449": {
+          "type": "noul",
+          "noul": 0.3
+        },
+        "live_1449": {
+          "type": "noul",
+          "noul": 0.17
+        },
+        "source_1452": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "live_1452": {
+          "type": "noul",
+          "noul": 0.93
+        }
+      },
+      "usage": {
+        "input_tokens": 2006,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 32,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1458": {
+          "type": "noul",
+          "noul": 0.48
+        },
+        "live_1458": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "source_1459": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "live_1459": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "source_1460": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "live_1460": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "source_1461": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "live_1461": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "source_1510": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "live_1510": {
+          "type": "noul",
+          "noul": 0.48
+        },
+        "source_1553": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "live_1553": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "source_1554": {
+          "type": "noul",
+          "noul": 0.76
+        },
+        "live_1554": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "source_1555": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "live_1555": {
+          "type": "noul",
+          "noul": 0.62
+        }
+      },
+      "usage": {
+        "input_tokens": 2351,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 40,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1556": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "live_1556": {
+          "type": "noul",
+          "noul": 0.41
+        },
+        "source_1557": {
+          "type": "noul",
+          "noul": 0.58
+        },
+        "live_1557": {
+          "type": "noul",
+          "noul": 0.34
+        },
+        "source_1558": {
+          "type": "noul",
+          "noul": 0.5
+        },
+        "live_1558": {
+          "type": "noul",
+          "noul": 0.2
+        },
+        "source_1559": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "live_1559": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "source_1560": {
+          "type": "noul",
+          "noul": 0.58
+        },
+        "live_1560": {
+          "type": "noul",
+          "noul": 0.58
+        },
+        "source_1561": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "live_1561": {
+          "type": "noul",
+          "noul": 0.5
+        },
+        "source_1562": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "live_1562": {
+          "type": "noul",
+          "noul": 0.5
+        },
+        "source_1563": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "live_1563": {
+          "type": "noul",
+          "noul": 0.67
+        }
+      },
+      "usage": {
+        "input_tokens": 3063,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 48,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1564": {
+          "type": "noul",
+          "noul": 0.7
+        },
+        "live_1564": {
+          "type": "noul",
+          "noul": 0.47
+        },
+        "source_1565": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "live_1565": {
+          "type": "noul",
+          "noul": 0.67
+        },
+        "source_1566": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "live_1566": {
+          "type": "noul",
+          "noul": 0.73
+        },
+        "source_1567": {
+          "type": "noul",
+          "noul": 0.56
+        },
+        "live_1567": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "source_1568": {
+          "type": "noul",
+          "noul": 0.34
+        },
+        "live_1568": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "source_1569": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "live_1569": {
+          "type": "noul",
+          "noul": 0.68
+        },
+        "source_1570": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "live_1570": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "source_1571": {
+          "type": "noul",
+          "noul": 0.43
+        },
+        "live_1571": {
+          "type": "noul",
+          "noul": 0.76
+        }
+      },
+      "usage": {
+        "input_tokens": 3618,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 56,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1572": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "live_1572": {
+          "type": "noul",
+          "noul": 0.68
+        },
+        "source_1573": {
+          "type": "noul",
+          "noul": 0.24
+        },
+        "live_1573": {
+          "type": "noul",
+          "noul": 0.44
+        },
+        "source_1574": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "live_1574": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "source_1575": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "live_1575": {
+          "type": "noul",
+          "noul": 0.31
+        },
+        "source_1576": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "live_1576": {
+          "type": "noul",
+          "noul": 0.24
+        },
+        "source_1577": {
+          "type": "noul",
+          "noul": 0.38
+        },
+        "live_1577": {
+          "type": "noul",
+          "noul": 0.4
+        },
+        "source_1578": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "live_1578": {
+          "type": "noul",
+          "noul": 0.39
+        },
+        "source_1579": {
+          "type": "noul",
+          "noul": 0.56
+        },
+        "live_1579": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      },
+      "usage": {
+        "input_tokens": 3997,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 64,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1580": {
+          "type": "noul",
+          "noul": 0.5
+        },
+        "live_1580": {
+          "type": "noul",
+          "noul": 0.28
+        },
+        "source_1581": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "live_1581": {
+          "type": "noul",
+          "noul": 0.44
+        },
+        "source_1582": {
+          "type": "noul",
+          "noul": 0.77
+        },
+        "live_1582": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "source_1583": {
+          "type": "noul",
+          "noul": 0.55
+        },
+        "live_1583": {
+          "type": "noul",
+          "noul": 0.3
+        },
+        "source_1584": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "live_1584": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "source_1585": {
+          "type": "noul",
+          "noul": 0.47
+        },
+        "live_1585": {
+          "type": "noul",
+          "noul": 0.43
+        },
+        "source_1586": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "live_1586": {
+          "type": "noul",
+          "noul": 0.4
+        },
+        "source_1587": {
+          "type": "noul",
+          "noul": 0.37
+        },
+        "live_1587": {
+          "type": "noul",
+          "noul": 0.43
+        }
+      },
+      "usage": {
+        "input_tokens": 3177,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 72,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1588": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "live_1588": {
+          "type": "noul",
+          "noul": 0.61
+        },
+        "source_1589": {
+          "type": "noul",
+          "noul": 0.7
+        },
+        "live_1589": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "source_1590": {
+          "type": "noul",
+          "noul": 0.61
+        },
+        "live_1590": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "source_1591": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "live_1591": {
+          "type": "noul",
+          "noul": 0.61
+        },
+        "source_1592": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "live_1592": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "source_1593": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "live_1593": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "source_1594": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "live_1594": {
+          "type": "noul",
+          "noul": 0.44
+        },
+        "source_1596": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "live_1596": {
+          "type": "noul",
+          "noul": 0.75
+        }
+      },
+      "usage": {
+        "input_tokens": 2930,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 80,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1597": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "live_1597": {
+          "type": "noul",
+          "noul": 0.4
+        },
+        "source_1598": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "live_1598": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "source_1599": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "live_1599": {
+          "type": "noul",
+          "noul": 0.69
+        },
+        "source_1600": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "live_1600": {
+          "type": "noul",
+          "noul": 0.36
+        },
+        "source_1601": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "live_1601": {
+          "type": "noul",
+          "noul": 0.67
+        },
+        "source_1602": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "live_1602": {
+          "type": "noul",
+          "noul": 0.3
+        },
+        "source_1603": {
+          "type": "noul",
+          "noul": 0.69
+        },
+        "live_1603": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "source_1604": {
+          "type": "noul",
+          "noul": 0.85
+        },
+        "live_1604": {
+          "type": "noul",
+          "noul": 0.98
+        }
+      },
+      "usage": {
+        "input_tokens": 2870,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 88,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1605": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "live_1605": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "source_1606": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "live_1606": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "source_1607": {
+          "type": "noul",
+          "noul": 0.73
+        },
+        "live_1607": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "source_1608": {
+          "type": "noul",
+          "noul": 0.77
+        },
+        "live_1608": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "source_1609": {
+          "type": "noul",
+          "noul": 0.75
+        },
+        "live_1609": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "source_1610": {
+          "type": "noul",
+          "noul": 0.54
+        },
+        "live_1610": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "source_1611": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "live_1611": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "source_1612": {
+          "type": "noul",
+          "noul": 0.76
+        },
+        "live_1612": {
+          "type": "noul",
+          "noul": 0.91
+        }
+      },
+      "usage": {
+        "input_tokens": 2174,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 96,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1613": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "live_1613": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "source_1614": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "live_1614": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "source_1615": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "live_1615": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "source_1616": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "live_1616": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "source_1617": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "live_1617": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "source_1618": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "live_1618": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "source_1619": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "live_1619": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "source_1620": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "live_1620": {
+          "type": "noul",
+          "noul": 0.84
+        }
+      },
+      "usage": {
+        "input_tokens": 1798,
+        "output_tokens": 340
+      }
+    },
+    {
+      "offset": 104,
+      "model": "jev-1.14.0",
+      "answers": {
+        "source_1621": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "live_1621": {
+          "type": "noul",
+          "noul": 0.85
+        },
+        "source_1622": {
+          "type": "noul",
+          "noul": 0.48
+        },
+        "live_1622": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "source_1623": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "live_1623": {
+          "type": "noul",
+          "noul": 0.81
+        }
+      },
+      "usage": {
+        "input_tokens": 832,
+        "output_tokens": 130
+      }
+    }
+  ],
+  "publishedBranches": [
+    {
+      "branch": "origin/codex/v3-audio-storage-bucket-resolution",
+      "sha": "c2e600294b99ee157f3e5318e9934a9dd1e14d1f"
+    },
+    {
+      "branch": "origin/codex/v3-claims-live-read-evidence",
+      "sha": "88af164cab724fa124e88e0eb56491693665f01e"
+    },
+    {
+      "branch": "origin/codex/v3-command-hydration-lifetime",
+      "sha": "4ca1107691460a258b967a07cc44387920d6a316"
+    },
+    {
+      "branch": "origin/codex/v3-creative-controls-accessibility",
+      "sha": "b788b9840db3270280aba5ba6e929c58696b7c65"
+    },
+    {
+      "branch": "origin/codex/v3-dashboard-evidence-labels",
+      "sha": "d46d11b17a8055e9232a4c12c1cc294d5c2a5902"
+    },
+    {
+      "branch": "origin/codex/v3-data-export-completeness",
+      "sha": "c4d229103d31b85720ef3f7cafdc9afb561a4b9e"
+    },
+    {
+      "branch": "origin/codex/v3-founding-artist-invitation-acceptance",
+      "sha": "84fb3c7a63a94308ecc530a63e7d4c16953f76f5"
+    },
+    {
+      "branch": "origin/codex/v3-health-probe-contract",
+      "sha": "789fd44daabe1ac86cee6fdb95b7068e90b055ff"
+    },
+    {
+      "branch": "origin/codex/v3-likeness-reference-removal",
+      "sha": "2d64c9a17c58ba4760f480c90af66c4ba214e758"
+    },
+    {
+      "branch": "origin/codex/v3-merch-autosave-lifecycle",
+      "sha": "cb73efea77ea8cfa07d5d141ce456364b1530863"
+    },
+    {
+      "branch": "origin/codex/v3-merch-workflow-acceptance",
+      "sha": "4bd7686d30e07d5cbaf758e0987f59706b531714"
+    },
+    {
+      "branch": "origin/codex/v3-migration-transaction-lifetime",
+      "sha": "99492e5f97d457a6012e8ac53ae4519f573bb1ce"
+    },
+    {
+      "branch": "origin/codex/v3-public-profile-settings-sync",
+      "sha": "e9e8585c12b08da876a41d2c14d519417d554037"
+    },
+    {
+      "branch": "origin/codex/v3-review-primitives-batch-20261115",
+      "sha": "57e7dc1ee1891dfd52ad1eb147ff0346013d7b87"
+    },
+    {
+      "branch": "origin/codex/v3-scheduled-worker-error-audit",
+      "sha": "2380684f7fa0203c2a87bb1880f746e20d7b4d68"
+    },
+    {
+      "branch": "origin/codex/v3-social-profile-request-lifetime",
+      "sha": "225ec620ee6ea6913be4fdaa27745de48e88e15c"
+    },
+    {
+      "branch": "origin/codex/v3-storage-deletion-failures",
+      "sha": "2a0f3c0bcda82347ea274c5bc8eccd1659fbc81e"
+    }
+  ],
+  "advisoryLimit": "Jev judged ledger text, not current source. Historical requirements can receive high implementation scores even when source repairs exist. Never use these scores for closure, authorization, implementation priority, or claims that a source defect remains."
+}

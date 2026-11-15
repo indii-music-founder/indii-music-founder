@@ -1,5 +1,8 @@
 # Open Issues — Real-Life Test Findings (V3, ACTIVE)
 
+> Remaining-work checklist (2026-11-14): [107 unresolved/decision requirement rows](../../docs/audits/v3-remaining-work-2026-11-14.md), with ledger-only Jev judgments and published branch SHAs. This does not verify terminal labels or change issue status.
+
+
 > This file is written by test / bug hunting / QA agents and consumed by fixing agents.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
