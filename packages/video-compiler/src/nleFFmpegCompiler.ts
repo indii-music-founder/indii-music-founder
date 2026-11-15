@@ -110,7 +110,7 @@ export function compileFfmpegCommand(
       const aLabel = `a_${clip.id}`;
 
       filterChains.push(
-        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,atempo=${Math.sqrt(clip.speed)},atempo=${Math.sqrt(clip.speed)},aresample=48000,adelay=${delaySamples}S:all=1,volume=${clip.gain}[${aLabel}]`
+        `[${inIdx}:a]atrim=start=${trimStart}:duration=${trimDur},asetpts=PTS-STARTPTS,atempo=${Math.sqrt(clip.speed)},atempo=${Math.sqrt(clip.speed)},aresample=48000,adelay=${delaySamples}S:all=1,asetpts=N/SR/TB,volume=${clip.gain}[${aLabel}]`
       );
       audioLabels.push(`[${aLabel}]`);
     }
