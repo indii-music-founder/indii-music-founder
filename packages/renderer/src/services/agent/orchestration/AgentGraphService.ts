@@ -63,6 +63,11 @@ export class AgentGraphService {
         if (!executionId) {
             const state = await this.createExecution(userId, graph);
             executionId = state.executionId;
+        } else {
+            const state = await agentGraphStateService.getExecution(userId, executionId);
+            if (!state || state.executionId !== executionId || state.graphId !== graph.id) {
+                throw new Error('Saved graph execution does not match the requested graph and execution.');
+            }
         }
 
         logger.info(`[AgentGraph] Starting graph execution: ${graph.name} (${graph.id}), trace: ${traceId}, execution: ${executionId}`);
