@@ -3253,6 +3253,8 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1442: UI-first backwards redundancy audit — Stage 1+1b executed (dead code deleted, registry defects fixed)
 
+- **Dashboard evidence-label follow-up (2026-11-14):** Live Home in the existing `wiil` production Studio session exposed hard-coded dynamic-card inspection/delivery labels and `100% Safe`; no new account was created and tier was not shown. Source traced the dynamic cards to invented fallback `hasPendingSplits: true` and a default release type. Dynamic modules now require supplied layout evidence or explicit module keys; no-evidence inference is skipped. Explicit cards label unassessed inspection/delivery honestly, and missing campaign counts remain not loaded. Supplied layout context is passed to rendered cards. Approval Gates reports its local queue instead of global safety or readiness. Nineteen focused structural/component checks, renderer typecheck, and diff checks pass. Scoped lint: zero errors, four existing fast-refresh warnings. Jev `jev-1.14.0` advisory unproven-claim-removal score: 0.89. These repairs are branch source, not a deployed acceptance claim; real provider telemetry and post-deployment UI verification remain unverified.
+
 - **Status:** ✅ FIXED (Stage 1 + 1b; Stages 2–3 remain open)
 - **Severity:** 🟡 MEDIUM
 - **Module:** renderer module registry / orphaned modules+services / cloud functions

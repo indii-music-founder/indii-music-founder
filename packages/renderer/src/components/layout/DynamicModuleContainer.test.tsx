@@ -45,6 +45,11 @@ describe('DynamicModuleContainer & Layout Assembler', () => {
     });
 
     describe('DynamicModuleContainer Component', () => {
+        it('renders no inferred modules without supplied layout evidence', () => {
+            const { container } = render(<DynamicModuleContainer />);
+            expect(container).toBeEmptyDOMElement();
+        });
+
         it('renders requested registered components in order', () => {
             const modules: DynamicComponentKey[] = ['StemInspector', 'RoyaltySplitTable'];
 

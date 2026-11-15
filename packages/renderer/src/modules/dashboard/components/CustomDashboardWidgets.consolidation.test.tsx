@@ -1,3 +1,4 @@
+// Legacy structural-only widget checks; mocked state is not production telemetry evidence.
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -287,7 +288,7 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
     });
 
     describe('ApprovalGatesWidget', () => {
-        it('renders nominal safe state when no approval gates are pending', async () => {
+        it('renders the queue state without claiming operation safety', async () => {
             mocks.onPendingApprovals.mockImplementation((callback) => {
                 callback([]);
                 return vi.fn();
@@ -295,9 +296,9 @@ describe('Consolidated Dashboard Widgets & Operational Gates', () => {
 
             render(WIDGET_RENDERERS.approval_gates());
 
-            expect(screen.getByText('All Gates Clear')).toBeInTheDocument();
-            expect(screen.getByText('Autonomous safeguards active')).toBeInTheDocument();
-            expect(screen.getByText('100% Safe')).toBeInTheDocument();
+            expect(screen.getByText('No pending approvals')).toBeInTheDocument();
+            expect(screen.getByText('No approvals are waiting in this queue')).toBeInTheDocument();
+            expect(screen.getByText('Review each action')).toBeInTheDocument();
         });
 
         it('renders pending approval gates with risk tier and handles approve & deny actions', async () => {
