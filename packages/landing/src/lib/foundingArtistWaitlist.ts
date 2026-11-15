@@ -159,3 +159,44 @@ export async function acceptFoundingArtistInvitation(): Promise<FoundingArtistIn
   const response = await callable({});
   return response.data;
 }
+
+
+const INVITATION_EMAIL_STORAGE_KEY = 'indii_founding_artist_invitation_email';
+
+export async function beginFoundingArtistInvitationVerification(email: string): Promise<void> {
+  const { firebaseAuth } = requireFirebase();
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail) throw new Error('Enter your invitation email address.');
+  await sendSignInLinkToEmail(firebaseAuth, normalizedEmail, {
+    url: `${window.location.origin}/accept-invitation`,
+    handleCodeInApp: true,
+  });
+  try {
+    localStorage.setItem(INVITATION_EMAIL_STORAGE_KEY, normalizedEmail);
+  } catch {
+    // The artist can enter the same email when opening the link.
+  }
+}
+
+export function getStoredInvitationEmail(): string {
+  try {
+    return localStorage.getItem(INVITATION_EMAIL_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export async function completeFoundingArtistInvitationVerification(email: string): Promise<void> {
+  const { firebaseAuth } = requireFirebase();
+  if (!isSignInWithEmailLink(firebaseAuth, window.location.href)) {
+    throw new Error('This sign-in link is invalid or expired. Request a new link.');
+  }
+  const credential = await signInWithEmailLink(firebaseAuth, normalizeEmail(email), window.location.href);
+  await credential.user.getIdToken(true);
+  if (!credential.user.emailVerified) throw new Error('Request a new link to verify your invitation email.');
+  try {
+    localStorage.removeItem(INVITATION_EMAIL_STORAGE_KEY);
+  } catch {
+    // Storage cleanup must not invalidate verified sign-in.
+  }
+}

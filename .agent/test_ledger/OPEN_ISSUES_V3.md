@@ -2918,6 +2918,8 @@ Backlogged (need design/gateway work — flag for the firebase swarm):
 
 ### ISSUE-1420: Verified-email account, waitlist, invitation order, and milestone updates are not one authoritative flow
 
+- **Invitation UI update (2026-11-14):** Added `/accept-invitation` in both landing route sets with separate Firebase email-link sign-in, explicit server-backed acceptance, cross-device email entry, expired-link recovery, and Studio continuation. Invitation sign-in does not reenroll or change milestone consent. New and pending legacy app-root invitations now target this page. Landing production build, scoped ESLint, and 18 existing structural tests passed. Jev `jev-1.14.0` advisory scores: consent preservation 0.77; remaining live-proof requirement 0.55. Genuine email receipt, deployed acceptance, dashboard state, and legacy promotion remain unverified; status stays PARTIAL.
+
 - **Status:** 🟡 PARTIAL — verified enrollment is deployed; administrator invitation and consent-respecting milestone delivery are implemented with local structural proof; genuine delivery/acceptance and legacy promotion remain open
 - **Severity:** 🟠 HIGH
 - **Module:** Landing / Firebase Auth / waitlist / communications
