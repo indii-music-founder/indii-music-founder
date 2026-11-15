@@ -212,8 +212,19 @@ export function sanitizeObjectForPrompt<T>(obj: T): T {
     if (Array.isArray(obj)) {
         return obj.map(item => sanitizeObjectForPrompt(item)) as unknown as T;
     }
+    const record = obj as Record<string, unknown>;
     const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(record)) {
+        if (
+            (key === 'base64' || (key === 'data' && typeof record.mimeType === 'string')) &&
+            typeof value === 'string' &&
+            value.length >= 1024 &&
+            !value.startsWith('[elided ')
+        ) {
+            const approxKb = Math.max(1, Math.round((value.length * 3) / 4 / 1024));
+            result[key] = `[elided ${approxKb}KB — delivered to the model as inlineData when needed]`;
+            continue;
+        }
         result[key] = sanitizeObjectForPrompt(value);
     }
     return result as T;

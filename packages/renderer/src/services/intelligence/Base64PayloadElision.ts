@@ -1,5 +1,11 @@
-/** Elide image bytes from prompt text without regex recursion over large exports. */
-export function elideBase64Payloads(text: string): string {
+function isBase64CharCode(code: number): boolean {
+    return (code >= 65 && code <= 90) ||
+        (code >= 97 && code <= 122) ||
+        (code >= 48 && code <= 57) ||
+        code === 43 || code === 47 || code === 61;
+}
+
+function elideDataUrlBase64Payloads(text: string): string {
     if (!text || !text.includes(';base64,')) return text;
     const prefix = /data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,/g;
     const pieces: string[] = [];
@@ -8,10 +14,7 @@ export function elideBase64Payloads(text: string): string {
     while ((match = prefix.exec(text)) !== null) {
         const payloadStart = prefix.lastIndex;
         let end = payloadStart;
-        while (end < text.length) {
-            const code = text.charCodeAt(end);
-            if (!((code >= 65 && code <= 90) || (code >= 97 && code <= 122) ||
-                (code >= 48 && code <= 57) || code === 43 || code === 47 || code === 61)) break;
+        while (end < text.length && isBase64CharCode(text.charCodeAt(end))) {
             end++;
         }
         const payloadLength = end - payloadStart;
@@ -25,4 +28,34 @@ export function elideBase64Payloads(text: string): string {
     if (copiedThrough === 0) return text;
     pieces.push(text.slice(copiedThrough));
     return pieces.join('');
+}
+
+function elideRawJsonBase64Fields(text: string): string {
+    if (!text || !text.includes('"base64"')) return text;
+    const prefix = /("base64"\s*:\s*")/g;
+    const pieces: string[] = [];
+    let copiedThrough = 0;
+    while (prefix.exec(text) !== null) {
+        const payloadStart = prefix.lastIndex;
+        let end = payloadStart;
+        while (end < text.length && isBase64CharCode(text.charCodeAt(end))) {
+            end++;
+        }
+        const payloadLength = end - payloadStart;
+        if (payloadLength >= 1024 && text.charCodeAt(end) === 34) {
+            pieces.push(text.slice(copiedThrough, payloadStart));
+            pieces.push(`[elided ${Math.max(1, Math.round(payloadLength * 3 / 4 / 1024))}KB — delivered to the model as inlineData when needed]`);
+            copiedThrough = end;
+        }
+        prefix.lastIndex = end;
+    }
+    if (copiedThrough === 0) return text;
+    pieces.push(text.slice(copiedThrough));
+    return pieces.join('');
+}
+
+/** Elide image bytes from prompt text without regex recursion over large exports. */
+export function elideBase64Payloads(text: string): string {
+    if (!text) return text;
+    return elideRawJsonBase64Fields(elideDataUrlBase64Payloads(text));
 }

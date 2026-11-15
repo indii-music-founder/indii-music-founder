@@ -1053,4 +1053,69 @@ describe('AgentService request-bound approval guidance', () => {
             expect(execution.task).not.toContain('AAAA');
         }
     });
+
+    it('routes attachment-only boardroom messages with audio metadata instead of dropping as trivial input', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_READY',
+            executedAgentIds: ['generalist', 'marketing'],
+            deferredAgentIds: [],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: null,
+            leaseId: '44444444-4444-4444-8444-444444444444',
+            leaseExpiresAtMs: Date.now() + 60_000,
+            sideEffectOwnerAgentId: 'generalist',
+        });
+        const messages = [{ id: 'response-att-only', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeAgents: ['generalist', 'marketing'],
+            referencedAssets: [],
+            uploadedImages: [],
+            generatedHistory: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(message => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService(vi.fn(async ({ response }) => ({ text: response.text })));
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        const determineBoardroomIntent = vi.fn().mockResolvedValue('conversation');
+        (service as unknown as {
+            orchestrator: { determineBoardroomIntent: typeof determineBoardroomIntent };
+        }).orchestrator = { determineBoardroomIntent } as unknown as {
+            determineBoardroomIntent: typeof determineBoardroomIntent;
+        };
+
+        await (service as unknown as {
+            executeFlow: (
+                text: string,
+                attachments: { mimeType: string; base64: string; filename?: string }[],
+                context: AgentContext,
+                responseId: string,
+            ) => Promise<void>;
+        }).executeFlow(
+            '',
+            [{ mimeType: 'audio/wav', base64: 'UklGRg==', filename: 'midnight-demo.wav' }],
+            {},
+            'response-att-only',
+        );
+
+        expect(determineBoardroomIntent).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.stringContaining('midnight-demo.wav'),
+            0,
+        );
+        expect(capturedExecutions).toHaveLength(2);
+        for (const execution of capturedExecutions) {
+            expect(execution.task).toContain('[AVAILABLE SOURCE ASSETS');
+            expect(execution.task).toContain('attachment-0');
+            expect(execution.task).toContain('"type":"audio"');
+            expect(execution.task).toContain('midnight-demo.wav');
+            expect(execution.task).not.toContain('UklGRg==');
+        }
+    });
 });

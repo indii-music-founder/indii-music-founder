@@ -136,4 +136,33 @@ describe('HistoryManager compaction', () => {
         await expect(manager.getCompiledView()).resolves.toContain('Compressed prior turns');
         expect(SummaryService.summarize).toHaveBeenCalledTimes(2);
     });
+
+    it('retains and formats attachment-only user messages in history', async () => {
+        const manager = new HistoryManager();
+        vi.mocked(useStore.getState).mockReturnValue({
+            agentHistory: [
+                {
+                    id: 'att-only-1',
+                    role: 'user',
+                    text: '',
+                    timestamp: 100,
+                    attachments: [
+                        { mimeType: 'audio/wav', base64: 'UklGRg==', filename: 'master-take.wav' },
+                    ],
+                },
+                {
+                    id: 'model-1',
+                    role: 'model',
+                    text: 'Listening to master-take.wav now.',
+                    timestamp: 101,
+                },
+            ],
+        } as unknown as ReturnType<typeof useStore.getState>);
+
+        const recent = await manager.getRecentHistory();
+        expect(recent).toHaveLength(2);
+        const formatted = manager.formatHistory(recent);
+        expect(formatted).toContain('User: [Attached: master-take.wav (audio/wav)]');
+        expect(formatted).toContain('Assistant: Listening to master-take.wav now.');
+    });
 });
