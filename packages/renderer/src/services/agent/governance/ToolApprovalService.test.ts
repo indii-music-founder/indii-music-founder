@@ -532,4 +532,24 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(callback).toHaveBeenCalledWith([expect.objectContaining({ id: 'claimed-1', status: 'claimed' })]);
         });
     });
+
+    describe('tool outcome audit receipts', () => {
+        it('records a logAuditEvent outcome receipt after approved non-computer tool execution', async () => {
+            const auditFn = vi.fn().mockResolvedValue({ data: { logId: 'audit-log-1' } });
+            mocks.httpsCallable.mockImplementation((_fns: unknown, name: string) => {
+                if (name === 'logAuditEvent') return auditFn;
+                return vi.fn().mockResolvedValue({ data: {} });
+            });
+            const executor = vi.fn().mockResolvedValue({ success: true });
+            await bindApproval('execute_code', { script: 'ok' }, executor);
+
+            const res = await toolApprovalService.approve('approval-1');
+            expect(res.success).toBe(true);
+            expect(auditFn).toHaveBeenCalledWith(expect.objectContaining({
+                action: 'agent.tool.execute_code',
+                status: 'success',
+                details: 'toolCallId=approval-1',
+            }));
+        });
+    });
 });
