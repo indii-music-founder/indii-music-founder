@@ -134,7 +134,6 @@ export const ThreeDCard = ({
         if (isInteractive && !isNestedInteractiveTarget(e.target, e.currentTarget)) {
             onClick?.();
         }
-        rest.onClick?.(e);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -169,7 +168,7 @@ export const ThreeDCard = ({
                 onMouseLeave={handleMouseLeave}
                 {...interactiveProps}
                 {...rest}
-                onClick={isInteractive || rest.onClick ? handleClick : undefined}
+                onClick={isInteractive ? handleClick : undefined}
                 onKeyDown={isInteractive || rest.onKeyDown ? handleKeyDown : undefined}
                 style={{
                     rotateX: prefersReducedMotion ? '0deg' : rotateX,

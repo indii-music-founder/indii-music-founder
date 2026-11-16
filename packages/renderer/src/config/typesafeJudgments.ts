@@ -247,10 +247,10 @@ export async function invokeTypesafeJudge(
         'typesafeJudge',
     );
     const result = admission
-        ? await runBudgetedSemanticCall(admission, () => call(request))
-        : await call(request);
+        ? await runBudgetedSemanticCall(admission, () => call(request).then(res => res.data))
+        : (await call(request)).data;
     if (!result || typeof result !== 'object') return null;
-    const answers = result.data?.answers;
+    const answers = result.answers;
     if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return null;
     return answers;
 }
@@ -11611,7 +11611,7 @@ export async function judgeMobileRemoteIntent(
     try {
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },
-            { answers: Record<string, unknown> }
+            { answers?: Record<string, unknown>; usage?: unknown }
         >(getFunctions(), 'typesafeJudge');
 
         const invoke = async () => (await judgeFn({
@@ -11648,7 +11648,7 @@ export async function judgeMobileRemoteIntent(
                     },
                 },
             },
-        }))?.data;
+        })).data;
 
         const data = admission
             ? await runBudgetedSemanticCall(admission, invoke)

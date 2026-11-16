@@ -30,6 +30,7 @@ describe('ApprovalQueue primitives', () => {
     function makeApproval(overrides: Partial<NonNullable<DesktopState['pendingApproval']>> = {}): NonNullable<DesktopState['pendingApproval']> {
         return {
             id: 'req-alpha-001',
+            type: 'tool_execution',
             content: 'Send distribution package to aggregator?',
             timestamp: Date.now() - 2000,
             expiresAt: Date.now() + 5000,

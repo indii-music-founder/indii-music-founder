@@ -209,12 +209,12 @@ export async function judgeSpokenConversationIntent(
                     },
                 },
             },
-        });
+        }).then(res => res.data);
         const result = admission
             ? await runBudgetedSemanticCall(admission, invoke)
             : await invoke();
 
-        return parseSpokenIntentAnswers(result?.data?.answers, fallback);
+        return parseSpokenIntentAnswers(result?.answers, fallback);
     } catch (err: unknown) {
         noteJudgmentFailure(err, 'spoken conversation intent judgment', 'judgeSpokenConversationIntent');
     }

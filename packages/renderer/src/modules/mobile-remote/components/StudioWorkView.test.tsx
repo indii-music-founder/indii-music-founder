@@ -116,8 +116,8 @@ describe('StudioWorkView Component', () => {
     });
 
     it('renders JevRemoteHintBar on non-chat studio subtabs with Jev department guidance', async () => {
-        const onNavigateTab = vi.fn();
-        render(<StudioWorkView isPaired={true} activeDesktopModule="creative" onNavigateTab={onNavigateTab} />);
+        const onNavigateRemoteTab = vi.fn();
+        render(<StudioWorkView isPaired={true} activeDesktopModule="creative" onNavigateRemoteTab={onNavigateRemoteTab} />);
 
         const input = screen.getByPlaceholderText('Create a flyer for Friday night show...');
         fireEvent.change(input, { target: { value: 'Make a flyer for Friday night show' } });

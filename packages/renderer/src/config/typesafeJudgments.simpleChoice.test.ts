@@ -58,11 +58,17 @@ describe('invokeTypesafeJudge & answer shape hardening', () => {
     });
 
     it('rejects wrong types and zero confidence in whitelistedChoice', async () => {
+        const context = {
+            prompt: 'make cover art',
+            generationMode: 'image' as const,
+            viewMode: 'studio',
+            ingredients: { audio: false, image: false, video: false },
+        };
         mocks.call.mockResolvedValueOnce({ data: { answers: { intent: { type: 'score', choice: 'music_video', confidence: 0.9 } } } });
-        expect((await judgeCreativeJourneyIntent({ prompt: 'make cover art' })).intent).toBe('album_artwork');
+        expect((await judgeCreativeJourneyIntent(context)).intent).toBe('album_artwork');
 
         mocks.call.mockResolvedValueOnce({ data: { answers: { intent: { choice: 'music_video', confidence: 0 } } } });
-        expect((await judgeCreativeJourneyIntent({ prompt: 'make cover art' })).intent).toBe('album_artwork');
+        expect((await judgeCreativeJourneyIntent(context)).intent).toBe('album_artwork');
     });
 
     it('rejects wrong types in oneIndexedScore', async () => {
