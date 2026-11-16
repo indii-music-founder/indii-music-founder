@@ -57,7 +57,7 @@ describe('VoiceTextViewingStage', () => {
         expect(onChange).toHaveBeenCalledWith('Hello Boardroom');
     });
 
-    it('expands the viewing stage and shows live waveform during speech dictation', () => {
+    it('shows inline dictation status without stacking a second popup overlay or fake waveguide', () => {
         const onChange = vi.fn();
         const onSubmit = vi.fn();
         render(
@@ -70,9 +70,11 @@ describe('VoiceTextViewingStage', () => {
             />
         );
 
-        expect(screen.getByText('Live Dictation')).toBeInTheDocument();
-        expect(screen.getByText('Creative Agent')).toBeInTheDocument();
-        expect(screen.getAllByText(/Voice interim transcript/i).length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByTestId('composer-inline-status')).toHaveTextContent('Dictating');
+        expect(screen.getByTestId('composer-inline-status')).toHaveTextContent('Creative Agent');
+        expect(screen.queryByText(/Live Dictation/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Edit Text/i)).not.toBeInTheDocument();
+        expect(screen.getByDisplayValue('Voice interim transcript...')).toBeInTheDocument();
     });
 
     it('submits on send button click', () => {
@@ -88,16 +90,17 @@ describe('VoiceTextViewingStage', () => {
         );
 
         const sendButtons = screen.getAllByRole('button', { name: /send/i });
+        expect(sendButtons).toHaveLength(1);
         fireEvent.click(sendButtons[0]);
         expect(onSubmit).toHaveBeenCalledTimes(1);
     });
 
-    it('clears text when Clear is clicked in viewing stage', () => {
+    it('clears text when Clear is clicked in the inline status strip', () => {
         const onChange = vi.fn();
         const onSubmit = vi.fn();
         render(
             <VoiceTextViewingStage
-                value={'This is a long piece of text that automatically triggers the viewing stage to open because it exceeds eighty characters in length.'}
+                value={'This is a long piece of text that surfaces the inline clear control in the unified composer.'}
                 onChange={onChange}
                 onSubmit={onSubmit}
             />
