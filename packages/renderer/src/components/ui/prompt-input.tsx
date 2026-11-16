@@ -206,6 +206,7 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
 
   return (
     <Textarea
+      data-testid="prompt-input"
       {...props}
       ref={handleRef}
       value={value}
@@ -221,7 +222,6 @@ const PromptInputTextarea = memo(function PromptInputTextarea({
       )}
       rows={1}
       disabled={disabled}
-      data-testid="prompt-input"
     />
   )
 })
