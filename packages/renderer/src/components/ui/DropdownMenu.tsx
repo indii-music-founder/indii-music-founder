@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import { forwardRef, type ComponentProps, type ReactNode } from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -81,22 +81,25 @@ export function DropdownMenuLabel({
     );
 }
 
-export function DropdownMenuTriggerButton({
-    children,
-    className = '',
-    ...props
-}: ComponentProps<'button'> & { children: ReactNode }) {
+export const DropdownMenuTriggerButton = forwardRef<
+    HTMLButtonElement,
+    ComponentProps<'button'> & { children: ReactNode }
+>(({ children, className = '', type = 'button', ...props }, ref) => {
     return (
-        <DropdownMenuPrimitive.Trigger asChild {...props}>
+        <DropdownMenuPrimitive.Trigger asChild>
             <button
-                className={`flex items-center justify-between gap-2 px-4 py-2.5 rounded-lg border text-sm transition-all bg-gray-800/50 border-gray-700 text-gray-300 hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+                ref={ref}
+                type={type}
+                className={`flex items-center justify-between gap-2 px-4 py-2.5 rounded-lg border text-sm transition-all bg-gray-800/50 border-gray-700 text-gray-300 hover:border-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+                {...props}
             >
                 {children}
-                <ChevronDown size={14} className="text-gray-500" />
+                <ChevronDown aria-hidden="true" size={14} className="text-gray-500" />
             </button>
         </DropdownMenuPrimitive.Trigger>
     );
-}
+});
+DropdownMenuTriggerButton.displayName = 'DropdownMenuTriggerButton';
 
 export function DropdownMenuContent({
     children,

@@ -158,4 +158,33 @@ describe('PromptInput Interaction', () => {
     const btn = screen.getByTestId('icon-only-btn')
     expect(btn).toHaveAttribute('aria-label', 'Run command')
   })
+
+  it('preserves child disabled={true} even when PromptInput is not loading', () => {
+    render(
+      <PromptInput isLoading={false}>
+        <PromptInputTextarea />
+        <PromptInputActions>
+          <PromptInputAction tooltip="Unavailable">
+            <button type="button" disabled data-testid="disabled-child-btn">
+              Locked
+            </button>
+          </PromptInputAction>
+        </PromptInputActions>
+      </PromptInput>
+    )
+
+    expect(screen.getByTestId('disabled-child-btn')).toBeDisabled()
+  })
+
+  it('preserves caller onFocus on PromptInputTextarea', () => {
+    const onFocus = vi.fn()
+    render(
+      <PromptInput>
+        <PromptInputTextarea onFocus={onFocus} />
+      </PromptInput>
+    )
+
+    fireEvent.focus(screen.getByTestId('prompt-input'))
+    expect(onFocus).toHaveBeenCalledOnce()
+  })
 })

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ThreeDCardContainer, ThreeDCard } from './ThreeDCard'
+import { ThreeDCardContainer, ThreeDCard, ThreeDCardBody, ThreeDCardItem } from './ThreeDCard'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 
@@ -68,6 +68,43 @@ describe('ThreeDCard Interactions', () => {
 
             fireEvent.keyDown(button, { key: 'Enter', code: 'Enter' })
             expect(handleClick).toHaveBeenCalledTimes(2)
+        })
+
+        it('ignores nested interactive button clicks and keydowns', async () => {
+            const cardClick = vi.fn()
+            const innerClick = vi.fn()
+            const user = userEvent.setup()
+
+            render(
+                <ThreeDCard onClick={cardClick} aria-label="Outer card">
+                    <button type="button" onClick={innerClick}>Inner Action</button>
+                </ThreeDCard>
+            )
+
+            const innerBtn = screen.getByRole('button', { name: 'Inner Action' })
+            await user.click(innerBtn)
+            fireEvent.keyDown(innerBtn, { key: 'Enter' })
+
+            expect(innerClick).toHaveBeenCalledTimes(1)
+            expect(cardClick).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('ThreeDCardItem', () => {
+        it('preserves explicit CSS units on translate props', () => {
+            render(
+                <ThreeDCardContainer>
+                    <ThreeDCardBody>
+                        <ThreeDCardItem translateX="2rem" translateY={12} data-testid="unit-item">
+                            Item
+                        </ThreeDCardItem>
+                    </ThreeDCardBody>
+                </ThreeDCardContainer>
+            )
+
+            const item = screen.getByTestId('unit-item')
+            expect(item.style.transform).toContain('translateX(2rem)')
+            expect(item.style.transform).toContain('translateY(12px)')
         })
     })
 })

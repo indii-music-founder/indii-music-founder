@@ -1,7 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react';
 import { cn } from '@/lib/utils';
+
+const NESTED_INTERACTIVE_SELECTOR =
+    'button, a[href], input, select, textarea, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+
+function isNestedInteractiveTarget(target: EventTarget | null, currentTarget: EventTarget | null): boolean {
+    if (!target || typeof (target as HTMLElement).closest !== 'function') {
+        return false;
+    }
+    const interactiveAncestor = (target as HTMLElement).closest(NESTED_INTERACTIVE_SELECTOR);
+    return Boolean(interactiveAncestor && interactiveAncestor !== currentTarget);
+}
+
+function formatCssUnit(value: number | string, defaultUnit: string): string {
+    if (typeof value === 'number') {
+        return `${value}${defaultUnit}`;
+    }
+    const trimmed = value.trim();
+    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(trimmed)) {
+        return `${trimmed}${defaultUnit}`;
+    }
+    return trimmed;
+}
 
 interface ThreeDCardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
@@ -33,6 +55,7 @@ export const ThreeDCard = ({
     const ref = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
     const rectRef = useRef<DOMRect | null>(null);
+    const prefersReducedMotion = useReducedMotion();
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -63,7 +86,7 @@ export const ThreeDCard = ({
     }, [updateRect]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!ref.current) return;
+        if (!ref.current || prefersReducedMotion) return;
 
         const clientX = e.clientX;
         const clientY = e.clientY;
@@ -107,8 +130,15 @@ export const ThreeDCard = ({
 
     const isInteractive = !!onClick; // Derived for reuse
 
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isInteractive && !isNestedInteractiveTarget(e.target, e.currentTarget)) {
+            onClick?.();
+        }
+        rest.onClick?.(e);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+        if (isInteractive && !isNestedInteractiveTarget(e.target, e.currentTarget) && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
             onClick?.();
         }
@@ -137,12 +167,13 @@ export const ThreeDCard = ({
                 onMouseMove={handleMouseMove}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                onClick={onClick}
                 {...interactiveProps}
                 {...rest}
+                onClick={isInteractive || rest.onClick ? handleClick : undefined}
+                onKeyDown={isInteractive || rest.onKeyDown ? handleKeyDown : undefined}
                 style={{
-                    rotateX,
-                    rotateY,
+                    rotateX: prefersReducedMotion ? '0deg' : rotateX,
+                    rotateY: prefersReducedMotion ? '0deg' : rotateY,
                     transformStyle: "preserve-3d",
                     cursor: isInteractive ? 'pointer' : undefined,
                     ...style
@@ -210,15 +241,17 @@ export const ThreeDCardItem = ({
     [key: string]: any;
 }) => {
     const ref = useRef<HTMLDivElement>(null);
+    const prefersReducedMotion = useReducedMotion();
 
     const [isMouseEntered] = useMouseEnter();
+    const activeZ = isMouseEntered && !prefersReducedMotion ? translateZ : 0;
 
     return (
         <Component
             ref={ref}
-            className={cn("w-fit transition-all duration-200 ease-linear", className)}
+            className={cn("w-fit motion-safe:transition-all motion-safe:duration-200 ease-linear", className)}
             style={{
-                transform: `translateX(${translateX}px) translateY(${translateY}px) translateZ(${isMouseEntered ? translateZ : 0}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`,
+                transform: `translateX(${formatCssUnit(translateX, 'px')}) translateY(${formatCssUnit(translateY, 'px')}) translateZ(${formatCssUnit(activeZ, 'px')}) rotateX(${formatCssUnit(rotateX, 'deg')}) rotateY(${formatCssUnit(rotateY, 'deg')}) rotateZ(${formatCssUnit(rotateZ, 'deg')})`,
             }}
             {...rest}
         >
@@ -234,17 +267,20 @@ export const ThreeDCardContainer = ({
     children,
     className,
     containerClassName,
-    onClick
+    onClick,
+    'aria-label': ariaLabel,
 }: {
     children: React.ReactNode;
     className?: string;
     containerClassName?: string;
     onClick?: () => void;
+    'aria-label'?: string;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
     const rectRef = useRef<DOMRect | null>(null);
     const [isMouseEntered, setIsMouseEntered] = useState(false);
+    const prefersReducedMotion = useReducedMotion();
 
     const updateRect = useCallback(() => {
         if (containerRef.current) {
@@ -263,7 +299,7 @@ export const ThreeDCardContainer = ({
     }, [updateRect]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || prefersReducedMotion) return;
 
         const clientX = e.clientX;
         const clientY = e.clientY;
@@ -304,8 +340,14 @@ export const ThreeDCardContainer = ({
         containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
     };
 
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (onClick && !isNestedInteractiveTarget(e.target, e.currentTarget)) {
+            onClick();
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+        if (onClick && !isNestedInteractiveTarget(e.target, e.currentTarget) && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
             onClick();
         }
@@ -327,13 +369,14 @@ export const ThreeDCardContainer = ({
                     onMouseEnter={handleMouseEnter}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
-                    onClick={onClick}
+                    onClick={onClick ? handleClick : undefined}
                     role={onClick ? "button" : undefined}
                     tabIndex={onClick ? 0 : undefined}
-                    onKeyDown={handleKeyDown}
+                    aria-label={onClick ? ariaLabel : undefined}
+                    onKeyDown={onClick ? handleKeyDown : undefined}
                     className={cn(
-                        "flex items-center justify-center relative transition-all duration-200 ease-linear",
-                        onClick && "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl",
+                        "flex items-center justify-center relative motion-safe:transition-all motion-safe:duration-200 ease-linear",
+                        onClick && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl",
                         className
                     )}
                     style={{

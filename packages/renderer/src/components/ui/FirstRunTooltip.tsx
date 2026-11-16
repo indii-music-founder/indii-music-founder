@@ -81,7 +81,11 @@ export function useFirstRunTip(tipId: string) {
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function resetAllTips(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        // Ignore storage errors
+    }
 }
 
 /** Predefined tips for key features */
@@ -110,6 +114,16 @@ export function FirstRunTooltip({
     position = 'bottom',
     className = '',
 }: FirstRunTooltipProps) {
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onDismiss();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onDismiss]);
+
     const positionClasses: Record<string, string> = {
         top: 'bottom-full mb-2',
         bottom: 'top-full mt-2',
@@ -127,7 +141,7 @@ export function FirstRunTooltip({
                 <button
                     type="button"
                     onClick={onDismiss}
-                    className="mt-1.5 text-[10px] font-bold text-white/70 hover:text-white uppercase tracking-wider transition-colors"
+                    className="mt-1.5 text-[10px] font-bold text-white/70 hover:text-white uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 rounded"
                     aria-label="Dismiss tip"
                 >
                     Got it

@@ -48,7 +48,7 @@ export function SectionCard({ title, icon, children, isOpen, onToggle }: Section
                 onClick={onToggle}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? contentId : undefined}
-                className="w-full py-2 px-1 flex items-center justify-between group"
+                className="w-full py-2 px-1 flex items-center justify-between group rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
                 <div className="flex items-center gap-2 text-[11px] font-bold text-gray-300 tracking-wider uppercase transition-colors group-hover:text-white">
                     {icon}
