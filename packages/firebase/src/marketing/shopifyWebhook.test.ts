@@ -70,7 +70,7 @@ vi.mock('../config/secrets', () => ({
   },
 }));
 
-import { emitSaleConversion } from './shopifyWebhook';
+import { emitSaleConversion, isStaleProcessingClaim } from './shopifyWebhook';
 
 beforeEach(() => {
   db.outbox.length = 0;
@@ -272,5 +272,27 @@ describe('Shopify HMAC verification', () => {
 
     // Lengths differ, so this would return false immediately
     expect(validBuf.length !== invalidBuf.length).toBe(true);
+  });
+});
+
+describe('Shopify delivery claim staleness', () => {
+  const NOW = 10 * 60 * 1000;
+  const ts = (ms: number) => ({ toMillis: () => ms });
+
+  it('treats an old untouched processing claim as stale', () => {
+    expect(isStaleProcessingClaim('processing', ts(0), undefined, NOW)).toBe(true);
+  });
+
+  it('does not treat a live retry as stale even when the first delivery is old', () => {
+    expect(isStaleProcessingClaim('processing', ts(0), ts(NOW - 1_000), NOW)).toBe(false);
+  });
+
+  it('accepts Date values written by the handler', () => {
+    expect(isStaleProcessingClaim('processing', new Date(NOW - 1_000), undefined, NOW)).toBe(false);
+  });
+
+  it('never marks non-processing claims stale', () => {
+    expect(isStaleProcessingClaim('processed', ts(0), undefined, NOW)).toBe(false);
+    expect(isStaleProcessingClaim('failed', ts(0), undefined, NOW)).toBe(false);
   });
 });

@@ -82,8 +82,8 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `functions/knowledge/upload.ts:29` | `createKnowledgeUpload` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:120` | `finalizeKnowledgeUpload` | `onCall` | Present | Present |
 | `functions/knowledge/upload.ts:250` | `deleteKnowledgeDocument` | `onCall` | Present | Present |
-| `functions/marketing/adCampaignCallables.ts:258` | `executeUnifiedCampaignDirective` | `onCall` | Present | Present |
-| `functions/marketing/adCampaignCallables.ts:318` | `ingestUnifiedAttributionEvent` | `onCall` | Present | Present |
+| `functions/marketing/adCampaignCallables.ts:282` | `executeUnifiedCampaignDirective` | `onCall` | Present | Present |
+| `functions/marketing/adCampaignCallables.ts:342` | `ingestUnifiedAttributionEvent` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:130` | `getCanonicalClaimsInbox` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:154` | `declareCanonicalRightsClaim` | `onCall` | Present | Present |
 | `functions/music/claimsInbox.ts:178` | `respondToCanonicalRightsClaim` | `onCall` | Present | Present |
@@ -192,7 +192,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/presaveCampaigns.ts:270` | `getPreSaveCampaign` | `onCall` | Present | Present |
 | `marketing/presaveCampaigns.ts:326` | `listPreSaveCampaigns` | `onCall` | Present | Present |
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
-| `marketing/shopifyWebhook.ts:189` | `shopifyWebhook` | `onRequest` | Present | Present |
+| `marketing/shopifyWebhook.ts:211` | `shopifyWebhook` | `onRequest` | Present | Present |
 | `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:42` | `createMarketplaceCheckout` | `onCall` | Present | Present |
 | `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |
