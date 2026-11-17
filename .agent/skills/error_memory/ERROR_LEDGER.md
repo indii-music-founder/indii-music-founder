@@ -1,3 +1,11 @@
+## 2026-11-17 Release Details Saved the Previous Value; Brand-Kit Success Toasts Survived a Never-Rejecting Save (RELEASE_PANEL_STALE_SAVE)
+
+- **SEVERITY:** High (user-facing: edits to release date/type/tracks were reported "saved" but stored the previous value, and a staged creative handoff could be consumed after a failed save)
+- **FILES:** `packages/renderer/src/modules/marketing/components/brand-manager/{ReleasePanel,VisualsPanel,types}.ts*`, `BrandManager.tsx`
+- **ERROR:** (1) `ReleasePanel` called `handleUpdateRelease(field, v); handleSaveRelease();` in one event, but `handleSaveRelease` saved `release` from the current render (stale closure), so the new value was stored only by a later save while the toast already said "Release details saved". (2) Making `saveBrandKit` never reject (BRAND_MANAGER_UNHANDLED_SAVE) silently broke consumers that relied on rejection: `ReleasePanel`'s catch -> error toast and `VisualsPanel`'s `.then(consumeHandoff + success).catch(keep handoff)`. Caught in review of that change before it shipped.
+- **FIX:** `handleUpdateRelease` returns the updated release and `handleSaveRelease(releaseToSave)` saves exactly that. `saveBrandKit` now resolves a boolean (`Promise<boolean>` in `BrandManagerTabProps`); `ReleasePanel` toasts "saved" only on `true`; `VisualsPanel` consumes the handoff only on `true`. Tests: saved date equals the picked date, no "saved" toast on a failed write.
+- **PREVENTION:** Never update state and then call a save that reads that state in the same event handler; pass the new value explicitly. When changing a helper from reject-on-failure to resolve-false, grep every caller for `.catch`/`try` that encoded the old contract, and change the return type so the compiler lists them.
+
 ## 2026-11-17 Brand Manager Saved Profile/Brand-Kit Changes Without Handling Failure (BRAND_MANAGER_UNHANDLED_SAVE)
 
 - **SEVERITY:** Medium (user-facing: a rejected write left the screen showing a value that was never saved, with an unhandled rejection)

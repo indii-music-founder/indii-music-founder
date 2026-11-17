@@ -68,12 +68,12 @@ const BrandManager: React.FC = () => {
     const release: ReleaseDetails = brandKit.releaseDetails || { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' };
 
     // -- PERSISTENCE HELPER --
-    const saveBrandKit = async (updates: Partial<BrandKit>): Promise<void> => {
+    const saveBrandKit = async (updates: Partial<BrandKit>): Promise<boolean> => {
         const firestoreUpdates: Record<string, BrandKit[keyof BrandKit]> = {};
         Object.keys(updates).forEach(key => {
             firestoreUpdates[`brandKit.${key}`] = updates[key as keyof BrandKit];
         });
-        await persistUserUpdates(userProfile?.id, firestoreUpdates, toast.error);
+        return persistUserUpdates(userProfile?.id, firestoreUpdates, toast.error);
     };
 
     // Profile completeness for the interview badge
