@@ -7,14 +7,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/error-reporting": "^4.1.0",
+    "@google-cloud/error-reporting": "^4.3.0",
     "@indii/shared": "*",
     "@indii/video-compiler": "*",
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "@ngrok/ngrok": "^1.7.0",
-    "bufferutil": "^4.1.0",
+    "@ngrok/ngrok": "^1.8.0",
+    "bufferutil": "^4.2.0",
     "chokidar": "^5.0.0",
-    "electron-log": "5.4.3",
+    "electron-log": "5.4.4",
     "electron-squirrel-startup": "1.0.1",
     "electron-store": "11.0.2",
     "electron-updater": "^6.8.11",
@@ -26,9 +26,9 @@
     "hyperframes": "0.8.10",
     "keytar": "7.9.0",
     "libsodium-wrappers": "^0.7.10",
-    "ssh2-sftp-client": "12.0.1",
+    "ssh2-sftp-client": "12.1.1",
     "utf-8-validate": "^5.0.2",
-    "ws": "^8.18.0",
+    "ws": "^8.23.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -37,7 +37,7 @@
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "22.19.1",
     "@types/ssh2-sftp-client": "9.0.6",
-    "@types/ws": "^8.5.14",
+    "@types/ws": "^8.18.2",
     "typescript": "5.8.2"
   }
 }

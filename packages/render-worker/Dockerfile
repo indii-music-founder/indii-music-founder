@@ -53,6 +53,10 @@ COPY --from=build /app/packages/render-worker/package.json packages/render-worke
 RUN rm -rf node_modules/@indii/shared node_modules/@indii/video-compiler
 COPY --from=build /app/packages/shared/package.json node_modules/@indii/shared/package.json
 COPY --from=build /app/packages/shared/dist node_modules/@indii/shared/dist
+# Runtime deps pinned under the shared workspace (e.g. @noble/hashes 2.x, which
+# is not hoisted to the root) must sit beside the physical @indii/shared copy so
+# Node resolves them from node_modules/@indii/shared/dist.
+COPY --from=build /app/packages/shared/node_modules node_modules/@indii/shared/node_modules
 COPY --from=build /app/packages/video-compiler/package.json node_modules/@indii/video-compiler/package.json
 COPY --from=build /app/packages/video-compiler/dist node_modules/@indii/video-compiler/dist
 # Local checkout permissions are preserved by COPY. Keep runtime package
