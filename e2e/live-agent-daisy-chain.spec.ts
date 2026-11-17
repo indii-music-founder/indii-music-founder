@@ -114,7 +114,7 @@ interface ChainReport {
   };
 }
 
-test.describe('Live coordinated agent daisy chain', () => {
+test.describe('@live Live coordinated agent daisy chain', () => {
   test.use({ viewport: { width: 1440, height: 920 } });
 
   test('creates connected assets, campaign data, and downstream agent handoffs', async ({ authedPage: page }) => {
