@@ -1,3 +1,11 @@
+## 2026-11-17 Navigation Tools Claimed "Navigated" Without Awaiting `setModule` (NAVIGATION_TOOL_FALSE_SUCCESS)
+
+- **SEVERITY:** Medium (user-facing: the agent said it opened a module/project while an unsaved-changes prompt was pending or the user had declined it)
+- **FILES:** `packages/renderer/src/services/agent/tools/{NavigationTools,LegalTools,ProjectTools,navigationOutcome}.ts`, `MediaTools.ts`
+- **ERROR:** `appSlice.setModule` returns a Promise: it awaits an unsaved-changes modal, returns without navigating if declined, and drops a switch within 100 ms of the previous one. `switch_module`, `navigate_to`, `register_copyright`, `register_music_work` and `open_project` called it without awaiting and unconditionally returned success; the registration tools also set focus on a module that never opened. Found with typed `@typescript-eslint/no-floating-promises` (the repo's lint config has no type info, so it never reports these). Same scan: `analyze_audio_dna` fired `updateProjectMetadata` without awaiting or catching, so a failed save was an unhandled rejection.
+- **FIX:** `navigateToModule` awaits `setModule` and confirms `currentModule === target`; tools return `NAVIGATION_NOT_COMPLETED` (naming the module the app is still on) and only set registration focus after a confirmed switch. `analyze_audio_dna` awaits the save and reports `savedToProject`.
+- **PREVENTION:** Await every store action that returns a Promise and verify its effect before claiming it. To find floating promises, lint with type information (`parserOptions.project`); the default config cannot see them. `packages/firebase` non-test source has none.
+
 ## 2026-11-17 `edit_document_with_annotations` Claimed an Applied Edit and Invented a Document ID (DOCUMENT_EDIT_FALSE_SUCCESS)
 
 - **SEVERITY:** High (user-facing: the agent told artists their document was edited and handed out an ID that does not exist)

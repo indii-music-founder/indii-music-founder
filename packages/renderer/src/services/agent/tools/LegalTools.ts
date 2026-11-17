@@ -6,6 +6,7 @@ import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
 
 // ============================================================================
 // Types for LegalTools
@@ -248,7 +249,9 @@ Signature: ____________________________
         // Navigate to Registration Center focused on Library of Congress
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
-        store.setModule('registration');
+        if (!await navigateToModule(useStore, 'registration')) {
+            return toolError(navigationNotCompletedMessage('registration', useStore.getState().currentModule), 'NAVIGATION_NOT_COMPLETED');
+        }
         store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
         store.setRegistrationIntelligenceMessage(
             `Opening Library of Congress (eCO) copyright registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill everything I know from your catalog — you'll only need to confirm a couple of details.`
@@ -271,7 +274,9 @@ Signature: ____________________________
 
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
-        store.setModule('registration');
+        if (!await navigateToModule(useStore, 'registration')) {
+            return toolError(navigationNotCompletedMessage('registration', useStore.getState().currentModule), 'NAVIGATION_NOT_COMPLETED');
+        }
         store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
         store.setRegistrationIntelligenceMessage(
             `Opening ${orgName} work registration${args.trackTitle ? ` for "${args.trackTitle}"` : ''}. I'll pre-fill your contributor splits and metadata — just confirm your IPI number.`
