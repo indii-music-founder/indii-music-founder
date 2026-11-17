@@ -35,9 +35,11 @@ This is not certification that every primitive or customer path is complete.
   question). If the estimate exceeds `remaining`, the guardrail abstains (pass
   through), as before. A missing receipt now retains only the estimate; actual
   usage above the estimate is still recorded on settle.
-- **Note:** `runBudgetedSemanticCall` in `governance/SemanticCallBudget.ts` uses the
-  same whole-allowance pattern for optional judgments. It was not in this
-  finding's scope and is left unchanged; it should get the same treatment.
+- **Same pattern, also fixed:** `runBudgetedSemanticCall` in
+  `governance/SemanticCallBudget.ts` held the whole allowance for every optional
+  TypeSafe judgment (transient-error, mobile-remote intent, spoken intent, the
+  shared `invokeTypesafeJudge`). It now requires the judge payload and reserves
+  `estimateSemanticCallTokens(payload)`; the guardrail reuses that estimator.
 
 ### H2 — Campaign directive stuck in `claimed` after a Jev rejection
 
@@ -78,4 +80,10 @@ _Not available in this session — see scope note._
   `tsc -p packages/firebase/tsconfig.test.json`: clean. ESLint on changed files:
   clean. The full `npm run typecheck` chain was not run end to end (it OOMs at the
   default heap in this container); each relevant project was checked separately.
+- Semantic-call follow-up: `SemanticCallBudget.test.ts` rewritten for bounded
+  holds (incl. a concurrent second call that now proceeds); renderer agent,
+  config and intelligence suites 3258 passed / 18 skipped.
 - Structural (mocked) tests only — no live Jev or ad-provider call was made.
+- `npm ci` failing in the authoring container was npm 10.9 only; CI (npm 11.19)
+  and the founder Mac (npm 11.12) accept the checked-in lockfile, so it was left
+  unchanged.
