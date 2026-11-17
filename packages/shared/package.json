@@ -15,8 +15,8 @@
         "build:runtime": "tsc -p tsconfig.runtime.json"
     },
     "dependencies": {
-        "@noble/hashes": "2.2.0",
-        "fast-xml-parser": "^5.10.1",
+        "@noble/hashes": "2.4.0",
+        "fast-xml-parser": "^5.12.1",
         "zod": "3.25.76"
     },
     "devDependencies": {
