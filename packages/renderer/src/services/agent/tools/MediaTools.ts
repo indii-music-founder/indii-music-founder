@@ -476,16 +476,22 @@ export const MediaTools = {
                 genre: profile.semantic.genre.join(', ')
             };
 
+            // The analysis stands on its own; saving it to the project is a separate
+            // write that can fail, so await it and report whether it was saved.
+            let savedToProject = false;
             if (currentProjectId && profile) {
-                // Update project metadata with the DNA info
-                updateProjectMetadata(currentProjectId, {
-                    audioDna: profile
-                });
+                try {
+                    await updateProjectMetadata(currentProjectId, { audioDna: profile });
+                    savedToProject = true;
+                } catch (saveError) {
+                    logger.warn('[MediaTools] Audio DNA could not be saved to the project:', saveError);
+                }
             }
 
             return toolSuccess({
                 dna,
-                profile // Return full profile for advanced tools
+                profile, // Return full profile for advanced tools
+                savedToProject,
             }, `Audio DNA extracted successfully:\nBPM: ${dna.bpm}\nKey: ${dna.key}\nMood: ${dna.mood}\nEnergy: ${dna.energy}\nGenre: ${dna.genre}`);
             
         } catch (e: unknown) {
