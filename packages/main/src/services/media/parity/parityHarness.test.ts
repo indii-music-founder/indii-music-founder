@@ -7,7 +7,7 @@
  */
 
 import { execFile } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -56,10 +56,11 @@ beforeAll(async () => {
     compB = path.join(root, 'compB');
     await mkdir(compA); await mkdir(compB);
 
-    // GSAP is vendored locally so the fixture is network-free at render time.
-    const res = await fetch('https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js');
-    if (!res.ok) throw new Error(`gsap download failed: ${res.status}`);
-    const gsap = Buffer.from(await res.arrayBuffer());
+    // GSAP comes from the repo's vendored fixture so setup is network-free,
+    // matching the sibling hyperframes tests (no CDN fetch on every run).
+    const gsap = await readFile(
+        path.join(__dirname, '../../video/hyperframes/__fixtures__/gsap.min.js'),
+    );
     await writeFile(path.join(compA, 'gsap.min.js'), gsap);
     await writeFile(path.join(compA, 'index.html'), compositionHtml('CAL-A', '#101418'));
     await writeFile(path.join(compB, 'gsap.min.js'), gsap);
