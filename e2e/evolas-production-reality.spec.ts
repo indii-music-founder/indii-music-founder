@@ -149,7 +149,7 @@ async function sendAndReadReceipt(
     .getAttribute("data-response-id")
     .catch(() => null);
   await page.getByTestId("main-prompt-input").fill(prompt);
-  await page.getByTestId("command-bar-run-btn").click();
+  await page.getByTestId("main-prompt-input").press("Enter");
   await expect
     .poll(
       () =>
