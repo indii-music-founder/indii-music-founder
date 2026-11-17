@@ -1,3 +1,11 @@
+## 2026-11-17 Bulk Release Delete/Archive Reported Total Failure After Partial Success (BULK_RELEASE_PROMISE_ALL)
+
+- **SEVERITY:** Medium (user-facing: "Failed to delete releases" after some were deleted; stale selection kept)
+- **FILES:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx`, `bulkReleaseAction.ts`
+- **ERROR:** The bulk handler wrapped `Promise.all(selectedIds.map(deleteRelease))` in `toast.promise`. One rejection reported failure for the whole batch although the others had already been changed, and the rejected promise skipped `setSelectedIds([])`.
+- **FIX:** `runBulkReleaseAction` uses `allSettled` and returns succeeded/failed ids; `describeBulkReleaseResult` states exactly what happened; the selection is reduced to the ids that failed so the user can retry only those. Dashboard tests now assert the exact confirmed-result message.
+- **PREVENTION:** Same family as AUTOPOST_PROMISE_ALL_DOUBLE_POST: for batches of independent mutations use `allSettled` and report per-item outcomes. Prefer asserting the user-visible message over asserting that a toast helper was called.
+
 ## 2026-11-17 `multi_platform_autopost` Hid Already-Queued Platforms When One Platform Failed (AUTOPOST_PROMISE_ALL_DOUBLE_POST)
 
 - **SEVERITY:** High (user-facing: a retry after a reported failure double-posts to platforms that already published)
