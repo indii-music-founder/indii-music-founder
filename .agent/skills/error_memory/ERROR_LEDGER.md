@@ -1,3 +1,11 @@
+## 2026-11-17 `request_feature` Always Denied: Payload Lacked the `userId` the Rules Require (FEATURE_REQUEST_USERID_DENIED)
+
+- **SEVERITY:** High (user-facing: no user could ever file a feature request; the tool honestly returned an error every time)
+- **FILES:** `packages/renderer/src/services/agent/tools/BugReportTools.ts`, `packages/firebase/firestore.rules` (`feature_requests`)
+- **ERROR:** The rule allows `create` only when `request.resource.data.userId == request.auth.uid`. The tool wrote `requestedBy: 'user-via-agent'` and no `userId`, and `FirestoreService.add` does not inject one, so every write was `PERMISSION_DENIED`. The earlier "dead client write" follow-up added the rule but never aligned the payload.
+- **FIX:** Set `userId` from `auth.currentUser.uid`; return `AUTH_REQUIRED` without attempting a write when signed out. Tests assert `userId` is persisted and no write happens when signed out.
+- **PREVENTION:** When adding a Firestore rule for a client write, test the exact payload against the rule's ownership predicate. A tool that fails honestly every time is still broken: honest errors need a test that the success path can succeed.
+
 ## 2026-11-17 White-Glove Uploads of Non-Analyzed Types Stuck `processing` Forever (WHITE_GLOVE_STUCK_PROCESSING)
 
 - **SEVERITY:** Medium (user-visible: ingested assets never reach a terminal state)

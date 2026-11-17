@@ -17,8 +17,11 @@ vi.mock('firebase/functions', () => ({
   httpsCallable: httpsCallableMock,
 }));
 
+const authMock = vi.hoisted(() => ({ currentUser: { uid: 'user-1' } as { uid: string } | null }));
+
 vi.mock('@/services/firebase', () => ({
   functions: {},
+  auth: authMock,
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -217,7 +220,20 @@ describe('BugReportTools.request_feature honesty gate', () => {
       title: 'Batch stems export',
       priority: 'high',
       module: 'Mastering',
+      userId: 'user-1',
     }));
+  });
+
+  it('refuses without a signed-in user instead of attempting a write the rules deny', async () => {
+    authMock.currentUser = null;
+    try {
+      const result = await BugReportTools.request_feature!(featureArgs);
+      expect(result.success).toBe(false);
+      expect(result.metadata?.errorCode).toBe('AUTH_REQUIRED');
+      expect(mockFirestoreAdd).not.toHaveBeenCalled();
+    } finally {
+      authMock.currentUser = { uid: 'user-1' };
+    }
   });
 
   it('returns toolError when Firestore persistence fails, never fake success', async () => {
