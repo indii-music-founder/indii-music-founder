@@ -159,7 +159,8 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             throw new Error(`Onboarding flow failed to complete: Both "Go to Studio" and "Skip" commands missing. Last Agent Response: "${responseText}"`);
         }
 
-        await expect(page.getByRole('button', { name: /(Agent Workspace|My Dashboard)/i }).first()).toBeVisible({ timeout: 15000 }); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        // Finishing onboarding lands the user on the Home dashboard inside the studio shell.
+        await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeVisible({ timeout: 15000 });
 
         // C. Navigate to Creative Domain
         // Project creation is no longer required upfront; users jump straight into modules
@@ -168,16 +169,14 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.locator('[data-testid="nav-item-creative"]').click();
 
         // D. Verify Creative Director Module Loaded
-        await expect(page.getByRole('heading', { name: /(Creative Director|Studio)/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 15000 });
         console.log('[Gauntlet] Creative Director module loaded.');
 
-        // E. Verify Key Sub-Modules Are Accessible
-        // The Creative Director has tabs: Generate, Canvas, Direct, Lab, Release AND Builder, Brand, History
-        const generateTab = page.getByRole('button', { name: /generate/i }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-        const builderTab = page.getByRole('button', { name: /builder/i }).first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
-        await expect(generateTab).toBeVisible({ timeout: 5000 });
-        await expect(builderTab).toBeVisible({ timeout: 5000 });
-        console.log('[Gauntlet] Creative Director sub-tabs verified (Generate, Builder).');
+        // E. Verify the studio workspace controls are accessible. The old Generate/Builder
+        // tab strip was replaced by the canvas mode picker.
+        await expect(page.getByTestId('creative-navbar')).toBeVisible({ timeout: 5000 });
+        await expect(page.getByTestId('canvas-mode-picker')).toBeVisible({ timeout: 5000 });
+        console.log('[Gauntlet] Creative Director workspace controls verified (navbar, canvas mode picker).');
 
         // F. Verify Chat Input is Ready
         // The chat input can be in the right panel (Messages tab) OR the bottom bar (textbox)
@@ -381,12 +380,16 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
             const store = (window as unknown as TestWindow).useStore;
             const state = store.getState() as Record<string, any>;
             return {
-                isAuthenticated: state.isAuthenticated,
+                // Auth is represented by a resolved session (`user`) and `authLoading` false;
+                // the store has no `isAuthenticated`/`isAuthReady` fields.
+                authLoading: state.authLoading,
+                hasUser: !!state.user,
                 hasOrg: state.organizations && state.organizations.length > 0
             };
         });
 
-        expect(finalState.isAuthenticated).toBe(true);
+        expect(finalState.authLoading).toBe(false);
+        expect(finalState.hasUser).toBe(true);
         expect(finalState.hasOrg).toBe(true);
 
         console.log('[Gauntlet] Tier Transition Stress Test completed. No crashes detected.');

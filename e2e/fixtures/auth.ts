@@ -355,6 +355,39 @@ export async function setupE2EPage(page: Page): Promise<void> {
         return;
       }
 
+      // Boardroom dispatch is admitted server-side before any agent streams.
+      // Mirror the contract CostControlService.getBoardroomDispatchPlan
+      // validates: every requested agent executes, none are deferred.
+      if (url.includes("planBoardroomAgentStreamDispatch")) {
+        let agentIds: string[] = [];
+        try {
+          const parsed = JSON.parse(route.request().postData() || "{}");
+          const requested = parsed?.data?.agentIds ?? parsed?.agentIds;
+          agentIds = Array.isArray(requested) ? requested.filter((id: unknown): id is string => typeof id === "string") : [];
+        } catch {
+          // fall through with an empty plan
+        }
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: JSON.stringify({
+            data: {
+              type: "BOARDROOM_DISPATCH_PLAN",
+              code: "BOARDROOM_DISPATCH_READY",
+              executedAgentIds: agentIds,
+              deferredAgentIds: [],
+              maxIterationsPerAgent: 1,
+              nextContinuationAgentId: null,
+              leaseId: "e2e00000-0000-4000-8000-000000000001",
+              leaseExpiresAtMs: Date.now() + 5 * 60_000,
+              sideEffectOwnerAgentId: agentIds[0] ?? null,
+            },
+          }),
+        });
+        return;
+      }
+
       if (url.includes("typesafeJudge")) {
         let postData: any = {};
         try {

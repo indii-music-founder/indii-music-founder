@@ -16,15 +16,15 @@ test.describe('Mobile Remote Encounters & Contact Creation', () => {
         await page.goto('/mobile-remote', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('#root', { state: 'visible', timeout: 15_000 });
 
-        // Verify bottom navigation bar has Encounters button
-        const encountersTab = page.locator('nav[aria-label="Mobile Remote rooms"] button:has-text("Encounters")').first(); // bypass-strict
+        // The encounters room is labelled "Feed" in the bottom navigation bar.
+        const encountersTab = page.locator('nav[aria-label="Mobile Remote rooms"] button:has-text("Feed")').first(); // bypass-strict
         await expect(encountersTab).toBeVisible({ timeout: 10_000 });
 
         // Tap on Encounters tab
         await encountersTab.click();
 
         // Feed view should render
-        const feedHeader = page.locator('text=/Recent Encounters/i').first(); // bypass-strict
+        const feedHeader = page.locator('text=/Field Feed/i').first(); // bypass-strict
         await expect(feedHeader).toBeVisible({ timeout: 10_000 });
     });
 });
