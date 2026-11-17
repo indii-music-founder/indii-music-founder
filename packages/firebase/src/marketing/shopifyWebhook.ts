@@ -113,6 +113,28 @@ function parsePriceToCents(price: string): number | null {
  * Requires a valid artist_id metafield on the order.
  * Exported for testing.
  */
+const PROCESSING_CLAIM_TTL_MS = 5 * 60 * 1000;
+
+function timestampMs(value: unknown): number {
+  if (value instanceof Date) return value.getTime();
+  const maybe = value as { toMillis?: () => number } | null | undefined;
+  return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
+}
+
+/**
+ * A `processing` claim is stale only when its newest activity is old. A retry
+ * of a failed delivery rewrites `retriedAt`, so measuring from the original
+ * `receivedAt` would let a duplicate treat a live retry as abandoned and
+ * process the same order twice.
+ */
+export function isStaleProcessingClaim(
+  status: unknown, receivedAt: unknown, retriedAt: unknown, nowMs: number,
+): boolean {
+  if (status !== 'processing') return false;
+  const lastActivityMs = Math.max(timestampMs(receivedAt), timestampMs(retriedAt));
+  return nowMs - lastActivityMs > PROCESSING_CLAIM_TTL_MS;
+}
+
 export async function emitSaleConversion(order: ShopifyOrder): Promise<void> {
   const artistId = extractArtistId(order);
   if (!artistId) {
@@ -254,12 +276,9 @@ export const shopifyWebhook = onRequest(
         const snap = await tx.get(deliveryRef);
         if (snap.exists) {
           const status = snap.get('status');
-          const receivedAt = snap.get('receivedAt');
-          const receivedMs = typeof receivedAt?.toMillis === 'function'
-            ? receivedAt.toMillis()
-            : 0;
-          const staleProcessing =
-            status === 'processing' && Date.now() - receivedMs > 5 * 60 * 1000;
+          const staleProcessing = isStaleProcessingClaim(
+            status, snap.get('receivedAt'), snap.get('retriedAt'), Date.now(),
+          );
           if (status !== 'failed' && !staleProcessing) {
             return true; // Already processed
           }
