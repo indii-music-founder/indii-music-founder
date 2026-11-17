@@ -135,6 +135,13 @@ Return ONLY a JSON object that adheres to the following schema:
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             }
+        } else {
+            // Image, video, document and any other type have no analysis step.
+            // Without a terminal state the asset would stay `processing` forever.
+            await docRef.set({
+                status: 'processed',
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
         }
     }
 );
