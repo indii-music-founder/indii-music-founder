@@ -11,6 +11,17 @@ Each fix has a failing-first test and an ERROR_LEDGER entry (search the ledger f
 - **Not on this branch:** the two high review fixes (whole-allowance token holds, Jev-rejected campaign claim) are on `claude/intelligent-ride-tqbjl5` (PR #888).
 - **Method note:** typed `@typescript-eslint/no-floating-promises` is the best bug finder here but the repo lint config has no type info. Use a throwaway config with `parserOptions.project` and match BOTH `**/*.ts` and `**/*.tsx`. `packages/firebase` source and renderer `.ts` services/tools/modules are triaged; `.tsx` modules, `components/`, `core/` and `services/` are all triaged; remaining hits are effect-triggered loaders and background work that handle their own errors. Slice `*Error` fields with no UI consumer: only `analysisError`/`audioError` remain, and those slices have no UI callers (dead code).
 - **Environment gaps (not code):** full `npm run build` needs `VITE_FIREBASE_*`/App Check values; Jev (TypeSafe) is unreachable without the app's signed-in callable.
+# Primitives Review H1/H2 Fixes, Semantic-Call Budget Bounding & Agent-Doc Sync — In Review (2026-11-17)
+
+**Branch:** `claude/intelligent-ride-tqbjl5` → draft PR indii-music-founder/indii-music-founder#888 (not merged). Base: `main` @ `b72f43f`.
+
+- **H1 — whole-allowance token holds:** `JevGuardrailService` and `runBudgetedSemanticCall` reserved `budget.remaining` on the run-wide `ExecutionTokenBudget`, starving concurrent agents and burning the whole run on a missing receipt. Both now reserve `estimateSemanticCallTokens(payload)`; `runBudgetedSemanticCall(admission, payload, call)` requires the judge payload (all four callers in `typesafeJudgments.ts` / `liveConversationJudgments.ts` updated).
+- **H2 — campaign claim stuck `claimed`:** Jev creative-readiness / asset-verification / allocation-minimum refusals now raise `CampaignPreflightRejectedError`; `adCampaignCallables.ts` marks the record `rejected` (retryable) and the claim transaction reclaims it. Judge throws, ledger failures and post-reservation failures still stay `claimed`.
+- **Docs:** `docs/audits/primitives-review-2026-11-17.md` (H1/H2 only — medium/low findings from the original review still need pasting in), ERROR_LEDGER `TOKEN_HOLD_AND_STUCK_CLAIM`, Platinum pitfall entry, `docs/ARCJET_PROTECTION_MATRIX.md` line refs refreshed.
+- **Agent docs:** CODEX/GEMINI/DROID/JULES/ANTIGRAVITY re-synced verbatim from CLAUDE.md (they had stale stack versions, Remotion listed as video); AGENTS.md gained a "Shared Agent Memory" section.
+- **Lockfile:** not out of sync. `npm ci` only fails on npm 10.x; CI (npm 11.19) and the founder Mac (npm 11.12) accept it.
+- **Founder Mac:** local `main` fast-forwarded to `origin/main` `b72f43f`; duplicate commit `76aef5691` (same patch as `b7cfe45f1`) remains only on local branch `fix/arcjet-quota-efficiency`.
+- **Pending:** PR #888 CI + review; paste remaining review findings; decide whether to delete `fix/arcjet-quota-efficiency` on the Mac.
 
 ---
 

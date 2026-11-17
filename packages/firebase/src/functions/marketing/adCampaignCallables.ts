@@ -38,6 +38,7 @@ import {
 import { evaluateCampaignAllocationWithJev } from '../../orchestration/marketing/campaign-judgments';
 import {
     CampaignOrchestrator,
+    CampaignPreflightRejectedError,
     DefaultPostMasteringAssetVerifier,
     type OrchestratedCampaignExecutionResult,
 } from '../../orchestration/marketing/campaign-orchestrator';
@@ -168,18 +169,25 @@ export async function handleExecuteUnifiedCampaignDirective(
     const requestHash = createHash('sha256').update(JSON.stringify(parsedDirective)).digest('hex');
     const claimExecution = deps?.claimExecution ?? (async () => executionDb.runTransaction(async transaction => {
         const existing = await transaction.get(executionRef);
+        const claim = {
+            artistId: authenticatedUid,
+            directiveId: parsedDirective.directiveId,
+            requestHash,
+            status: 'claimed',
+            claimedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
         if (!existing.exists) {
-            transaction.create(executionRef, {
-                artistId: authenticatedUid,
-                directiveId: parsedDirective.directiveId,
-                requestHash,
-                status: 'claimed',
-                claimedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
+            transaction.create(executionRef, claim);
             return null;
         }
 
         const recorded = existing.data();
+        // A preflight rejection moved no money and created no campaign, so the
+        // same directive ID may be reclaimed — with the same or corrected inputs.
+        if (recorded?.status === 'rejected') {
+            transaction.set(executionRef, claim);
+            return null;
+        }
         if (recorded?.requestHash !== requestHash) {
             throw new HttpsError('already-exists', 'Campaign directive ID was already used for different inputs. Review the existing execution before creating another.');
         }
@@ -215,7 +223,23 @@ export async function handleExecuteUnifiedCampaignDirective(
     const previousResult = await claimExecution(parsedDirective);
     if (previousResult) return previousResult;
 
-    const result = await orchestrator.executeDirective(parsedDirective);
+    let result: OrchestratedCampaignExecutionResult;
+    try {
+        result = await orchestrator.executeDirective(parsedDirective);
+    } catch (error) {
+        if (error instanceof CampaignPreflightRejectedError) {
+            // Settle the claim: leaving it `claimed` would report a definitive,
+            // side-effect-free refusal as "outcome unresolved" forever.
+            await executionRef.update({
+                status: 'rejected',
+                rejectionReason: error.reason,
+                rejectionMessage: error.message,
+                rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            throw new HttpsError('failed-precondition', error.message, { reason: error.reason, retryable: true });
+        }
+        throw error;
+    }
 
     if (deps?.onReceiptPersist) {
         await deps.onReceiptPersist(result);
