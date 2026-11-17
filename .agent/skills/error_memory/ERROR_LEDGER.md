@@ -12,6 +12,14 @@
 - **ERROR:** `beforeAll` fetched `https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js` while its comment claimed the fixture was "network-free". `ENOTFOUND` failed the whole file.
 - **FIX:** Read the repo's vendored `video/hyperframes/__fixtures__/gsap.min.js` (same 3.14.2 build the sibling tests use).
 - **PREVENTION:** Tests must never fetch from the network in setup; vendor fixtures and read them from disk. A comment saying "network-free" is not evidence: grep test setup for `fetch(`/URLs.
+
+## 2026-11-17 White-Glove Uploads of Non-Analyzed Types Stuck `processing` Forever (WHITE_GLOVE_STUCK_PROCESSING)
+
+- **SEVERITY:** Medium (user-visible: ingested assets never reach a terminal state)
+- **FILES:** `packages/firebase/src/functions/ingestion/onWhiteGloveAssetUploaded.ts`
+- **ERROR:** The trigger wrote `status: 'processing'` for every upload, but only `music`/`audio` and `archive` branches ever wrote a terminal status. The client allows `image`, `video` and `document` uploads too; those stayed `processing` permanently.
+- **FIX:** Added an `else` branch that settles every other type as `processed` (no analysis step). Regression test covers image/video/document.
+- **PREVENTION:** Any trigger that writes an in-progress status must have a terminal write on every branch, including the default. Test the default branch, not just the named ones.
 ## 2026-11-17 Whole-Allowance Token Holds & Claims Never Settled on Definitive Refusal (TOKEN_HOLD_AND_STUCK_CLAIM)
 
 - **SEVERITY:** High (primitives review 2026-11-17, H1 + H2)
