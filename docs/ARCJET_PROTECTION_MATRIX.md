@@ -192,7 +192,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `marketing/presaveCampaigns.ts:270` | `getPreSaveCampaign` | `onCall` | Present | Present |
 | `marketing/presaveCampaigns.ts:326` | `listPreSaveCampaigns` | `onCall` | Present | Present |
 | `marketing/presaveRegister.ts:180` | `presaveRegister` | `onCall` | Present | Present |
-| `marketing/shopifyWebhook.ts:189` | `shopifyWebhook` | `onRequest` | Present | Present |
+| `marketing/shopifyWebhook.ts:211` | `shopifyWebhook` | `onRequest` | Present | Present |
 | `marketing/smartLink.ts:105` | `smartLinkRedirect` | `onRequest` | Present | Present |
 | `marketplace/createMarketplaceCheckout.ts:42` | `createMarketplaceCheckout` | `onCall` | Present | Present |
 | `marketplace/getStemDownloadUrl.ts:28` | `getStemDownloadUrl` | `onCall` | Present | Present |
