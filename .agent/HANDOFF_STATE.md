@@ -1,3 +1,17 @@
+# Primitives Review H1/H2 Fixes, Semantic-Call Budget Bounding & Agent-Doc Sync — In Review (2026-11-17)
+
+**Branch:** `claude/intelligent-ride-tqbjl5` → draft PR indii-music-founder/indii-music-founder#888 (not merged). Base: `main` @ `b72f43f`.
+
+- **H1 — whole-allowance token holds:** `JevGuardrailService` and `runBudgetedSemanticCall` reserved `budget.remaining` on the run-wide `ExecutionTokenBudget`, starving concurrent agents and burning the whole run on a missing receipt. Both now reserve `estimateSemanticCallTokens(payload)`; `runBudgetedSemanticCall(admission, payload, call)` requires the judge payload (all four callers in `typesafeJudgments.ts` / `liveConversationJudgments.ts` updated).
+- **H2 — campaign claim stuck `claimed`:** Jev creative-readiness / asset-verification / allocation-minimum refusals now raise `CampaignPreflightRejectedError`; `adCampaignCallables.ts` marks the record `rejected` (retryable) and the claim transaction reclaims it. Judge throws, ledger failures and post-reservation failures still stay `claimed`.
+- **Docs:** `docs/audits/primitives-review-2026-11-17.md` (H1/H2 only — medium/low findings from the original review still need pasting in), ERROR_LEDGER `TOKEN_HOLD_AND_STUCK_CLAIM`, Platinum pitfall entry, `docs/ARCJET_PROTECTION_MATRIX.md` line refs refreshed.
+- **Agent docs:** CODEX/GEMINI/DROID/JULES/ANTIGRAVITY re-synced verbatim from CLAUDE.md (they had stale stack versions, Remotion listed as video); AGENTS.md gained a "Shared Agent Memory" section.
+- **Lockfile:** not out of sync. `npm ci` only fails on npm 10.x; CI (npm 11.19) and the founder Mac (npm 11.12) accept it.
+- **Founder Mac:** local `main` fast-forwarded to `origin/main` `b72f43f`; duplicate commit `76aef5691` (same patch as `b7cfe45f1`) remains only on local branch `fix/arcjet-quota-efficiency`.
+- **Pending:** PR #888 CI + review; paste remaining review findings; decide whether to delete `fix/arcjet-quota-efficiency` on the Mac.
+
+---
+
 # Multi-Platform Programmatic Ad Adapters, Attribution Engine, Mobile Remote Studio Bridge (ISSUE-1528), Desktop v1.82.0 & Issues #418/#417 — Delivered (2026-10-15 EDT)
 
 Delivered end-to-end Multi-Platform Programmatic Ad Adapters (`META`, `TIKTOK`, `GOOGLE_ADS`), Unified Server-Side Attribution Engine (`AttributionBus` + `FirestoreAttributionDeduplicationStore`), Cross-Department Campaign Orchestrator (`CampaignOrchestrator` + `FirestoreFinanceRecoupmentLedger` + Jev System One `campaign-judgments.ts`), Gen 2 Cloud Function callables (`adCampaignCallables.ts`), Marketing Agent tool wiring (`dispatch_multi_platform_campaign`, `record_attribution_conversion`), Mobile Remote Studio Bridge (`ISSUE-1528`), Desktop App v1.82.0 Apple Silicon DMG version bump, and fixes for GitHub Issues `#418` and `#417` on `main`:

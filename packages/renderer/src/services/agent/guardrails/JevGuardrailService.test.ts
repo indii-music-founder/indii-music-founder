@@ -18,7 +18,8 @@ vi.mock('../truthOverclaimReporter', () => ({
 }));
 
 import { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { JevGuardrailService, parseGuardrailProbability, projectGuardrailToolEvidence } from './JevGuardrailService';
+import { GUARDRAIL_QUESTIONS } from '@/config/typesafeJudgments';
+import { JevGuardrailService, estimateGuardrailReservation, parseGuardrailProbability, projectGuardrailToolEvidence } from './JevGuardrailService';
 
 describe('guardrail probability contract (pure parser)', () => {
   it.each([0, 0.3, 0.5, 0.7, 1])('preserves valid probability %s in both supported shapes', probability => {
@@ -65,11 +66,28 @@ describe('JevGuardrailService', () => {
   let service: JevGuardrailService;
   let budget: ExecutionTokenBudget;
 
+  const LIMIT = 100_000;
+  const receipt = (total: number) => ({ data: { answers: {}, usage: { inputTokens: total - 5, outputTokens: 5, totalTokens: total } } });
+
+  /** Tokens held by in-flight guardrail work, observed through the shared ledger. */
+  async function heldWhileInFlight(text: string): Promise<number> {
+    let finish!: (response: unknown) => void;
+    judgeInvoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const probe = new ExecutionTokenBudget(LIMIT);
+    const screening = service.screen({ text }, probe);
+    await vi.waitFor(() => expect(judgeInvoke).toHaveBeenCalled());
+    const held = LIMIT - probe.remaining;
+    finish(receipt(20));
+    await screening;
+    judgeInvoke.mockReset();
+    return held;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     httpsCallableMock.mockReturnValue(judgeInvoke);
     service = new JevGuardrailService();
-    budget = new ExecutionTokenBudget(100);
+    budget = new ExecutionTokenBudget(LIMIT);
   });
 
   it('accounts for the usage receipt before interpreting the judgment (structural)', async () => {
@@ -79,11 +97,21 @@ describe('JevGuardrailService', () => {
     } });
     await service.screen({ text: 'Response' }, budget);
     expect(budget.spent).toBe(20);
-    expect(budget.remaining).toBe(80);
+    expect(budget.remaining).toBe(LIMIT - 20);
   });
 
-  it('skips the proxy when the execution allowance is exhausted (structural)', async () => {
-    budget.reserve(100);
+  it('reserves a bounded per-call estimate, never the whole allowance (structural)', async () => {
+    const held = await heldWhileInFlight('Response');
+    expect(held).toBeGreaterThan(0);
+    expect(held).toBeLessThan(LIMIT);
+    expect(held).toBe(estimateGuardrailReservation({
+      response: { text: 'Response', tool_calls: 'none', tool_results: [], omitted_tool_results: 0 },
+    }, GUARDRAIL_QUESTIONS));
+  });
+
+  it('skips the proxy when the allowance cannot cover the estimate (structural)', async () => {
+    const held = await heldWhileInFlight('Response');
+    budget.reserve(LIMIT - held + 1);
     judgeInvoke.mockResolvedValue({ data: { answers: {} } });
     const result = await service.screen({ text: 'Response' }, budget);
     expect(result.text).toBe('Response');
@@ -91,64 +119,65 @@ describe('JevGuardrailService', () => {
   });
 
   it.each([undefined, { totalTokens: 2 }, { inputTokens: 1, outputTokens: 1, totalTokens: 3 }])(
-    'retains the reservation for missing or malformed usage %j (structural)', async usage => {
+    'retains only the estimate for missing or malformed usage %j (structural)', async usage => {
+      const held = await heldWhileInFlight('Response');
       judgeInvoke.mockResolvedValue({ data: { answers: {}, usage } });
       await service.screen({ text: 'Response' }, budget);
-      expect(budget.remaining).toBe(0);
+      expect(budget.remaining).toBe(LIMIT - held);
     },
   );
 
   it('keeps the reservation during a display timeout and settles a late receipt (structural)', async () => {
+    const held = await heldWhileInFlight('Response');
     vi.useFakeTimers();
     let finish!: (response: unknown) => void;
     judgeInvoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-    const receipt = { data: { answers: {}, usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 } } };
     try {
       const screening = service.screen({ text: 'Response' }, budget);
       await vi.advanceTimersByTimeAsync(2000);
       expect((await screening).text).toBe('Response');
-      expect(budget.remaining).toBe(0);
-      finish(receipt);
+      expect(budget.remaining).toBe(LIMIT - held);
+      finish(receipt(20));
       await vi.advanceTimersByTimeAsync(0);
       expect(budget.spent).toBe(20);
     } finally {
-      finish?.(receipt);
+      finish?.(receipt(20));
       await vi.advanceTimersByTimeAsync(0);
       vi.useRealTimers();
     }
   });
 
-  it('shares admission within a run and keeps separate runs independent (structural)', async () => {
+  it('lets concurrent agents in the same run reserve while a judgment is in flight (structural)', async () => {
     let finish!: (response: unknown) => void;
     judgeInvoke.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }))
-      .mockResolvedValue({ data: { answers: {}, usage: { inputTokens: 15, outputTokens: 5, totalTokens: 20 } } });
+      .mockResolvedValue(receipt(20));
     const first = service.screen({ text: 'First' }, budget);
     try {
+      await vi.waitFor(() => expect(judgeInvoke).toHaveBeenCalledOnce());
+      expect(budget.reserve(1_000)).not.toBeNull();
       await service.screen({ text: 'Same run' }, budget);
-      expect(judgeInvoke).toHaveBeenCalledOnce();
-      const otherBudget = new ExecutionTokenBudget(100);
-      await service.screen({ text: 'Other run' }, otherBudget);
       expect(judgeInvoke).toHaveBeenCalledTimes(2);
-      expect(otherBudget.spent).toBe(20);
-      expect(budget.remaining).toBe(0);
     } finally {
-      finish({ data: { answers: {}, usage: { inputTokens: 8, outputTokens: 2, totalTokens: 10 } } });
+      finish(receipt(10));
       await first;
     }
-    expect(budget.spent).toBe(10);
+    expect(budget.spent).toBe(1_000 + 20 + 10);
   });
 
-  it('retains the hold when the transport fails without a receipt (structural)', async () => {
+  it('retains only the estimate when the transport fails without a receipt (structural)', async () => {
+    const held = await heldWhileInFlight('Response');
     judgeInvoke.mockRejectedValueOnce(new Error('Unavailable'));
     expect((await service.screen({ text: 'Response' }, budget)).text).toBe('Response');
-    expect(budget.remaining).toBe(0);
+    expect(budget.remaining).toBe(LIMIT - held);
   });
 
   it('records actual usage above the remaining allowance (structural)', async () => {
-    judgeInvoke.mockResolvedValue({ data: { answers: {}, usage: { inputTokens: 120, outputTokens: 30, totalTokens: 150 } } });
-    await service.screen({ text: 'Response' }, budget);
-    expect(budget.spent).toBe(150);
-    expect(budget.remaining).toBe(0);
+    const small = new ExecutionTokenBudget(LIMIT);
+    small.reserve(LIMIT - 5_000);
+    judgeInvoke.mockResolvedValue(receipt(6_000));
+    await service.screen({ text: 'Response' }, small);
+    expect(small.spent).toBe(LIMIT - 5_000 + 6_000);
+    expect(small.remaining).toBe(0);
   });
 
   it('evaluates an actionable response without modification through the server proxy', async () => {

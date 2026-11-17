@@ -169,7 +169,7 @@ export async function judgeSpokenConversationIntent(
             { answers?: Record<string, unknown>; usage?: unknown }
         >(getFunctions(), 'typesafeJudge');
 
-        const invoke = () => judgeFn({
+        const request = {
             state: {
                 utterance: spokenText.slice(0, 300),
                 currentAgentId: currentAgentId || 'generalist',
@@ -209,9 +209,10 @@ export async function judgeSpokenConversationIntent(
                     },
                 },
             },
-        }).then(res => res.data);
+        };
+        const invoke = () => judgeFn(request).then(res => res.data);
         const result = admission
-            ? await runBudgetedSemanticCall(admission, invoke)
+            ? await runBudgetedSemanticCall(admission, request, invoke)
             : await invoke();
 
         return parseSpokenIntentAnswers(result?.answers, fallback);
