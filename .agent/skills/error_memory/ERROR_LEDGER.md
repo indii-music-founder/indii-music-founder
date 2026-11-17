@@ -1,3 +1,10 @@
+## 2026-11-17 White-Glove Uploads of Non-Analyzed Types Stuck `processing` Forever (WHITE_GLOVE_STUCK_PROCESSING)
+
+- **SEVERITY:** Medium (user-visible: ingested assets never reach a terminal state)
+- **FILES:** `packages/firebase/src/functions/ingestion/onWhiteGloveAssetUploaded.ts`
+- **ERROR:** The trigger wrote `status: 'processing'` for every upload, but only `music`/`audio` and `archive` branches ever wrote a terminal status. The client allows `image`, `video` and `document` uploads too; those stayed `processing` permanently.
+- **FIX:** Added an `else` branch that settles every other type as `processed` (no analysis step). Regression test covers image/video/document.
+- **PREVENTION:** Any trigger that writes an in-progress status must have a terminal write on every branch, including the default. Test the default branch, not just the named ones.
 ## 2026-11-17 Parity Harness Test Downloaded GSAP From a CDN on Every Run (UNHERMETIC_PARITY_TEST)
 
 - **SEVERITY:** Medium (suite fails offline / whenever the CDN or sandbox network is unavailable)
