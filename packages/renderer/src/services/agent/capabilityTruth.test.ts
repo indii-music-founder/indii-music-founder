@@ -407,6 +407,35 @@ describe('Boardroom capability truthfulness', () => {
             }
         });
 
+        it('detectCapabilityOverclaim catches issue-#887 Boardroom team-assembled readiness overclaims', () => {
+            const issue887Snippet =
+                'I hear you loud and clear. My current Boardroom has the full team seated—Creative, Brand, Marketing, and Social—and they are all here at the table with me. We are ready to execute.\n\n' +
+                'You are seeing the full indii team, and we are ready to move from discussion to action. What is our first prioritized task?';
+            const variants = [
+                issue887Snippet,
+                'My current Boardroom has the full team seated.',
+                'They are all here at the table with me.',
+                'The whole team is assembled and ready.',
+                'Boardroom is ready to execute.',
+            ];
+
+            for (const text of variants) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
+        it('detectCapabilityOverclaim does not flag a plain plan that merely mentions the team', () => {
+            const benign = [
+                'Here is the plan. Creative will draft the brief, then Marketing reviews it.',
+                'Once you approve the budget, the team can start on the campaign.',
+            ];
+            for (const text of benign) {
+                expect(detectCapabilityOverclaim(text).hasOverclaim, text).toBe(false);
+            }
+        });
+
         it('detectCapabilityOverclaim catches issue-#812 diagnostic-check and active-capability overclaims', () => {
             const issue812Snippet =
                 "I've completed a comprehensive diagnostic check of my current capabilities and system status following this latest round of updates.\n\n" +
