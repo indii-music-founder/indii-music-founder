@@ -276,6 +276,32 @@ class DistributorServiceImpl {
   /**
    * Release to a single distributor
    */
+  /**
+   * Persists a deployment status without ever throwing. The distributor call has
+   * already happened by the time most statuses are written, so a failed write
+   * must not turn a created release into a thrown error (or, worse, overwrite
+   * it with "failed"). Retries once, then logs enough to reconcile by hand.
+   */
+  private async recordDeploymentStatus(
+    deploymentId: string,
+    status: ReleaseDeploymentDocument['status'],
+    details?: { externalId?: string; errors?: unknown[]; trackingLink?: string },
+  ): Promise<boolean> {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await this.store.updateDeploymentStatus(deploymentId, status, details);
+        return true;
+      } catch (error: unknown) {
+        if (attempt === 2) {
+          logger.error('[DistributorService] Could not persist deployment status; the record may be stale', {
+            deploymentId, status, externalId: details?.externalId, error,
+          });
+        }
+      }
+    }
+    return false;
+  }
+
   async createRelease(
     distributorId: DistributorId,
     metadata: ExtendedGoldenMetadata & { id?: string }, // Ensure ID is accessible if passed
@@ -322,7 +348,7 @@ class DistributorServiceImpl {
       );
 
       if (!validation.isValid) {
-        this.store.updateDeploymentStatus(deployment.id, 'failed', {
+        await this.recordDeploymentStatus(deployment.id, 'failed', {
           errors: validation.errors
         });
 
@@ -353,7 +379,7 @@ class DistributorServiceImpl {
       });
 
       // 4. Update Persistence Record with Result
-      this.store.updateDeploymentStatus(deployment.id, result.status as ReleaseDeploymentDocument['status'], {
+      await this.recordDeploymentStatus(deployment.id, result.status as ReleaseDeploymentDocument['status'], {
         externalId: result.distributorReleaseId
       });
 
@@ -361,7 +387,7 @@ class DistributorServiceImpl {
 
     } catch (error: unknown) {
       // Handle unexpected errors during submission
-      this.store.updateDeploymentStatus(deployment.id, 'failed', {
+      await this.recordDeploymentStatus(deployment.id, 'failed', {
         errors: [{ code: 'SUBMISSION_ERROR', message: error instanceof Error ? error.message : 'Unknown error', severity: 'error' }]
       });
       throw error;
@@ -619,7 +645,7 @@ class DistributorServiceImpl {
               );
 
               // Update store
-              this.store.updateDeploymentStatus(deployment.id, status as ReleaseDeploymentDocument['status']);
+              await this.recordDeploymentStatus(deployment.id, status as ReleaseDeploymentDocument['status']);
 
               results[distributorId] = { status };
             } else {

@@ -1,3 +1,100 @@
+## 2026-11-17 Distributor Deployment Status Writes Were Fire-and-Forget (DISTRIBUTION_STATUS_FLOATING)
+
+- **SEVERITY:** High (user-facing: a release could be live at a distributor while its record stayed `validating`, inviting a duplicate submission; validation failures never left `validating`)
+- **FILES:** `packages/renderer/src/services/distribution/DistributorService.ts`
+- **ERROR:** `createRelease` and the status refresh called `this.store.updateDeploymentStatus(...)` without awaiting or catching at four sites. A failed write was an unhandled rejection and the record kept its old status. Naively awaiting the success-path write inside the existing `try` would have been worse: a failed write would reach the `catch`, mark a successfully created release `failed` and rethrow.
+- **FIX:** `recordDeploymentStatus` awaits the write, retries once, never throws, and logs deployment id/status/externalId for reconciliation. All four sites use it. Tests: retry on a transient failure, a failed status write does not turn a created release into a failure, and a validation failure is persisted before returning.
+- **PREVENTION:** After an irreversible external call, persistence failures must be isolated from the error path that reports the external call's outcome. Found with typed `no-floating-promises`.
+
+## 2026-11-17 File Tree Move/Rename/Delete/Create-Folder Failures Were Never Shown (FILESYSTEM_ERROR_NEVER_RENDERED)
+
+- **SEVERITY:** Medium (user-facing: a failed delete made the file silently reappear; failed moves, renames and folder creation gave no explanation)
+- **FILES:** `packages/renderer/src/core/store/slices/fileSystemSlice.ts`
+- **ERROR:** The slice rolled back optimistic changes and stored the message in `fileSystemError`, but no component reads `fileSystemError`, so the user saw the UI snap back with no reason. Found by checking that the error state flagged by typed `no-floating-promises` was actually consumed anywhere.
+- **FIX:** `createFolder`, `moveNode`, `renameNode` and `deleteNode` also call the module-level `toast.error("Could not <action>: <reason>")`. `createFileNode` is unchanged: it rethrows to its upload callers, which report outcomes themselves. Tests cover each failure and the quiet success path.
+- **PREVENTION:** Setting error state is not reporting it. For every `*Error` field a slice writes, grep for a consumer; if there is none, the failure is invisible. Prefer a toast at the point of failure for user-triggered mutations.
+
+## 2026-11-17 Mobile Remote Settings Toggle Stayed On After a Failed Save (MOBILE_SETTINGS_SILENT_REVERT)
+
+- **SEVERITY:** Low-Medium (user-facing: auto-sleep looked saved but reverted on reload)
+- **FILES:** `packages/renderer/src/modules/mobile-remote/components/SettingsView.tsx`
+- **ERROR:** `persist` updated the toggle optimistically and, when `setDoc` failed, only logged. The user was never told and the UI kept showing a value that was not stored.
+- **FIX:** Restore the previous settings and show an inline `role="alert"` message on failure. Tests cover failure (toggle unchanged + alert) and success (no alert).
+- **PREVENTION:** Same family as BRAND_MANAGER_UNHANDLED_SAVE: an optimistic update must either roll back or tell the user when the write fails.
+
+## 2026-11-17 Release Details Saved the Previous Value; Brand-Kit Success Toasts Survived a Never-Rejecting Save (RELEASE_PANEL_STALE_SAVE)
+
+- **SEVERITY:** High (user-facing: edits to release date/type/tracks were reported "saved" but stored the previous value, and a staged creative handoff could be consumed after a failed save)
+- **FILES:** `packages/renderer/src/modules/marketing/components/brand-manager/{ReleasePanel,VisualsPanel,types}.ts*`, `BrandManager.tsx`
+- **ERROR:** (1) `ReleasePanel` called `handleUpdateRelease(field, v); handleSaveRelease();` in one event, but `handleSaveRelease` saved `release` from the current render (stale closure), so the new value was stored only by a later save while the toast already said "Release details saved". (2) Making `saveBrandKit` never reject (BRAND_MANAGER_UNHANDLED_SAVE) silently broke consumers that relied on rejection: `ReleasePanel`'s catch -> error toast and `VisualsPanel`'s `.then(consumeHandoff + success).catch(keep handoff)`. Caught in review of that change before it shipped.
+- **FIX:** `handleUpdateRelease` returns the updated release and `handleSaveRelease(releaseToSave)` saves exactly that. `saveBrandKit` now resolves a boolean (`Promise<boolean>` in `BrandManagerTabProps`); `ReleasePanel` toasts "saved" only on `true`; `VisualsPanel` consumes the handoff only on `true`. Tests: saved date equals the picked date, no "saved" toast on a failed write.
+- **PREVENTION:** Never update state and then call a save that reads that state in the same event handler; pass the new value explicitly. When changing a helper from reject-on-failure to resolve-false, grep every caller for `.catch`/`try` that encoded the old contract, and change the return type so the compiler lists them.
+
+## 2026-11-17 Brand Manager Saved Profile/Brand-Kit Changes Without Handling Failure (BRAND_MANAGER_UNHANDLED_SAVE)
+
+- **SEVERITY:** Medium (user-facing: a rejected write left the screen showing a value that was never saved, with an unhandled rejection)
+- **FILES:** `packages/renderer/src/modules/marketing/components/BrandManager.tsx`, `brandPersistence.ts`
+- **ERROR:** Career stage and primary goal updated the store optimistically, then called `updateDoc` with no `await`/`catch`. `saveBrandKit` was `async` and rejected on failure, but VisualsPanel, IdentityPanel and HealthPanel call it without awaiting (colors, fonts, aura, assets, socials, health history). Found with typed `no-floating-promises` run over `.tsx`.
+- **FIX:** `persistUserUpdates` wraps the write, logs, shows a toast on failure and returns a boolean; `saveBrandKit` and both direct writes use it. Because it never rejects, the un-awaited callers are now safe. Tests cover success, failure and missing user.
+- **PREVENTION:** An optimistic UI update needs a failure path that tells the user. When a helper is called fire-and-forget from many sites, make the helper itself handle failure rather than patching each call site.
+- **TOOLING NOTE:** a typed-lint config must match `**/*.tsx` as well as `**/*.ts`; a `.ts`-only glob silently skips every React component.
+
+## 2026-11-17 Navigation Tools Claimed "Navigated" Without Awaiting `setModule` (NAVIGATION_TOOL_FALSE_SUCCESS)
+
+- **SEVERITY:** Medium (user-facing: the agent said it opened a module/project while an unsaved-changes prompt was pending or the user had declined it)
+- **FILES:** `packages/renderer/src/services/agent/tools/{NavigationTools,LegalTools,ProjectTools,navigationOutcome}.ts`, `MediaTools.ts`
+- **ERROR:** `appSlice.setModule` returns a Promise: it awaits an unsaved-changes modal, returns without navigating if declined, and drops a switch within 100 ms of the previous one. `switch_module`, `navigate_to`, `register_copyright`, `register_music_work` and `open_project` called it without awaiting and unconditionally returned success; the registration tools also set focus on a module that never opened. Found with typed `@typescript-eslint/no-floating-promises` (the repo's lint config has no type info, so it never reports these). Same scan: `analyze_audio_dna` fired `updateProjectMetadata` without awaiting or catching, so a failed save was an unhandled rejection.
+- **FIX:** `navigateToModule` awaits `setModule` and confirms `currentModule === target`; tools return `NAVIGATION_NOT_COMPLETED` (naming the module the app is still on) and only set registration focus after a confirmed switch. `analyze_audio_dna` awaits the save and reports `savedToProject`.
+- **PREVENTION:** Await every store action that returns a Promise and verify its effect before claiming it. To find floating promises, lint with type information (`parserOptions.project`); the default config cannot see them. `packages/firebase` non-test source has none.
+
+## 2026-11-17 `edit_document_with_annotations` Claimed an Applied Edit and Invented a Document ID (DOCUMENT_EDIT_FALSE_SUCCESS)
+
+- **SEVERITY:** High (user-facing: the agent told artists their document was edited and handed out an ID that does not exist)
+- **FILES:** `packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts`
+- **ERROR:** The tool only asks the model for a text plan; it never opens, modifies or saves a document. It still returned `success: true`, "Applied N annotations", a fabricated `newDocumentId` (`edited-<id>-<uuid>`) and "The revised document will be generated shortly" (nothing generates it). The same happened when the model call failed. The unit test pinned the fabricated ID.
+- **FIX:** Returns `success: false`, `code: 'DOCUMENT_EDIT_NOT_APPLIED'`, `documentModified: false`, no invented ID, and the model's plan (or `null`) as a preview. Tests assert no "applied/processed/generated shortly" claim.
+- **PREVENTION:** A tool must not report the outcome it was named for unless it performed it. Never mint identifiers for artifacts that were not created; a test that asserts a generated ID format can pin a lie.
+
+## 2026-11-17 Bulk Release Delete/Archive Reported Total Failure After Partial Success (BULK_RELEASE_PROMISE_ALL)
+
+- **SEVERITY:** Medium (user-facing: "Failed to delete releases" after some were deleted; stale selection kept)
+- **FILES:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx`, `bulkReleaseAction.ts`
+- **ERROR:** The bulk handler wrapped `Promise.all(selectedIds.map(deleteRelease))` in `toast.promise`. One rejection reported failure for the whole batch although the others had already been changed, and the rejected promise skipped `setSelectedIds([])`.
+- **FIX:** `runBulkReleaseAction` uses `allSettled` and returns succeeded/failed ids; `describeBulkReleaseResult` states exactly what happened; the selection is reduced to the ids that failed so the user can retry only those. Dashboard tests now assert the exact confirmed-result message.
+- **PREVENTION:** Same family as AUTOPOST_PROMISE_ALL_DOUBLE_POST: for batches of independent mutations use `allSettled` and report per-item outcomes. Prefer asserting the user-visible message over asserting that a toast helper was called.
+
+## 2026-11-17 `multi_platform_autopost` Hid Already-Queued Platforms When One Platform Failed (AUTOPOST_PROMISE_ALL_DOUBLE_POST)
+
+- **SEVERITY:** High (user-facing: a retry after a reported failure double-posts to platforms that already published)
+- **FILES:** `packages/renderer/src/services/agent/tools/SocialTools.ts`
+- **ERROR:** The tool queued all platforms with `Promise.all`. If one platform rejected (e.g. Instagram policy), the whole tool returned "Failed to queue" even though TikTok/YouTube Shorts posts had already been dispatched. The user retried and those platforms posted twice.
+- **FIX:** `Promise.allSettled` with a per-platform result. All queued -> success. Mixed -> `AUTOPOST_PARTIAL_FAILURE` that names the queued platforms ("do not resubmit"), the failed ones and their reasons, and carries `metadata.posts`. All failed -> `AUTOPOST_QUEUE_FAILED`.
+- **PREVENTION:** `Promise.all` over side-effecting calls is a double-execution trap: the first rejection discards the successes of its siblings. Use `allSettled` and report each outcome whenever the calls are not idempotent.
+
+## 2026-11-17 `send_email` / `reply_to_email` Claimed "Sent Successfully" When the Provider Returned `success: false` (EMAIL_TOOL_FALSE_SUCCESS)
+
+- **SEVERITY:** High (user-facing: the agent told artists an email was sent when Gmail/Outlook had rejected it)
+- **FILES:** `packages/renderer/src/services/agent/tools/EmailTools.ts`
+- **ERROR:** `GmailProvider`/`OutlookProvider.sendEmail` return `{ success: false, error }` on an HTTP failure instead of throwing. The tools only caught thrown errors and unconditionally returned `toolSuccess(... "sent successfully")`. The UI path (`emailSlice.emailSend`) already checked `result.success`, so only agent replies lied.
+- **FIX:** Both tools return `toolError(..., 'EMAIL_SEND_FAILED')` when `result.success` is false. Tests cover confirmed and rejected sends for both tools.
+- **PREVENTION:** A result type with a `success` flag must be checked on every consumer; "did not throw" is not delivery. When one consumer of a service checks the flag, grep the others.
+
+## 2026-11-17 Distribution Job Stuck `processing` After Retries Exhausted (DISTRIBUTION_JOB_NO_ONFAILURE)
+
+- **SEVERITY:** High (user-facing: a release distribution that failed never showed as failed)
+- **FILES:** `packages/firebase/src/functions/orchestration/inngest.ts`
+- **ERROR:** `processDistribution` set the distribution to `processing`, then marked only the per-distributor submission `failed` when credentials were missing. After the 3 retries were exhausted nothing updated the parent `distributions/{id}` doc, so it stayed `processing` indefinitely.
+- **FIX:** Added `onFailure` that calls exported `markDistributionJobFailed`, setting `status: 'failed'`, a bounded `error` and `failedAt`. Unit tests cover the update path, missing identifiers, and handler registration.
+- **PREVENTION:** Every Inngest function that writes an in-progress status needs `onFailure` that writes the terminal failure; step-level error marking on a child doc does not settle the parent.
+
+## 2026-11-17 `request_feature` Always Denied: Payload Lacked the `userId` the Rules Require (FEATURE_REQUEST_USERID_DENIED)
+
+- **SEVERITY:** High (user-facing: no user could ever file a feature request; the tool honestly returned an error every time)
+- **FILES:** `packages/renderer/src/services/agent/tools/BugReportTools.ts`, `packages/firebase/firestore.rules` (`feature_requests`)
+- **ERROR:** The rule allows `create` only when `request.resource.data.userId == request.auth.uid`. The tool wrote `requestedBy: 'user-via-agent'` and no `userId`, and `FirestoreService.add` does not inject one, so every write was `PERMISSION_DENIED`. The earlier "dead client write" follow-up added the rule but never aligned the payload.
+- **FIX:** Set `userId` from `auth.currentUser.uid`; return `AUTH_REQUIRED` without attempting a write when signed out. Tests assert `userId` is persisted and no write happens when signed out.
+- **PREVENTION:** When adding a Firestore rule for a client write, test the exact payload against the rule's ownership predicate. A tool that fails honestly every time is still broken: honest errors need a test that the success path can succeed.
+
 ## 2026-11-17 White-Glove Uploads of Non-Analyzed Types Stuck `processing` Forever (WHITE_GLOVE_STUCK_PROCESSING)
 
 - **SEVERITY:** Medium (user-visible: ingested assets never reach a terminal state)
@@ -5,6 +102,7 @@
 - **ERROR:** The trigger wrote `status: 'processing'` for every upload, but only `music`/`audio` and `archive` branches ever wrote a terminal status. The client allows `image`, `video` and `document` uploads too; those stayed `processing` permanently.
 - **FIX:** Added an `else` branch that settles every other type as `processed` (no analysis step). Regression test covers image/video/document.
 - **PREVENTION:** Any trigger that writes an in-progress status must have a terminal write on every branch, including the default. Test the default branch, not just the named ones.
+
 ## 2026-11-17 Parity Harness Test Downloaded GSAP From a CDN on Every Run (UNHERMETIC_PARITY_TEST)
 
 - **SEVERITY:** Medium (suite fails offline / whenever the CDN or sandbox network is unavailable)

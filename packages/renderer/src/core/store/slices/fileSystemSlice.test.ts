@@ -15,6 +15,9 @@ vi.mock('@/services/FileSystemService', () => ({
     }
 }));
 
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock('@/core/context/ToastContext', () => ({ toast: { error: toastError, success: vi.fn() } }));
+
 describe('FileSystemSlice', () => {
     let mockSet: any;
     let mockGet: any;
@@ -71,5 +74,40 @@ describe('FileSystemSlice', () => {
 
         expect(nextState.fileNodes).toContainEqual(mockNewNode);
         expect(nextState.selectedFileNodeId).toBe('new-file-id');
+    });
+
+    describe('failed mutations are reported to the user', () => {
+        const makeSlice = () => createFileSystemSlice(
+            mockSet, mockGet, {} as unknown as import('zustand').StoreApi<import('../index').StoreState>,
+        );
+
+        beforeEach(() => {
+            toastError.mockClear();
+            mockGet.mockReturnValue({ fileNodes: [{ id: 'a', parentId: null }], selectedFileNodeId: null, expandedFolderIds: [] });
+        });
+
+        it('tells the user when a delete fails and the file is restored', async () => {
+            vi.mocked(fileSystemService.deleteFolderRecursive).mockRejectedValueOnce(new Error('PERMISSION_DENIED'));
+            await makeSlice().deleteNode('a');
+            expect(toastError).toHaveBeenCalledWith('Could not delete it: PERMISSION_DENIED');
+        });
+
+        it('tells the user when a move fails', async () => {
+            vi.mocked(fileSystemService.updateNode).mockRejectedValueOnce(new Error('offline'));
+            await makeSlice().moveNode('a', { parentId: 'b' }, 'p1');
+            expect(toastError).toHaveBeenCalledWith('Could not move it: offline');
+        });
+
+        it('tells the user when a rename fails', async () => {
+            vi.mocked(fileSystemService.updateNode).mockRejectedValueOnce(new Error('offline'));
+            await makeSlice().renameNode('a', 'New name');
+            expect(toastError).toHaveBeenCalledWith('Could not rename it: offline');
+        });
+
+        it('stays quiet when the mutation succeeds', async () => {
+            vi.mocked(fileSystemService.deleteFolderRecursive).mockResolvedValueOnce(undefined as never);
+            await makeSlice().deleteNode('a');
+            expect(toastError).not.toHaveBeenCalled();
+        });
     });
 });

@@ -14,6 +14,7 @@ import { useReleaseList } from '../hooks/useReleaseList';
 import { ClientReleaseRecord } from '../hooks/useReleases';
 import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { describeBulkReleaseResult, runBulkReleaseAction } from './bulkReleaseAction';
 
 interface ReleaseListViewProps {
     onNewRelease: () => void;
@@ -57,26 +58,15 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
 
         if (!ok) return;
 
-        if (action === 'delete') {
-            await toast.promise(
-                Promise.all(selectedIds.map(id => deleteRelease(id))),
-                {
-                    loading: 'Deleting releases...',
-                    success: 'Releases deleted successfully',
-                    error: 'Failed to delete releases'
-                }
-            );
-        } else if (action === 'archive') {
-            await toast.promise(
-                Promise.all(selectedIds.map(id => archiveRelease(id))),
-                {
-                    loading: 'Archiving releases...',
-                    success: 'Releases archived successfully',
-                    error: 'Failed to archive releases'
-                }
-            );
-        }
-        setSelectedIds([]);
+        const result = await runBulkReleaseAction(
+            selectedIds,
+            action === 'delete' ? deleteRelease : archiveRelease,
+        );
+        const summary = describeBulkReleaseResult(action, result);
+        if (summary.level === 'success') toast.success(summary.message);
+        else toast.error(summary.message);
+        // Keep only the releases that were not changed so the user can retry them.
+        setSelectedIds(result.failed);
     };
 
     return (

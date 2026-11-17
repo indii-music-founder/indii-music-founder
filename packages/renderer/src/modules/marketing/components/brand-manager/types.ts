@@ -10,7 +10,8 @@ export interface BrandManagerTabProps {
     brandKit: BrandKitWithDefaults;
     release: ReleaseDetails;
     updateBrandKit: (updates: Partial<BrandKit>) => void;
-    saveBrandKit: (updates: Partial<BrandKit>) => Promise<void>;
+    /** Resolves true only when the write was stored; failures are already toasted and never reject. */
+    saveBrandKit: (updates: Partial<BrandKit>) => Promise<boolean>;
     setUserProfile: (profile: UserProfile) => void;
 }
 

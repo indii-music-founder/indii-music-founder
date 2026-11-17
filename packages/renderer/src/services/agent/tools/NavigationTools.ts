@@ -1,5 +1,6 @@
 import type { AppSlice } from '@/core/store/slices/appSlice';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
 import type { AnyToolFunction } from '../types';
 import type { OrgId } from '@/modules/registration/types';
 import { importWithRetry } from '@/utils/dynamicImport';
@@ -7,7 +8,9 @@ import { importWithRetry } from '@/utils/dynamicImport';
 export const NavigationTools = {
     switch_module: wrapTool('switch_module', async (args: { module: AppSlice['currentModule'] }) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
-        useStore.getState().setModule(args.module);
+        if (!await navigateToModule(useStore, args.module)) {
+            return toolError(navigationNotCompletedMessage(args.module, useStore.getState().currentModule), 'NAVIGATION_NOT_COMPLETED');
+        }
         return toolSuccess({ module: args.module }, `Navigated to module: ${args.module}`);
     }),
 
@@ -24,8 +27,10 @@ export const NavigationTools = {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
-        // Switch module first
-        store.setModule(args.module);
+        // Switch module first, and only continue (and claim success) if it happened.
+        if (!await navigateToModule(useStore, args.module)) {
+            return toolError(navigationNotCompletedMessage(args.module, useStore.getState().currentModule), 'NAVIGATION_NOT_COMPLETED');
+        }
 
         // If navigating to registration, set the focus
         if (args.module === 'registration' && (args.orgId || args.trackId)) {

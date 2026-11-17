@@ -22,6 +22,7 @@ describe('ProjectTools', () => {
         loadProjects: vi.fn(),
         currentOrganizationId: 'org-123',
         currentProjectId: 'project-123',
+        currentModule: 'dashboard' as string,
         projects: [
             { id: 'proj-1', name: 'Project 1', type: 'creative', orgId: 'org-123' },
             { id: 'proj-2', name: 'Project 2', type: 'music', orgId: 'org-123' },
@@ -33,6 +34,9 @@ describe('ProjectTools', () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        mockStoreState.currentModule = 'dashboard';
+        // Like the real store: navigation only takes effect when it completes.
+        mockStoreState.setModule.mockImplementation(async (module: string) => { mockStoreState.currentModule = module; });
         mockGetState.mockReturnValue(mockStoreState);
     });
 
@@ -97,6 +101,17 @@ describe('ProjectTools', () => {
             expect(result.message).toContain('Opened project: Project 1');
             expect(mockStoreState.setProject).toHaveBeenCalledWith('proj-1');
             expect(mockStoreState.setModule).toHaveBeenCalledWith('creative');
+        });
+
+        it('does not claim the project opened when the module switch is declined', async () => {
+            // e.g. the user declines the unsaved-changes prompt: setModule resolves without navigating.
+            mockStoreState.setModule.mockImplementation(async () => undefined);
+
+            const result = await ProjectTools.open_project({ projectId: 'proj-1' });
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('NAVIGATION_NOT_COMPLETED');
+            expect(result.message).not.toContain('Opened project');
         });
 
         it('should handle non-existent project', async () => {

@@ -4,6 +4,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
 
 export const ProjectTools = {
     create_project: wrapTool('create_project', async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
@@ -74,7 +75,12 @@ export const ProjectTools = {
 
         // Mutations still go through store actions
         store.setProject(args.projectId);
-        store.setModule(project.type);
+        if (!await navigateToModule(useStore, project.type)) {
+            return toolError(
+                `Project "${project.name}" was selected, but the switch to ${project.type} did not complete: ${navigationNotCompletedMessage(project.type, useStore.getState().currentModule)}`,
+                'NAVIGATION_NOT_COMPLETED',
+            );
+        }
 
         return toolSuccess({
             projectId: args.projectId,
