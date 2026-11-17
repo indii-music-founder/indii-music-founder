@@ -98,9 +98,13 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Audits, elevates, and polishes whatever you're currently working on. Checks style alignment, performance, and formatting.
 - **When to use:** Can be invoked manually anytime. In the automated pipeline it runs in exactly two places: per-task inside `/go` (Step 5, scoped to the files just modified) and once in `/end` before `/ci-validate`. No other workflow auto-invokes it — chained auto-polish passes were removed to stop redundant triple-audits of the same files.
 
+### `/sweep` — Stale-Context Audit
+- **Purpose:** Audits instruction files, specs, plans, handoffs, and TODO/FIXME comments against the current code and git history, with TypeSafe JEV as an advisory semantic triager (code and git evidence decide). Reports Verified Stale, Conflicts, and Kept; archives or edits only after named approval.
+- **When to use:** Manually any time context feels stale. Auto-called report-only and scoped: `/start` (T2/T3 or stale context), `/proceed` and `/walk` (untrusted handoff), `/go` (stale driving context), `/middle` and `/end` (documented behavior changed), `/opp` (offered), `/review`, `/flowchart`, `/better`, `/api`, `/db-sync` (doc drift in their area), `/plat` (NO-GO if the diff's drift is unaddressed), `/broken`, and the `health_audit` skill. Not wired into the quarantined legacy workflows (`/a`, `/b`, `/c`, `/d`, `/abcd`, `/issue`, `/get-git`, `/hunter`, `/factory`, `/mega`, `/finish`, `/issue-sweep`, `/auto-fix`, `/devex-review`) until they are re-certified, nor into `/ci-validate`, which stays observational. The bounded replacement for the quarantined `/finish` TODO scan.
+
 ### `/finish` — Legacy Unfinished Work Sweep (Quarantined)
 - **Purpose:** Historical sweep that converts broad pattern matches into permanent ledger mutations.
-- **When to use:** Use a bounded read-only audit instead until the workflow is re-certified.
+- **When to use:** Use a bounded read-only audit instead (`/sweep` covers stale TODO/FIXME notes) until the workflow is re-certified.
 
 ### `/devex-review` — Legacy Developer Experience Audit (Quarantined)
 - **Purpose:** Historical audit that also auto-fixes, moves, or deletes files.

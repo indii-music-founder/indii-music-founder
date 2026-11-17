@@ -25,6 +25,7 @@ Check for prior session work:
 - Read `.agent/artifacts/task.md` (if exists) — Active task list
 - Read `.agent/artifacts/implementation_plan.md` (if exists) — Active plan
 - Check for any uncommitted changes via `git status`
+- If the handoff or plan files look stale against recent commits, offer [`/sweep`](sweep.md) (report-only) before acting on them
 
 ## 3. Preventative Maintenance Medicine (// turbo)
 

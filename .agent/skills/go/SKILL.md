@@ -16,7 +16,8 @@ Before changing anything:
 - separate current-task files from unrelated dirty files;
 - identify completed, active, blocked, and unverified acceptance criteria;
 - read `.agent/workflows/branch-safety.md` before code, git, CI, or push actions;
-- use `/skill-skill` when a specialized capability or multi-tool chain is likely.
+- use `/skill-skill` when a specialized capability or multi-tool chain is likely;
+- when the handoff, plan, or instructions disagree with the diff or look old, run `.agent/workflows/sweep.md` (report-only, scoped to those artifacts) before trusting them.
 
 Never overwrite, stage, stash, commit, or attribute unrelated work.
 

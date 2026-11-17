@@ -16,11 +16,12 @@ No placeholders, debug residue, secrets, generated junk, or unintended files may
 
 ## 3. Finish relevant artifacts only
 
+- Run [`/sweep`](sweep.md) scoped to the final diff when it renamed, removed, or changed documented behavior. Apply only approved fixes that belong to this objective, as part of the same commit, and before the final proof in §4. Report anything out of scope instead of editing it.
 - Run `/better` once on the final bounded diff if a meaningful quality pass remains.
 - Update flowcharts only when the implementation changed relevant state, ownership, or sequence.
 - Update checkpoints only with current reusable handoff state.
 - Update issue/error ledgers only with verified unique facts; never self-verify external acceptance.
-- **TypeSafe closeout:** if judgments were used in this task, record in the handoff/ledger what was judged, the shadow/live mode, observed agreement, and token cost — and confirm no key material and no renderer-side judgment calls entered the diff.
+- **TypeSafe closeout:** if judgments were used in this task (including `/sweep` JEV triage), record in the handoff/ledger what was judged, the shadow/live mode, observed agreement, and token cost — and confirm no key material and no renderer-side judgment calls entered the diff.
 - Run dependency drift/integrity checks only when manifests, locks, runtime packages, or dependency behavior changed.
 
 ## 4. Run proportional final proof

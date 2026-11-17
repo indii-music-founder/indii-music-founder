@@ -12,6 +12,7 @@ You are performing a comprehensive audit of known broken items and error pattern
    - Are there items in BROKEN.md that have matching fixes in the Error Ledger?
    - Are there error patterns in the Ledger that aren't tracked in BROKEN.md?
    - Are there any items marked as "FIXED" that should be removed or archived?
+   - Verify candidates with `.agent/workflows/sweep.md` (report-only: code state plus `git log -S` evidence) before calling anything closed or stale; never archive or delete on this audit alone.
 
 4. **Check for new issues** by running `npm test -- --run --pool=forks --testTimeout=15000 2>&1 | tail -30` to see if there are any currently failing tests not yet documented.
 

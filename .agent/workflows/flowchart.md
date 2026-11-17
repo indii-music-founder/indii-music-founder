@@ -11,7 +11,7 @@ Use a visualization for relationships that are difficult to understand linearly:
 ## 2. Establish evidence and scope
 
 - identify the audience and question the diagram must answer;
-- inspect real files, callers, schemas, services, and external boundaries;
+- inspect real files, callers, schemas, services, and external boundaries; when an existing diagram or architecture doc disagrees with the code, trust the code and report the drift via [`/sweep`](sweep.md) (report-only);
 - label planned, implemented, simulated, and externally verified nodes honestly;
 - preserve uncertainty rather than inventing connections;
 - use the project's domain vocabulary and current paths.

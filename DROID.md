@@ -665,9 +665,9 @@ Four skill registries exist — do not confuse them. All are active; the "not li
 | Registry | Contents | Edit policy |
 | --- | --- | --- |
 | `.agent/skills/` | Indii-authored agent skills (hunter, walk, go, tdd, zoom-out, …) | Editable — ours |
-| `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. The lock intentionally lists some skills that are not installed (genkit-dart, genkit-go, xcode) — do not "fix" the drift or reinstall them. |
+| `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. Every locked skill is installed; `gemini-enterprise-agent-schema` and `legal-contract-extraction` are present but not in the lock — ask before changing or locking them. |
 | `skills/` | Proprietary product skills — `direct-distribution` (Direct Distribution Engine V3; pairs with `directives/direct_distribution_engine.md`) | Editable, but a covenant doc — keep status tables truthful |
-| `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/workflows/graphify.md` + `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
+| `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
 
 
 ---
@@ -697,17 +697,18 @@ These commands form the backbone of the agent's development workflow. When a use
 - `/hunter` — Full-spectrum bug hunter. (`.agent/workflows/hunter.md`)
 - `/issue-sweep` — End-to-end issue sweep and stabilization. (`.agent/workflows/issue-sweep.md`)
 - `/better` — Universal improvement engine (audit, elevate, polish). (`.agent/workflows/better.md`)
+- `/sweep` — Stale-context audit of instructions, specs, handoffs, and code notes vs the code and git history; TypeSafe JEV advisory triage; report-only until approved. Auto-called report-only and scoped from `/start`, `/proceed`, `/middle`, `/end`, `/go`, `/walk`, `/plat`, and others (see `WIIL-skill.md`). (`.agent/workflows/sweep.md`)
 - `/finish` — Unfinished work sweep (TODOs, stubs, slop). (`.agent/workflows/finish.md`)
 - `/devex-review` — Developer experience (DX) audit. (`.agent/workflows/devex-review.md`)
 - `/factory` — Automated test & fix loop (nightly/autonomous runs). (`.agent/workflows/factory.md`)
 - `/test` — Context-aware test runner. (`.agent/workflows/test.md`)
 - `/training` — AI agent dataset generation & fine-tuning. (`.agent/workflows/training.md`)
 - `/api` — The API knowledge base and diagnostic tool. (`.agent/workflows/api.md`)
-- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/workflows/to-prd.md`)
-- `/to-issues` — vertical-Slice Ticketer. (`.agent/workflows/to-issues.md`)
-- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/workflows/grill-me.md`)
-- `/zoom-out` — Codebase dependency mapper. (`.agent/workflows/zoom-out.md`)
-- `/tdd` — Test-driven development loop. (`.agent/workflows/tdd.md`)
+- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/skills/to-prd/SKILL.md`)
+- `/to-issues` — vertical-Slice Ticketer. (`.agent/skills/to-issues/SKILL.md`)
+- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/skills/grill-me/SKILL.md`)
+- `/zoom-out` — Codebase dependency mapper. (`.agent/skills/zoom-out/SKILL.md`)
+- `/tdd` — Test-driven development loop. (`.agent/skills/tdd/SKILL.md`)
 - `/mega` — Mega stress test orchestrator. (`.agent/workflows/mega.md`)
 - `/mega-test` — Single mega test plan execution. (`.agent/workflows/mega-test.md`)
 - `/real` — Adaptive real-life testing workflow. (`.agent/workflows/real.md`)

@@ -45,7 +45,7 @@ Record skipped suites and why. Test fixtures and mocked providers prove structur
 ### Repository architecture and completeness
 
 - inspect package/module entry points and public contracts;
-- find TODOs, placeholders, dead paths, duplicate implementations, and stale status documents;
+- find TODOs, placeholders, dead paths, duplicate implementations, and stale status documents; run `.agent/workflows/sweep.md` (report-only) for stale instructions, specs, and code notes, and carry its Verified Stale, Conflicts, and Kept groups into the findings;
 - distinguish intentionally planned modules from incomplete shipped surfaces;
 - verify current paths before reporting missing components.
 

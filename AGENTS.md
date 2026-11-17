@@ -58,6 +58,7 @@ matching workflow file. Common commands include:
 - `/end` -> `.agent/workflows/end.md`
 - `/go` -> `.agent/workflows/go.md`
 - `/better` -> `.agent/workflows/better.md`
+- `/sweep` -> `.agent/workflows/sweep.md`
 - `/flowchart` -> `.agent/workflows/flowchart.md`
 - `/proceed` -> `.agent/workflows/proceed.md`
 - `/review` -> `.agent/workflows/review.md`
