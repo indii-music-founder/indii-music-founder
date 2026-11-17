@@ -119,8 +119,8 @@ describe('SettingsView saving settings', () => {
     const renderView = () => render(
         <SettingsView
             desktopState={{ online: true, sleepMode: false } as unknown as DesktopState}
-            isRelayOnline
-            onNavigate={vi.fn()}
+            isPaired
+            onNavigateTab={vi.fn()}
         />
     );
 
