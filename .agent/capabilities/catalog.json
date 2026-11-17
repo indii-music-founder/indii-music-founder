@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "a15c84608a740a539eb48559261a5e4df6fecc869180bd4d6b93e2b7736ed5c5",
+  "sourceDigest": "53d582372f6f5ac272b70b0c73bd12a804e087dafd49608e364385f9f2b2e1d6",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5191,7 +5191,7 @@
       "available": true,
       "description": "Engine A / A-Engine — the Finder. Runs the test suites (live + background), finds bugs, and writes them as enriched issues to OPEN_ISSUES.md for B to fix. A does NOT fix and does NOT ship.",
       "descriptionHash": "09442979210e729f950ef659d6e4efb932e22fb9d7fc9697bb817a860ad8ef37",
-      "contentHash": "b098a3031da3c8ae01ce7b8e8343690157f0173ef2c565408cec07e8ae2991c6",
+      "contentHash": "b57c6eaa7b0386d4a9c9d48017735a130786bc5960e9b198542fd8dcff5e401c",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5207,7 +5207,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy finder requires persistent polling, stale V2 ledger writes, automatic syncing, and independent commits.",
+      "reason": "The legacy finder requires persistent polling, ledger writes, automatic syncing, and independent commits.",
       "conflicts": []
     },
     {
@@ -5220,7 +5220,7 @@
       "available": true,
       "description": "Full ABCD engine launch workflow. Starts the coordinated testing/build/CI/CD loop by activating /a, /b, /c, and /d as discoverable Engine A/B/C/D roles.",
       "descriptionHash": "5ec7114ec24d03ed4290004364cd7a7b92cee59a0b5af48d5d4e2cb9ad53db38",
-      "contentHash": "7ff1c4248be4f768eea5fce60c6abf39de395011b8c7ee1d2bbcad2b7876575f",
+      "contentHash": "8c285d1410fc20137d41af3ea3e51133b0e4408c137d7bc5873ad77722e32ad8",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5236,7 +5236,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy swarm coordinates through stale V2 ledgers and automatic multi-engine commits/delivery without a sufficiently bounded authority contract.",
+      "reason": "The legacy swarm coordinates through shared ledgers and automatic multi-engine commits/delivery without a sufficiently bounded authority contract.",
       "conflicts": []
     },
     {
@@ -5366,7 +5366,7 @@
       "available": true,
       "description": "Engine B / B-Engine workflow to resolve real ledger issues autonomously in the ABCD Swarm.",
       "descriptionHash": "0abc983c78421cae4a9483c9bc10640c01f329ec62168baba07df1e46644ae1b",
-      "contentHash": "9ad10137f8a598399fd20fad82a355e75451765489969f0022a0215d478ea7d6",
+      "contentHash": "411215ed2ddd6bbbb4de02bcf2390bdcf746e0afb87411ce2d646afcaae154cf",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5382,7 +5382,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy fixer mixes persistent monitoring, stale V2 ledger mutation, broad autonomous fixes, and independent commits.",
+      "reason": "The legacy fixer mixes persistent monitoring, ledger mutation, broad autonomous fixes, and independent commits.",
       "conflicts": []
     },
     {
@@ -5452,7 +5452,7 @@
       "available": true,
       "description": "Engine C / C-Engine workflow to keep the exact pushed main SHA green, monitor deployment health, and ship verified single-commit changes in the ABCD Swarm.",
       "descriptionHash": "083f7f8607cf2520c7fa8ea5a483f1b6434e1397331b4209af0bd04491404007",
-      "contentHash": "931e867640e67dae003abcd15b8775785bbfa5caf3a44c9a511573477a5e9d54",
+      "contentHash": "e809897033c8a06240f45c4778f1a827bd602add2dd061b493b0170b845eda86",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5512,7 +5512,7 @@
       "available": true,
       "description": "Engine D / D-Engine — the Verifier / Quality Gate. Independently checks B's FIXED claims and C's CI/shipping claims against the real code, catches fake or incomplete fixes, and re-opens them with evidence until they are genuinely done. Does NOT fix code; it writes verdicts and re-opens only.",
       "descriptionHash": "194ec44a9f93827becaab48cdc300c7e76589951e1e2d105cb274dfa65e8c751",
-      "contentHash": "f27d9126fa4ff29aadf57aa016bc587d694eaf529d52387ff55d76a9a09d39fe",
+      "contentHash": "802ffde0f7f1264731e371aecdbe1e64d800a7a095f8775d3ce2b86e78cb9f18",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5528,7 +5528,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy verifier uses persistent polling, stale V2 ledger writes, and immediate verification commits.",
+      "reason": "The legacy verifier uses persistent polling, ledger writes, and immediate verification commits.",
       "conflicts": []
     },
     {
@@ -5659,7 +5659,7 @@
       "available": true,
       "description": "The ultimate closed-loop automation workflow. Spins up the Test Orchestrator, the Fix Agent, and the CI Publisher simultaneously to run full system tests, auto-patch bugs, and deploy overnight.",
       "descriptionHash": "12247c7e05dcb2e4a9e6070d3efc6ebc38d9799f3e24de3f638916f945ad950e",
-      "contentHash": "e0f655b89940f36b1899c70eb85228c2111564d4f880ad174e76afaa59d5bcec",
+      "contentHash": "a93a4e54bb0a3e9c8b25f0899538addb15792d83e766b4c5c14f2ed66fd1081b",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5688,7 +5688,7 @@
       "available": true,
       "description": "Scours the repository for unfinished work, TODOs, and stubs using a swarm of agents, aggregates them for human approval, and then fixes them.",
       "descriptionHash": "c17d92917bba79b8dbf2b2f83ebf6552ca5da54c8c73386a3cd5dbe944ceea1c",
-      "contentHash": "402bb32e7ab2013ca1c1d74c17bb458967057ed94dfc98ac406e56ed8925333c",
+      "contentHash": "47fd440ea4c25c2d1b38949da10741028c0521b8e8f2a4e9c07e49135daa541a",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5704,7 +5704,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy sweep writes stale V2 ledgers, clears staging documents, and expands a scan into permanent issue mutation.",
+      "reason": "The legacy sweep writes ledgers without issue-level evidence, clears staging documents, and expands a scan into permanent issue mutation.",
       "conflicts": []
     },
     {
@@ -5745,7 +5745,7 @@
       "available": true,
       "description": "Mainline sync, pre-push validation, and CI monitor. Requires main, fast-forwards safely, validates one coherent commit, pushes directly to origin/main, and monitors its exact CI run.",
       "descriptionHash": "86052eea3cf90641cf032c1a77d12773e948b1f8b26ea986d7c3487b7209b276",
-      "contentHash": "d12c83d95edb743051f56b71fd304eb6b4c24e70299ebb294ab9a49f9238b374",
+      "contentHash": "868a9b16f1f733bbefce41df2058d5d4f4559aa9bcb1f6099503de5f4baff16d",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5833,7 +5833,7 @@
       "available": true,
       "description": "Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. In HUNT mode it fixes, verifies, and commits; in AUDIT mode it records findings in OPEN_ISSUES.md and preserves supporting evidence only.",
       "descriptionHash": "d3209ce49cdb4f19f58cff8e795db8d08d1a36d1833e7ffe7cd64a3dbe839606",
-      "contentHash": "0202e72bb1c951228146fc72bbb59d6d16019754803c18ba0fd2a177e5692407",
+      "contentHash": "59ba370707b15e5df1bedefdf771802b48a42bd2ccd27c7807fa2ec17bc29f05",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5862,7 +5862,7 @@
       "available": true,
       "description": "The Fix Agent. Scans .agent/test_ledger/OPEN_ISSUES_V3.md for unresolved issues, triages by severity, diagnoses root causes in source code, applies surgical fixes, verifies them, and marks issues as FIXED. This is the counterpart to /mega and /real which only find issues — /issue is the one that resolves them. THE FIX AGENT DOES NOT RUN TESTS. It reads issues, patches code, and verifies.",
       "descriptionHash": "b2e7859dd0cb97da0f04cbfb43574dcad06c384a3ce9948702d24e80b7ec8d9c",
-      "contentHash": "52b4831d32c93b85f4033a34324e5d194c92c8c04cdaa6cbc1f17048143d34a4",
+      "contentHash": "ee0ebf3fa19f1d4aaf4c50d87c36703426ddd5f121e5e3f571ecb2870715fb91",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5891,7 +5891,7 @@
       "available": true,
       "description": ">-",
       "descriptionHash": "debf8b346efdb2cdc8c1d4530cc5708ff2d99963b8df5d6cfa63f2c1b04c7de4",
-      "contentHash": "1ea6858d696ddd316e4ac768ff877d6cd84b1d4c44bfe8a6badb6a8c805c778a",
+      "contentHash": "2e649259ed43608c7dd8cabdabebf130914045195177256c313165ed4bce4691",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5907,7 +5907,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy sweep harvests tokens, spans unrelated external issues, writes stale ledgers, and expands scope.",
+      "reason": "The legacy sweep harvests tokens, spans unrelated external issues, writes ledgers without issue-level evidence, and expands scope.",
       "conflicts": []
     },
     {
@@ -5918,9 +5918,9 @@
       "path": ".agent/workflows/mega.md",
       "mutable": true,
       "available": true,
-      "description": "The Master Orchestrator for the Mega Stress Test. Sweeps EVERY left-menu item — managers, departments, tools, projects/dashboards — running the full per-item gauntlet (`/mega-test <item>`) against each, grouped by sidebar category. Can run autonomously for hours, cycling the entire menu on a loop until explicitly stopped. The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`. Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
-      "descriptionHash": "1f5373b997837e5ed9c342c57a28c80d7c06ecbcf6fb65bc70d35d44cc641fd5",
-      "contentHash": "b3871bb48fa554c5406372763aedde1745f2bcc40b359e5b06dbe7b3859c2c7e",
+      "description": "The Master Orchestrator for the Mega Stress Test. Sweeps EVERY left-menu item — managers, departments, tools, projects/dashboards — running the full per-item gauntlet (`/mega-test <item>`) against each, grouped by sidebar category. Can run autonomously for hours, cycling the entire menu on a loop until explicitly stopped. The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`. Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a fixing agent.",
+      "descriptionHash": "2a6092d7b8d3a05fbf66c2051054852f07101d5dd09821591b647525e5d7da3d",
+      "contentHash": "4400a7b164205e5c177e806e4b4dc4753a9b6ad1d29839b5bd8b9e1b2f54a9d1",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5936,7 +5936,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy live sweep writes stale V2 ledgers, assumes indefinite execution, and lacks current authenticity and cost boundaries.",
+      "reason": "The legacy live sweep writes ledgers, assumes indefinite execution, and lacks current authenticity and cost boundaries.",
       "conflicts": []
     },
     {
@@ -5947,9 +5947,9 @@
       "path": ".agent/workflows/mega-test.md",
       "mutable": true,
       "available": true,
-      "description": "Execute a full multi-dimensional stress test against ONE left-menu item — a manager, department, tool, or project/dashboard — named as the fill-in-the-blank target. Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`. The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`. Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet against the live module, documents pass/fail, logs new issues to `.agent/test_ledger/OPEN_ISSUES_V2.md`, and produces a structured per-target report. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
-      "descriptionHash": "c87fd82387bb53edc8cc3d4b6b02bba94d3398e54a7e0b1dbea00dfbcb4c862a",
-      "contentHash": "e572a66358fe8e7fcd4f55c4d191e9c233a8e2f6e53f8fa1c44720ab5c96ff24",
+      "description": "Execute a full multi-dimensional stress test against ONE left-menu item — a manager, department, tool, or project/dashboard — named as the fill-in-the-blank target. Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`. The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`. Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet against the live module, documents pass/fail, logs new issues to `.agent/test_ledger/OPEN_ISSUES_V3.md`, and produces a structured per-target report. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a fixing agent.",
+      "descriptionHash": "f4f38a604f17e3c26bfaffb8987524912155ca92934353f8809e016cc5517919",
+      "contentHash": "176057fc4568e4922bddcc5dacfe9fad723d405c519accda99a2c8c6ac3990de",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5965,7 +5965,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy per-item test writes stale V2 ledgers and hard-codes outdated technology/environment assumptions.",
+      "reason": "The legacy per-item test writes ledgers and hard-codes outdated technology/environment assumptions.",
       "conflicts": []
     },
     {
@@ -6065,9 +6065,9 @@
       "path": ".agent/workflows/real.md",
       "mutable": true,
       "available": true,
-      "description": "Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios. Can be vague (AI figures out what to test) or specific (user directs the test). Always exhausts the system until completion or documented failure. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a separate fixing agent.",
-      "descriptionHash": "086134a05dfc4bc74627535b09d4ecc665c76113de11b71d23d54177432f69ae",
-      "contentHash": "db12c92f291b96dd74a9c918e5bf4e58d0ea26c125ea3545bfef4518f2b9aa65",
+      "description": "Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios. Can be vague (AI figures out what to test) or specific (user directs the test). Always exhausts the system until completion or documented failure. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a separate fixing agent.",
+      "descriptionHash": "9b0951c9d2126a8f1d053af86b5d0846b4672b2d40f3858e53c01ba16a8e26a9",
+      "contentHash": "9b353135e3cbf2e1c9a3ec08430d7a860f9c77c7aadc523d938cf5681bab85b8",
       "state": "conditional",
       "authority": "named-live-interaction",
       "prerequisites": [
@@ -6276,7 +6276,7 @@
       "available": true,
       "description": "Human-facing index of indii slash workflows. The generated capability catalog owns health, authority, availability, and automatic-selection state.",
       "descriptionHash": "d8b9d6ac930b9110ffb76b3e8ae4e2e9a897f762c8839c9fb08d2f6ad9294fe3",
-      "contentHash": "83a7cd08f7bef37c22970007e120991f17b972bb7542b2482290d8a8328a240e",
+      "contentHash": "cbab8aa9cdf238adf94db565fa4727e3a3801580a4f17dddeb52f6779f05d9e9",
       "state": "certified",
       "authority": "read-only-index",
       "prerequisites": [

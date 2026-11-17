@@ -5,6 +5,7 @@ description: Human-facing index of indii slash workflows. The generated capabili
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V3.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
 
 
 # WIIL-Skill: Human Command Index

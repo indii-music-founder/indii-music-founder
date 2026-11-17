@@ -4,6 +4,8 @@ description: Engine B / B-Engine workflow to resolve real ledger issues autonomo
 
 # Engine B — B-Engine (/b)
 
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+
 **You are acting as Engine B / Agent B ("B" in the ABCD agent swarm).**
 Your exact job is to read the issues ledger, fix real issues, verify the changed behavior locally, and commit the fix. You are part of a 4-engine team (A, B, C, D) that may be split across Codex, Claude, Gemini, or another AI app. Do exactly what is outlined here.
 
@@ -37,7 +39,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 
 ## 2. Swarm Coordination (The ABCD Protocol)
 - **Role Definition (ABCD):** **A finds** → **B (you) fixes the ledger's issues in one coherent `main` commit** → **C ships** (exact main SHA green → Firebase) → **D independently verifies your fixes against the real code and re-opens any fake/incomplete one.** Read only the ledger; fix per the protocol. **Because D runs the test and re-opens fakes, do it right the first time: RUN THE TEST and confirm green before you mark `✅ FIXED`** — a status D can disprove in one command is worse than an honest `🟠 BLOCKED`.
-- **Claiming Work:** When you find an issue in `.agent/test_ledger/OPEN_ISSUES_V2.md`, immediately change its status to `🟡 IN PROGRESS (Agent B)`. This signals the other agents to skip it.
+- **Claiming Work:** When you find an issue in `.agent/test_ledger/OPEN_ISSUES_V3.md`, immediately change its status to `🟡 IN PROGRESS (Agent B)`. This signals the other agents to skip it.
 - **Conflict Avoidance:** Before beginning a bounded fix cycle, require a clean tree and run `git fetch origin && git merge --ff-only origin/main`. Keep related status and code changes in the single coherent task commit; do not create micro-commits. Stop if `origin/main` advances before push, and never rewrite the ledger from a stale snapshot.
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` in `OPEN_ISSUES.md` and let the others try.
 
@@ -47,7 +49,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - Let `git_monitor_sync.js` handle the typechecking, testing, and pushing of these commits to `origin/main`.
 
 ## 4. Autonomous Issue Resolution
-- Scan `.agent/test_ledger/OPEN_ISSUES_V2.md` periodically.
+- Scan `.agent/test_ledger/OPEN_ISSUES_V3.md` periodically.
 - Pick exactly ONE unassigned issue at a time.
 - Trigger the `/issue` workflow to surgically fix it, verify, and commit.
 - **Before flipping any status to `✅ FIXED`, satisfy the §0 Definition of Done.** If the only way to make an issue "pass" is to fabricate data/success/UI, STOP — set `🟠 BLOCKED — needs real <API/SDK/creds>` and leave the honest state in code. Do not touch another agent's or the human's Verification Findings / REOPENED notes.

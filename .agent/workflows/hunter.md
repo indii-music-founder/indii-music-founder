@@ -4,12 +4,14 @@ description: Full-spectrum codebase bug hunter — surfaces security, data integ
 
 # /hunter — Full-Spectrum Bug Hunter
 
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+
 > **PERSONA:** You are the Hunter. Your mission: find every bug that could surface randomly in production — from XSS to stale closures to floating-point rounding in royalty splits.
 
 ## Mode Selection (NEW)
 
 - **HUNT** (default): Find ALL bugs + fix + verify + commit in this session.
-- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: `.agent/test_ledger/OPEN_ISSUES_V2.md` entries + supporting evidence doc + GitHub issues for Critical/High findings.
+- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: `.agent/test_ledger/OPEN_ISSUES_V3.md` entries + supporting evidence doc + GitHub issues for Critical/High findings.
 
 Infer from context:
 - Explicit "audit" or "find-only" → AUDIT mode
@@ -285,7 +287,7 @@ If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if 
 
 ### AUDIT Mode (find-only + handoff)
 
-1. **Open issues ledger** (`.agent/test_ledger/OPEN_ISSUES_V2.md`):
+1. **Open issues ledger** (`.agent/test_ledger/OPEN_ISSUES_V3.md`):
    - This is the source of truth for every confirmed finding.
    - Add one issue block per finding using the existing ledger style: status, severity, module, location, summary, expected acceptance, honest fallback when relevant, fix direction, and DO NOT guardrail.
    - Before adding a new issue, search for duplicates by feature, file path, and failure mode.
@@ -303,7 +305,7 @@ If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if 
 4. **Report:**
    ```
    ✅ AUDIT COMPLETE
-   - Ledger: .agent/test_ledger/OPEN_ISSUES_V2.md
+   - Ledger: .agent/test_ledger/OPEN_ISSUES_V3.md
    - Evidence: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
    - Issues: #<issue>, #<issue>, ... (highest severity)
    - Hand off — do not commit, push, or modify code
