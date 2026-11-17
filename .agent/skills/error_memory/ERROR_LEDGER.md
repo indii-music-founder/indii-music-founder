@@ -1,3 +1,12 @@
+## 2026-11-17 Brand Manager Saved Profile/Brand-Kit Changes Without Handling Failure (BRAND_MANAGER_UNHANDLED_SAVE)
+
+- **SEVERITY:** Medium (user-facing: a rejected write left the screen showing a value that was never saved, with an unhandled rejection)
+- **FILES:** `packages/renderer/src/modules/marketing/components/BrandManager.tsx`, `brandPersistence.ts`
+- **ERROR:** Career stage and primary goal updated the store optimistically, then called `updateDoc` with no `await`/`catch`. `saveBrandKit` was `async` and rejected on failure, but VisualsPanel, IdentityPanel and HealthPanel call it without awaiting (colors, fonts, aura, assets, socials, health history). Found with typed `no-floating-promises` run over `.tsx`.
+- **FIX:** `persistUserUpdates` wraps the write, logs, shows a toast on failure and returns a boolean; `saveBrandKit` and both direct writes use it. Because it never rejects, the un-awaited callers are now safe. Tests cover success, failure and missing user.
+- **PREVENTION:** An optimistic UI update needs a failure path that tells the user. When a helper is called fire-and-forget from many sites, make the helper itself handle failure rather than patching each call site.
+- **TOOLING NOTE:** a typed-lint config must match `**/*.tsx` as well as `**/*.ts`; a `.ts`-only glob silently skips every React component.
+
 ## 2026-11-17 Navigation Tools Claimed "Navigated" Without Awaiting `setModule` (NAVIGATION_TOOL_FALSE_SUCCESS)
 
 - **SEVERITY:** Medium (user-facing: the agent said it opened a module/project while an unsaved-changes prompt was pending or the user had declined it)
