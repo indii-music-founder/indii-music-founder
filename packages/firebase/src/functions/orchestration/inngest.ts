@@ -71,8 +71,38 @@ interface OnboardingPayload {
 /**
  * Job: Process distribution across multiple platforms
  */
+/**
+ * Settles a distribution whose job exhausted every retry. Without this the
+ * document stays `processing` forever and the artist never learns the release
+ * was not submitted.
+ */
+export async function markDistributionJobFailed(
+  firestore: Pick<admin.firestore.Firestore, 'collection'>,
+  originalData: Partial<DistributionJobPayload> | undefined,
+  error: unknown,
+): Promise<boolean> {
+  const { userId, distributionId } = originalData ?? {};
+  if (!userId || !distributionId) return false;
+  await firestore
+    .collection('users').doc(userId)
+    .collection('distributions').doc(distributionId)
+    .update({
+      status: 'failed',
+      error: (error instanceof Error ? error.message : String(error)).slice(0, 500),
+      failedAt: new Date().toISOString(),
+    });
+  return true;
+}
+
 export const processDistribution = inngest.createFunction(
-  { id: 'process-distribution', retries: 3 },
+  {
+    id: 'process-distribution',
+    retries: 3,
+    onFailure: async ({ event, error, step }) => {
+      const originalData = event.data?.event?.data as Partial<DistributionJobPayload> | undefined;
+      await step.run('mark-failed', () => markDistributionJobFailed(db, originalData, error));
+    },
+  },
   { event: 'distribution/created' },
   async ({ event, step }) => {
     const { distributionId, userId, distributors, tracks } = event.data as DistributionJobPayload;

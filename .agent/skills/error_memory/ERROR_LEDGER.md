@@ -1,3 +1,11 @@
+## 2026-11-17 Distribution Job Stuck `processing` After Retries Exhausted (DISTRIBUTION_JOB_NO_ONFAILURE)
+
+- **SEVERITY:** High (user-facing: a release distribution that failed never showed as failed)
+- **FILES:** `packages/firebase/src/functions/orchestration/inngest.ts`
+- **ERROR:** `processDistribution` set the distribution to `processing`, then marked only the per-distributor submission `failed` when credentials were missing. After the 3 retries were exhausted nothing updated the parent `distributions/{id}` doc, so it stayed `processing` indefinitely.
+- **FIX:** Added `onFailure` that calls exported `markDistributionJobFailed`, setting `status: 'failed'`, a bounded `error` and `failedAt`. Unit tests cover the update path, missing identifiers, and handler registration.
+- **PREVENTION:** Every Inngest function that writes an in-progress status needs `onFailure` that writes the terminal failure; step-level error marking on a child doc does not settle the parent.
+
 ## 2026-11-17 `request_feature` Always Denied: Payload Lacked the `userId` the Rules Require (FEATURE_REQUEST_USERID_DENIED)
 
 - **SEVERITY:** High (user-facing: no user could ever file a feature request; the tool honestly returned an error every time)
