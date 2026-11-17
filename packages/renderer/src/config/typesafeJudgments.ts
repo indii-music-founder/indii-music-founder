@@ -247,7 +247,7 @@ export async function invokeTypesafeJudge(
         'typesafeJudge',
     );
     const result = admission
-        ? await runBudgetedSemanticCall(admission, () => call(request).then(res => res.data))
+        ? await runBudgetedSemanticCall(admission, request, () => call(request).then(res => res.data))
         : (await call(request)).data;
     if (!result || typeof result !== 'object') return null;
     const answers = result.answers;
@@ -361,7 +361,7 @@ export async function judgeTransientError(
 
         const detectedStatusCode = context?.statusCode ?? extractStatusCode(error);
 
-        const invoke = async () => (await judgeFn({
+        const request = {
             state: {
                 errorMessage: error instanceof Error ? error.message : String(error),
                 errorName: error instanceof Error ? error.name : typeof error,
@@ -371,9 +371,10 @@ export async function judgeTransientError(
                 heuristicVerdict,
             },
             questions: { transient: TRANSIENT_FAILURE_QUESTION },
-        })).data;
+        };
+        const invoke = async () => (await judgeFn(request)).data;
         const result = context?.admission
-            ? await runBudgetedSemanticCall(context.admission, invoke)
+            ? await runBudgetedSemanticCall(context.admission, request, invoke)
             : await invoke();
         if (!result) return null;
 
@@ -11614,7 +11615,7 @@ export async function judgeMobileRemoteIntent(
             { answers?: Record<string, unknown>; usage?: unknown }
         >(getFunctions(), 'typesafeJudge');
 
-        const invoke = async () => (await judgeFn({
+        const request = {
             state: {
                 activeTab: input.tab,
                 text: input.text.slice(0, 400),
@@ -11648,10 +11649,11 @@ export async function judgeMobileRemoteIntent(
                     },
                 },
             },
-        })).data;
+        };
+        const invoke = async () => (await judgeFn(request)).data;
 
         const data = admission
-            ? await runBudgetedSemanticCall(admission, invoke)
+            ? await runBudgetedSemanticCall(admission, request, invoke)
             : await invoke();
         if (!data || !data.answers || typeof data.answers !== 'object') {
             return fallback;

@@ -29,6 +29,22 @@ import {
 } from './campaign-judgments';
 import { MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS } from '../../execution/ad-adapters/base.adapter';
 
+/**
+ * A definitive refusal raised before any ledger reservation or provider call.
+ * No money moved and no campaign exists, so the directive may be corrected and
+ * resubmitted. Transient failures (a judge or ledger that did not answer) are
+ * never wrapped in this type: their outcome stays unresolved.
+ */
+export class CampaignPreflightRejectedError extends Error {
+    readonly reason: 'ASSET_VERIFICATION' | 'ALLOCATION_MINIMUM' | 'JEV_CREATIVE_READINESS';
+
+    constructor(reason: CampaignPreflightRejectedError['reason'], message: string) {
+        super(message);
+        this.name = 'CampaignPreflightRejectedError';
+        this.reason = reason;
+    }
+}
+
 export type ICampaignAllocationJudgePort = (
     directive: UnifiedCampaignDirective,
     priorTelemetry?: ReadonlyArray<PlatformTelemetrySnapshot>,
@@ -303,7 +319,8 @@ export class CampaignOrchestrator {
             directive.assets,
         );
         if (!assetCheck.verified) {
-            throw new Error(
+            throw new CampaignPreflightRejectedError(
+                'ASSET_VERIFICATION',
                 `Post-mastering asset verification failed: ${assetCheck.reason ?? 'unverified release assets'}`,
             );
         }
@@ -312,7 +329,7 @@ export class CampaignOrchestrator {
         const originalAllocations = CampaignOrchestrator.computePlatformAllocationsCents(directive);
         for (const platform of directive.platforms) {
             if (originalAllocations[platform] < MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS) {
-                throw new Error(`Initial ${platform} allocation is below the ${MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS}-cent platform minimum.`);
+                throw new CampaignPreflightRejectedError('ALLOCATION_MINIMUM', `Initial ${platform} allocation is below the ${MIN_PLATFORM_CAMPAIGN_BUDGET_CENTS}-cent platform minimum.`);
             }
         }
 
@@ -321,7 +338,8 @@ export class CampaignOrchestrator {
         if (this.campaignJudge && directive.triggeredBy !== 'MANUAL_OVERRIDE') {
             allocationJudgment = await this.campaignJudge(directive, options?.priorTelemetry);
             if (!allocationJudgment.creativeReadinessConfirmed) {
-                throw new Error(
+                throw new CampaignPreflightRejectedError(
+                    'JEV_CREATIVE_READINESS',
                     'Jev System One creative readiness check rejected campaign execution due to insufficient platform-native assets.',
                 );
             }

@@ -1,4 +1,5 @@
 import type { ExecutionTokenBudget } from './ExecutionTokenBudget';
+import { TokenEstimator } from './TokenEstimator';
 
 export interface SemanticCallAdmission {
     budget: ExecutionTokenBudget;
@@ -17,19 +18,50 @@ export function reportedSemanticTokens(usage: unknown): number | undefined {
     return totalTokens;
 }
 
+/** The exact judgment payload sent to `typesafeJudge`, used to size its hold. */
+export interface SemanticCallPayload {
+    state: unknown;
+    questions: Record<string, unknown>;
+}
+
+/** Projected output per judgment question (an answer plus structured framing). */
+const OUTPUT_TOKENS_PER_QUESTION = 64;
+
+/** Headroom for the judge's own system framing around the serialized payload. */
+const INPUT_OVERHEAD_MULTIPLIER = 2;
+
 /**
- * Optional judgments have no provider-enforced token ceiling. Hold the remaining
- * run allowance exclusively until a complete receipt permits settlement. Missing
- * usage keeps that reservation, including across a durable restart. This records
- * actual overages; it cannot enforce a provider-side per-call spending limit.
+ * Bounded token hold for one judgment, derived from the exact payload. Never
+ * the whole execution allowance: concurrent agents sharing the run must still
+ * be able to reserve their own calls, and a missing usage receipt may only
+ * retain this call's projected cost.
+ */
+export function estimateSemanticCallTokens(payload: SemanticCallPayload): number {
+    const estimate = TokenEstimator.estimate(
+        JSON.stringify({ state: payload.state, questions: payload.questions }),
+        undefined,
+        [],
+        Number.MAX_SAFE_INTEGER,
+        Math.max(1, Object.keys(payload.questions).length) * OUTPUT_TOKENS_PER_QUESTION,
+    );
+    return estimate.inputTokens * INPUT_OVERHEAD_MULTIPLIER + estimate.projectedOutputTokens;
+}
+
+/**
+ * Optional judgments have no provider-enforced token ceiling. Hold a bounded
+ * estimate of this call's cost until a complete receipt permits settlement.
+ * Missing usage keeps that estimate, including across a durable restart. When
+ * the estimate does not fit the remaining allowance the judgment abstains.
+ * This records actual overages; it cannot enforce a provider-side limit.
  */
 export async function runBudgetedSemanticCall<T extends { usage?: unknown }>(
     admission: SemanticCallAdmission,
+    payload: SemanticCallPayload,
     call: () => Promise<T>,
 ): Promise<T | null> {
-    const allowance = admission.budget.remaining;
-    if (allowance === 0) return null;
-    const reservation = admission.budget.reserve(allowance);
+    const projected = estimateSemanticCallTokens(payload);
+    if (projected > admission.budget.remaining) return null;
+    const reservation = admission.budget.reserve(projected);
     if (reservation === null) return null;
     let settled = false;
     const checkpoint = async () => {
