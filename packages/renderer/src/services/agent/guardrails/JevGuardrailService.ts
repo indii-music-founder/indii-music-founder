@@ -1,6 +1,5 @@
 import type { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { reportedSemanticTokens } from '../governance/SemanticCallBudget';
-import { TokenEstimator } from '../governance/TokenEstimator';
+import { estimateSemanticCallTokens, reportedSemanticTokens } from '../governance/SemanticCallBudget';
 import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
@@ -70,31 +69,12 @@ const JEV_MODEL = GUARDRAIL_MODEL;
 /** Max milliseconds to wait for Jev before passing through unmodified. */
 const GUARDRAIL_TIMEOUT_MS = 2000;
 
-/** Projected output per noul question (a probability plus structured framing). */
-const OUTPUT_TOKENS_PER_QUESTION = 64;
-
-/** Headroom for the judge's own system framing around the serialized payload. */
-const INPUT_OVERHEAD_MULTIPLIER = 2;
-
-/**
- * Bounded token hold for one guardrail judgment, derived from the exact payload
- * sent to `typesafeJudge`. Never the whole execution allowance: concurrent
- * agents in the same run must still be able to reserve their own calls, and a
- * missing usage receipt may only retain this call's projected cost.
- */
+/** Bounded token hold for one guardrail judgment (see `estimateSemanticCallTokens`). */
 export function estimateGuardrailReservation(
   state: Record<string, unknown>,
   questions: Record<string, unknown>,
 ): number {
-  const payload = JSON.stringify({ state, questions });
-  const estimate = TokenEstimator.estimate(
-    payload,
-    undefined,
-    [],
-    Number.MAX_SAFE_INTEGER,
-    Object.keys(questions).length * OUTPUT_TOKENS_PER_QUESTION,
-  );
-  return estimate.inputTokens * INPUT_OVERHEAD_MULTIPLIER + estimate.projectedOutputTokens;
+  return estimateSemanticCallTokens({ state, questions });
 }
 
 /** Noul threshold above which a flag is considered fired. */
