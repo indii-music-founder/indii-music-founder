@@ -1,3 +1,11 @@
+## 2026-11-17 `multi_platform_autopost` Hid Already-Queued Platforms When One Platform Failed (AUTOPOST_PROMISE_ALL_DOUBLE_POST)
+
+- **SEVERITY:** High (user-facing: a retry after a reported failure double-posts to platforms that already published)
+- **FILES:** `packages/renderer/src/services/agent/tools/SocialTools.ts`
+- **ERROR:** The tool queued all platforms with `Promise.all`. If one platform rejected (e.g. Instagram policy), the whole tool returned "Failed to queue" even though TikTok/YouTube Shorts posts had already been dispatched. The user retried and those platforms posted twice.
+- **FIX:** `Promise.allSettled` with a per-platform result. All queued -> success. Mixed -> `AUTOPOST_PARTIAL_FAILURE` that names the queued platforms ("do not resubmit"), the failed ones and their reasons, and carries `metadata.posts`. All failed -> `AUTOPOST_QUEUE_FAILED`.
+- **PREVENTION:** `Promise.all` over side-effecting calls is a double-execution trap: the first rejection discards the successes of its siblings. Use `allSettled` and report each outcome whenever the calls are not idempotent.
+
 ## 2026-11-17 `send_email` / `reply_to_email` Claimed "Sent Successfully" When the Provider Returned `success: false` (EMAIL_TOOL_FALSE_SUCCESS)
 
 - **SEVERITY:** High (user-facing: the agent told artists an email was sent when Gmail/Outlook had rejected it)
