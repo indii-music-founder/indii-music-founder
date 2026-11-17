@@ -60,17 +60,27 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
         return record;
     }
 
+    let committed: Record<string, unknown> = {};
+
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.currentUser = { uid: 'user-1', getIdToken: vi.fn().mockResolvedValue('identity-token') };
         mocks.toolRegistry = {};
         mocks.getDoc.mockResolvedValue({ exists: () => false });
         mocks.httpsCallable.mockReturnValue(vi.fn().mockResolvedValue({ data: { denied: true } }));
+    // Like Firestore, a later transaction sees what an earlier one committed.
+    committed = {};
     mocks.runTransaction.mockImplementation(async (_db, callback) => {
         const pendingWrites: Promise<unknown>[] = [];
         const result = await callback({
-            get: mocks.getDoc,
-            update: (...args: unknown[]) => { pendingWrites.push(Promise.resolve(mocks.updateDoc(...args))); },
+            get: async (...args: unknown[]) => {
+                const snap = await mocks.getDoc(...args);
+                return snap?.exists?.() ? { ...snap, data: () => ({ ...snap.data(), ...committed }) } : snap;
+            },
+            update: (ref: unknown, patch: Record<string, unknown>) => {
+                committed = { ...committed, ...patch };
+                pendingWrites.push(Promise.resolve(mocks.updateDoc(ref, patch)));
+            },
         });
         await Promise.all(pendingWrites);
         return result;
@@ -215,13 +225,12 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(globalTool).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
             expect(result.data).toBe('ran ok');
-            // Consent and one-shot dispatch claim are committed atomically, then result is recorded.
-            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(1, expect.anything(), expect.objectContaining({
-                status: 'claimed', approvedAt: 'server-timestamp', claimedAt: 'server-timestamp',
-            }));
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'executed' }));
-            expect(mocks.updateDoc.mock.calls[1]?.[1]).toEqual({ status: 'executed', result: { success: true } });
+            // Consent, then the one-shot dispatch claim, then the recorded result. Each write
+            // is exactly the field set firestore.rules allows for that transition.
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(3);
+            expect(mocks.updateDoc.mock.calls[0]?.[1]).toEqual({ status: 'approved', resolvedAt: 'server-timestamp' });
+            expect(mocks.updateDoc.mock.calls[1]?.[1]).toEqual({ status: 'claimed', claimedAt: 'server-timestamp' });
+            expect(mocks.updateDoc.mock.calls[2]?.[1]).toEqual({ status: 'executed', result: { success: true } });
         });
 
         it('executes a validated persisted report_bug through its stable registry handler after the originating session is gone', async () => {
@@ -280,8 +289,8 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(result.error).toMatch(/reconciliation/);
             expect(result.error).toMatch(/check its effect/i);
             expect(result.error).not.toContain('private provider detail');
-            expect(mocks.updateDoc).toHaveBeenCalledTimes(1);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(1, expect.anything(), expect.objectContaining({ status: 'claimed' }));
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({ status: 'claimed' }));
             expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' })).toBe(false);
         });
 
@@ -289,7 +298,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             await bindApproval('execute_code', {}, vi.fn().mockResolvedValue({ success: false, error: 'Provider rejected the action' }));
             const result = await toolApprovalService.approve('approval-1');
             expect(result.success).toBe(false);
-            expect(mocks.updateDoc).toHaveBeenNthCalledWith(2, expect.anything(), expect.objectContaining({
+            expect(mocks.updateDoc).toHaveBeenNthCalledWith(3, expect.anything(), expect.objectContaining({
                 status: 'failed', result: { success: false, error: 'Provider rejected the action' },
             }));
         });
@@ -305,6 +314,19 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(result.error).toMatch(/tool was not run/i);
             expect(execute).not.toHaveBeenCalled();
             expect(mocks.updateDoc).toHaveBeenCalledTimes(1);
+        });
+
+        it('never dispatches when the claim write fails after consent was recorded', async () => {
+            const execute = vi.fn().mockResolvedValue({ success: true });
+            await bindApproval('execute_code', {}, execute);
+            mocks.updateDoc.mockImplementationOnce(() => undefined).mockRejectedValueOnce(new Error('database unavailable'));
+
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(false);
+            expect(result.error).toMatch(/tool was not run/i);
+            expect(execute).not.toHaveBeenCalled();
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
         });
 
         it.each(['read', 'claim'])('does not dispatch when the authenticated owner changes during %s (structural)', async boundary => {
@@ -356,7 +378,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             const returned = await toolApprovalService.approve('approval-1');
             expect(returned).toMatchObject({ ...result, metadata: { approvalPersistence: { status: 'unconfirmed' } } });
             expect(execute).toHaveBeenCalledOnce();
-            expect(mocks.updateDoc).toHaveBeenCalledTimes(1);
+            expect(mocks.updateDoc).toHaveBeenCalledTimes(2);
         });
 
         it('preserves computer tool success without completing under a different owner (structural)', async () => {
@@ -382,7 +404,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             await bindApproval('execute_code', {}, execute);
             let releaseClaim!: () => void;
             const claimSaved = new Promise<void>(resolve => { releaseClaim = resolve; });
-            mocks.updateDoc.mockImplementationOnce(() => claimSaved);
+            mocks.updateDoc.mockImplementationOnce(() => undefined).mockImplementationOnce(() => claimSaved);
 
             const approval = toolApprovalService.approve('approval-1');
             await vi.waitFor(() => expect(mocks.updateDoc).toHaveBeenCalledWith(
@@ -400,7 +422,7 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
                 ...(!success ? { error: 'Provider rejected action' } : {}), metadata: { durableReceipt: true, receiptText: 'Saved asset' } };
             const execute = vi.fn().mockResolvedValue(receipt);
             await bindApproval('execute_code', {}, execute);
-            mocks.updateDoc.mockImplementationOnce(() => undefined)
+            mocks.updateDoc.mockImplementationOnce(() => undefined).mockImplementationOnce(() => undefined)
                 .mockRejectedValueOnce(new Error('database unavailable'));
             const result = await toolApprovalService.approve('approval-1');
             expect(execute).toHaveBeenCalledOnce();

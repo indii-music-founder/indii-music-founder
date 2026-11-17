@@ -114,8 +114,16 @@ function canonicalArgs(value: unknown): string {
  * and remain bound to the renderer that created them.
  */
 function isRecoverableBugReport(approval: PendingToolApproval): boolean {
-    if (approval.status !== 'pending'
-        || approval.agentId !== 'generalist'
+    return approval.status === 'pending' && hasRecoverableBugReportShape(approval);
+}
+
+/**
+ * The validated shape alone, without the status. Approving is two writes
+ * (pending -> approved -> claimed), so the claim step must re-validate the same
+ * record while it is `approved`.
+ */
+function hasRecoverableBugReportShape(approval: PendingToolApproval): boolean {
+    if (approval.agentId !== 'generalist'
         || approval.toolName !== 'report_bug'
         || approval.riskTier !== 'write'
         || approval.description !== 'File a bug report and sync it to GitHub Issues'
@@ -277,25 +285,38 @@ class ToolApprovalService {
                 approval = candidate;
             } else {
                 try {
+                    // firestore.rules only permits pending -> approved (status + resolvedAt) and
+                    // approved -> claimed (status + claimedAt) as separate writes, so consent and
+                    // the one-shot dispatch claim are two transactions. Exclusivity comes from the
+                    // claim: its transaction requires `approved`, so only one caller can win it.
+                    await runTransaction(db, async transaction => {
+                        const snap = await transaction.get(approvalDocRef);
+                        requireApprovalOwner(uid);
+                        if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
+                        const current = snap.data() as PendingToolApproval;
+                        if (current.status !== 'pending' && current.status !== 'approved') {
+                            throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
+                        }
+                        if (!matchesBinding(current) && !hasRecoverableBugReportShape(current)) {
+                            throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
+                        }
+                        // An earlier attempt may already have recorded consent; do not rewrite it.
+                        if (current.status === 'pending') {
+                            transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
+                        }
+                    });
                     approval = await runTransaction(db, async transaction => {
                         const snap = await transaction.get(approvalDocRef);
                         requireApprovalOwner(uid);
                         if (!snap.exists()) throw new Error(`Approval ${approvalId} not found`);
                         const current = snap.data() as PendingToolApproval;
-                        if (current.status !== 'pending') throw new Error(`Approval ${approvalId} is not pending (status: ${current.status})`);
-                        if (!matchesBinding(current) && !isRecoverableBugReport(current)) {
+                        if (current.status !== 'approved') {
+                            throw new Error(`Approval ${approvalId} was already claimed or resolved (status: ${current.status})`);
+                        }
+                        if (!matchesBinding(current) && !hasRecoverableBugReportShape(current)) {
                             throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
                         }
-                        // Atomically record consent and claim this one-shot dispatch.
-                        // Keeping both timestamps in the same conditional transaction
-                        // closes the approved-to-claimed race between separate writes.
-                        const now = serverTimestamp();
-                        transaction.update(approvalDocRef, {
-                            status: 'claimed',
-                            approvedAt: now,
-                            resolvedAt: now,
-                            claimedAt: now,
-                        });
+                        transaction.update(approvalDocRef, { status: 'claimed', claimedAt: serverTimestamp() });
                         return current;
                     });
                 } catch (error) {
@@ -345,7 +366,7 @@ class ToolApprovalService {
                     __computerAgentId: approval.agentId,
                 };
                 result = await toolFn(executionArgs);
-            } else if (isRecoverableBugReport(approval)) {
+            } else if (reportBugHandler && hasRecoverableBugReportShape(approval)) {
                 // This tool has no renderer-local closure and consumes only its
                 // persisted, validated arguments, so it remains executable after
                 // reload or approval from another active renderer.
