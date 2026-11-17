@@ -6,6 +6,14 @@
 - **FIX:** Added an `else` branch that settles every other type as `processed` (no analysis step). Regression test covers image/video/document.
 - **PREVENTION:** Any trigger that writes an in-progress status must have a terminal write on every branch, including the default. Test the default branch, not just the named ones.
 
+## 2026-11-17 Parity Harness Test Downloaded GSAP From a CDN on Every Run (UNHERMETIC_PARITY_TEST)
+
+- **SEVERITY:** Medium (suite fails offline / whenever the CDN or sandbox network is unavailable)
+- **FILES:** `packages/main/src/services/media/parity/parityHarness.test.ts`
+- **ERROR:** `beforeAll` fetched `https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js` while its comment claimed the fixture was "network-free". `ENOTFOUND` failed the whole file.
+- **FIX:** Read the repo's vendored `video/hyperframes/__fixtures__/gsap.min.js` (same 3.14.2 build the sibling tests use).
+- **PREVENTION:** Tests must never fetch from the network in setup; vendor fixtures and read them from disk. A comment saying "network-free" is not evidence: grep test setup for `fetch(`/URLs.
+
 ## 2026-10-03 Blender 5.x Media Type Video Separation & VSE Strips Collection (BLENDER_5_MEDIA_TYPE_AND_VSE_STRIPS)
 
 - **SEVERITY:** Major (Blender headless video generation crashed on modern Blender 5.x with TypeError and AttributeError)
