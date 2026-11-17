@@ -219,7 +219,7 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       await expect(tabletPage.getByTestId('boardroom-module')).toBeVisible({ timeout: 15_000 });
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('Durability check message');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
 
       // The mocked generateContentStream route (auth.ts) always fulfills with a fixed
       // reply — we're not asserting on AI comprehension here, only that the user's own
@@ -275,11 +275,11 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       }
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('My artist name is Luna Synthwave');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
       await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('What is my artist name?');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
       await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 10_000 }); // bypass-strict: select specific element by 0-based index
 
       const secondRequestOnward = capturedPayloads.slice(1).join('\n');
