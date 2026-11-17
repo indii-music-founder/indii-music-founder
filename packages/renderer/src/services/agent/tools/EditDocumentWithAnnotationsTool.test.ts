@@ -44,8 +44,14 @@ describe('EditDocumentWithAnnotationsTool', () => {
 
         const result = await EditDocumentWithAnnotationsTool.execute(mockArgs);
 
-        expect(result.success).toBe(true);
-        expect(result.newDocumentId).toContain('edited-doc-123-');
+        // The tool only prepares a plan; it must never claim an applied edit or
+        // return a document id that does not exist.
+        expect(result.success).toBe(false);
+        expect(result.code).toBe('DOCUMENT_EDIT_NOT_APPLIED');
+        expect(result.documentModified).toBe(false);
+        expect(result.newDocumentId).toBeUndefined();
+        expect(result.message).not.toMatch(/applied|processed|generated shortly/i);
+        expect(result.plan).toBe('Mock Autonomous Response');
         expect(result.spatialPromptContext).toContain('Spatial Document Edit Request for ID: doc-123');
         expect(result.spatialPromptContext).toContain('Global Instruction: Make it sound professional');
         expect(result.spatialPromptContext).toContain('[PAGE 1 - HIGHLIGHT 1]: (x: 10, y: 20, w: 100, h: 50) -> "Rewrite this"');
@@ -62,7 +68,7 @@ describe('EditDocumentWithAnnotationsTool', () => {
 
         const result = await EditDocumentWithAnnotationsTool.execute(mockArgs);
 
-        expect(result.success).toBe(true);
+        expect(result.documentModified).toBe(false);
         expect(result.spatialPromptContext).not.toContain('Global Instruction:');
         expect(result.spatialPromptContext).toContain('[PAGE 1 - HIGHLIGHT 1]: (x: 10, y: 20, w: 100, h: 50)');
     });

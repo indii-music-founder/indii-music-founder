@@ -1,3 +1,11 @@
+## 2026-11-17 `edit_document_with_annotations` Claimed an Applied Edit and Invented a Document ID (DOCUMENT_EDIT_FALSE_SUCCESS)
+
+- **SEVERITY:** High (user-facing: the agent told artists their document was edited and handed out an ID that does not exist)
+- **FILES:** `packages/renderer/src/services/agent/tools/EditDocumentWithAnnotationsTool.ts`
+- **ERROR:** The tool only asks the model for a text plan; it never opens, modifies or saves a document. It still returned `success: true`, "Applied N annotations", a fabricated `newDocumentId` (`edited-<id>-<uuid>`) and "The revised document will be generated shortly" (nothing generates it). The same happened when the model call failed. The unit test pinned the fabricated ID.
+- **FIX:** Returns `success: false`, `code: 'DOCUMENT_EDIT_NOT_APPLIED'`, `documentModified: false`, no invented ID, and the model's plan (or `null`) as a preview. Tests assert no "applied/processed/generated shortly" claim.
+- **PREVENTION:** A tool must not report the outcome it was named for unless it performed it. Never mint identifiers for artifacts that were not created; a test that asserts a generated ID format can pin a lie.
+
 ## 2026-11-17 Bulk Release Delete/Archive Reported Total Failure After Partial Success (BULK_RELEASE_PROMISE_ALL)
 
 - **SEVERITY:** Medium (user-facing: "Failed to delete releases" after some were deleted; stale selection kept)
