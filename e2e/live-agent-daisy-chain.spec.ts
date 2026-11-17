@@ -114,7 +114,7 @@ interface ChainReport {
   };
 }
 
-test.describe('Live coordinated agent daisy chain', () => {
+test.describe('@live Live coordinated agent daisy chain', () => {
   test.use({ viewport: { width: 1440, height: 920 } });
 
   test('creates connected assets, campaign data, and downstream agent handoffs', async ({ authedPage: page }) => {
@@ -137,7 +137,7 @@ test.describe('Live coordinated agent daisy chain', () => {
     await prompt.fill(
       'LIVE_AGENT_CHAIN: act like a user launching a connected release campaign. Use my profile, generated assets, campaign, social, publicist, and finance data.'
     );
-    await page.getByTestId('command-bar-run-btn').click();
+    await page.getByTestId('main-prompt-input').press('Enter');
 
     await expect(page.getByText('Live agent chain ready')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(scenario.campaign.title)).toBeVisible({ timeout: 10_000 });

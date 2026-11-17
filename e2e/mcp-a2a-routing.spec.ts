@@ -63,7 +63,7 @@ test.describe('A2A Routing to MCP Tools', () => {
 
         // Send a message specifically targeting the new MCP tool with arguments that match its schema
         await page.fill('[data-testid="main-prompt-input"]', 'Generate a playlist pitch for releaseId "track-123" targeting the "RapCaviar" playlist with an aggressive angle.');
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Stronger assertion checking the actual UI
         const locator = page.locator('[data-agent-id="publicist"] .message-content').last(); // bypass-strict: select latest message in chat thread

@@ -63,7 +63,7 @@ test.describe('Boardroom Collaboration via MCP', () => {
 
         // Send a message targeting the manager, who should delegate to the publicist
         await page.fill('[data-testid="main-prompt-input"]', 'Hey Manager, please coordinate with the Publicist to generate a playlist pitch.');
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Wait for both agents to respond
         await page.waitForFunction(() => {

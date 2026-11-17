@@ -298,7 +298,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 1: Submitting strategic tour goal...');
         await page.fill('[data-testid="main-prompt-input"]', "Let's plan a Detroit tour with the new album art");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Wait for Creative Director to seat
         console.log('[E2E:Strategic] Waiting for Creative Director to seat...');
@@ -319,7 +319,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 2: Requesting imagery and tour dates advance...');
         await page.fill('[data-testid="main-prompt-input"]', "Creative Director generate the art, Road Director plan Detroit advance");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Wait for responses to register in messages
         await page.waitForFunction(() => {
@@ -335,7 +335,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 3: Triggers pulse to unlock flyer dependency...');
         await page.fill('[data-testid="main-prompt-input"]', "Imagery and dates are locked. Trigger rollout.");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Wait for Marketing and Social to be seated
         await page.waitForFunction(() => {
@@ -351,7 +351,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 4: Social flyer rollout execution...');
         await page.fill('[data-testid="main-prompt-input"]', "Generate rollout materials and schedule drafts");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         await page.waitForFunction(() => {
             const store = window.useStore;
@@ -366,7 +366,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 5: Adjourning and excusing the swarm...');
         await page.fill('[data-testid="main-prompt-input"]', "We are done. Clear the boardroom table.");
-        await page.click('[data-testid="command-bar-run-btn"]');
+        await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         // Wait for all agents to be unseated
         await page.waitForFunction(() => {
