@@ -96,7 +96,7 @@ test.describe('Distribution Module', () => {
         await expect(modal.getByTestId('release-artist-input')).toBeVisible();
 
         // Close modal
-        await modal.getByRole('button', { name: 'Close modal' }).click();
+        await modal.getByRole('button', { name: 'Close release submission' }).click();
         await expect(modal).toHaveCount(0);
     });
 
@@ -105,6 +105,8 @@ test.describe('Distribution Module', () => {
         await page.getByTestId('distro-tab-brain').click();
         const qcContent = page.getByTestId('distro-content-brain');
         await expect(qcContent).toBeVisible({ timeout: 10_000 });
+        // ISSUE-1440: the metadata intake and run control only mount on their own sub-tab.
+        await qcContent.getByTestId('qc-subtab-metadata').click();
 
         // Fill QC metadata inputs
         const titleInput = qcContent.getByTestId('qc-input-title');
@@ -225,6 +227,8 @@ test.describe('Distribution Delivery Pipeline', () => {
         await page.getByTestId('distro-tab-brain').click();
         const qcContent = page.getByTestId('distro-content-brain');
         await expect(qcContent).toBeVisible({ timeout: 10_000 });
+        // ISSUE-1440: the metadata intake and run control only mount on their own sub-tab.
+        await qcContent.getByTestId('qc-subtab-metadata').click();
 
         const runBtn = qcContent.getByTestId('qc-run-analysis');
         await expect(runBtn).toBeVisible({ timeout: 10_000 });

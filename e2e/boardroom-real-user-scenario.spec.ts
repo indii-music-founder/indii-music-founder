@@ -549,10 +549,19 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
             // Wait 1.5 seconds for the processing state to initialize and start E2E mock loop
             await page.waitForTimeout(1500);
             
-            // Wait for isAgentProcessing to become false, signifying the entire turn completion
+            // A Boardroom turn runs in phases (conductor, admission, then each seated
+            // agent), so isAgentProcessing can dip to false between phases. Treat the turn
+            // as finished only once processing has stayed false for a settle window.
+            await page.evaluate(() => { (window as any).__idleSince = undefined; });
             await page.waitForFunction(() => {
-                return window.useStore.getState().isAgentProcessing === false;
-            }, { timeout: 45000 });
+                const w = window as any;
+                if (w.useStore.getState().isAgentProcessing !== false) {
+                    w.__idleSince = undefined;
+                    return false;
+                }
+                w.__idleSince ??= Date.now();
+                return Date.now() - w.__idleSince >= 3000;
+            }, undefined, { timeout: 45000, polling: 250 });
             console.log(`[E2E:Scenario] Prompt processing completed for: "${promptText}"`);
         };
 

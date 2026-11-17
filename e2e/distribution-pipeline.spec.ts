@@ -72,7 +72,7 @@ test.describe('Distribution Pipeline Tests', () => {
         await expect(modal.getByTestId('release-artist-input')).toBeVisible();
 
         // Close modal
-        await modal.getByRole('button', { name: 'Close modal' }).click();
+        await modal.getByRole('button', { name: 'Close release submission' }).click();
         await expect(modal).toHaveCount(0);
     });
 });

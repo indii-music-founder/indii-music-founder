@@ -10,6 +10,19 @@ import { test, expect } from './fixtures/auth';
  * Run: npx playwright test e2e/creative-persistence.spec.ts
  */
 
+/**
+ * Leaving Creative with a dirty prompt raises the "Unsaved Changes" guard. A real user
+ * confirms "Leave Page"; do the same instead of leaving the module blocked behind it.
+ */
+async function leaveCreative(page: import('@playwright/test').Page, target: string) {
+    await page.evaluate((t) => {
+        const store = (window as any).useStore;
+        if (store) store.getState().setModule(t);
+    }, target);
+    const leave = page.getByRole('button', { name: 'Leave Page' });
+    await leave.waitFor({ state: 'visible', timeout: 2_000 }).then(() => leave.click()).catch(() => undefined);
+}
+
 test.describe('Creative Studio Persistence', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -79,28 +92,16 @@ test.describe('Creative Studio Persistence', () => {
             if (store) store.getState().setCreativePrompt(prompt);
         }, testPrompt);
 
-        // 3. Navigate away to finance
-        const financeNav = page.locator('[data-testid="nav-item-finance"]');
-        if (await financeNav.isVisible().catch(() => false)) {
-            await financeNav.click();
-        } else {
-            await page.evaluate(() => {
-                const store = (window as any).useStore;
-                if (store) store.getState().setModule('finance');
-            });
-        }
+        // 3. Navigate away to finance. Sidebar items are collapsible groups now, so a click
+        //    may only expand a group; switch modules through the store to test persistence.
+        await leaveCreative(page, 'finance');
         await expect(page.getByTestId('creative-studio-container')).toHaveCount(0);
 
         // 4. Return to creative
-        const creativeNav = page.locator('[data-testid="nav-item-creative"]');
-        if (await creativeNav.isVisible().catch(() => false)) {
-            await creativeNav.click();
-        } else {
-            await page.evaluate(() => {
-                const store = (window as any).useStore;
-                if (store) store.getState().setModule('creative');
-            });
-        }
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            if (store) store.getState().setModule('creative');
+        });
 
         // 5. Assert studio re-mounted and preserved prompt state
         await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 30_000 });
@@ -151,10 +152,7 @@ test.describe('Creative Studio Persistence', () => {
         const modules = ['creative', 'finance', 'distribution', 'creative'] as const;
 
         for (const mod of modules) {
-            await page.evaluate((target) => {
-                const store = (window as any).useStore;
-                if (store) store.getState().setModule(target);
-            }, mod);
+            await leaveCreative(page, mod);
 
             if (mod === 'creative') {
                 await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 30_000 });

@@ -467,8 +467,10 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                         "Access-Control-Allow-Origin": "*",
                         "Access-Control-Allow-Credentials": "true",
                     },
-                    contentType: 'application/json',
-                    body: `${JSON.stringify(nextOnboardingResponse())}\n`,
+                    // The stream client reads SSE frames and requires a terminal
+                    // {complete:true} frame before it settles billing.
+                    contentType: 'text/event-stream',
+                    body: `data: ${JSON.stringify(nextOnboardingResponse())}\n\ndata: ${JSON.stringify({ complete: true })}\n\n`,
                 });
                 return;
             }
@@ -722,8 +724,8 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
             // Verify Automatic Redirect to Dashboard
             console.log('[Techno E2E] Onboarding complete. Waiting for redirect to dashboard...');
-            const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-            await expect(dashboardBtn).toBeVisible({ timeout: 35000 });
+            // The redirect lands on the Home dashboard inside the studio shell.
+            await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeVisible({ timeout: 35000 });
             await page.waitForTimeout(1500);
 
             // Phase 2: Creative Director (artwork creation)

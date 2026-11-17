@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 
 const LANDING_URL = process.env.PLAYWRIGHT_LANDING_URL || 'http://localhost:3000';
 
-test.describe('Artist Passport Acquisition Funnel', () => {
+test.describe('@external-legacy Artist Passport Acquisition Funnel', () => {
   test('completes diagnostic survey, generates gap report, and supports skeptical handoff', async ({ page }) => {
     // 1. Visit /passport
     await page.goto(`${LANDING_URL}/passport`, { waitUntil: 'domcontentloaded' });

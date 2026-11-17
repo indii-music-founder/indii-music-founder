@@ -1,23 +1,40 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures/auth';
 
 /**
- * Item 278: Payment Flow E2E Tests — Subscription Checkout Journey
- *
- * Covers: plan selection → mocked Stripe Checkout session creation →
- *         simulated webhook → subscription activation → feature gating.
- *
- * All Cloud Functions and Stripe API calls are intercepted so no real
- * charges are made in CI.
- *
- * Run: npx playwright test e2e/payment.spec.ts
+ * The Subscription sub-tab lives inside EarningsDashboard, which only renders its
+ * tabs once an earnings summary exists. Offline Firestore resolves the earnings
+ * subscription to null, so deliver a minimal valid summary through the finance
+ * service singleton before the Earnings tab mounts and subscribes.
  */
+async function openSubscriptionTab(page: Page): Promise<void> {
+    await page.evaluate(async () => {
+        const { financeService } = await import('/src/services/finance/FinanceService.ts');
+        (financeService as any).subscribeToEarnings = (_userId: string, onData: (data: unknown) => void) => {
+            onData({
+                period: { startDate: '2026-01-01', endDate: '2026-01-31' },
+                totalGrossRevenue: 0,
+                totalNetRevenue: 0,
+                totalStreams: 0,
+                totalDownloads: 0,
+                currencyCode: 'USD',
+                byPlatform: [],
+                byTerritory: [],
+                byRelease: [],
+            });
+            return () => undefined;
+        };
+    });
+    await page.locator('[data-testid="finance-tab-earnings"]').click();
+    await page.locator('[data-testid="earnings-subtab-subscription"]').click();
+}
 
 test.describe('Payment Flow (Item 278)', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
     test.beforeEach(async ({ authedPage: page }) => {
         // ── Mock createCheckoutSession Cloud Function ────────────────────────
-        await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
+        await page.route(/cloudfunctions\.net\/createCheckoutSession/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -31,7 +48,7 @@ test.describe('Payment Flow (Item 278)', () => {
         });
 
         // ── Mock stripeWebhook Cloud Function ────────────────────────────────
-        await page.route('**/cloudfunctions.net/**/stripeWebhook**', async route => {
+        await page.route(/cloudfunctions\.net\/stripeWebhook/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -40,7 +57,7 @@ test.describe('Payment Flow (Item 278)', () => {
         });
 
         // ── Mock getSubscription and getUsageStats Cloud Functions ───────────
-        await page.route('**/cloudfunctions.net/**/getSubscription**', async route => {
+        await page.route(/cloudfunctions\.net\/getSubscription/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -60,7 +77,7 @@ test.describe('Payment Flow (Item 278)', () => {
             });
         });
 
-        await page.route('**/cloudfunctions.net/**/getUsageStats**', async route => {
+        await page.route(/cloudfunctions\.net\/getUsageStats/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -117,7 +134,7 @@ test.describe('Payment Flow (Item 278)', () => {
     test('Strict Stripe Test Mode directive followed during E2E checkout', async ({ authedPage: page }) => {
         let testModeDirectiveFound = false;
 
-        await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
+        await page.route(/cloudfunctions\.net\/createCheckoutSession/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -141,12 +158,11 @@ test.describe('Payment Flow (Item 278)', () => {
         });
 
         // Open subscription tab in Finance
-        await page.locator('[data-testid="finance-tab-earnings"]').click();
-        await page.locator('[data-testid="earnings-subtab-subscription"]').click();
+        await openSubscriptionTab(page);
         await expect(page.locator('[data-testid="subscription-tab-content"]')).toBeVisible({ timeout: 15_000 });
 
-        // Trigger upgrade for Studio tier
-        const upgradeBtn = page.locator('[data-testid="tier-upgrade-studio_monthly"]');
+        // Trigger upgrade for a paid tier (build)
+        const upgradeBtn = page.locator('[data-testid="tier-upgrade-build"]');
         await expect(upgradeBtn).toBeVisible({ timeout: 10_000 });
         await upgradeBtn.click();
 
@@ -155,8 +171,7 @@ test.describe('Payment Flow (Item 278)', () => {
     });
 
     test('subscription plan cards render and are interactive', async ({ authedPage: page }) => {
-        await page.locator('[data-testid="finance-tab-earnings"]').click();
-        await page.locator('[data-testid="earnings-subtab-subscription"]').click();
+        await openSubscriptionTab(page);
 
         const subscriptionContent = page.locator('[data-testid="subscription-tab-content"]');
         await expect(subscriptionContent).toBeVisible({ timeout: 15_000 });
@@ -167,7 +182,7 @@ test.describe('Payment Flow (Item 278)', () => {
     test('Upgrade button triggers mocked Stripe checkout session', async ({ authedPage: page }) => {
         let checkoutCallMade = false;
 
-        await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
+        await page.route(/cloudfunctions\.net\/createCheckoutSession/, async route => {
             checkoutCallMade = true;
             await route.fulfill({
                 status: 200,
@@ -185,11 +200,10 @@ test.describe('Payment Flow (Item 278)', () => {
             await route.abort();
         });
 
-        await page.locator('[data-testid="finance-tab-earnings"]').click();
-        await page.locator('[data-testid="earnings-subtab-subscription"]').click();
+        await openSubscriptionTab(page);
         await expect(page.locator('[data-testid="subscription-tab-content"]')).toBeVisible({ timeout: 15_000 });
 
-        const upgradeBtn = page.locator('[data-testid="tier-upgrade-studio_monthly"]');
+        const upgradeBtn = page.locator('[data-testid="tier-upgrade-build"]');
         await expect(upgradeBtn).toBeVisible({ timeout: 10_000 });
         await upgradeBtn.click();
 
@@ -228,7 +242,7 @@ test.describe('Payment Flow (Item 278)', () => {
 
     test('Pro-gated features show upgrade prompt for free tier', async ({ authedPage: page }) => {
         // Mock subscription as free tier
-        await page.route('**/cloudfunctions.net/**/getSubscription**', async route => {
+        await page.route(/cloudfunctions\.net\/getSubscription/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -246,7 +260,7 @@ test.describe('Payment Flow (Item 278)', () => {
             });
         });
 
-        await page.route('**/cloudfunctions.net/**/getUsageStats**', async route => {
+        await page.route(/cloudfunctions\.net\/getUsageStats/, async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -302,7 +316,7 @@ test.describe('Payment Flow (Item 278)', () => {
 
     test('error state handling: payment failure shows appropriate message', async ({ authedPage: page }) => {
         // Mock failed checkout session
-        await page.route('**/cloudfunctions.net/**/createCheckoutSession**', async route => {
+        await page.route(/cloudfunctions\.net\/createCheckoutSession/, async route => {
             await route.fulfill({
                 status: 400,
                 contentType: 'application/json',
@@ -316,11 +330,10 @@ test.describe('Payment Flow (Item 278)', () => {
             await route.abort();
         });
 
-        await page.locator('[data-testid="finance-tab-earnings"]').click();
-        await page.locator('[data-testid="earnings-subtab-subscription"]').click();
+        await openSubscriptionTab(page);
         await expect(page.locator('[data-testid="subscription-tab-content"]')).toBeVisible({ timeout: 15_000 });
 
-        const upgradeBtn = page.locator('[data-testid="tier-upgrade-studio_monthly"]');
+        const upgradeBtn = page.locator('[data-testid="tier-upgrade-build"]');
         await expect(upgradeBtn).toBeVisible({ timeout: 10_000 });
         await upgradeBtn.click();
 

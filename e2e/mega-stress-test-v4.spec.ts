@@ -54,7 +54,8 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
     });
 
     test('104. Settings page opens and navigates away cleanly', async ({ authedPage: page }) => {
-        const settingsBtn = page.locator('[data-testid="nav-item-settings"]').first(); // bypass-strict: navigation element rendered across desktop and mobile layouts
+        // Settings is a modal opened from the sidebar rail (aria-label "Settings (⌘,)"), not a nav item.
+        const settingsBtn = page.getByRole('button', { name: /^Settings/ }).first(); // bypass-strict: sidebar rail renders a collapsed and an expanded variant
         await expect(settingsBtn).toBeVisible({ timeout: 15_000 });
         await settingsBtn.click();
 
@@ -62,10 +63,10 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
         const profileHeader = page.getByRole('heading', { name: /profile/i }).first(); // bypass-strict: heading text rendered across responsive layout breakpoints
         await expect(profileHeader).toBeVisible({ timeout: 5_000 });
 
-        // Navigate back to dashboard to "close" it
-        const dashboardBtn = page.locator('[data-testid="return-hq-btn"]').first(); // bypass-strict: candidate element present across multiple viewport containers
-        await expect(dashboardBtn).toBeVisible({ timeout: 5_000 });
-        await dashboardBtn.click();
+        // Close the modal to return to the shell
+        const closeBtn = page.getByRole('button', { name: /Close settings/ });
+        await expect(closeBtn).toBeVisible({ timeout: 5_000 });
+        await closeBtn.click();
 
         await expect(profileHeader).not.toBeVisible({ timeout: 3_000 });
     });
