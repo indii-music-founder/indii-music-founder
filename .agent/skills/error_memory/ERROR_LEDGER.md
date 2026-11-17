@@ -1,3 +1,11 @@
+## 2026-11-17 Distributor Deployment Status Writes Were Fire-and-Forget (DISTRIBUTION_STATUS_FLOATING)
+
+- **SEVERITY:** High (user-facing: a release could be live at a distributor while its record stayed `validating`, inviting a duplicate submission; validation failures never left `validating`)
+- **FILES:** `packages/renderer/src/services/distribution/DistributorService.ts`
+- **ERROR:** `createRelease` and the status refresh called `this.store.updateDeploymentStatus(...)` without awaiting or catching at four sites. A failed write was an unhandled rejection and the record kept its old status. Naively awaiting the success-path write inside the existing `try` would have been worse: a failed write would reach the `catch`, mark a successfully created release `failed` and rethrow.
+- **FIX:** `recordDeploymentStatus` awaits the write, retries once, never throws, and logs deployment id/status/externalId for reconciliation. All four sites use it. Tests: retry on a transient failure, a failed status write does not turn a created release into a failure, and a validation failure is persisted before returning.
+- **PREVENTION:** After an irreversible external call, persistence failures must be isolated from the error path that reports the external call's outcome. Found with typed `no-floating-promises`.
+
 ## 2026-11-17 File Tree Move/Rename/Delete/Create-Folder Failures Were Never Shown (FILESYSTEM_ERROR_NEVER_RENDERED)
 
 - **SEVERITY:** Medium (user-facing: a failed delete made the file silently reappear; failed moves, renames and folder creation gave no explanation)

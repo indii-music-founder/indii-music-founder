@@ -210,6 +210,61 @@ describe('DistributorService.createRelease', () => {
     );
   });
 
+  describe('deployment status persistence', () => {
+    const metadata = { id: 'rel-1', trackTitle: 'Test', artistName: 'Artist' } as unknown as Parameters<typeof DistributorService.createRelease>[1];
+    const assets = { coverArt: { url: 'http://test.com/img.jpg' } } as unknown as Parameters<typeof DistributorService.createRelease>[2];
+
+    beforeEach(() => {
+      // Submission validation is covered elsewhere; these tests are about status persistence.
+      vi.spyOn(DistributorService, 'validateForDistributor').mockResolvedValue({ isValid: true, errors: [], warnings: [] } as never);
+    });
+
+    it('does not report a created release as failed when only the status write fails', async () => {
+      vi.mocked(distributionStore.updateDeploymentStatus).mockRejectedValue(new Error('PERMISSION_DENIED'));
+
+      const result = await DistributorService.createRelease('distrokid', metadata, assets);
+
+      expect(result).toMatchObject({ success: true, distributorReleaseId: 'DIST-123' });
+      // The submission happened: it must never be overwritten with a "failed" status.
+      expect(distributionStore.updateDeploymentStatus).not.toHaveBeenCalledWith(
+        'deploy-123', 'failed', expect.anything(),
+      );
+    });
+
+    it('retries the final status write once before giving up', async () => {
+      vi.mocked(distributionStore.updateDeploymentStatus)
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValueOnce(undefined);
+
+      await DistributorService.createRelease('distrokid', metadata, assets);
+
+      expect(distributionStore.updateDeploymentStatus).toHaveBeenCalledTimes(2);
+      expect(distributionStore.updateDeploymentStatus).toHaveBeenLastCalledWith(
+        'deploy-123', 'delivered', { externalId: 'DIST-123' },
+      );
+    });
+
+    it('records a validation failure before returning it, so the record is not left validating', async () => {
+      vi.spyOn(DistributorService, 'validateForDistributor').mockResolvedValue({
+        isValid: false, warnings: [],
+        errors: [{ code: 'BAD_TITLE', message: 'Title required', field: 'title', severity: 'error' }],
+      } as never);
+      let settled = false;
+      vi.mocked(distributionStore.updateDeploymentStatus).mockImplementation(async () => {
+        await Promise.resolve();
+        settled = true;
+      });
+
+      const result = await DistributorService.createRelease('distrokid', metadata, assets);
+
+      expect(result.success).toBe(false);
+      expect(settled).toBe(true);
+      expect(distributionStore.updateDeploymentStatus).toHaveBeenCalledWith(
+        'deploy-123', 'failed', expect.objectContaining({ errors: expect.any(Array) }),
+      );
+    });
+  });
+
   it('should throw if userProfile is missing', async () => {
     // Arrange
     vi.mocked(useStore.getState).mockReturnValueOnce({ userProfile: null, currentOrganizationId: 'test-org-id' } as unknown as import('@/core/store').StoreState);
