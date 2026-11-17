@@ -177,4 +177,25 @@ describe('onWhiteGloveAssetUploaded', () => {
             }
         }), { merge: true });
     });
+
+    it.each(['image', 'video', 'document'])(
+        'settles a %s upload that has no analysis step instead of leaving it processing forever',
+        async (assetType) => {
+            const handler = onWhiteGloveAssetUploaded as unknown as (event: any) => Promise<void>;
+            const mockSet = vi.fn();
+            (admin.firestore as any).mockReturnValue({
+                collection: vi.fn().mockReturnValue({ doc: vi.fn().mockReturnValue({ set: mockSet, collection: vi.fn().mockReturnValue({ doc: vi.fn().mockReturnValue({ set: mockSet }) }) }) })
+            });
+
+            await handler({
+                data: {
+                    name: `ingest/white-glove/artist123/${assetType}/file.bin`,
+                    bucket: 'test-bucket', size: 10, contentType: 'application/octet-stream'
+                }
+            });
+
+            const statuses = mockSet.mock.calls.map(call => call[0].status);
+            expect(statuses).toEqual(['processing', 'processed']);
+        },
+    );
 });
