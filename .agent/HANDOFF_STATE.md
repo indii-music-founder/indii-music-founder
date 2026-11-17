@@ -1,3 +1,18 @@
+# Primitives Batch — Stuck States, False "Done" Claims, Unsaved Edits (2026-11-17)
+
+**Branch:** `claude/primitives-batch-2026-11-17` (pushed, no PR; the GitHub agent team owns PRs). Base: `main` @ `11f9551`.
+Each fix has a failing-first test and an ERROR_LEDGER entry (search the ledger for the IDs below).
+
+- **Stuck in-progress status:** white-glove uploads of image/video/document (`WHITE_GLOVE_STUCK_PROCESSING`); distribution Inngest job failure (`DISTRIBUTION_JOB_NO_ONFAILURE`); Shopify stale-claim measured from last activity.
+- **Tools that claimed success they did not achieve:** `send_email`/`reply_to_email` on provider `success:false` (`EMAIL_TOOL_FALSE_SUCCESS`); `edit_document_with_annotations` never edits (`DOCUMENT_EDIT_FALSE_SUCCESS`); navigation tools did not await `setModule` (`NAVIGATION_TOOL_FALSE_SUCCESS`); `multi_platform_autopost` `Promise.all` hid queued platforms (`AUTOPOST_PROMISE_ALL_DOUBLE_POST`); bulk release delete/archive (`BULK_RELEASE_PROMISE_ALL`); `request_feature` payload lacked `userId` so rules denied it (`FEATURE_REQUEST_USERID_DENIED`).
+- **Unsaved/misreported edits:** brand-kit + profile writes (`BRAND_MANAGER_UNHANDLED_SAVE`), release panel stale-closure save (`RELEASE_PANEL_STALE_SAVE`), mobile remote settings (`MOBILE_SETTINGS_SILENT_REVERT`), `analyze_audio_dna` save.
+- **Tests:** parity harness no longer fetches a CDN (`UNHERMETIC_PARITY_TEST`); show-me tests re-enabled.
+- **Not on this branch:** the two high review fixes (whole-allowance token holds, Jev-rejected campaign claim) are on `claude/intelligent-ride-tqbjl5` (PR #888).
+- **Method note:** typed `@typescript-eslint/no-floating-promises` is the best bug finder here but the repo lint config has no type info. Use a throwaway config with `parserOptions.project` and match BOTH `**/*.ts` and `**/*.tsx`. `packages/firebase` source and renderer `.ts` services/tools/modules are triaged; `.tsx` modules have ~148 hits of which the mutation ones are triaged (remaining are effect-triggered loaders that handle their own errors).
+- **Environment gaps (not code):** full `npm run build` needs `VITE_FIREBASE_*`/App Check values; Jev (TypeSafe) is unreachable without the app's signed-in callable.
+
+---
+
 # Multi-Platform Programmatic Ad Adapters, Attribution Engine, Mobile Remote Studio Bridge (ISSUE-1528), Desktop v1.82.0 & Issues #418/#417 — Delivered (2026-10-15 EDT)
 
 Delivered end-to-end Multi-Platform Programmatic Ad Adapters (`META`, `TIKTOK`, `GOOGLE_ADS`), Unified Server-Side Attribution Engine (`AttributionBus` + `FirestoreAttributionDeduplicationStore`), Cross-Department Campaign Orchestrator (`CampaignOrchestrator` + `FirestoreFinanceRecoupmentLedger` + Jev System One `campaign-judgments.ts`), Gen 2 Cloud Function callables (`adCampaignCallables.ts`), Marketing Agent tool wiring (`dispatch_multi_platform_campaign`, `record_attribution_conversion`), Mobile Remote Studio Bridge (`ISSUE-1528`), Desktop App v1.82.0 Apple Silicon DMG version bump, and fixes for GitHub Issues `#418` and `#417` on `main`:

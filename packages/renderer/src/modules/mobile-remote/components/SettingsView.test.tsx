@@ -109,3 +109,38 @@ describe('SettingsView Jev integration', () => {
         expect(actionBtn).toHaveTextContent('Wake Studio First');
     });
 });
+
+describe('SettingsView saving settings', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.onSnapshot.mockImplementation(() => vi.fn());
+    });
+
+    const renderView = () => render(
+        <SettingsView
+            desktopState={{ online: true, sleepMode: false } as unknown as DesktopState}
+            isRelayOnline
+            onNavigate={vi.fn()}
+        />
+    );
+
+    it('keeps the toggle in sync with what was stored when the write fails', async () => {
+        mocks.setDoc.mockRejectedValueOnce(new Error('PERMISSION_DENIED'));
+        renderView();
+        const toggle = screen.getByText('Auto-sleep').closest('button')!;
+        const before = toggle.querySelector('span.rounded-full')!.className;
+
+        fireEvent.click(toggle);
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('Could not save your remote settings');
+        expect(toggle.querySelector('span.rounded-full')!.className).toBe(before);
+    });
+
+    it('shows no error when the write succeeds', async () => {
+        mocks.setDoc.mockResolvedValueOnce(undefined);
+        renderView();
+        fireEvent.click(screen.getByText('Auto-sleep').closest('button')!);
+        await Promise.resolve();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+});

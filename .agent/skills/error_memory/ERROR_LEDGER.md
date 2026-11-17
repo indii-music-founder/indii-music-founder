@@ -1,3 +1,11 @@
+## 2026-11-17 Mobile Remote Settings Toggle Stayed On After a Failed Save (MOBILE_SETTINGS_SILENT_REVERT)
+
+- **SEVERITY:** Low-Medium (user-facing: auto-sleep looked saved but reverted on reload)
+- **FILES:** `packages/renderer/src/modules/mobile-remote/components/SettingsView.tsx`
+- **ERROR:** `persist` updated the toggle optimistically and, when `setDoc` failed, only logged. The user was never told and the UI kept showing a value that was not stored.
+- **FIX:** Restore the previous settings and show an inline `role="alert"` message on failure. Tests cover failure (toggle unchanged + alert) and success (no alert).
+- **PREVENTION:** Same family as BRAND_MANAGER_UNHANDLED_SAVE: an optimistic update must either roll back or tell the user when the write fails.
+
 ## 2026-11-17 Release Details Saved the Previous Value; Brand-Kit Success Toasts Survived a Never-Rejecting Save (RELEASE_PANEL_STALE_SAVE)
 
 - **SEVERITY:** High (user-facing: edits to release date/type/tracks were reported "saved" but stored the previous value, and a staged creative handoff could be consumed after a failed save)

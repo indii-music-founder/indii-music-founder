@@ -54,6 +54,7 @@ function timeoutLabel(minutes: number): string {
 export default function SettingsView({ desktopState, isPaired, onNavigateTab }: SettingsViewProps) {
     const [settings, setSettings] = useState<RemoteSleepSettings>(DEFAULT_REMOTE_SLEEP_SETTINGS);
     const [isWaking, setIsWaking] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [pushStatus, setPushStatus] = useState<string | null>(null);
     const [isEnablingPush, setIsEnablingPush] = useState(false);
     const wakeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,7 +107,9 @@ export default function SettingsView({ desktopState, isPaired, onNavigateTab }: 
     }, []);
 
     const persist = async (next: RemoteSleepSettings) => {
+        const previous = settings;
         setSettings(next); // optimistic
+        setSaveError(null);
         const uid = auth.currentUser?.uid;
         if (!uid) return;
         try {
@@ -117,6 +120,9 @@ export default function SettingsView({ desktopState, isPaired, onNavigateTab }: 
             );
         } catch (err) {
             logger.error('[SettingsView] Failed to persist remote settings:', err);
+            // Show what is actually stored instead of a toggle that would revert on reload.
+            setSettings(previous);
+            setSaveError('Could not save your remote settings. Check your connection and try again.');
         }
     };
 
@@ -283,6 +289,8 @@ export default function SettingsView({ desktopState, isPaired, onNavigateTab }: 
             )}
 
             {/* ─── Sleep Mode ─────────────────────────────────────────── */}
+            {saveError && <p role="alert" className="mb-3 text-xs text-red-300">{saveError}</p>}
+
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
