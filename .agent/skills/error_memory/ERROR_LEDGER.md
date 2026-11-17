@@ -1,3 +1,11 @@
+## 2026-11-17 `send_email` / `reply_to_email` Claimed "Sent Successfully" When the Provider Returned `success: false` (EMAIL_TOOL_FALSE_SUCCESS)
+
+- **SEVERITY:** High (user-facing: the agent told artists an email was sent when Gmail/Outlook had rejected it)
+- **FILES:** `packages/renderer/src/services/agent/tools/EmailTools.ts`
+- **ERROR:** `GmailProvider`/`OutlookProvider.sendEmail` return `{ success: false, error }` on an HTTP failure instead of throwing. The tools only caught thrown errors and unconditionally returned `toolSuccess(... "sent successfully")`. The UI path (`emailSlice.emailSend`) already checked `result.success`, so only agent replies lied.
+- **FIX:** Both tools return `toolError(..., 'EMAIL_SEND_FAILED')` when `result.success` is false. Tests cover confirmed and rejected sends for both tools.
+- **PREVENTION:** A result type with a `success` flag must be checked on every consumer; "did not throw" is not delivery. When one consumer of a service checks the flag, grep the others.
+
 ## 2026-11-17 Distribution Job Stuck `processing` After Retries Exhausted (DISTRIBUTION_JOB_NO_ONFAILURE)
 
 - **SEVERITY:** High (user-facing: a release distribution that failed never showed as failed)
