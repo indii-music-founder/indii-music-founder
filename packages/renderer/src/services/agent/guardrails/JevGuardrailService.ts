@@ -1,5 +1,6 @@
 import type { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { reportedSemanticTokens } from '../governance/SemanticCallBudget';
+import { TokenEstimator } from '../governance/TokenEstimator';
 import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
@@ -69,6 +70,33 @@ const JEV_MODEL = GUARDRAIL_MODEL;
 /** Max milliseconds to wait for Jev before passing through unmodified. */
 const GUARDRAIL_TIMEOUT_MS = 2000;
 
+/** Projected output per noul question (a probability plus structured framing). */
+const OUTPUT_TOKENS_PER_QUESTION = 64;
+
+/** Headroom for the judge's own system framing around the serialized payload. */
+const INPUT_OVERHEAD_MULTIPLIER = 2;
+
+/**
+ * Bounded token hold for one guardrail judgment, derived from the exact payload
+ * sent to `typesafeJudge`. Never the whole execution allowance: concurrent
+ * agents in the same run must still be able to reserve their own calls, and a
+ * missing usage receipt may only retain this call's projected cost.
+ */
+export function estimateGuardrailReservation(
+  state: Record<string, unknown>,
+  questions: Record<string, unknown>,
+): number {
+  const payload = JSON.stringify({ state, questions });
+  const estimate = TokenEstimator.estimate(
+    payload,
+    undefined,
+    [],
+    Number.MAX_SAFE_INTEGER,
+    Object.keys(questions).length * OUTPUT_TOKENS_PER_QUESTION,
+  );
+  return estimate.inputTokens * INPUT_OVERHEAD_MULTIPLIER + estimate.projectedOutputTokens;
+}
+
 /** Noul threshold above which a flag is considered fired. */
 const FIRE_THRESHOLD = GUARDRAIL_FIRE_THRESHOLD;
 
@@ -122,8 +150,8 @@ export class JevGuardrailService {
    * renderer bundle, or browser-side SDK client.
    *
    * Returns the original response unmodified on timeout, upstream failure, or
-   * unavailable service. The execution allowance remains reserved while the
-   * provider is unresolved; missing usage retains that hold.
+   * unavailable service. A bounded per-call estimate stays reserved while the
+   * provider is unresolved; missing usage retains only that estimate.
    */
   async screen(input: GuardrailInput, budget: ExecutionTokenBudget): Promise<GuardrailResult> {
     const passthrough: GuardrailResult = {
@@ -193,9 +221,12 @@ export class JevGuardrailService {
 
     // This call belongs to BaseAgent's active execution. A UI timeout does
     // not cancel provider work, so settle only when that work returns a receipt.
-    const allowance = budget.remaining;
-    if (allowance === 0) return null;
-    const reservation = budget.reserve(allowance);
+    // Reserve this call's projected cost only — holding `budget.remaining`
+    // would starve every concurrent agent sharing the run and, on a missing
+    // receipt, permanently consume the whole execution allowance.
+    const projected = estimateGuardrailReservation(state, questionsDef);
+    if (projected > budget.remaining) return null;
+    const reservation = budget.reserve(projected);
     if (reservation === null) return null;
     let settled = false;
     let rawAnswers: Record<string, unknown> | undefined;

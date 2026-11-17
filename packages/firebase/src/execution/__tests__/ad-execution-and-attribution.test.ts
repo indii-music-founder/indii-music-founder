@@ -6,6 +6,7 @@
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
+import { HttpsError } from 'firebase-functions/v2/https';
 import {
     type IAdPlatformAdapter,
     type UnifiedAttributionEvent,
@@ -1200,9 +1201,14 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
             runTransaction: async <T>(callback: (tx: {
                 get(ref: ReturnType<typeof makeRef>): Promise<{ exists: boolean; data(): Record<string, unknown> | undefined }>;
                 create(ref: ReturnType<typeof makeRef>, data: Record<string, unknown>): void;
+                set(ref: ReturnType<typeof makeRef>, data: Record<string, unknown>): void;
             }) => Promise<T>): Promise<T> => callback({
                 get: async ref => ({ exists: executions.has(ref.id), data: () => executions.get(ref.id) }),
-                create: (ref, data) => { executions.set(ref.id, data); },
+                create: (ref, data) => {
+                    if (executions.has(ref.id)) throw new Error('ALREADY_EXISTS');
+                    executions.set(ref.id, data);
+                },
+                set: (ref, data) => { executions.set(ref.id, data); },
             }),
         } as unknown as FirebaseFirestore.Firestore;
         const providerFetch = vi.fn(async () => jsonResponse({ id: 'meta_campaign_1' }));
@@ -1251,6 +1257,37 @@ describe('Cloud Function Callable Handlers (adCampaignCallables)', () => {
         await expect(handleExecuteUnifiedCampaignDirective('artist_detroit_01', interrupted, deps))
             .rejects.toThrow(/outcome is unresolved/);
         expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+
+        // A Jev creative-readiness rejection is definitive and pre-reservation:
+        // the claim settles as `rejected` and the directive may be resubmitted.
+        const rejected = { ...directive, directiveId: 'dir_jev_rejected_01', triggeredBy: 'MARKETING_AGENT' as const };
+        const balanceBefore = ledger.getAccountBalance('ledger_recoup_01');
+        const rejection = await handleExecuteUnifiedCampaignDirective('artist_detroit_01', rejected, {
+            ...deps,
+            allocationJudge: async dir => ({
+                ...heuristicCampaignJudgment(dir), creativeReadinessConfirmed: false, source: 'jev' as const,
+            }),
+        }).catch((error: unknown) => error);
+        expect(rejection).toBeInstanceOf(HttpsError);
+        expect(rejection).toMatchObject({
+            code: 'failed-precondition',
+            details: { reason: 'JEV_CREATIVE_READINESS', retryable: true },
+        });
+        expect(executions.get(rejected.directiveId)).toMatchObject({
+            status: 'rejected', rejectionReason: 'JEV_CREATIVE_READINESS',
+        });
+        expect(ledger.getAccountBalance('ledger_recoup_01')).toBe(balanceBefore);
+        expect(providerFetch).toHaveBeenCalledTimes(providerCalls);
+
+        const resubmitted = await handleExecuteUnifiedCampaignDirective('artist_detroit_01', rejected, {
+            ...deps,
+            allocationJudge: async dir => ({
+                ...heuristicCampaignJudgment(dir), creativeReadinessConfirmed: true, source: 'jev' as const,
+            }),
+        });
+        expect(resubmitted.receipts).toHaveLength(1);
+        expect(executions.get(rejected.directiveId)).toMatchObject({ status: 'completed', result: resubmitted });
+        expect(providerFetch.mock.calls.length).toBeGreaterThan(providerCalls);
     });
 
     it('executes handleExecuteUnifiedCampaignDirective and handleIngestUnifiedAttributionEvent end-to-end', async () => {
