@@ -1,3 +1,11 @@
+## 2026-11-17 File Tree Move/Rename/Delete/Create-Folder Failures Were Never Shown (FILESYSTEM_ERROR_NEVER_RENDERED)
+
+- **SEVERITY:** Medium (user-facing: a failed delete made the file silently reappear; failed moves, renames and folder creation gave no explanation)
+- **FILES:** `packages/renderer/src/core/store/slices/fileSystemSlice.ts`
+- **ERROR:** The slice rolled back optimistic changes and stored the message in `fileSystemError`, but no component reads `fileSystemError`, so the user saw the UI snap back with no reason. Found by checking that the error state flagged by typed `no-floating-promises` was actually consumed anywhere.
+- **FIX:** `createFolder`, `moveNode`, `renameNode` and `deleteNode` also call the module-level `toast.error("Could not <action>: <reason>")`. `createFileNode` is unchanged: it rethrows to its upload callers, which report outcomes themselves. Tests cover each failure and the quiet success path.
+- **PREVENTION:** Setting error state is not reporting it. For every `*Error` field a slice writes, grep for a consumer; if there is none, the failure is invisible. Prefer a toast at the point of failure for user-triggered mutations.
+
 ## 2026-11-17 Mobile Remote Settings Toggle Stayed On After a Failed Save (MOBILE_SETTINGS_SILENT_REVERT)
 
 - **SEVERITY:** Low-Medium (user-facing: auto-sleep looked saved but reverted on reload)
