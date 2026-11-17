@@ -5,7 +5,7 @@ import * as path from 'path';
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4243';
 const ARTIFACTS_DIR = path.join(process.cwd(), '.agent/artifacts/browser_verification');
 
-test.describe('Tier 0 Artist Master Directive & Visual DNA Live Browser Verification', () => {
+test.describe('@live Tier 0 Artist Master Directive & Visual DNA Live Browser Verification', () => {
     test.beforeAll(() => {
         if (!fs.existsSync(ARTIFACTS_DIR)) {
             fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
