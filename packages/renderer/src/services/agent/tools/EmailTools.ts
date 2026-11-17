@@ -38,6 +38,9 @@ export const EmailTools = {
                 body: args.body,
                 isHtml: false
             });
+            if (!result.success) {
+                return toolError(`Email was not sent: ${result.error ?? 'the provider rejected the request'}`, 'EMAIL_SEND_FAILED');
+            }
             return toolSuccess(result, `Email sent successfully to ${args.to} via account ${args.accountId}.`);
         } catch (error: any) {
             return toolError(`Failed to send email: ${error.message}`);
@@ -55,6 +58,9 @@ export const EmailTools = {
                 threadId: args.threadId,
                 inReplyTo: args.inReplyTo
             });
+            if (!result.success) {
+                return toolError(`Reply was not sent: ${result.error ?? 'the provider rejected the request'}`, 'EMAIL_SEND_FAILED');
+            }
             return toolSuccess(result, `Reply sent successfully to ${args.to} on thread ${args.threadId}.`);
         } catch (error: any) {
             return toolError(`Failed to reply to email: ${error.message}`);

@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import type { StoreState } from '../types';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
 import { logger } from '@/utils/logger';
+import { toast } from '@/core/context/ToastContext';
 
 export interface FileSystemSlice {
     fileNodes: FileNode[];
@@ -65,6 +66,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             const message = error instanceof Error ? error.message : 'Failed to create folder';
             set({ fileSystemError: message });
             logger.error('Error creating folder:', error);
+            toast.error(`Could not create the folder: ${message}`);
         }
     },
 
@@ -111,6 +113,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             const message = error instanceof Error ? error.message : 'Failed to move node';
             set({ fileNodes: previousNodes, fileSystemError: message });
             logger.error('Error moving node:', error);
+            toast.error(`Could not move it: ${message}`);
         }
     },
 
@@ -127,6 +130,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             const message = error instanceof Error ? error.message : 'Failed to rename node';
             set({ fileNodes: previousNodes, fileSystemError: message });
             logger.error('Error renaming node:', error);
+            toast.error(`Could not rename it: ${message}`);
         }
     },
 
@@ -157,6 +161,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             const message = error instanceof Error ? error.message : 'Failed to delete node';
             set({ fileNodes: previousNodes, fileSystemError: message });
             logger.error('Error deleting node:', error);
+            toast.error(`Could not delete it: ${message}`);
         }
     },
 

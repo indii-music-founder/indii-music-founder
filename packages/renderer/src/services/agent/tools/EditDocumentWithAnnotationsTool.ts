@@ -68,8 +68,10 @@ export const EditDocumentWithAnnotationsTool: any = {
             spatialPrompt += '\n';
         });
 
-        let summary = "AI has processed the document highlights and instructions. The revised document will be generated shortly.";
-        
+        // This tool only prepares an edit plan. It does not open, modify or save any
+        // document, so it must never claim an edit or return an invented document id.
+        let plan: string | null = null;
+
         try {
             const systemPrompt = "You are an expert document editor. Summarize the requested spatial document edits and provide a short plan of action.";
             const response = await AutonomousIntelligence.generateContent(
@@ -78,16 +80,21 @@ export const EditDocumentWithAnnotationsTool: any = {
                 undefined,
                 systemPrompt
             );
-            summary = getResponseText(response);
+            plan = getResponseText(response);
         } catch (e) {
-            logger.warn('[EditDocumentWithAnnotationsTool] Intelligence generation failed, using fallback summary.', e);
+            logger.warn('[EditDocumentWithAnnotationsTool] Edit plan generation failed.', e);
         }
 
+        const notApplied = `The document was not changed: applying annotated edits to the file is not available yet.${plan ? ' An edit plan was prepared for review.' : ''}`;
         return {
-            success: true,
-            message: `Document edit request processed for ${args.documentId}. Applied ${args.annotations.length} annotations.`,
-            newDocumentId: `edited-${args.documentId}-${uuidv4().slice(0, 8)}`,
-            summary,
+            success: false,
+            code: 'DOCUMENT_EDIT_NOT_APPLIED',
+            error: notApplied,
+            message: notApplied,
+            documentModified: false,
+            documentId: args.documentId,
+            annotationCount: args.annotations.length,
+            plan,
             spatialPromptContext: spatialPrompt
         };
     }

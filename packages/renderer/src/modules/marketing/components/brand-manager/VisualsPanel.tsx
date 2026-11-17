@@ -41,8 +41,10 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 
             // Await persistence before consuming handoff to prevent loss on write failure
             saveBrandKit({ brandAssets: updatedAssets })
-                .then(() => {
-                    // Only acknowledge after successful persistence
+                .then(saved => {
+                    // Only acknowledge after successful persistence. The save helper has
+                    // already told the user about a failure; keep the handoff for retry.
+                    if (!saved) return;
                     consumeHandoff('marketing');
                     toast.success(`Staged creative "${newAsset.description}" loaded into Campaigns!`);
                 })

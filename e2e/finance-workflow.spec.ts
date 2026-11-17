@@ -36,12 +36,15 @@ test.describe('Finance Module', () => {
     });
 
     test('should switch between Finance tabs', async ({ authedPage: page }) => {
+        // Tabs are grouped; a tab's button only exists while its group is active.
         // Test Expenses tab
+        await page.locator('[data-testid="finance-group-spending"]').click();
         const expenseTab = page.locator('[data-testid="finance-tab-expenses"]');
         await expenseTab.click();
         await expect(expenseTab).toHaveAttribute('data-state', 'active');
 
         // Test Royalties tab
+        await page.locator('[data-testid="finance-group-royalties"]').click();
         const royaltiesTab = page.locator('[data-testid="finance-tab-royalties"]');
         await royaltiesTab.click();
         await expect(royaltiesTab).toHaveAttribute('data-state', 'active');

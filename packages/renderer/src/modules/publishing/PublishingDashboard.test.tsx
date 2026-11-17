@@ -7,6 +7,8 @@ import { useStore } from '@/core/store';
 const mockDeleteRelease = vi.fn();
 const mockArchiveRelease = vi.fn();
 const mockToastPromise = vi.fn();
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
 const mockSetModule = vi.fn();
 const mockFetchDistributors = vi.fn();
 const mockFetchEarnings = vi.fn();
@@ -63,8 +65,8 @@ vi.mock('./hooks/useReleaseList', () => ({
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         promise: mockToastPromise,
-        success: vi.fn(),
-        error: vi.fn()
+        success: mockToastSuccess,
+        error: mockToastError
     })
 }));
 
@@ -300,7 +302,7 @@ describe('PublishingDashboard', () => {
         expect(screen.queryByText('Berry')).not.toBeInTheDocument();
     });
 
-    it('executes bulk delete with toast promise', async () => {
+    it('executes bulk delete and reports the confirmed result', async () => {
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Delete Me' }, status: 'draft', assets: {} }
         ] as any[];
@@ -342,12 +344,13 @@ describe('PublishingDashboard', () => {
         });
 
         await waitFor(() => {
-            expect(mockToastPromise).toHaveBeenCalled();
             expect(mockDeleteRelease).toHaveBeenCalledWith('1');
+            expect(mockToastSuccess).toHaveBeenCalledWith('1 release deleted.');
+            expect(mockToastError).not.toHaveBeenCalled();
         });
     });
 
-    it('executes bulk archive with toast promise', async () => {
+    it('executes bulk archive and reports the confirmed result', async () => {
         const mockReleases = [
             { id: '1', metadata: { trackTitle: 'Test Track' }, status: 'live', assets: {} }
         ] as any[];
@@ -389,8 +392,9 @@ describe('PublishingDashboard', () => {
         });
 
         await waitFor(() => {
-            expect(mockToastPromise).toHaveBeenCalled();
             expect(mockArchiveRelease).toHaveBeenCalledWith('1');
+            expect(mockToastSuccess).toHaveBeenCalledWith('1 release archived.');
+            expect(mockToastError).not.toHaveBeenCalled();
         });
     });
 

@@ -53,7 +53,9 @@ const MobileRemote = lazy(() => import('@/modules/mobile-remote/MobileRemote'));
 
 function DevPortWarning() {
     const port = window.location.port;
-    if (!import.meta.env.DEV || port === '4243') return null;
+    // The e2e harness intentionally serves the renderer on :4242. Its fixed
+    // bottom-right banner would sit over controls and intercept test clicks.
+    if (!import.meta.env.DEV || port === '4243' || import.meta.env.VITE_E2E === 'true') return null;
 
     return (
         <div className="fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-bold border border-red-400 animate-pulse">

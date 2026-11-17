@@ -178,7 +178,9 @@ Be specific and data-driven based on the post content above.`;
                 'IG Reels': 'meta_reels',
             } as const;
 
-            const posts = await Promise.all(args.platforms.map(async platform => {
+            // allSettled, not all: a rejection on one platform must not hide the
+            // platforms that already queued, or the user retries and double-posts.
+            const outcomes = await Promise.allSettled(args.platforms.map(async platform => {
                 const instagramPayload: InstagramPublishingPayload | undefined = platform === 'IG Reels' ? {
                     surface: 'reel',
                     width: args.width ?? 0,
@@ -188,7 +190,7 @@ Be specific and data-driven based on the post content above.`;
                     caption: args.caption,
                     hashtags: args.hashtags ?? [],
                 } : undefined;
-                const jobId = await socialAutoPosterService.queuePost({
+                return socialAutoPosterService.queuePost({
                     id: `autopost-${crypto.randomUUID()}`,
                     mediaUrl: args.videoUrl,
                     caption: args.caption,
@@ -196,8 +198,32 @@ Be specific and data-driven based on the post content above.`;
                     platform: platformMap[platform],
                     instagramPayload,
                 });
-                return { platform, status: 'queued', jobId };
             }));
+            const results = outcomes.map((outcome, index) => {
+                const platform = args.platforms[index]!;
+                return outcome.status === 'fulfilled'
+                    ? { platform, status: 'queued' as const, jobId: outcome.value }
+                    : {
+                        platform,
+                        status: 'failed' as const,
+                        error: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason),
+                    };
+            });
+            const queued = results.filter(result => result.status === 'queued');
+            const failed = results.filter(result => result.status === 'failed');
+            if (failed.length > 0 && queued.length > 0) {
+                return toolError(
+                    `${queued.map(result => result.platform).join(', ')} already queued; do not resubmit. ` +
+                    `Failed: ${failed.map(result => `${result.platform} (${(result as { error: string }).error})`).join('; ')}.`,
+                    'AUTOPOST_PARTIAL_FAILURE',
+                    { posts: results },
+                );
+            }
+            if (failed.length > 0) {
+                const reasons = failed.map(result => (result as { error: string }).error).join('; ');
+                return toolError(`Failed to queue short-form autopost package: ${reasons}`, 'AUTOPOST_QUEUE_FAILED');
+            }
+            const posts = results;
 
             return toolSuccess({
                 batchId: `autopost-${Date.now().toString(36)}`,

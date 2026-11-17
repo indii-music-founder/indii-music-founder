@@ -4,6 +4,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
 import { toast } from '@/core/context/ToastContext';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { auth } from '@/services/firebase';
 
 /**
  * Bug and feature reporting tools.
@@ -207,11 +208,20 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             return toolError('Feature request requires at least a title and description.', 'MISSING_FIELDS');
         }
 
+        // firestore.rules (feature_requests) only allows a create whose userId is
+        // the caller's uid. Without it every write is denied and no user can ever
+        // file a request.
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            return toolError('Sign in to submit a feature request.', 'AUTH_REQUIRED');
+        }
+
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
         const featureRequest = {
             id: `feat-${Date.now()}-${crypto.randomUUID().split('-')[0]}`,
+            userId,
             title,
             description,
             useCase,

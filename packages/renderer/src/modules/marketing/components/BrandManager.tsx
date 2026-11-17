@@ -10,8 +10,8 @@ import { BrandKit } from '@/modules/workflow/types';
 import BrandInterview from './BrandInterview';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { calculateProfileStatus } from '@/services/onboarding/onboardingService';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { useToast } from '@/core/context/ToastContext';
+import { persistUserUpdates } from './brandPersistence';
 import { resolveBrandManagerTab } from '@/modules/handoffViews';
 import {
     IdentityPanel,
@@ -26,6 +26,7 @@ import type { BrandKitWithDefaults, ReleaseDetails } from './brand-manager';
 type TabId = 'identity' | 'visuals' | 'release' | 'health' | 'interview';
 
 const BrandManager: React.FC = () => {
+    const toast = useToast();
     const { userProfile, updateBrandKit, setUserProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         updateBrandKit: state.updateBrandKit,
@@ -67,14 +68,12 @@ const BrandManager: React.FC = () => {
     const release: ReleaseDetails = brandKit.releaseDetails || { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' };
 
     // -- PERSISTENCE HELPER --
-    const saveBrandKit = async (updates: Partial<BrandKit>) => {
-        if (!userProfile || !userProfile.id) return;
-        const userRef = doc(db, 'users', userProfile.id);
+    const saveBrandKit = async (updates: Partial<BrandKit>): Promise<boolean> => {
         const firestoreUpdates: Record<string, BrandKit[keyof BrandKit]> = {};
         Object.keys(updates).forEach(key => {
             firestoreUpdates[`brandKit.${key}`] = updates[key as keyof BrandKit];
         });
-        await updateDoc(userRef, firestoreUpdates);
+        return persistUserUpdates(userProfile?.id, firestoreUpdates, toast.error);
     };
 
     // Profile completeness for the interview badge
@@ -158,10 +157,7 @@ const BrandManager: React.FC = () => {
                                     onChange={(val) => {
                                         if (userProfile) {
                                             setUserProfile({ ...userProfile, careerStage: val });
-                                            if (userProfile.id) {
-                                                const userRef = doc(db, 'users', userProfile.id);
-                                                updateDoc(userRef, { careerStage: val });
-                                            }
+                                            void persistUserUpdates(userProfile.id, { careerStage: val }, toast.error);
                                         }
                                     }}
                                 />
@@ -175,10 +171,7 @@ const BrandManager: React.FC = () => {
                                         if (userProfile) {
                                             const newGoals = [val, ...(userProfile.goals?.slice(1) || [])];
                                             setUserProfile({ ...userProfile, goals: newGoals });
-                                            if (userProfile.id) {
-                                                const userRef = doc(db, 'users', userProfile.id);
-                                                updateDoc(userRef, { goals: newGoals });
-                                            }
+                                            void persistUserUpdates(userProfile.id, { goals: newGoals }, toast.error);
                                         }
                                     }}
                                 />

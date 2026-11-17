@@ -18,7 +18,7 @@ ensureDir(path.join(BASE_OUT, 'mobile/landing'));
 ensureDir(path.join(BASE_OUT, 'mobile/studio'));
 ensureDir(path.join(BASE_OUT, 'mobile/modals'));
 
-test.describe('Marketing Capture - Landing Page (Production)', () => {
+test.describe('@external-legacy Marketing Capture - Landing Page (Production)', () => {
     test.setTimeout(180_000);
 
     test('capture landing page desktop - sections and views', async ({ page }) => {
