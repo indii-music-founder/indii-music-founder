@@ -718,6 +718,7 @@ These commands form the backbone of the agent's development workflow. When a use
 - `/review` — Conversational Q&A loop to review state and align context. (`.agent/workflows/review.md`)
 - `/opp` — Operator persona activation / handoff check. (`.agent/workflows/opp.md`)
 - `/go` — Universal recursive execution loop for task continuation. (`.agent/workflows/go.md`)
+- `/PP` — Perfect Primitive: audit, test-first hardening, sibling sweep, and mainline delivery for foundational primitives across Antigravity, Codex, and Claude. (`.agent/workflows/PP.md`, `.claude/commands/PP.md`)
 - `/get-git` — Git sync, local validation, and background scheduling. (`.agent/workflows/get-git.md`)
 - `/c` — Continuous coordination engine (autonomous supervisor). (`.agent/workflows/c.md`)
 - `/away` — Autonomous CI monitor & merge loop. (`.agent/workflows/away.md`)
