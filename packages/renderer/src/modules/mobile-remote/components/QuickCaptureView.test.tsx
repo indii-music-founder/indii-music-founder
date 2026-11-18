@@ -99,6 +99,7 @@ vi.mock('motion/react', () => ({
         button: ({ children, whileTap, ...props }: React.PropsWithChildren<Record<string, unknown>> & { whileTap?: unknown }) => <button {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    useReducedMotion: () => false,
 }));
 
 describe('QuickCaptureView', () => {

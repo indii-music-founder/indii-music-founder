@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CameraViewfinderModal, { cropToRatio } from './CameraViewfinderModal';
 
 describe('camera viewfinder', () => {
@@ -92,6 +92,123 @@ describe('camera viewfinder', () => {
         await waitFor(() => expect(onPhoto).toHaveBeenCalledOnce());
         expect(drawImage).toHaveBeenCalledWith(expect.any(HTMLVideoElement), 656, 0, 608, 1080, 0, 0, 608, 1080);
         expect(onPhoto.mock.calls[0]?.[0]).toMatchObject({ type: 'image/jpeg', size: 11 });
+        view.unmount();
+    });
+
+    it('catches preview click play() rejection and clears tap-to-start error once playback succeeds', async () => {
+        const track = { stop: vi.fn(), getCapabilities: () => ({}), getSettings: () => ({}) };
+        const stream = { getTracks: () => [track], getVideoTracks: () => [track] };
+        Object.defineProperty(navigator, 'mediaDevices', {
+            configurable: true,
+            value: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+        });
+        const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play')
+            .mockRejectedValueOnce(new DOMException('NotAllowedError'))
+            .mockRejectedValueOnce(new DOMException('StillBlocked'))
+            .mockResolvedValueOnce(undefined);
+
+        const view = render(<CameraViewfinderModal onClose={vi.fn()} onFallback={vi.fn()} onPhoto={vi.fn()} />);
+        await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Tap the preview to start the camera.'));
+
+        const video = document.querySelector('video')!;
+        // First tap rejects — must stay caught with no unhandled rejection and keep alert
+        fireEvent.click(video);
+        await waitFor(() => expect(playSpy).toHaveBeenCalledTimes(2));
+        expect(screen.getByRole('alert')).toHaveTextContent('Tap the preview to start the camera.');
+
+        // Second tap succeeds — must clear the tap-to-start error banner
+        fireEvent.click(video);
+        await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+        view.unmount();
+    });
+
+    it('ignores stale applyConstraints completion after switching cameras and reports denied iOS motion permission', async () => {
+        let resolveTorch!: () => void;
+        const rearTrack = {
+            stop: vi.fn(),
+            getCapabilities: () => ({ torch: true }),
+            getSettings: () => ({}),
+            applyConstraints: vi.fn(() => new Promise<void>((resolve) => { resolveTorch = resolve; })),
+        };
+        const frontTrack = {
+            stop: vi.fn(),
+            getCapabilities: () => ({ torch: true }),
+            getSettings: () => ({}),
+            applyConstraints: vi.fn().mockResolvedValue(undefined),
+        };
+        const getUserMedia = vi.fn()
+            .mockResolvedValueOnce({ getTracks: () => [rearTrack], getVideoTracks: () => [rearTrack] })
+            .mockResolvedValueOnce({ getTracks: () => [frontTrack], getVideoTracks: () => [frontTrack] });
+        Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia } });
+        vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+
+        const requestPermission = vi.fn().mockResolvedValue('denied');
+        const MockDeviceOrientation = Object.assign(function DeviceOrientationEvent() {}, { requestPermission });
+        vi.stubGlobal('DeviceOrientationEvent', MockDeviceOrientation);
+
+        const view = render(<CameraViewfinderModal onClose={vi.fn()} onFallback={vi.fn()} onPhoto={vi.fn()} />);
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Toggle torch' })).toBeEnabled());
+
+        // Trigger torch on rear camera, then immediately switch camera before applyConstraints resolves
+        fireEvent.click(screen.getByRole('button', { name: 'Toggle torch' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Switch camera' }));
+        await waitFor(() => expect(getUserMedia).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Toggle torch' })).toBeEnabled());
+
+        // Resolve stale rear torch promise — front camera torch must remain off (aria-pressed="false")
+        resolveTorch();
+        await new Promise((r) => setTimeout(r, 10));
+        expect(screen.getByRole('button', { name: 'Toggle torch' })).toHaveAttribute('aria-pressed', 'false');
+
+        // Tap Level when iOS requestPermission resolves 'denied' — must show denial alert
+        fireEvent.click(screen.getByRole('button', { name: 'Level' }));
+        await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Motion sensor permission was denied.'));
+        view.unmount();
+    });
+
+    it('recovers recording controls when MediaRecorder emits an error without firing onstop', async () => {
+        const track = { stop: vi.fn(), getCapabilities: () => ({}), getSettings: () => ({}) };
+        const stream = { getTracks: () => [track], getVideoTracks: () => [track], getAudioTracks: () => [track] };
+        Object.defineProperty(navigator, 'mediaDevices', {
+            configurable: true,
+            value: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+        });
+        vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+
+        let triggerRecorderError: (() => void) | null = null;
+        class FailingRecorder {
+            static isTypeSupported = () => true;
+            state: 'inactive' | 'recording' = 'inactive';
+            mimeType = 'video/mp4';
+            ondataavailable: ((event: { data: Blob }) => void) | null = null;
+            onstop: (() => void) | null = null;
+            set onerror(handler: (() => void) | null) {
+                triggerRecorderError = handler;
+            }
+            get onerror() {
+                return triggerRecorderError;
+            }
+            start() { this.state = 'recording'; }
+            stop() { this.state = 'inactive'; }
+        }
+        vi.stubGlobal('MediaRecorder', FailingRecorder);
+
+        const view = render(<CameraViewfinderModal mode="video" onClose={vi.fn()} onFallback={vi.fn()} onPhoto={vi.fn()} onVideo={vi.fn()} />);
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Start recording video' })).toBeEnabled());
+
+        fireEvent.click(screen.getByRole('button', { name: 'Start recording video' }));
+        expect(screen.getByRole('button', { name: 'Stop recording video' })).toBeDefined();
+
+        // Simulate MediaRecorder error without onstop
+        act(() => {
+            triggerRecorderError?.();
+        });
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Video recording failed. Please retry.');
+            expect(screen.getByRole('button', { name: 'Start recording video' })).toBeEnabled();
+            expect(screen.getByRole('button', { name: 'Switch camera' })).toBeEnabled();
+        });
         view.unmount();
     });
 });

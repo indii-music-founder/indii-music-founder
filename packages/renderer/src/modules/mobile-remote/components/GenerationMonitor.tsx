@@ -14,16 +14,13 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { 
-    Image as ImageIcon, Loader2, Sparkles, Send, Palette, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Wand2, LayoutGrid, Check, AlertCircle, RefreshCw,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Layers, Cpu, Activity
+import {
+    Image as ImageIcon, Loader2, Sparkles, Send, Palette,
+    Wand2, LayoutGrid, AlertCircle, RefreshCw, Activity
 } from 'lucide-react';
 import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/services/agent/RemoteRelayService';
 import type { Unsubscribe } from 'firebase/firestore';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 
@@ -122,6 +119,7 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
         }))
     );
 
+    const prefersReducedMotion = useReducedMotion();
     const [inputPrompt, setInputPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState('1:1');
     const [isSending, setIsSending] = useState(false);
@@ -134,6 +132,8 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
     const activeListenerRef = useRef<Unsubscribe | null>(null);
     const activeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isMountedRef = useRef(true);
+    const sendingRef = useRef(false);
+    const requestSeqRef = useRef(0);
     // ISSUE-989: tracks the in-flight command so a timeout OR unmount can
     // actually cancel it in Firestore, not just detach the local listener.
     const activeCommandIdRef = useRef<string | null>(null);
@@ -150,21 +150,35 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
     }, [activeStylePreset, inputPrompt]);
 
     const handleGenerate = useCallback(async () => {
-        if (!isPaired || !inputPrompt.trim() || isSending) return;
+        const submittedPrompt = inputPrompt.trim();
+        if (!isPaired || !submittedPrompt || isSending || sendingRef.current) return;
 
+        requestSeqRef.current += 1;
+        sendingRef.current = true;
         setIsSending(true);
         setError(null);
         let commandId: string | null = null;
 
         try {
             commandId = await remoteRelayService.sendCommand(
-                `[GENERATE_IMAGE] ${inputPrompt.trim()}`,
+                `[GENERATE_IMAGE] ${submittedPrompt}`,
                 undefined,
                 { aspectRatio, type: 'generate_image' } as Record<string, unknown>,
                 'studio'
             );
 
+            if (!isMountedRef.current) {
+                sendingRef.current = false;
+                if (commandId) {
+                    remoteRelayService.cancelCommand(commandId).catch((cancelError) => {
+                        logger.warn('[GenerationMonitor] Failed to cancel command after unmount during send:', cancelError);
+                    });
+                }
+                return;
+            }
+
             if (!commandId) {
+                sendingRef.current = false;
                 setError('Cloud Pipeline Failure');
                 setIsSending(false);
                 return;
@@ -181,34 +195,47 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
             activeCommandIdRef.current = commandId;
             setActiveCommandId(commandId);
 
-            activeTimeoutRef.current = setTimeout(async () => {
-                activeTimeoutRef.current = null;
-                if (activeListenerRef.current) {
-                    activeListenerRef.current();
-                    activeListenerRef.current = null;
-                }
-                if (isMountedRef.current) setIsSending(false);
-                // ISSUE-989: actively cancel in Firestore, not just detach the
-                // listener — otherwise a pending command survives and a later
-                // desktop recovery/backlog scan can still execute (and pay
-                // for) a generation the phone already gave up on.
-                const cancelled = await remoteRelayService.cancelCommand(commandId);
-                // The user can start another generation while the cancellation
-                // transaction is in flight. Never let the older completion
-                // clear or annotate the newer command.
-                if (activeCommandIdRef.current !== commandId) return;
-                activeCommandIdRef.current = null;
-                if (isMountedRef.current) setActiveCommandId(null);
-                if (isMountedRef.current) {
-                    setError(cancelled
-                        ? 'Generation timed out and was cancelled — no cost incurred.'
-                        : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
-                }
+            activeTimeoutRef.current = setTimeout(() => {
+                void (async () => {
+                    activeTimeoutRef.current = null;
+                    if (activeListenerRef.current) {
+                        activeListenerRef.current();
+                        activeListenerRef.current = null;
+                    }
+                    if (activeCommandIdRef.current === commandId) {
+                        sendingRef.current = false;
+                        if (isMountedRef.current) setIsSending(false);
+                    }
+                    // ISSUE-989: actively cancel in Firestore, not just detach the
+                    // listener — otherwise a pending command survives and a later
+                    // desktop recovery/backlog scan can still execute (and pay
+                    // for) a generation the phone already gave up on.
+                    try {
+                        const cancelled = await remoteRelayService.cancelCommand(commandId);
+                        // The user can start another generation while the cancellation
+                        // transaction is in flight. Never let the older completion
+                        // clear or annotate the newer command.
+                        if (activeCommandIdRef.current !== commandId) return;
+                        activeCommandIdRef.current = null;
+                        if (!isMountedRef.current) return;
+                        setActiveCommandId(null);
+                        setError(cancelled
+                            ? 'Generation timed out and was cancelled — no cost incurred.'
+                            : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
+                    } catch (timeoutCancelErr) {
+                        logger.warn('[GenerationMonitor] Failed to cancel timed-out command:', timeoutCancelErr);
+                        if (activeCommandIdRef.current !== commandId) return;
+                        activeCommandIdRef.current = null;
+                        if (!isMountedRef.current) return;
+                        setActiveCommandId(null);
+                        setError('Generation timed out and cancellation could not be confirmed — check desktop studio before retrying.');
+                    }
+                })();
             }, 90000);
 
             activeListenerRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
                 if (response.isFinal && response.text) {
-                    if (activeCommandIdRef.current !== commandId) return;
+                    if (!isMountedRef.current || activeCommandIdRef.current !== commandId) return;
                     if (activeTimeoutRef.current) {
                         clearTimeout(activeTimeoutRef.current);
                         activeTimeoutRef.current = null;
@@ -218,13 +245,14 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                         activeListenerRef.current = null;
                     }
                     activeCommandIdRef.current = null;
+                    sendingRef.current = false;
                     setActiveCommandId(null);
                     setIsSending(false);
 
                     if (response.imageUrls && response.imageUrls.length > 0) {
                         const newImages = response.imageUrls.map((url: string) => ({
                             url,
-                            prompt: inputPrompt.trim(),
+                            prompt: submittedPrompt,
                             timestamp: Date.now(),
                         }));
                         setLocalGeneratedImages(prev => [...newImages, ...prev]);
@@ -238,6 +266,7 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                 }
             });
         } catch (err: unknown) {
+            sendingRef.current = false;
             if (activeTimeoutRef.current) {
                 clearTimeout(activeTimeoutRef.current);
                 activeTimeoutRef.current = null;
@@ -251,30 +280,36 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                     logger.warn('[GenerationMonitor] Failed to cancel command after listener setup error:', error);
                 });
                 activeCommandIdRef.current = null;
-                setActiveCommandId(null);
+                if (isMountedRef.current) setActiveCommandId(null);
             }
-            setError(err instanceof Error ? err.message : 'Pipeline Error');
-            setIsSending(false);
+            if (isMountedRef.current) {
+                setError(err instanceof Error ? err.message : 'Pipeline Error');
+                setIsSending(false);
+            }
         }
     }, [inputPrompt, aspectRatio, isSending, isPaired]);
 
     const handleCancel = useCallback(async () => {
         const commandId = activeCommandIdRef.current;
         if (!commandId) return;
+        const cancelSeq = ++requestSeqRef.current;
         if (activeTimeoutRef.current) clearTimeout(activeTimeoutRef.current);
         activeTimeoutRef.current = null;
         activeListenerRef.current?.();
         activeListenerRef.current = null;
         activeCommandIdRef.current = null;
+        sendingRef.current = false;
         setActiveCommandId(null);
         setIsSending(false);
         try {
             const cancelled = await remoteRelayService.cancelCommand(commandId);
+            if (!isMountedRef.current || requestSeqRef.current !== cancelSeq) return;
             setError(cancelled
                 ? 'Pending generation cancelled.'
                 : 'Desktop may already be processing this request — check before retrying.');
         } catch (err) {
             logger.warn('[GenerationMonitor] Cancellation failed:', err);
+            if (!isMountedRef.current || requestSeqRef.current !== cancelSeq) return;
             setError('Cancellation could not be confirmed — check desktop before retrying.');
         }
     }, []);
@@ -361,17 +396,17 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
             {/* Active Monitoring */}
             <AnimatePresence>
                 {(isGenerating || isSending || (isAgentProcessing && currentModule === 'creative')) && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
+                    <motion.div
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.95 }}
                         className="relative overflow-hidden p-5 rounded-[32px] bg-white/[0.03] border border-blue-500/20 shadow-[0_20px_40px_-12px_rgba(59,130,246,0.1)]"
                     >
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 relative">
                                 <motion.div 
-                                    animate={{ rotate: 360 }}
-                                    transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                                    animate={prefersReducedMotion ? undefined : { rotate: 360 }}
+                                    transition={prefersReducedMotion ? undefined : { repeat: Infinity, duration: 3, ease: "linear" }}
                                     className="absolute inset-0 rounded-2xl border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent"
                                 />
                                 <Sparkles className="w-5 h-5 text-blue-400" />
@@ -394,10 +429,10 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                                 
                                 <div className="mt-4 space-y-1.5">
                                     <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                        <motion.div 
-                                            initial={{ width: 0 }}
+                                        <motion.div
+                                            initial={prefersReducedMotion ? false : { width: 0 }}
                                             animate={{ width: '100%' }}
-                                            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                                            transition={prefersReducedMotion ? undefined : { repeat: Infinity, duration: 4, ease: "easeInOut" }}
                                             className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
                                         />
                                     </div>
@@ -425,9 +460,9 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                     className="flex flex-col items-center justify-center py-12 text-center flex-1"
                 >
                     <div className="w-20 h-20 rounded-[32px] bg-white/[0.02] border border-white/5 flex items-center justify-center mb-6 relative">
-                        <motion.div 
-                            animate={{ rotate: [0, 90, 0], scale: [1, 1.1, 1] }}
-                            transition={{ repeat: Infinity, duration: 6 }}
+                        <motion.div
+                            animate={prefersReducedMotion ? undefined : { rotate: [0, 90, 0], scale: [1, 1.1, 1] }}
+                            transition={prefersReducedMotion ? undefined : { repeat: Infinity, duration: 6 }}
                             className="absolute inset-0 bg-blue-500/5 rounded-[32px] blur-xl"
                         />
                         <Wand2 className="w-8 h-8 text-white/10" />
@@ -442,15 +477,21 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
             {/* Error UI */}
             <AnimatePresence>
                 {error && (
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9 }}
+                    <motion.div
+                        role="alert"
+                        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.9 }}
                         className="px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-400"
                     >
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <span className="text-[10px] font-bold uppercase tracking-widest">{error}</span>
-                        <button onClick={() => setError(null)} className="ml-auto opacity-40 hover:opacity-100 transition-opacity">
+                        <button
+                            type="button"
+                            aria-label="Dismiss error"
+                            onClick={() => setError(null)}
+                            className="ml-auto opacity-40 hover:opacity-100 transition-opacity"
+                        >
                             <RefreshCw className="w-3 h-3" />
                         </button>
                     </motion.div>
@@ -468,7 +509,8 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                         {STYLE_PRESETS.map(preset => (
                             <motion.button
                                 key={preset.label}
-                                whileTap={{ scale: 0.95 }}
+                                type="button"
+                                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                                 onClick={() => handleStylePreset(preset)}
                                 className={cn(
                                     "px-4.5 py-3 rounded-full text-[10px] font-extrabold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border cursor-pointer",
@@ -493,7 +535,8 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                         {ASPECT_RATIOS.map(ar => (
                             <motion.button
                                 key={ar.value}
-                                whileTap={{ scale: 0.95 }}
+                                type="button"
+                                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                                 onClick={() => setAspectRatio(ar.value)}
                                 className={cn(
                                     "px-4.5 py-3 rounded-xl text-[9px] font-extrabold uppercase tracking-widest transition-all duration-300 border cursor-pointer flex items-center gap-1.5",
@@ -522,15 +565,17 @@ export default function GenerationMonitor({ isPaired = true }: { isPaired?: bool
                                 setError(null);
                             }}
                             onKeyDown={e => {
-                                if (e.key === 'Enter') handleGenerate();
+                                if (e.key === 'Enter') void handleGenerate();
                             }}
                             placeholder="Describe visual concept…"
                             disabled={isSending || !isPaired}
                             className="flex-1 bg-transparent text-sm text-white placeholder:text-[#636366] outline-none font-medium"
                         />
                         <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleGenerate}
+                            type="button"
+                            aria-label="Generate image"
+                            whileTap={prefersReducedMotion ? undefined : { scale: 0.9 }}
+                            onClick={() => void handleGenerate()}
                             disabled={!isPaired || !inputPrompt.trim() || isSending}
                             className={cn(
                                 "w-12 h-12 rounded-[20px] flex items-center justify-center transition-all shadow-lg cursor-pointer",

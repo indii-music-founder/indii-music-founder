@@ -1,3 +1,14 @@
+# Mobile Remote Contact Audio/Submit, Camera Viewfinder & GenerationMonitor Primitives (`/PP`) — Delivered on `main` (2026-11-18)
+
+Delivered on `main` (`ERROR_LEDGER` IDs: `QUICK_CONTACT_AUDIO_PLAYBACK_AND_SUBMIT_LIFECYCLE`, `CAMERA_VIEWFINDER_PLAY_CONTROL_AND_RECORDER_LIFECYCLE`, `GENERATION_MONITOR_UNMOUNT_TIMEOUT_AND_CANCEL_RACES`):
+
+- **`QuickContactModal.tsx`:** Reset cached `Audio` element before revoking `blob:` URLs on Redo/re-record, wrapped `Audio.play()` with rejection/error recovery and user-visible error toast, added `aria-label` on play/pause, guarded voice & manual submissions with shared `savingRef` + `isMountedRef` / session checks, disabled close while saving, and added backdrop dismissal + `useReducedMotion()`.
+- **`CameraViewfinderModal.tsx`:** Handled preview click `video.play()` rejections and cleared the tap-to-start alert on playback recovery, guarded `applyControl` / `capture` against camera switches and unmount via `cameraGenerationRef` + `isMountedRef`, surfaced iOS `DeviceOrientationEvent.requestPermission()` `'denied'` resolutions, recovered recording controls on `MediaRecorder.onerror`, and detached recorder handlers in `stopCamera`.
+- **`GenerationMonitor.tsx`:** Added synchronous `sendingRef` double-submit protection, cancelled orphaned commands immediately when unmounted mid-`sendCommand` (preventing 90s timer and Firestore listener leaks), caught `cancelCommand` rejections inside the 90s timeout callback, isolated slow `handleCancel` completions via `requestSeqRef` so they cannot clobber a newer generation, and added `role="alert"`, button types/labels, and `useReducedMotion()`.
+- **Verification note:** Structural/mock-backed regression checks passed after the final edit (`npx vitest run packages/renderer/src/modules/mobile-remote/` on 23 files / 154 tests, including `QuickContactModal.test.tsx` 8/8, `CameraViewfinderModal.test.tsx` 7/7, `GenerationMonitor.component.test.tsx` 4/4, `GenerationMonitor.test.ts` 7/7, and `QuickCaptureView.test.tsx` 26/26; `npx eslint --max-warnings=0` 0 warnings/errors across all touched files; `npm run typecheck:renderer` exit 0; `node scripts/check-test-quality.js` 0 violations; `git diff --check` clean). Live real-user end-to-end verification against `https://indii.music/` was not executed in this pass.
+
+---
+
 # Shareability Phase 2 ("Now what?" Franchise, HyperFrames Reels, Fan Presave Loop, Studio Polish) — 2026-11-18
 
 Delivered on branch `antigravity/now-what-franchise` (layered cleanly on top of `origin/main` `102e048f78`, extending #909/#910/#911 without duplication):
