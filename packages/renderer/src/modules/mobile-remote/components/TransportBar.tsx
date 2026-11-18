@@ -34,6 +34,17 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
+    const [playbackError, setPlaybackError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        return () => {
+            playbackRequestRef.current += 1;
+            if (audio) {
+                audio.pause();
+            }
+        };
+    }, []);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -56,15 +67,22 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
             setIsPlaying(false);
             if (onNext) onNext();
         };
+        const handleError = () => {
+            playbackRequestRef.current += 1;
+            setIsPlaying(false);
+            setPlaybackError('Unable to stream this track right now.');
+        };
 
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('durationchange', handleDurationChange);
         audio.addEventListener('ended', handleEnded);
+        audio.addEventListener('error', handleError);
 
         return () => {
             audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('error', handleError);
         };
     }, [onNext]);
 
@@ -77,6 +95,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
             audio.src = track.url;
             audio.load();
             void (async () => {
+                setPlaybackError(null);
                 try {
                     await audio.play();
                     if (playbackRequestRef.current === requestId) setIsPlaying(true);
@@ -84,6 +103,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
                     if (playbackRequestRef.current === requestId) {
                         logger.error('[TransportBar] Playback failed:', err);
                         setIsPlaying(false);
+                        setPlaybackError('Unable to stream this track right now.');
                     }
                 }
             })();
@@ -92,6 +112,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
             audio.src = '';
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPlaying(false);
+            setPlaybackError(null);
             setCurrentTime(0);
             setDuration(0);
         }
@@ -159,6 +180,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
         } else {
             const requestId = ++playbackRequestRef.current;
             const audio = audioRef.current;
+            setPlaybackError(null);
             void (async () => {
                 try {
                     await audio.play();
@@ -167,6 +189,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
                     if (playbackRequestRef.current === requestId) {
                         logger.error('[TransportBar] Toggle play failed:', err);
                         setIsPlaying(false);
+                        setPlaybackError('Unable to stream this track right now.');
                     }
                 }
             })();
@@ -185,6 +208,7 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsPlaying(false);
+        setPlaybackError(null);
     };
 
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -253,6 +277,12 @@ export default function TransportBar({ track, onNext, onPrevious }: TransportBar
                                 <span className="text-[10px] font-mono font-bold text-white/40">{formatTime(duration)}</span>
                             </div>
                         </div>
+
+                        {playbackError && (
+                            <p role="alert" className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                                {playbackError}
+                            </p>
+                        )}
 
                         {/* Transport Controls */}
                         <div className="flex items-center justify-between gap-4 pt-2">

@@ -1,3 +1,19 @@
+## 2026-11-17 Remote Navigation & Relay Dispatch Claimed Success Before Confirmation (REMOTE_NAVIGATION_AND_RELAY_FALSE_SUCCESS)
+
+- **SEVERITY:** High (user-facing: Phone/Studio navigation commands reported "Navigated" when `setModule` was declined or debounced; Video timeline clips were imported before module confirmation; Phone Flyers/Hub/Vault controls cleared drafts or switched tabs when `remoteRelayService.sendCommand` returned `null`.)
+- **FILES:** `packages/renderer/src/services/remote/{rendererExecutionAdapter,openRemoteMedia}.ts`, `packages/renderer/src/services/agent/tools/RemoteSupportTools.ts`, `packages/renderer/src/services/commands/EntryCommandService.ts`, `packages/renderer/src/services/agent/components/AgentOrchestrator.ts`, `packages/renderer/src/modules/mobile-remote/{MobileRemote,components/StudioWorkView,components/CommandPad}.tsx`
+- **ERROR:** Sibling `setModule` callers skipped `navigateToModule`, returning success before the module switched or mutating store/URL state prematurely. Separately, phone relay callers ignored `null` returns from `sendCommand` (and mutated the local phone Zustand store in `CommandPad.navigateTo`), clearing prompts or leaving `two-way-live` start failures unhandled.
+- **FIX:** All five `setModule` callers now gate state/reply mutations on `await navigateToModule(...)` and report `navigationNotCompletedMessage` (`NAVIGATION_NOT_COMPLETED`). Phone relay callers verify non-null `commandId`, remove local store `setModule` mutation in `CommandPad.navigateTo`, and surface errors inline or via toast/rejection.
+- **PREVENTION:** Every `setModule` call must go through `navigateToModule` and every `sendCommand` caller must explicitly handle `null` acceptance failure.
+
+## 2026-11-17 Remote Audio Playback & Cloud Vault Stream Swallowed Failures (REMOTE_AUDIO_PLAYBACK_AND_STREAM_SILENT_ERROR)
+
+- **SEVERITY:** Medium (user-facing: rejected `play()` left voice notes showing the Pause icon, unmounting left audio playing in the background, failed vault queries displayed "No Tracks Available", and modal/settings dialogs lacked Escape/backdrop dismissal or mount/timer guards.)
+- **FILES:** `packages/renderer/src/modules/mobile-remote/components/{EncounterFeedView,TransportBar,StreamView,ArtistShareCardModal,IpadSurfacePrompt}.tsx`, `packages/renderer/src/modules/settings/settings-panel/RemoteSection.tsx`
+- **ERROR:** `EncounterFeedView.togglePlayAudio` fired `new Audio(url).play()` without catching promise rejections or pausing on unmount. `TransportBar` logged stream failures silently without an alert banner or unmount pause. `StreamView` rendered empty state on `loadHistory` rejection. `ArtistShareCardModal` and `IpadSurfacePrompt` lacked Escape/backdrop dismissal (`IpadSurfacePrompt` also lacked `useReducedMotion`), and `RemoteSection` lacked unmount/copy-timer guards and clipboard error surfacing.
+- **FIX:** Added `Promise.resolve(audio.play()).catch(...)`, `<audio>` error listeners, unmount `pause()` cleanup, `role="alert"` playback/vault-load error states with Retry, modal Escape/backdrop + `useReducedMotion()`, and `isMountedRef` / `copyTimerRef` guards in `RemoteSection`.
+- **PREVENTION:** Never invoke `HTMLMediaElement.play()` without handling promise rejection or cleanup on unmount; never collapse storage fetch failures into empty-list UI.
+
 ## 2026-11-17 Every Human Approval Failed: Client Claimed `pending -> claimed` in One Write, Rules Allow Two (APPROVAL_CLAIM_RULES_DRIFT)
 
 - **SEVERITY:** Critical (user-facing: approving any non-computer tool, including the `report_bug` GitHub issue/feature-request gate, always returned "Tool was not run because its approval could not be claimed atomically. Missing or insufficient permissions.")

@@ -1,3 +1,15 @@
+# Remote Control Navigation, Audio/Vault Lifecycle, Modal Dismissal & Executor Wiring Primitives — Delivered on `main` (2026-11-18)
+
+Delivered across `ed7d30c0d4` (#906) and this follow-up commit on `main` (ERROR_LEDGER IDs: `REMOTE_NAVIGATION_AND_RELAY_FALSE_SUCCESS`, `REMOTE_AUDIO_PLAYBACK_AND_STREAM_SILENT_ERROR`):
+
+- **Navigation & relay acceptance (`ed7d30c0d4`, #906):** `rendererExecutionAdapter.ts`, `openRemoteMedia.ts`, `RemoteSupportTools.ts`, `EntryCommandService.ts`, and `AgentOrchestrator.ts` now confirm `navigateToModule(...)` before reporting success or mutating focus/timeline state; `StudioWorkView.tsx`, `CommandPad.tsx`, and `MobileRemote.tsx` verify non-null `commandId` acceptance and surface session/relay errors.
+- **Audio playback lifecycle & vault load errors:** `EncounterFeedView.tsx` catches `Audio.play()` rejections, pauses on unmount, and guards async mutations with `isMountedRef`; `TransportBar.tsx` adds `<audio>` error listeners, a `role="alert"` playback banner, and unmount pause cleanup; `StreamView.tsx` distinguishes `loadHistory` failures with a `role="alert"` Retry state instead of empty UI.
+- **Modal dismissal, reduced motion & `RemoteSection` lifecycle:** `ArtistShareCardModal.tsx` and `IpadSurfacePrompt.tsx` support Escape key and backdrop dismissal (plus `useReducedMotion()` in `IpadSurfacePrompt.tsx`); `RemoteSection.tsx` adds `isMountedRef` / `copyTimerRef` cleanup and clipboard error reporting.
+- **Executor wiring & request-control tests:** Added `studioExecutorCore.wiring.test.ts` (`visibilitychange`, `shouldProcess`, `defaultWriteDiagnostic` guards) and expanded `relayRequestControl.test.ts` (exact `retryAt` boundaries through the 300s cap + `SingleFlight` sync-throw recovery).
+- **Verification note:** Automated Vitest (`typecheck:renderer`, ESLint `--max-warnings=0`, 16 test files) are structural/mock-backed regression checks; live real-user verification against `https://indii.music/` was not executed in this pass.
+
+---
+
 # Primitives Batch — Stuck States, False "Done" Claims, Unsaved Edits (2026-11-17)
 
 **Branch:** `claude/primitives-batch-2026-11-17` (pushed, no PR; the GitHub agent team owns PRs). Base: `main` @ `11f9551`.
