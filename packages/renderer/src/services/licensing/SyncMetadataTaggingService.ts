@@ -3,6 +3,7 @@ import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'fireb
 import { logger } from '@/utils/logger';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { SyncMood } from './LicensingService';
+import { judgeSyncMoods } from '@/config/typesafeJudgments';
 import { IngestionMapper } from '@/services/distribution/proprietary-ingestion/IngestionMapper';
 
 export class SyncMetadataTaggingService {
@@ -69,6 +70,21 @@ export class SyncMetadataTaggingService {
     }
 
     /**
+     * Resolve AI mood tags to SyncMoods. Jev judges each tag (with a companion
+     * "does any mood apply?" Noul); a tag Jev did not settle, or any tag when
+     * judgments are unavailable, uses the deterministic mapToSyncMoods.
+     */
+    async resolveSyncMoods(aiMoods: string[]): Promise<SyncMood[]> {
+        const judged = await judgeSyncMoods(aiMoods);
+        const resolved = new Set<SyncMood>();
+        aiMoods.forEach((mood, i) => {
+            const moods = judged[i] ?? this.mapToSyncMoods([mood]);
+            moods.forEach((m) => resolved.add(m));
+        });
+        return Array.from(resolved);
+    }
+
+    /**
      * Propagate extracted AI semantic metadata tags to the release catalog.
      */
     async syncTagsToRelease(releaseId: string, profile: AudioIntelligenceProfile): Promise<void> {
@@ -89,7 +105,7 @@ export class SyncMetadataTaggingService {
 
             // Extract & map standard sync supervisor moods
             const rawMoods = profile.semantic?.mood || [];
-            const syncMoods = this.mapToSyncMoods(rawMoods);
+            const syncMoods = await this.resolveSyncMoods(rawMoods);
 
             const mergedMetadata = {
                 ...currentMetadata,

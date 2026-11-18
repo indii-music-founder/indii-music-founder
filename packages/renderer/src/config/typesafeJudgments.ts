@@ -11738,3 +11738,98 @@ export const GUARDRAIL_QUESTIONS = {
           'or a request for missing information they can act on?',
       },
     };
+
+// ---------------------------------------------------------------------------
+// Judgment: sync-licensing mood for an AI mood tag
+// (consumer: services/licensing/SyncMetadataTaggingService.ts)
+// A Choice always picks a mood, so each tag also gets a companion Noul asking
+// whether any standard mood applies. Code decides:
+//   applies >= YES -> the Choice; applies <= NO -> no mood;
+//   between, error or unavailable -> null (caller keeps its deterministic map).
+// Shadow run (live jev, 10 labeled tags): 10/10, no regressions vs baseline.
+// ---------------------------------------------------------------------------
+
+export const SYNC_MOODS = ['Cinematic', 'Upbeat', 'Energetic', 'Melancholic', 'Dark', 'Chill', 'Romantic', 'Triumphant'] as const;
+export type SyncMoodJudgment = typeof SYNC_MOODS[number];
+
+export const SYNC_MOOD_APPLIES_YES = 0.7;
+export const SYNC_MOOD_APPLIES_NO = 0.3;
+/** Two questions per tag; the typesafeJudge callable allows 20 per request. */
+export const SYNC_MOOD_MAX_TAGS = 10;
+
+export const SYNC_MOOD_APPLIES_QUESTION = {
+    type: 'noul' as const,
+    instructions: 'Does the mood tag `ai_mood_tag` express one of the moods in `standard_sync_moods`?',
+    criteria: {
+        true: 'The tag clearly conveys one of the listed moods, e.g. "happy" conveys Upbeat.',
+        false: 'The tag describes a feeling, theme or sound none of the listed moods captures, e.g. a heartbreak theme or a noise texture.',
+    },
+};
+
+export const SYNC_MOOD_CHOICE_CRITERIA: Record<SyncMoodJudgment, string> = Object.fromEntries(
+    SYNC_MOODS.map((mood) => [mood, `The tag expresses a ${mood} mood.`]),
+) as Record<SyncMoodJudgment, string>;
+
+function syncMoodQuestions(tag: string): Record<string, unknown> {
+    return {
+        applies: {
+            ...SYNC_MOOD_APPLIES_QUESTION,
+            instructions: `Does the mood tag "${tag}" express one of the moods in \`standard_sync_moods\`?`,
+        },
+        mood: {
+            type: 'choice' as const,
+            instructions: {
+                task: 'A music AI tagged a track with this mood string. Which standardized sync-licensing mood matches it best?',
+                tag,
+            },
+            criteria: SYNC_MOOD_CHOICE_CRITERIA,
+        },
+    };
+}
+
+/**
+ * Judge each AI mood tag. Returns one entry per input tag, in order:
+ * an array of moods (possibly empty = "no mood applies") when Jev settled it,
+ * or null when the caller should use its deterministic baseline for that tag.
+ */
+export async function judgeSyncMoods(tags: string[]): Promise<Array<SyncMoodJudgment[] | null>> {
+    const cleaned = tags.map((t) => t.trim().slice(0, 120));
+    const fallback = cleaned.map(() => null);
+    if (cleaned.length === 0 || !judgmentsAvailable('judgeSyncMoods')) return fallback;
+    const judged = cleaned.slice(0, SYNC_MOOD_MAX_TAGS);
+
+    const questions: Record<string, unknown> = {};
+    judged.forEach((tag, i) => {
+        if (!tag) return;
+        const q = syncMoodQuestions(tag);
+        questions[`applies_${i}`] = q.applies;
+        questions[`mood_${i}`] = q.mood;
+    });
+    if (Object.keys(questions).length === 0) return fallback;
+
+    let answers: Record<string, unknown> | null;
+    try {
+        answers = await invokeTypesafeJudge({
+            state: { standard_sync_moods: [...SYNC_MOODS] },
+            questions,
+        });
+    } catch (err: unknown) {
+        noteJudgmentFailure(err, 'sync mood judgment', 'judgeSyncMoods');
+        return fallback;
+    }
+    if (!answers) return fallback;
+
+    return cleaned.map((tag, i) => {
+        if (!tag || i >= SYNC_MOOD_MAX_TAGS) return null;
+        const applies = answers[`applies_${i}`] as { noul?: unknown } | undefined;
+        const mood = answers[`mood_${i}`] as { choice?: unknown } | undefined;
+        const p = applies?.noul;
+        if (typeof p !== 'number' || !Number.isFinite(p)) return null;
+        if (p <= SYNC_MOOD_APPLIES_NO) return [];
+        if (p < SYNC_MOOD_APPLIES_YES) return null;
+        const choice = mood?.choice;
+        return typeof choice === 'string' && (SYNC_MOODS as readonly string[]).includes(choice)
+            ? [choice as SyncMoodJudgment]
+            : null;
+    });
+}
