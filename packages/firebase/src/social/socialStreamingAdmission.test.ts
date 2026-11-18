@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHmac } from 'node:crypto';
 
 const mocks = vi.hoisted(() => ({
   protectAuthenticated: vi.fn(),
@@ -375,6 +376,45 @@ describe('Social Connections, Messaging, Webhook & Streaming Admission Gates (IS
 
         expect(statusFn).toHaveBeenCalledWith(200);
         expect(sendFn).toHaveBeenCalledWith('challenge_code_123');
+        // Verify-token handshake is authenticated; no hosted Arcjet decision.
+        expect(mocks.protectAnonymous).not.toHaveBeenCalled();
+      });
+
+      it('skips Arcjet for a Meta-signed delivery', async () => {
+        const rawBody = Buffer.from(JSON.stringify({ entry: [] }));
+        const signature = `sha256=${createHmac('sha256', 'test_meta_app_secret').update(rawBody).digest('hex')}`;
+        const req = {
+          method: 'POST',
+          header: vi.fn((name: string) => (name === 'x-hub-signature-256' ? signature : undefined)),
+          headers: {},
+          rawBody,
+          body: { entry: [] },
+        };
+        const sendStatusFn = vi.fn();
+        const res = { status: vi.fn().mockReturnThis(), send: vi.fn(), sendStatus: sendStatusFn, set: vi.fn() };
+
+        const webhook = instagramWebhook as unknown as (req: unknown, res: unknown) => Promise<void>;
+        await webhook(req, res);
+
+        expect(mocks.protectAnonymous).not.toHaveBeenCalled();
+        expect(sendStatusFn).toHaveBeenCalledWith(200);
+      });
+
+      it('still runs Arcjet on a forged delivery and then rejects it', async () => {
+        const req = {
+          method: 'POST',
+          header: vi.fn().mockReturnValue('sha256=forged'),
+          headers: {},
+          rawBody: Buffer.from('{}'),
+        };
+        const sendStatusFn = vi.fn();
+        const res = { status: vi.fn().mockReturnThis(), send: vi.fn(), sendStatus: sendStatusFn, set: vi.fn() };
+
+        const webhook = instagramWebhook as unknown as (req: unknown, res: unknown) => Promise<void>;
+        await webhook(req, res);
+
+        expect(mocks.protectAnonymous).toHaveBeenCalledTimes(1);
+        expect(sendStatusFn).toHaveBeenCalledWith(403);
       });
     });
 

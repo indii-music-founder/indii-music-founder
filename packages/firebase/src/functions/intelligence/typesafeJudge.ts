@@ -99,6 +99,12 @@ export const typesafeJudge = onCall(
         if (!request.auth.token.email_verified) {
             throw new HttpsError('permission-denied', 'Verify your email to use AI judgments.');
         }
+        // One Firestore-backed limiter per judgment. The admission gate and the
+        // per-user generation limit used to run back to back (60/min then
+        // 30/min) — two sequential transactions on a 2s guardrail budget where
+        // only the tighter one could ever bind. The admission gate now enforces
+        // the generation limit itself; the direct call covers invocations that
+        // arrive without a raw HTTP request.
         if (request.rawRequest) {
             const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
                 userId: request.auth.uid,
@@ -106,16 +112,16 @@ export const typesafeJudge = onCall(
                 operationId: `typesafe-judge:${request.auth.uid}`,
                 ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(request.auth.token),
                 mode: 'local-rate-limit',
-                rateLimit: { bucket: 'typesafe-judge-admission', maxRequests: 60, windowMs: 60_000 },
+                rateLimit: { bucket: 'typesafeJudge', ...RATE_LIMITS.generation },
             });
             if (!protection.allowed) {
                 const code = protection.status === 429 ? 'resource-exhausted'
                     : protection.status === 403 ? 'permission-denied' : 'unavailable';
                 throw new HttpsError(code, protection.message);
             }
+        } else {
+            await enforceRateLimit(request.auth.uid, 'typesafeJudge', RATE_LIMITS.generation);
         }
-
-        await enforceRateLimit(request.auth.uid, 'typesafeJudge', RATE_LIMITS.generation);
 
         const input = (request.data ?? {}) as {
             state?: unknown;

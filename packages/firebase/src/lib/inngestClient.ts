@@ -5,18 +5,16 @@
  * pulls in every Cloud Function as an import-time side effect).
  */
 import { Inngest } from 'inngest';
-import { inngestEventKey } from '../config/secrets.js';
 
 export const getInngestClient = (): Inngest => {
-    let eventKey = process.env.INNGEST_EVENT_KEY;
-    if (!eventKey) {
-        try {
-            eventKey = inngestEventKey.value();
-        } catch {
-            // Secret values are only available at runtime, not during deployment analysis
-            eventKey = undefined;
-        }
-    }
+    // A bound Firebase secret is exposed as process.env.INNGEST_EVENT_KEY, so
+    // this read is the whole lookup. Calling `inngestEventKey.value()` as a
+    // fallback could only re-read the same env var, and on every function that
+    // does not bind the secret it logged "No value found for secret parameter"
+    // at each cold start (~260 functions, because orchestration/inngest.ts
+    // builds a client at module load). Unbound callers keep an undefined key,
+    // exactly as before.
+    const eventKey = process.env.INNGEST_EVENT_KEY || undefined;
     return new Inngest({
         id: 'indii-music-functions',
         eventKey,

@@ -27,27 +27,36 @@ async function createOnce(ref: FirebaseFirestore.DocumentReference, data: Record
 export const instagramWebhook = onRequest(
     { secrets: [metaAppSecret, metaWebhookVerifyToken, arcjetKey], timeoutSeconds: 30, memory: '512MiB' },
     async (request, response) => {
-        const protection = await protectAnonymousSignupRequest(
-            request as never,
-            `instagram-webhook:${request.header('x-hub-signature-256')?.slice(0, 16) || 'anonymous'}`,
-            'allow-low-risk-read'
-        );
-        if (!protection.allowed) {
-            if (protection.retryAfterSeconds && typeof response.set === 'function') {
-                response.set('Retry-After', String(protection.retryAfterSeconds));
+        // Meta-signed deliveries and the verify-token handshake are
+        // authenticated by HMAC / shared token, so they skip the hosted Arcjet
+        // decision (this webhook was the second-largest Arcjet consumer).
+        // Anything unauthenticated still goes through Arcjet before the 403,
+        // so floods of forged requests keep Arcjet's shield and rate limit.
+        const authenticated = request.method === 'GET'
+            ? request.query['hub.mode'] === 'subscribe'
+                && request.query['hub.verify_token'] === metaWebhookVerifyToken.value()
+            : request.method === 'POST'
+                && validSignature(request.rawBody, request.header('x-hub-signature-256'), metaAppSecret.value());
+
+        if (!authenticated) {
+            const protection = await protectAnonymousSignupRequest(
+                request as never,
+                `instagram-webhook:${request.header('x-hub-signature-256')?.slice(0, 16) || 'anonymous'}`,
+                'allow-low-risk-read'
+            );
+            if (!protection.allowed) {
+                if (protection.retryAfterSeconds && typeof response.set === 'function') {
+                    response.set('Retry-After', String(protection.retryAfterSeconds));
+                }
+                response.status(protection.status).send(protection.message);
+                return;
             }
-            response.status(protection.status).send(protection.message);
+            response.sendStatus(403);
             return;
         }
 
         if (request.method === 'GET') {
-            const verified = request.query['hub.mode'] === 'subscribe'
-                && request.query['hub.verify_token'] === metaWebhookVerifyToken.value();
-            if (!verified) { response.sendStatus(403); return; }
             response.status(200).send(String(request.query['hub.challenge'] ?? '')); return;
-        }
-        if (request.method !== 'POST' || !validSignature(request.rawBody, request.header('x-hub-signature-256'), metaAppSecret.value())) {
-            response.sendStatus(403); return;
         }
 
         const db = admin.firestore();

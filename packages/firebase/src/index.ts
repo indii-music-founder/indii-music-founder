@@ -1415,6 +1415,15 @@ export const generateContentStream = onRequest(
                     }),
                     operationId: `generate-content-stream:${crypto.randomUUID()}`,
                     ownerQuotaContinuity: isVerifiedOwnerContinuityCaller(decodedToken),
+                    // Leased endpoint: every stream must first claim a cost
+                    // reservation that enforceOperationCost / the boardroom
+                    // dispatch planner already admitted (owner-checked,
+                    // single-claim). A hosted Arcjet decision here re-judged
+                    // the same request and was ~75% of the project's Arcjet
+                    // volume (2026-11-16..18). The local Firestore limiter
+                    // still caps per-user stream starts.
+                    mode: 'local-rate-limit',
+                    rateLimit: { bucket: 'agent-stream', maxRequests: 60, windowMs: 60_000 },
                 });
                 if (!protection.allowed) {
                     await finalizePreSubmission('arcjet-denied');

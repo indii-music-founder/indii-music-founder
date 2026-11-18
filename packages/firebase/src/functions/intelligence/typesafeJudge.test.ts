@@ -176,6 +176,21 @@ describe('typesafeJudge', () => {
         );
     });
 
+    it('runs exactly one limiter when the admission gate has the raw request', async () => {
+        const result = await (typesafeJudge as unknown as (req: unknown) => Promise<unknown>)(
+            { auth: AUTHED_AUTH, data: validPayload(), rawRequest: { headers: {}, ip: '203.0.113.7' } } as never,
+        );
+        expect(result).toMatchObject({ answers: { transient: 0.9 } });
+        // The admission gate enforces the generation limit itself on the same
+        // 'typesafeJudge' bucket — no second back-to-back transaction.
+        expect(mocks.enforceRateLimit).toHaveBeenCalledTimes(1);
+        expect(mocks.enforceRateLimit).toHaveBeenCalledWith(
+            'artist-1',
+            'typesafeJudge',
+            expect.objectContaining({ maxRequests: 20, windowMs: 60000 })
+        );
+    });
+
     it('rejects when enforceRateLimit throws resource-exhausted', async () => {
         const { HttpsError } = await import('firebase-functions/v2/https');
         mocks.enforceRateLimit.mockRejectedValueOnce(new HttpsError('resource-exhausted', 'Rate limit exceeded'));
