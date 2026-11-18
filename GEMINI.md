@@ -630,6 +630,21 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 
 ---
 
+## Entire Platform Standard (All Agents: Claude, Codex, Antigravity/Gemini)
+
+All coding agents (**Claude Code**, **Codex**, **Antigravity/Gemini**) must use **Entire** (`https://entire.com/gh/indii-music-founder/indii-music-founder`) instead of GitHub for Git operations, session/checkpoint capture, historical search, and code trails:
+
+- **Primary Remote (`origin`):** `entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder` (set via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`). Push and fetch through `origin` (`git push origin HEAD:main`), which automatically uploads captured agent sessions and checkpoints to Entire.
+- **No Direct GitHub Agent Workflows:** Do not use `gh pr`, `gh issue`, or direct `github.com` remotes for coding agent workflows. Use Entire CLI equivalents instead:
+  - `entire status` / `entire doctor` — verify Entire & agent hook health
+  - `entire search --json --compact "<query>"` — search past checkpoints and session transcripts
+  - `entire checkpoint explain <id>` — inspect reasoning and transcripts behind a checkpoint
+  - `entire trail` — manage trails across branches and changes (`entire agent-help trail`)
+  - `entire session` — inspect or resume cross-agent sessions
+- **Exact CLI Usage:** Always run `entire agent-help` (or `entire agent-help <command>`) rather than guessing flags.
+
+---
+
 ## Agent Skills Configuration
 
 The engineering skills (from Matt Pocock's suite) read three config files to understand how indii tracks work, manages triage, and documents domain knowledge.
