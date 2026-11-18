@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T18:29:31.590Z",
+  "generatedAt": "2026-11-18T01:26:32.969Z",
   "model": "jev-latest",
   "evidenceClass": "local-real (live API, labeled synthetic fixtures) — not production proof",
   "experiments": {
@@ -12,7 +12,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 2155
+        "ms": 497
       },
       {
         "header": "UPC",
@@ -22,17 +22,17 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1484
+        "ms": 166
       },
       {
         "header": "Fee Amount",
         "truth": "fee_amount",
         "baseline": "fee_amount",
         "jev": "fee_amount",
-        "jev_confidence": 0.95,
+        "jev_confidence": 0.93,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1103
+        "ms": 167
       },
       {
         "header": "Net Receipts",
@@ -42,27 +42,27 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 1478
+        "ms": 151
       },
       {
         "header": "Units",
         "truth": "quantity_count",
         "baseline": "quantity_count",
         "jev": "quantity_count",
-        "jev_confidence": 0.97,
+        "jev_confidence": 0.88,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 2162
+        "ms": 172
       },
       {
         "header": "Sales Month",
         "truth": "us_date",
         "baseline": "iso_date",
         "jev": "generic_text",
-        "jev_confidence": 0.42,
+        "jev_confidence": 0.48,
         "baseline_correct": false,
         "jev_correct": false,
-        "ms": 1716
+        "ms": 172
       },
       {
         "header": "Reporting Date",
@@ -72,7 +72,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1530
+        "ms": 197
       },
       {
         "header": "Territory",
@@ -82,17 +82,17 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1674
+        "ms": 147
       },
       {
         "header": "Store",
         "truth": "dsp_name",
         "baseline": "dsp_name",
         "jev": "dsp_name",
-        "jev_confidence": 1,
+        "jev_confidence": 0.99,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1442
+        "ms": 161
       },
       {
         "header": "Artist",
@@ -102,7 +102,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1764
+        "ms": 170
       },
       {
         "header": "Track Title",
@@ -112,7 +112,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1588
+        "ms": 152
       },
       {
         "header": "Album Title",
@@ -122,7 +122,7 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 1288
+        "ms": 160
       },
       {
         "header": "Transaction Type",
@@ -132,7 +132,7 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 1096
+        "ms": 156
       },
       {
         "header": "ISWC",
@@ -142,27 +142,27 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 5496
+        "ms": 197
       },
       {
         "header": "Streams",
         "truth": "stream_count",
         "baseline": "quantity_count",
         "jev": "stream_count",
-        "jev_confidence": 1,
+        "jev_confidence": 0.98,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 1224
+        "ms": 159
       },
       {
         "header": "Downloads",
         "truth": "download_count",
         "baseline": "generic_number",
         "jev": "download_count",
-        "jev_confidence": 1,
+        "jev_confidence": 0.99,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 1394
+        "ms": 153
       }
     ],
     "moods": [
@@ -180,7 +180,7 @@
         "jev_confidence": 0.99,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1395
+        "ms": 155
       },
       {
         "mood": "unhappy",
@@ -189,10 +189,10 @@
         "jev": [
           "Melancholic"
         ],
-        "jev_confidence": 0.97,
+        "jev_confidence": 0.98,
         "baseline_correct": true,
         "jev_correct": false,
-        "ms": 1156
+        "ms": 178
       },
       {
         "mood": "lovelorn",
@@ -201,10 +201,10 @@
         "jev": [
           "Melancholic"
         ],
-        "jev_confidence": 0.85,
+        "jev_confidence": 0.76,
         "baseline_correct": true,
         "jev_correct": false,
-        "ms": 1100
+        "ms": 150
       },
       {
         "mood": "dark-pop",
@@ -217,10 +217,10 @@
         "jev": [
           "Dark"
         ],
-        "jev_confidence": 0.97,
+        "jev_confidence": 0.92,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1492
+        "ms": 277
       },
       {
         "mood": "epic orchestral",
@@ -233,10 +233,10 @@
         "jev": [
           "Cinematic"
         ],
-        "jev_confidence": 0.92,
+        "jev_confidence": 0.82,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1465
+        "ms": 203
       },
       {
         "mood": "chill",
@@ -249,10 +249,10 @@
         "jev": [
           "Chill"
         ],
-        "jev_confidence": 0.99,
+        "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1663
+        "ms": 157
       },
       {
         "mood": "somber sad piano",
@@ -268,7 +268,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 5833
+        "ms": 174
       },
       {
         "mood": "hype",
@@ -281,10 +281,10 @@
         "jev": [
           "Energetic"
         ],
-        "jev_confidence": 0.76,
+        "jev_confidence": 0.79,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 3758
+        "ms": 169
       },
       {
         "mood": "experimental industrial glitched noise",
@@ -293,10 +293,10 @@
         "jev": [
           "Dark"
         ],
-        "jev_confidence": 0.78,
+        "jev_confidence": 0.75,
         "baseline_correct": true,
         "jev_correct": false,
-        "ms": 3983
+        "ms": 210
       },
       {
         "mood": "romantic dinner jazz",
@@ -309,10 +309,10 @@
         "jev": [
           "Romantic"
         ],
-        "jev_confidence": 0.99,
+        "jev_confidence": 0.97,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 1617
+        "ms": 155
       }
     ]
   },
@@ -347,6 +347,6 @@
     "input_tokens": 16061,
     "output_tokens": 3609,
     "total_requests": 26,
-    "total_ms": 52056
+    "total_ms": 4805
   }
 }
