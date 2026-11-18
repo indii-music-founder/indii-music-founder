@@ -42,6 +42,16 @@ export type ShareCardTemplate =
         coverArtUrl?: string;
     }
     | {
+        kind: 'passport';
+        artistName?: string;
+        /** e.g. "STAGE 02" */
+        stageBadge: string;
+        stageTitle: string;
+        /** Headline finding, e.g. the rights observation title. */
+        finding: string;
+        url?: string;
+    }
+    | {
         kind: 'milestone';
         artistName?: string;
         headline: string;
@@ -175,6 +185,16 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
                 callout: 'Stream it everywhere',
                 url: displayUrl(template.url),
                 coverArtUrl: safeCoverUrl(template.coverArtUrl),
+                attribution,
+                ...accents,
+            };
+        case 'passport':
+            return {
+                eyebrow: clean(`Artist Passport · ${template.stageBadge}`, 40),
+                title: clean(template.stageTitle, MAX_TITLE) || 'Artist Passport',
+                subtitle: artist,
+                callout: clean(template.finding, MAX_LINE) || undefined,
+                url: displayUrl(template.url),
                 attribution,
                 ...accents,
             };

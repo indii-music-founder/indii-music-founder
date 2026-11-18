@@ -24,6 +24,7 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { ShareSheet } from '@/components/share/ShareSheet';
+import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
 import {
     preSaveCampaignService,
     type PreSaveCampaign,
@@ -593,9 +594,11 @@ export default function PreSaveCampaignBuilder() {
                                         <button
                                             type="button"
                                             onClick={() => openShareCard({ title: trackTitle.trim(), releaseDate, coverArtUrl, url: publishedUrl })}
-                                            className="flex items-center gap-1.5 rounded-lg border border-dept-marketing/30 bg-dept-marketing/10 px-3 py-1.5 text-xs font-semibold text-dept-marketing"
+                                            className={`${SIGNATURE_BUTTON_BASE} ${SIGNATURE_BUTTON_TONES.indigo.button} px-3 py-1.5 text-xs`}
                                         >
-                                            <ImageIcon size={12} /> Share card
+                                            <ImageIcon size={12} className={SIGNATURE_BUTTON_TONES.indigo.icon} />
+                                            <span className={SIGNATURE_BUTTON_TONES.indigo.label}>Share card</span>
+                                            <span aria-hidden="true" className={SIGNATURE_BUTTON_TONES.indigo.sweep} />
                                         </button>
                                     </div>
                                 </div>

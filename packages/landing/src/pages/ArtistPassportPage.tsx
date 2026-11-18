@@ -33,6 +33,7 @@ import {
   getActiveAssessmentId,
 } from '../lib/passportService';
 import { trackPassportEvent } from '../lib/passportAnalytics';
+import PassportSharePanel from '../components/passport/PassportSharePanel';
 import { NOW_WHAT_CAMPAIGNS, readCampaignAttribution, campaignQuery } from '../lib/nowWhatCampaign';
 
 // --- Main Component ---
@@ -677,6 +678,8 @@ export default function ArtistPassportPage() {
                   </button>
                 </div>
               </div>
+
+              <PassportSharePanel answers={answers} assessmentId={assessmentId} />
 
               {entry && <aside className="rounded-xl border border-[#FFB800]/30 p-5"><h2 className="font-bold text-[#FFB800]">{entry.hook}</h2><p className="mt-2 text-sm text-white/70">{entry.answer} Your personalized priorities below come from your answers.</p></aside>}
 

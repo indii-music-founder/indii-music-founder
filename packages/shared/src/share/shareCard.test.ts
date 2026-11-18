@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import {
     FREQUENCY_PALETTE,
@@ -73,6 +74,16 @@ describe('buildShareCardModel', () => {
 
     it('falls back to a generic title when blank', () => {
         expect(buildShareCardModel({ kind: 'release', trackTitle: '   ' }).title).toBe('New music');
+    });
+});
+
+describe('passport template', () => {
+    it('builds the passport card', () => {
+        const model = buildShareCardModel({ kind: 'passport', stageBadge: 'STAGE 02', stageTitle: 'Building momentum', finding: 'Dual-Royalty Foundation Established', url: 'https://indii.music/passport/r/abc' });
+        expect(model.eyebrow).toBe('Artist Passport · STAGE 02');
+        expect(model.title).toBe('Building momentum');
+        expect(model.callout).toBe('Dual-Royalty Foundation Established');
+        expect(model.url).toBe('indii.music/passport/r/abc');
     });
 });
 

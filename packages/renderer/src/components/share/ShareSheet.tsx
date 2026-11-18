@@ -18,9 +18,12 @@ import {
     type ShareCardOptions,
     type ShareCardSize,
     type ShareCardTemplate,
-} from '@/services/share/shareCardTemplates';
-import { renderShareCard } from '@/services/share/ShareCardRenderer';
-import { downloadBlob, shareOrDownloadImage } from '@/services/share/shareFile';
+} from '@shared/share/shareCardTemplates';
+import { renderShareCard } from '@shared/share/ShareCardRenderer';
+import { downloadBlob, shareOrDownloadImage } from '@shared/share/shareFile';
+import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
+
+const indigo = SIGNATURE_BUTTON_TONES.indigo;
 
 export interface ShareSheetProps {
     template: ShareCardTemplate;
@@ -129,10 +132,11 @@ export const ShareSheet = createCallable<ShareSheetProps, ShareSheetResult>(({ c
                     <Button variant="ghost" onClick={handleDownload} disabled={!ready || busy}>
                         <Download size={16} className="mr-2" /> Download
                     </Button>
-                    <Button onClick={() => void handleShare()} disabled={!ready || busy}>
-                        {busy ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Share2 size={16} className="mr-2" />}
-                        Share
-                    </Button>
+                    <button type="button" onClick={() => void handleShare()} disabled={!ready || busy} className={`${SIGNATURE_BUTTON_BASE} ${indigo.button} min-h-10 px-5 text-sm`}>
+                        {busy ? <Loader2 size={16} className={`animate-spin ${indigo.icon}`} /> : <Share2 size={16} className={indigo.icon} />}
+                        <span className={indigo.label}>Share</span>
+                        <span aria-hidden="true" className={indigo.sweep} />
+                    </button>
                 </div>
             </div>
         </Modal>
