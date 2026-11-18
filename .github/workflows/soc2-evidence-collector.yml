@@ -30,6 +30,11 @@ permissions:
   contents: read
   issues: write # For automated vulnerability / failure reporting
 
+env:
+  # onnxruntime-node's install script downloads a CUDA build from GitHub releases that 404s on
+  # CI runners (no GPU). The CPU runtime is all CI needs; skip the CUDA fetch so `npm ci` is deterministic.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   soc2-compliance-audit:
     name: Continuous SOC 2 Evidence Verification

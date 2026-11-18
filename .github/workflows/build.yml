@@ -22,6 +22,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 env:
+  # onnxruntime-node's install script downloads a CUDA build from GitHub releases that 404s on
+  # CI runners (no GPU). The CPU runtime is all CI needs; skip the CUDA fetch so `npm ci` is deterministic.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   HYPERFRAMES_NO_TELEMETRY: '1'
 

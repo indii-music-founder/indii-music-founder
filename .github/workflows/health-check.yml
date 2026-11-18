@@ -6,6 +6,11 @@ on:
     - cron: '0 */6 * * *'
   workflow_dispatch: # Allow manual triggers
 
+env:
+  # onnxruntime-node's install script downloads a CUDA build from GitHub releases that 404s on
+  # CI runners (no GPU). The CPU runtime is all CI needs; skip the CUDA fetch so `npm ci` is deterministic.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   health-check:
     runs-on: ubuntu-latest
