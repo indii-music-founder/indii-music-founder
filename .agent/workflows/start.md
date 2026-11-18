@@ -44,6 +44,7 @@ Invoke [`/skill-skill`](skill-skill.md) early when routing is ambiguous or speci
 - Run `health-check` only when a baseline/delta helps the task; never write baseline hits to a permanent issue ledger automatically.
 - Use `zoom-out` or `/flowchart` only when multi-component state, ownership, or sequence is materially clearer visually.
 - Read the Error Ledger only for a reproduced failure or known relevant pattern; validate remembered fixes before reuse.
+- Run [`/sweep`](sweep.md) (report-only, scoped to the files this objective will touch) at T2/T3, or when the handoff, specs, or instruction files for the target area look older than the code. Its findings may redefine nothing; they only tell you which context to distrust. Skip at T0/T1 unless context is visibly stale.
 - Read `.agent/REAL_USER_AUTHENTICITY.md` before live-user, browser E2E, release-acceptance, demo-readiness, production, or free-tier claims.
 
 ## 5.5 Activate TypeSafe

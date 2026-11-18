@@ -6,13 +6,13 @@ description: Recursive motor for the active objective. Reviews progress, selects
 
 ## Loop
 
-1. **Reassess:** Current objective, definition of done, diff, evidence, blockers, and unrelated dirty state.
+1. **Reassess:** Current objective, definition of done, diff, evidence, blockers, and unrelated dirty state. When the instructions, handoff, or plan driving the loop disagree with the diff or look old, run [`/sweep`](sweep.md) (report-only, scoped to those artifacts) before acting on them.
 2. **Route:** Use the current `/skill-skill` toolchain; refresh it when a capability is stale, unavailable, quarantined, or repeatedly failing.
 3. **Choose a unit:** One coherent contract with one decisive proof surface—not mechanically one micro-task.
 4. **Execute:** Reproduce/test, implement the smallest complete mechanism, and verify affected callers and boundaries.
 5. **Improve:** Run `/better` only on the bounded unit when a material quality gain remains.
 6. **Verify:** Use proportional tests, typecheck/lint, build/integration, or genuine UI/external evidence.
-7. **Accumulate:** Keep related work uncommitted while the active objective still has units remaining.
+7. **Accumulate:** Keep related work uncommitted while the active objective still has units remaining. If the unit changed documented behavior, note it for the `/sweep` pass in `/middle` or `/end`; do not sweep per unit.
 8. **Repeat or close:** Continue with the next unit, or invoke `/end` when every acceptance criterion is proved.
 
 ## Blockers

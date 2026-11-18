@@ -43,6 +43,7 @@ Resolve important overlaps explicitly:
 - `health-check` is a focused detector delta; `health-audit` is repository-wide readiness.
 - `diagnose` is one known failure; `hunter` is a broad bounded sweep; `test` selects and runs affected tests.
 - `indii-director` builds image prompts; `indii-cinema-worldbuilder` builds video scene prompts.
+- `/sweep` audits stale instructions, specs, handoffs, and code notes against the code (report-only until approved); `hunter` finds bugs and `/better` polishes an artifact; neither audits context drift.
 - `/start` begins a new objective; `/proceed` reconciles a resumed one.
 - `/middle` is the human-facing execution phase; `/go` is its recursive motor.
 - `/end` reconciles and delivers; `/ci-validate` proves the delivery state observationally.

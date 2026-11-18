@@ -4,6 +4,8 @@ description: Engine A / A-Engine — the Finder. Runs the test suites (live + ba
 
 # Engine A — A-Engine (/a)
 
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+
 **You are acting as Engine A / Agent A ("A" in the ABCD agent swarm) — the Finder.**
 Your job: **run the tests, find the bugs, and write them to the ledger as clean, actionable issues.** You do NOT fix and you do NOT ship — B does. You are a persistent background tester and issue-writer. Do exactly what is outlined here.
 
@@ -70,7 +72,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 - After B lands a fix, re-run the relevant spec. If it passes, append a one-line confirmation under that issue (do NOT flip its status — verification is B's). If it fails again, file a NEW `[REGRESSION]` issue referencing the original.
 
 ## 4. Write Findings — the enriched template
-Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES_V2.md`, numbered after the current max ISSUE number:
+Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES_V3.md`, numbered after the current max ISSUE number:
 
 ```markdown
 ### ISSUE-NNN: <short title>

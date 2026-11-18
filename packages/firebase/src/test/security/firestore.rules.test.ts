@@ -25,6 +25,9 @@
  */
 
 import {
+    toolApprovalClaimPatch, toolApprovalCompletionPatch, toolApprovalConsentPatch, toolApprovalDenyPatch,
+} from '@indii/shared';
+import {
     initializeTestEnvironment,
     assertFails,
     assertSucceeds,
@@ -1338,6 +1341,24 @@ describe('Firestore Security Rules', () => {
             await assertFails(updateDoc(ref, { status: 'approved' }));
             await assertSucceeds(updateDoc(ref, { status: 'executed', result: { success: true } }));
             await assertFails(updateDoc(ref, { status: 'claimed' }));
+        });
+
+        it('accepts the exact client approval writes from the shared contract (ToolApprovalService)', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'tool_approvals', 'contract-1');
+            await assertSucceeds(setDoc(ref, { ...pending, toolName: 'report_bug', bindingSessionId: 'renderer-1' }));
+            // Regression (APPROVAL_CLAIM_RULES_DRIFT): one-step pending -> claimed was denied for every user.
+            await assertFails(updateDoc(ref, {
+                status: 'claimed', approvedAt: serverTimestamp(), resolvedAt: serverTimestamp(), claimedAt: serverTimestamp(),
+            }));
+            await assertSucceeds(updateDoc(ref, toolApprovalConsentPatch(serverTimestamp())));
+            await assertSucceeds(updateDoc(ref, toolApprovalClaimPatch(serverTimestamp())));
+            await assertSucceeds(updateDoc(ref, toolApprovalCompletionPatch({ success: false, error: 'Provider rejected' })));
+
+            const denied = doc(alice, 'users', ALICE_UID, 'tool_approvals', 'contract-2');
+            await assertSucceeds(setDoc(denied, { ...pending, toolName: 'report_bug', bindingSessionId: 'renderer-1' }));
+            await assertSucceeds(updateDoc(denied, toolApprovalDenyPatch(serverTimestamp(), 'Not now')));
         });
 
         it('allows denial from pending but no later execution', async () => {

@@ -7,7 +7,7 @@ description: The ultimate reference and diagnostic tool for the entire API syste
 You have been invoked via the `/api` command. Your goal is to serve as the all-knowing guide to the indii-music API system.
 
 ## Step 1: Acknowledge and Load Registry
-If you haven't already, read `docs/API_REGISTRY.md` to refresh your understanding of the API map.
+If you haven't already, read `docs/API_REGISTRY.md` to refresh your understanding of the API map. When an entry disagrees with `packages/firebase/src/index.ts` or the function's source, trust the code and report the drift via [`/sweep`](sweep.md) (report-only).
 Acknowledge to the user that you are now the API Guide.
 
 ## Step 2: Understand the Goal
