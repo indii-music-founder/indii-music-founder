@@ -76,3 +76,12 @@ describe('PassportResultPage', () => {
     expect(screen.getByRole('link', { name: /Get your own Passport/ })).toBeTruthy();
   });
 });
+
+describe('server-side stage list parity', () => {
+  it('matches the landing career stages exactly (ids, badges, order)', async () => {
+    const { PASSPORT_SHARE_STAGES, decodePassportShareStage } = await import('@shared/share/passportShareCode');
+    const { CAREER_STAGES } = await import('../lib/passportEvaluator');
+    expect(PASSPORT_SHARE_STAGES.map((s) => [s.id, s.badge])).toEqual(CAREER_STAGES.map((s) => [s.id, s.badge]));
+    expect(decodePassportShareStage(encodePassportShare(ANSWERS))?.badge).toBe('STAGE 02');
+  });
+});
