@@ -71,6 +71,7 @@ matching workflow file. Common commands include:
 - `/flowchart` -> `.agent/workflows/flowchart.md`
 - `/proceed` -> `.agent/workflows/proceed.md`
 - `/review` -> `.agent/workflows/review.md`
+- `/effect` -> `.agent/workflows/effect.md`
 
 When a workflow references another slash command, open the corresponding file in
 `.agent/workflows/` and follow its local instructions.
