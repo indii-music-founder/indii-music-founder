@@ -1,3 +1,4 @@
+import { aiStreamBody } from './fixtures/aiStream';
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 import { join } from 'path';
@@ -455,7 +456,7 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                             'Cache-Control': 'no-cache',
                             'Connection': 'keep-alive'
                         },
-                        body: `data: ${JSON.stringify(responseObj)}\n\n`
+                        body: aiStreamBody(responseObj)
                     });
                 } else {
                     await route.fulfill({
@@ -585,7 +586,7 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
         await submitMessageAndWaitForIdle("How much should we spend on this campaign?");
 
         // Verify responses are stored
-        const messagesAfterTurn2 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        const messagesAfterTurn2 = await page.evaluate(() => window.useStore.getState().agentHistory || []);
         console.log('[E2E:Scenario] messagesAfterTurn2:', JSON.stringify(messagesAfterTurn2, null, 2));
         const hasBudgetDetail = messagesAfterTurn2.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
         expect(hasBudgetDetail).toBe(true);
@@ -632,7 +633,7 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
         console.log('[E2E:Diagnostic] Legal agent load error in browser:', registryError);
 
         // Verify Legal response contains standard 50/50 split
-        const messagesAfterTurn5 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        const messagesAfterTurn5 = await page.evaluate(() => window.useStore.getState().agentHistory || []);
         console.log('[E2E:Diagnostic] Turn 5 Boardroom Messages:', JSON.stringify(messagesAfterTurn5, null, 2));
         const hasLegalSplit = messagesAfterTurn5.some(m => m.text?.includes('50/50 split') && m.agentId === 'legal');
         expect(hasLegalSplit).toBe(true);

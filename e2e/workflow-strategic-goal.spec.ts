@@ -1,3 +1,4 @@
+import { aiStreamBody, extractCurrentObjective } from './fixtures/aiStream';
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 
@@ -7,18 +8,29 @@ declare global {
             getState: () => {
                 setConversationMode: (mode: string) => void;
                 activeAgents: string[];
-                boardroomMessages: Array<{ text?: string }>;
+                agentHistory: Array<{ text?: string }>;
             };
         };
     }
 }
 
 test.describe('Boardroom Strategic Workflow Scenario', () => {
+    // FirebaseIntelligenceService paces model requests client-side (RateLimiter(10, 1):
+    // 10/min with a burst of 1, matching the backend generation window), so a turn
+    // with N parallel participants plus the autorater needs up to ~6s per request
+    // before its last request is even sent. Size waits to that documented pacing.
+    const PACED_TURN_TIMEOUT_MS = 60_000;
+
     test('should execute the complete flowchart dependency chain with dynamic seating and pulse unlock', async ({ authedPage: page }) => {
-        let seatedCreative = false;
-        let seatedRoad = false;
-        let seatedMarketing = false;
-        let seatedSocial = false;
+        test.setTimeout(10 * PACED_TURN_TIMEOUT_MS);
+
+        // A turn can satisfy its assertion (e.g. agents seated) while its other paced
+        // participants are still running; the prompt input is disabled until the turn
+        // ends (PromptArea: isAgentProcessing). Wait for that before the next turn.
+        const waitForTurnToFinish = () => page.waitForFunction(() => {
+            const store = (window as unknown as { useStore?: { getState: () => { isAgentProcessing?: boolean } } }).useStore;
+            return typeof store?.getState === 'function' && store.getState().isAgentProcessing !== true;
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
@@ -72,8 +84,11 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                 }
 
                 // Extract the actual request text from the full system prompt/context block
+                const currentObjective = extractCurrentObjective(userMessage);
                 let actualRequest = userMessage;
-                if (userMessage.includes('CURRENT REQUEST:')) {
+                if (currentObjective) {
+                    actualRequest = currentObjective;
+                } else if (userMessage.includes('CURRENT REQUEST:')) {
                     const parts = userMessage.split('CURRENT REQUEST:');
                     actualRequest = parts[parts.length - 1].split('\n')[0].trim();
                 } else {
@@ -123,8 +138,9 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                     return;
                 }
 
-                const _requestLower = actualRequest.toLowerCase();
-                const postDataLower = postData.toLowerCase();
+                // Branch on the user's request, never the whole payload: the system
+                // prompt contains words like "blocked" that match 'locked'.
+                const requestLower = actualRequest.toLowerCase();
                 let systemInstruction = "";
                 try {
                     const parsed = JSON.parse(postData);
@@ -159,81 +175,45 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                         { text: "[Social Media Dept.]: Draft announcement flyer scheduled for Instagram & Twitter rollout." }
                     ];
                 } else {
-                    // 3. Main strategic workflow state machine for the Generalist Conductor
-                    if (postDataLower.includes('clear the boardroom table')) {
-                        if (seatedCreative) {
-                            seatedCreative = false;
-                            parts = [
-                                { text: "[indii Conductor]: Strategic goal successfully met! Excusing Creative Director first." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } }
+                    // 3. Main strategic workflow for the Generalist Conductor.
+                    // A Boardroom agent gets two steps (server BOARDROOM_MAX_ITERATIONS_PER_AGENT = 2)
+                    // and tools are withheld on the final one, so the Conductor requests a turn's
+                    // roster changes together (parallel function calls) and then summarizes.
+                    const toolStepDone = /\[Tool Call: (?:un)?seat_agent\(/.test(postData);
+                    const rosterTurn = (calls: Array<{ name: string; agent: string }>, opening: string, summary: string) => {
+                        parts = toolStepDone
+                            ? [{ text: summary }]
+                            : [
+                                { text: opening },
+                                ...calls.map(({ name, agent }) => ({ functionCall: { name, args: { targetAgentId: agent } } })),
                             ];
-                        } else if (seatedRoad) {
-                            seatedRoad = false;
-                            parts = [
-                                { text: "Creative Director excused. Excusing Road Manager next." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'road' } } }
-                            ];
-                        } else if (seatedMarketing) {
-                            seatedMarketing = false;
-                            parts = [
-                                { text: "Road Manager excused. Excusing Marketing next." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'marketing' } } }
-                            ];
-                        } else if (seatedSocial) {
-                            seatedSocial = false;
-                            parts = [
-                                { text: "Marketing excused. Excusing Social Specialist finally." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[indii Conductor]: All agents excused. Boardroom table cleared successfully." }
-                            ];
-                        }
-                    } else if (postDataLower.includes('rollout materials') || postDataLower.includes('schedule drafts')) {
+                    };
+                    if (requestLower.includes('clear the boardroom table')) {
+                        rosterTurn(
+                            ['creative', 'road', 'marketing', 'social'].map(agent => ({ name: 'unseat_agent', agent })),
+                            "[indii Conductor]: Excusing the Creative Director, Road Manager, Marketing and Social Specialist.",
+                            "[indii Conductor]: All agents excused. Boardroom table cleared successfully.",
+                        );
+                    } else if (requestLower.includes('rollout materials') || requestLower.includes('schedule drafts')) {
                         parts = [
                             { text: "[indii Conductor]: Generating rollout materials and scheduling drafts." }
                         ];
-                    } else if (postDataLower.includes('locked')) {
-                        if (!seatedMarketing) {
-                            seatedMarketing = true;
-                            parts = [
-                                { text: "[indii Conductor]: Pulse trigger! Album art is saved to Firebase Gallery and Detroit dates are confirmed. Seating Marketing first." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }
-                            ];
-                        } else if (!seatedSocial) {
-                            seatedSocial = true;
-                            parts = [
-                                { text: "Marketing is seated. Seating Social Specialist next." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'social' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[indii Conductor]: Marketing and Social Specialist are seated. Dynamic rollout team active." }
-                            ];
-                        }
-                    } else if (postDataLower.includes('generate the art') || postDataLower.includes('plan detroit advance')) {
+                    } else if (requestLower.includes('locked')) {
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'marketing' }, { name: 'seat_agent', agent: 'social' }],
+                            "[indii Conductor]: Pulse trigger! Album art is saved to Firebase Gallery and Detroit dates are confirmed. Seating Marketing and the Social Specialist.",
+                            "[indii Conductor]: Marketing and Social Specialist are seated. Dynamic rollout team active.",
+                        );
+                    } else if (requestLower.includes('generate the art') || requestLower.includes('plan detroit advance')) {
                         parts = [
                             { text: "[indii Conductor]: Instructing Creative Director and Road Manager to execute tasks." }
                         ];
-                    } else if (postDataLower.includes('detroit tour') || postDataLower.includes('plan a detroit tour')) {
-                        if (!seatedCreative) {
-                            seatedCreative = true;
-                            parts = [
-                                { text: "[indii Conductor]: Starting the Detroit Tour & Album Launch strategy. Seating the Creative Director first." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'creative' } } }
-                            ];
-                        } else if (!seatedRoad) {
-                            seatedRoad = true;
-                            parts = [
-                                { text: "Creative Director is seated. Seating Road Manager next." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'road' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[indii Conductor]: Strategic swarm activated. Creative Director and Road Manager are seated at the table." }
-                            ];
-                        }
+                    } else if (requestLower.includes('detroit tour') || requestLower.includes('plan a detroit tour')) {
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'creative' }, { name: 'seat_agent', agent: 'road' }],
+                            "[indii Conductor]: Starting the Detroit Tour & Album Launch strategy. Seating the Creative Director and Road Manager.",
+                            "[indii Conductor]: Strategic swarm activated. Creative Director and Road Manager are seated at the table.",
+                        );
                     } else {
                         parts = [
                             { text: "Meeting in progress." }
@@ -267,7 +247,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                             'Cache-Control': 'no-cache',
                             'Connection': 'keep-alive'
                         },
-                        body: `data: ${JSON.stringify(responseObj)}\n\n`
+                        body: aiStreamBody(responseObj)
                     });
                 } else {
                     await route.fulfill({
@@ -305,19 +285,20 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         await page.waitForFunction(() => {
             const store = window.useStore;
             return typeof store?.getState === 'function' && store.getState().activeAgents.includes('creative');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // Wait for Road Manager to seat
         console.log('[E2E:Strategic] Waiting for Road Manager to seat...');
         await page.waitForFunction(() => {
             const store = window.useStore;
             return typeof store?.getState === 'function' && store.getState().activeAgents.includes('road');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // ----------------------------------------------------
         // TURN 2: Task Execution (Art & Tour Dates)
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 2: Requesting imagery and tour dates advance...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Creative Director generate the art, Road Director plan Detroit advance");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -325,15 +306,16 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         await page.waitForFunction(() => {
             const store = window.useStore;
             if (typeof store?.getState !== 'function') return false;
-            const msgs = store.getState().boardroomMessages || [];
+            const msgs = store.getState().agentHistory || [];
             return msgs.some((m: { text?: string }) => m.text?.includes('album imagery'));
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Creative and Road tasks registered.');
 
         // ----------------------------------------------------
         // TURN 3: Task Dependency (Pulse Unlock) & Marketing Seating
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 3: Triggers pulse to unlock flyer dependency...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Imagery and dates are locked. Trigger rollout.");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -343,28 +325,30 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const active = store.getState().activeAgents;
             return active.includes('marketing') && active.includes('social');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Pulse triggered. Marketing & Social seated successfully.');
 
         // ----------------------------------------------------
         // TURN 4: Marketing Rollout Copy
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 4: Social flyer rollout execution...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Generate rollout materials and schedule drafts");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
         await page.waitForFunction(() => {
             const store = window.useStore;
             if (typeof store?.getState !== 'function') return false;
-            const msgs = store.getState().boardroomMessages || [];
+            const msgs = store.getState().agentHistory || [];
             return msgs.some((m: { text?: string }) => m.text?.includes('announcement flyer'));
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Rollout executed successfully.');
 
         // ----------------------------------------------------
         // TURN 5: Strategic Goal Complete & Dismiss Swarm
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 5: Adjourning and excusing the swarm...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "We are done. Clear the boardroom table.");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -374,7 +358,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const active = store.getState().activeAgents;
             return !active.includes('creative') && !active.includes('road') && !active.includes('marketing') && !active.includes('social');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         const finalSeated = await page.evaluate(() => window.useStore?.getState?.()?.activeAgents || []);
         console.log('[E2E:Strategic] Final seated agents list:', finalSeated);

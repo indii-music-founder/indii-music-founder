@@ -209,8 +209,11 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       });
       await tabletPage.getByLabel('View Chat Archives').click();
 
-      await expect(tabletPage.getByRole('button', { name: /Local Session 0$/ })).toBeVisible();
-      await expect(tabletPage.getByRole('button', { name: /Local Session 59$/ })).toBeVisible();
+      // Each archive row has its own exact "Delete session: <title>" control; a loose
+      // /Local Session 59$/ also matched the dashboard's "Resume: Local Session 59"
+      // shortcut (useEntryContext.ts) whenever it was rendered.
+      await expect(tabletPage.getByRole('button', { name: 'Delete session: Local Session 0', exact: true })).toBeVisible();
+      await expect(tabletPage.getByRole('button', { name: 'Delete session: Local Session 59', exact: true })).toBeVisible();
 
       // Restore the real tablet width for tests that run after this one.
       await tabletPage.setViewportSize({ width: 768, height: 1024 });

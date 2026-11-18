@@ -1,3 +1,4 @@
+import { aiStreamBody } from './fixtures/aiStream';
 import { test, expect } from './fixtures/auth';
 import type { Page } from '@playwright/test';
 import * as fs from 'fs/promises';
@@ -454,7 +455,7 @@ async function installLiveAgentMocks(page: Page, scenario: LiveScenario, chain: 
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
-      body: `data: ${JSON.stringify(conductorPayload)}\n`,
+      body: aiStreamBody(conductorPayload),
     });
   });
 

@@ -1,5 +1,5 @@
 import { FunctionDeclaration, ToolParameters, ToolParameterSchema } from '../types';
-import { resolveToolRiskMetadata } from '../ToolRiskRegistry';
+import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from '../ToolRiskRegistry';
 import { SUPERPOWER_TOOLS } from '../definitions/SuperpowerTools';
 
 function sanitizeSchemaProperty(schema: ToolParameterSchema, propertyName: string): ToolParameterSchema {
@@ -113,13 +113,10 @@ export class ToolPoolAssembler {
 
         // 2. Filter out destructive tools if in read-only mode
         if (context.isReadOnly) {
-            pool = pool.filter(tool => {
-                const riskTier = resolveToolRiskMetadata(
-                    tool.name,
-                    context.localToolNames?.has(tool.name) ? tool : undefined,
-                )?.riskTier;
-                return riskTier === 'read';
-            });
+            pool = pool.filter(tool => isAllowedInReadOnlyDiscussion(
+                tool.name,
+                resolveToolRiskMetadata(tool.name, context.localToolNames?.has(tool.name) ? tool : undefined),
+            ));
         }
 
         // 3. Module Context Filtering (Minimize attack surface)

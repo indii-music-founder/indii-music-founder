@@ -68,7 +68,7 @@ test.describe('Boardroom Collaboration via MCP', () => {
         // Wait for both agents to respond
         await page.waitForFunction(() => {
             const state = window.useStore.getState();
-            const msgs = state.boardroomMessages || [];
+            const msgs = state.agentHistory || [];
             
             // Check if both manager and publicist have responded
             const hasManagerResponse = msgs.some(m => m.role === 'model' && m.agentId === 'manager');
