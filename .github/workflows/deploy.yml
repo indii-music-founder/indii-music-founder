@@ -808,14 +808,94 @@ jobs:
           PRINT_WORKER_AUDIENCE: https://print-prep-148015878263.us-central1.run.app
           PRINT_TASKS_QUEUE: print-prep-queue
           PRINT_TASKS_LOCATION: us-central1
+          STRIPE_PLATFORM_ACCOUNT_ID: acct_1TdEjSFePy0u3aVt
+          STRIPE_PRODUCT_START: prod_VeXXBd5r3LOJ9R
+          STRIPE_PRODUCT_BUILD: prod_VeXd7SiCrjz5Wj
+          STRIPE_PRODUCT_SCALE: prod_VeXfxTV0WgC692
+          STRIPE_PRICE_START_MONTHLY: price_1UdESlFePy0u3aVtb688zBKB
+          STRIPE_PRICE_START_QUARTERLY: price_1UdEUxFePy0u3aVtTc5QWoTH
+          STRIPE_PRICE_START_SIX_MONTH: price_1UdEWjFePy0u3aVt6RwsiT7N
+          STRIPE_PRICE_START_ANNUAL: price_1UdEWxFePy0u3aVtrlWqNKK6
+          STRIPE_PRICE_BUILD_MONTHLY: price_1UdEY1FePy0u3aVtM7VJmb7D
+          STRIPE_PRICE_BUILD_QUARTERLY: price_1UdEYzFePy0u3aVtqCQQ86Ub
+          STRIPE_PRICE_BUILD_SIX_MONTH: price_1UdEZ2FePy0u3aVtueJkS5FG
+          STRIPE_PRICE_BUILD_ANNUAL: price_1UdEZ7FePy0u3aVtu93Arjy3
+          STRIPE_PRICE_SCALE_MONTHLY: price_1UdEZnFePy0u3aVteCAmCaKw
+          STRIPE_PRICE_SCALE_QUARTERLY: price_1UdEa9FePy0u3aVtkyTjnITp
+          STRIPE_PRICE_SCALE_SIX_MONTH: price_1UdEaDFePy0u3aVt8aS30xIH
+          STRIPE_PRICE_SCALE_ANNUAL: price_1UdEaHFePy0u3aVtg9SAX4Ro
+          STRIPE_PRICE_FOUNDER_ONE_TIME: price_1UdEawFePy0u3aVt6jEGfPch
+          STRIPE_PRICE_CREDIT_PACK: price_1UdEbHFePy0u3aVtk7cEX9z6
+          STRIPE_COUPON_START_QUARTERLY_INTRO: PsNthv42
+          STRIPE_COUPON_START_SIX_MONTH_INTRO: K6ewNupR
+          STRIPE_COUPON_START_ANNUAL_INTRO: mcmip2bR
+          STRIPE_COUPON_BUILD_QUARTERLY_INTRO: rmi5B3pJ
+          STRIPE_COUPON_BUILD_SIX_MONTH_INTRO: PrDYLfuG
+          STRIPE_COUPON_BUILD_ANNUAL_INTRO: nwEZl2h2
+          STRIPE_COUPON_SCALE_QUARTERLY_INTRO: AeuYhYk9
+          STRIPE_COUPON_SCALE_SIX_MONTH_INTRO: RvmvXWGc
+          STRIPE_COUPON_SCALE_ANNUAL_INTRO: fGXkUzKy
         run: |
-          FUNCTIONS_HASH=$(git rev-parse HEAD:packages/firebase HEAD:packages/shared HEAD:firebase.json HEAD:package-lock.json | sha256sum | awk '{print $1}')
+          FUNCTIONS_ENV_TMP=$(mktemp)
+          printf '%s\n' \
+            "INFLUENCER_BOUNTY_BASE_URL=$INFLUENCER_BOUNTY_BASE_URL" \
+            "MEDIA_PROVIDER=$MEDIA_PROVIDER" \
+            "SESSION_UPLOAD_ALLOWED_ORIGIN=$SESSION_UPLOAD_ALLOWED_ORIGIN" \
+            "SESSION_PROXY_ESTIMATE_USD_PER_GIB=$SESSION_PROXY_ESTIMATE_USD_PER_GIB" \
+            "SESSION_PROXY_ESTIMATE_VERSION=$SESSION_PROXY_ESTIMATE_VERSION" \
+            "SESSION_PROXY_WORKER_URL=$SESSION_PROXY_WORKER_URL" \
+            "SESSION_PROXY_SERVICE_ACCOUNT=$SESSION_PROXY_SERVICE_ACCOUNT" \
+            "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
+            "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
+            "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
+            "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
+            "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
+            "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
+            "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
+            "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
+            "PRINT_WORKER_URL=$PRINT_WORKER_URL" \
+            "PRINT_WORKER_SERVICE_ACCOUNT=$PRINT_WORKER_SERVICE_ACCOUNT" \
+            "PRINT_WORKER_AUDIENCE=$PRINT_WORKER_AUDIENCE" \
+            "PRINT_TASKS_QUEUE=$PRINT_TASKS_QUEUE" \
+            "PRINT_TASKS_LOCATION=$PRINT_TASKS_LOCATION" \
+            "STRIPE_PLATFORM_ACCOUNT_ID=$STRIPE_PLATFORM_ACCOUNT_ID" \
+            "STRIPE_PRODUCT_START=$STRIPE_PRODUCT_START" \
+            "STRIPE_PRODUCT_BUILD=$STRIPE_PRODUCT_BUILD" \
+            "STRIPE_PRODUCT_SCALE=$STRIPE_PRODUCT_SCALE" \
+            "STRIPE_PRICE_START_MONTHLY=$STRIPE_PRICE_START_MONTHLY" \
+            "STRIPE_PRICE_START_QUARTERLY=$STRIPE_PRICE_START_QUARTERLY" \
+            "STRIPE_PRICE_START_SIX_MONTH=$STRIPE_PRICE_START_SIX_MONTH" \
+            "STRIPE_PRICE_START_ANNUAL=$STRIPE_PRICE_START_ANNUAL" \
+            "STRIPE_PRICE_BUILD_MONTHLY=$STRIPE_PRICE_BUILD_MONTHLY" \
+            "STRIPE_PRICE_BUILD_QUARTERLY=$STRIPE_PRICE_BUILD_QUARTERLY" \
+            "STRIPE_PRICE_BUILD_SIX_MONTH=$STRIPE_PRICE_BUILD_SIX_MONTH" \
+            "STRIPE_PRICE_BUILD_ANNUAL=$STRIPE_PRICE_BUILD_ANNUAL" \
+            "STRIPE_PRICE_SCALE_MONTHLY=$STRIPE_PRICE_SCALE_MONTHLY" \
+            "STRIPE_PRICE_SCALE_QUARTERLY=$STRIPE_PRICE_SCALE_QUARTERLY" \
+            "STRIPE_PRICE_SCALE_SIX_MONTH=$STRIPE_PRICE_SCALE_SIX_MONTH" \
+            "STRIPE_PRICE_SCALE_ANNUAL=$STRIPE_PRICE_SCALE_ANNUAL" \
+            "STRIPE_PRICE_FOUNDER_ONE_TIME=$STRIPE_PRICE_FOUNDER_ONE_TIME" \
+            "STRIPE_PRICE_CREDIT_PACK=$STRIPE_PRICE_CREDIT_PACK" \
+            "STRIPE_COUPON_START_QUARTERLY_INTRO=$STRIPE_COUPON_START_QUARTERLY_INTRO" \
+            "STRIPE_COUPON_START_SIX_MONTH_INTRO=$STRIPE_COUPON_START_SIX_MONTH_INTRO" \
+            "STRIPE_COUPON_START_ANNUAL_INTRO=$STRIPE_COUPON_START_ANNUAL_INTRO" \
+            "STRIPE_COUPON_BUILD_QUARTERLY_INTRO=$STRIPE_COUPON_BUILD_QUARTERLY_INTRO" \
+            "STRIPE_COUPON_BUILD_SIX_MONTH_INTRO=$STRIPE_COUPON_BUILD_SIX_MONTH_INTRO" \
+            "STRIPE_COUPON_BUILD_ANNUAL_INTRO=$STRIPE_COUPON_BUILD_ANNUAL_INTRO" \
+            "STRIPE_COUPON_SCALE_QUARTERLY_INTRO=$STRIPE_COUPON_SCALE_QUARTERLY_INTRO" \
+            "STRIPE_COUPON_SCALE_SIX_MONTH_INTRO=$STRIPE_COUPON_SCALE_SIX_MONTH_INTRO" \
+            "STRIPE_COUPON_SCALE_ANNUAL_INTRO=$STRIPE_COUPON_SCALE_ANNUAL_INTRO" \
+            > "$FUNCTIONS_ENV_TMP"
+
+          FUNCTIONS_ENV_HASH=$(sha256sum "$FUNCTIONS_ENV_TMP" | awk '{print $1}')
+          FUNCTIONS_HASH=$(printf '%s\n%s\n' "$(git rev-parse HEAD:packages/firebase HEAD:packages/shared HEAD:firebase.json HEAD:package-lock.json)" "$FUNCTIONS_ENV_HASH" | sha256sum | awk '{print $1}')
           LAST_FUNCTIONS_HASH=$(gcloud secrets versions access latest --secret=INDII_FUNCTIONS_DEPLOY_HASH --project indii-music-founder 2>/dev/null || true)
           dispatcher_trigger="$(gcloud functions describe dispatchCloudVideoRender \
             --gen2 --region us-central1 --project indii-music-founder \
             --format='value(eventTrigger.eventType)' 2>/dev/null || true)"
 
           if [ "${GITHUB_EVENT_NAME:-}" != "workflow_dispatch" ] && [ -n "$LAST_FUNCTIONS_HASH" ] && [ "$FUNCTIONS_HASH" = "$LAST_FUNCTIONS_HASH" ] && [ "$dispatcher_trigger" = "google.cloud.firestore.document.v1.created" ]; then
+            rm -f "$FUNCTIONS_ENV_TMP"
             echo "::notice::Cloud Functions source hash ($FUNCTIONS_HASH) matches live deployment and dispatchCloudVideoRender trigger is verified — skipping redundant 16m functions redeploy."
           else
             # Routine deployments must not delete live functions. Generation
@@ -919,28 +999,7 @@ jobs:
                 exit 1
               fi
             done
-            printf '%s\n' \
-              "INFLUENCER_BOUNTY_BASE_URL=$INFLUENCER_BOUNTY_BASE_URL" \
-              "MEDIA_PROVIDER=$MEDIA_PROVIDER" \
-              "SESSION_UPLOAD_ALLOWED_ORIGIN=$SESSION_UPLOAD_ALLOWED_ORIGIN" \
-              "SESSION_PROXY_ESTIMATE_USD_PER_GIB=$SESSION_PROXY_ESTIMATE_USD_PER_GIB" \
-              "SESSION_PROXY_ESTIMATE_VERSION=$SESSION_PROXY_ESTIMATE_VERSION" \
-              "SESSION_PROXY_WORKER_URL=$SESSION_PROXY_WORKER_URL" \
-              "SESSION_PROXY_SERVICE_ACCOUNT=$SESSION_PROXY_SERVICE_ACCOUNT" \
-              "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
-              "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
-              "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
-              "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
-              "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
-              "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
-              "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
-              "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
-              "PRINT_WORKER_URL=$PRINT_WORKER_URL" \
-              "PRINT_WORKER_SERVICE_ACCOUNT=$PRINT_WORKER_SERVICE_ACCOUNT" \
-              "PRINT_WORKER_AUDIENCE=$PRINT_WORKER_AUDIENCE" \
-              "PRINT_TASKS_QUEUE=$PRINT_TASKS_QUEUE" \
-              "PRINT_TASKS_LOCATION=$PRINT_TASKS_LOCATION" \
-              > packages/firebase/.env.indii-music-founder
+            mv "$FUNCTIONS_ENV_TMP" packages/firebase/.env.indii-music-founder
             rm -rf packages/firebase/lib packages/firebase/shared-pkg packages/firebase/indii-shared-*.tgz packages/firebase/package-lock.json
             npx tsc -b packages/shared
             # Package @indii/shared as a pre-packed tarball to eliminate Arborist tree calculation defects on local directory references (ISSUE-1434).
