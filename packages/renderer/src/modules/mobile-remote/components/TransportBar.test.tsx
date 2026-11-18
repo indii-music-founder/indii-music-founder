@@ -107,4 +107,16 @@ describe('TransportBar playback races', () => {
         expect(handlers.get('play')).toBeNull();
         expect(session.metadata).toBeNull();
     });
+
+    it('renders a playback alert when streaming fails and pauses audio on unmount', async () => {
+        vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValueOnce(new Error('Network error'));
+        const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, 'pause');
+
+        const view = render(<TransportBar track={track('bad', 'https://cdn.example/bad.mp3')} />);
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('Unable to stream this track right now.');
+
+        view.unmount();
+        expect(pauseSpy).toHaveBeenCalled();
+    });
 });

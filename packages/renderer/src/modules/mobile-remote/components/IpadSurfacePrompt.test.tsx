@@ -64,4 +64,18 @@ describe('IpadSurfacePrompt', () => {
     fireEvent.click(screen.getByRole('button', { name: /Close dialog/i }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it('sets sessionStorage and dismisses on Escape key and backdrop click', () => {
+    const onDismiss = vi.fn();
+    render(<IpadSurfacePrompt isOpen={true} onDismiss={onDismiss} />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem(IPAD_REMOTE_PROMPT_KEY)).toBe('true');
+
+    sessionStorage.clear();
+    fireEvent.click(screen.getByRole('dialog'));
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+    expect(sessionStorage.getItem(IPAD_REMOTE_PROMPT_KEY)).toBe('true');
+  });
 });

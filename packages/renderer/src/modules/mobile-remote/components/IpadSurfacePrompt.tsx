@@ -3,9 +3,9 @@
  * Prompts whether they want to open the full Web Studio or use the companion Remote Controller.
  */
 
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Tablet, Monitor, Smartphone, X, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { triggerHaptic } from '../haptics';
 
 interface IpadSurfacePromptProps {
@@ -21,7 +21,7 @@ export default function IpadSurfacePrompt({
   onDismiss,
   onOpenStudio,
 }: IpadSurfacePromptProps) {
-  if (!isOpen) return null;
+  const shouldReduceMotion = useReducedMotion();
 
   const handleOpenStudio = () => {
     triggerHaptic();
@@ -32,7 +32,7 @@ export default function IpadSurfacePrompt({
     }
   };
 
-  const handleUseRemote = () => {
+  const handleUseRemote = useCallback(() => {
     triggerHaptic();
     if (typeof window !== 'undefined') {
       try {
@@ -42,7 +42,20 @@ export default function IpadSurfacePrompt({
       }
     }
     onDismiss();
-  };
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleUseRemote();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleUseRemote]);
+
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -50,13 +63,16 @@ export default function IpadSurfacePrompt({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ipad-prompt-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) handleUseRemote();
+        }}
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          exit={shouldReduceMotion ? undefined : { opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="relative max-w-md w-full bg-[#16161a] border border-white/15 rounded-3xl p-6 shadow-2xl overflow-hidden"
         >
           {/* Subtle Ambient Background Gradient */}

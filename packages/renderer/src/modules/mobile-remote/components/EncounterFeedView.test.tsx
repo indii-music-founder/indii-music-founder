@@ -4,9 +4,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import EncounterFeedView from './EncounterFeedView';
 
 const fixtureState: { items: unknown[]; emit?: (items: unknown[]) => void } = { items: [] };
-const { mockCreateEncounter, mockUploadFile } = vi.hoisted(() => ({
+const { mockCreateEncounter, mockUploadFile, toastMocks } = vi.hoisted(() => ({
     mockCreateEncounter: vi.fn(async () => 'enc-card'),
     mockUploadFile: vi.fn(async () => 'gs://project/users/u1/encounters/card.png'),
+    toastMocks: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
 vi.mock('@/core/store', () => ({ useStore: (selector: (state: unknown) => unknown) => selector({
@@ -34,7 +35,7 @@ function setEncounters(items: unknown[]) {
 }
 
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
+    useToast: () => toastMocks,
 }));
 
 const baseEncounter = {
@@ -152,5 +153,47 @@ describe('EncounterFeedView Component', () => {
 
         fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
         expect(onNavigateTab).toHaveBeenCalledWith('studio');
+    });
+
+    it('resets play state and surfaces a toast error if voice note play() rejects', async () => {
+        toastMocks.error.mockClear();
+        const pauseSpy = vi.fn();
+        const playSpy = vi.fn().mockRejectedValue(new Error('Autoplay blocked'));
+        vi.stubGlobal('Audio', class {
+            play = playSpy;
+            pause = pauseSpy;
+            onended = null;
+            onerror = null;
+        });
+        setEncounters([baseEncounter]);
+        render(<EncounterFeedView />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Play voice note' }));
+
+        await waitFor(() => {
+            expect(toastMocks.error).toHaveBeenCalledWith('Unable to play audio memo.');
+        });
+        expect(screen.getByRole('button', { name: 'Play voice note' })).toBeInTheDocument();
+        vi.unstubAllGlobals();
+    });
+
+    it('pauses active voice note audio when unmounted', async () => {
+        const pauseSpy = vi.fn();
+        const playSpy = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal('Audio', class {
+            play = playSpy;
+            pause = pauseSpy;
+            onended = null;
+            onerror = null;
+        });
+        setEncounters([baseEncounter]);
+        const view = render(<EncounterFeedView />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Play voice note' }));
+        expect(screen.getByRole('button', { name: 'Pause voice note' })).toBeInTheDocument();
+
+        view.unmount();
+        expect(pauseSpy).toHaveBeenCalledTimes(1);
+        vi.unstubAllGlobals();
     });
 });

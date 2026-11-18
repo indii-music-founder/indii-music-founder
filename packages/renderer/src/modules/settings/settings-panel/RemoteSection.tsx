@@ -50,6 +50,8 @@ const RemoteSection: React.FC = () => {
     const [assetFolderError, setAssetFolderError] = useState<string | null>(null);
     const [assetFolderBusy, setAssetFolderBusy] = useState(false);
     const expiryTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+    const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isMountedRef = useRef(true);
 
     // Live view of what the presence loop actually observed. The heartbeat
     // itself lives in useRemoteCommandListener; this only mirrors its result
@@ -73,28 +75,45 @@ const RemoteSection: React.FC = () => {
         }
     };
 
-    useEffect(() => clearExpiryTimer, []);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            clearExpiryTimer();
+            if (copyTimerRef.current) {
+                clearTimeout(copyTimerRef.current);
+                copyTimerRef.current = null;
+            }
+        };
+    }, []);
 
     const loadAssetFolders = async () => {
         try {
-            setAssetFolders(await desktopFileIndexService.listApprovedFolders());
+            const folders = await desktopFileIndexService.listApprovedFolders();
+            if (!isMountedRef.current) return;
+            setAssetFolders(folders);
         } catch (err) {
+            if (!isMountedRef.current) return;
             setAssetFolderError(err instanceof Error ? err.message : 'Could not load approved asset folders.');
         }
     };
 
-    useEffect(() => { loadAssetFolders(); }, []);
+    useEffect(() => { void loadAssetFolders(); }, []);
 
     const handleApproveAssetFolder = async () => {
         setAssetFolderBusy(true);
         setAssetFolderError(null);
         try {
             await desktopFileIndexService.approveFolder();
+            if (!isMountedRef.current) return;
             await loadAssetFolders();
         } catch (err) {
+            if (!isMountedRef.current) return;
             setAssetFolderError(err instanceof Error ? err.message : 'Could not approve this folder.');
         } finally {
-            setAssetFolderBusy(false);
+            if (isMountedRef.current) {
+                setAssetFolderBusy(false);
+            }
         }
     };
 
@@ -103,11 +122,15 @@ const RemoteSection: React.FC = () => {
         setAssetFolderError(null);
         try {
             await desktopFileIndexService.revokeFolder(folderId);
+            if (!isMountedRef.current) return;
             await loadAssetFolders();
         } catch (err) {
+            if (!isMountedRef.current) return;
             setAssetFolderError(err instanceof Error ? err.message : 'Could not remove this folder.');
         } finally {
-            setAssetFolderBusy(false);
+            if (isMountedRef.current) {
+                setAssetFolderBusy(false);
+            }
         }
     };
 
@@ -138,6 +161,7 @@ const RemoteSection: React.FC = () => {
             if (!data.code) {
                 throw new Error('No pairing code returned');
             }
+            if (!isMountedRef.current) return;
 
             // Same URL scheme the Mobile Remote pairing modal generates
             const isDev =
@@ -151,6 +175,10 @@ const RemoteSection: React.FC = () => {
             const expiresAt = Date.now() + CODE_TTL_MS;
             setSecondsLeft(Math.round(CODE_TTL_MS / 1000));
             expiryTimer.current = setInterval(() => {
+                if (!isMountedRef.current) {
+                    clearExpiryTimer();
+                    return;
+                }
                 const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
                 setSecondsLeft(remaining);
                 if (remaining <= 0) {
@@ -161,9 +189,13 @@ const RemoteSection: React.FC = () => {
             }, 1000);
         } catch (err) {
             logger.error('[RemoteSection] Failed to generate pairing code:', err);
-            setError(err instanceof Error ? err.message : 'Failed to generate pairing code');
+            if (isMountedRef.current) {
+                setError(err instanceof Error ? err.message : 'Failed to generate pairing code');
+            }
         } finally {
-            setGenerating(false);
+            if (isMountedRef.current) {
+                setGenerating(false);
+            }
         }
     };
 
@@ -171,10 +203,22 @@ const RemoteSection: React.FC = () => {
         if (!code) return;
         try {
             await navigator.clipboard.writeText(code);
+            if (!isMountedRef.current) return;
             setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            if (copyTimerRef.current) {
+                clearTimeout(copyTimerRef.current);
+            }
+            copyTimerRef.current = setTimeout(() => {
+                copyTimerRef.current = null;
+                if (isMountedRef.current) {
+                    setCopied(false);
+                }
+            }, 2000);
         } catch (err) {
             logger.warn('[RemoteSection] Clipboard write failed:', err);
+            if (isMountedRef.current) {
+                setError('Could not copy pairing code to clipboard.');
+            }
         }
     };
 

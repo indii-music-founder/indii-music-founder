@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import StreamView from './StreamView';
 import type { DesktopState } from '@/services/agent/RemoteRelayService';
+import { StorageService } from '@/services/StorageService';
 
 vi.mock('@/services/StorageService', () => ({
     StorageService: { loadHistory: vi.fn().mockResolvedValue([
@@ -13,6 +14,12 @@ vi.mock('./TransportBar', () => ({
 }));
 
 describe('StreamView desktop handoff', () => {
+    beforeEach(() => {
+        vi.mocked(StorageService.loadHistory).mockReset().mockResolvedValue([
+            { id: 'track-1', type: 'music', url: 'https://example.test/master.mp3', prompt: 'New Master', timestamp: 1, projectId: 'p' } as never,
+        ]);
+    });
+
     it('offers the cloud copy of the desktop track for local phone playback', async () => {
         render(<StreamView desktopState={{ activeTrackId: 'track-1', activeTrackTitle: 'New Master' } as DesktopState} />);
         const button = await screen.findByRole('button', { name: 'Stream to Phone' });
@@ -39,5 +46,21 @@ describe('StreamView desktop handoff', () => {
         expect(hintBar).toHaveTextContent(/Jev/i);
         fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
         expect(onSendToStudio).toHaveBeenCalledWith(expect.stringContaining('New Master'));
+    });
+
+    it('shows an error alert with Retry instead of No Tracks Available when vault load fails', async () => {
+        vi.mocked(StorageService.loadHistory)
+            .mockRejectedValueOnce(new Error('Vault offline'))
+            .mockResolvedValueOnce([
+                { id: 'track-1', type: 'music', url: 'https://example.test/master.mp3', prompt: 'New Master', timestamp: 1, projectId: 'p' } as never,
+            ]);
+
+        render(<StreamView />);
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('Vault offline');
+        expect(screen.queryByText('No Tracks Available')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(await screen.findByText('New Master')).toBeInTheDocument();
     });
 });

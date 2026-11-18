@@ -35,7 +35,8 @@ export default function EncounterFeedView({
     const [encounters, setEncounters] = useState<FieldEncounter[]>([]);
     const [activeFilter, setActiveFilter] = useState<FeedFilter>('all');
     const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
-    const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const isMountedRef = useRef(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [shareOpen, setShareOpen] = useState(false);
     const [isScanningCard, setIsScanningCard] = useState(false);
@@ -58,14 +59,20 @@ export default function EncounterFeedView({
         try {
             const path = `users/${uid}/encounters/card_${crypto.randomUUID()}.${file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'}`;
             const downloadUrl = await StorageService.uploadFile(file, path);
+            if (!isMountedRef.current) return;
             await EncounterService.createEncounter({ assets: [{ type: 'document', storagePath: path, downloadUrl,
                 mimeType: file.type, filename: file.name }] }, uid);
+            if (!isMountedRef.current) return;
             toast.success('Card saved for extraction. Review the contact fields before saving.');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to scan card.');
+            if (isMountedRef.current) {
+                toast.error(error instanceof Error ? error.message : 'Unable to scan card.');
+            }
         } finally {
-            setIsScanningCard(false);
-            if (cardInputRef.current) cardInputRef.current.value = '';
+            if (isMountedRef.current) {
+                setIsScanningCard(false);
+                if (cardInputRef.current) cardInputRef.current.value = '';
+            }
         }
     };
     const startReview = (encounter: FieldEncounter) => {
@@ -78,18 +85,36 @@ export default function EncounterFeedView({
         setIsSavingReview(true);
         try {
             await EncounterService.reviewContact(reviewId, reviewFields);
+            if (!isMountedRef.current) return;
             setReviewId(null);
             toast.success('Contact details confirmed and saved.');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to save contact review.');
+            if (isMountedRef.current) {
+                toast.error(error instanceof Error ? error.message : 'Unable to save contact review.');
+            }
         } finally {
-            setIsSavingReview(false);
+            if (isMountedRef.current) {
+                setIsSavingReview(false);
+            }
         }
     };
 
     useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
         const unsub = EncounterService.subscribeRecentEncounters((items) => {
-            setEncounters(items);
+            if (isMountedRef.current) {
+                setEncounters(items);
+            }
         });
         return () => unsub();
     }, []);
@@ -97,21 +122,33 @@ export default function EncounterFeedView({
     const togglePlayAudio = (assetId: string, audioUrl: string) => {
         triggerHaptic(50);
         if (playingAudioId === assetId) {
-            audioElement?.pause();
+            audioRef.current?.pause();
+            audioRef.current = null;
             setPlayingAudioId(null);
         } else {
-            if (audioElement) {
-                audioElement.pause();
+            if (audioRef.current) {
+                audioRef.current.pause();
             }
             const nextAudio = new Audio(audioUrl);
-            nextAudio.onended = () => setPlayingAudioId(null);
+            audioRef.current = nextAudio;
+            nextAudio.onended = () => {
+                if (!isMountedRef.current || audioRef.current !== nextAudio) return;
+                audioRef.current = null;
+                setPlayingAudioId(null);
+            };
             nextAudio.onerror = () => {
+                if (!isMountedRef.current || audioRef.current !== nextAudio) return;
+                audioRef.current = null;
                 toast.error('Unable to play audio memo.');
                 setPlayingAudioId(null);
             };
-            nextAudio.play();
-            setAudioElement(nextAudio);
             setPlayingAudioId(assetId);
+            void Promise.resolve(nextAudio.play()).catch(() => {
+                if (!isMountedRef.current || audioRef.current !== nextAudio) return;
+                audioRef.current = null;
+                toast.error('Unable to play audio memo.');
+                setPlayingAudioId(null);
+            });
         }
     };
 
@@ -134,13 +171,18 @@ export default function EncounterFeedView({
             const { remoteRelayService, waitForDispatchConfirmation } = await import('@/services/agent/RemoteRelayService');
             const taskId = await remoteRelayService.dispatchTask({ type: 'editor_import', payload });
             const outcome = await waitForDispatchConfirmation(taskId);
+            if (!isMountedRef.current) return;
             if (outcome.status === 'failed') throw new Error(outcome.error?.message || 'Unable to open capture on the computer.');
 
             toast.success(mediaType === 'image' ? 'Photo saved and opened in Studio Photo Editor.' : 'Opened in Studio Timeline Editor.');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to open capture.');
+            if (isMountedRef.current) {
+                toast.error(error instanceof Error ? error.message : 'Unable to open capture.');
+            }
         } finally {
-            setOpeningId(null);
+            if (isMountedRef.current) {
+                setOpeningId(null);
+            }
         }
     };
 
@@ -166,11 +208,13 @@ export default function EncounterFeedView({
 
         try {
             const success = await exportContactToIPhone(contact);
-            if (success) {
+            if (isMountedRef.current && success) {
                 toast.success('Contact opened for iPhone Contacts!');
             }
         } catch {
-            toast.error('Failed to export contact to iPhone.');
+            if (isMountedRef.current) {
+                toast.error('Failed to export contact to iPhone.');
+            }
         }
     };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X } from 'lucide-react';
 import { buildArtistShareCard } from './artistShareCard';
@@ -6,8 +6,27 @@ import { buildArtistShareCard } from './artistShareCard';
 export default function ArtistShareCardModal({ name, email, onClose }: { name: string; email?: string; onClose: () => void }) {
     const [includeEmail, setIncludeEmail] = useState(false);
     const card = buildArtistShareCard(name, includeEmail ? email : undefined);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
     return (
-        <div role="dialog" aria-modal="true" aria-label="Share my artist card" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Share my artist card"
+            onClick={(event) => {
+                if (event.target === event.currentTarget) onClose();
+            }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+        >
             <div className="w-full max-w-sm rounded-3xl bg-[#1c1815] p-6 text-white shadow-2xl">
                 <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-bold">Share My Card</h2>

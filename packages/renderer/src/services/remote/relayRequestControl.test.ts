@@ -70,4 +70,44 @@ describe('relay request volume control', () => {
         ]);
         expect(await flight.run(async () => 99)).toBe(99);
     });
+
+    it('enforces exact retryAt boundaries up to the 300s cap and resets failure exponent after succeed()', () => {
+        const gate = new PresencePublishGate();
+        let now = 1_000;
+        for (const expectedDelay of [60_000, 120_000, 240_000, 300_000, 300_000]) {
+            expect(gate.tryBegin(now)).toBe(true);
+            gate.fail(now);
+            expect(gate.tryBegin(now + expectedDelay - 1)).toBe(false);
+            now += expectedDelay;
+        }
+        expect(gate.tryBegin(now)).toBe(true);
+        gate.succeed();
+
+        expect(gate.tryBegin(now + 1)).toBe(true);
+        gate.fail(now + 1);
+        expect(gate.tryBegin(now + 60_000)).toBe(false);
+        expect(gate.tryBegin(now + 60_001)).toBe(true);
+    });
+
+    it('propagates synchronous throws across shared SingleFlight callers and recovers cleanly', async () => {
+        const flight = new SingleFlight<string>();
+        const boom = new Error('sync throw');
+        let calls = 0;
+        const crashingRequest = () => {
+            calls += 1;
+            throw boom;
+        };
+
+        const first = flight.run(crashingRequest);
+        const second = flight.run(crashingRequest);
+        expect(second).toBe(first);
+
+        const outcomes = await Promise.allSettled([first, second]);
+        expect(calls).toBe(1);
+        expect(outcomes).toEqual([
+            { status: 'rejected', reason: boom },
+            { status: 'rejected', reason: boom },
+        ]);
+        expect(await flight.run(async () => 'recovered')).toBe('recovered');
+    });
 });

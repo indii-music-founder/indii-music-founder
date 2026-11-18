@@ -25,6 +25,8 @@ export default function StreamView({
 }) {
     const [tracks, setTracks] = useState<HistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadToken, setReloadToken] = useState(0);
     const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
     const [jevHint, setJevHint] = useState<MobileRemoteIntentJudgment | null>(null);
 
@@ -38,17 +40,21 @@ export default function StreamView({
                 if (active) {
                     const audioItems = items.filter(item => item.type === 'music');
                     setTracks(audioItems);
+                    setLoadError(null);
                     setIsLoading(false);
                 }
             } catch (err) {
                 logger.error('[StreamView] Failed to load tracks:', err);
-                if (active) setIsLoading(false);
+                if (active) {
+                    setLoadError(err instanceof Error ? err.message : 'Unable to load Cloud Vault tracks.');
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchTracks();
         return () => { active = false; };
-    }, []);
+    }, [reloadToken]);
 
     const activeTrack = useMemo(() => {
         return tracks.find(t => t.id === activeTrackId) || null;
@@ -112,7 +118,14 @@ export default function StreamView({
 
             <JevRemoteHintBar
                 judgment={focusedTrackTitle ? jevHint : null}
-                onAction={focusedTrackTitle && onSendToStudio ? () => onSendToStudio(`Help prepare release assets and distribution notes for track "${focusedTrackTitle}"`) : undefined}
+                onAction={focusedTrackTitle && onSendToStudio ? () => {
+                    void Promise.resolve(
+                        onSendToStudio(`Help prepare release assets and distribution notes for track "${focusedTrackTitle}"`)
+                    ).catch((err) => {
+                        logger.error('[StreamView] Failed to send track to Studio:', err);
+                        setLoadError(err instanceof Error ? err.message : 'Unable to send track to Studio.');
+                    });
+                } : undefined}
             />
 
             <div className="flex-1 bg-[#1a1512]/80 backdrop-blur-md border border-white/10 rounded-3xl p-4 min-h-[300px] shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
@@ -120,6 +133,21 @@ export default function StreamView({
                     <div className="flex flex-col items-center justify-center h-full text-[#8e8e93] space-y-4 py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-[#00ff66]" />
                         <p className="text-xs font-bold font-mono uppercase tracking-widest">Decrypting Vault...</p>
+                    </div>
+                ) : loadError ? (
+                    <div role="alert" className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12 px-4">
+                        <p className="text-sm font-medium text-red-300">{loadError}</p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsLoading(true);
+                                setLoadError(null);
+                                setReloadToken(t => t + 1);
+                            }}
+                            className="min-h-11 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-white cursor-pointer"
+                        >
+                            Retry
+                        </button>
                     </div>
                 ) : tracks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-[#8e8e93] space-y-4 py-12">
