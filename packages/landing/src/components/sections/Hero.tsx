@@ -60,7 +60,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
 
       <div className="relative my-auto py-6 md:py-8">
         <h1
-          className="relative max-w-[1450px] text-[12vw] font-black leading-[0.80] tracking-[-0.065em] text-white sm:text-[9.5vw] md:text-[7.5vw] lg:text-[5.5rem] xl:text-[6.8rem]"
+          className="relative max-w-[1450px] text-[12vw] font-black leading-[0.94] tracking-[-0.06em] text-white sm:text-[9.5vw] md:text-[7.5vw] lg:text-[5.5rem] xl:text-[6.8rem]"
           aria-label="Run your music career without giving it away."
         >
           {heroWords.map((word, index) => (
@@ -83,8 +83,8 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 <span className="relative inline-flex items-baseline" aria-hidden="true">
                   <span className="relative inline-block">
                     <motion.span
-                      className="absolute -top-[0.24em] left-[50%] -translate-x-1/2 text-[0.34em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
-                      animate={{ scale: [1, 1.25, 1], opacity: [0.85, 1, 0.85] }}
+                      className="absolute -top-[0.16em] left-[50%] -translate-x-1/2 text-[0.30em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.85, 1, 0.85] }}
                       transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     >
                       $

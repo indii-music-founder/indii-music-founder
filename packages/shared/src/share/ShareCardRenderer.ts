@@ -202,8 +202,12 @@ function drawText(ctx: CanvasRenderingContext2D, layout: Layout, model: ShareCar
         y += bodySize * 0.3;
         ctx.font = `500 ${bodySize}px ${FONT_STACK}`;
         ctx.fillStyle = 'rgba(240,240,240,0.78)';
-        ctx.fillText(wrapText(t => ctx.measureText(t).width, model.subtitle, text.w, 1)[0], anchorX, y);
-        y += bodySize * 1.4;
+        const subtitleLines = wrapText(t => ctx.measureText(t).width, model.subtitle, text.w, model.compactTitle ? 2 : 1);
+        for (const line of subtitleLines) {
+            ctx.fillText(line, anchorX, y);
+            y += bodySize * 1.25;
+        }
+        y += bodySize * 0.2;
     }
 
     if (model.callout) {

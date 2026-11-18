@@ -16,6 +16,8 @@ import FieldRecorder from './pages/FieldRecorder';
 import ArtistPassportPage from './pages/ArtistPassportPage';
 import PassportResultPage from './pages/PassportResultPage';
 import SectionShareRedirect from './pages/SectionShareRedirect';
+import NowWhatShareRedirect from './pages/NowWhatShareRedirect';
+import NotFound from './pages/NotFound';
 import RainGlassOverlay from './components/effects/RainGlassOverlay';
 
 const FounderRoutes = () => (
@@ -30,10 +32,12 @@ const FounderRoutes = () => (
     <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/passport/r/:code" element={<PassportResultPage />} />
     <Route path="/s/:section" element={<SectionShareRedirect />} />
+    <Route path="/n/:hook" element={<NowWhatShareRedirect />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/record" element={<FieldRecorder />} />
+    <Route path="*" element={<NotFound />} />
   </Routes>
 );
 
@@ -49,9 +53,11 @@ const GeneralRoutes = () => (
     <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/passport/r/:code" element={<PassportResultPage />} />
     <Route path="/s/:section" element={<SectionShareRedirect />} />
+    <Route path="/n/:hook" element={<NowWhatShareRedirect />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
+    <Route path="*" element={<NotFound />} />
   </Routes>
 );
 

@@ -14,7 +14,16 @@
  */
 import { onRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { decodePassportShareStage, findSiteSection, passportStageOgImagePath, siteSectionOgImagePath, siteSectionSharePath } from '@indii/shared';
+import {
+    decodePassportShareStage,
+    findNowWhatHook,
+    findSiteSection,
+    nowWhatOgImagePath,
+    nowWhatSharePath,
+    passportStageOgImagePath,
+    siteSectionOgImagePath,
+    siteSectionSharePath,
+} from '@indii/shared';
 import { getPublicPreSaveCampaign } from '../marketing/presaveCampaigns';
 import { arcjetKey } from '../config/secrets';
 import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
@@ -26,7 +35,12 @@ const CACHE_SECONDS = 300;
 
 /** Only our own hosts may be fetched as a shell (no SSRF via Host headers). */
 const ALLOWED_HOST = /^(?:[a-z0-9-]+\.)*(?:indii\.music|web\.app|firebaseapp\.com)$/i;
-const DEFAULT_ORIGIN = { presave: 'https://app.indii.music', passport: 'https://indii.music', section: 'https://indii.music' } as const;
+const DEFAULT_ORIGIN = {
+    presave: 'https://app.indii.music',
+    passport: 'https://indii.music',
+    section: 'https://indii.music',
+    nowwhat: 'https://indii.music',
+} as const;
 
 export interface ShareMeta {
     title: string;
@@ -41,7 +55,8 @@ export interface ShareMeta {
 export type ShareRoute =
     | { kind: 'presave'; campaignId: string }
     | { kind: 'passport'; code: string }
-    | { kind: 'section'; id: string };
+    | { kind: 'section'; id: string }
+    | { kind: 'nowwhat'; id: string };
 
 export function parseShareRoute(path: string): ShareRoute | null {
     const presave = /^\/presave\/([A-Za-z0-9_-]{8,128})\/?$/.exec(path);
@@ -50,6 +65,8 @@ export function parseShareRoute(path: string): ShareRoute | null {
     if (passport) return { kind: 'passport', code: passport[1] };
     const section = /^\/s\/([a-z0-9-]{1,64})\/?$/.exec(path);
     if (section) return { kind: 'section', id: section[1] };
+    const nowwhat = /^\/n\/([a-z0-9-]{1,64})\/?$/.exec(path);
+    if (nowwhat) return { kind: 'nowwhat', id: nowwhat[1] };
     return null;
 }
 
@@ -104,6 +121,19 @@ export interface ShareMetaDeps {
 }
 
 export async function resolveShareMeta(route: ShareRoute, origin: string, deps: ShareMetaDeps): Promise<ShareMeta | null> {
+    if (route.kind === 'nowwhat') {
+        const hook = findNowWhatHook(route.id);
+        if (!hook) return null;
+        return {
+            title: `${hook.hook} — indii.music`,
+            description: `${hook.answer} Start your free Artist Passport on indii.music.`,
+            url: `${origin}${nowWhatSharePath(hook)}`,
+            image: `${origin}${nowWhatOgImagePath(hook)}`,
+            imageAlt: hook.hook,
+            imageSize: { width: 1200, height: 630 },
+        };
+    }
+
     if (route.kind === 'section') {
         const section = findSiteSection(route.id);
         if (!section) return null;
@@ -191,7 +221,15 @@ export const shareMeta = onRequest(
             shell = await fetchShell(origin);
         } catch (error) {
             logger.warn('[shareMeta] shell unavailable', { origin, error: String(error) });
-            const target = escapeAttr(route.kind === 'passport' ? `${origin}/passport` : route.kind === 'section' ? `${origin}/#${route.id}` : origin);
+            const target = escapeAttr(
+                route.kind === 'passport'
+                    ? `${origin}/passport`
+                    : route.kind === 'section'
+                        ? `${origin}/#${route.id}`
+                        : route.kind === 'nowwhat'
+                            ? `${origin}/passport?entry=${encodeURIComponent(route.id)}`
+                            : origin,
+            );
             res.status(503).set('Cache-Control', 'no-store').type('html')
                 .send(`<!doctype html><meta charset="utf-8"><title>indii.music</title><p><a href="${target}">Continue to indii.music</a></p>`);
             return;

@@ -38,6 +38,7 @@ export * from './schemas/instagramSocial.js';
 export * from './schemas/artistMasterDirective.js';
 export * from './share/passportShareCode.js';
 export * from './share/siteSections.js';
+export * from './share/nowWhat.js';
 
 
 

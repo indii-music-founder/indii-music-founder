@@ -169,6 +169,21 @@ describe('shareOrDownloadImage', () => {
         expect(click).toHaveBeenCalledOnce();
     });
 
+    it('builds a Now what? hook card model', () => {
+        const model = buildShareCardModel({
+            kind: 'nowwhat',
+            situation: 'You finished your first song.',
+            answer: 'Document credits and ownership, then prepare your release.',
+            url: 'https://indii.music/n/first-song',
+        }, { brandColors: ['#FFB800', '#E65100'] });
+        expect(model.eyebrow).toBe('Now what?');
+        expect(model.title).toBe('You finished your first song. Now what?');
+        expect(model.subtitle).toBe('Document credits and ownership, then prepare your release.');
+        expect(model.callout).toBe('Take the free Artist Passport');
+        expect(model.url).toBe('indii.music/n/first-song');
+        expect(model.compactTitle).toBe(true);
+    });
+
     it('canShareFiles is false when canShare throws', () => {
         Object.defineProperty(navigator, 'share', { value: vi.fn(), configurable: true });
         Object.defineProperty(navigator, 'canShare', { value: () => { throw new Error('boom'); }, configurable: true });

@@ -65,6 +65,14 @@ export type ShareCardTemplate =
         url?: string;
     }
     | {
+        kind: 'nowwhat';
+        /** Situation line before "Now what?", e.g. "You finished your first song." */
+        situation: string;
+        /** Actionable answer from indii. */
+        answer: string;
+        url?: string;
+    }
+    | {
         kind: 'milestone';
         artistName?: string;
         headline: string;
@@ -226,6 +234,17 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
             return {
                 eyebrow: clean(`indii.music · ${template.label}`, 40),
                 title: clean(template.title, MAX_TITLE) || 'indii.music',
+                compactTitle: true,
+                url: displayUrl(template.url),
+                attribution,
+                ...accents,
+            };
+        case 'nowwhat':
+            return {
+                eyebrow: 'Now what?',
+                title: clean(`${template.situation} Now what?`, MAX_TITLE) || 'Now what?',
+                subtitle: clean(template.answer, MAX_LINE) || undefined,
+                callout: 'Take the free Artist Passport',
                 compactTitle: true,
                 url: displayUrl(template.url),
                 attribution,
