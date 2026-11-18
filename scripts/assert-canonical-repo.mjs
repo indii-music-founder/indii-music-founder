@@ -18,6 +18,10 @@ export function normalizeGitHubRemote(rawRemote) {
 
   try {
     const url = new URL(raw);
+    if (url.protocol === 'entire:') {
+      const ghMatch = url.pathname.match(/^\/gh\/(.+)$/);
+      return ghMatch ? ghMatch[1].replace(/\.git$/, '').replace(/\/+$/, '') : '';
+    }
     if (url.hostname.toLowerCase() !== 'github.com') return '';
     return url.pathname.replace(/^\/+/, '').replace(/\.git$/, '').replace(/\/+$/, '');
   } catch {

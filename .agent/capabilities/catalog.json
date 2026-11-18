@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "53d582372f6f5ac272b70b0c73bd12a804e087dafd49608e364385f9f2b2e1d6",
+  "sourceDigest": "de99ce78b6bbb35d4dabe709bb0698d4434f2b642d2528153d9973b4c632dac1",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +8,7 @@
   "counts": {
     "certified": 37,
     "conditional": 71,
-    "quarantined": 98,
+    "quarantined": 101,
     "deprecated": 1
   },
   "capabilities": [
@@ -1304,6 +1304,96 @@
       "description": "bash scripts/doctor.sh",
       "descriptionHash": "4aa98c8df563a0ed61bf9eaebe9c720f024d575c28014ddaf416e547f13d1053",
       "contentHash": "e2de8e7224813f11f72e2d0c721459f4b7db9e079acba2487365eacf6dd5b2f2",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:diagnostics",
+      "name": "npm run effect:diagnostics",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "effect-language-service diagnostics --project packages/shared/tsconfig.json",
+      "descriptionHash": "4e033ba9c189cd259c76741dcf4bf69943942df647f9ba54c112b1bc8fd5caed",
+      "contentHash": "5d4e5a2ba65fcf23430ee8c10d993da5ea1bdaf3e1c8c32bd842b9aa54d0b78c",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:sync-repo",
+      "name": "npm run effect:sync-repo",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "git -C repos/effect pull --ff-only 2>/dev/null || git clone --depth 1 https://github.com/Effect-TS/effect.git repos/effect",
+      "descriptionHash": "268daf4589d8662a2ad4dfb6c1112fd57d708831a8782c22809576134f7fc239",
+      "contentHash": "9fb91e66feeb2a032e6423de6e3f97e256cbd048d6ba6bcc06aae734656a852b",
+      "state": "quarantined",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Dependencies are installed",
+        "The script exists in package.json"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "Require exit code zero and inspect the relevant result"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:tsgo",
+      "name": "npm run effect:tsgo",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "effect-tsgo tsc --noEmit",
+      "descriptionHash": "d5f32db7f952c0e09b01298affec6cc94df14347d97827ea6b3971b396097f61",
+      "contentHash": "337bd95878fc90b0bb37482f3b86aecfeebc38ce320a3c2e916b851a89491c65",
       "state": "quarantined",
       "authority": "local-execution",
       "prerequisites": [

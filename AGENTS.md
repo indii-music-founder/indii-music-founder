@@ -45,6 +45,15 @@ through the repository, not through any one tool. Before working, read:
 When you fix a novel regression, add it to the ledger and standards above so the
 next agent, whichever tool it runs in, inherits it.
 
+## Vendored Repositories & Effect-TS
+
+This project maintains local read-only reference repositories under `@repos/` (excluded from git via `/repos/`, editor search/auto-imports, TypeScript, Vitest, and ESLint; run `npm run effect:sync-repo` to initialize or refresh):
+
+- Before writing Effect code, read `docs/guides/effect-guide.md`, `docs/guides/reference-repos.md`, and `@repos/effect/LLMS.md`.
+- Inspect `@repos/effect/` (`packages/effect/src/`, `ai-docs/src/`) for idiomatic Effect v4 usage, tests, module structure, and API design instead of guessing or relying on fragmented web snippets.
+- Do not edit files under `@repos/` unless explicitly asked.
+- Do not import from `@repos/` — application code must import from installed npm packages (e.g. `import { Effect, Schema } from 'effect'`).
+
 ## Slash Workflows
 
 This repo keeps its slash-command workflow docs in the hidden folder

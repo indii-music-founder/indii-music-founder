@@ -4,8 +4,363 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
+/**
+ * Effect-TS safety and idiom rules adapted from mikearnaldi/accountability.
+ */
+const effectLocalPlugin = {
+    rules: {
+        'no-disable-validation': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow disableValidation: true in Schema operations' },
+                messages: {
+                    noDisableValidation:
+                        'Do not use { disableValidation: true }. Fix the data or schema instead of disabling Schema validation.',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    Property(node) {
+                        const isKey =
+                            node.key &&
+                            ((node.key.type === 'Identifier' && node.key.name === 'disableValidation') ||
+                                (node.key.type === 'Literal' && node.key.value === 'disableValidation'));
+                        if (isKey && node.value && node.value.type === 'Literal' && node.value.value === true) {
+                            context.report({ node, messageId: 'noDisableValidation' });
+                        }
+                    },
+                };
+            },
+        },
+        'prefer-option-from-nullable': {
+            meta: {
+                type: 'suggestion',
+                docs: { description: 'Prefer Option.fromNullishOr (or Option.fromNullOr) over ternary with Option.some/none' },
+                messages: {
+                    preferFromNullable:
+                        'Use Option.fromNullishOr({{name}}) (or Option.fromNullOr) instead of ternary with Option.some/Option.none.',
+                },
+                schema: [],
+            },
+            create(context) {
+                const sourceCode = context.sourceCode ?? context.getSourceCode();
+                return {
+                    ConditionalExpression(node) {
+                        const { test, consequent, alternate } = node;
+                        if (test.type !== 'BinaryExpression') return;
+                        if (test.operator !== '!==' && test.operator !== '!=') return;
+
+                        let testedName = null;
+                        const extractTested = (expr) => {
+                            if (expr.type === 'Identifier') return expr.name;
+                            if (expr.type === 'MemberExpression') return sourceCode.getText(expr);
+                            return null;
+                        };
+                        if (test.right.type === 'Literal' && test.right.value === null) {
+                            testedName = extractTested(test.left);
+                        } else if (test.left.type === 'Literal' && test.left.value === null) {
+                            testedName = extractTested(test.right);
+                        }
+                        if (!testedName) return;
+
+                        if (consequent.type !== 'CallExpression') return;
+                        const conseqCallee = consequent.callee;
+                        const isOptionSome =
+                            conseqCallee.type === 'MemberExpression' &&
+                            conseqCallee.object.type === 'Identifier' &&
+                            conseqCallee.object.name === 'Option' &&
+                            conseqCallee.property.type === 'Identifier' &&
+                            conseqCallee.property.name === 'some';
+                        if (!isOptionSome) return;
+
+                        if (alternate.type !== 'CallExpression') return;
+                        const altCallee = alternate.callee;
+                        const innerAlt =
+                            altCallee.type === 'TSInstantiationExpression' ? altCallee.expression : altCallee;
+                        const isOptionNone =
+                            innerAlt.type === 'MemberExpression' &&
+                            innerAlt.object.type === 'Identifier' &&
+                            innerAlt.object.name === 'Option' &&
+                            innerAlt.property.type === 'Identifier' &&
+                            innerAlt.property.name === 'none';
+                        if (!isOptionNone) return;
+
+                        context.report({
+                            node,
+                            messageId: 'preferFromNullable',
+                            data: { name: testedName },
+                        });
+                    },
+                };
+            },
+        },
+        'pipe-max-arguments': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow .pipe() with more than 20 arguments' },
+                messages: {
+                    tooManyArgs:
+                        '.pipe() has {{count}} arguments. Split into multiple .pipe() calls for readability (max 20).',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    CallExpression(node) {
+                        const callee = node.callee;
+                        if (
+                            callee.type === 'MemberExpression' &&
+                            callee.property.type === 'Identifier' &&
+                            callee.property.name === 'pipe' &&
+                            node.arguments.length > 20
+                        ) {
+                            context.report({
+                                node,
+                                messageId: 'tooManyArgs',
+                                data: { count: String(node.arguments.length) },
+                            });
+                        }
+                    },
+                };
+            },
+        },
+        'no-effect-asvoid': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow Effect.asVoid - it is usually unnecessary' },
+                messages: {
+                    noEffectAsVoid:
+                        'Effect.asVoid is usually unnecessary because void allows any return value in Effect.',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    MemberExpression(node) {
+                        if (
+                            node.object.type === 'Identifier' &&
+                            node.object.name === 'Effect' &&
+                            node.property.type === 'Identifier' &&
+                            node.property.name === 'asVoid'
+                        ) {
+                            context.report({ node, messageId: 'noEffectAsVoid' });
+                        }
+                    },
+                };
+            },
+        },
+        'no-effect-ignore': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow Effect.ignore - errors should be explicitly handled' },
+                messages: {
+                    noEffectIgnore:
+                        'Do not use Effect.ignore. Handle errors explicitly with Effect.catchTag, Effect.catch, or propagate them.',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    MemberExpression(node) {
+                        if (
+                            node.object.type === 'Identifier' &&
+                            node.object.name === 'Effect' &&
+                            node.property.type === 'Identifier' &&
+                            node.property.name === 'ignore'
+                        ) {
+                            context.report({ node, messageId: 'noEffectIgnore' });
+                        }
+                    },
+                };
+            },
+        },
+        'no-effect-catchallcause': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow Effect.catchAllCause / Effect.catchCause' },
+                messages: {
+                    noEffectCatchAllCause:
+                        'Do not use Effect.catchAllCause or Effect.catchCause. They catch defects (bugs). Handle expected errors with Effect.catch or Effect.catchTag.',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    MemberExpression(node) {
+                        if (
+                            node.object.type === 'Identifier' &&
+                            node.object.name === 'Effect' &&
+                            node.property.type === 'Identifier' &&
+                            (node.property.name === 'catchAllCause' || node.property.name === 'catchCause')
+                        ) {
+                            context.report({ node, messageId: 'noEffectCatchAllCause' });
+                        }
+                    },
+                };
+            },
+        },
+        'no-silent-error-swallow': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow catch handlers that silently swallow errors by returning Effect.void' },
+                messages: {
+                    noSilentSwallow:
+                        "Do not silently swallow errors with '() => Effect.void'. Propagate, transform with mapError, or recover meaningfully.",
+                },
+                schema: [],
+            },
+            create(context) {
+                const isEffectVoidOrUnit = (node) =>
+                    Boolean(
+                        node &&
+                            node.type === 'MemberExpression' &&
+                            node.object.type === 'Identifier' &&
+                            node.object.name === 'Effect' &&
+                            node.property.type === 'Identifier' &&
+                            (node.property.name === 'void' || node.property.name === 'unit')
+                    );
+
+                const isVoidReturningHandler = (node) => {
+                    if (!node) return false;
+                    if (node.type === 'ArrowFunctionExpression') {
+                        if (isEffectVoidOrUnit(node.body)) return true;
+                        if (node.body.type === 'BlockStatement') {
+                            const body = node.body.body;
+                            if (body.length === 1 && body[0].type === 'ReturnStatement') {
+                                return isEffectVoidOrUnit(body[0].argument);
+                            }
+                        }
+                    }
+                    if (node.type === 'FunctionExpression') {
+                        const body = node.body.body;
+                        if (body.length === 1 && body[0].type === 'ReturnStatement') {
+                            return isEffectVoidOrUnit(body[0].argument);
+                        }
+                    }
+                    return false;
+                };
+
+                const getCatchType = (node) => {
+                    if (node.type !== 'CallExpression') return null;
+                    const callee = node.callee;
+                    if (
+                        callee.type === 'MemberExpression' &&
+                        callee.object.type === 'Identifier' &&
+                        callee.object.name === 'Effect' &&
+                        callee.property.type === 'Identifier'
+                    ) {
+                        const propName = callee.property.name;
+                        if (
+                            propName === 'catchTag' ||
+                            propName === 'catchAll' ||
+                            propName === 'catch' ||
+                            propName === 'catchTags'
+                        ) {
+                            return propName;
+                        }
+                    }
+                    return null;
+                };
+
+                return {
+                    CallExpression(node) {
+                        const catchType = getCatchType(node);
+                        if (!catchType) return;
+
+                        if (catchType === 'catchTags' && node.arguments.length >= 1) {
+                            const obj = node.arguments[0];
+                            if (obj.type === 'ObjectExpression') {
+                                for (const prop of obj.properties) {
+                                    if (prop.type === 'Property' && isVoidReturningHandler(prop.value)) {
+                                        context.report({ node: prop.value, messageId: 'noSilentSwallow' });
+                                    }
+                                }
+                            }
+                            return;
+                        }
+
+                        const handlerArg =
+                            catchType === 'catchTag' && node.arguments.length >= 2
+                                ? node.arguments[1]
+                                : (catchType === 'catchAll' || catchType === 'catch') && node.arguments.length >= 1
+                                  ? node.arguments[0]
+                                  : null;
+
+                        if (handlerArg && isVoidReturningHandler(handlerArg)) {
+                            context.report({ node: handlerArg, messageId: 'noSilentSwallow' });
+                        }
+                    },
+                };
+            },
+        },
+        'no-service-option': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow Effect.serviceOption - services should always be in context' },
+                messages: {
+                    noServiceOption:
+                        'Do not use Effect.serviceOption. Yield the service directly and provide it in your layer composition.',
+                },
+                schema: [],
+            },
+            create(context) {
+                return {
+                    CallExpression(node) {
+                        const callee = node.callee;
+                        if (
+                            callee.type === 'MemberExpression' &&
+                            callee.object.type === 'Identifier' &&
+                            callee.object.name === 'Effect' &&
+                            callee.property.type === 'Identifier' &&
+                            callee.property.name === 'serviceOption'
+                        ) {
+                            context.report({ node, messageId: 'noServiceOption' });
+                        }
+                    },
+                };
+            },
+        },
+        'no-nested-layer-provide': {
+            meta: {
+                type: 'problem',
+                docs: { description: 'Disallow nested Layer.provide calls' },
+                messages: {
+                    nestedProvide:
+                        'Nested Layer.provide detected. Extract the inner Layer.provide to a separate variable or use Layer.provideMerge.',
+                },
+                schema: [],
+            },
+            create(context) {
+                const isLayerProvide = (node) => {
+                    if (!node || node.type !== 'CallExpression') return false;
+                    const callee = node.callee;
+                    return (
+                        callee.type === 'MemberExpression' &&
+                        callee.object.type === 'Identifier' &&
+                        callee.object.name === 'Layer' &&
+                        callee.property.type === 'Identifier' &&
+                        callee.property.name === 'provide'
+                    );
+                };
+
+                return {
+                    CallExpression(node) {
+                        if (!isLayerProvide(node)) return;
+                        for (const arg of node.arguments) {
+                            if (isLayerProvide(arg)) {
+                                context.report({ node: arg, messageId: 'nestedProvide' });
+                            }
+                        }
+                    },
+                };
+            },
+        },
+    },
+};
+
 export default tseslint.config(
-    { ignores: ['dist', 'node_modules', 'src/_archive_legacy', '**/dist-electron', '**/dist', '**/.next', '**/.turbo', '**/out', 'landing-page/**', 'functions/lib/**', '.claude/**', '.agent/**', 'scripts/**'] },
+    { ignores: ['dist', 'node_modules', 'repos/**', 'src/_archive_legacy', '**/dist-electron', '**/dist', '**/.next', '**/.turbo', '**/out', 'landing-page/**', 'functions/lib/**', '.claude/**', '.agent/**', 'scripts/**'] },
     {
         extends: [js.configs.recommended, ...tseslint.configs.recommended],
         files: ['**/*.{ts,tsx}'],
@@ -16,6 +371,7 @@ export default tseslint.config(
         plugins: {
             'react-hooks': reactHooks,
             'react-refresh': reactRefresh,
+            'effect-local': effectLocalPlugin,
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
@@ -33,6 +389,15 @@ export default tseslint.config(
             }],
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/ban-ts-comment': 'warn',
+            'effect-local/no-disable-validation': 'error',
+            'effect-local/prefer-option-from-nullable': 'error',
+            'effect-local/pipe-max-arguments': 'error',
+            'effect-local/no-effect-asvoid': 'error',
+            'effect-local/no-effect-ignore': 'error',
+            'effect-local/no-effect-catchallcause': 'error',
+            'effect-local/no-silent-error-swallow': 'error',
+            'effect-local/no-service-option': 'error',
+            'effect-local/no-nested-layer-provide': 'error',
         },
     },
     // Test files, Cloud Functions, and Electron: relax no-explicit-any

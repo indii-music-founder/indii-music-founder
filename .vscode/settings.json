@@ -9,6 +9,8 @@
     "source.fixAll.eslint": "explicit"
   },
   "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.autoImportFileExcludePatterns": ["repos/**"],
+  "javascript.preferences.autoImportFileExcludePatterns": ["repos/**"],
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.suggest.autoImports": true,
@@ -29,7 +31,13 @@
     "**/.firebase": true,
     "**/coverage": true,
     "**/test-results": true,
-    "**/playwright-report": true
+    "**/playwright-report": true,
+    "repos/**": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "repos/**": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -38,7 +46,8 @@
     "**/.firebase": true,
     "**/test-results": true,
     "**/*.min.js": true,
-    "**/package-lock.json": true
+    "**/package-lock.json": true,
+    "repos/**": true
   },
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
@@ -65,7 +74,8 @@
     "**/packages/landing/**",
     "**/config/vitest/**",
     "**/dist/**",
-    "**/e2e/**"
+    "**/e2e/**",
+    "**/repos/**"
   ],
   "vitest.configSearchPatterns": [
     "vitest.workspace.ts"
