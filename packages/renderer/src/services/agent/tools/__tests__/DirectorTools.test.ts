@@ -6,6 +6,18 @@ import { useStore } from '@/core/store';
 import { AppErrorCode, AppException, QuotaExceededError } from '@/shared/types/errors';
 
 // Mock dependencies
+const { fetchAsBase64Mock } = vi.hoisted(() => ({
+    fetchAsBase64Mock: vi.fn(),
+}));
+
+vi.mock('@/services/storage/safeStorageFetch', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/services/storage/safeStorageFetch')>();
+    return {
+        ...actual,
+        fetchAsBase64: (...args: unknown[]) => fetchAsBase64Mock(...args),
+    };
+});
+
 vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: {
         generateImages: vi.fn()
@@ -283,6 +295,70 @@ describe('DirectorTools (structural only)', () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('No images found');
+        });
+
+        it('resolves cloud-stored https upload at index 0 via fetchAsBase64 (issue #903)', async () => {
+            const httpsUrl = 'https://firebasestorage.googleapis.com/v0/b/indii-os.appspot.com/o/484DBBB9.jpeg?alt=media';
+            const uploads = [
+                { id: 'upload-0', url: httpsUrl, type: 'image' },
+            ];
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ uploadedImages: uploads }) as unknown as ReturnType<typeof useStore.getState>);
+            fetchAsBase64Mock.mockResolvedValueOnce({ mimeType: 'image/jpeg', base64: 'jpegBase64Data' });
+            vi.mocked(Editing.batchEdit).mockResolvedValue({
+                results: [{ id: 'ed-903', url: 'data:image/png;base64,edited903', prompt: 'edited' }],
+                failures: [],
+            });
+
+            const result = await DirectorTools.batch_edit_images!({
+                prompt: 'Make the sky neon purple',
+                imageIndices: [0],
+            });
+
+            expect(result.success).toBe(true);
+            expect(fetchAsBase64Mock).toHaveBeenCalledWith(httpsUrl);
+            expect(Editing.batchEdit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    images: [{ mimeType: 'image/jpeg', data: 'jpegBase64Data' }],
+                    prompt: 'Make the sky neon purple',
+                })
+            );
+        });
+
+        it('falls back to context attachments at index 0 when upload URL is placeholder or uploads store is syncing', async () => {
+            const uploads = [
+                { id: 'upload-0', url: 'placeholder:dev-data-uri-too-large', type: 'image' },
+            ];
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ uploadedImages: uploads }) as unknown as ReturnType<typeof useStore.getState>);
+            vi.mocked(Editing.batchEdit).mockResolvedValue({
+                results: [{ id: 'ed-att-1', url: 'data:image/png;base64,editedAtt', prompt: 'edited' }],
+                failures: [],
+            });
+
+            const result = await DirectorTools.batch_edit_images!(
+                { prompt: 'Warm vintage grade', imageIndices: [0] },
+                { attachments: [{ mimeType: 'image/jpeg', base64: 'attJpegPayload' }] }
+            );
+
+            expect(result.success).toBe(true);
+            expect(Editing.batchEdit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    images: [{ mimeType: 'image/jpeg', data: 'attJpegPayload' }],
+                    prompt: 'Warm vintage grade',
+                })
+            );
+
+            vi.mocked(useStore.getState).mockReturnValue(createMockStoreState({ uploadedImages: [] }) as unknown as ReturnType<typeof useStore.getState>);
+            vi.mocked(Editing.batchEdit).mockResolvedValue({
+                results: [{ id: 'ed-att-2', url: 'data:image/png;base64,editedAtt2', prompt: 'edited' }],
+                failures: [],
+            });
+
+            const emptyStoreResult = await DirectorTools.batch_edit_images!(
+                { prompt: 'Warm vintage grade', imageIndices: [0] },
+                { attachments: [{ mimeType: 'image/jpeg', base64: 'attJpegPayload' }] }
+            );
+
+            expect(emptyStoreResult.success).toBe(true);
         });
     });
 

@@ -416,11 +416,13 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     /\bcompleted\s+(?:a\s+)?(?:comprehensive\s+)?(?:diagnostic|system|capability)\s+check\b/i,
     /\b(?:my|our|the|all)\s+(?:core\s+)?(?:conversational\s+)?(?:abilities|capabilities)\b[^.?!]{0,120}\b(?:remain|are|is)\s+(?:fully\s+|completely\s+)?active\b/i,
     /\b(?:my|our)\s+(?:ability|capabilities?|systems?)\b[^.?!]{0,80}\bis\s+functioning\s+normally\b/i,
-    // Issue #887: a Boardroom status answer that claims the team is assembled and
-    // ready to execute, with no tool evidence behind it.
+    // Issue #887 & #899: a Boardroom status answer that claims the team is assembled/re-seated,
+    // connections refreshed, or ready to execute/take an objective without tool evidence.
     /\b(?:full|whole|entire)\s+(?:indii\s+)?team\s+(?:is\s+|are\s+)?(?:seated|assembled|here|ready)\b/i,
     /\ball\s+(?:of\s+(?:them|you)\s+)?(?:are\s+)?(?:here\s+)?(?:seated\s+)?at\s+the\s+table\b/i,
-    /\b(?:boardroom|team|departments?|agents?)\b[^.?!]{0,80}\bready\s+to\s+(?:execute|launch)\b/i,
+    /\brefreshed\s+(?:the\s+)?connection\s+to\s+(?:the\s+)?(?:active\s+)?(?:agents?|departments?|specialists?|team|boardroom)\b/i,
+    /\b(?:the\s+)?(?:indii\s+)?team\s+(?:is|are)\s+(?:re-?seated|reseated)(?:\s+and\s+ready)?\b/i,
+    /\b(?:boardroom|team|departments?|agents?)\b[^.?!]{0,80}\bready\s+(?:to\s+(?:execute|launch)|for\s+your\s+(?:objective|task|campaign|command|instructions?))\b/i,
 ];
 
 export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResult {

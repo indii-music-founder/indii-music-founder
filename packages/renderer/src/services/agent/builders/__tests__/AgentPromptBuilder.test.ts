@@ -428,6 +428,7 @@ describe('buildExecutionContract', () => {
             expect(contract).toContain('does NOT by itself prove');
             expect(contract).toContain('configured, implemented, tested, live-verified, degraded, blocked, and unverified');
             expect(contract).toContain('If evidence is unavailable, say unverified');
+            expect(contract).toContain('NEVER FABRICATE LEASE OR CONNECTION RECOVERY');
             expect(contract).not.toContain('All 23 departments');
             expect(contract).not.toContain('fully implemented and operational');
         }

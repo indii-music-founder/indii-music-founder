@@ -501,6 +501,51 @@ describe('Unit 22 Admission Security: Semantic Catalog, Vector Memory, Workflows
 
       expect(mocks.protectAuthenticatedApiRequest).toHaveBeenCalled();
     });
+
+    it('persists bug reports without errorMessage or token email using zero undefined Firestore fields', async () => {
+      vi.stubEnv('GITHUB_TOKEN', 'test-gh-token');
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ number: 904, html_url: 'https://github.com/indii-music-founder/indii-music-founder/issues/904' }),
+        });
+      vi.stubGlobal('fetch', fetchMock);
+      try {
+        mocks.firestoreDocSet.mockResolvedValueOnce(undefined);
+        mocks.firestoreDocUpdate.mockResolvedValueOnce(undefined);
+
+        const response = await call(reportBugFn, {
+          auth: { uid: 'user-bug-1', token: { email_verified: true, firebase: { sign_in_provider: 'password' } } },
+          rawRequest: { headers: {}, ip: '127.0.0.1' },
+          data: {
+            title: 'Approving pending report_bug fails',
+            description: 'Approvals panel returned an error.',
+            severity: 'MAJOR',
+            module: 'approvals',
+          },
+        });
+
+        expect(response.firestore).toBe('ok');
+        expect(response.github).toBe('ok');
+        expect(mocks.firestoreDocSet).toHaveBeenCalledTimes(1);
+        const savedDoc = mocks.firestoreDocSet.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(savedDoc).not.toHaveProperty('errorMessage');
+        expect(savedDoc.severity).toBe('major');
+        expect(savedDoc.userEmail).toBeNull();
+        expect(Object.values(savedDoc).some((value) => value === undefined)).toBe(false);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const createBody = JSON.parse((fetchMock.mock.calls[1]?.[1] as { body: string }).body) as {
+          title: string;
+          labels: string[];
+        };
+        expect(createBody.title).toBe('[MAJOR] Approving pending report_bug fails');
+        expect(createBody.labels).toEqual(['bug', 'severity:major', 'module:approvals']);
+      } finally {
+        vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
+      }
+    });
   });
 
   describe('getCapabilitySnapshot', () => {

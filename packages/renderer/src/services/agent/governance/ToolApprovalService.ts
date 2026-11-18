@@ -140,7 +140,7 @@ function hasRecoverableBugReportShape(approval: PendingToolApproval): boolean {
     if (Object.keys(args).some(key => !allowedKeys.has(key))) return false;
     if (typeof args.title !== 'string' || !args.title.trim() || args.title.length > 200) return false;
     if (typeof args.description !== 'string' || !args.description.trim() || args.description.length > 20_000) return false;
-    if (args.severity !== undefined && !['critical', 'major', 'minor', 'cosmetic'].includes(String(args.severity))) return false;
+    if (args.severity !== undefined && !['critical', 'major', 'minor', 'cosmetic'].includes(String(args.severity).toLowerCase())) return false;
     return ['stepsToReproduce', 'expectedBehavior', 'actualBehavior', 'module', 'errorMessage']
         .every(key => args[key] === undefined || (typeof args[key] === 'string' && (args[key] as string).length <= 20_000));
 }

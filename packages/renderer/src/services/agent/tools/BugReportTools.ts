@@ -20,7 +20,10 @@ export const BugReportTools: Record<string, AnyToolFunction> = {
         const stepsToReproduce = (args.stepsToReproduce as string) || 'Not provided';
         const expectedBehavior = (args.expectedBehavior as string) || 'Not provided';
         const actualBehavior = (args.actualBehavior as string) || 'Not provided';
-        const severity = (args.severity as 'critical' | 'major' | 'minor' | 'cosmetic') || 'major';
+        const rawSeverity = typeof args.severity === 'string' ? args.severity.toLowerCase() : '';
+        const severity = (['critical', 'major', 'minor', 'cosmetic'].includes(rawSeverity)
+            ? rawSeverity
+            : 'major') as 'critical' | 'major' | 'minor' | 'cosmetic';
         const moduleArg = args.module as string | undefined;
         const errorMessage = args.errorMessage as string | undefined;
 

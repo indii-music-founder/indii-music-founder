@@ -188,6 +188,25 @@ describe('BugReportTools.report_bug honesty gate', () => {
     expect(result.metadata?.receiptText).not.toContain('undefined');
   });
 
+  it('normalizes uppercase severity before invoking reportBugFn', async () => {
+    judgeInvoke.mockResolvedValue({
+      data: { firestore: 'ok', github: 'ok', issueUrl: 'https://x/issues/904', bugId: 'bug-904', message: 'created' },
+    });
+
+    const result = await BugReportTools.report_bug!({
+      title: 'Approving report_bug fails',
+      description: 'Clicking Approve returns an error.',
+      severity: 'MAJOR',
+      module: 'approvals',
+    });
+
+    expect(result.success).toBe(true);
+    expect(judgeInvoke).toHaveBeenCalledWith(expect.objectContaining({
+      severity: 'major',
+      module: 'approvals',
+    }));
+  });
+
   it('rejects reports missing title or description', async () => {
     const result = await BugReportTools.report_bug!({ title: '', description: '' });
 

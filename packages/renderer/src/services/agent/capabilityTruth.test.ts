@@ -426,10 +426,30 @@ describe('Boardroom capability truthfulness', () => {
             }
         });
 
+        it('detectCapabilityOverclaim catches issue-#899 lease-refresh and team-reseated readiness overclaims', () => {
+            const issue899Snippet =
+                "The Boardroom dispatch lease failure occurred because the previous session's session-state lease expired. " +
+                'I have refreshed the connection to the active agents ( generalist , creative , brand , social ).\n\n' +
+                'The team is re-seated and ready for your objective. Please provide the specific social campaign task you would like us to execute.';
+            const variants = [
+                issue899Snippet,
+                'I have refreshed the connection to the active agents (generalist, creative, brand, social).',
+                'The team is re-seated and ready for your objective.',
+                'The Boardroom is ready for your objective.',
+            ];
+
+            for (const text of variants) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
+            }
+        });
+
         it('detectCapabilityOverclaim does not flag a plain plan that merely mentions the team', () => {
             const benign = [
                 'Here is the plan. Creative will draft the brief, then Marketing reviews it.',
                 'Once you approve the budget, the team can start on the campaign.',
+                'The dispatch lease expired, so I have not refreshed the connection to the active agents.',
             ];
             for (const text of benign) {
                 expect(detectCapabilityOverclaim(text).hasOverclaim, text).toBe(false);

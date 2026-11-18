@@ -105,6 +105,61 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
     image: string;
 }
 
+/**
+ * Resolves a stored or uploaded image reference (`data:` URI, `https:`/`http:`/`blob:`/`gs:` URL)
+ * into raw base64 payload and MIME type for inline Gemini multimodal calls.
+ */
+async function resolveImageSourceData(
+    url: string | undefined
+): Promise<{ mimeType: string; data: string } | null> {
+    if (typeof url !== 'string') return null;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed.startsWith('[elided ') || trimmed.startsWith('placeholder:')) {
+        return null;
+    }
+
+    const dataMatch = trimmed.match(/^data:([^;,]+)(?:;[^,]*)?;base64,([\s\S]+)$/i);
+    if (dataMatch) {
+        const data = dataMatch[2]!.trim();
+        if (!data || data.startsWith('[elided ')) return null;
+        return { mimeType: dataMatch[1]!.trim(), data };
+    }
+
+    if (/^(?:https?:|blob:|gs:)/i.test(trimmed)) {
+        try {
+            const fetched = await fetchAsBase64(trimmed);
+            const data = fetched.base64?.trim();
+            if (data && !data.startsWith('[elided ')) {
+                return { mimeType: fetched.mimeType || 'image/png', data };
+            }
+        } catch (fetchErr) {
+            logger.warn('[DirectorTools] Failed to fetch image URL as base64:', fetchErr);
+        }
+    }
+
+    return null;
+}
+
+function attachmentToImageData(
+    att: { mimeType?: string; base64?: string } | undefined
+): { mimeType: string; data: string } | null {
+    if (!att || typeof att.base64 !== 'string') return null;
+    const raw = att.base64.trim();
+    if (!raw || raw.startsWith('[elided ')) return null;
+    const dataMatch = raw.match(/^data:([^;,]+)(?:;[^,]*)?;base64,([\s\S]+)$/i);
+    if (dataMatch) {
+        const data = dataMatch[2]!.trim();
+        return data && !data.startsWith('[elided ')
+            ? { mimeType: dataMatch[1]!.trim(), data }
+            : null;
+    }
+    const mimeType = typeof att.mimeType === 'string' && att.mimeType.trim()
+        ? att.mimeType.trim()
+        : 'image/png';
+    if (!mimeType.startsWith('image/')) return null;
+    return { mimeType, data: raw };
+}
+
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs, context) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
@@ -117,31 +172,28 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         if (args.referenceImageIndex !== undefined) {
             const refImages = userProfile.brandKit?.referenceImages || [];
             const refImg = refImages[args.referenceImageIndex];
-            if (refImg) {
-                const match = refImg.url.match(/^data:(.+);base64,(.+)$/);
-                if (match) {
-                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
-                }
+            const resolved = await resolveImageSourceData(refImg?.url);
+            if (resolved) {
+                sourceImages = [resolved];
             }
         } else if (args.referenceAssetIndex !== undefined) {
             // Handle Brand Assets (e.g. Logos)
             const brandAssets = userProfile.brandKit?.brandAssets || [];
             const asset = brandAssets[args.referenceAssetIndex];
-            if (asset) {
-                const match = asset.url.match(/^data:(.+);base64,(.+)$/);
-                if (match) {
-                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
-                }
+            const resolved = await resolveImageSourceData(asset?.url);
+            if (resolved) {
+                sourceImages = [resolved];
             }
         } else if (args.uploadedImageIndex !== undefined) {
             // Handle Recent Uploads
             const { uploadedImages } = useStore.getState();
             const upload = uploadedImages[args.uploadedImageIndex];
-            if (upload) {
-                const match = upload.url.match(/^data:(.+);base64,(.+)$/);
-                if (match) {
-                    sourceImages = [{ mimeType: match[1]!, data: match[2]! }];
-                }
+            const resolved =
+                (await resolveImageSourceData(upload?.url))
+                ?? (await resolveImageSourceData(upload?.storageUri))
+                ?? attachmentToImageData(context?.attachments?.[args.uploadedImageIndex]);
+            if (resolved) {
+                sourceImages = [resolved];
             }
         } else if (context?.assetReferences?.length || context?.attachments?.length || context?.boardroomExecution?.sourceId) {
             const { resolveAgentAssetUrl } = await importWithRetry(() => import('./CommerceTools'));
@@ -243,32 +295,60 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }
     }),
 
-    batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
+    batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }, context) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedImages, addToHistory, currentProjectId, addAgentMessage } = useStore.getState();
 
-        if (uploadedImages.length === 0) {
+        const imageAttachments = (context?.attachments ?? []).filter(
+            (att) => att?.mimeType?.startsWith('image/') && attachmentToImageData(att) !== null
+        );
+
+        if (uploadedImages.length === 0 && imageAttachments.length === 0) {
             return toolError("No images found in uploads to edit. Please upload images first.", "NO_INPUT_IMAGES");
         }
 
-        const targetImages = args.imageIndices
-            ? args.imageIndices
-                .filter(i => i >= 0 && i < uploadedImages.length)
-                .map(i => uploadedImages[i])
-                .filter(Boolean)
-            : uploadedImages;
+        let imageDataList: { mimeType: string; data: string }[];
 
-        if (targetImages.length === 0) {
-            return toolError("No valid images found for the provided indices.", "INVALID_INDICES");
-        }
+        if (uploadedImages.length > 0) {
+            const targetEntries = args.imageIndices
+                ? args.imageIndices
+                    .filter(i => i >= 0 && i < uploadedImages.length)
+                    .map(i => ({ index: i, img: uploadedImages[i] }))
+                    .filter((entry): entry is { index: number; img: HistoryItem } => Boolean(entry.img))
+                : uploadedImages.map((img, index) => ({ index, img }));
 
-        const imageDataList = targetImages.map((img) => {
-            const match = img!.url.match(/^data:(.+);base64,(.+)$/);
-            if (match) {
-                return { mimeType: match[1]!, data: match[2]! };
+            if (targetEntries.length === 0) {
+                return toolError("No valid images found for the provided indices.", "INVALID_INDICES");
             }
-            return null;
-        }).filter((img): img is { mimeType: string, data: string } => img !== null);
+
+            const resolvedList = await Promise.all(
+                targetEntries.map(async ({ index, img }) => {
+                    const fromUrl = await resolveImageSourceData(img.url);
+                    if (fromUrl) return fromUrl;
+                    const fromStorageUri = await resolveImageSourceData(img.storageUri);
+                    if (fromStorageUri) return fromStorageUri;
+                    return attachmentToImageData(context?.attachments?.[index]);
+                })
+            );
+            imageDataList = resolvedList.filter(
+                (img): img is { mimeType: string; data: string } => img !== null
+            );
+        } else {
+            const targetAttachments = args.imageIndices
+                ? args.imageIndices
+                    .filter(i => i >= 0 && i < imageAttachments.length)
+                    .map(i => imageAttachments[i])
+                    .filter(Boolean)
+                : imageAttachments;
+
+            if (targetAttachments.length === 0) {
+                return toolError("No valid images found for the provided indices.", "INVALID_INDICES");
+            }
+
+            imageDataList = targetAttachments
+                .map(att => attachmentToImageData(att))
+                .filter((img): img is { mimeType: string; data: string } => img !== null);
+        }
 
         if (imageDataList.length === 0) {
             return toolError("Could not process image data from uploads.", "PROCESS_FAILED");

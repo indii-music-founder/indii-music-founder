@@ -86,7 +86,16 @@ export const reportBugFn = onCall(
         }
 
         // Generate idempotency key to prevent duplicate entries from retries
-        const idempotencyKey = generateIdempotencyKey(title, module, severity, description);
+        const validSeverities = ['critical', 'major', 'minor', 'cosmetic'] as const;
+        const normalizedSeverity: 'critical' | 'major' | 'minor' | 'cosmetic' =
+            typeof severity === 'string' && (validSeverities as readonly string[]).includes(severity.toLowerCase())
+                ? (severity.toLowerCase() as 'critical' | 'major' | 'minor' | 'cosmetic')
+                : 'major';
+        const normalizedErrorMessage = typeof errorMessage === 'string' && errorMessage.trim().length > 0
+            ? errorMessage
+            : undefined;
+
+        const idempotencyKey = generateIdempotencyKey(title, module, normalizedSeverity, description);
         const bugReportId = `bug-${idempotencyKey}-${Date.now()}`;
 
         const bugReport = {
@@ -97,12 +106,12 @@ export const reportBugFn = onCall(
             stepsToReproduce,
             expectedBehavior,
             actualBehavior,
-            severity,
+            severity: normalizedSeverity,
             module,
-            errorMessage,
+            ...(normalizedErrorMessage !== undefined ? { errorMessage: normalizedErrorMessage } : {}),
             reportedAt: new Date().toISOString(),
             reportedBy: request.auth.uid,
-            userEmail: request.auth.token.email,
+            userEmail: request.auth.token.email ?? null,
         };
 
         let firestoreStatus: 'ok' | 'failed' = 'ok';
@@ -138,10 +147,10 @@ export const reportBugFn = onCall(
 
         if (resolvedGithubToken) {
             try {
-                const issueTitle = `[${severity.toUpperCase()}] ${title}`;
+                const issueTitle = `[${normalizedSeverity.toUpperCase()}] ${title}`;
                 const markdownBody = `## Bug Report
 
-**Severity:** \`${severity.toUpperCase()}\`
+**Severity:** \`${normalizedSeverity.toUpperCase()}\`
 **Module:** \`${module}\`
 **Reported:** ${bugReport.reportedAt}
 **Reporter:** ${request.auth.token.email || 'agent'}
@@ -158,7 +167,7 @@ ${expectedBehavior}
 ### Actual Behavior
 ${actualBehavior}
 
-${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
+${normalizedErrorMessage ? `### Error Message\n\`\`\`\n${normalizedErrorMessage}\n\`\`\`` : ''}
 
 ---
 *Reported from indii*`;
@@ -223,7 +232,7 @@ ${errorMessage ? `### Error Message\n\`\`\`\n${errorMessage}\n\`\`\`` : ''}
                         body: JSON.stringify({
                             title: issueTitle,
                             body: markdownBody,
-                            labels: ['bug', `severity:${severity}`, `module:${module}`],
+                            labels: ['bug', `severity:${normalizedSeverity}`, `module:${module}`],
                         }),
                     });
 

@@ -257,6 +257,31 @@ describe('ToolApprovalService (ISSUE-1116)', () => {
             expect(mocks.updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'executed' }));
         });
 
+        it('approves a persisted report_bug without errorMessage and with uppercase severity', async () => {
+            const args = {
+                title: 'Approval gate fails without errorMessage',
+                description: 'Pending report_bug lacks errorMessage and uses uppercase severity.',
+                severity: 'MAJOR',
+                module: 'approvals',
+            };
+            const record = {
+                agentId: 'generalist', toolName: 'report_bug', args,
+                riskTier: 'write' as const, description: 'File a bug report and sync it to GitHub Issues',
+                status: 'pending' as const, createdAt: 'server-timestamp' as never,
+                bindingSessionId: 'previous-renderer-session',
+            };
+            const reportBug = vi.fn().mockResolvedValue({ success: true, data: { bugId: 'bug-1', issueUrl: 'https://github.com/example/repo/issues/904' } });
+            mocks.toolRegistry = { report_bug: reportBug };
+            mocks.getDoc.mockResolvedValue({ exists: () => true, data: () => record });
+
+            expect(toolApprovalService.canApproveInThisSession({ ...record, id: 'approval-1' })).toBe(true);
+            const result = await toolApprovalService.approve('approval-1');
+
+            expect(result.success).toBe(true);
+            expect(reportBug).toHaveBeenCalledWith(args);
+            expect(mocks.updateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'executed', result: { success: true } }));
+        });
+
         it('does not replay malformed persisted report_bug arguments', async () => {
             const reportBug = vi.fn();
             mocks.toolRegistry = { report_bug: reportBug };
