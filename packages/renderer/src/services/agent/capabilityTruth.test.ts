@@ -489,9 +489,26 @@ describe('Boardroom capability truthfulness', () => {
                 'Not active in this session: direct banking transactions and DSP delivery.',
                 'Some capabilities are still unverified; I can report per-capability status.',
                 'The audit cannot certify every department as production-operational without fresh evidence.',
+                'Here are the capabilities and tools currently in our active toolkit, organized by verification status so you can see exactly what is ready:',
+                'We can review the capabilities in your workspace and check which are ready for this release.',
             ];
             for (const text of grounded) {
                 expect(detectCapabilityOverclaim(text).hasOverclaim, text).toBe(false);
+            }
+        });
+
+        it('detectCapabilityOverclaim catches issue-#917 unverified Studio-executor and render-host readiness claims', () => {
+            const overclaims = [
+                "I have successfully probed the environment: the Studio executor is active, confirming your local environment is communicating with the indii desktop app, and I've inventoried your 20 files.\n\nI have verified the local host is ready to accept render commands.",
+                'The Studio executor is active right now.',
+                'I have verified the local host is ready to accept render commands.',
+                'Confirming your local environment is communicating with the indii desktop app.',
+                'All our capabilities are ready, and you can see what is ready.',
+            ];
+            for (const text of overclaims) {
+                const result = detectCapabilityOverclaim(text);
+                expect(result.hasOverclaim, text).toBe(true);
+                expect(result.snippet, text).toBeTruthy();
             }
         });
 
