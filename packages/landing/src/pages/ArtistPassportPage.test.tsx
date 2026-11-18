@@ -446,5 +446,33 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(eventNames).toContain('passport_started');
     expect(eventNames).toContain('passport_step_completed');
   });
+
+  it('provides an accessible Pause/Play horizon motion toggle without aria-pressed', () => {
+    render(
+      <MemoryRouter initialEntries={['/passport']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    // Default jsdom has no WebGL2, so qualityProfile falls back to paused ('Play horizon')
+    const toggle = screen.getByRole('button', { name: /horizon/i });
+    expect(toggle.hasAttribute('aria-pressed')).toBe(false);
+    const initialLabel = toggle.textContent;
+    fireEvent.click(toggle);
+    expect(toggle.textContent).not.toBe(initialLabel);
+    expect(toggle.hasAttribute('aria-pressed')).toBe(false);
+  });
+
+  it('mounts the singularity horizon backdrop artwork on Step 0', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/passport']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    const img = container.querySelector('img[src="/images/passport-singularity.jpg"]');
+    expect(img).not.toBeNull();
+    expect(img?.getAttribute('alt')).toBe('');
+  });
 });
 
