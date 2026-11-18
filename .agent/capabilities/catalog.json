@@ -1,19 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "c5dd9e7c33d2399b1a327a17349a6b0f8a9aa645e7c3a3f36f39d6ea030171e4",
-  "sourceDigest": "97b44a73ddef0bcf1a3b549d6defad3d52bedf94bb412245cb2790325fd57826",
-  "sourceDigest": "7aeebe1819e5a06103993e64ae755c99ba71a1d51a0d29a3b56f82eb6c2ecdf7",
+  "sourceDigest": "09b91706e4a707ebc812f2f4c4dd4dd654551bd1db68f466ea7245df5dfdaf25",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
     "certified": 38,
-    "conditional": 71,
-    "certified": 37,
     "conditional": 75,
-    "quarantined": 98,
-    "conditional": 71,
     "quarantined": 99,
     "deprecated": 1
   },
