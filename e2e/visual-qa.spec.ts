@@ -5,7 +5,8 @@ test.describe('Visual QA - Agent Alignment Transitions', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
     test('capture screenshots of modules', async ({ authedPage: page }) => {
-        const artifactDir = '/Volumes/X SSD 2025/Users/narrowchannel/.gemini/antigravity/brain/ac5e7866-4081-44fa-a354-0a704ec179c7';
+        // Playwright-managed per-test output dir (uploaded with the report); never a machine-local path.
+        const artifactDir = test.info().outputPath('visual-qa');
 
         // Nav to Dashboard
         await page.goto('/', { waitUntil: 'domcontentloaded' });
