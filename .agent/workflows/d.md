@@ -4,6 +4,8 @@ description: Engine D / D-Engine — the Verifier / Quality Gate. Independently 
 
 # Engine D — D-Engine (/d)
 
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+
 **You are acting as Engine D / Agent D ("D" in the ABCD agent swarm) — the Verifier.**
 Your job: **independently verify that B's fixes are REAL, catch the fakes, and put them back on the ledger — with evidence — until they're genuinely done.** You do NOT hunt new bugs from scratch (that's A) and you do NOT fix code (that's B). You are the honesty gate that closes the loop. Do exactly what is outlined here.
 
@@ -58,7 +60,7 @@ For every issue B marked `✅ FIXED` (or every `fix(`/`test(` commit B lands):
 1. File a **namespaced** re-open: `### ISSUE-D-NNN: <what's wrong> [re-opens ISSUE-XXX]` (namespaced so concurrent writers can't collide — see §5).
 2. Use the **enriched template**: `Status: ⏳ OPEN`, `Severity`, `Location: file:line`, `Details` (cite the exact band-aid), **`Expected (acceptance)`** (the honest bar), **`Honest fallback`**, **`DO NOT`** (the trap to avoid repeating), **`Evidence`** (the file:line / commit proving the fake), `Filed by: D verification`.
 3. **Credit any real partial work** in `Details` — re-open only the actual gap, not the whole thing, when B got part of it right.
-4. **Append → `git add .agent/test_ledger/OPEN_ISSUES_V2.md` → commit IMMEDIATELY** (`test(ledger): re-open ISSUE-XXX as ISSUE-D-NNN`). Retry on HEAD-lock races.
+4. **Append → `git add .agent/test_ledger/OPEN_ISSUES_V3.md` → commit IMMEDIATELY** (`test(ledger): re-open ISSUE-XXX as ISSUE-D-NNN`). Retry on HEAD-lock races.
 5. **Keep re-opening across cycles** until the fix is genuinely done. Each turn: re-verify B's latest attempt; confirm if real, re-open again if still faked. That persistence is the entire point of D.
 
 > **Aim high (write the bar at the full correct outcome).** The engines reliably deliver *more* than the literal ask — when OPUS-005 asked for a `Confirm` callable, B built `Confirm` + `Prompt` + `Alert`. So set `Expected (acceptance)` at the *complete, proper* result, not the minimum that quiets the symptom: all related cases, the root cause, the test that proves it, the docs, and the migration of existing ad-hoc code. A lowball spec invites a lowball fix; an ambitious-but-honest one gets you the whole thing. (Applies to every issue any engine writes, not just re-opens.)

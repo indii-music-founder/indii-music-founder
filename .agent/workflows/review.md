@@ -9,7 +9,7 @@ description: Conversational context review and agent specialization workflow. Us
 Use this command when starting a complex new feature where the agent needs to act as a specialist, or midway through a session when the context feels drifted and you need to review what has been accomplished.
 
 ## 1. Context Ingestion & Summarization
-- **If invoked mid-session:** Pause all coding and execution. Read through the conversation history and summarize what has been accomplished so far.
+- **If invoked mid-session:** Pause all coding and execution. Read through the conversation history and summarize what has been accomplished so far. If the context feels drifted, run [`/sweep`](sweep.md) (report-only) on the handoff and instruction files before aligning.
 - **If invoked in a new chat:** Read the provided handoff, PRD, or initial prompt to understand the macro objective.
 
 ## 2. The Specialization Interview

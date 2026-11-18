@@ -16,7 +16,7 @@ Read in precedence order:
 4. relevant handoff/checkpoint;
 5. task, plan, flowchart, and ledger artifacts.
 
-Downgrade any completion claim that current state does not prove. Do not let a stale task file redefine the objective.
+Downgrade any completion claim that current state does not prove. When the handoff, plan, or task artifacts disagree with the diff or look old, run [`/sweep`](sweep.md) (report-only, scoped to those artifacts) to classify them as stale, conflicting, or still valid before trusting them. Do not let a stale task file redefine the objective.
 
 ## 2. Reconcile repository state
 

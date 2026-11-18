@@ -44,7 +44,7 @@ node scripts/check-test-quality.js && npm run typecheck && npm run lint && npm t
 ```
 
 ### Phase 6: Ledger Cross-Reference
-Check changed files against `ERROR_LEDGER.md`. Ensure no known rules are violated. If a new regression pattern was solved in this branch, add it to the Ledger.
+Check changed files against `ERROR_LEDGER.md`. Ensure no known rules are violated. If the diff renamed, removed, or changed documented behavior, confirm `/sweep` (`.agent/workflows/sweep.md`, report-only) ran on the diff and its in-scope findings are resolved or reported; otherwise NO-GO. If a new regression pattern was solved in this branch, add it to the Ledger.
 
 ### Phase 7: The Enforcement Loop (GO / NO-GO)
 Generate the final report (see format below).

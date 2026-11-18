@@ -16,6 +16,8 @@ Read, in order:
 3. `git status --short`, current branch, `HEAD`, and `origin/main`;
 4. the active diff and any referenced task/plan/issue source.
 
+Run `.agent/workflows/sweep.md` (report-only, scoped to the handoff, plan, and instruction files the mobile session touched) to classify them as stale, conflicting, or still valid; the sweep archives or edits nothing without approval.
+
 The current user request wins over stale artifacts. If the handoff claims work that the diff or tests do not support, downgrade it to unverified.
 
 Before code, git, CI, or push actions, read `.agent/workflows/branch-safety.md`. Stay on `main` unless the user explicitly requested a branch workflow. Preserve unrelated dirty files and report them.

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "1a5de5e87757c3c4c2dc64be6c3b45694421de3ed74c406c836860f4f8c863b5",
+  "sourceDigest": "53d582372f6f5ac272b70b0c73bd12a804e087dafd49608e364385f9f2b2e1d6",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
   "dynamicOverlayRule": "At runtime, merge only tools actually exposed by the current host. Session tools inherit active authority and require the same contract checks.",
   "counts": {
     "certified": 37,
-    "conditional": 70,
+    "conditional": 71,
     "quarantined": 98,
     "deprecated": 1
   },
@@ -3150,7 +3150,7 @@
       "available": true,
       "description": "Recursive execution motor for an active indii objective. Use when the user invokes /go or @go, asks to continue autonomously, wants a blocker driven to resolution, or needs the current task carried from implementation through proportional verification and delivery. It works in coherent verification units, preserves the direct-main policy, and never creates checkpoint or micro-fix commits.",
       "descriptionHash": "bb94115c4aeb608d81d867683718f2eea315bfb4e0702ad81cf964b245045a82",
-      "contentHash": "0d2072a9e2d437e2199d0528aa75f4db016684d0f72afaf6f2b83a858597ee2f",
+      "contentHash": "fcf7497aa11f268e69d2c8a160617435aaf44c6c2b0d8636a8082b22e0db2623",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -3238,7 +3238,7 @@
       "available": true,
       "description": "Full repository engineering health and ship-readiness audit for indii. Use when the user asks for overall codebase health, readiness to ship, unfinished systems, security posture, dependency health, CI health, or prioritized technical risk across multiple packages. Do not use for a quick hidden-pattern delta (use health-check) or one known bug (use diagnose).",
       "descriptionHash": "62797f728226d5666616ad488bab044e4b91491cc51534452a9bd1c73adcd2a7",
-      "contentHash": "ded82f0d121ba80c90195a3110dff42e41e5f3bd764289261017bdce34b7c0b3",
+      "contentHash": "0f49e220767567c8dd32031338d980004a5954fa11dac96284b4635cebe3d625",
       "state": "conditional",
       "authority": "read-only-by-default",
       "prerequisites": [
@@ -3654,7 +3654,7 @@
       "available": true,
       "description": "Resume a mobile or interrupted indii session from its handoff and drive that same objective to verified completion. Use when the user says /walk, “I’m home,” “pick up where we left off,” or asks to continue from a mobile session. Reconcile the handoff with current main and the actual diff before editing; never assume stale checkpoints are authoritative.",
       "descriptionHash": "56e06c352d2f689d5e9307fe04c1c579f5e1a69534f6e868f517ba50bebd4c42",
-      "contentHash": "cc53e0bf55d70c1ae3489d346d07d65ef6f74a709b8debca89c20e2014512547",
+      "contentHash": "bc012719c8cdea74471f6cf3b76fe0ba4ece08bb5e0826da7bcb77281fa84c70",
       "state": "conditional",
       "authority": "inherits-resumed-objective",
       "prerequisites": [
@@ -5191,7 +5191,7 @@
       "available": true,
       "description": "Engine A / A-Engine — the Finder. Runs the test suites (live + background), finds bugs, and writes them as enriched issues to OPEN_ISSUES.md for B to fix. A does NOT fix and does NOT ship.",
       "descriptionHash": "09442979210e729f950ef659d6e4efb932e22fb9d7fc9697bb817a860ad8ef37",
-      "contentHash": "b098a3031da3c8ae01ce7b8e8343690157f0173ef2c565408cec07e8ae2991c6",
+      "contentHash": "b57c6eaa7b0386d4a9c9d48017735a130786bc5960e9b198542fd8dcff5e401c",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5207,7 +5207,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy finder requires persistent polling, stale V2 ledger writes, automatic syncing, and independent commits.",
+      "reason": "The legacy finder requires persistent polling, ledger writes, automatic syncing, and independent commits.",
       "conflicts": []
     },
     {
@@ -5220,7 +5220,7 @@
       "available": true,
       "description": "Full ABCD engine launch workflow. Starts the coordinated testing/build/CI/CD loop by activating /a, /b, /c, and /d as discoverable Engine A/B/C/D roles.",
       "descriptionHash": "5ec7114ec24d03ed4290004364cd7a7b92cee59a0b5af48d5d4e2cb9ad53db38",
-      "contentHash": "7ff1c4248be4f768eea5fce60c6abf39de395011b8c7ee1d2bbcad2b7876575f",
+      "contentHash": "8c285d1410fc20137d41af3ea3e51133b0e4408c137d7bc5873ad77722e32ad8",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5236,7 +5236,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy swarm coordinates through stale V2 ledgers and automatic multi-engine commits/delivery without a sufficiently bounded authority contract.",
+      "reason": "The legacy swarm coordinates through shared ledgers and automatic multi-engine commits/delivery without a sufficiently bounded authority contract.",
       "conflicts": []
     },
     {
@@ -5249,7 +5249,7 @@
       "available": true,
       "description": "The ultimate reference and diagnostic tool for the entire API system (Firebase Cloud Functions, AI logic, Inngest Jobs, etc.).",
       "descriptionHash": "3949a367164a2473d1a80077fb61114c40d5494d21fa476b98e72727544418cc",
-      "contentHash": "7ca3496231f3fde09e0fc256acd8a8fabc3cdf2fa9fcbe7d0d635160de4175a9",
+      "contentHash": "ee0e4e34719b6158bcdededaf3b5c616bcef1c1a6e14084bb117fd09262b7705",
       "state": "certified",
       "authority": "read-only-unless-implementation-requested",
       "prerequisites": [
@@ -5366,7 +5366,7 @@
       "available": true,
       "description": "Engine B / B-Engine workflow to resolve real ledger issues autonomously in the ABCD Swarm.",
       "descriptionHash": "0abc983c78421cae4a9483c9bc10640c01f329ec62168baba07df1e46644ae1b",
-      "contentHash": "9ad10137f8a598399fd20fad82a355e75451765489969f0022a0215d478ea7d6",
+      "contentHash": "411215ed2ddd6bbbb4de02bcf2390bdcf746e0afb87411ce2d646afcaae154cf",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5382,7 +5382,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy fixer mixes persistent monitoring, stale V2 ledger mutation, broad autonomous fixes, and independent commits.",
+      "reason": "The legacy fixer mixes persistent monitoring, ledger mutation, broad autonomous fixes, and independent commits.",
       "conflicts": []
     },
     {
@@ -5395,7 +5395,7 @@
       "available": true,
       "description": "Bounded improvement pass for an existing artifact. Finds and applies material quality gains inside the active scope without changing the acceptance contract, expanding authority, or creating independent commits.",
       "descriptionHash": "855b40a449a7481551ae7fe1590f5e16ff2c4473230d24ffbbc0f727ca0b92ca",
-      "contentHash": "27e14cd18e72241b23840f091d9943bb5b613ed4e4a41c7c7cb3e9e759dbc5a7",
+      "contentHash": "9f23fb1610e7015b36b22c158e0acff5e37bd99c055302f904179ee958bf52bf",
       "state": "certified",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5452,7 +5452,7 @@
       "available": true,
       "description": "Engine C / C-Engine workflow to keep the exact pushed main SHA green, monitor deployment health, and ship verified single-commit changes in the ABCD Swarm.",
       "descriptionHash": "083f7f8607cf2520c7fa8ea5a483f1b6434e1397331b4209af0bd04491404007",
-      "contentHash": "931e867640e67dae003abcd15b8775785bbfa5caf3a44c9a511573477a5e9d54",
+      "contentHash": "e809897033c8a06240f45c4778f1a827bd602add2dd061b493b0170b845eda86",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5512,7 +5512,7 @@
       "available": true,
       "description": "Engine D / D-Engine — the Verifier / Quality Gate. Independently checks B's FIXED claims and C's CI/shipping claims against the real code, catches fake or incomplete fixes, and re-opens them with evidence until they are genuinely done. Does NOT fix code; it writes verdicts and re-opens only.",
       "descriptionHash": "194ec44a9f93827becaab48cdc300c7e76589951e1e2d105cb274dfa65e8c751",
-      "contentHash": "f27d9126fa4ff29aadf57aa016bc587d694eaf529d52387ff55d76a9a09d39fe",
+      "contentHash": "802ffde0f7f1264731e371aecdbe1e64d800a7a095f8775d3ce2b86e78cb9f18",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5528,7 +5528,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy verifier uses persistent polling, stale V2 ledger writes, and immediate verification commits.",
+      "reason": "The legacy verifier uses persistent polling, ledger writes, and immediate verification commits.",
       "conflicts": []
     },
     {
@@ -5541,7 +5541,7 @@
       "available": true,
       "description": "Database and Security Rules synchronization workflow. Audit rules and sync changes to firestore.rules or storage.rules safely.",
       "descriptionHash": "63a094ac57e13ec09b89ecf47f28d73acac529fc3639038ca5202a3dfbb835df",
-      "contentHash": "e2cc7bf04cd37b9f17daf6db0179b38a74ef456e0e155463805be01c495e38b5",
+      "contentHash": "9cd02d8c52dd9881013c539584967a29e77e07d365a94669af56f9d6d5b4d03c",
       "state": "conditional",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5599,7 +5599,7 @@
       "available": true,
       "description": "Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, delivers one coherent main commit when authorized, and verifies exact-SHA CI without post-gate edits.",
       "descriptionHash": "297ab210dd4cc34ff85d29a566892b3d322f7749d06524ea3827e46de93d3716",
-      "contentHash": "e910ae35fd537592089367e4b3815d6b6835b91783b237c82f5ea3da2a1cd024",
+      "contentHash": "e5622c60edfe3defc08a94a9a90e77c7e21b8727fc8cc9742f4949c86bed62f2",
       "state": "certified",
       "authority": "repository-delivery-when-authorized",
       "prerequisites": [
@@ -5659,7 +5659,7 @@
       "available": true,
       "description": "The ultimate closed-loop automation workflow. Spins up the Test Orchestrator, the Fix Agent, and the CI Publisher simultaneously to run full system tests, auto-patch bugs, and deploy overnight.",
       "descriptionHash": "12247c7e05dcb2e4a9e6070d3efc6ebc38d9799f3e24de3f638916f945ad950e",
-      "contentHash": "e0f655b89940f36b1899c70eb85228c2111564d4f880ad174e76afaa59d5bcec",
+      "contentHash": "a93a4e54bb0a3e9c8b25f0899538addb15792d83e766b4c5c14f2ed66fd1081b",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5688,7 +5688,7 @@
       "available": true,
       "description": "Scours the repository for unfinished work, TODOs, and stubs using a swarm of agents, aggregates them for human approval, and then fixes them.",
       "descriptionHash": "c17d92917bba79b8dbf2b2f83ebf6552ca5da54c8c73386a3cd5dbe944ceea1c",
-      "contentHash": "402bb32e7ab2013ca1c1d74c17bb458967057ed94dfc98ac406e56ed8925333c",
+      "contentHash": "47fd440ea4c25c2d1b38949da10741028c0521b8e8f2a4e9c07e49135daa541a",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5704,7 +5704,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy sweep writes stale V2 ledgers, clears staging documents, and expands a scan into permanent issue mutation.",
+      "reason": "The legacy sweep writes ledgers without issue-level evidence, clears staging documents, and expands a scan into permanent issue mutation.",
       "conflicts": []
     },
     {
@@ -5717,7 +5717,7 @@
       "available": true,
       "description": "Evidence-based Mermaid visualization workflow for state, ownership, hierarchy, dependencies, and multi-step execution paths. Use when a diagram materially improves understanding; save a repository artifact only when the user or active task calls for durable documentation.",
       "descriptionHash": "8be1013d6d6b21b83b8644ef3321e617befe27aa5a03a3ee43ba3de92df895dd",
-      "contentHash": "85a8a4d34751b81bf90beda12a3954d2f5984a5a0d9238d9e93ed0b42060e1f9",
+      "contentHash": "7e75fa4d6f12b5af48838833487433ba79c7863ddabab85e40be15ea64003577",
       "state": "conditional",
       "authority": "bounded-local-writes",
       "prerequisites": [
@@ -5745,7 +5745,7 @@
       "available": true,
       "description": "Mainline sync, pre-push validation, and CI monitor. Requires main, fast-forwards safely, validates one coherent commit, pushes directly to origin/main, and monitors its exact CI run.",
       "descriptionHash": "86052eea3cf90641cf032c1a77d12773e948b1f8b26ea986d7c3487b7209b276",
-      "contentHash": "d12c83d95edb743051f56b71fd304eb6b4c24e70299ebb294ab9a49f9238b374",
+      "contentHash": "868a9b16f1f733bbefce41df2058d5d4f4559aa9bcb1f6099503de5f4baff16d",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5774,7 +5774,7 @@
       "available": true,
       "description": "Recursive motor for the active objective. Reviews progress, selects one coherent verification unit, resolves blockers with bounded retries, and continues to evidence-backed completion without checkpoint or micro-fix commits.",
       "descriptionHash": "4754d59e1a5b4eee8f18d23fd53fb9719009e9b744712a3b668f5b5421ee69dc",
-      "contentHash": "f36043394729c1fff9f61a42713488db48630724d8b56843635f2c72d4e8e186",
+      "contentHash": "a655c57b226b5b51eb90b4225d82e432d9b80b3a9bb67ab13aae4fbad3cda031",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5833,7 +5833,7 @@
       "available": true,
       "description": "Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. In HUNT mode it fixes, verifies, and commits; in AUDIT mode it records findings in OPEN_ISSUES.md and preserves supporting evidence only.",
       "descriptionHash": "d3209ce49cdb4f19f58cff8e795db8d08d1a36d1833e7ffe7cd64a3dbe839606",
-      "contentHash": "0202e72bb1c951228146fc72bbb59d6d16019754803c18ba0fd2a177e5692407",
+      "contentHash": "59ba370707b15e5df1bedefdf771802b48a42bd2ccd27c7807fa2ec17bc29f05",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5862,7 +5862,7 @@
       "available": true,
       "description": "The Fix Agent. Scans .agent/test_ledger/OPEN_ISSUES_V3.md for unresolved issues, triages by severity, diagnoses root causes in source code, applies surgical fixes, verifies them, and marks issues as FIXED. This is the counterpart to /mega and /real which only find issues — /issue is the one that resolves them. THE FIX AGENT DOES NOT RUN TESTS. It reads issues, patches code, and verifies.",
       "descriptionHash": "b2e7859dd0cb97da0f04cbfb43574dcad06c384a3ce9948702d24e80b7ec8d9c",
-      "contentHash": "52b4831d32c93b85f4033a34324e5d194c92c8c04cdaa6cbc1f17048143d34a4",
+      "contentHash": "ee0ebf3fa19f1d4aaf4c50d87c36703426ddd5f121e5e3f571ecb2870715fb91",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5891,7 +5891,7 @@
       "available": true,
       "description": ">-",
       "descriptionHash": "debf8b346efdb2cdc8c1d4530cc5708ff2d99963b8df5d6cfa63f2c1b04c7de4",
-      "contentHash": "1ea6858d696ddd316e4ac768ff877d6cd84b1d4c44bfe8a6badb6a8c805c778a",
+      "contentHash": "2e649259ed43608c7dd8cabdabebf130914045195177256c313165ed4bce4691",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5907,7 +5907,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy sweep harvests tokens, spans unrelated external issues, writes stale ledgers, and expands scope.",
+      "reason": "The legacy sweep harvests tokens, spans unrelated external issues, writes ledgers without issue-level evidence, and expands scope.",
       "conflicts": []
     },
     {
@@ -5918,9 +5918,9 @@
       "path": ".agent/workflows/mega.md",
       "mutable": true,
       "available": true,
-      "description": "The Master Orchestrator for the Mega Stress Test. Sweeps EVERY left-menu item — managers, departments, tools, projects/dashboards — running the full per-item gauntlet (`/mega-test <item>`) against each, grouped by sidebar category. Can run autonomously for hours, cycling the entire menu on a loop until explicitly stopped. The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`. Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
-      "descriptionHash": "1f5373b997837e5ed9c342c57a28c80d7c06ecbcf6fb65bc70d35d44cc641fd5",
-      "contentHash": "b3871bb48fa554c5406372763aedde1745f2bcc40b359e5b06dbe7b3859c2c7e",
+      "description": "The Master Orchestrator for the Mega Stress Test. Sweeps EVERY left-menu item — managers, departments, tools, projects/dashboards — running the full per-item gauntlet (`/mega-test <item>`) against each, grouped by sidebar category. Can run autonomously for hours, cycling the entire menu on a loop until explicitly stopped. The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`. Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a fixing agent.",
+      "descriptionHash": "2a6092d7b8d3a05fbf66c2051054852f07101d5dd09821591b647525e5d7da3d",
+      "contentHash": "4400a7b164205e5c177e806e4b4dc4753a9b6ad1d29839b5bd8b9e1b2f54a9d1",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5936,7 +5936,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy live sweep writes stale V2 ledgers, assumes indefinite execution, and lacks current authenticity and cost boundaries.",
+      "reason": "The legacy live sweep writes ledgers, assumes indefinite execution, and lacks current authenticity and cost boundaries.",
       "conflicts": []
     },
     {
@@ -5947,9 +5947,9 @@
       "path": ".agent/workflows/mega-test.md",
       "mutable": true,
       "available": true,
-      "description": "Execute a full multi-dimensional stress test against ONE left-menu item — a manager, department, tool, or project/dashboard — named as the fill-in-the-blank target. Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`. The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`. Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet against the live module, documents pass/fail, logs new issues to `.agent/test_ledger/OPEN_ISSUES_V2.md`, and produces a structured per-target report. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.",
-      "descriptionHash": "c87fd82387bb53edc8cc3d4b6b02bba94d3398e54a7e0b1dbea00dfbcb4c862a",
-      "contentHash": "e572a66358fe8e7fcd4f55c4d191e9c233a8e2f6e53f8fa1c44720ab5c96ff24",
+      "description": "Execute a full multi-dimensional stress test against ONE left-menu item — a manager, department, tool, or project/dashboard — named as the fill-in-the-blank target. Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`. The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`. Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet against the live module, documents pass/fail, logs new issues to `.agent/test_ledger/OPEN_ISSUES_V3.md`, and produces a structured per-target report. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a fixing agent.",
+      "descriptionHash": "f4f38a604f17e3c26bfaffb8987524912155ca92934353f8809e016cc5517919",
+      "contentHash": "176057fc4568e4922bddcc5dacfe9fad723d405c519accda99a2c8c6ac3990de",
       "state": "quarantined",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -5965,7 +5965,7 @@
       "fallback": "workflow:skill-skill",
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
-      "reason": "The legacy per-item test writes stale V2 ledgers and hard-codes outdated technology/environment assumptions.",
+      "reason": "The legacy per-item test writes ledgers and hard-codes outdated technology/environment assumptions.",
       "conflicts": []
     },
     {
@@ -5978,7 +5978,7 @@
       "available": true,
       "description": "Flagship execution workflow for implementing an active objective in coherent verification units. Runs the certified toolchain selected by /skill-skill, preserves contract and authenticity boundaries, and uses /go as its recursive motor.",
       "descriptionHash": "64b173c82e83c2fb5b7f6bc5714239e6a3b357aa6a75baa768e7bda9bb220ae5",
-      "contentHash": "0cc61be79c5185ffa5bcf9f19fc606aaa9c6a9b9de82b63dd2840b57f096b309",
+      "contentHash": "3878f8d89b7f881ef60e33af5e2e042c82b8c81f71e67663dfc680c10fb44d6d",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -6008,7 +6008,7 @@
       "available": true,
       "description": "Session bootstrap — comprehensive environment audit, handoff state check, and Operator persona activation. Run this at the START of every session.",
       "descriptionHash": "c09c88237ab94ef67e265c550a7903ae349aa549ae4698cf276fbe3586cc824b",
-      "contentHash": "e1f23931f73345e9ba6e5bd4b7f6e5091da384be799ab1d7b1ddd7b78e65d39b",
+      "contentHash": "dd741547a7707b59a26f721f2150b0fc6668b3f2d44535764447f9847d887313",
       "state": "conditional",
       "authority": "read-only-orientation",
       "prerequisites": [
@@ -6037,7 +6037,7 @@
       "available": true,
       "description": "Resume and reconciliation gate for an interrupted or handed-off objective. Verifies the current request, handoff, diff, mainline state, scope, and evidence before continuing edits.",
       "descriptionHash": "859a8e0163d5cf0bf34495c52c2f5a0c3efb6839681ca8466eade96714cf0b1e",
-      "contentHash": "4fa4e2f451cdc52d16c4978cab807eb364b0cf4c0bd0d24c156013accdbd07a9",
+      "contentHash": "2b36c668708edc1a17864535c76fc822e922d48e685439fc1db2b86880ae41e1",
       "state": "certified",
       "authority": "read-only-until-reconciled",
       "prerequisites": [
@@ -6065,9 +6065,9 @@
       "path": ".agent/workflows/real.md",
       "mutable": true,
       "available": true,
-      "description": "Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios. Can be vague (AI figures out what to test) or specific (user directs the test). Always exhausts the system until completion or documented failure. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a separate fixing agent.",
-      "descriptionHash": "086134a05dfc4bc74627535b09d4ecc665c76113de11b71d23d54177432f69ae",
-      "contentHash": "db12c92f291b96dd74a9c918e5bf4e58d0ea26c125ea3545bfef4518f2b9aa65",
+      "description": "Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios. Can be vague (AI figures out what to test) or specific (user directs the test). Always exhausts the system until completion or documented failure. TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a separate fixing agent.",
+      "descriptionHash": "9b0951c9d2126a8f1d053af86b5d0846b4672b2d40f3858e53c01ba16a8e26a9",
+      "contentHash": "9b353135e3cbf2e1c9a3ec08430d7a860f9c77c7aadc523d938cf5681bab85b8",
       "state": "conditional",
       "authority": "named-live-interaction",
       "prerequisites": [
@@ -6097,7 +6097,7 @@
       "available": true,
       "description": "Conversational context review and agent specialization workflow. Use to onboard the agent into a specific role or review mid-session progress to realign focus.",
       "descriptionHash": "001219c8a2f05ff0eb1a2bc8a3e0a2cab2c50580c11cfc013d2a0167f64cff54",
-      "contentHash": "64f01530b3079a8e77ea176a386b88d24d4bce5a364c6d5b0777d62dabedf293",
+      "contentHash": "aafaa4a46240b9b48c3b0c2a16739f15d728a273bbb89b06a1ed00c577930803",
       "state": "certified",
       "authority": "conversation-only",
       "prerequisites": [
@@ -6125,7 +6125,7 @@
       "available": true,
       "description": "Canonical intent, authority, and capability router. Selects the smallest healthy ordered toolchain from the generated catalog plus tools actually exposed by the current host, then executes inside existing authority or pauses for one named prerequisite.",
       "descriptionHash": "f7f58e449968730743612fb8f56e79cbd4c5a62b3563d70c9a3716b397e39b13",
-      "contentHash": "5fa06b1a57714ba540c348e9f6167602e995d3d0703938162731e3bf43fa289e",
+      "contentHash": "cfa6035a16dbb6e10b8d7ef94760e842570dd687523b358068916e6671b8ac80",
       "state": "certified",
       "authority": "routing-only-inherits-on-execution",
       "prerequisites": [
@@ -6155,7 +6155,7 @@
       "available": true,
       "description": "Flagship orientation workflow for a new objective. Establishes source of truth, request mode, task profile, authority, repository state, capability route, and definition of done before mutation.",
       "descriptionHash": "d3113fa8bc4e707037a51f84e8c5b3a921b5ef75ad00854975b36211d0b51ce2",
-      "contentHash": "a9983b85db1c8e6a0369802c456251e8e4bb56a2abcc4e9ca40a27f809f9dcd3",
+      "contentHash": "af6265e109c1492b1e37af64dc813d00eb5f6e47579e9d2af4dd39c0cf16e1ff",
       "state": "certified",
       "authority": "profile-bounded",
       "prerequisites": [
@@ -6173,6 +6173,40 @@
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
       "conflicts": [
         "workflow:proceed"
+      ]
+    },
+    {
+      "id": "workflow:sweep",
+      "name": "sweep",
+      "kind": "workflow",
+      "registry": ".agent/workflows",
+      "path": ".agent/workflows/sweep.md",
+      "mutable": true,
+      "available": true,
+      "description": "Observational audit of agent instructions, specs, plans, handoffs, and code notes against the current codebase and git history. Uses TypeSafe JEV as an advisory semantic triager; deterministic code and git evidence decide. Reports first; archives or edits only after named approval.",
+      "descriptionHash": "81c1f9d8d20c78702abcc457e88b9423ec7228c3a9b736d0a6eac08b13a28535",
+      "contentHash": "8c53821bc874d0f0548682b3fc83133333d71f49b7b68c87c0f966bf878d4173",
+      "state": "conditional",
+      "authority": "read-only-until-approved",
+      "prerequisites": [
+        "The scope (repository, area, or current diff) is explicit",
+        "Git history is deep enough for log -S and blame on the candidates, otherwise those items are Kept",
+        "branch-safety.md has been read before any approved edit or delivery",
+        "TYPESAFE_API_KEY is available for the JEV triage step; without it the step is skipped, never faked"
+      ],
+      "outputs": [
+        "The workflow-defined result and its decisive evidence"
+      ],
+      "verification": [
+        "Every Verified Stale item cites current code state plus a git log or blame result and passes an independent fact-check that was not shown the hypothesis or any JEV verdict"
+      ],
+      "failure": "Stop after bounded retries, report the exact blocker, and use a certified fallback.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Reassess repository and external state before repeating.",
+      "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
+      "conflicts": [
+        "workflow:finish",
+        "workflow:hunter"
       ]
     },
     {
@@ -6242,7 +6276,7 @@
       "available": true,
       "description": "Human-facing index of indii slash workflows. The generated capability catalog owns health, authority, availability, and automatic-selection state.",
       "descriptionHash": "d8b9d6ac930b9110ffb76b3e8ae4e2e9a897f762c8839c9fb08d2f6ad9294fe3",
-      "contentHash": "c75337a7440a4413ad46a8d82b2fc0e5c79522aa74c841c68bc6c24a4d53d0d8",
+      "contentHash": "cbab8aa9cdf238adf94db565fa4727e3a3801580a4f17dddeb52f6779f05d9e9",
       "state": "certified",
       "authority": "read-only-index",
       "prerequisites": [

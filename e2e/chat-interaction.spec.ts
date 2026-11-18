@@ -49,12 +49,14 @@ test.describe('Chat / CommandBar Interaction', () => {
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
         await page.locator('[data-testid="dev-bypass-button"]').click({ timeout: 10_000 }).catch(() => { });
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        // The composer lives inside Boardroom mode; the landing view is the dashboard.
+        await page.getByLabel('Enter Boardroom').click({ timeout: 15_000 });
+        const input = page.locator('[data-testid="main-prompt-input"]:visible');
         await expect(input).toBeVisible({ timeout: 30_000 });
     });
 
     test('prompt input renders and accepts keyboard input', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        const input = page.locator('[data-testid="main-prompt-input"]:visible');
         await expect(input).toBeVisible({ timeout: 15_000 });
 
         await input.fill('hello indii');
@@ -62,7 +64,7 @@ test.describe('Chat / CommandBar Interaction', () => {
     });
 
     test('submitting empty prompt is rejected gracefully', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        const input = page.locator('[data-testid="main-prompt-input"]:visible');
         await expect(input).toBeVisible({ timeout: 15_000 });
 
         await input.fill('');
@@ -74,7 +76,7 @@ test.describe('Chat / CommandBar Interaction', () => {
     });
 
     test('app remains stable during rapid input changes', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        const input = page.locator('[data-testid="main-prompt-input"]:visible');
         await expect(input).toBeVisible({ timeout: 15_000 });
 
         for (let i = 0; i < 5; i++) {

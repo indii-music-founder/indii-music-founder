@@ -1,4 +1,18 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures/auth';
+
+/**
+ * Reveal the Creative nav item. The "Manager's Office" section can start expanded or
+ * collapsed, so toggle it only when the item is not already visible; an unconditional
+ * click collapses an expanded section and hides the item.
+ */
+async function revealCreativeNav(page: Page) {
+  const creativeNav = page.getByTestId('nav-item-creative');
+  if (!(await creativeNav.isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: /manager's office/i }).click();
+  }
+  await expect(creativeNav).toBeVisible({ timeout: 10000 });
+}
 
 /**
  * ISSUE-763: Beta First-Touch Journey
@@ -31,22 +45,23 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
   });
 
   test('2. Wander modules - Creative Suite nav item is present and clickable', async ({ authedPage: page }) => {
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await expect(page.getByTestId('nav-item-creative')).toBeVisible({ timeout: 10000 });
   });
 
   test('3. Enter Creative Suite and see first-run guidance on an empty canvas', async ({ authedPage: page }) => {
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('canvas-view-btn').click();
+    // The view-mode buttons are gone; the studio's view mode is switched through the store.
+    await page.evaluate(() => (window as any).useStore.getState().setViewMode('canvas'));
 
     await expect(page.getByText('Create Your First Image')).toBeVisible();
     await expect(page.getByText('Start by generating an image with a prompt')).toBeVisible();
   });
 
   test('4. Generate image from prompt', async ({ authedPage: page }) => {
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
@@ -65,7 +80,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
   });
 
   test('6. Upload own image', async ({ authedPage: page }) => {
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
@@ -73,7 +88,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
   });
 
   test('7. Video tab is reachable and renders its own controls', async ({ authedPage: page }) => {
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
@@ -84,7 +99,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
   test('Complete beta flow smoke test: Skip → Wander → Create → Upload → Video', async ({ authedPage: page }) => {
     await expect(page.getByTestId('app-container')).toBeVisible();
     
-    await page.getByRole('button', { name: /manager's office/i }).click();
+    await revealCreativeNav(page);
     await expect(page.getByTestId('nav-item-creative')).toBeVisible();
 
     await page.getByTestId('nav-item-creative').click();

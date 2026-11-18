@@ -145,17 +145,17 @@ indii-music-founder/
 | Category | Technology | Notes |
 |----------|-----------|-------|
 | Framework | React 18.3.1 | With lazy-loaded modules |
-| Build | Vite 6.4.1 | Port 4242 for dev |
+| Build | Vite ^6.4.3 | Port 4242 for dev |
 | Styling | TailwindCSS 4.1.17 | With tailwind-merge, clsx |
 | State | Zustand 5.0.8 | Slice-based store pattern |
-| Animation | Framer Motion 12.x | |
-| Canvas | Fabric.js 6.9 | Image editing |
+| Animation | Motion 12.23.26 | |
+| Canvas | Fabric.js ^7.2.0 | Image editing |
 | Graph Editor | React Flow 11.11 | Workflow automation |
 | Audio | Wavesurfer.js 7.11.1 + Essentia.js 0.1.3 + Python (YAMNet ONNX) | Local-first analysis & visualization |
-| Video | Remotion 4.0.445 | Video rendering |
+| Video | HyperFrames CLI 0.8.10 + player 0.8.11 | Shared compiler, desktop adapter, web preview, and Cloud Run worker; Remotion is retired |
 | 3D | Three.js 0.182.0 | Via @react-three/fiber |
 | Charts | Recharts 3.6 | Data visualization |
-| Router | React Router 7.11 | URL sync |
+| Router | React Router 7.18.2 | URL sync |
 | UI Kit | Radix UI + Lucide icons | Accessible primitives |
 | Validation | Zod 3.25 | Schema validation |
 
@@ -163,9 +163,9 @@ indii-music-founder/
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Functions | Firebase Functions 7.0.5 (Gen 2) | Node.js 22 runtime |
-| AI | Genkit AI 1.26 (pinned) + @google/genai^1.48.0 | Gemini models |
-| Jobs | Inngest 3.46 | Background job orchestration |
+| Functions | Firebase Functions ^7.2.5 (Gen 2) | Node.js 22 runtime |
+| AI | @google/genai ^2.12.0 + TypeSafe System One | Gemini generation and Jev judgments |
+| Jobs | Inngest ^3.54.2 | Background job orchestration |
 | Payments | Stripe 20.1 | Subscription billing |
 | Database | Firestore | With security rules |
 | Storage | Firebase Storage | With security rules |
@@ -400,7 +400,7 @@ The `build` script runs three steps sequentially:
 
 - **A2A Swarm Protocol** - Decentralized P2P delegation via `A2AClient` and `AgentCard` identity.
 - **Specialist Agents** - Autonomous domain experts that collaborate directly using `consult_specialist`.
-- **Native Execution** - All tools run natively within the Node.js/TypeScript environment with sidecar support.
+- **Native Execution** - Node.js/TypeScript services are the primary execution path. Some DDEX and media utilities still use the optional Python bridge; do not assume a Docker sidecar is running.
 
 ---
 
@@ -665,9 +665,9 @@ Four skill registries exist — do not confuse them. All are active; the "not li
 | Registry | Contents | Edit policy |
 | --- | --- | --- |
 | `.agent/skills/` | Indii-authored agent skills (hunter, walk, go, tdd, zoom-out, …) | Editable — ours |
-| `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. The lock intentionally lists some skills that are not installed (genkit-dart, genkit-go, xcode) — do not "fix" the drift or reinstall them. |
+| `.agents/skills/` | Vendored third-party skills (`firebase/agent-skills` + `arcjet/skills`) pinned by root `skills-lock.json` with content hashes. Includes `firebase-security-rules-auditor` used by `/db-sync`. | **READ-ONLY** — never edit in place; update via the skills installer. Every locked skill is installed; `gemini-enterprise-agent-schema` and `legal-contract-extraction` are present but not in the lock — ask before changing or locking them. |
 | `skills/` | Proprietary product skills — `direct-distribution` (Direct Distribution Engine V3; pairs with `directives/direct_distribution_engine.md`) | Editable, but a covenant doc — keep status tables truthful |
-| `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/workflows/graphify.md` + `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
+| `~/.agents/skills/` | User-global skills (graphify; repo carries `.agents/rules/graphify.md`) | Machine-specific — may be absent on a given machine |
 
 
 ---
@@ -697,17 +697,18 @@ These commands form the backbone of the agent's development workflow. When a use
 - `/hunter` — Full-spectrum bug hunter. (`.agent/workflows/hunter.md`)
 - `/issue-sweep` — End-to-end issue sweep and stabilization. (`.agent/workflows/issue-sweep.md`)
 - `/better` — Universal improvement engine (audit, elevate, polish). (`.agent/workflows/better.md`)
+- `/sweep` — Stale-context audit of instructions, specs, handoffs, and code notes vs the code and git history; TypeSafe JEV advisory triage; report-only until approved. Auto-called report-only and scoped from `/start`, `/proceed`, `/middle`, `/end`, `/go`, `/walk`, `/plat`, and others (see `WIIL-skill.md`). (`.agent/workflows/sweep.md`)
 - `/finish` — Unfinished work sweep (TODOs, stubs, slop). (`.agent/workflows/finish.md`)
 - `/devex-review` — Developer experience (DX) audit. (`.agent/workflows/devex-review.md`)
 - `/factory` — Automated test & fix loop (nightly/autonomous runs). (`.agent/workflows/factory.md`)
 - `/test` — Context-aware test runner. (`.agent/workflows/test.md`)
 - `/training` — AI agent dataset generation & fine-tuning. (`.agent/workflows/training.md`)
 - `/api` — The API knowledge base and diagnostic tool. (`.agent/workflows/api.md`)
-- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/workflows/to-prd.md`)
-- `/to-issues` — vertical-Slice Ticketer. (`.agent/workflows/to-issues.md`)
-- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/workflows/grill-me.md`)
-- `/zoom-out` — Codebase dependency mapper. (`.agent/workflows/zoom-out.md`)
-- `/tdd` — Test-driven development loop. (`.agent/workflows/tdd.md`)
+- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/skills/to-prd/SKILL.md`)
+- `/to-issues` — vertical-Slice Ticketer. (`.agent/skills/to-issues/SKILL.md`)
+- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/skills/grill-me/SKILL.md`)
+- `/zoom-out` — Codebase dependency mapper. (`.agent/skills/zoom-out/SKILL.md`)
+- `/tdd` — Test-driven development loop. (`.agent/skills/tdd/SKILL.md`)
 - `/mega` — Mega stress test orchestrator. (`.agent/workflows/mega.md`)
 - `/mega-test` — Single mega test plan execution. (`.agent/workflows/mega-test.md`)
 - `/real` — Adaptive real-life testing workflow. (`.agent/workflows/real.md`)

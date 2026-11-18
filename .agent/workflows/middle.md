@@ -45,6 +45,8 @@ After two failed attempts with the same mechanism, stop repeating it. Add instru
 
 ## 5. Durable artifacts
 
+When a unit renames, removes, or changes the behavior of a route, symbol, flag, or feature that instructions, specs, plans, or code notes describe, run [`/sweep`](sweep.md) scoped to that surface (report-only) and fold in-task fixes into the same unit. Use JEV advisory triage per `sweep.md` §3; code and git evidence decide. Do not sweep repository-wide mid-task.
+
 Update a flowchart only when state, sequence, or ownership is genuinely difficult to verify linearly. Update issue/error ledgers only with verified, uniquely identified, reusable facts that belong to the active task.
 
 ## Exit

@@ -1,5 +1,5 @@
 import type { ExecutionTokenBudget } from '../governance/ExecutionTokenBudget';
-import { reportedSemanticTokens } from '../governance/SemanticCallBudget';
+import { estimateSemanticCallTokens, reportedSemanticTokens } from '../governance/SemanticCallBudget';
 import { GUARDRAIL_QUESTIONS, GUARDRAIL_MODEL, GUARDRAIL_FIRE_THRESHOLD, GUARDRAIL_ACTIONABLE_THRESHOLD } from '@/config/typesafeJudgments';
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
@@ -69,6 +69,14 @@ const JEV_MODEL = GUARDRAIL_MODEL;
 /** Max milliseconds to wait for Jev before passing through unmodified. */
 const GUARDRAIL_TIMEOUT_MS = 2000;
 
+/** Bounded token hold for one guardrail judgment (see `estimateSemanticCallTokens`). */
+export function estimateGuardrailReservation(
+  state: Record<string, unknown>,
+  questions: Record<string, unknown>,
+): number {
+  return estimateSemanticCallTokens({ state, questions });
+}
+
 /** Noul threshold above which a flag is considered fired. */
 const FIRE_THRESHOLD = GUARDRAIL_FIRE_THRESHOLD;
 
@@ -122,8 +130,8 @@ export class JevGuardrailService {
    * renderer bundle, or browser-side SDK client.
    *
    * Returns the original response unmodified on timeout, upstream failure, or
-   * unavailable service. The execution allowance remains reserved while the
-   * provider is unresolved; missing usage retains that hold.
+   * unavailable service. A bounded per-call estimate stays reserved while the
+   * provider is unresolved; missing usage retains only that estimate.
    */
   async screen(input: GuardrailInput, budget: ExecutionTokenBudget): Promise<GuardrailResult> {
     const passthrough: GuardrailResult = {
@@ -193,9 +201,12 @@ export class JevGuardrailService {
 
     // This call belongs to BaseAgent's active execution. A UI timeout does
     // not cancel provider work, so settle only when that work returns a receipt.
-    const allowance = budget.remaining;
-    if (allowance === 0) return null;
-    const reservation = budget.reserve(allowance);
+    // Reserve this call's projected cost only — holding `budget.remaining`
+    // would starve every concurrent agent sharing the run and, on a missing
+    // receipt, permanently consume the whole execution allowance.
+    const projected = estimateGuardrailReservation(state, questionsDef);
+    if (projected > budget.remaining) return null;
+    const reservation = budget.reserve(projected);
     if (reservation === null) return null;
     let settled = false;
     let rawAnswers: Record<string, unknown> | undefined;

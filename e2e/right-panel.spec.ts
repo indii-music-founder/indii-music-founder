@@ -51,8 +51,10 @@ test.describe('Right Panel & Swarm Tabs', () => {
         const boxExpanded = await panel.boundingBox();
         expect(boxExpanded?.width).toBeGreaterThanOrEqual(300);
 
-        // 4. Verify default "No Tool Selected" fallback content
-        await expect(page.locator('[data-testid="no-tool-selected"]')).toBeVisible();
+        // 4. The expanded panel opens on the Messages tab, empty for a fresh session.
+        // (The "No Tool Selected" context fallback is unreachable: every module that can
+        // show the Context Controls tab renders its own tool panel.)
+        await expect(page.getByText('No messages yet').first()).toBeVisible(); // bypass-strict: text appears in multiple responsive layouts
 
         // 5. Collapse Panel using Close button inside
         const closeBtn = page.locator('[aria-label="Close Panel"]').first(); // bypass-strict: select active panel/modal layer among stacked containers
@@ -83,8 +85,8 @@ test.describe('Right Panel & Swarm Tabs', () => {
                     thumbnailUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
                     prompt: 'Mock E2E generated image',
                     timestamp: Date.now(),
-                    projectId: 'mock-project-id',
-                    origin: 'generation'
+                    projectId: store.getState().currentProjectId,
+                    origin: 'generated'
                 }]
             });
         });
@@ -93,7 +95,8 @@ test.describe('Right Panel & Swarm Tabs', () => {
         await expect(page.locator('text=Mock E2E generated image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
 
         // Clicking the asset should redirect us to the creative studio
-        await page.locator('text=Mock E2E generated image').first().click(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        // The card's click target is an overlay button labelled "Edit in Studio: <prompt>".
+        await page.getByRole('button', { name: 'Edit in Studio: Mock E2E generated image' }).first().click(); // bypass-strict: text appears in multiple DOM containers or preview cards
         await page.waitForTimeout(1500);
 
         // Verify navigation to Creative Studio occurred
@@ -180,8 +183,8 @@ test.describe('Right Panel & Swarm Tabs', () => {
                         url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
                         prompt: 'Cyberpunk landscape image',
                         timestamp: Date.now() - 1000,
-                        projectId: 'mock-project-id',
-                        origin: 'generation'
+                        projectId: store.getState().currentProjectId,
+                        origin: 'generated'
                     },
                     {
                         id: 'mock-vid-1',
@@ -189,47 +192,50 @@ test.describe('Right Panel & Swarm Tabs', () => {
                         url: 'https://mock-video.com/v1.mp4',
                         prompt: 'Synthwave music video',
                         timestamp: Date.now(),
-                        projectId: 'mock-project-id',
-                        origin: 'generation'
+                        projectId: store.getState().currentProjectId,
+                        origin: 'generated'
                     }
                 ]
             });
         });
 
+        // Scope to the panel: the same assets also appear in the Your Creations gallery.
+        const rightPanel = page.locator('[aria-label="Context panel"]');
+
         // Verify both assets are initially visible
-        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        await expect(page.locator('text=Synthwave music video').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Synthwave music video').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
 
         // Click on IMAGES filter
-        const imagesFilter = page.locator('button:has-text("Images")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        const imagesFilter = rightPanel.locator('button:has-text("Images")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await imagesFilter.click();
         await page.waitForTimeout(500);
 
         // Image should be visible, video should NOT be visible
-        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        await expect(page.locator('text=Synthwave music video').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Synthwave music video').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
 
         // Click on VIDEOS filter
-        const videosFilter = page.locator('button:has-text("Videos")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        const videosFilter = rightPanel.locator('button:has-text("Videos")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await videosFilter.click();
         await page.waitForTimeout(500);
 
         // Video should be visible, image should NOT be visible
-        await expect(page.locator('text=Synthwave music video').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        await expect(page.locator('text=Cyberpunk landscape image').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Synthwave music video').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Cyberpunk landscape image').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
 
         // Test search input
-        const allFilter = page.locator('button:has-text("All")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        const allFilter = rightPanel.locator('button:has-text("All")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
         await allFilter.click();
         await page.waitForTimeout(500);
 
-        const searchInput = page.locator('[placeholder="Search assets..."]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
+        const searchInput = rightPanel.locator('[placeholder="Search assets..."]').first(); // bypass-strict: form input may coexist with background modal or duplicate field
         await searchInput.fill('Cyberpunk');
         await page.waitForTimeout(500);
 
         // Only search matching item should show
-        await expect(page.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
-        await expect(page.locator('text=Synthwave music video').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Cyberpunk landscape image').first()).toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
+        await expect(rightPanel.locator('text=Synthwave music video').first()).not.toBeVisible(); // bypass-strict: text appears in multiple DOM containers or preview cards
     });
 
     test('should dynamically render Context Controls panel for Workflow Builder and execute workflow', async ({ authedPage: page }) => {
@@ -245,6 +251,10 @@ test.describe('Right Panel & Swarm Tabs', () => {
         // Verify Workflow panel title
         const rightPanel = page.locator('[aria-label="Context panel"]');
         await expect(rightPanel.locator('text=Workflow Builder').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
+
+        // The panel's Run button is disabled until the workflow has nodes, so load a
+        // built-in system protocol first.
+        await page.getByText('Campaign Launch', { exact: true }).first().click(); // bypass-strict: protocol and workflow names render in separate sidebar lists (WorkflowSidebarWidgets), so the name can match more than once
 
         // Click "Run Workflow" button
         const runBtn = rightPanel.locator('button:has-text("Run Workflow")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
@@ -269,16 +279,18 @@ test.describe('Right Panel & Swarm Tabs', () => {
         const rightPanel = page.locator('[aria-label="Context panel"]');
         await expect(rightPanel.locator('text=Knowledge Base').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
 
-        // Click "Ingest Document" button
-        const ingestBtn = rightPanel.locator('button:has-text("Ingest Document")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        await expect(ingestBtn).toBeVisible();
-        await ingestBtn.click();
-
-        // Verify toast message "Opening upload dialog"
-        await expect(page.locator('text=Opening upload dialog').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
+        // "Ingest Document" is a native file input (aria-label "Upload knowledge documents")
+        // laid over a decorative button, so activating it opens the file chooser.
+        await expect(rightPanel.getByText('Ingest Document').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
+        const fileInput = rightPanel.getByLabel('Upload knowledge documents');
+        const [fileChooser] = await Promise.all([
+            page.waitForEvent('filechooser'),
+            fileInput.click(),
+        ]);
+        expect(fileChooser.isMultiple()).toBe(true);
     });
 
-    test('should dynamically render Context Controls panel for Marketing and deploy protocol', async ({ authedPage: page }) => {
+    test('should dynamically render Context Controls panel for Marketing and prepare protocol', async ({ authedPage: page }) => {
         // Navigate directly to Marketing
         await page.goto('/marketing', { waitUntil: 'domcontentloaded' });
         await page.waitForSelector('[data-testid="app-container"], main', { timeout: 15_000 });
@@ -304,12 +316,29 @@ test.describe('Right Panel & Swarm Tabs', () => {
         const select = rightPanel.locator('select').first(); // bypass-strict: select active panel/modal layer among stacked containers
         await select.selectOption('INDII_GROWTH_PROTOCOL');
 
-        // Click "Deploy Protocol" button
-        const deployBtn = rightPanel.locator('button:has-text("Deploy Protocol")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
-        await expect(deployBtn).toBeVisible();
-        await deployBtn.click();
+        // The server accepts the run and returns an execution id; the persisted record
+        // is then read back from Firestore, which is offline in this harness, so supply
+        // a non-completed execution through the service singleton.
+        await page.route(/cloudfunctions\.net\/createWorkflowExecution/, async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                headers: { 'access-control-allow-origin': '*' },
+                body: JSON.stringify({ data: { executionId: 'e2e-exec-001', status: 'PENDING' } }),
+            });
+        });
+        await page.evaluate(async () => {
+            const { workflowStateService } = await import('/src/services/agent/WorkflowStateService.ts');
+            (workflowStateService as any).getExecution = async (_userId: string, id: string) => ({ id, status: 'RUNNING' });
+        });
 
-        // Verify toast message "indii Growth Protocol deployed."
-        await expect(page.locator('text=indii Growth Protocol deployed.').first()).toBeVisible(); // bypass-strict: select first item in dynamic list or collection
+        // The panel only prepares a protocol package (a live launch needs connected
+        // ad credentials and approval), so the button is "Prepare Protocol".
+        const prepareBtn = rightPanel.locator('button:has-text("Prepare Protocol")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
+        await expect(prepareBtn).toBeVisible();
+        await prepareBtn.click();
+
+        // A non-completed execution is reported as queued, never as launched.
+        await expect(page.getByText(/Protocol queued as e2e-exec-001/).first()).toBeVisible(); // bypass-strict: select first item in dynamic list or collection
     });
 });

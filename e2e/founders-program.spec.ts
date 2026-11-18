@@ -18,6 +18,10 @@ test.describe('Founders Program Flow', () => {
         const checkoutHeading = page.locator('h1:has-text("Back The")');
         await expect(checkoutHeading).toBeVisible();
 
+        // Checkout is a 3-step flow: choose path -> review agreement -> payment option.
+        await page.getByRole('button', { name: /Business Software Purchase/ }).click();
+        await page.getByRole('button', { name: /Proceed to Payment/ }).click();
+
         // Check for the current Founder Pass card and Stripe checkout CTA
         await expect(page.locator('h3:has-text("indii Founder Pass")')).toBeVisible();
         await expect(page.locator('text=$2,500.00')).toBeVisible();
@@ -63,6 +67,10 @@ test.describe('Founders Program Flow', () => {
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
+
+        // Auth init replaces the profile once the session resolves; set the founder
+        // tier only after that has landed or it is overwritten and the portal stays denied.
+        await page.waitForFunction(() => (window as any).useStore.getState().userProfile?.id === 'test-user-uid-e2e');
 
         // Set user to founder tier
         await page.evaluate(() => {

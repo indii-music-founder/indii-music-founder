@@ -49,7 +49,7 @@ Select matching archetype and inspect against concrete failure modes:
 - **Mock determinism:** Mocks branch on arguments/endpoints rather than call-order FIFO queues.
 
 ### D. Documentation / Prompts / Workflows
-- **Truthfulness:** All file paths, symbols, and links exist and resolve.
+- **Truthfulness:** All file paths, symbols, and links exist and resolve. For stale claims across instruction files, specs, or code notes, run [`/sweep`](sweep.md) (report-only) instead of fixing them ad hoc; `/better` edits only what is inside the bounded scope.
 - **Prompt hygiene:** Zero template literal whitespace bloat (`.replace(/^\s+/gm, '')`).
 - **Brand voice:** Lowercase `indii` / `indii.music`, "your 23-piece team", zero tech-spiritualism.
 

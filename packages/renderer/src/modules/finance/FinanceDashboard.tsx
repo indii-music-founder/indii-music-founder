@@ -197,6 +197,7 @@ export default function FinanceDashboard() {
                                     <button
                                         key={tab.value}
                                         data-testid={`finance-tab-${tab.value}`}
+                                        data-state={isActive ? 'active' : 'inactive'}
                                         onClick={() => handleTabChange(tab.value)}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all whitespace-nowrap ${
                                             isActive

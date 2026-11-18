@@ -89,9 +89,12 @@ test.describe('Video Studio', () => {
         const seedValue = await seedInput.inputValue();
         expect(Number(seedValue)).toBeGreaterThanOrEqual(0);
 
-        // Close technical settings drawer
+        // Close technical settings drawer. The wrapper stays mounted (it holds the toggle);
+        // only the drawer contents are removed.
         await toggleSettingsBtn.click();
-        await expect(settingsPanel).toHaveCount(0);
+        await expect(toggleSettingsBtn).toHaveAttribute('aria-expanded', 'false');
+        await expect(page.getByTestId('seed-input')).toHaveCount(0);
+        await expect(settingsPanel).toBeVisible();
     });
 
     test('Workflow switches seamlessly between Director and Editor timeline modes', async ({ authedPage: page }) => {
@@ -105,8 +108,23 @@ test.describe('Video Studio', () => {
             return (window as any).useVideoEditorStore?.getState().viewMode;
         })).toBe('editor');
 
+        // Offline Firestore cannot load the saved timeline, and the editor then blocks
+        // editing by design (ISSUE-1193), replacing the workspace and its mode switcher.
+        // This test exercises the switcher, not timeline persistence, so once that
+        // harness-only failure lands, clear it (a successful load needs no clearing).
+        // Both Workflow and Editor render a director tab; only the visible one counts.
+        const directorBtn = page.locator('[data-testid="video-mode-director"]:visible');
+        const loadFailure = page.getByRole('alert').filter({ hasText: /load this timeline/i });
+        await loadFailure.or(directorBtn).first().waitFor({ state: 'visible', timeout: 20_000 }); // bypass-strict: .or() can legitimately match both the failure alert and the director tab
+        if (await loadFailure.isVisible().catch(() => false)) {
+            await page.evaluate(() => {
+                const editor = (window as any).useVideoEditorStore.getState();
+                editor.setProjectLoadError(null);
+                editor.setIsLoadingProject(false);
+            });
+        }
+
         // Switch back to Director Mode
-        const directorBtn = page.getByTestId('video-mode-director');
         await expect(directorBtn).toBeVisible();
         await directorBtn.click();
 
@@ -157,11 +175,11 @@ test.describe('Video Studio', () => {
             }
         });
 
-        const historyItem = await page.evaluate(() => {
+        // addToHistory updates the store inside a dynamic import, so the item lands
+        // asynchronously; poll for it rather than reading once.
+        await expect.poll(() => page.evaluate(() => {
             const store = (window as any).useStore;
-            return store?.getState().generatedHistory?.find((h: any) => h.id === 'test-completed-video-1');
-        });
-        expect(historyItem).toBeDefined();
-        expect(historyItem.type).toBe('video');
+            return store?.getState().generatedHistory?.find((h: any) => h.id === 'test-completed-video-1')?.type;
+        }), { timeout: 10_000 }).toBe('video');
     });
 });

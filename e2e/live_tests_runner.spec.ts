@@ -33,7 +33,7 @@ const isExpectedNetworkFailure = (url: string, errorText: string): boolean =>
   isFirestoreEmulatorUrl(url) ||
   (url.includes('google.com/images/cleardot.gif') && errorText.includes('net::ERR_ABORTED'));
 
-test.describe('Live Test Orchestrator', () => {
+test.describe('@live Live Test Orchestrator', () => {
   for (const agent of agentsToTest) {
     if (agent.skip) continue;
 

@@ -256,7 +256,7 @@ describe('judgeTransientError decision bands', () => {
 
     it('charges the originating execution from the receipt before adopting a retry verdict', async () => {
         mocks.enabled.mockReturnValue(true);
-        const budget = new ExecutionTokenBudget(100);
+        const budget = new ExecutionTokenBudget(100_000);
         const durableSpend: number[] = [];
         mocks.httpsCallable.mockReturnValue(async () => ({ data: {
             answers: { transient: { type: 'noul', noul: 0.9 } },
@@ -265,7 +265,12 @@ describe('judgeTransientError decision bands', () => {
         expect(await judgeTransientError(new Error('network'), true, { admission: {
             budget, checkpoint: async () => { durableSpend.push(budget.spent); },
         } })).toBe(true);
-        expect(durableSpend).toEqual([100, 20]);
+        // The pre-dispatch checkpoint durably records a bounded per-call hold,
+        // not the whole execution allowance; settlement then records the receipt.
+        expect(durableSpend).toHaveLength(2);
+        expect(durableSpend[0]).toBeGreaterThan(20);
+        expect(durableSpend[0]).toBeLessThan(100_000);
+        expect(durableSpend[1]).toBe(20);
         expect(budget.spent).toBe(20);
     });
 

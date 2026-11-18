@@ -62,7 +62,9 @@ test('video editor preview mounts a real, full-size player for a decoded clip', 
         });
     }
 
-    const player = page.getByTestId('video-primary-stage').getByTestId('video-player');
+    // Video.js copies the test id onto both the <video-js> wrapper and its inner <video>
+    // tech element; the size regression is about the wrapper.
+    const player = page.getByTestId('video-primary-stage').locator('video-js[data-testid="video-player"]');
     await expect(player).toBeVisible({ timeout: 15_000 });
 
     // THE regression assertion: the player must occupy real space, not the

@@ -92,10 +92,17 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
   // under this harness because App.tsx redirects before it would.
   // ─────────────────────────────────────────────────────────────────────────
 
-  test('Phone-class viewport is routed to the Remote Controller pairing screen, not Notes/Boardroom', async () => {
-    await expect(phonePage.getByRole('heading', { name: 'Studio Disconnected' })).toBeVisible();
-    await expect(phonePage.getByRole('button', { name: 'Show Pairing Code' })).toBeVisible();
-    await expect(phonePage.getByRole('button', { name: 'Try Reconnecting Now' })).toBeVisible();
+  test('Phone-class viewport shows the Remote Controller, not Notes/Boardroom', async () => {
+    // The harness injects window.electronAPI (fixtures/auth.ts), which App.tsx treats as
+    // an Electron runtime, so a phone-width viewport is not auto-routed here (that routing
+    // is covered by modules/mobile-remote/routing tests). The Controller's explicit route
+    // is what a phone is sent to, so open it directly.
+    await phonePage.goto('/mobile-remote', { waitUntil: 'domcontentloaded' });
+
+    // The controller reports that no Studio is online (the pairing code is issued by the
+    // desktop, so there is no "Show Pairing Code" button here) and shows its build.
+    await expect(phonePage.getByRole('heading', { name: /Pairing Failed|Studio Disconnected/ })).toBeVisible({ timeout: 15_000 });
+    await expect(phonePage.getByTestId('controller-build')).toBeVisible();
 
     // Neither the desktop Sidebar nor any Notes/Boardroom surface is reachable from here.
     await expect(phonePage.getByTestId('nav-item-notes')).toHaveCount(0);
@@ -117,7 +124,8 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       // CLAUDE.md documents and every other slice-consuming module already follows
       // (ConversationHistoryList.tsx, BoardroomModule.tsx, RightPanel.tsx).
       try {
-        await tabletPage.getByTestId('nav-item-notes').click();
+        // Notes is still a module but no longer a sidebar item; open it through the store.
+        await tabletPage.evaluate(() => (window as any).useStore.getState().setModule('notes'));
 
         // NotesModule.tsx has no data-testid on the "new note" button (icon-only, no
         // accessible name) — select it structurally via its real sibling relationship
@@ -194,12 +202,12 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
 
       // Open the session history panel: setRightPanelTab('agent') opens the panel
       // (appSlice.ts:342 sets isRightPanelOpen: true as a side effect), then the real
-      // "Archives" tab (aria-label="View Archives", BoardroomModule... RightPanel.tsx)
+      // "Archives" tab (aria-label="View Chat Archives", BoardroomModule... RightPanel.tsx)
       // switches to ConversationHistoryList.
       await tabletPage.evaluate(() => {
         (window as any).useStore.getState().setRightPanelTab('agent');
       });
-      await tabletPage.getByLabel('View Archives').click();
+      await tabletPage.getByLabel('View Chat Archives').click();
 
       await expect(tabletPage.getByRole('button', { name: /Local Session 0$/ })).toBeVisible();
       await expect(tabletPage.getByRole('button', { name: /Local Session 59$/ })).toBeVisible();
@@ -219,7 +227,7 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       await expect(tabletPage.getByTestId('boardroom-module')).toBeVisible({ timeout: 15_000 });
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('Durability check message');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
 
       // The mocked generateContentStream route (auth.ts) always fulfills with a fixed
       // reply — we're not asserting on AI comprehension here, only that the user's own
@@ -262,10 +270,12 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
         await route.fulfill({
           status: 200,
           headers: { 'Access-Control-Allow-Origin': '*' },
-          contentType: 'application/json',
-          body: JSON.stringify({
-            candidates: [{ content: { role: 'model', parts: [{ text: 'Noted.' }] }, finishReason: 'STOP' }],
-          }),
+          // The Boardroom stream client reads server-sent events (same shape as
+          // fixtures/auth.ts's generateContentStream mock), not a JSON candidates body.
+          contentType: 'text/event-stream',
+          body:
+            'data: ' + JSON.stringify({ text: 'Noted.', functionCalls: [] }) + '\n\n' +
+            'data: ' + JSON.stringify({ complete: true }) + '\n\n',
         });
       });
 
@@ -275,12 +285,15 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
       }
 
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('My artist name is Luna Synthwave');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
       await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
 
+      // Let the first turn finish before the follow-up; a send during processing is ignored.
+      await tabletPage.waitForFunction(() => (window as any).useStore.getState().isAgentProcessing === false, undefined, { timeout: 15_000 });
+
       await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('What is my artist name?');
-      await tabletPage.locator('[data-testid="command-bar-run-btn"]:visible').click();
-      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 10_000 }); // bypass-strict: select specific element by 0-based index
+      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
+      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 30_000 }); // bypass-strict: select specific element by 0-based index
 
       const secondRequestOnward = capturedPayloads.slice(1).join('\n');
       expect(secondRequestOnward).toContain('Luna Synthwave');
