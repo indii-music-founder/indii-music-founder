@@ -189,35 +189,66 @@ async function runColumnExperiment() {
     return rows;
 }
 
+// Noul thresholds for "does any standard mood apply?". Above YES -> trust the Choice;
+// below NO -> no mood; between -> unsettled, fall back to the deterministic baseline.
+const MOOD_APPLIES_YES = 0.7;
+const MOOD_APPLIES_NO = 0.3;
+
 async function runMoodExperiment() {
     const rows = [];
     for (const fixture of MOOD_FIXTURES) {
         const criteria = {};
         for (const mood of MOOD_ENUM) criteria[mood] = `The tag expresses a ${mood} mood.`;
-        criteria.none = 'The tag expresses no recognizable mood from the list.';
+        // A Choice always picks an option, so the null case is a separate Noul in the
+        // same request (TypeSafe guidance: companion Noul over a "none" option).
         const { answers, ms } = await judge(
-            { ai_mood_tag: fixture.mood },
+            { ai_mood_tag: fixture.mood, standard_sync_moods: MOOD_ENUM },
             {
+                mood_applies: {
+                    type: 'noul',
+                    instructions: 'Does the mood tag `ai_mood_tag` express one of the moods in `standard_sync_moods`?',
+                    criteria: {
+                        true: 'The tag clearly conveys one of the listed moods, e.g. "happy" conveys Upbeat.',
+                        false: 'The tag describes a feeling, theme or sound none of the listed moods captures, e.g. a heartbreak theme or a noise texture.',
+                    },
+                },
                 mood: {
                     type: 'choice',
                     instructions: {
-                        task: 'A music AI tagged a track with this mood string. Which single standardized sync-licensing mood matches it best? If the string expresses no recognizable mood, choose none.',
+                        task: 'A music AI tagged a track with this mood string. Which standardized sync-licensing mood matches it best?',
                         tag: fixture.mood,
                     },
                     criteria,
                 },
             },
         );
-        const a = answers.mood;
-        const jev = a?.choice && a.choice !== 'none' ? [a.choice] : [];
+        const applies = answers.mood_applies?.noul ?? null;
+        const choice = answers.mood?.choice ?? null;
         const baseline = baselineMapToSyncMoods([fixture.mood]);
+        let jev;
+        let decision;
+        if (applies === null || choice === null) {
+            jev = ['(error)'];
+            decision = 'error';
+        } else if (applies >= MOOD_APPLIES_YES) {
+            jev = [choice];
+            decision = 'choice';
+        } else if (applies <= MOOD_APPLIES_NO) {
+            jev = [];
+            decision = 'no_mood';
+        } else {
+            jev = baseline;
+            decision = 'unsettled_baseline';
+        }
         const sameSet = (x, y) => x.length === y.length && x.every((m) => y.includes(m));
         rows.push({
             mood: fixture.mood,
             truth: fixture.truth,
             baseline,
             jev,
-            jev_confidence: a?.confidence ?? null,
+            jev_confidence: answers.mood?.confidence ?? null,
+            mood_applies: applies,
+            decision,
             baseline_correct: sameSet(baseline, fixture.truth),
             jev_correct: sameSet(jev, fixture.truth),
             ms,
@@ -274,13 +305,13 @@ const md = [`# TypeSafe shadow experiments — ${results.generatedAt}`, '',
     `Evidence class: **${results.evidenceClass}** · model \`${MODEL}\` · ${results.cost.total_requests} requests · ${results.cost.input_tokens} in / ${results.cost.output_tokens} out tokens · ${(results.cost.total_ms / 1000).toFixed(1)}s total`, '',
     `## A. Foundry column semantics (${columnSummary.n} fixtures)`, '',
     `| header | truth | shipped baseline | jev | jev conf |`, '|---|---|---|---|---|',
-    ...columnRows.map((r) => `| ${r.header} | ${r.truth} | ${r.baseline}${r.baseline_correct ? ' ✓' : ' ✗'} | ${r.jev}${r.jev_correct ? ' ✓' : ' ✗'} | ${r.jev_confidence ?? '-'} |`), '',
+    ...columnRows.map((r) => `| ${r.header} | ${r.truth} | ${r.baseline}${r.baseline_correct ? ' ✓' : ' ✗'} | ${r.jev}${r.jev_correct ? ' ✓' : ' ✗'} | ${r.mood_applies ?? '-'} | ${r.decision} |`), '',
     `Baseline ${columnSummary.baselineCorrect}/${columnSummary.n} · Jev ${columnSummary.jevCorrect}/${columnSummary.n}`,
     `Jev fixes baseline: ${columnSummary.payoff.map((r) => `\`${r.header}\``).join(', ') || '—'}`,
     `Jev regressions: ${columnSummary.regressions.map((r) => `\`${r.header}\``).join(', ') || '—'}`, '',
     `## B. Sync mood classification (${moodSummary.n} fixtures)`, '',
-    `| tag | truth | shipped baseline | jev | jev conf |`, '|---|---|---|---|---|',
-    ...moodRows.map((r) => `| ${r.mood} | [${r.truth.join(',') || '∅'}] | [${r.baseline.join(',') || '∅'}]${r.baseline_correct ? ' ✓' : ' ✗'} | [${r.jev.join(',') || '∅'}]${r.jev_correct ? ' ✓' : ' ✗'} | ${r.jev_confidence ?? '-'} |`), '',
+    `| tag | truth | shipped baseline | jev | mood applies (noul) | decision |`, '|---|---|---|---|---|---|',
+    ...moodRows.map((r) => `| ${r.mood} | [${r.truth.join(',') || '∅'}] | [${r.baseline.join(',') || '∅'}]${r.baseline_correct ? ' ✓' : ' ✗'} | [${r.jev.join(',') || '∅'}]${r.jev_correct ? ' ✓' : ' ✗'} | ${r.mood_applies ?? '-'} | ${r.decision} |`), '',
     `Baseline ${moodSummary.baselineCorrect}/${moodSummary.n} · Jev ${moodSummary.jevCorrect}/${moodSummary.n}`,
     `Jev fixes baseline: ${moodSummary.payoff.map((r) => `\`${r.mood}\``).join(', ') || '—'}`,
     `Jev regressions: ${moodSummary.regressions.map((r) => `\`${r.mood}\``).join(', ') || '—'}`, ''].join('\n');

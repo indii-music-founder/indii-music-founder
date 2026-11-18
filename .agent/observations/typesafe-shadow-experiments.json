@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T01:26:32.969Z",
+  "generatedAt": "2026-11-18T14:28:43.243Z",
   "model": "jev-latest",
   "evidenceClass": "local-real (live API, labeled synthetic fixtures) — not production proof",
   "experiments": {
@@ -12,7 +12,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 497
+        "ms": 694
       },
       {
         "header": "UPC",
@@ -22,17 +22,17 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 166
+        "ms": 234
       },
       {
         "header": "Fee Amount",
         "truth": "fee_amount",
         "baseline": "fee_amount",
         "jev": "fee_amount",
-        "jev_confidence": 0.93,
+        "jev_confidence": 0.94,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 167
+        "ms": 257
       },
       {
         "header": "Net Receipts",
@@ -42,27 +42,27 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 151
+        "ms": 236
       },
       {
         "header": "Units",
         "truth": "quantity_count",
         "baseline": "quantity_count",
         "jev": "quantity_count",
-        "jev_confidence": 0.88,
+        "jev_confidence": 0.9,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 172
+        "ms": 218
       },
       {
         "header": "Sales Month",
         "truth": "us_date",
         "baseline": "iso_date",
         "jev": "generic_text",
-        "jev_confidence": 0.48,
+        "jev_confidence": 0.5,
         "baseline_correct": false,
         "jev_correct": false,
-        "ms": 172
+        "ms": 215
       },
       {
         "header": "Reporting Date",
@@ -72,7 +72,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 197
+        "ms": 242
       },
       {
         "header": "Territory",
@@ -82,17 +82,17 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 147
+        "ms": 253
       },
       {
         "header": "Store",
         "truth": "dsp_name",
         "baseline": "dsp_name",
         "jev": "dsp_name",
-        "jev_confidence": 0.99,
+        "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 161
+        "ms": 221
       },
       {
         "header": "Artist",
@@ -102,7 +102,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 170
+        "ms": 239
       },
       {
         "header": "Track Title",
@@ -112,7 +112,7 @@
         "jev_confidence": 1,
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 152
+        "ms": 232
       },
       {
         "header": "Album Title",
@@ -122,7 +122,7 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 160
+        "ms": 284
       },
       {
         "header": "Transaction Type",
@@ -132,7 +132,7 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 156
+        "ms": 244
       },
       {
         "header": "ISWC",
@@ -142,17 +142,17 @@
         "jev_confidence": 1,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 197
+        "ms": 244
       },
       {
         "header": "Streams",
         "truth": "stream_count",
         "baseline": "quantity_count",
         "jev": "stream_count",
-        "jev_confidence": 0.98,
+        "jev_confidence": 0.99,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 159
+        "ms": 262
       },
       {
         "header": "Downloads",
@@ -162,7 +162,7 @@
         "jev_confidence": 0.99,
         "baseline_correct": false,
         "jev_correct": true,
-        "ms": 153
+        "ms": 313
       }
     ],
     "moods": [
@@ -177,34 +177,36 @@
         "jev": [
           "Upbeat"
         ],
-        "jev_confidence": 0.99,
+        "jev_confidence": 1,
+        "mood_applies": 0.74,
+        "decision": "choice",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 155
+        "ms": 242
       },
       {
         "mood": "unhappy",
         "truth": [],
         "baseline": [],
-        "jev": [
-          "Melancholic"
-        ],
-        "jev_confidence": 0.98,
+        "jev": [],
+        "jev_confidence": 1,
+        "mood_applies": 0.54,
+        "decision": "unsettled_baseline",
         "baseline_correct": true,
-        "jev_correct": false,
-        "ms": 178
+        "jev_correct": true,
+        "ms": 245
       },
       {
         "mood": "lovelorn",
         "truth": [],
         "baseline": [],
-        "jev": [
-          "Melancholic"
-        ],
-        "jev_confidence": 0.76,
+        "jev": [],
+        "jev_confidence": 0.61,
+        "mood_applies": 0.55,
+        "decision": "unsettled_baseline",
         "baseline_correct": true,
-        "jev_correct": false,
-        "ms": 150
+        "jev_correct": true,
+        "ms": 242
       },
       {
         "mood": "dark-pop",
@@ -217,10 +219,12 @@
         "jev": [
           "Dark"
         ],
-        "jev_confidence": 0.92,
+        "jev_confidence": 1,
+        "mood_applies": 0.47,
+        "decision": "unsettled_baseline",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 277
+        "ms": 258
       },
       {
         "mood": "epic orchestral",
@@ -233,10 +237,12 @@
         "jev": [
           "Cinematic"
         ],
-        "jev_confidence": 0.82,
+        "jev_confidence": 0.79,
+        "mood_applies": 0.65,
+        "decision": "unsettled_baseline",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 203
+        "ms": 253
       },
       {
         "mood": "chill",
@@ -250,9 +256,11 @@
           "Chill"
         ],
         "jev_confidence": 1,
+        "mood_applies": 0.98,
+        "decision": "choice",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 157
+        "ms": 271
       },
       {
         "mood": "somber sad piano",
@@ -266,9 +274,11 @@
           "Melancholic"
         ],
         "jev_confidence": 1,
+        "mood_applies": 0.81,
+        "decision": "choice",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 174
+        "ms": 253
       },
       {
         "mood": "hype",
@@ -281,22 +291,24 @@
         "jev": [
           "Energetic"
         ],
-        "jev_confidence": 0.79,
+        "jev_confidence": 0.83,
+        "mood_applies": 0.71,
+        "decision": "choice",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 169
+        "ms": 263
       },
       {
         "mood": "experimental industrial glitched noise",
         "truth": [],
         "baseline": [],
-        "jev": [
-          "Dark"
-        ],
-        "jev_confidence": 0.75,
+        "jev": [],
+        "jev_confidence": 0.98,
+        "mood_applies": 0.15,
+        "decision": "no_mood",
         "baseline_correct": true,
-        "jev_correct": false,
-        "ms": 210
+        "jev_correct": true,
+        "ms": 261
       },
       {
         "mood": "romantic dinner jazz",
@@ -309,10 +321,12 @@
         "jev": [
           "Romantic"
         ],
-        "jev_confidence": 0.97,
+        "jev_confidence": 0.99,
+        "mood_applies": 0.84,
+        "decision": "choice",
         "baseline_correct": true,
         "jev_correct": true,
-        "ms": 155
+        "ms": 256
       }
     ]
   },
@@ -334,19 +348,15 @@
     "moods": {
       "fixtures": 10,
       "baseline_correct": 10,
-      "jev_correct": 7,
+      "jev_correct": 10,
       "jev_fixes_baseline": [],
-      "jev_regressions_vs_baseline": [
-        "unhappy",
-        "lovelorn",
-        "experimental industrial glitched noise"
-      ]
+      "jev_regressions_vs_baseline": []
     }
   },
   "cost": {
-    "input_tokens": 16061,
-    "output_tokens": 3609,
+    "input_tokens": 17301,
+    "output_tokens": 3739,
     "total_requests": 26,
-    "total_ms": 4805
+    "total_ms": 6932
   }
 }
