@@ -19,7 +19,12 @@ import {
     ArrowLeft,
     Edit3,
     QrCode,
+    ImageIcon,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
+import { useStore } from '@/core/store';
+import { ShareSheet } from '@/components/share/ShareSheet';
+import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
 import {
     preSaveCampaignService,
     type PreSaveCampaign,
@@ -194,6 +199,26 @@ export default function PreSaveCampaignBuilder() {
         window.setTimeout(() => setCopied(false), 2000);
     };
 
+    const { artistName, brandColors } = useStore(useShallow(state => ({
+        artistName: state.userProfile?.displayName,
+        brandColors: state.userProfile?.brandKit?.colors,
+    })));
+
+    const openShareCard = (card: { title: string; releaseDate: string | number; coverArtUrl?: string; url: string }) => {
+        void ShareSheet.call({
+            title: 'Pre-save share card',
+            template: {
+                kind: 'presave',
+                artistName,
+                trackTitle: card.title,
+                releaseDate: card.releaseDate,
+                coverArtUrl: card.coverArtUrl || undefined,
+                url: card.url,
+            },
+            options: { brandColors },
+        });
+    };
+
     const handleShare = async (url?: string, title?: string) => {
         const targetUrl = url || publishedUrl;
         if (!targetUrl) return;
@@ -342,6 +367,15 @@ export default function PreSaveCampaignBuilder() {
                                                 title="View QR Code"
                                             >
                                                 <QrCode size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openShareCard({ title: c.title, releaseDate: c.releaseDate, coverArtUrl: c.coverArtUrl, url })}
+                                                className="rounded-lg border border-white/10 bg-white/5 p-2 text-gray-400 hover:text-white"
+                                                title="Create share card"
+                                                aria-label={`Create share card for ${c.title}`}
+                                            >
+                                                <ImageIcon size={14} />
                                             </button>
                                             <button
                                                 type="button"
@@ -556,6 +590,15 @@ export default function PreSaveCampaignBuilder() {
                                         </button>
                                         <button type="button" onClick={() => void handleShare()} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-gray-300">
                                             <Share2 size={12} /> Share
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => openShareCard({ title: trackTitle.trim(), releaseDate, coverArtUrl, url: publishedUrl })}
+                                            className={`${SIGNATURE_BUTTON_BASE} ${SIGNATURE_BUTTON_TONES.indigo.button} px-3 py-1.5 text-xs`}
+                                        >
+                                            <ImageIcon size={12} className={SIGNATURE_BUTTON_TONES.indigo.icon} />
+                                            <span className={SIGNATURE_BUTTON_TONES.indigo.label}>Share card</span>
+                                            <span aria-hidden="true" className={SIGNATURE_BUTTON_TONES.indigo.sweep} />
                                         </button>
                                     </div>
                                 </div>
