@@ -254,7 +254,7 @@ test.describe('Right Panel & Swarm Tabs', () => {
 
         // The panel's Run button is disabled until the workflow has nodes, so load a
         // built-in system protocol first.
-        await page.getByText('Campaign Launch', { exact: true }).first().click();
+        await page.getByText('Campaign Launch', { exact: true }).first().click(); // bypass-strict: protocol and workflow names render in separate sidebar lists (WorkflowSidebarWidgets), so the name can match more than once
 
         // Click "Run Workflow" button
         const runBtn = rightPanel.locator('button:has-text("Run Workflow")').first(); // bypass-strict: action button may appear in multiple responsive viewports or action bars
