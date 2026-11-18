@@ -14,6 +14,9 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/services/firebase';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports } from '@/modules/registration/prerequisiteReports';
+import { CelebrationMoment } from '@/components/share/CelebrationMoment';
+import { ShareSheet } from '@/components/share/ShareSheet';
+import { claimMilestone } from '@/services/share/milestones';
 
 interface PipelineStep {
     id: string;
@@ -262,6 +265,15 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             } else {
                 setDeliveryState('delivered');
                 toastSuccess('Release delivered to distributor!');
+                const releaseTitle = title.trim();
+                if (ownerId && claimMilestone('first-release-delivered', ownerId)) {
+                    void CelebrationMoment.call({
+                        headline: 'First release delivered',
+                        detail: `“${releaseTitle}” is on its way to every store.`,
+                        template: { kind: 'release', artistName: artist.trim() || userProfile?.displayName, trackTitle: releaseTitle, coverArtUrl: selectedCoverUrl || undefined },
+                        options: { brandColors: userProfile?.brandKit?.colors },
+                    });
+                }
             }
             // Wait for user to click Done button, which triggers onSubmitted via handleClose
         } catch (err: unknown) {
@@ -543,6 +555,21 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                     )}
 
                     <div className="flex items-center gap-3 ml-auto">
+                        {done && deliveryState === 'delivered' && (
+                            <button
+                                type="button"
+                                onClick={() => void ShareSheet.call({
+                                    title: 'Share your release',
+                                    template: { kind: 'release', artistName: artist.trim() || userProfile?.displayName, trackTitle: title.trim(), coverArtUrl: selectedCoverUrl || undefined },
+                                    options: { brandColors: userProfile?.brandKit?.colors },
+                                    initialSize: 'square',
+                                })}
+                                data-testid="release-share-card-button"
+                                className="px-4 py-2 text-xs font-bold text-gray-300 hover:text-white uppercase tracking-widest transition-colors"
+                            >
+                                Share card
+                            </button>
+                        )}
                         {done ? (
                             <button
                                 onClick={handleClose}

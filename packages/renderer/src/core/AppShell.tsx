@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { installPresentModeShortcut, usePresentMode } from '@/core/presentMode';
 import { MotionConfig } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
@@ -430,10 +431,29 @@ function ModuleRenderer({
     return <ModuleComponent />;
 }
 
+/** Brief "you're presenting" pill; mounts with present mode and hides itself. */
+function PresentModeHint() {
+    const [visible, setVisible] = useState(true);
+    useEffect(() => {
+        const timer = window.setTimeout(() => setVisible(false), 2000);
+        return () => window.clearTimeout(timer);
+    }, []);
+    if (!visible) return null;
+    return (
+        <div role="status" className="pointer-events-none fixed left-1/2 top-4 z-[200] -translate-x-1/2 rounded-full border border-white/15 bg-black/80 px-4 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md">
+            Presenting · Shift+P to exit
+        </div>
+    );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
     useOnboardingRedirect();
     useModuleDeepLink();
+
+    // Present mode: clean screenshots / screen recordings (Shift+P or ?present=1).
+    const presenting = usePresentMode();
+    useEffect(() => installPresentModeShortcut(), []);
 
     const { subscription, loading: subLoading } = useSubscription();
 
@@ -627,11 +647,15 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                 <ApprovalModal />
                 <CostWarningModal />
                 <ApprovalManager />
-                <PWAInstallPrompt />
-                <Suspense fallback={null}>
-                    <TransmissionMonitor />
-                </Suspense>
-                <UpdaterMonitor />
+                {!presenting && (
+                    <>
+                        <PWAInstallPrompt />
+                        <Suspense fallback={null}>
+                            <TransmissionMonitor />
+                        </Suspense>
+                        <UpdaterMonitor />
+                    </>
+                )}
 
                 <UnifiedCommandMenu />
 
@@ -639,19 +663,26 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                     <BoardroomModule />
                 </Suspense>
 
-                <UploadQueueMonitor />
-                <BackgroundJobMonitor />
+                {!presenting && (
+                    <>
+                        <UploadQueueMonitor />
+                        <BackgroundJobMonitor />
+                    </>
+                )}
                 <AudioPIPPlayer />
 
                 <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
 
-                <CookieConsentBanner />
+                {!presenting && (
+                    <>
+                        <CookieConsentBanner />
+                        <FirstRunTour />
+                        <AgentFeedbackWidget />
+                        <TaskPlanWidget />
+                    </>
+                )}
 
-                <FirstRunTour />
-
-                <AgentFeedbackWidget />
-
-                <TaskPlanWidget />
+                {presenting && <PresentModeHint />}
 
                 <AgentCanvasPanel />
 

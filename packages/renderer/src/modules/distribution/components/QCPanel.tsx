@@ -17,6 +17,8 @@ import { TagMatrix } from '@/modules/tools/components/TagMatrix';
 // ISSUE-1440: shared disclosure primitive for metadata-tab secondaries.
 import SectionCard from '@/components/ui/SectionCard';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
+import { CelebrationMoment } from '@/components/share/CelebrationMoment';
+import { claimMilestone } from '@/services/share/milestones';
 import type { ValidationReport } from '@/types/distribution';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
@@ -262,6 +264,22 @@ export const QCPanel: React.FC = () => {
 
             toast.dismiss(extractToastId);
             toast.success("Extraction Complete: Deep acoustic profile generated.");
+
+            const ownerId = useStore.getState().userProfile?.uid || useStore.getState().user?.uid || '';
+            if (ownerId && claimMilestone('first-track-analyzed', ownerId)) {
+                const tempo = resultProfile.technical?.bpm ? `${Math.round(resultProfile.technical.bpm)} BPM` : '';
+                const key = resultProfile.technical?.key && resultProfile.technical.key !== 'unmeasured'
+                    ? `${resultProfile.technical.key}${resultProfile.technical.scale && resultProfile.technical.scale !== 'unmeasured' ? ` ${resultProfile.technical.scale}` : ''}`
+                    : '';
+                const detail = [tempo, key].filter(Boolean).join(' · ') || 'Deep acoustic profile ready.';
+                const artistName = useStore.getState().userProfile?.displayName;
+                void CelebrationMoment.call({
+                    headline: 'First track analyzed',
+                    detail,
+                    template: { kind: 'milestone', artistName, headline: 'First track analyzed', detail },
+                    options: { brandColors: useStore.getState().userProfile?.brandKit?.colors },
+                });
+            }
 
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
