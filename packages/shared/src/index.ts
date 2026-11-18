@@ -36,6 +36,7 @@ export * from './schemas/conversionEvent.js';
 export * from './schemas/trash.js';
 export * from './schemas/instagramSocial.js';
 export * from './schemas/artistMasterDirective.js';
+export * from './share/passportShareCode.js';
 
 
 

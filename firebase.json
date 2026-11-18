@@ -123,6 +123,10 @@
           "source": "/l/**"
         },
         {
+          "function": { "functionId": "shareMeta" },
+          "source": "/passport/r/**"
+        },
+        {
           "destination": "/index.html",
           "source": "**"
         }
@@ -304,6 +308,10 @@
         {
           "function": { "functionId": "sdkApi" },
           "source": "/api/**"
+        },
+        {
+          "function": { "functionId": "shareMeta" },
+          "source": "/presave/**"
         },
         {
           "destination": "/index.html",
