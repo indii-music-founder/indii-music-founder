@@ -127,6 +127,10 @@
           "source": "/passport/r/**"
         },
         {
+          "function": { "functionId": "shareMeta" },
+          "source": "/s/**"
+        },
+        {
           "destination": "/index.html",
           "source": "**"
         }

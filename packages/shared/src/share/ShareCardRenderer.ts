@@ -189,11 +189,13 @@ function drawText(ctx: CanvasRenderingContext2D, layout: Layout, model: ShareCar
     ctx.textAlign = align;
     y += pillH + bodySize * 0.8;
 
-    ctx.font = `800 ${titleSize}px ${FONT_STACK}`;
+    const fittedTitleSize = model.compactTitle ? Math.round(titleSize * 0.78) : titleSize;
+    const titleLines = model.compactTitle ? layout.maxTitleLines + 1 : layout.maxTitleLines;
+    ctx.font = `800 ${fittedTitleSize}px ${FONT_STACK}`;
     ctx.fillStyle = FREQUENCY_PALETTE.signalWhite;
-    for (const line of wrapText(t => ctx.measureText(t).width, model.title, text.w, layout.maxTitleLines)) {
+    for (const line of wrapText(t => ctx.measureText(t).width, model.title, text.w, titleLines)) {
         ctx.fillText(line, anchorX, y);
-        y += titleSize * 1.08;
+        y += fittedTitleSize * 1.08;
     }
 
     if (model.subtitle) {

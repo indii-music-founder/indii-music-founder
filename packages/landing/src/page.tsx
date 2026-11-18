@@ -20,6 +20,8 @@ import NowWhatSection from './components/sections/NowWhatSection';
 import WaitlistSection from './components/sections/WaitlistSection';
 import FooterSection from './components/sections/FooterSection';
 import ExperienceShell from './components/ExperienceShell';
+import SectionShareChip from './components/SectionShareChip';
+import { findSiteSection } from '@shared/share/siteSections';
 
 const ThesisCrawl = lazy(() => import('./components/ThesisCrawl'));
 
@@ -87,7 +89,63 @@ function LazySection({ id, children }: { id?: string; children: React.ReactNode 
     };
   }, [id, visible]);
 
-  return <div ref={ref}>{visible ? <Suspense fallback={null}>{children}</Suspense> : null}</div>;
+  // Re-run the anchor below when the hash changes within an already-loaded page.
+  const [hashVersion, setHashVersion] = useState(0);
+  useEffect(() => {
+    if (!id) return;
+    const onHashChange = () => setHashVersion((v) => v + 1);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [id]);
+
+  // Deep links (`/#pricing`, `/s/pricing`): the browser's own jump happens
+  // before a lazy section exists, so scroll once its element is mounted.
+  useEffect(() => {
+    if (!visible || !id || window.location.hash !== '#' + id) return;
+    // Sections above the target load lazily as we arrive and push it down, so
+    // keep re-anchoring on layout changes for a few seconds — but stop the
+    // moment the visitor scrolls on their own.
+    let frame = 0;
+    let done = false;
+    const started = performance.now();
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => anchor());
+    const stop = () => {
+      done = true;
+      cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('touchmove', stop);
+      window.removeEventListener('keydown', stop);
+    };
+    function anchor() {
+      if (done) return;
+      if (performance.now() - started > 4000) {
+        stop();
+        return;
+      }
+      const target = document.getElementById(id!);
+      if (target) target.scrollIntoView({ block: 'start' });
+      else frame = requestAnimationFrame(anchor);
+    }
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('touchmove', stop, { passive: true });
+    window.addEventListener('keydown', stop);
+    resizeObserver?.observe(document.body);
+    frame = requestAnimationFrame(anchor);
+    const timeout = window.setTimeout(stop, 4100);
+    return () => {
+      window.clearTimeout(timeout);
+      stop();
+    };
+  }, [id, visible, hashVersion]);
+
+  const shareable = findSiteSection(id);
+  return (
+    <div ref={ref} className={shareable ? 'relative' : undefined}>
+      {visible ? <Suspense fallback={null}>{children}</Suspense> : null}
+      {visible && shareable ? <SectionShareChip section={shareable} /> : null}
+    </div>
+  );
 }
 
 const ambientStars = Array.from({ length: 72 }, (_, index) => ({
@@ -417,7 +475,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         />
       )}
 
-      <NowWhatSection />
+      <LazySection id="now-what">
+        <NowWhatSection />
+      </LazySection>
 
       {founder && (
         <LazySection id="detroit">
@@ -441,7 +501,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <LazySection id="capabilities">
         <AgentGrid />
       </LazySection>
-      <LazySection>
+      <LazySection id="overlooked-work">
         <OverlookedWorkSection />
       </LazySection>
       <LazySection id="conductor">
@@ -450,7 +510,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <LazySection id="studio-preview">
         <AppStudioShowcase />
       </LazySection>
-      <LazySection>
+      <LazySection id="principles">
         <PrinciplesSection />
       </LazySection>
 

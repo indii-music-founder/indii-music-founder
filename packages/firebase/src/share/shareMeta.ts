@@ -3,7 +3,7 @@
  *
  * Link unfurlers (iMessage, Slack, X, WhatsApp, Discord…) don't run our SPA,
  * so every link used to preview as the generic site card. Hosting rewrites
- * `/presave/**` (app) and `/passport/r/**` (landing) here; we fetch that
+ * `/presave/**` (app), `/passport/r/**` and `/s/**` (landing) here; we fetch that
  * site's own built `index.html`, swap in page-specific og:/twitter: tags and
  * serve it. Humans get the normal app (same HTML, better tags) — no
  * user-agent sniffing, no redirect.
@@ -14,7 +14,7 @@
  */
 import { onRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions/v2';
-import { decodePassportShareStage, passportStageOgImagePath } from '@indii/shared';
+import { decodePassportShareStage, findSiteSection, passportStageOgImagePath, siteSectionOgImagePath, siteSectionSharePath } from '@indii/shared';
 import { getPublicPreSaveCampaign } from '../marketing/presaveCampaigns';
 import { arcjetKey } from '../config/secrets';
 import { protectAnonymousSignupRequest } from '../functions/security/arcjet';
@@ -26,7 +26,7 @@ const CACHE_SECONDS = 300;
 
 /** Only our own hosts may be fetched as a shell (no SSRF via Host headers). */
 const ALLOWED_HOST = /^(?:[a-z0-9-]+\.)*(?:indii\.music|web\.app|firebaseapp\.com)$/i;
-const DEFAULT_ORIGIN = { presave: 'https://app.indii.music', passport: 'https://indii.music' } as const;
+const DEFAULT_ORIGIN = { presave: 'https://app.indii.music', passport: 'https://indii.music', section: 'https://indii.music' } as const;
 
 export interface ShareMeta {
     title: string;
@@ -40,13 +40,16 @@ export interface ShareMeta {
 
 export type ShareRoute =
     | { kind: 'presave'; campaignId: string }
-    | { kind: 'passport'; code: string };
+    | { kind: 'passport'; code: string }
+    | { kind: 'section'; id: string };
 
 export function parseShareRoute(path: string): ShareRoute | null {
     const presave = /^\/presave\/([A-Za-z0-9_-]{8,128})\/?$/.exec(path);
     if (presave) return { kind: 'presave', campaignId: presave[1] };
     const passport = /^\/passport\/r\/([A-Za-z0-9_-]{1,1024})\/?$/.exec(path);
     if (passport) return { kind: 'passport', code: passport[1] };
+    const section = /^\/s\/([a-z0-9-]{1,64})\/?$/.exec(path);
+    if (section) return { kind: 'section', id: section[1] };
     return null;
 }
 
@@ -101,6 +104,19 @@ export interface ShareMetaDeps {
 }
 
 export async function resolveShareMeta(route: ShareRoute, origin: string, deps: ShareMetaDeps): Promise<ShareMeta | null> {
+    if (route.kind === 'section') {
+        const section = findSiteSection(route.id);
+        if (!section) return null;
+        return {
+            title: `${section.title} — indii.music`,
+            description: section.description,
+            url: `${origin}${siteSectionSharePath(section)}`,
+            image: `${origin}${siteSectionOgImagePath(section)}`,
+            imageAlt: `indii.music — ${section.label}`,
+            imageSize: { width: 1200, height: 630 },
+        };
+    }
+
     if (route.kind === 'passport') {
         const stage = decodePassportShareStage(route.code);
         if (!stage) return null;
@@ -175,7 +191,7 @@ export const shareMeta = onRequest(
             shell = await fetchShell(origin);
         } catch (error) {
             logger.warn('[shareMeta] shell unavailable', { origin, error: String(error) });
-            const target = escapeAttr(route.kind === 'passport' ? `${origin}/passport` : origin);
+            const target = escapeAttr(route.kind === 'passport' ? `${origin}/passport` : route.kind === 'section' ? `${origin}/#${route.id}` : origin);
             res.status(503).set('Cache-Control', 'no-store').type('html')
                 .send(`<!doctype html><meta charset="utf-8"><title>indii.music</title><p><a href="${target}">Continue to indii.music</a></p>`);
             return;

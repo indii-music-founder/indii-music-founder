@@ -33,6 +33,8 @@ describe('parseShareRoute', () => {
         expect(parseShareRoute('/presave/short')).toBeNull();
         expect(parseShareRoute('/presave/../../etc')).toBeNull();
         expect(parseShareRoute('/passport')).toBeNull();
+        expect(parseShareRoute('/s/pricing')).toEqual({ kind: 'section', id: 'pricing' });
+        expect(parseShareRoute('/s/Pricing')).toBeNull();
     });
 });
 
@@ -113,5 +115,16 @@ describe('resolveShareMeta', () => {
         const forged = Buffer.from(JSON.stringify({ v: 1, c: '<script>' })).toString('base64url');
         expect(await resolveShareMeta({ kind: 'passport', code: forged }, 'https://indii.music', { getPresave: vi.fn() })).toBeNull();
         expect(await resolveShareMeta({ kind: 'passport', code: 'garbage' }, 'https://indii.music', { getPresave: vi.fn() })).toBeNull();
+    });
+
+    it('builds a home-page section preview and ignores unknown sections', async () => {
+        const meta = await resolveShareMeta({ kind: 'section', id: 'pricing' }, 'https://indii.music', { getPresave: vi.fn() });
+        expect(meta).toMatchObject({
+            title: 'Choose the stage that fits your career now. — indii.music',
+            url: 'https://indii.music/s/pricing',
+            image: 'https://indii.music/og/section-pricing.jpg',
+            imageSize: { width: 1200, height: 630 },
+        });
+        expect(await resolveShareMeta({ kind: 'section', id: 'nope' }, 'https://indii.music', { getPresave: vi.fn() })).toBeNull();
     });
 });
