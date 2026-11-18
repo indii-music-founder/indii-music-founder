@@ -1,3 +1,4 @@
+import { aiStreamBody } from './fixtures/aiStream';
 import { test, expect } from './fixtures/auth';
 
 /**
@@ -42,7 +43,7 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
 
             if (isMarketing) {
                 // Specialist streams its reply in chunks (so the UI grows progressively).
-                const bodyLines = REPLY_CHUNKS.map(t => `data: ${JSON.stringify({ text: t })}\n`).join('');
+                const bodyLines = aiStreamBody(...REPLY_CHUNKS.map(t => ({ text: t })));
                 await route.fulfill({
                     status: 200,
                     contentType: 'text/event-stream',
@@ -59,7 +60,7 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'text/event-stream',
-                body: `data: ${JSON.stringify(conductorPayload)}\n`,
+                body: aiStreamBody(conductorPayload),
             });
         });
 

@@ -359,6 +359,21 @@ export function resolveToolRiskMetadata(toolName: string, declaration?: Function
     return metadata;
 }
 
+/**
+ * Write-tier tools still allowed in a read-only discussion (the Boardroom).
+ * Roster tools only change who is seated at the table in the UI — no
+ * external system, file, account or spend is touched — and the Boardroom
+ * prompt tells the Conductor to use them. Every other non-read tool stays
+ * blocked. Keep this list to roster management only.
+ */
+export const READ_ONLY_DISCUSSION_ROSTER_TOOLS: ReadonlySet<string> = new Set(['seat_agent', 'unseat_agent']);
+
+/** Whether a classified tool may run during a read-only discussion. */
+export function isAllowedInReadOnlyDiscussion(toolName: string, metadata: ToolRiskMetadata | undefined): boolean {
+    if (!metadata) return false;
+    return metadata.riskTier === 'read' || READ_ONLY_DISCUSSION_ROSTER_TOOLS.has(toolName);
+}
+
 export function getToolRiskTier(toolName: string): ToolRiskTier {
     return getToolRiskMetadata(toolName).riskTier;
 }

@@ -44,7 +44,7 @@ import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
 import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
-import { resolveToolRiskMetadata } from './ToolRiskRegistry';
+import { isAllowedInReadOnlyDiscussion, resolveToolRiskMetadata } from './ToolRiskRegistry';
 import { toolApprovalService } from './governance/ToolApprovalService';
 import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
 import { hasAutonomousComputerControl } from '@indii/shared';
@@ -1739,7 +1739,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                         const authorizedTools = this.authorizedTools ?? allFunctions.map(tool => tool.name);
                         const universalTrashTools = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
                         const riskMeta = resolveToolRiskMetadata(name, this.functions[name] ? declarations.find(d => d.name === name) : undefined);
-                        if (context?.isReadOnly && riskMeta?.riskTier !== 'read') {
+                        if (context?.isReadOnly && !isAllowedInReadOnlyDiscussion(name, riskMeta)) {
                             const blockedResult = toolError('This response is for discussion only. No action was executed.', 'READ_ONLY_EXECUTION');
                             toolCalls.push({ name, args, result: blockedResult });
                             fullPrompt += `\n[Tool ${name} blocked: this is a read-only discussion.]\n`;
