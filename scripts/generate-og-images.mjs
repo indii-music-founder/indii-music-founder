@@ -24,6 +24,8 @@ import { buildShareCardModel } from ${JSON.stringify(join(shareDir, 'shareCardTe
 import { renderShareCard } from ${JSON.stringify(join(shareDir, 'ShareCardRenderer.ts'))};
 import { PASSPORT_SHARE_STAGES } from ${JSON.stringify(join(shareDir, 'passportShareCode.ts'))};
 import { SITE_SECTIONS } from ${JSON.stringify(join(shareDir, 'siteSections.ts'))};
+import { NOW_WHAT_HOOKS } from ${JSON.stringify(join(shareDir, 'nowWhat.ts'))};
+import { INDII_BRAND } from ${JSON.stringify(join(root, 'packages/shared/src/brand.ts'))};
 window.renderStages = async () => {
   const out = [];
   for (const stage of PASSPORT_SHARE_STAGES) {
@@ -50,6 +52,34 @@ window.renderStages = async () => {
     canvas.getContext('2d').drawImage(bitmap, 0, 0);
     out.push({ name: 'section-' + section.id, dataUrl: canvas.toDataURL('image/jpeg', 0.86) });
   }
+  for (const hook of NOW_WHAT_HOOKS) {
+    const model = buildShareCardModel(
+      { kind: 'nowwhat', situation: hook.situation, answer: hook.answer, url: 'https://indii.music/n/' + hook.id },
+      { brandColors: ['#FFB800', '#E65100'] },
+    );
+    const { blob } = await renderShareCard(model, 'og');
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width; canvas.height = bitmap.height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0);
+    out.push({ name: 'now-what-' + hook.id, dataUrl: canvas.toDataURL('image/jpeg', 0.86) });
+  }
+  // Canonical site OG card (replaces legacy tagline in public/og-image.png)
+  {
+    const model = buildShareCardModel(
+      { kind: 'page', label: 'Founding Artist Beta', title: 'Run your music career without giving it away.', url: 'https://indii.music' },
+      { brandColors: ['#FFB800', '#E65100'], showAttribution: false },
+    );
+    model.eyebrow = INDII_BRAND.name;
+    model.subtitle = INDII_BRAND.tagline;
+    model.callout = '0% royalty cut · Built in Detroit';
+    const { blob } = await renderShareCard(model, 'og');
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width; canvas.height = bitmap.height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0);
+    out.push({ name: '__site-og-image__', dataUrl: canvas.toDataURL('image/png') });
+  }
   return out;
 };
 `;
@@ -72,7 +102,9 @@ try {
     const images = await page.evaluate(() => window.renderStages());
     mkdirSync(outDir, { recursive: true });
     for (const { name, dataUrl } of images) {
-        const file = join(outDir, `${name}.jpg`);
+        const file = name === '__site-og-image__'
+            ? join(root, 'packages/landing/public/og-image.png')
+            : join(outDir, `${name}.jpg`);
         writeFileSync(file, Buffer.from(dataUrl.split(',')[1], 'base64'));
         console.log(`wrote ${file}`);
     }

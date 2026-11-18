@@ -38,14 +38,6 @@ export default function ExperienceShell() {
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.16] mix-blend-screen"
       aria-hidden="true"
     >
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="hidden"
-        src="/videos/ambient-studio-loop.mp4"
-      />
       <AnimatePresence initial={false}>
         <motion.img
           key={BACKGROUND_SCREENSHOTS[currentIndex]}

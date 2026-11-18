@@ -131,6 +131,10 @@
           "source": "/s/**"
         },
         {
+          "function": { "functionId": "shareMeta" },
+          "source": "/n/**"
+        },
+        {
           "destination": "/index.html",
           "source": "**"
         }

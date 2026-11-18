@@ -1,15 +1,65 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowLeft, Award } from 'lucide-react';
-import { FOUNDERS } from '@/config/founders';
+import { ArrowLeft, Award, Share2 } from 'lucide-react';
+import { FOUNDERS, type FounderRecord } from '@/config/founders';
+import { ShareSheet } from '@/components/share/ShareSheet';
+import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
+import type { UserProfile } from '@/types/User';
+
+const GOLD_TONE = SIGNATURE_BUTTON_TONES.gold;
+
+/**
+ * Determines whether a founder covenant record belongs to the currently signed-in
+ * verified founder viewer. Matches on authoritative UID first, falling back to
+ * normalized display name only when the record has no UID bound.
+ */
+function isMatchingFounderRecord(
+    founder: FounderRecord,
+    userProfile: Partial<UserProfile> | null | undefined,
+    authUid?: string | null,
+    authDisplayName?: string | null,
+): boolean {
+    if (!userProfile) return false;
+    const isFounder = userProfile.subscriptionTier === 'founder'
+        || userProfile.tier === 'founder'
+        || userProfile.isFounder === true;
+    if (!isFounder) return false;
+
+    const viewerUid = userProfile.uid || userProfile.id || authUid || '';
+    if (founder.uid) {
+        return Boolean(viewerUid) && founder.uid === viewerUid;
+    }
+
+    const viewerName = (userProfile.displayName ?? authDisplayName ?? '').trim().toLowerCase();
+    const recordName = founder.name.trim().toLowerCase();
+    return Boolean(viewerName) && recordName === viewerName;
+}
 
 export default function FoundersRecognition() {
-    const { setModule } = useStore(
+    const { setModule, userProfile, user } = useStore(
         useShallow(state => ({
-            setModule: state.setModule
+            setModule: state.setModule,
+            userProfile: state.userProfile,
+            user: state.user,
         }))
     );
+
+    const handleShareSeat = (founder: FounderRecord) => {
+        void ShareSheet.call({
+            title: 'Founder Seat Card',
+            template: {
+                kind: 'founder',
+                name: founder.name,
+                seat: founder.seat,
+                joinedAt: founder.joinedAt,
+                verificationHash: founder.verificationHash,
+            },
+            options: {
+                brandColors: ['#FFB800', '#E65100'],
+            },
+        });
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-8 overflow-y-auto relative bg-background text-foreground">
@@ -46,25 +96,46 @@ export default function FoundersRecognition() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {FOUNDERS.map((founder) => (
-                            <div
-                                key={founder.verificationHash}
-                                className="bg-white/[0.02] border border-white/10 rounded-lg p-4 text-left hover:border-amber-500/30 transition-all"
-                            >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div>
-                                        <p className="font-bold text-white text-sm">{founder.name}</p>
-                                        <p className="text-xs text-gray-500 font-mono">Seat #{founder.seat}</p>
+                        {FOUNDERS.map((founder) => {
+                            const isOwnSeat = isMatchingFounderRecord(
+                                founder,
+                                userProfile,
+                                user?.uid,
+                                user?.displayName,
+                            );
+                            return (
+                                <div
+                                    key={founder.verificationHash}
+                                    className="bg-white/[0.02] border border-white/10 rounded-lg p-4 text-left hover:border-amber-500/30 transition-all"
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <p className="font-bold text-white text-sm">{founder.name}</p>
+                                            <p className="text-xs text-gray-500 font-mono">Seat #{founder.seat}</p>
+                                        </div>
+                                        <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded">
+                                            Founder
+                                        </span>
                                     </div>
-                                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-1 rounded">
-                                        Founder
-                                    </span>
+                                    <div className="flex items-center justify-between gap-2 mt-2">
+                                        <p className="text-xs text-gray-600">
+                                            Joined {new Date(founder.joinedAt).toLocaleDateString()}
+                                        </p>
+                                        {isOwnSeat && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleShareSeat(founder)}
+                                                className={`${SIGNATURE_BUTTON_BASE} ${GOLD_TONE.button} px-3 py-1.5 text-xs`}
+                                            >
+                                                <Share2 size={13} className={GOLD_TONE.icon} />
+                                                <span className={GOLD_TONE.label}>Share my seat</span>
+                                                <span aria-hidden="true" className={GOLD_TONE.sweep} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                                <p className="text-xs text-gray-600">
-                                    Joined {new Date(founder.joinedAt).toLocaleDateString()}
-                                </p>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 

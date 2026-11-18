@@ -23,17 +23,15 @@ describe('Landing Page Video Spots Integration', () => {
     container.remove();
   });
 
-  it('renders ambient studio loop in ExperienceShell', async () => {
+  it('renders ambient studio screenshot backdrop in ExperienceShell without hidden background video', async () => {
     await act(async () => {
       root.render(<ExperienceShell />);
     });
 
-    const video = container.querySelector('video');
-    expect(video).toBeTruthy();
-    expect(video?.getAttribute('src')).toBe('/videos/ambient-studio-loop.mp4');
-    expect(video?.hasAttribute('autoplay')).toBe(true);
-    expect(video?.hasAttribute('loop')).toBe(true);
-    expect(video?.muted).toBe(true);
+    const img = container.querySelector('img');
+    expect(img).toBeTruthy();
+    expect(img?.getAttribute('src')).toMatch(/^\/screenshots\/.+\.png$/);
+    expect(container.querySelector('video')).toBeNull();
   });
 
   it('renders video slicing demo in OverlookedWorkSection', async () => {

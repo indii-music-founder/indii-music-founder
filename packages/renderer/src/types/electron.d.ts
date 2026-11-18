@@ -109,6 +109,7 @@ export interface ElectronAPI {
     }>>;
     getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
+    captureSnapshot?: () => Promise<{ dataUrl: string } | null>;
 
     // Safe Local Trash
     trash?: {

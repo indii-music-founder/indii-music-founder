@@ -24,6 +24,8 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import { ShareSheet } from '@/components/share/ShareSheet';
+import { CelebrationMoment } from '@/components/share/CelebrationMoment';
+import { markCelebrated, nextUncelebratedThreshold, presaveThresholdKey } from '@/services/moments/momentLedger';
 import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
 import {
     preSaveCampaignService,
@@ -75,6 +77,12 @@ export default function PreSaveCampaignBuilder() {
     const [copied, setCopied] = useState(false);
     const [activeQrModal, setActiveQrModal] = useState<string | null>(null);
 
+    const { artistName, brandColors, uid } = useStore(useShallow(state => ({
+        artistName: state.userProfile?.displayName,
+        brandColors: state.userProfile?.brandKit?.colors,
+        uid: state.userProfile?.id,
+    })));
+
     const loadCampaigns = async () => {
         setIsLoadingList(true);
         try {
@@ -82,6 +90,35 @@ export default function PreSaveCampaignBuilder() {
             setCampaigns(list);
             if (list.length > 0 && !campaignId) {
                 setViewMode('list');
+            }
+            if (uid) {
+                for (const c of list) {
+                    const threshold = nextUncelebratedThreshold(uid, c.id, c.leadCount || 0);
+                    if (threshold !== null) {
+                        markCelebrated(uid, presaveThresholdKey(c.id, threshold));
+                        try {
+                            void CelebrationMoment.call({
+                                eyebrow: 'Fan milestone',
+                                headline: `${threshold} fans pre-saved “${c.title}”`,
+                                detail: 'Your pre-save link is picking up real momentum.',
+                                template: {
+                                    kind: 'milestone',
+                                    artistName,
+                                    headline: `${threshold} fans pre-saved “${c.title}”`,
+                                    detail: 'Pre-save link live on indii.music',
+                                },
+                                options: { brandColors },
+                                nextSteps: [
+                                    { label: 'Pitch & Press', moduleId: 'publicist' },
+                                    { label: 'Track Growth', moduleId: 'analytics' },
+                                ],
+                            }).catch(() => undefined);
+                        } catch {
+                            // Callable root is absent in isolated component tests.
+                        }
+                        break;
+                    }
+                }
             }
         } catch {
             setCampaigns([]);
@@ -172,9 +209,11 @@ export default function PreSaveCampaignBuilder() {
         setIsPublishing(true);
         setPublishError(null);
         try {
+            const isNewPublish = !campaignId;
+            const releaseMs = new Date(`${releaseDate}T00:00:00`).getTime();
             const persistedId = await preSaveCampaignService.createCampaign({
                 title,
-                releaseDate: new Date(`${releaseDate}T00:00:00`).getTime(),
+                releaseDate: releaseMs,
                 coverArtUrl: coverArtUrl.trim(),
                 links,
                 captureEmails: collectEmail,
@@ -184,6 +223,30 @@ export default function PreSaveCampaignBuilder() {
             setCampaignId(persistedId);
             setIsDirty(false);
             await loadCampaigns();
+            if (isNewPublish) {
+                try {
+                    void CelebrationMoment.call({
+                        eyebrow: 'Pre-save live',
+                        headline: 'Your pre-save is live',
+                        detail: `Share “${title}” with fans before release day.`,
+                        template: {
+                            kind: 'presave',
+                            artistName,
+                            trackTitle: title,
+                            releaseDate: releaseMs,
+                            url: preSaveCampaignService.getCampaignUrl(persistedId),
+                            coverArtUrl: coverArtUrl.trim() || undefined,
+                        },
+                        options: { brandColors },
+                        nextSteps: [
+                            { label: 'Pitch & Press', moduleId: 'publicist' },
+                            { label: 'Track Growth', moduleId: 'analytics' },
+                        ],
+                    }).catch(() => undefined);
+                } catch {
+                    // Callable root is absent in isolated component tests.
+                }
+            }
         } catch {
             setPublishError('Campaign was not published. Nothing was shared or saved as live.');
         } finally {
@@ -198,11 +261,6 @@ export default function PreSaveCampaignBuilder() {
         setCopied(true);
         window.setTimeout(() => setCopied(false), 2000);
     };
-
-    const { artistName, brandColors } = useStore(useShallow(state => ({
-        artistName: state.userProfile?.displayName,
-        brandColors: state.userProfile?.brandKit?.colors,
-    })));
 
     const openShareCard = (card: { title: string; releaseDate: string | number; coverArtUrl?: string; url: string }) => {
         void ShareSheet.call({

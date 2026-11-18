@@ -35,6 +35,8 @@ describe('parseShareRoute', () => {
         expect(parseShareRoute('/passport')).toBeNull();
         expect(parseShareRoute('/s/pricing')).toEqual({ kind: 'section', id: 'pricing' });
         expect(parseShareRoute('/s/Pricing')).toBeNull();
+        expect(parseShareRoute('/n/first-song')).toEqual({ kind: 'nowwhat', id: 'first-song' });
+        expect(parseShareRoute('/n/FirstSong')).toBeNull();
     });
 });
 
@@ -126,5 +128,17 @@ describe('resolveShareMeta', () => {
             imageSize: { width: 1200, height: 630 },
         });
         expect(await resolveShareMeta({ kind: 'section', id: 'nope' }, 'https://indii.music', { getPresave: vi.fn() })).toBeNull();
+    });
+
+    it('builds a Now what? hook preview and ignores unknown hooks', async () => {
+        const meta = await resolveShareMeta({ kind: 'nowwhat', id: 'first-song' }, 'https://indii.music', { getPresave: vi.fn() });
+        expect(meta).toMatchObject({
+            title: 'You finished your first song. Now what? — indii.music',
+            description: 'Document credits and ownership, then prepare your release. Start your free Artist Passport on indii.music.',
+            url: 'https://indii.music/n/first-song',
+            image: 'https://indii.music/og/now-what-first-song.jpg',
+            imageSize: { width: 1200, height: 630 },
+        });
+        expect(await resolveShareMeta({ kind: 'nowwhat', id: 'unknown-hook' }, 'https://indii.music', { getPresave: vi.fn() })).toBeNull();
     });
 });

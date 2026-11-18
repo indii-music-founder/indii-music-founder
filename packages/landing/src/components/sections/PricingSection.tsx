@@ -113,22 +113,43 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
           </a>
         </motion.div>
         <div className="mx-auto mt-10 max-w-3xl">
-          <div className="mb-3 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-white/40">Choose your billing rhythm</div>
-          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/80 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:grid-cols-4" role="group" aria-label="Billing schedule">
-            {billingCycles.map((cycle) => (
-              <button
-                key={cycle.id}
-                type="button"
-                aria-pressed={billingCycle === cycle.id}
-                onClick={() => setBillingCycle(cycle.id)}
-                className={`rounded-xl px-3 py-3 text-xs font-bold transition-all ${billingCycle === cycle.id ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] text-black shadow-[0_0_16px_rgba(255,184,0,0.45),0_0_24px_rgba(229,57,53,0.2)]' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'}`}
-              >
-                <span className="block">{cycle.label}</span>
-                <span className={`mt-1 block font-mono text-[8px] uppercase tracking-[0.12em] ${billingCycle === cycle.id ? 'text-black/75 font-bold' : 'text-amber-400'}`}>
-                  {cycle.discount ? `${Math.round(cycle.discount * 100)}% off first term` : 'Standard price'}
-                </span>
-              </button>
-            ))}
+          <div className="mb-3 text-center font-mono text-[9px] uppercase tracking-[0.22em] text-amber-300/80">
+            Choose your billing rhythm · Save up to 50% upfront
+          </div>
+          <div className="grid grid-cols-2 gap-2 rounded-2xl border border-amber-400/20 bg-black/80 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:grid-cols-4" role="group" aria-label="Billing schedule">
+            {billingCycles.map((cycle) => {
+              const isSelected = billingCycle === cycle.id;
+              const isBestValue = cycle.id === 'annual';
+              return (
+                <button
+                  key={cycle.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setBillingCycle(cycle.id)}
+                  className={`relative rounded-xl px-3 py-3 text-xs font-bold transition-all ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] text-black shadow-[0_0_20px_rgba(255,184,0,0.5),0_0_28px_rgba(229,57,53,0.22)]'
+                      : isBestValue
+                        ? 'border border-amber-400/45 bg-amber-500/[0.08] text-white hover:border-amber-300 hover:bg-amber-500/[0.14]'
+                        : 'text-white/60 hover:bg-white/[0.04] hover:text-white'
+                  }`}
+                >
+                  {isBestValue && (
+                    <span
+                      className={`mb-1 inline-block rounded-full px-2 py-0.5 font-mono text-[8px] font-black uppercase tracking-[0.14em] ${
+                        isSelected ? 'bg-black/20 text-black' : 'bg-[#FFB800] text-black'
+                      }`}
+                    >
+                      Best value
+                    </span>
+                  )}
+                  <span className="block">{cycle.label}</span>
+                  <span className={`mt-1 block font-mono text-[9px] uppercase tracking-[0.12em] ${isSelected ? 'text-black/80 font-bold' : 'text-amber-400'}`}>
+                    {cycle.discount ? `${Math.round(cycle.discount * 100)}% off first term` : 'Standard price'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -193,22 +214,62 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
             );
           })}
         </div>
-        <div className="mt-8 grid gap-5 rounded-2xl border border-white/10 bg-black/55 p-6 md:grid-cols-[1fr_1.4fr] md:p-8">
-          <div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400">Term Commitments & Savings</div>
-            <p className="mt-3 text-xl font-bold tracking-tight text-white">Monthly, quarterly, six-month, or annual.</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              ['Quarterly', 'About 15% off the first 3 months'],
-              ['Six-month', 'About 30% off the first 6 months'],
-              ['Annual', '50% off the first year'],
-            ].map(([period, discount]) => (
-              <div key={period} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-sm font-bold text-white">{period}</div>
-                <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-amber-400">{discount}</div>
+        <div className="relative mt-10 overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/[0.07] via-[#0a0805]/95 to-black/95 p-6 shadow-[0_20px_60px_rgba(255,184,0,0.08)] md:p-8">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
+          <div className="grid gap-6 md:grid-cols-[0.9fr_1.6fr] md:items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800]" aria-hidden="true" />
+                Term Commitments & Savings
               </div>
-            ))}
+              <p className="mt-4 text-2xl font-black tracking-tight text-white md:text-3xl">
+                Monthly, quarterly, six-month, or annual.
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-white/65">
+                Pay upfront to lock in deeper beta discounts — click a term to preview your exact upfront savings above.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {([
+                { id: 'quarterly', period: 'Quarterly', pct: '15% OFF', discount: 'About 15% off the first 3 months', highlight: false, tag: '3-month lock' },
+                { id: 'six-month', period: 'Six-month', pct: '30% OFF', discount: 'About 30% off the first 6 months', highlight: false, tag: '6-month lock' },
+                { id: 'annual', period: 'Annual', pct: '50% OFF', discount: '50% off the first year', highlight: true, tag: 'Best upfront value' },
+              ] as const).map((term) => {
+                const active = billingCycle === term.id;
+                return (
+                  <button
+                    key={term.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setBillingCycle(term.id)}
+                    className={`group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FFB800] ${
+                      active
+                        ? 'border-[#FFB800] bg-gradient-to-b from-amber-500/20 to-amber-500/[0.05] shadow-[0_0_28px_rgba(255,184,0,0.22)]'
+                        : term.highlight
+                          ? 'border-amber-400/50 bg-amber-500/[0.09] hover:border-[#FFB800] hover:bg-amber-500/[0.14]'
+                          : 'border-white/15 bg-white/[0.03] hover:border-amber-400/50 hover:bg-white/[0.06]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-white">{term.period}</span>
+                        {term.highlight && (
+                          <span className="rounded-full bg-[#FFB800] px-2 py-0.5 font-mono text-[8px] font-black uppercase tracking-[0.14em] text-black">
+                            Half off
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-3 text-2xl font-black tracking-tight text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.3)]">
+                        {term.pct}
+                      </div>
+                    </div>
+                    <div className="mt-2 font-mono text-[10px] uppercase leading-snug tracking-[0.12em] text-amber-200/85">
+                      {term.discount}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="mt-6 flex flex-col gap-3 text-xs leading-relaxed text-white/40 md:flex-row md:items-start md:justify-between">

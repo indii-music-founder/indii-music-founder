@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { installPresentModeShortcut, usePresentMode } from '@/core/presentMode';
+import { canCaptureSnapshot, captureAndShareSnapshot } from '@/services/share/snapshotService';
 import { MotionConfig } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
@@ -431,18 +432,47 @@ function ModuleRenderer({
     return <ModuleComponent />;
 }
 
-/** Brief "you're presenting" pill; mounts with present mode and hides itself. */
+/** Brief "you're presenting" pill + quiet watermark + Electron snapshot action. */
 function PresentModeHint() {
     const [visible, setVisible] = useState(true);
+    const [capturing, setCapturing] = useState(false);
+    const canSnapshot = canCaptureSnapshot();
     useEffect(() => {
         const timer = window.setTimeout(() => setVisible(false), 2000);
         return () => window.clearTimeout(timer);
     }, []);
-    if (!visible) return null;
+    const handleSnapshot = async () => {
+        if (capturing) return;
+        setCapturing(true);
+        try {
+            await captureAndShareSnapshot();
+        } finally {
+            setCapturing(false);
+        }
+    };
     return (
-        <div role="status" className="pointer-events-none fixed left-1/2 top-4 z-[200] -translate-x-1/2 rounded-full border border-white/15 bg-black/80 px-4 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md">
-            Presenting · Shift+P to exit
-        </div>
+        <>
+            {visible && (
+                <div role="status" className="pointer-events-none fixed left-1/2 top-4 z-[200] -translate-x-1/2 rounded-full border border-white/15 bg-black/80 px-4 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md">
+                    Presenting · Shift+P to exit
+                </div>
+            )}
+            <div data-present-watermark className="fixed bottom-4 right-16 z-[250] flex items-center gap-3">
+                {canSnapshot && (
+                    <button
+                        type="button"
+                        onClick={() => void handleSnapshot()}
+                        disabled={capturing}
+                        className="rounded-full border border-white/20 bg-black/80 px-3 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur-md transition-colors hover:border-amber-400/60 hover:text-white"
+                    >
+                        {capturing ? 'Capturing…' : 'Snapshot'}
+                    </button>
+                )}
+                <span className="pointer-events-none rounded-full bg-black/70 px-2.5 py-1 font-mono text-[11px] font-semibold tracking-[0.18em] text-white/45 backdrop-blur-sm">
+                    indii.music
+                </span>
+            </div>
+        </>
     );
 }
 

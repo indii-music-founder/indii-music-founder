@@ -33,6 +33,8 @@ export type ShareCardTemplate =
         releaseDate: string | number;
         url?: string;
         coverArtUrl?: string;
+        /** Artist campaign card vs fan-shared countdown card. */
+        voice?: 'artist' | 'fan';
     }
     | {
         kind: 'release';
@@ -63,6 +65,21 @@ export type ShareCardTemplate =
         label: string;
         title: string;
         url?: string;
+    }
+    | {
+        kind: 'nowwhat';
+        /** Situation line before "Now what?", e.g. "You finished your first song." */
+        situation: string;
+        /** Actionable answer from indii. */
+        answer: string;
+        url?: string;
+    }
+    | {
+        kind: 'founder';
+        name: string;
+        seat: number;
+        joinedAt?: string;
+        verificationHash: string;
     }
     | {
         kind: 'milestone';
@@ -181,11 +198,15 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
         case 'presave': {
             const countdown = describeCountdown(template.releaseDate, options.now);
             const day = formatReleaseDay(template.releaseDate);
+            const isFan = template.voice === 'fan';
+            const baseCallout = countdown && countdown !== 'Out now' && day ? `${countdown} · ${day}` : day;
             return {
-                eyebrow: countdown === 'Out now' ? 'Out now' : 'Pre-save now',
+                eyebrow: countdown === 'Out now' ? 'Out now' : isFan ? 'Counting down' : 'Pre-save now',
                 title: clean(template.trackTitle, MAX_TITLE) || 'New music',
                 subtitle: artist,
-                callout: countdown && countdown !== 'Out now' && day ? `${countdown} · ${day}` : day,
+                callout: isFan
+                    ? (baseCallout ? `I'm pre-saved · ${baseCallout}` : "I'm pre-saved")
+                    : baseCallout,
                 url: displayUrl(template.url),
                 coverArtUrl: safeCoverUrl(template.coverArtUrl),
                 attribution,
@@ -231,6 +252,35 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
                 attribution,
                 ...accents,
             };
+        case 'nowwhat':
+            return {
+                eyebrow: 'Now what?',
+                title: clean(`${template.situation} Now what?`, MAX_TITLE) || 'Now what?',
+                subtitle: clean(template.answer, MAX_LINE) || undefined,
+                callout: 'Take the free Artist Passport',
+                compactTitle: true,
+                url: displayUrl(template.url),
+                attribution,
+                ...accents,
+            };
+        case 'founder': {
+            const hasBrandOverride = (options.brandColors ?? []).some(color => HEX_COLOR.test(color));
+            const founderAccents = hasBrandOverride
+                ? accents
+                : { accentFrom: '#FFB800', accentTo: '#E65100' };
+            const seatLabel = Number.isFinite(template.seat)
+                ? `Seat #${String(Math.max(0, Math.trunc(template.seat))).padStart(3, '0')}`
+                : 'Founding Seat';
+            const hashPrefix = (template.verificationHash ?? '').replace(/\s+/g, '').slice(0, 8);
+            return {
+                eyebrow: 'Founding Artist',
+                title: seatLabel,
+                subtitle: clean(template.name, MAX_LINE) || undefined,
+                callout: hashPrefix ? `verified · ${hashPrefix}` : 'verified',
+                attribution,
+                ...founderAccents,
+            };
+        }
         case 'milestone':
             return {
                 eyebrow: 'Milestone unlocked',

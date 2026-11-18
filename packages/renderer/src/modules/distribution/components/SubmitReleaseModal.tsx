@@ -272,6 +272,11 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                         detail: `“${releaseTitle}” is on its way to every store.`,
                         template: { kind: 'release', artistName: artist.trim() || userProfile?.displayName, trackTitle: releaseTitle, coverArtUrl: selectedCoverUrl || undefined },
                         options: { brandColors: userProfile?.brandKit?.colors },
+                        nextSteps: [
+                            { label: 'Launch Pre-Save', moduleId: 'marketing' },
+                            { label: 'Register Works', moduleId: 'registration' },
+                            { label: 'Pitch & Press', moduleId: 'publicist' },
+                        ],
                     });
                 }
             }

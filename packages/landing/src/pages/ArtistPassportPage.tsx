@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -34,7 +34,13 @@ import {
 } from '../lib/passportService';
 import { trackPassportEvent } from '../lib/passportAnalytics';
 import PassportSharePanel from '../components/passport/PassportSharePanel';
+import PassportSingularityHero from '../components/passport/PassportSingularityHero';
 import { NOW_WHAT_CAMPAIGNS, readCampaignAttribution, campaignQuery } from '../lib/nowWhatCampaign';
+import { detectQualityProfile } from '../three/quality';
+
+const PassportSingularityCanvas = lazy(
+  () => import('../components/passport/PassportSingularityCanvas'),
+);
 
 // --- Main Component ---
 export default function ArtistPassportPage() {
@@ -83,6 +89,44 @@ export default function ArtistPassportPage() {
   });
 
   const completionTracked = useRef(false);
+  const ctaAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [qualityProfile] = useState(() => detectQualityProfile());
+  const [horizonPaused, setHorizonPaused] = useState(() => qualityProfile.tier === 'FALLBACK');
+  const [pullActive, setPullActive] = useState(false);
+  const [warping, setWarping] = useState(false);
+  const [focalPoint, setFocalPoint] = useState({ x: 0.5, y: 0.55 });
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = 'Artist Passport | indii.music';
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
+
+  const syncFocalPoint = useCallback(() => {
+    if (currentStep !== 0 || !ctaAnchorRef.current) return;
+    const rect = ctaAnchorRef.current.getBoundingClientRect();
+    const vw = window.innerWidth || 1440;
+    const vh = window.innerHeight || 900;
+    if (rect.width === 0 || rect.height === 0) return;
+    setFocalPoint({
+      x: Math.max(0.2, Math.min(0.8, (rect.left + rect.width / 2) / vw)),
+      y: Math.max(0.25, Math.min(0.8, (rect.top + rect.height / 2) / vh)),
+    });
+  }, [currentStep]);
+
+  useEffect(() => {
+    syncFocalPoint();
+    window.addEventListener('resize', syncFocalPoint, { passive: true });
+    return () => window.removeEventListener('resize', syncFocalPoint);
+  }, [syncFocalPoint]);
+
+  useEffect(() => {
+    if (!warping) return;
+    const timer = window.setTimeout(() => setWarping(false), 520);
+    return () => window.clearTimeout(timer);
+  }, [warping]);
 
   // Funnel Telemetry: Track page arrival
   useEffect(() => {
@@ -133,6 +177,8 @@ export default function ArtistPassportPage() {
 
   const handleStart = () => {
     trackPassportEvent('passport_started', { source: acquisitionSource });
+    setPullActive(false);
+    if (!horizonPaused) setWarping(true);
     setCurrentStep(1);
   };
 
@@ -199,18 +245,45 @@ export default function ArtistPassportPage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white selection:bg-[#FFB800] selection:text-black antialiased relative overflow-hidden flex flex-col justify-between">
-      {/* Background Ambience */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,184,0,0.06),transparent_60%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_80%_80%,rgba(46,46,254,0.04),transparent_50%)]" />
+      {/* Bespoke Black Hole Singularity Backdrop (instant LCP + static FALLBACK) */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700 no-print ${
+          currentStep === 0 ? 'opacity-55' : 'opacity-18'
+        }`}
+      >
+        <img
+          src="/images/passport-singularity.jpg"
+          alt=""
+          className={`h-full w-full object-cover object-center transition-transform duration-700 ${
+            pullActive && !horizonPaused ? 'scale-[1.06]' : 'scale-100'
+          }`}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_52%,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.68)_42%,#000000_82%)]" />
+      </div>
+
+      {/* Real-time Three.js / GLSL Singularity Accretion & Gravitational Particle Engine */}
+      {qualityProfile.tier !== 'FALLBACK' && (
+        <Suspense fallback={null}>
+          <PassportSingularityCanvas
+            tier={qualityProfile.tier}
+            paused={horizonPaused}
+            pullActive={pullActive}
+            warping={warping}
+            step={currentStep}
+            focalPoint={focalPoint}
+          />
+        </Suspense>
+      )}
 
       {/* Header Bar */}
-      <header className="relative z-20 border-b border-[#1F222A] bg-[#000000]/80 backdrop-blur-md px-6 py-4 no-print">
+      <header className="relative z-20 border-b border-white/10 bg-[#000000]/70 backdrop-blur-md px-6 py-4 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/" className="text-xl font-bold tracking-tight text-white hover:text-[#FFB800] transition-colors">
               indii<span className="text-[#FFB800]">.music</span>
             </Link>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-white/10 bg-[#070709] text-[10px] font-mono uppercase tracking-widest text-[#8A8F9E]">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-white/15 bg-black/75 text-[10px] font-mono uppercase tracking-widest text-[#B4B9C7]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800] animate-pulse" />
               Artist Passport
             </span>
@@ -218,13 +291,13 @@ export default function ArtistPassportPage() {
 
           <div className="flex items-center gap-4 text-xs font-mono">
             {currentStep > 0 && currentStep <= 5 && (
-              <span className="text-[#8A8F9E]">
+              <span className="text-[#9AA1B2]">
                 STEP <span className="text-white font-bold">{`0${currentStep}`}</span> / 05
               </span>
             )}
             <Link
               to={`/login${referralQuery}`}
-              className="text-[#8A8F9E] hover:text-white transition-colors"
+              className="text-[#B4B9C7] hover:text-white transition-colors"
             >
               Sign In
             </Link>
@@ -233,71 +306,22 @@ export default function ArtistPassportPage() {
       </header>
 
       {/* Main Diagnostic Body */}
-      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 w-full flex-1 flex flex-col justify-center">
-        {/* STEP 0: HERO ARRIVAL */}
+      <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 w-full flex-1 flex flex-col justify-center">
+        {/* STEP 0: HERO ARRIVAL (EVENT HORIZON SINGULARITY) */}
         {currentStep === 0 && (
-          <motion.div
-            key="step-0"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="text-center max-w-2xl mx-auto space-y-6"
-          >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FFB800]/30 bg-[#FFB800]/10 text-xs font-mono tracking-wide text-[#FFB800]">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>People make the music, indii makes the business.</span>
-              </div>
-
-              {entry && <div className="rounded-xl border border-[#FFB800]/30 p-4"><h2 className="text-xl font-bold text-[#FFB800]">{entry.hook}</h2><p className="mt-2 text-sm text-white/70">{entry.answer}</p></div>}
-
-              <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-                How ready is your music <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white/90 to-white/60">
-                  for business?
-                </span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-[#8A8F9E] leading-relaxed">
-                Find potential gaps in your mechanical royalty registrations, release preparation, and business
-                operations in about two minutes.
-              </p>
-
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleStart}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-black text-black bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_24px_rgba(255,184,0,0.35)]"
-                >
-                  <span>Find my next steps</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <Link
-                  to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport_hero`}
-                  onClick={() => trackPassportEvent('freebie_clicked', { cta: 'hero_platform_guide' })}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#FFB800]/40 transition-all"
-                >
-                  <span>Explore Platform Guide & Wiki</span>
-                  <Sparkles className="w-4 h-4 text-[#FFB800]" />
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 pt-8 border-t border-[#1F222A] text-left">
-                <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
-                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Fast & Focused</div>
-                  <div className="text-xs font-semibold text-white mt-1">2-Minute Diagnostic</div>
-                </div>
-                <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
-                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Platform Wiki</div>
-                  <div className="text-xs font-semibold text-white mt-1">Full System Blueprint</div>
-                </div>
-                <div className="p-3 rounded-lg bg-[#070709] border border-[#1F222A]">
-                  <div className="text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">Entry Point</div>
-                  <div className="text-xs font-semibold text-white mt-1">100% Human Music</div>
-                </div>
-              </div>
-            </motion.div>
-          )}
+          <PassportSingularityHero
+            entry={entry}
+            referralQuery={referralQuery}
+            motionPaused={horizonPaused}
+            onToggleMotion={() => setHorizonPaused((prev) => !prev)}
+            onPullChange={setPullActive}
+            onStart={handleStart}
+            onExploreGuide={() => trackPassportEvent('freebie_clicked', { cta: 'hero_platform_guide' })}
+            onAnchorElement={(el) => {
+              ctaAnchorRef.current = el;
+            }}
+          />
+        )}
 
           {/* STEP 1: CAREER STAGE */}
           {currentStep === 1 && (
@@ -1060,7 +1084,7 @@ export default function ArtistPassportPage() {
       </main>
 
       {/* Footer Branding */}
-      <footer className="relative z-20 border-t border-[#1F222A] bg-[#000000] px-6 py-6 text-center text-xs text-[#8A8F9E] no-print">
+      <footer className="relative z-20 border-t border-white/10 bg-[#000000]/75 backdrop-blur-md px-6 py-5 text-center text-xs text-[#9AA1B2] no-print">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-white">indii.music</span>

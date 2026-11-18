@@ -1542,7 +1542,17 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
 
 
 // eslint-disable-next-line react-refresh/only-export-components
-function CostEstimatorWidget() {
+export function formatEstimatedRunCost(cost: number): string {
+    const safeCost = Number.isFinite(cost) ? Math.max(0, cost) : 0;
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: safeCost > 0 && safeCost < 0.01 ? 4 : 2,
+    }).format(safeCost);
+}
+
+export function CostEstimatorWidget() {
     const [mediaType, setMediaType] = useState<'video' | 'image'>('video');
     const [tier, setTier] = useState<'pro' | 'fast' | 'lite'>('pro');
     const [duration, setDuration] = useState<number>(8);
@@ -1581,8 +1591,8 @@ function CostEstimatorWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className="text-5xl font-black text-white tracking-tighter">
-                        ${activeCost.toFixed(3)}
+                    <p data-testid="cost-estimator-value" className="text-5xl font-black text-white tracking-tighter">
+                        {formatEstimatedRunCost(activeCost)}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Estimated Run Cost</p>
                 </div>
