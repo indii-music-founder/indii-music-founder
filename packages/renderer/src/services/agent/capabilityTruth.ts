@@ -402,7 +402,7 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     // e.g. "I can confirm that my core capabilities — including image generation... — are fully operational"
     /\b(?:confirm|certify)\b[^.?!]{0,30}\b(?:my|our|the|all)?\s*(?:core\s+)?capabilities\b[^.?!]{0,120}\b(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
     // e.g. "my core capabilities are fully operational"
-    /\b(?:my|our|the|all)\s+(?:core\s+)?capabilities\b[^.?!]{0,120}\b(?:are|is)\s+(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
+    /\b(?:my|our|the|all)\s+(?:core\s+)?capabilities\b[^.?!]{0,120}?\b(?:are|is)\s+(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i,
     // e.g. "functioning normally and ready to work" or "operational and ready to work"
     /\b(?:functioning normally|operational)\s+and\s+ready\s+to\s+work\b/i,
     // A successful session-level connection check does not certify the product.
@@ -423,7 +423,15 @@ const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
     /\brefreshed\s+(?:the\s+)?connection\s+to\s+(?:the\s+)?(?:active\s+)?(?:agents?|departments?|specialists?|team|boardroom)\b/i,
     /\b(?:the\s+)?(?:indii\s+)?team\s+(?:is|are)\s+(?:re-?seated|reseated)(?:\s+and\s+ready)?\b/i,
     /\b(?:boardroom|team|departments?|agents?)\b[^.?!]{0,80}\bready\s+(?:to\s+(?:execute|launch)|for\s+your\s+(?:objective|task|campaign|command|instructions?))\b/i,
+    // Issue #917: unverified environment-probe, Studio-executor, or local-host
+    // render-command readiness claims without live status/render tool proof.
+    /\b(?:verified|confirmed|probed)\b[^.?!]{0,60}\b(?:local\s+host|studio\s+executor|render\s+(?:host|queue|engine|environment))\b[^.?!]{0,60}\b(?:is\s+)?(?:ready|active|online|communicating|operational)\b/i,
+    /\bstudio\s+executor\s+is\s+(?:active|online|ready|connected|communicating)\b/i,
+    /\b(?:local\s+host|render\s+(?:host|queue|engine))\s+is\s+ready\s+to\s+(?:accept|receive|run|process)\s+(?:render\s+)?commands?\b/i,
+    /\bconfirming\s+(?:your\s+)?local\s+environment\s+is\s+communicating\b/i,
 ];
+
+const NON_ASSERTION_READINESS_CLAUSE = /\b(?:what|which|whether)\s+(?:is|are)\s+(?:fully\s+|completely\s+)?(?:operational|functional|working|verified|ready)\b/i;
 
 export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResult {
     if (!text || typeof text !== 'string') {
@@ -445,6 +453,12 @@ export function detectCapabilityOverclaim(text: string): CapabilityOverclaimResu
             // or qualify it. Only report affirmative claims; otherwise the
             // truth guardrail files an issue about its own correction text.
             if (/\b(?:not|never|cannot|can't|couldn't|won't|wouldn't|shouldn't|isn't|aren't)\b/i.test(assertionContext)) {
+                continue;
+            }
+            // Indirect/interrogative clauses like "organized by verification status
+            // so you can see exactly what is ready" distinguish status rather than
+            // claiming all capabilities are ready.
+            if (NON_ASSERTION_READINESS_CLAUSE.test(match[0])) {
                 continue;
             }
             return {
