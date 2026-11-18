@@ -134,7 +134,19 @@ vi.mock('./components/QuickCaptureView', async () => {
 });
 
 vi.mock('./components/StreamView', () => ({
-    default: () => <div>Stream View</div>,
+    default: ({ onSendToStudio }: { onSendToStudio?: (prompt: string) => unknown }) => (
+        <div>
+            <span>Stream View</span>
+            {onSendToStudio && (
+                <button
+                    type="button"
+                    onClick={() => void Promise.resolve(onSendToStudio('Help prepare release assets')).catch(() => undefined)}
+                >
+                    Send Vault To Studio
+                </button>
+            )}
+        </div>
+    ),
 }));
 
 vi.mock('./components/SettingsView', () => ({
@@ -354,6 +366,29 @@ describe('MobileRemote', () => {
         expect(remoteRelayService.sendCommand).toHaveBeenCalledWith(
             '[DAW_CONTROL] pause', undefined, undefined, 'studio'
         );
+    });
+
+    it('keeps Vault active and refuses to switch to Studio when Vault sendCommand returns null', async () => {
+        vi.mocked(remoteRelayService.sendCommand).mockResolvedValueOnce(null);
+        renderController();
+
+        const vaultButton = await screen.findByRole('button', { name: 'Vault' });
+        await waitFor(() => expect(vaultButton).toBeEnabled());
+        fireEvent.click(vaultButton);
+
+        const trigger = await screen.findByRole('button', { name: 'Send Vault To Studio' });
+        fireEvent.click(trigger);
+
+        await waitFor(() => {
+            expect(remoteRelayService.sendCommand).toHaveBeenCalledWith(
+                'Help prepare release assets',
+                'creative',
+                { source: 'mobile-remote', conversationMode: 'department' },
+                'studio'
+            );
+        });
+        expect(screen.getByText('Stream View')).toBeInTheDocument();
+        expect(screen.queryByText('Studio Work & Chat')).not.toBeInTheDocument();
     });
 
 });

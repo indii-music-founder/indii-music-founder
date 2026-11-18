@@ -18,6 +18,7 @@ import {
 } from './EntryCommandRegistry';
 import { entryCommandSyncService } from './EntryCommandSyncService';
 import { requestSettingsSection } from '@/modules/settings/SettingsNavigation';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 
 export interface EntryCommandHandleResult {
   handled: boolean;
@@ -88,14 +89,22 @@ class EntryCommandService {
 
     if (command.launchMode === 'navigate') {
       if (command.id === 'connect-remote') {
+        if (!await navigateToModule(useStore, 'settings')) {
+          const text = navigationNotCompletedMessage('settings', useStore.getState().currentModule);
+          this.addMessage('model', text, command.id, options.source);
+          return { handled: true, responseText: text, agentId: command.id };
+        }
         requestSettingsSection('remote');
-        await useStore.getState().setModule('settings');
         useStore.getState().clearEntryCommandWorkflow();
         const text = 'Opening Mobile Remote settings so you can pair this Studio, check its connection, or recover an existing controller.';
         this.addMessage('model', text, command.id, options.source);
         return { handled: true, responseText: text, agentId: command.id };
       }
-      await useStore.getState().setModule('workflow');
+      if (!await navigateToModule(useStore, 'workflow')) {
+        const text = navigationNotCompletedMessage('workflow', useStore.getState().currentModule);
+        this.addMessage('model', text, command.id, options.source);
+        return { handled: true, responseText: text, agentId: command.id };
+      }
       useStore.getState().clearEntryCommandWorkflow();
       const text = 'Opening Workflow Lab so you can build or run a custom automation pipeline.';
       this.addMessage('model', text, command.id, options.source);

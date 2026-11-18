@@ -5,8 +5,8 @@ import CommandPad from './CommandPad';
 
 const { mockSetModule, mockSendCommand, mockRelaySendCommand } = vi.hoisted(() => ({
     mockSetModule: vi.fn(),
-    mockSendCommand: vi.fn(),
-    mockRelaySendCommand: vi.fn(async () => 'cmd-hub-1'),
+    mockSendCommand: vi.fn<(...args: unknown[]) => void | Promise<string | null | void>>(),
+    mockRelaySendCommand: vi.fn<(...args: unknown[]) => Promise<string | null>>(async () => 'cmd-hub-1'),
 }));
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -70,7 +70,7 @@ describe('CommandPad', () => {
 
         fireEvent.click(roadButton);
 
-        expect(mockSetModule).toHaveBeenCalledWith('road');
+        expect(mockSetModule).not.toHaveBeenCalled();
         expect(mockSendCommand).toHaveBeenCalledWith({
             type: 'navigate',
             payload: { module: 'road' },
@@ -103,6 +103,30 @@ describe('CommandPad', () => {
                 'studio'
             );
             expect(onOpenChat).toHaveBeenCalledWith('cmd-hub-1');
+        });
+    });
+
+    it('renders an alert and does not open chat when relay sendCommand returns null', async () => {
+        const onOpenChat = vi.fn();
+        mockRelaySendCommand.mockResolvedValueOnce(null);
+        render(<CommandPad onSendCommand={mockSendCommand} isPaired={true} onOpenChat={onOpenChat} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /next release/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Studio did not accept the command.');
+        });
+        expect(onOpenChat).not.toHaveBeenCalled();
+    });
+
+    it('renders an alert when module navigation returns null from relay', async () => {
+        mockSendCommand.mockResolvedValueOnce(null);
+        render(<CommandPad onSendCommand={mockSendCommand} isPaired={true} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /finance/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Studio did not accept the navigation command.');
         });
     });
 });

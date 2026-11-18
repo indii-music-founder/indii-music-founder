@@ -161,7 +161,10 @@ export default function MobileRemote() {
     const commandId = await remoteRelayService.sendCommand(prompt, 'creative', {
       source: 'mobile-remote', conversationMode: 'department',
     }, 'studio');
-    if (commandId) setPendingChatCommandId(commandId);
+    if (!commandId) {
+      throw new Error('The Vault request was not accepted by Studio. Please retry.');
+    }
+    setPendingChatCommandId(commandId);
     setActiveTab('studio');
   }, [isPaired]);
 
@@ -485,10 +488,10 @@ export default function MobileRemote() {
   }, [connectionStatus, isReconnecting, isPaired]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendCommand = useCallback((command: { type: string; payload: any }) => {
+  const sendCommand = useCallback(async (command: { type: string; payload: any }): Promise<string | null> => {
     if (!isPaired) {
       logger.warn('[MobileRemote] Cannot send command: Remote not paired or reconnecting');
-      return;
+      return null;
     }
 
     let commandStr = '';
@@ -505,9 +508,12 @@ export default function MobileRemote() {
       commandStr = `[RAW] ${JSON.stringify(command)}`;
     }
 
-    remoteRelayService.sendCommand(commandStr, undefined, undefined, 'studio').catch(err => {
+    try {
+      return await remoteRelayService.sendCommand(commandStr, undefined, undefined, 'studio');
+    } catch (err) {
       logger.error('[MobileRemote] Failed to send command to relay:', err);
-    });
+      return null;
+    }
   }, [isPaired]);
 
   const handleManualRetry = () => {

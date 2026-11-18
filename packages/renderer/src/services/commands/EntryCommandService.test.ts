@@ -13,6 +13,7 @@ const storeState = vi.hoisted(() => ({
     updatedAt: null as number | null,
   },
   currentProjectId: 'project-1',
+  currentModule: 'dashboard' as string,
   agentHistory: [] as Array<{ id: string; role: 'user' | 'model' | 'system'; text: string; timestamp: number }>,
   boardroomMessages: [] as Array<{ id: string; role: 'user' | 'model' | 'system'; text: string; timestamp: number }>,
   addAgentMessage: vi.fn(),
@@ -90,6 +91,10 @@ describe('EntryCommandService', () => {
     vi.clearAllMocks();
     window.history.replaceState({}, '', '/');
     clearCustomEntryCommands();
+    storeState.currentModule = 'dashboard';
+    storeState.setModule.mockImplementation(async (mod: string) => {
+      storeState.currentModule = mod;
+    });
     storeState.agentHistory = [];
     storeState.boardroomMessages = [];
     storeState.entryCommandWorkflow = {
@@ -125,6 +130,19 @@ describe('EntryCommandService', () => {
     expect(storeState.setModule).toHaveBeenCalledWith('settings');
     expect(window.location.search).toBe('?section=remote');
     expect(result.responseText).toContain('Mobile Remote');
+  });
+
+  it('reports incomplete navigation and avoids mutating URL search when /connect-remote switch is declined', async () => {
+    storeState.setModule.mockImplementation(async () => undefined);
+    const result = await entryCommandService.handleInput('/connect-remote', {
+      source: 'command-bar',
+      includeUserMessage: true,
+    });
+
+    expect(result).toMatchObject({ handled: true, agentId: 'connect-remote' });
+    expect(result.responseText).toContain('Did not open settings');
+    expect(window.location.search).toBe('');
+    expect(storeState.clearEntryCommandWorkflow).not.toHaveBeenCalled();
   });
 
   it('captures a field contact from messy slash input', async () => {

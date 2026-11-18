@@ -4,8 +4,14 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import StudioWorkView from './StudioWorkView';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 
+const toastMocks = vi.hoisted(() => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+}));
+
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
+    useToast: () => toastMocks,
 }));
 
 vi.mock('./AgentChat', () => ({
@@ -110,9 +116,30 @@ describe('StudioWorkView Component', () => {
                 expect.objectContaining({
                     type: 'generate_image',
                     aspectRatio: '4:5',
-                })
+                }),
+                'studio'
             );
         });
+    });
+
+    it('surfaces an error toast and keeps flyer prompt when Studio does not accept the command', async () => {
+        vi.mocked(remoteRelayService.sendCommand).mockResolvedValueOnce(null);
+        render(<StudioWorkView isPaired={true} />);
+
+        const input = screen.getByPlaceholderText('Create a flyer for Friday night show...') as HTMLInputElement;
+        fireEvent.change(input, {
+            target: { value: 'Tour kick-off in Chicago' },
+        });
+
+        fireEvent.submit(input.closest('form')!);
+
+        await waitFor(() => {
+            expect(toastMocks.error).toHaveBeenCalledWith(
+                'Studio did not accept the flyer request. Check connection and retry.'
+            );
+        });
+        expect(toastMocks.success).not.toHaveBeenCalled();
+        expect(input.value).toBe('Tour kick-off in Chicago');
     });
 
     it('renders JevRemoteHintBar on non-chat studio subtabs with Jev department guidance', async () => {

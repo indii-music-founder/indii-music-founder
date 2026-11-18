@@ -24,7 +24,7 @@ interface StudioWorkViewProps {
     onClearPendingCommand?: () => void;
     isPaired: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSendCommand?: (command: { type: string; payload: any }) => void;
+    onSendCommand?: (command: { type: string; payload: any }) => void | Promise<string | null | void>;
     pendingChatAttachment?: { url: string; mimeType: string; name: string } | null;
     onClearPendingAttachment?: () => void;
 }
@@ -130,14 +130,18 @@ export default function StudioWorkView({
 
         try {
             // Send image generation command to desktop
-            await remoteRelayService.sendCommand(
+            const commandId = await remoteRelayService.sendCommand(
                 `[GENERATE_IMAGE] ${trimmed}`,
                 'creative',
                 {
                     type: 'generate_image',
                     aspectRatio: '4:5', // Best aspect ratio for flyers
-                }
+                },
+                'studio'
             );
+            if (!commandId) {
+                throw new Error('Studio did not accept the flyer request. Check connection and retry.');
+            }
             toast.success('Flyer request sent to desktop studio.');
             setFlyerPrompt('');
         } catch (error) {

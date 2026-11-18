@@ -4,6 +4,7 @@ import type { AgentDispatchTask } from '@/services/agent/RemoteRelayService';
 import { CanvasDocumentService } from '@/services/canvas/CanvasDocumentService';
 import { createDocFromImage } from '@/services/canvas/CanvasDoc';
 import { editorImportPlan } from './editorImportPlan';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 
 /** Open an uploaded capture in the paired desktop executor, never on the controller. */
 export async function openRemoteMedia(payload: AgentDispatchTask['payload'], taskId?: string): Promise<NonNullable<AgentDispatchTask['result']>> {
@@ -25,7 +26,9 @@ export async function openRemoteMedia(payload: AgentDispatchTask['payload'], tas
         if (auth.currentUser?.uid !== uid) throw new Error('Sign in again to open this capture.');
         // A save can take time: never overwrite artwork opened while it was pending.
         if (useStore.getState().currentDoc) throw new Error('Photo saved in Saved artwork. Close the current artwork before reopening it.');
-        await useStore.getState().setModule('creative');
+        if (!await navigateToModule(useStore, 'creative')) {
+            throw new Error(navigationNotCompletedMessage('creative', useStore.getState().currentModule));
+        }
         if (auth.currentUser?.uid !== uid) throw new Error('Sign in again to open this capture.');
         if (useStore.getState().currentDoc) throw new Error('Photo saved in Saved artwork. Close the current artwork before reopening it.');
         useStore.getState().setViewMode('direct');
@@ -34,8 +37,11 @@ export async function openRemoteMedia(payload: AgentDispatchTask['payload'], tas
     }
     const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
     if (auth.currentUser?.uid !== uid) throw new Error('Sign in again to open this capture.');
+    if (!await navigateToModule(useStore, 'creative')) {
+        throw new Error(navigationNotCompletedMessage('creative', useStore.getState().currentModule));
+    }
+    if (auth.currentUser?.uid !== uid) throw new Error('Sign in again to open this capture.');
     useVideoEditorStore.getState().importMediaUrlAsClip(plan.mediaUrl, plan.mediaType, plan.title);
-    await useStore.getState().setModule('creative');
     useStore.getState().setViewMode('video_production');
     return { projectId: useVideoEditorStore.getState().project.id, assetUrl: plan.mediaUrl };
 }
