@@ -115,7 +115,7 @@ test.describe('Video Studio', () => {
         // Both Workflow and Editor render a director tab; only the visible one counts.
         const directorBtn = page.locator('[data-testid="video-mode-director"]:visible');
         const loadFailure = page.getByRole('alert').filter({ hasText: /load this timeline/i });
-        await loadFailure.or(directorBtn).first().waitFor({ state: 'visible', timeout: 20_000 });
+        await loadFailure.or(directorBtn).first().waitFor({ state: 'visible', timeout: 20_000 }); // bypass-strict: .or() can legitimately match both the failure alert and the director tab
         if (await loadFailure.isVisible().catch(() => false)) {
             await page.evaluate(() => {
                 const editor = (window as any).useVideoEditorStore.getState();
