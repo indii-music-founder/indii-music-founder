@@ -10,8 +10,6 @@
  */
 
 import { useState } from 'react';
-import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
@@ -27,7 +25,7 @@ import { triggerHaptic } from '../haptics';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 
 interface CommandPadProps {
-  onSendCommand: (command: { type: string; payload: unknown }) => void;
+  onSendCommand: (command: { type: string; payload: unknown }) => void | Promise<string | null | void>;
   isPaired: boolean;
   activeDesktopModule?: string | null;
   onOpenChat?: (commandId?: string) => void;
@@ -61,21 +59,29 @@ export default function CommandPad({
   onOpenChat,
   onNavigateRemoteTab,
 }: CommandPadProps) {
-  const { setModule } = useStore(
-    useShallow(state => ({
-      setModule: state.setModule,
-    }))
-  );
   const [statusFeedback, setStatusFeedback] = useState<{ kind: 'info' | 'error'; message: string } | null>(null);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
   const navigateTo = (moduleId: ModuleId, label?: string) => {
     triggerHaptic(40);
-    setModule(moduleId);
-    onSendCommand({ type: 'navigate', payload: { module: moduleId } });
-    if (label) {
-      setStatusFeedback({ kind: 'info', message: `Switched Desktop Studio to ${label}.` });
-    }
+    const maybePromise = onSendCommand({ type: 'navigate', payload: { module: moduleId } });
+    void Promise.resolve(maybePromise)
+      .then((result) => {
+        if (result === null) {
+          setStatusFeedback({ kind: 'error', message: 'Studio did not accept the navigation command.' });
+          return;
+        }
+        if (label) {
+          setStatusFeedback({ kind: 'info', message: `Switched Desktop Studio to ${label}.` });
+        }
+      })
+      .catch((err: unknown) => {
+        logger.error(`[CommandPad] Navigation to "${moduleId}" failed:`, err);
+        setStatusFeedback({
+          kind: 'error',
+          message: err instanceof Error ? err.message : 'Unable to switch Desktop Studio module.',
+        });
+      });
   };
 
   const dispatchRelayPrompt = async (
@@ -98,6 +104,9 @@ export default function CommandPad({
         options?.metadata ?? { conversationMode: 'boardroom', source: 'mobile-remote' },
         'studio'
       );
+      if (!commandId) {
+        throw new Error('Studio did not accept the command.');
+      }
       if (options?.openChatOnDispatch !== false) {
         onOpenChat?.(commandId);
       }
@@ -134,7 +143,13 @@ export default function CommandPad({
       glow: 'shadow-emerald-500/25 hover:shadow-emerald-500/40',
       action: () => {
         triggerHaptic(50);
-        void liveConversationService.startSession({ source: 'mobile-remote' });
+        void liveConversationService.startSession({ source: 'mobile-remote' }).catch((err: unknown) => {
+          logger.error('[CommandPad] Live conversation start failed:', err);
+          setStatusFeedback({
+            kind: 'error',
+            message: err instanceof Error ? err.message : 'Unable to start Two-Way Live conversation.',
+          });
+        });
         onSendCommand({ type: 'agent_action', payload: { action: 'open_chat' } });
         onOpenChat?.();
       },

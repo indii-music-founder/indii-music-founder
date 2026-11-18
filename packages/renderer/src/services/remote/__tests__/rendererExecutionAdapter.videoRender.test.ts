@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { CompletedRenderReceipt, IndiiVideoProject } from '@indii/shared';
 
-import { executeVideoRenderDispatch } from '../rendererExecutionAdapter';
+import { useStore } from '@/core/store';
+import { createRendererExecutionAdapter, executeVideoRenderDispatch } from '../rendererExecutionAdapter';
 
 const project: IndiiVideoProject = {
     id: 'project-1', name: 'Project', width: 1920, height: 1080, fps: 30,
@@ -63,5 +64,50 @@ describe('executeVideoRenderDispatch', () => {
             type: 'video_render', status: 'pending', createdAt: {} as never, payload: { projectId: 'project-1' },
         }, { ...base, hasDesktopVideo: () => true, currentUid: () => undefined }))
             .rejects.toThrow(/authenticated/i);
+    });
+});
+
+describe('createRendererExecutionAdapter navigate outcome', () => {
+    it('reports navigation success only after currentModule changes to the target', async () => {
+        const state = {
+            currentModule: 'dashboard' as string,
+            setModule: vi.fn(async (mod: string) => {
+                state.currentModule = mod;
+            }),
+        };
+        const spy = vi.spyOn(useStore, 'getState').mockImplementation(() => state as never);
+        try {
+            const adapter = createRendererExecutionAdapter();
+            const result = await adapter.executeCommand({
+                command: { id: 'cmd-1', text: '[NAVIGATE] finance', status: 'processing', timestamp: {} as never, createdAt: {} as never },
+                parsed: { kind: 'navigate', module: 'finance' },
+                respond: vi.fn(async () => undefined),
+            });
+
+            expect(result.relays[0]?.text).toBe('🧭 Navigated to finance');
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it('reports NAVIGATION_NOT_COMPLETED style failure when setModule is declined', async () => {
+        const state = {
+            currentModule: 'dashboard' as string,
+            setModule: vi.fn(async () => undefined),
+        };
+        const spy = vi.spyOn(useStore, 'getState').mockImplementation(() => state as never);
+        try {
+            const adapter = createRendererExecutionAdapter();
+            const result = await adapter.executeCommand({
+                command: { id: 'cmd-2', text: '[NAVIGATE] finance', status: 'processing', timestamp: {} as never, createdAt: {} as never },
+                parsed: { kind: 'navigate', module: 'finance' },
+                respond: vi.fn(async () => undefined),
+            });
+
+            expect(result.relays[0]?.text).toContain('Did not open finance');
+            expect(result.relays[0]?.text).toContain('still on dashboard');
+        } finally {
+            spy.mockRestore();
+        }
     });
 });

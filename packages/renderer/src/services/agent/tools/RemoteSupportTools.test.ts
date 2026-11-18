@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+    currentModule: 'dashboard' as string,
     setModule: vi.fn().mockResolvedValue(undefined),
     getDoc: vi.fn(),
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: { getState: () => ({ setModule: mocks.setModule }) },
+    useStore: { getState: () => ({ currentModule: mocks.currentModule, setModule: mocks.setModule }) },
 }));
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(() => ({ path: 'users/user-1/remote-relay/state' })),
@@ -25,6 +26,10 @@ import { RemoteSupportTools } from './RemoteSupportTools';
 describe('RemoteSupportTools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.currentModule = 'dashboard';
+        mocks.setModule.mockImplementation(async (mod: string) => {
+            mocks.currentModule = mod;
+        });
         window.history.replaceState({}, '', '/');
     });
 
@@ -33,6 +38,16 @@ describe('RemoteSupportTools', () => {
         expect(mocks.setModule).toHaveBeenCalledWith('settings');
         expect(window.location.search).toBe('?section=remote');
         expect(JSON.stringify(result)).not.toMatch(/token|secret|pairingCode|deviceId/i);
+    });
+
+    it('returns NAVIGATION_NOT_COMPLETED and leaves URL untouched if setModule does not switch modules', async () => {
+        mocks.setModule.mockImplementation(async () => undefined);
+        const result = await RemoteSupportTools.open_remote_setup({});
+        expect(result).toMatchObject({
+            success: false,
+            metadata: { errorCode: 'NAVIGATION_NOT_COMPLETED' },
+        });
+        expect(window.location.search).toBe('');
     });
 
     it('returns only a bounded remote status projection', async () => {

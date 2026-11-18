@@ -15,6 +15,7 @@ import { refineInjectionRisk, judgeOrchestrationComplexity, judgeBoardroomIntent
 
 import { executionTokenBudget } from '../governance/ExecutionTokenBudget';
 import { TokenEstimator } from '../governance/TokenEstimator';
+import { navigateToModule } from '../tools/navigationOutcome';
 
 async function generateRoutingResponse(
     context: AgentContext,
@@ -243,9 +244,9 @@ These are gallery/upload references, not desktop files. Match the requested labe
                 const validOrgIds = ['loc', 'ascap', 'bmi', 'sesac', 'soundexchange', 'mlc'];
                 const orgId = validOrgIds.includes(registrationIntent) ? registrationIntent : null;
                 logger.info(`[AgentOrchestrator] Registration intent detected: ${registrationIntent} → opening Registration Center`);
-                import('@/core/store').then(({ useStore }) => {
+                import('@/core/store').then(async ({ useStore }) => {
+                    if (!await navigateToModule(useStore, 'registration')) return;
                     const store = useStore.getState();
-                    store.setModule('registration');
                     if (orgId) {
                         store.setRegistrationFocus({ orgId: orgId as import('@/modules/registration/types').OrgId, trackId: null });
                         store.setRegistrationIntelligenceMessage(

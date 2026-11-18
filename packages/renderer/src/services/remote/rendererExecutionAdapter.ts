@@ -22,6 +22,7 @@ import { auth } from '@/services/firebase';
 import { loadVideoProject } from '@/modules/creative/video/services/VideoProjectPersistenceService';
 import { renderVideoProjectLocally } from '@/services/video/LocalVideoProjectRenderer';
 import { persistRemoteNote } from './persistRemoteNote';
+import { navigateToModule, navigationNotCompletedMessage } from '@/services/agent/tools/navigationOutcome';
 import {
     MAX_REMOTE_AGENT_RESPONSES,
     type RelayRespond,
@@ -400,7 +401,12 @@ export function createRendererExecutionAdapter(): StudioExecutionAdapter {
             case 'navigate': {
                 const targetModule = parsed.module;
                 logger.info(`[RemoteAdapter] 🧭 Navigate to: "${targetModule}"`);
-                useStore.getState().setModule(targetModule);
+                if (!await navigateToModule(useStore, targetModule)) {
+                    return {
+                        relays: [{ text: navigationNotCompletedMessage(targetModule, useStore.getState().currentModule) }],
+                        queuedBehindActiveRun: false,
+                    };
+                }
                 return { relays: [{ text: `🧭 Navigated to ${targetModule}` }], queuedBehindActiveRun: false };
             }
 

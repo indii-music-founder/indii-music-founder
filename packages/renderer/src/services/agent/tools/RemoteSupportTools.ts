@@ -2,14 +2,20 @@ import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { requestSettingsSection } from '@/modules/settings/SettingsNavigation';
 import { isFreshStudioState, type DesktopState } from '../RemoteRelayService';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import { navigateToModule, navigationNotCompletedMessage } from './navigationOutcome';
 import type { AnyToolFunction } from '../types';
 
 export const RemoteSupportTools = {
     open_remote_setup: wrapTool('open_remote_setup', async () => {
-        requestSettingsSection('remote');
         const { useStore } = await import('@/core/store');
-        await useStore.getState().setModule('settings');
+        if (!await navigateToModule(useStore, 'settings')) {
+            return toolError(
+                navigationNotCompletedMessage('settings', useStore.getState().currentModule),
+                'NAVIGATION_NOT_COMPLETED',
+            );
+        }
+        requestSettingsSection('remote');
         return toolSuccess(
             { module: 'settings', section: 'remote' },
             'Opened Settings > Mobile Remote.',
