@@ -15,7 +15,22 @@ declare global {
 }
 
 test.describe('Boardroom Strategic Workflow Scenario', () => {
+    // FirebaseIntelligenceService paces model requests client-side (RateLimiter(10, 1):
+    // 10/min with a burst of 1, matching the backend generation window), so a turn
+    // with N parallel participants plus the autorater needs up to ~6s per request
+    // before its last request is even sent. Size waits to that documented pacing.
+    const PACED_TURN_TIMEOUT_MS = 60_000;
+
     test('should execute the complete flowchart dependency chain with dynamic seating and pulse unlock', async ({ authedPage: page }) => {
+        test.setTimeout(10 * PACED_TURN_TIMEOUT_MS);
+
+        // A turn can satisfy its assertion (e.g. agents seated) while its other paced
+        // participants are still running; the prompt input is disabled until the turn
+        // ends (PromptArea: isAgentProcessing). Wait for that before the next turn.
+        const waitForTurnToFinish = () => page.waitForFunction(() => {
+            const store = (window as unknown as { useStore?: { getState: () => { isAgentProcessing?: boolean } } }).useStore;
+            return typeof store?.getState === 'function' && store.getState().isAgentProcessing !== true;
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
@@ -126,7 +141,6 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                 // Branch on the user's request, never the whole payload: the system
                 // prompt contains words like "blocked" that match 'locked'.
                 const requestLower = actualRequest.toLowerCase();
-                const postDataLower = postData.toLowerCase();
                 let systemInstruction = "";
                 try {
                     const parsed = JSON.parse(postData);
@@ -271,19 +285,20 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
         await page.waitForFunction(() => {
             const store = window.useStore;
             return typeof store?.getState === 'function' && store.getState().activeAgents.includes('creative');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // Wait for Road Manager to seat
         console.log('[E2E:Strategic] Waiting for Road Manager to seat...');
         await page.waitForFunction(() => {
             const store = window.useStore;
             return typeof store?.getState === 'function' && store.getState().activeAgents.includes('road');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         // ----------------------------------------------------
         // TURN 2: Task Execution (Art & Tour Dates)
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 2: Requesting imagery and tour dates advance...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Creative Director generate the art, Road Director plan Detroit advance");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -293,13 +308,14 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const msgs = store.getState().agentHistory || [];
             return msgs.some((m: { text?: string }) => m.text?.includes('album imagery'));
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Creative and Road tasks registered.');
 
         // ----------------------------------------------------
         // TURN 3: Task Dependency (Pulse Unlock) & Marketing Seating
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 3: Triggers pulse to unlock flyer dependency...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Imagery and dates are locked. Trigger rollout.");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -309,13 +325,14 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const active = store.getState().activeAgents;
             return active.includes('marketing') && active.includes('social');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Pulse triggered. Marketing & Social seated successfully.');
 
         // ----------------------------------------------------
         // TURN 4: Marketing Rollout Copy
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 4: Social flyer rollout execution...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "Generate rollout materials and schedule drafts");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -324,13 +341,14 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const msgs = store.getState().agentHistory || [];
             return msgs.some((m: { text?: string }) => m.text?.includes('announcement flyer'));
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
         console.log('[E2E:Strategic] Rollout executed successfully.');
 
         // ----------------------------------------------------
         // TURN 5: Strategic Goal Complete & Dismiss Swarm
         // ----------------------------------------------------
         console.log('[E2E:Strategic] Turn 5: Adjourning and excusing the swarm...');
+        await waitForTurnToFinish();
         await page.fill('[data-testid="main-prompt-input"]', "We are done. Clear the boardroom table.");
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
@@ -340,7 +358,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             if (typeof store?.getState !== 'function') return false;
             const active = store.getState().activeAgents;
             return !active.includes('creative') && !active.includes('road') && !active.includes('marketing') && !active.includes('social');
-        }, { timeout: 15000 });
+        }, { timeout: PACED_TURN_TIMEOUT_MS });
 
         const finalSeated = await page.evaluate(() => window.useStore?.getState?.()?.activeAgents || []);
         console.log('[E2E:Strategic] Final seated agents list:', finalSeated);
