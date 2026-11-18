@@ -26,7 +26,7 @@ const details = [
 
 export default function OverlookedWorkSection() {
   return (
-    <section data-system-section="overlooked-work" aria-labelledby="overlooked-work-title" className="relative z-20 border-t border-white/10 bg-[#090909] py-24 md:py-32">
+    <section id="overlooked-work" data-system-section="overlooked-work" aria-labelledby="overlooked-work-title" className="relative z-20 border-t border-white/10 bg-[#090909] py-24 md:py-32">
       <div className="mx-auto max-w-[1500px] px-5 md:px-10">
         <div className="max-w-3xl">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-amber-400">The work around the music</p>

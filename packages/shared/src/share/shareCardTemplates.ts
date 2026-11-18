@@ -52,6 +52,13 @@ export type ShareCardTemplate =
         url?: string;
     }
     | {
+        kind: 'page';
+        /** Short section label, e.g. "Pricing". */
+        label: string;
+        title: string;
+        url?: string;
+    }
+    | {
         kind: 'milestone';
         artistName?: string;
         headline: string;
@@ -68,6 +75,8 @@ export interface ShareCardModel {
     accentFrom: string;
     accentTo: string;
     attribution: string;
+    /** Smaller title with one extra line, for long headlines. */
+    compactTitle?: boolean;
 }
 
 export interface ShareCardOptions {
@@ -160,7 +169,7 @@ function pickAccents(brandColors: readonly string[] | undefined): { accentFrom: 
 export function buildShareCardModel(template: ShareCardTemplate, options: ShareCardOptions = {}): ShareCardModel {
     const accents = pickAccents(options.brandColors);
     const attribution = options.showAttribution === false ? '' : SHARE_ATTRIBUTION;
-    const artist = clean(template.artistName, MAX_LINE) || undefined;
+    const artist = clean('artistName' in template ? template.artistName : undefined, MAX_LINE) || undefined;
 
     switch (template.kind) {
         case 'presave': {
@@ -194,6 +203,15 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
                 title: clean(template.stageTitle, MAX_TITLE) || 'Artist Passport',
                 subtitle: artist,
                 callout: clean(template.finding, MAX_LINE) || undefined,
+                url: displayUrl(template.url),
+                attribution,
+                ...accents,
+            };
+        case 'page':
+            return {
+                eyebrow: clean(`indii.music · ${template.label}`, 40),
+                title: clean(template.title, MAX_TITLE) || 'indii.music',
+                compactTitle: true,
                 url: displayUrl(template.url),
                 attribution,
                 ...accents,

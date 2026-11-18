@@ -15,6 +15,7 @@ import AcceptFoundingArtistInvitation from './pages/AcceptFoundingArtistInvitati
 import FieldRecorder from './pages/FieldRecorder';
 import ArtistPassportPage from './pages/ArtistPassportPage';
 import PassportResultPage from './pages/PassportResultPage';
+import SectionShareRedirect from './pages/SectionShareRedirect';
 import RainGlassOverlay from './components/effects/RainGlassOverlay';
 
 const FounderRoutes = () => (
@@ -28,6 +29,7 @@ const FounderRoutes = () => (
     <Route path="/passport" element={<ArtistPassportPage />} />
     <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/passport/r/:code" element={<PassportResultPage />} />
+    <Route path="/s/:section" element={<SectionShareRedirect />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
@@ -46,6 +48,7 @@ const GeneralRoutes = () => (
     <Route path="/passport" element={<ArtistPassportPage />} />
     <Route path="/artist-passport" element={<ArtistPassportPage />} />
     <Route path="/passport/r/:code" element={<PassportResultPage />} />
+    <Route path="/s/:section" element={<SectionShareRedirect />} />
     <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
