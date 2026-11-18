@@ -111,3 +111,8 @@ visible and understandable without instructions; collapse secondary panels
 and disclose advanced choices on demand. More options must not mean an
 always-expanded wall of buttons. Preserve selected choices and make expand,
 collapse, focus and exit controls accessible and clear about their effect.
+
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
