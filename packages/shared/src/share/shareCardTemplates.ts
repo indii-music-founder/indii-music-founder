@@ -52,6 +52,12 @@ export type ShareCardTemplate =
         url?: string;
     }
     | {
+        kind: 'artist';
+        artistName: string;
+        tagline?: string;
+        url?: string;
+    }
+    | {
         kind: 'page';
         /** Short section label, e.g. "Pricing". */
         label: string;
@@ -203,6 +209,15 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
                 title: clean(template.stageTitle, MAX_TITLE) || 'Artist Passport',
                 subtitle: artist,
                 callout: clean(template.finding, MAX_LINE) || undefined,
+                url: displayUrl(template.url),
+                attribution,
+                ...accents,
+            };
+        case 'artist':
+            return {
+                eyebrow: 'Independent artist',
+                title: clean(template.artistName, MAX_TITLE) || 'Independent artist',
+                callout: clean(template.tagline, MAX_LINE) || undefined,
                 url: displayUrl(template.url),
                 attribution,
                 ...accents,

@@ -2,20 +2,30 @@
 
 ## Mainline Delivery Standard
 
-This repository works directly on `main`. Do not create, switch to, push, or continue work on a task branch unless the user explicitly requests that branch workflow for the current task. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
+This repository works directly on `main` and routes all agent Git traffic (`origin`) through **Entire** (`entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder`, dashboard `https://entire.com/gh/indii-music-founder/indii-music-founder`) instead of directly through GitHub. All coding agents (Antigravity/Gemini, Codex, Claude Code) must push, fetch, and manage trails, checkpoints, and sessions via Entire (`entire` CLI) rather than GitHub PRs or direct GitHub remotes. Do not create, switch to, push, or continue work on a task branch unless the user explicitly requests that branch workflow for the current task. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
 
-Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA (for documentation-only commits, verify the `Docs and Policy Gate` run; if no remote CI is scheduled, explicitly report "Remote CI not scheduled" and document local verification rather than claiming green CI). Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
+Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main` (which publishes the commit and its captured Entire checkpoint/session to Entire and mirrors to GitHub for Firebase CI/CD), then inspect the CI run for that exact SHA (for documentation-only commits, verify the `Docs and Policy Gate` run; if no remote CI is scheduled, explicitly report "Remote CI not scheduled" and document local verification rather than claiming green CI). Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
 
-## User GitHub Completion Preference
+## Entire Agent Workflow & Completion Standard
 
 For this user's repository work, a local change or commit is not a completed
-deliverable. When the user requests a branch/PR workflow, publish the requested
-branch and open the requested PR, then verify the remote branch SHA, PR head,
-and CI status before reporting completion. Do not merge or deploy unless the
-user explicitly asks. If the normal Git push path fails, check the already
-authorized GitHub connection before calling the work blocked; do not switch to
-an unauthorized credential or authentication path. Coordinate with other
-agents first and do not duplicate or overwrite their work.
+deliverable, and coding agents (Antigravity, Codex, Claude) must use **Entire**
+instead of GitHub for code hosting, session/checkpoint tracking, historical
+search, and review trails:
+
+- **Git remote (`origin`):** Always keep `origin` pointed at Entire
+  (`entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder`
+  via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`).
+- **Sessions, Checkpoints & Trails:** Use `entire status`, `entire trail`,
+  `entire checkpoint`, `entire search --json --compact`, and `entire session`
+  (run `entire agent-help` for exact flags). When the user requests a branch/trail
+  review workflow, publish via Entire (`origin`) and manage the change through
+  `entire trail` rather than opening GitHub PRs.
+- **Authentication:** If an Entire push or command fails due to authentication,
+  check `entire auth status` (or prompt the user for the official `entire login`
+  flow) before calling the work blocked; never switch to an unauthorized
+  credential or authentication path. Coordinate with other agents first and do
+  not duplicate or overwrite their work.
 
 ## Real-User Authenticity Standard
 

@@ -6,6 +6,10 @@
 - Certified: 37
 - Conditional: 75
 - Quarantined: 98
+- Source digest: `7aeebe1819e5a06103993e64ae755c99ba71a1d51a0d29a3b56f82eb6c2ecdf7`
+- Certified: 37
+- Conditional: 71
+- Quarantined: 99
 - Deprecated: 1
 
 The router may select only Certified entries or Conditional entries whose prerequisites pass. Runtime MCP, connector, browser, computer-use, and other host-native tools are added as a session overlay and must satisfy the same contract.
@@ -147,6 +151,7 @@ The router may select only Certified entries or Conditional entries whose prereq
 | `skill:vendored:developing-genkit-js` | conditional | inherits-active-request | yes | .agents/skills/developing-genkit-js/SKILL.md |
 | `skill:vendored:developing-genkit-python` | conditional | inherits-active-request | yes | .agents/skills/developing-genkit-python/SKILL.md |
 | `skill:vendored:embedded-captions` | conditional | inherits-active-request | yes | .agents/skills/embedded-captions/SKILL.md |
+| `skill:vendored:entire-search` | quarantined | inherits-active-request | yes | .agents/skills/entire-search/SKILL.md |
 | `skill:vendored:faceless-explainer` | conditional | inherits-active-request | yes | .agents/skills/faceless-explainer/SKILL.md |
 | `skill:vendored:figma` | conditional | inherits-active-request | yes | .agents/skills/figma/SKILL.md |
 | `skill:vendored:firebase-ai-logic-basics` | conditional | inherits-active-request | yes | .agents/skills/firebase-ai-logic-basics/SKILL.md |

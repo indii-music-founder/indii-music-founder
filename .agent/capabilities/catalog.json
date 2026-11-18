@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceDigest": "97b44a73ddef0bcf1a3b549d6defad3d52bedf94bb412245cb2790325fd57826",
+  "sourceDigest": "7aeebe1819e5a06103993e64ae755c99ba71a1d51a0d29a3b56f82eb6c2ecdf7",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -9,6 +10,8 @@
     "certified": 37,
     "conditional": 75,
     "quarantined": 98,
+    "conditional": 71,
+    "quarantined": 99,
     "deprecated": 1
   },
   "capabilities": [
@@ -4045,6 +4048,40 @@
       "locked": true,
       "upstream": "heygen-com/hyperframes",
       "lockHash": "d0f86a829c3687376943db94a44375aa3dc98928ee534f662f1130a3a4974c3e"
+    },
+    {
+      "id": "skill:vendored:entire-search",
+      "name": "entire-search",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/entire-search/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Search Entire checkpoint history and transcripts with `entire search --json`. Use proactively when the user asks about previous work, commits, sessions, prompts, or historical context in this repository.",
+      "descriptionHash": "3683b7cb88997affad8b77d07f0f330d456e9f372ecf5eec69faf1e1622e972a",
+      "contentHash": "ad0ad29e1e66516790be7cbef15b5031d060ebf5f1f466374f4a653bdb81d3b6",
+      "state": "quarantined",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": false,
+      "upstream": null,
+      "lockHash": null,
+      "reason": "Installed vendored skill has no skills-lock.json entry."
     },
     {
       "id": "skill:vendored:faceless-explainer",

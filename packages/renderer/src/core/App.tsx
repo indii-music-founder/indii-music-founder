@@ -43,6 +43,8 @@ import { getPlatformOAuthCallbackProvider } from '@/modules/analytics/components
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PrintSpecDialog } from '@/components/ui/PrintSpecDialog';
 import { ShareSheet } from '@/components/share/ShareSheet';
+import { CelebrationMoment } from '@/components/share/CelebrationMoment';
+import { usePresentMode } from '@/core/presentMode';
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
@@ -112,6 +114,7 @@ function UnauthenticatedApp() {
 }
 
 function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> }) {
+    const presenting = usePresentMode();
     const location = useLocation();
     const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
@@ -206,12 +209,13 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
             <ConfirmDialog />
             <PrintSpecDialog />
             <ShareSheet />
+            <CelebrationMoment />
             {authLoading || !user ? (
                 authLoading ? <LoadingFallback /> : <UnauthenticatedApp />
             ) : (
                 <AppInitializationProvider>{signedInContent}</AppInitializationProvider>
             )}
-            {import.meta.env.DEV && <DevPortWarning />}
+            {import.meta.env.DEV && !presenting && <DevPortWarning />}
         </AuthInitializationProvider>
     );
 }
@@ -300,6 +304,7 @@ export default function App() {
         surface = (
             <MobileRemoteProviders>
                 <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
+                <ShareSheet />
             </MobileRemoteProviders>
         );
     } else if (publicLegalPage) {

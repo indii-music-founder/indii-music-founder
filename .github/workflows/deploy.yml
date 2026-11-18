@@ -57,6 +57,10 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
@@ -66,6 +70,9 @@ jobs:
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
           npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Build shared packages
+        run: npx tsc -b packages/shared packages/video-compiler
 
       - name: Sanity check - Duplicate identifiers (Item 342)
         run: |
@@ -127,11 +134,15 @@ jobs:
           node-version: '24.x'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Expose pinned FFmpeg tools
@@ -184,11 +195,15 @@ jobs:
           java-version: '21'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Build shared package
@@ -204,7 +219,7 @@ jobs:
   # ─── Build & Static Analysis ────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: setup
     outputs:
       artifact-id: ${{ steps.upload-build.outputs.artifact-id }}
     env:
@@ -223,26 +238,28 @@ jobs:
           node-version: '24.x'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
-      # Item 252: Security audit — non-blocking
-      - name: Audit dependencies for vulnerabilities (Item 252)
-        continue-on-error: true
-        run: npm audit --audit-level=high
 
       - name: Build shared package
         run: npx tsc -b packages/shared packages/video-compiler
 
-      - name: Run linting checks
-        run: npm run lint
-
-      - name: TypeScript type check (Item 343)
-        run: npm run typecheck
+      - name: Run linting and TypeScript type check in parallel
+        run: |
+          npm run lint &
+          PID_LINT=$!
+          npm run typecheck &
+          PID_TC=$!
+          wait $PID_LINT
+          wait $PID_TC
 
       - name: Verify isolated desktop MCP packages
         run: npm run verify:desktop:mcp
@@ -360,7 +377,7 @@ jobs:
   # ─── Staging Deploy ──────────────────────────────────────────────────────────
   deploy-staging:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, unit-tests]
     outputs:
       staging-url: ${{ steps.channel-deploy.outputs.staging_url }}
 
@@ -374,11 +391,15 @@ jobs:
           node-version: '24.x'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Download build artifacts
@@ -472,11 +493,15 @@ jobs:
           node-version: '24.x'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Cache Playwright browsers
@@ -534,11 +559,15 @@ jobs:
           node-version: '24.x'
 
       - name: Restore node_modules cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             node_modules
             packages/*/node_modules
+            packages/shared/dist
+            packages/shared/tsconfig.tsbuildinfo
+            packages/video-compiler/dist
+            packages/video-compiler/tsconfig.tsbuildinfo
           key: node-modules-node24-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Download build artifacts
@@ -693,229 +722,6 @@ jobs:
             --project indii-music-founder \
             --data-file=-
 
-      - name: Deploy Cloud Functions
-        env:
-          INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
-          # Production media generation uses postpaid Vertex AI via ADC. The
-          # API-key provider remains an explicit emergency-only override.
-          MEDIA_PROVIDER: vertex
-          SESSION_UPLOAD_ALLOWED_ORIGIN: https://app.indii.music
-          SESSION_PROXY_ESTIMATE_USD_PER_GIB: "0.18"
-          SESSION_PROXY_ESTIMATE_VERSION: gcp-session-proxy-2026-07
-          SESSION_PROXY_WORKER_URL: https://engine-dsp-148015878263.us-central1.run.app
-          SESSION_PROXY_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
-          SESSION_PROXY_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
-          SESSION_PROXY_TASKS_QUEUE: session-proxy-queue
-          SESSION_PROXY_TASKS_LOCATION: us-central1
-          ENGINE_DSP_URL: https://engine-dsp-148015878263.us-central1.run.app/profile
-          ENGINE_DSP_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
-          ENGINE_DSP_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
-          DSP_TASKS_QUEUE: dsp-processing-queue
-          DSP_TASKS_LOCATION: us-central1
-          PRINT_WORKER_URL: https://print-prep-148015878263.us-central1.run.app
-          PRINT_WORKER_SERVICE_ACCOUNT: print-prep-invoker@indii-music-founder.iam.gserviceaccount.com
-          PRINT_WORKER_AUDIENCE: https://print-prep-148015878263.us-central1.run.app
-          PRINT_TASKS_QUEUE: print-prep-queue
-          PRINT_TASKS_LOCATION: us-central1
-        run: |
-          # Routine deployments must not delete live functions. Generation
-          # changes require a separately reviewed migration with recovery.
-          # This inventory is the former Gen1 export list from
-          # scripts/check-gen2-migration-semantics.cjs. Fail before deploying
-          # if any existing endpoint still needs that migration.
-          for function_name in \
-            logAuditEvent \
-            persistFraudAlert \
-            registerAiContextCache \
-            recordInstrumentUsage \
-            assignDistributionIdentifier \
-            recordDistributionIdentifier \
-            recordDistributionAuditEvent \
-            requestDistributionTakedown \
-            createSftpIngestionRecord \
-            updateSftpIngestionRecord \
-            onMilestoneScheduled \
-            refreshSocialToken \
-            issueStudioExecutorLease \
-            publishStudioPresence \
-            releaseStudioPresence \
-            claimStudioCommand \
-            publishStudioResponse \
-            completeStudioCommand \
-            generateReleaseDownloadUrl \
-            auditReleaseArtworkForDelivery \
-            verifyMechanicalLicense \
-            sendForDigitalSignature \
-            requestTaxForms \
-            generateTelegramLinkCode \
-            getTelegramLinkStatus \
-            createStripeAccount \
-            createStripeConnectAccount \
-            createTransfer \
-            generateItinerary \
-            checkLogistics \
-            findPlaces \
-            executeCampaign \
-            dispatchSocialPost \
-            createInfluencerBounty \
-            reportBugFn \
-            analyticsExchangeToken \
-            analyticsFinalizeInstagramConnection \
-            analyticsGetConnectionStatus \
-            analyticsRefreshToken \
-            analyticsRevokeToken \
-            emailExchangeToken \
-            emailRefreshToken \
-            emailRevokeToken \
-            pandadocListTemplates \
-            pandadocCreateDocument \
-            pandadocSendDocument \
-            pandadocGetDocumentStatus \
-            pandadocGetSigningLink \
-            cleanupOrphanedVideos \
-            trackStorageQuotas \
-            cleanupExpiredVideoTemps \
-            flagVideosForArchival \
-            processRelayCommand \
-            pandadocWebhook \
-            telegramWebhook \
-            initiateSplitEscrow \
-            signEscrow \
-            releaseEscrow \
-            triggerVideoJob \
-            executeVideoJob \
-            triggerLongFormVideoJob \
-            renderVideo \
-            inngestApi \
-            generateSpeech \
-            generateContentStream \
-            ragProxy \
-            listGKEClusters \
-            getGKEClusterStatus \
-            scaleGKENodePool \
-            listGCEInstances \
-            restartGCEInstance \
-            executeBigQueryQuery \
-            getBigQueryTableSchema \
-            listBigQueryDatasets \
-            exportUserData \
-            requestAccountDeletion \
-            healthCheck \
-            healthCheckWest1 \
-            enrichFanData \
-            editImage \
-            analyzeAudio
-          do
-            # Two lookups: one to prove existence, one to read generation.
-            existing="$(gcloud functions describe "$function_name" \
-              --region us-central1 --project indii-music-founder \
-              --format="value(name)" 2>/dev/null || true)"
-            if [ -z "$existing" ]; then
-              echo "$function_name is not deployed; the deploy will create it as Gen2."
-              continue
-            fi
-            generation="$(gcloud functions describe "$function_name" \
-              --region us-central1 --project indii-music-founder \
-              --format="value(environment)" 2>/dev/null || true)"
-            if [ "$generation" = "GEN_2" ]; then
-              echo "$function_name is already Gen2; preserving it."
-            else
-              echo "::error::$function_name is deployed but is not confirmed Gen2. Stop routine deployment and perform a separately reviewed migration."
-              exit 1
-            fi
-          done
-          printf '%s\n' \
-            "INFLUENCER_BOUNTY_BASE_URL=$INFLUENCER_BOUNTY_BASE_URL" \
-            "MEDIA_PROVIDER=$MEDIA_PROVIDER" \
-            "SESSION_UPLOAD_ALLOWED_ORIGIN=$SESSION_UPLOAD_ALLOWED_ORIGIN" \
-            "SESSION_PROXY_ESTIMATE_USD_PER_GIB=$SESSION_PROXY_ESTIMATE_USD_PER_GIB" \
-            "SESSION_PROXY_ESTIMATE_VERSION=$SESSION_PROXY_ESTIMATE_VERSION" \
-            "SESSION_PROXY_WORKER_URL=$SESSION_PROXY_WORKER_URL" \
-            "SESSION_PROXY_SERVICE_ACCOUNT=$SESSION_PROXY_SERVICE_ACCOUNT" \
-            "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
-            "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
-            "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
-            "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
-            "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
-            "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
-            "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
-            "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
-            "PRINT_WORKER_URL=$PRINT_WORKER_URL" \
-            "PRINT_WORKER_SERVICE_ACCOUNT=$PRINT_WORKER_SERVICE_ACCOUNT" \
-            "PRINT_WORKER_AUDIENCE=$PRINT_WORKER_AUDIENCE" \
-            "PRINT_TASKS_QUEUE=$PRINT_TASKS_QUEUE" \
-            "PRINT_TASKS_LOCATION=$PRINT_TASKS_LOCATION" \
-            > packages/firebase/.env.indii-music-founder
-          rm -rf packages/firebase/lib packages/firebase/shared-pkg packages/firebase/indii-shared-*.tgz packages/firebase/package-lock.json
-          npx tsc -b packages/shared
-          # Package @indii/shared as a pre-packed tarball to eliminate Arborist tree calculation defects on local directory references (ISSUE-1434).
-          npm pack ./packages/shared --pack-destination packages/firebase
-          SHARED_TGZ_NAME="$(basename "$(ls packages/firebase/indii-shared-*.tgz | head -n 1)")"
-          # Update only the deployment manifest; npm workspace mutation loads Arborist.
-          SHARED_TGZ_NAME="$SHARED_TGZ_NAME" node <<'NODE'
-          const fs = require('node:fs');
-          const path = 'packages/firebase/package.json';
-          const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
-          manifest.dependencies['@indii/shared'] = `file:./${process.env.SHARED_TGZ_NAME}`;
-          fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
-          NODE
-          # Generate the deployment lock outside the workspace and its cached symlinks.
-          # npm Arborist can crash on the packed shared dependency inside the workspace;
-          # Cloud Build must receive a complete lockfile, not a warning and a missing file.
-          FUNCTIONS_LOCK_DIR=$(mktemp -d)
-          cp packages/firebase/package.json "packages/firebase/$SHARED_TGZ_NAME" "$FUNCTIONS_LOCK_DIR/"
-          (cd "$FUNCTIONS_LOCK_DIR" && npx --yes npm@11.20.0 install --package-lock-only --ignore-scripts --no-workspaces --quiet)
-          cp "$FUNCTIONS_LOCK_DIR/package-lock.json" packages/firebase/package-lock.json
-          rm -rf "$FUNCTIONS_LOCK_DIR"
-          npm run build -w packages/firebase
-          if [ ! -f packages/firebase/lib/index.js ]; then
-            echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
-            (cd packages/firebase && npx --no-install tsc --listEmittedFiles --diagnostics)
-            exit 1
-          fi
-          # ISSUE-1390: `firebase deploy --force` still exits 0 when individual
-          # function updates fail (observed 2026-08-19 22:46: seven HTTP 429
-          # "Per project mutation requests per minute per region" quota
-          # failures — generateImageV3 stayed on its old revision while CI
-          # reported success, so the per-API input-shape fix never went live).
-          # Retry transient quota failures with backoff; only a deploy that
-          # leaves functions on old code for a real (non-quota) reason fails
-          # the pipeline. A bare "Error:" would also match the benign
-          # "specified filters do not match" output from the pre-delete steps,
-          # so the check keys on the deploy's own failure marker.
-          for attempt in 1 2 3; do
-            set +e
-            npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force 2>&1 | tee /tmp/functions-deploy.log
-            deploy_status=${PIPESTATUS[0]}
-            set -e
-            if [ "$deploy_status" -eq 0 ] && ! grep -Eq "failed to (update|create) function" /tmp/functions-deploy.log; then
-              echo "::notice::All Cloud Functions updated successfully on attempt $attempt."
-              break
-            fi
-            if grep -Eq "429, Quota exceeded" /tmp/functions-deploy.log && [ "$attempt" -lt 3 ]; then
-              echo "::warning::Cloud Functions deploy attempt $attempt hit transient quota limits — retrying in 90s."
-              sleep 90
-              continue
-            fi
-            echo "::warning::Some Cloud Functions failed to update — see the deploy log above. Proceeding with Hosting, Rules, and Worker deploy so new code is released."
-            if [ "${STRICT_FUNCTIONS_DEPLOY:-false}" = "true" ]; then
-              echo "::error::Some Cloud Functions failed to update — see the deploy log above. The pipeline must not report success while functions are stale."
-              exit 1
-            fi
-            break
-          done
-
-          dispatcher_trigger="$(gcloud functions describe dispatchCloudVideoRender \
-            --gen2 --region us-central1 --project indii-music-founder \
-            --format='value(eventTrigger.eventType)' 2>/dev/null || true)"
-          if [ "$dispatcher_trigger" != "google.cloud.firestore.document.v1.created" ]; then
-            echo "::warning::dispatchCloudVideoRender is missing or does not have the required Firestore created trigger."
-            if [ "${STRICT_FUNCTIONS_DEPLOY:-false}" = "true" ]; then
-              echo "::error::dispatchCloudVideoRender is missing or does not have the required Firestore created trigger."
-              exit 1
-            fi
-          fi
-
       - name: Deploy landing page to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
@@ -978,6 +784,242 @@ jobs:
             --cors-file=cors.json \
             --quiet
 
+      - name: Deploy Cloud Functions
+        env:
+          INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
+          # Production media generation uses postpaid Vertex AI via ADC. The
+          # API-key provider remains an explicit emergency-only override.
+          MEDIA_PROVIDER: vertex
+          SESSION_UPLOAD_ALLOWED_ORIGIN: https://app.indii.music
+          SESSION_PROXY_ESTIMATE_USD_PER_GIB: "0.18"
+          SESSION_PROXY_ESTIMATE_VERSION: gcp-session-proxy-2026-07
+          SESSION_PROXY_WORKER_URL: https://engine-dsp-148015878263.us-central1.run.app
+          SESSION_PROXY_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
+          SESSION_PROXY_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
+          SESSION_PROXY_TASKS_QUEUE: session-proxy-queue
+          SESSION_PROXY_TASKS_LOCATION: us-central1
+          ENGINE_DSP_URL: https://engine-dsp-148015878263.us-central1.run.app/profile
+          ENGINE_DSP_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
+          ENGINE_DSP_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
+          DSP_TASKS_QUEUE: dsp-processing-queue
+          DSP_TASKS_LOCATION: us-central1
+          PRINT_WORKER_URL: https://print-prep-148015878263.us-central1.run.app
+          PRINT_WORKER_SERVICE_ACCOUNT: print-prep-invoker@indii-music-founder.iam.gserviceaccount.com
+          PRINT_WORKER_AUDIENCE: https://print-prep-148015878263.us-central1.run.app
+          PRINT_TASKS_QUEUE: print-prep-queue
+          PRINT_TASKS_LOCATION: us-central1
+        run: |
+          FUNCTIONS_HASH=$(git rev-parse HEAD:packages/firebase HEAD:packages/shared HEAD:firebase.json HEAD:package-lock.json | sha256sum | awk '{print $1}')
+          LAST_FUNCTIONS_HASH=$(gcloud secrets versions access latest --secret=INDII_FUNCTIONS_DEPLOY_HASH --project indii-music-founder 2>/dev/null || true)
+          dispatcher_trigger="$(gcloud functions describe dispatchCloudVideoRender \
+            --gen2 --region us-central1 --project indii-music-founder \
+            --format='value(eventTrigger.eventType)' 2>/dev/null || true)"
+
+          if [ "${GITHUB_EVENT_NAME:-}" != "workflow_dispatch" ] && [ -n "$LAST_FUNCTIONS_HASH" ] && [ "$FUNCTIONS_HASH" = "$LAST_FUNCTIONS_HASH" ] && [ "$dispatcher_trigger" = "google.cloud.firestore.document.v1.created" ]; then
+            echo "::notice::Cloud Functions source hash ($FUNCTIONS_HASH) matches live deployment and dispatchCloudVideoRender trigger is verified — skipping redundant 16m functions redeploy."
+          else
+            # Routine deployments must not delete live functions. Generation
+            # changes require a separately reviewed migration with recovery.
+            # This inventory is the former Gen1 export list from
+            # scripts/check-gen2-migration-semantics.cjs. Fail before deploying
+            # if any existing endpoint still needs that migration.
+            LIVE_FUNCTIONS_MAP="$(gcloud functions list --regions=us-central1 --project indii-music-founder --format='value(name,environment)' 2>/dev/null || true)"
+            for function_name in \
+              logAuditEvent \
+              persistFraudAlert \
+              registerAiContextCache \
+              recordInstrumentUsage \
+              assignDistributionIdentifier \
+              recordDistributionIdentifier \
+              recordDistributionAuditEvent \
+              requestDistributionTakedown \
+              createSftpIngestionRecord \
+              updateSftpIngestionRecord \
+              onMilestoneScheduled \
+              refreshSocialToken \
+              issueStudioExecutorLease \
+              publishStudioPresence \
+              releaseStudioPresence \
+              claimStudioCommand \
+              publishStudioResponse \
+              completeStudioCommand \
+              generateReleaseDownloadUrl \
+              auditReleaseArtworkForDelivery \
+              verifyMechanicalLicense \
+              sendForDigitalSignature \
+              requestTaxForms \
+              generateTelegramLinkCode \
+              getTelegramLinkStatus \
+              createStripeAccount \
+              createStripeConnectAccount \
+              createTransfer \
+              generateItinerary \
+              checkLogistics \
+              findPlaces \
+              executeCampaign \
+              dispatchSocialPost \
+              createInfluencerBounty \
+              reportBugFn \
+              analyticsExchangeToken \
+              analyticsFinalizeInstagramConnection \
+              analyticsGetConnectionStatus \
+              analyticsRefreshToken \
+              analyticsRevokeToken \
+              emailExchangeToken \
+              emailRefreshToken \
+              emailRevokeToken \
+              pandadocListTemplates \
+              pandadocCreateDocument \
+              pandadocSendDocument \
+              pandadocGetDocumentStatus \
+              pandadocGetSigningLink \
+              cleanupOrphanedVideos \
+              trackStorageQuotas \
+              cleanupExpiredVideoTemps \
+              flagVideosForArchival \
+              processRelayCommand \
+              pandadocWebhook \
+              telegramWebhook \
+              initiateSplitEscrow \
+              signEscrow \
+              releaseEscrow \
+              triggerVideoJob \
+              executeVideoJob \
+              triggerLongFormVideoJob \
+              renderVideo \
+              inngestApi \
+              generateSpeech \
+              generateContentStream \
+              ragProxy \
+              listGKEClusters \
+              getGKEClusterStatus \
+              scaleGKENodePool \
+              listGCEInstances \
+              restartGCEInstance \
+              executeBigQueryQuery \
+              getBigQueryTableSchema \
+              listBigQueryDatasets \
+              exportUserData \
+              requestAccountDeletion \
+              healthCheck \
+              healthCheckWest1 \
+              enrichFanData \
+              editImage \
+              analyzeAudio
+            do
+              generation="$(printf '%s\n' "$LIVE_FUNCTIONS_MAP" | awk -v fn="$function_name" '$1 ~ ("/" fn "$") || $1 == fn { print $2; exit }')"
+              if [ -z "$generation" ]; then
+                echo "$function_name is not deployed; the deploy will create it as Gen2."
+                continue
+              fi
+              if [ "$generation" = "GEN_2" ]; then
+                echo "$function_name is already Gen2; preserving it."
+              else
+                echo "::error::$function_name is deployed but is not confirmed Gen2. Stop routine deployment and perform a separately reviewed migration."
+                exit 1
+              fi
+            done
+            printf '%s\n' \
+              "INFLUENCER_BOUNTY_BASE_URL=$INFLUENCER_BOUNTY_BASE_URL" \
+              "MEDIA_PROVIDER=$MEDIA_PROVIDER" \
+              "SESSION_UPLOAD_ALLOWED_ORIGIN=$SESSION_UPLOAD_ALLOWED_ORIGIN" \
+              "SESSION_PROXY_ESTIMATE_USD_PER_GIB=$SESSION_PROXY_ESTIMATE_USD_PER_GIB" \
+              "SESSION_PROXY_ESTIMATE_VERSION=$SESSION_PROXY_ESTIMATE_VERSION" \
+              "SESSION_PROXY_WORKER_URL=$SESSION_PROXY_WORKER_URL" \
+              "SESSION_PROXY_SERVICE_ACCOUNT=$SESSION_PROXY_SERVICE_ACCOUNT" \
+              "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
+              "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
+              "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
+              "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
+              "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
+              "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
+              "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
+              "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
+              "PRINT_WORKER_URL=$PRINT_WORKER_URL" \
+              "PRINT_WORKER_SERVICE_ACCOUNT=$PRINT_WORKER_SERVICE_ACCOUNT" \
+              "PRINT_WORKER_AUDIENCE=$PRINT_WORKER_AUDIENCE" \
+              "PRINT_TASKS_QUEUE=$PRINT_TASKS_QUEUE" \
+              "PRINT_TASKS_LOCATION=$PRINT_TASKS_LOCATION" \
+              > packages/firebase/.env.indii-music-founder
+            rm -rf packages/firebase/lib packages/firebase/shared-pkg packages/firebase/indii-shared-*.tgz packages/firebase/package-lock.json
+            npx tsc -b packages/shared
+            # Package @indii/shared as a pre-packed tarball to eliminate Arborist tree calculation defects on local directory references (ISSUE-1434).
+            npm pack ./packages/shared --pack-destination packages/firebase
+            SHARED_TGZ_NAME="$(basename "$(ls packages/firebase/indii-shared-*.tgz | head -n 1)")"
+            # Update only the deployment manifest; npm workspace mutation loads Arborist.
+          SHARED_TGZ_NAME="$SHARED_TGZ_NAME" node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'packages/firebase/package.json';
+          const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
+          manifest.dependencies['@indii/shared'] = `file:./${process.env.SHARED_TGZ_NAME}`;
+          fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+            # Generate the deployment lock outside the workspace and its cached symlinks.
+            # npm Arborist can crash on the packed shared dependency inside the workspace;
+            # Cloud Build must receive a complete lockfile, not a warning and a missing file.
+            FUNCTIONS_LOCK_DIR=$(mktemp -d)
+            cp packages/firebase/package.json "packages/firebase/$SHARED_TGZ_NAME" "$FUNCTIONS_LOCK_DIR/"
+            (cd "$FUNCTIONS_LOCK_DIR" && npx --yes npm@11.20.0 install --package-lock-only --ignore-scripts --no-workspaces --quiet)
+            cp "$FUNCTIONS_LOCK_DIR/package-lock.json" packages/firebase/package-lock.json
+            rm -rf "$FUNCTIONS_LOCK_DIR"
+            npm run build -w packages/firebase
+            if [ ! -f packages/firebase/lib/index.js ]; then
+              echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
+              (cd packages/firebase && npx --no-install tsc --listEmittedFiles --diagnostics)
+              exit 1
+            fi
+            # ISSUE-1390: `firebase deploy --force` still exits 0 when individual
+            # function updates fail (observed 2026-08-19 22:46: seven HTTP 429
+            # "Per project mutation requests per minute per region" quota
+            # failures — generateImageV3 stayed on its old revision while CI
+            # reported success, so the per-API input-shape fix never went live).
+            # Retry transient quota failures with backoff; only a deploy that
+            # leaves functions on old code for a real (non-quota) reason fails
+            # the pipeline. A bare "Error:" would also match the benign
+            # "specified filters do not match" output from the pre-delete steps,
+            # so the check keys on the deploy's own failure marker.
+            FUNCTIONS_DEPLOY_OK=false
+            for attempt in 1 2 3; do
+              set +e
+              npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force 2>&1 | tee /tmp/functions-deploy.log
+              deploy_status=${PIPESTATUS[0]}
+              set -e
+              if [ "$deploy_status" -eq 0 ] && ! grep -Eq "failed to (update|create) function" /tmp/functions-deploy.log; then
+                echo "::notice::All Cloud Functions updated successfully on attempt $attempt."
+                FUNCTIONS_DEPLOY_OK=true
+                break
+              fi
+              if grep -Eq "429, Quota exceeded" /tmp/functions-deploy.log && [ "$attempt" -lt 3 ]; then
+                echo "::warning::Cloud Functions deploy attempt $attempt hit transient quota limits — retrying in 90s."
+                sleep 90
+                continue
+              fi
+              echo "::warning::Some Cloud Functions failed to update — see the deploy log above. Proceeding with Hosting, Rules, and Worker deploy so new code is released."
+              if [ "${STRICT_FUNCTIONS_DEPLOY:-false}" = "true" ]; then
+                echo "::error::Some Cloud Functions failed to update — see the deploy log above. The pipeline must not report success while functions are stale."
+                exit 1
+              fi
+              break
+            done
+
+            if [ "$FUNCTIONS_DEPLOY_OK" = "true" ]; then
+              gcloud secrets describe INDII_FUNCTIONS_DEPLOY_HASH --project indii-music-founder --quiet >/dev/null 2>&1 || \
+              gcloud secrets create INDII_FUNCTIONS_DEPLOY_HASH --project indii-music-founder --replication-policy automatic --quiet
+              printf '%s' "$FUNCTIONS_HASH" | gcloud secrets versions add INDII_FUNCTIONS_DEPLOY_HASH --project indii-music-founder --data-file=- --quiet
+            fi
+
+            dispatcher_trigger="$(gcloud functions describe dispatchCloudVideoRender \
+              --gen2 --region us-central1 --project indii-music-founder \
+              --format='value(eventTrigger.eventType)' 2>/dev/null || true)"
+            if [ "$dispatcher_trigger" != "google.cloud.firestore.document.v1.created" ]; then
+              echo "::warning::dispatchCloudVideoRender is missing or does not have the required Firestore created trigger."
+              if [ "${STRICT_FUNCTIONS_DEPLOY:-false}" = "true" ]; then
+                echo "::error::dispatchCloudVideoRender is missing or does not have the required Firestore created trigger."
+                exit 1
+              fi
+            fi
+          fi
+
       - name: Provision print preparation task identities and queue
         run: |
           set -euo pipefail
@@ -1020,36 +1062,77 @@ jobs:
             --project indii-music-founder \
             --location us-central1 \
             --quiet
-          gcloud run deploy print-prep \
-            --project indii-music-founder \
-            --region us-central1 \
-            --source execution/print_prep \
-            --service-account print-prep-runtime@indii-music-founder.iam.gserviceaccount.com \
-            --cpu 4 \
-            --memory 8Gi \
-            --concurrency 1 \
-            --timeout 30m \
-            --no-allow-unauthenticated \
-            --update-env-vars GOOGLE_CLOUD_PROJECT=indii-music-founder \
-            --quiet
-          gcloud run services add-iam-policy-binding print-prep \
-            --project indii-music-founder \
-            --region us-central1 \
-            --member=serviceAccount:print-prep-invoker@indii-music-founder.iam.gserviceaccount.com \
-            --role=roles/run.invoker \
-            --quiet
-          gcloud run deploy engine-dsp \
-            --project indii-music-founder \
-            --region us-central1 \
-            --source packages/engine-dsp \
-            --service-account engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
-            --cpu 2 \
-            --memory 2Gi \
-            --concurrency 1 \
-            --timeout 30m \
-            --no-allow-unauthenticated \
-            --update-env-vars SESSION_MEDIA_BUCKET=indii-music-founder.firebasestorage.app \
-            --quiet
+
+          PRINT_PREP_HASH=$(git rev-parse HEAD:execution/print_prep)
+          ENGINE_DSP_HASH=$(git rev-parse HEAD:packages/engine-dsp)
+
+          LIVE_PRINT_PREP_HASH=$(gcloud run services describe print-prep \
+            --project indii-music-founder --region us-central1 \
+            --format="value(spec.template.spec.containers[0].env[?name=='SOURCE_TREE_HASH'].value)" 2>/dev/null || true)
+          LIVE_ENGINE_DSP_HASH=$(gcloud run services describe engine-dsp \
+            --project indii-music-founder --region us-central1 \
+            --format="value(spec.template.spec.containers[0].env[?name=='SOURCE_TREE_HASH'].value)" 2>/dev/null || true)
+
+          DEPLOY_PRINT_PREP=false
+          DEPLOY_ENGINE_DSP=false
+          if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] || [ "$LIVE_PRINT_PREP_HASH" != "$PRINT_PREP_HASH" ]; then
+            DEPLOY_PRINT_PREP=true
+          else
+            echo "::notice::print-prep source hash ($PRINT_PREP_HASH) matches live Cloud Run service — skipping rebuild."
+          fi
+
+          if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] || [ "$LIVE_ENGINE_DSP_HASH" != "$ENGINE_DSP_HASH" ]; then
+            DEPLOY_ENGINE_DSP=true
+          else
+            echo "::notice::engine-dsp source hash ($ENGINE_DSP_HASH) matches live Cloud Run service — skipping rebuild."
+          fi
+
+          PIDS=""
+          if [ "$DEPLOY_PRINT_PREP" = "true" ]; then
+            (
+              gcloud run deploy print-prep \
+                --project indii-music-founder \
+                --region us-central1 \
+                --source execution/print_prep \
+                --service-account print-prep-runtime@indii-music-founder.iam.gserviceaccount.com \
+                --cpu 4 \
+                --memory 8Gi \
+                --concurrency 1 \
+                --timeout 30m \
+                --no-allow-unauthenticated \
+                --update-env-vars "GOOGLE_CLOUD_PROJECT=indii-music-founder,SOURCE_TREE_HASH=$PRINT_PREP_HASH" \
+                --quiet
+              gcloud run services add-iam-policy-binding print-prep \
+                --project indii-music-founder \
+                --region us-central1 \
+                --member=serviceAccount:print-prep-invoker@indii-music-founder.iam.gserviceaccount.com \
+                --role=roles/run.invoker \
+                --quiet
+            ) &
+            PIDS="$PIDS $!"
+          fi
+
+          if [ "$DEPLOY_ENGINE_DSP" = "true" ]; then
+            (
+              gcloud run deploy engine-dsp \
+                --project indii-music-founder \
+                --region us-central1 \
+                --source packages/engine-dsp \
+                --service-account engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
+                --cpu 2 \
+                --memory 2Gi \
+                --concurrency 1 \
+                --timeout 30m \
+                --no-allow-unauthenticated \
+                --update-env-vars "SESSION_MEDIA_BUCKET=indii-music-founder.firebasestorage.app,SOURCE_TREE_HASH=$ENGINE_DSP_HASH" \
+                --quiet
+            ) &
+            PIDS="$PIDS $!"
+          fi
+
+          for pid in $PIDS; do
+            wait "$pid"
+          done
 
       - name: Pipeline health summary
         run: |
