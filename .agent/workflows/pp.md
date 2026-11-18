@@ -1,18 +1,18 @@
 ---
-description: Perfect Primitive (/PP) shared workflow for Antigravity, Codex, and Claude teams. Audits, test-first hardens, sibling-sweeps, and delivers foundational primitives directly to main.
+description: Perfect Primitive (/pp, /PP) shared workflow for Antigravity, Codex, and Claude teams. Audits, test-first hardens, sibling-sweeps, and delivers foundational primitives directly to main.
 ---
 
-# /PP — Perfect Primitive (Antigravity + Codex + Claude)
+# /pp — Perfect Primitive (Antigravity + Codex + Claude)
 
-Use `/PP` when auditing, hardening, or repairing foundational application primitives across client services, relay/executor transport, tools, hooks, stores, rules, or UI controls. Any agent runtime in this repository — **Antigravity** (and Gemini/Droid/Jules), **Codex**, or **Claude** — runs the exact same deterministic contract.
+Use `/pp` (or `/PP`, `$pp`) when auditing, hardening, or repairing foundational application primitives across client services, relay/executor transport, tools, hooks, stores, rules, or UI controls. Any agent runtime in this repository — **Antigravity** (and Gemini/Droid/Jules), **Codex**, or **Claude** — runs the exact same deterministic contract.
 
 ## Runtime Discovery
 
 | Team / Runtime | Entry Surface |
 | --- | --- |
-| **Antigravity** / Gemini / Droid / Jules | `.agent/workflows/PP.md` (indexed in `AGENTS.md` and `ANTIGRAVITY.md` / `GEMINI.md`) |
-| **Codex** | `AGENTS.md`, `CODEX.md`, and `.agent/workflows/PP.md` |
-| **Claude** | `.claude/commands/PP.md`, `CLAUDE.md`, and `.agent/workflows/PP.md` |
+| **Antigravity** / Gemini / Droid / Jules | `.agent/workflows/pp.md`, `~/.gemini/config/skills/pp/SKILL.md`, `~/.gemini/antigravity/global_workflows/pp.md`, `AGENTS.md`, `ANTIGRAVITY.md` / `GEMINI.md` |
+| **Codex** | `AGENTS.md`, `CODEX.md`, `.agent/workflows/pp.md`, and `~/.codex/skills/pp/SKILL.md` |
+| **Claude** | `.claude/commands/pp.md`, `~/.claude/commands/pp.md`, `~/.claude/skills/pp/SKILL.md`, `CLAUDE.md`, and `.agent/workflows/pp.md` |
 
 ## 1. Shared Memory & Delivery Guard
 

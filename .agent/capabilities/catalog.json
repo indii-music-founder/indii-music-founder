@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "09b91706e4a707ebc812f2f4c4dd4dd654551bd1db68f466ea7245df5dfdaf25",
+  "sourceDigest": "b6f896d234591f0942bfaab450435ce52cc3c90bf9c94d5a8e7bc4985c7010af",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -6176,15 +6176,15 @@
     },
     {
       "id": "workflow:pp",
-      "name": "PP",
+      "name": "pp",
       "kind": "workflow",
       "registry": ".agent/workflows",
-      "path": ".agent/workflows/PP.md",
+      "path": ".agent/workflows/pp.md",
       "mutable": true,
       "available": true,
-      "description": "Perfect Primitive (/PP) shared workflow for Antigravity, Codex, and Claude teams. Audits, test-first hardens, sibling-sweeps, and delivers foundational primitives directly to main.",
-      "descriptionHash": "d40371f89292415f904fbf4459a618047499298104c3291f52f9ae4d11bad164",
-      "contentHash": "d7d5d96faa40fb3363c97a422a6a619831b906dbdcfdbbf92b3aa8138e62b7b5",
+      "description": "Perfect Primitive (/pp, /PP) shared workflow for Antigravity, Codex, and Claude teams. Audits, test-first hardens, sibling-sweeps, and delivers foundational primitives directly to main.",
+      "descriptionHash": "2b2b1ab1bf6ae3ef8fde476dff518c33537dfa8d70a7a242441de774e000d97a",
+      "contentHash": "9440b64bd057b3f0a252b9b0f3d29a265980922ed0ac09a4bc2d107d389d2d84",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
