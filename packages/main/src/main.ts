@@ -584,6 +584,7 @@ if (!gotTheLock) {
             'blender:pair-session', 'blender:cancel-render', 'blender:get-status', 'blender:list-templates', 'blender:render-music-video', 'blender:live-command',
             'rightsCopilot:launch-session', 'rightsCopilot:execute-step', 'rightsCopilot:close-session', 'rightsCopilot:get-session-status',
             'boardroom-browser:attach', 'boardroom-browser:set-bounds', 'boardroom-browser:navigate', 'boardroom-browser:go-back', 'boardroom-browser:go-forward', 'boardroom-browser:reload', 'boardroom-browser:capture-context', 'boardroom-browser:detach', 'boardroom-browser:open-external',
+            'studio:capture-snapshot',
             'dev:heap-snapshot',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
@@ -673,6 +674,17 @@ if (!gotTheLock) {
             if (process.platform === 'darwin') {
                 app.dock?.hide();
             }
+        });
+
+        // Studio Snapshot — captures the active renderer window for Present Mode sharing.
+        ipcMain.handle('studio:capture-snapshot', async (event) => {
+            validateSender(event);
+            const win = BrowserWindow.fromWebContents(event.sender);
+            if (!win || win.isDestroyed() || win.webContents.isDestroyed()) {
+                return null;
+            }
+            const image = await win.webContents.capturePage();
+            return { dataUrl: image.toDataURL() };
         });
 
         // Auto-updater IPC handlers — registered unconditionally so the renderer

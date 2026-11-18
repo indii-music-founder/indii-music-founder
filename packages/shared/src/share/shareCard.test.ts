@@ -184,6 +184,29 @@ describe('shareOrDownloadImage', () => {
         expect(model.compactTitle).toBe(true);
     });
 
+    it('builds fan-voice presave and founder seat card models', () => {
+        const fan = buildShareCardModel({
+            kind: 'presave',
+            trackTitle: 'Midnight Echo',
+            releaseDate: '2026-12-01',
+            voice: 'fan',
+        }, { now: new Date(2026, 10, 18) });
+        expect(fan.eyebrow).toBe('Counting down');
+        expect(fan.callout).toContain("I'm pre-saved");
+
+        const founder = buildShareCardModel({
+            kind: 'founder',
+            name: 'Aria Sol',
+            seat: 7,
+            verificationHash: 'deadbeef12345678',
+        });
+        expect(founder.eyebrow).toBe('Founding Artist');
+        expect(founder.title).toBe('Seat #007');
+        expect(founder.subtitle).toBe('Aria Sol');
+        expect(founder.callout).toBe('verified · deadbeef');
+        expect(founder.accentFrom).toBe('#FFB800');
+    });
+
     it('canShareFiles is false when canShare throws', () => {
         Object.defineProperty(navigator, 'share', { value: vi.fn(), configurable: true });
         Object.defineProperty(navigator, 'canShare', { value: () => { throw new Error('boom'); }, configurable: true });

@@ -424,6 +424,7 @@ export interface ElectronAPI {
     getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
     probeMedia?: (filePath: string) => Promise<ElectronVideoProbeResult>;
+    captureSnapshot?: () => Promise<{ dataUrl: string } | null>;
 
     // Namespaced APIs
     fs?: ElectronFsAPI;

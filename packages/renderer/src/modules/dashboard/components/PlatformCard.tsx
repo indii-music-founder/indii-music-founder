@@ -8,8 +8,6 @@ import { scrollModuleScrollerToTopAfterPaint } from '@/utils/scrollModuleScrolle
 
 const DISMISS_KEY = 'indii_platform_card_dismissed';
 
-const isElectron = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).electronAPI;
-
 interface FeatureRow {
     key: string;
     label: string;
@@ -37,6 +35,8 @@ function StatusDot({ status }: { status: boolean | 'limited' }) {
 export function PlatformCard() {
     const { t } = useTranslation();
     const setModule = useStore(state => state.setModule);
+    const analyticsReports = useStore(state => state.analyticsReports);
+    const isElectron = typeof window !== 'undefined' && !!(window as unknown as Record<string, unknown>).electronAPI;
     // Founders already own what this card sells — never show it to them, and
     // remember a free user's dismissal across refreshes instead of re-pitching
     // on every visit.
@@ -66,6 +66,31 @@ export function PlatformCard() {
 
     // If already running in Electron, show a confirmation card instead
     if (isElectron) {
+        const reports = analyticsReports ? Object.values(analyticsReports) : [];
+        const topReport = reports.length > 0
+            ? [...reports].sort((a, b) => (b.viralScore?.score ?? -1) - (a.viralScore?.score ?? -1))[0]
+            : undefined;
+        const hasLiveScore = Boolean(
+            topReport
+            && Number.isFinite(topReport.viralScore?.score)
+            && (topReport.viralScore.sampleDays > 0 || (topReport.track?.totalStreams ?? 0) > 0),
+        );
+        const viralScoreDisplay = hasLiveScore && topReport
+            ? topReport.viralScore.score.toFixed(1)
+            : '—';
+        const hasLiveVelocity = Boolean(
+            topReport
+            && (topReport.track?.history?.length ?? 0) >= 2
+            && Number.isFinite(topReport.metrics?.velocity)
+            && topReport.metrics.velocity > 0,
+        );
+        const velocityDelta = hasLiveVelocity && topReport
+            ? (topReport.metrics.velocity - 1) * 100
+            : null;
+        const velocityDisplay = velocityDelta !== null
+            ? `${velocityDelta >= 0 ? '+' : ''}${velocityDelta.toFixed(1)}%`
+            : '—';
+
         return (
             <div className="relative overflow-hidden border-b border-white/5 bg-[#050505]">
                 <div className="absolute inset-0 bg-linear-to-r from-amber-900/10 via-transparent to-orange-900/5 pointer-events-none" />
@@ -85,8 +110,8 @@ export function PlatformCard() {
                         <div className="flex flex-col">
                             <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest">{t('dashboard.viralScore')}</span>
                             <div className="flex items-center gap-1.5">
-                                <Flame size={12} className="text-amber-400" />
-                                <span className="text-sm font-bold text-amber-100">84.5</span>
+                                <Flame size={12} className={hasLiveScore ? 'text-amber-400' : 'text-gray-500'} />
+                                <span data-testid="platform-card-viral-score" className="text-sm font-bold text-amber-100">{viralScoreDisplay}</span>
                             </div>
                         </div>
 
@@ -95,8 +120,8 @@ export function PlatformCard() {
                         <div className="flex flex-col">
                             <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest">{t('dashboard.velocity')}</span>
                             <div className="flex items-center gap-1.5">
-                                <Activity size={12} className="text-emerald-400" />
-                                <span className="text-sm font-bold text-emerald-100">+12.4%</span>
+                                <Activity size={12} className={hasLiveVelocity ? 'text-emerald-400' : 'text-gray-500'} />
+                                <span data-testid="platform-card-velocity" className="text-sm font-bold text-emerald-100">{velocityDisplay}</span>
                             </div>
                         </div>
 
@@ -109,6 +134,19 @@ export function PlatformCard() {
                                 <span className="text-xs font-bold text-amber-500 tracking-wider">{t('dashboard.standby')}</span>
                             </div>
                         </div>
+
+                        {!hasLiveScore && (
+                            <>
+                                <div className="w-px h-6 bg-white/10" />
+                                <button
+                                    type="button"
+                                    onClick={() => void setModule('analytics')}
+                                    className="text-[10px] font-mono uppercase tracking-wider text-amber-400 hover:text-amber-300 transition-colors"
+                                >
+                                    Connect DSP
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

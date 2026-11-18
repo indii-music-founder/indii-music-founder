@@ -1,3 +1,19 @@
+# Shareability Phase 2 ("Now what?" Franchise, HyperFrames Reels, Fan Presave Loop, Studio Polish) — 2026-11-18
+
+Delivered on branch `antigravity/now-what-franchise` (layered cleanly on top of `origin/main` `102e048f78`, extending #909/#910/#911 without duplication):
+
+- **Landing / "Now what?" Franchise & Craft:**
+  - `packages/shared/src/share/nowWhat.ts` (`NOW_WHAT_HOOKS`, paths) + `nowwhat` card template (`shareCardTemplates.ts`) + `/n/:hook` route (`NowWhatShareRedirect.tsx`) + `shareMeta.ts` & `firebase.json` `/n/**` preview + `scripts/generate-og-images.mjs` (6 `now-what-*.jpg` + canonical-tagline `og-image.png`).
+  - Kinetic `NowWhatSection.tsx` (situation cycling with WCAG Pause/Play, stepper, user-triggered synth motif, per-card share chips, 6 HyperFrames 9:16 vertical MP4s + posters + VTT captions).
+  - Branded 404 (`NotFound.tsx` on `*` routes) with generated turntable run-out image; fixed crushed desktop waitlist input (`WaitlistSection.tsx`), Hero `$ıt` glyph collision (`Hero.tsx`), removed hidden autoplay video (`ExperienceShell.tsx`), replaced `testsrc` SMPTE bars in `video-slicing-demo.mp4` via HyperFrames, and re-captured all 15 distinct Present-Mode `packages/landing/public/screenshots/*.png` (`scripts/capture-marketing-screens.mjs`).
+  - Upfront pricing prominence (`PricingSection.tsx`): interactive Quarterly (`15% OFF`), Six-month (`30% OFF`), and highlighted Annual (`50% OFF` / `Best value`) term cards and billing schedule.
+- **Fan Share Loop & Studio Polish:**
+  - `countdown.ts` + `PreSaveLandingPage.tsx` (live countdown, "Share this drop", fan-voice story card, UTM links); `founder` template + own-record "Share my seat" in `FoundersRecognition.tsx`.
+  - Confetti (`services/moments/confetti.ts`) + "Now what?" module pills in `CelebrationMoment.tsx`; presave publish & real `leadCount` milestones (`momentLedger.ts`) in `PreSaveCampaignBuilder.tsx`; Electron Snapshot IPC (`studio:capture-snapshot` + `snapshotService.ts`) and clean `indii.music` watermark in `AppShell.tsx`; `CostEstimatorWidget` currency formatting & removed fabricated `84.5`/`+12.4%` in `PlatformCard.tsx`.
+- **Verification note:** 27 Vitest suites (164/164 tests), full `npm run typecheck`, `eslint` (0 errors), `check:arcjet-inventory`, `check:functions`, `build:landing`, `electron-vite build`, and Playwright visual checks on built landing (`1440×900` & `390×844`) all passed after final edits. See `OPEN_ISSUES_V3.md` for explicit NOT-verified items (deployed unfurls, real-device share sheets, live distributor delivery, Electron native window snapshot).
+
+---
+
 # Remote Executor Lease Eviction, AgentChat Send/Upload Guards & QuickCapture Mic/Pin Hardening (`/middle` Batch 5) — Delivered on `main` (2026-11-18)
 
 Delivered on `main` (`ERROR_LEDGER` IDs: `STUDIO_LEASE_STALE_CACHE_STICKY`, `AGENT_CHAT_SEND_FAILURE_AND_UNMOUNT_PRIMITIVES`, `QUICK_CAPTURE_MIC_AND_PIN_SILENT_FAILURE`):

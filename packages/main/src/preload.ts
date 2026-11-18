@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
     probeMedia: (filePath: string) => ipcRenderer.invoke('video:probe-media', filePath),
+    captureSnapshot: () => ipcRenderer.invoke('studio:capture-snapshot'),
 
     // Filesystem (Safe Local IPC Bridge for Inbox Watcher & Agent Tools)
     fs: {
