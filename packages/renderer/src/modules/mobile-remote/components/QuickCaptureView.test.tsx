@@ -46,7 +46,7 @@ class FakeMediaRecorder {
     }
 }
 
-const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, mockDeleteFile, mockCreateEncounter } = vi.hoisted(() => ({
+const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, mockDeleteFile, mockCreateEncounter, mockConfirmCall } = vi.hoisted(() => ({
     mockError: vi.fn(),
     mockSuccess: vi.fn(),
     mockDispatchTask: vi.fn(),
@@ -54,7 +54,10 @@ const { mockError, mockSuccess, mockDispatchTask, mockAddNote, mockUploadFile, m
     mockUploadFile: vi.fn(),
     mockDeleteFile: vi.fn(async () => undefined),
     mockCreateEncounter: vi.fn(async () => 'encounter-1'),
+    mockConfirmCall: vi.fn(async () => true),
 }));
+
+vi.mock('@/components/ui/ConfirmDialog', () => ({ ConfirmDialog: { call: mockConfirmCall } }));
 
 vi.mock('@/services/encounters/EncounterService', () => ({ EncounterService: { createEncounter: mockCreateEncounter } }));
 
@@ -312,6 +315,36 @@ describe('QuickCaptureView — voice memo mic lifecycle (ISSUE-985)', () => {
         expect(photoBtn).not.toBeDisabled();
         expect(docBtn).not.toBeDisabled();
         expect(videoBtn).not.toBeDisabled();
+    });
+
+    it('surfaces an actionable error toast when microphone permission fails', async () => {
+        getUserMedia.mockRejectedValueOnce(new Error('Permission denied'));
+        render(<QuickCaptureView isPaired={true} />);
+
+        await startRecording();
+
+        expect(mockError).toHaveBeenCalledWith('Microphone access failed. Check microphone permissions and try again.');
+        expect(screen.getByRole('button', { name: /start recording a voice memo/i })).toBeInTheDocument();
+    });
+
+    it('stops resolved audio tracks immediately if unmounted while waiting for microphone permission', async () => {
+        const pendingTrack = new FakeTrack();
+        const pendingStream = new FakeMediaStream([pendingTrack]);
+        let resolveStream!: (stream: FakeMediaStream) => void;
+        getUserMedia.mockImplementationOnce(() => new Promise<FakeMediaStream>((resolve) => { resolveStream = resolve; }));
+
+        const view = render(<QuickCaptureView isPaired={true} />);
+        fireEvent.click(screen.getByRole('button', { name: /start recording a voice memo/i }));
+        view.unmount();
+
+        await act(async () => {
+            resolveStream(pendingStream);
+            await Promise.resolve();
+        });
+
+        expect(pendingTrack.stop).toHaveBeenCalledTimes(1);
+        expect(pendingTrack.readyState).toBe('ended');
+        expect(FakeMediaRecorder.instances).toHaveLength(0);
     });
 });
 
@@ -575,5 +608,28 @@ describe('QuickCaptureView — venue pin geolocation (ISSUE-988)', () => {
 
         fireEvent.click(screen.getByTestId('jev-remote-hint-action'));
         expect(onNavigateTab).toHaveBeenCalledWith('studio');
+    });
+
+    it('surfaces an error banner and toast and unlocks Pin when venue pin dispatch fails', async () => {
+        mockConfirmCall.mockResolvedValueOnce(true);
+        mockDispatchTask.mockRejectedValueOnce(new Error('Relay permission denied'));
+        let onSuccess!: PositionCallback;
+        getCurrentPosition.mockImplementation((success) => { onSuccess = success; });
+
+        render(<QuickCaptureView isPaired={true} />);
+        const pinBtn = screen.getByRole('button', { name: /^pin$/i });
+        fireEvent.click(pinBtn);
+        expect(pinBtn).toBeDisabled();
+
+        await act(async () => {
+            await onSuccess({
+                coords: { latitude: 42.3314, longitude: -83.0458, accuracy: 12 } as GeolocationCoordinates,
+                timestamp: Date.now(),
+            } as GeolocationPosition);
+        });
+
+        expect(mockError).toHaveBeenCalledWith('Relay permission denied');
+        expect(screen.getByText('Relay permission denied')).toBeInTheDocument();
+        expect(pinBtn).toBeEnabled();
     });
 });

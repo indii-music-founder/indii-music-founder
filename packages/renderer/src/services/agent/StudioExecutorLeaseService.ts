@@ -80,6 +80,21 @@ class StudioExecutorLeaseService {
         return result.data;
     }
 
+    private invalidateLeaseIfRejected(lease: StudioExecutorLease | null, error: unknown): void {
+        if (!lease || this.cached !== lease) return;
+        const rawCode = typeof (error as { code?: unknown })?.code === 'string'
+            ? (error as { code: string }).code.toLowerCase()
+            : '';
+        const message = error instanceof Error ? error.message : String(error ?? '');
+        if (
+            rawCode.includes('permission-denied') ||
+            rawCode.includes('unauthenticated') ||
+            /lease is missing or expired|invalid studio executor lease/i.test(message)
+        ) {
+            this.cached = null;
+        }
+    }
+
     async publishPresence(state: Record<string, unknown>): Promise<void> {
         if (!this.isSupported()) {
             return;
@@ -88,8 +103,9 @@ class StudioExecutorLeaseService {
         // can report real relay health instead of a structural capability
         // check. Errors re-throw — callers already handle them per beat.
         recordPresencePublishAttempt();
+        let lease: StudioExecutorLease | null = null;
         try {
-            const lease = await this.getLease();
+            lease = await this.getLease();
             const publish = httpsCallable(functions, 'publishStudioPresence');
             await publish({
                 deviceId: lease.deviceId,
@@ -99,6 +115,7 @@ class StudioExecutorLeaseService {
             });
             recordPresencePublishSuccess();
         } catch (error) {
+            this.invalidateLeaseIfRejected(lease, error);
             recordPresencePublishFailure(error);
             // Preserve denial so the heartbeat backs off and never records it as success.
             throw error;
@@ -107,42 +124,54 @@ class StudioExecutorLeaseService {
 
     async releasePresence(studioInstanceId: string): Promise<void> {
         if (!this.isSupported()) return;
+        let lease: StudioExecutorLease | null = null;
         try {
-            const lease = await this.getLease();
+            lease = await this.getLease();
             const release = httpsCallable(functions, 'releaseStudioPresence');
             await release({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, studioInstanceId });
         } catch (error) {
+            this.invalidateLeaseIfRejected(lease, error);
             logger.warn('[StudioExecutorLeaseService] releasePresence failed:', error);
         }
     }
 
     async claimCommand(commandId: string, studioInstanceId: string): Promise<boolean> {
-        const lease = await this.getLease();
-        const claim = httpsCallable<
-            { deviceId: string; leaseToken: string; commandId: string; studioInstanceId: string },
-            { claimed: boolean }
-        >(functions, 'claimStudioCommand');
-        const result = await claim({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, commandId, studioInstanceId });
-        return result.data.claimed;
+        let lease: StudioExecutorLease | null = null;
+        try {
+            lease = await this.getLease();
+            const claim = httpsCallable<
+                { deviceId: string; leaseToken: string; commandId: string; studioInstanceId: string },
+                { claimed: boolean }
+            >(functions, 'claimStudioCommand');
+            const result = await claim({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, commandId, studioInstanceId });
+            return result.data.claimed;
+        } catch (error) {
+            this.invalidateLeaseIfRejected(lease, error);
+            throw error;
+        }
     }
 
     async publishResponse(response: { commandId: string; text: string; agentId?: string; imageUrls?: string[]; videoUrls?: string[]; isStreaming: boolean; boardroomMessageId?: string }): Promise<void> {
+        let lease: StudioExecutorLease | null = null;
         try {
-            const lease = await this.getLease();
+            lease = await this.getLease();
             const publish = httpsCallable(functions, 'publishStudioResponse');
             await publish({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, ...response });
         } catch (error) {
+            this.invalidateLeaseIfRejected(lease, error);
             logger.error(`[StudioExecutorLeaseService] publishResponse failed for ${response.commandId}:`, error);
             throw error;
         }
     }
 
     async completeCommand(commandId: string): Promise<void> {
+        let lease: StudioExecutorLease | null = null;
         try {
-            const lease = await this.getLease();
+            lease = await this.getLease();
             const complete = httpsCallable(functions, 'completeStudioCommand');
             await complete({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, commandId });
         } catch (error) {
+            this.invalidateLeaseIfRejected(lease, error);
             logger.error(`[StudioExecutorLeaseService] completeCommand failed for ${commandId}:`, error);
             throw error;
         }

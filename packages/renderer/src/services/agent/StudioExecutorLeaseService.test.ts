@@ -195,4 +195,44 @@ describe('StudioExecutorLeaseService', () => {
         expect(stored.apiKey).toBeDefined();
         expect(stored.apiSecret).toBeDefined();
     });
+
+    it('evicts the cached lease and re-issues on the next call when a callable rejects with permission-denied or expired lease', async () => {
+        const t0 = advanceClock();
+        callables.issue
+            .mockResolvedValueOnce({ data: { deviceId: 'studio-device-0001', leaseToken: 'stale-token', expiresAt: t0 + 600_000 } })
+            .mockResolvedValueOnce({ data: { deviceId: 'studio-device-0001', leaseToken: 'fresh-token', expiresAt: t0 + 600_000 } });
+
+        callables.publish.mockRejectedValueOnce(
+            Object.assign(new Error('Studio executor lease is missing or expired.'), { code: 'functions/permission-denied' })
+        );
+
+        await expect(studioExecutorLeaseService.publishPresence({ studioInstanceId: 's1' })).rejects.toThrow('missing or expired');
+        await studioExecutorLeaseService.publishPresence({ studioInstanceId: 's1' });
+
+        expect(callables.issue).toHaveBeenCalledTimes(2);
+        expect(callables.publish).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                leaseToken: 'fresh-token',
+            })
+        );
+    });
+
+    it('preserves the cached lease when a callable rejects with a non-auth transient error', async () => {
+        const t0 = advanceClock();
+        callables.issue.mockResolvedValueOnce({
+            data: { deviceId: 'studio-device-0001', leaseToken: 'steady-token', expiresAt: t0 + 600_000 },
+        });
+        callables.claim.mockRejectedValueOnce(new Error('publishStudioPresence is not deployed'));
+
+        await expect(studioExecutorLeaseService.claimCommand('cmd-transient', 'studio-instance-001')).rejects.toThrow('not deployed');
+        await studioExecutorLeaseService.claimCommand('cmd-transient-2', 'studio-instance-001');
+
+        expect(callables.issue).toHaveBeenCalledTimes(1);
+        expect(callables.claim).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                leaseToken: 'steady-token',
+                commandId: 'cmd-transient-2',
+            })
+        );
+    });
 });

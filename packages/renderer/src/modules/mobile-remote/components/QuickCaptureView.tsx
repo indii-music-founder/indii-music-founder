@@ -249,6 +249,10 @@ export default function QuickCaptureView({
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (!isMountedRef.current) {
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
             const mimeType = pickSupportedAudioMimeType();
             const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
             streamRef.current = stream;
@@ -314,7 +318,10 @@ export default function QuickCaptureView({
             clearMediaState();
         } catch (error) {
             logger.error('[QuickCapture] Failed to access microphone:', error);
-            triggerHaptic([100, 200, 100]);
+            if (isMountedRef.current) {
+                toast.error('Microphone access failed. Check microphone permissions and try again.');
+                triggerHaptic([100, 200, 100]);
+            }
         }
     };
 
@@ -356,7 +363,7 @@ export default function QuickCaptureView({
         const requestId = ++locationRequestId.current;
         navigator.geolocation.getCurrentPosition(
             async (position) => {
-                if (requestId !== locationRequestId.current) return;
+                if (!isMountedRef.current || requestId !== locationRequestId.current) return;
                 try {
                     const latitude = position.coords.latitude;
                     const longitude = position.coords.longitude;
@@ -366,13 +373,15 @@ export default function QuickCaptureView({
                         message: `Latitude ${latitude.toFixed(5)}, longitude ${longitude.toFixed(5)}${Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ''}.`,
                         confirmText: 'Send Pin',
                     });
-                    if (!confirmed) return;
+                    if (!confirmed || !isMountedRef.current || requestId !== locationRequestId.current) return;
                     const capturedAt = new Date(position.timestamp).toISOString();
                     if (isPaired) {
                         await remoteRelayService.dispatchTask({
                             type: 'venue_log',
                             payload: { lat: latitude, lng: longitude, accuracyMeters: accuracy, capturedAt }
                         });
+                        if (!isMountedRef.current || requestId !== locationRequestId.current) return;
+                        toast.success('Venue pin sent to Studio.');
                     } else {
                         useStore.getState().addNote({
                             title: `Venue pin — ${new Date(position.timestamp).toLocaleString()}`,
@@ -385,13 +394,20 @@ export default function QuickCaptureView({
                     triggerHaptic([50, 50, 50]);
                 } catch (error) {
                     logger.error('[QuickCapture] Failed to dispatch pin:', error);
-                    triggerHaptic([100, 200, 100]);
+                    if (isMountedRef.current && requestId === locationRequestId.current) {
+                        const message = error instanceof Error ? error.message : 'Unable to send venue pin. Please try again.';
+                        setGeoError(message);
+                        toast.error(message);
+                        triggerHaptic([100, 200, 100]);
+                    }
                 } finally {
-                    setIsDispatching(false);
+                    if (isMountedRef.current && requestId === locationRequestId.current) {
+                        setIsDispatching(false);
+                    }
                 }
             },
             (error) => {
-                if (requestId !== locationRequestId.current) return;
+                if (!isMountedRef.current || requestId !== locationRequestId.current) return;
                 logger.error('[QuickCapture] Error getting location:', error);
                 // ISSUE-988: TIMEOUT gets a clearer message; every branch still
                 // unlocks isDispatching so a stalled provider can't freeze capture.

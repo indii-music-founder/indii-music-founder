@@ -1,3 +1,14 @@
+# Remote Executor Lease Eviction, AgentChat Send/Upload Guards & QuickCapture Mic/Pin Hardening (`/middle` Batch 5) — Delivered on `main` (2026-11-18)
+
+Delivered on `main` (`ERROR_LEDGER` IDs: `STUDIO_LEASE_STALE_CACHE_STICKY`, `AGENT_CHAT_SEND_FAILURE_AND_UNMOUNT_PRIMITIVES`, `QUICK_CAPTURE_MIC_AND_PIN_SILENT_FAILURE`):
+
+- **Studio executor lease cache eviction (`StudioExecutorLeaseService.ts`):** Added `invalidateLeaseIfRejected` so all five lease-authenticated callables (`publishPresence`, `releasePresence`, `claimCommand`, `publishResponse`, `completeCommand`) evict the cached lease when the server rejects with `permission-denied`, `unauthenticated`, or an expired/invalid lease error (preserving cached leases across non-auth transient errors).
+- **Phone `AgentChat` error surfacing & mount guards (`AgentChat.tsx`):** Surfaced `'Message could not be sent to Studio. Check your connection and try again.'` via `setAttachmentError` (`role="alert"`) when `sendCommand` rejects or returns `null` (text and voice turns), guarded post-await attachment upload and response updates with `isMountedRef.current`, added `selectedAgentRef` to keep `watchCommandResponse` deps clean, and guarded `liveConversationService.notifyAgentResponse` with `.catch(...)`.
+- **Phone `QuickCaptureView` microphone & venue pin primitives (`QuickCaptureView.tsx`):** Stopped resolved audio tracks immediately if unmounted while `getUserMedia` is pending, surfaced mic permission failure toasts, guarded `handlePinDrop` async continuations with `isMountedRef.current && requestId === locationRequestId.current`, added remote pin confirmation toast, and surfaced pin dispatch errors via `setGeoError` + `toast.error`.
+- **Verification note:** Structural/mock-backed regression checks passed after the final code edit (`npx vitest run` on 3 files / 44 tests: `StudioExecutorLeaseService.test.ts` 10/10, `AgentChat.test.tsx` 8/8, `QuickCaptureView.test.tsx` 26/26; `npx eslint --max-warnings=0` 0 warnings/errors; `npm run typecheck:renderer` exit 0). Live real-user end-to-end verification against `https://indii.music/` was not executed in this pass.
+
+---
+
 # Remote Control Navigation, Audio/Vault Lifecycle, Modal Dismissal & Executor Wiring Primitives — Delivered on `main` (2026-11-18)
 
 Delivered across `ed7d30c0d4` (#906) and this follow-up commit on `main` (ERROR_LEDGER IDs: `REMOTE_NAVIGATION_AND_RELAY_FALSE_SUCCESS`, `REMOTE_AUDIO_PLAYBACK_AND_STREAM_SILENT_ERROR`):

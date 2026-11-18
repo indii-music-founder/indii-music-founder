@@ -157,6 +157,8 @@ export default function AgentChat({
     const [selectedMode, setSelectedMode] = useState<ConversationMode>('boardroom');
     const [selectedDept, setSelectedDept] = useState<string | null>(null);
     const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+    const selectedAgentRef = useRef(selectedAgent);
+    selectedAgentRef.current = selectedAgent;
     
     const [showAgentPicker, setShowAgentPicker] = useState(false);
     // Locally-generated system notices (e.g. "couldn't reach your studio").
@@ -217,14 +219,19 @@ export default function AgentChat({
             if (response.isStreaming) return;
 
             teardownResponseWatch();
+            if (!isMountedRef.current) return;
             setIsWaiting(false);
 
             if (response.text) {
-                void liveConversationService.notifyAgentResponse(
-                    response.agentId || selectedAgent || 'generalist',
-                    response.text,
-                    response.id || response.commandId
-                );
+                void Promise.resolve(
+                    liveConversationService.notifyAgentResponse(
+                        response.agentId || selectedAgentRef.current || 'generalist',
+                        response.text,
+                        response.id || response.commandId
+                    )
+                ).catch((err) => {
+                    logger.warn('[AgentChat] Live conversation response notification failed:', err);
+                });
             }
         });
 
@@ -412,6 +419,7 @@ export default function AgentChat({
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         const currentAttachments = [...stagedAttachments];
+        setAttachmentError(null);
         setInput('');
         setStagedAttachments([]);
         setIsWaiting(true);
@@ -459,9 +467,11 @@ export default function AgentChat({
         } catch (error: unknown) {
             logger.error('[AgentChat] Failed to send command:', error);
             teardownResponseWatch();
+            if (!isMountedRef.current) return;
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
             setStagedAttachments(currentAttachments); // Restore attachments on failure
+            setAttachmentError('Message could not be sent to Studio. Check your connection and try again.');
         }
     }, [input, stagedAttachments, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, watchCommandResponse, isListening, toggleListening]);
 
@@ -480,6 +490,7 @@ export default function AgentChat({
             const path = `users/${userId}/assets/boardroom_attachments/${filename}`;
             const downloadUrl = await StorageService.uploadFile(file, path);
 
+            if (!isMountedRef.current) return;
             setStagedAttachments(prev => [
                 ...prev,
                 {
@@ -490,10 +501,14 @@ export default function AgentChat({
             ]);
         } catch (err) {
             logger.error('[AgentChat] Failed to upload chat attachment:', err);
-            setAttachmentError('Attachment could not be uploaded. Please try adding it again.');
+            if (isMountedRef.current) {
+                setAttachmentError('Attachment could not be uploaded. Please try adding it again.');
+            }
         } finally {
-            pendingUploadsRef.current -= 1;
-            setPendingUploads(pendingUploadsRef.current);
+            pendingUploadsRef.current = Math.max(0, pendingUploadsRef.current - 1);
+            if (isMountedRef.current) {
+                setPendingUploads(pendingUploadsRef.current);
+            }
         }
     };
 
@@ -512,6 +527,7 @@ export default function AgentChat({
                 return;
             }
             const currentAttachments = [...stagedAttachmentsRef.current];
+            setAttachmentError(null);
             setInput('');
             setIsWaiting(true);
 
@@ -536,17 +552,21 @@ export default function AgentChat({
                     'studio',
                     currentAttachments.length ? currentAttachments : undefined
                 );
+                if (!isMountedRef.current) return;
                 if (commandId) {
                     setStagedAttachments(previous => previous.filter(item => !currentAttachments.some(sent => sent.url === item.url)));
                     watchCommandResponse(commandId);
                 } else {
                     setInput(clean);
                     setIsWaiting(false);
+                    setAttachmentError('Message could not be sent to Studio. Check your connection and try again.');
                 }
             } catch (err) {
                 logger.error('[AgentChat] Live turn relay failed:', err);
+                if (!isMountedRef.current) return;
                 setInput(clean);
                 setIsWaiting(false);
+                setAttachmentError('Message could not be sent to Studio. Check your connection and try again.');
             }
         },
     }), [isAuthenticated, isPaired, selectedAgent, selectedDept, selectedMode, watchCommandResponse]);
