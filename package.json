@@ -126,10 +126,10 @@
     "@electron/rebuild": "^4.2.1",
     "@eslint/js": "9.39.1",
     "@playwright/test": "^1.65.1",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.12",
     "axe-core": "4.14.1",
     "dotenv": "^17.2.3",
-    "electron": "^41.10.4",
+    "electron": "^41.10.7",
     "electron-builder": "^26.18.0",
     "electron-vite": "^5.0.0",
     "esbuild": "0.25.12",
@@ -148,7 +148,7 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "8.73.0",
     "utf-8-validate": "^5.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.12"
   },
   "optionalDependencies": {
     "@esbuild/linux-x64": "0.25.12",
@@ -250,7 +250,7 @@
     "re2": "1.26.1",
     "tar": "7.5.22",
     "node-gyp": {
-      "undici": "6.28.0"
+      "undici": "6.29.1"
     },
     "protobufjs": "7.6.5",
     "axios": "1.20.0",
@@ -274,7 +274,7 @@
     "@fastify/busboy": "3.2.4",
     "@xmldom/xmldom": "0.8.15",
     "adm-zip": "0.6.1",
-    "follow-redirects": "1.16.1",
+    "follow-redirects": "1.16.3",
     "source-map-js": "1.2.2",
     "@grpc/grpc-js": "1.14.6",
     "@firebase/firestore": {
