@@ -8,7 +8,7 @@ export const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 export const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 // TypeSafe System One judgments (ISSUE-1442 pilot). Server-side only — the
 // renderer reaches the API through the typesafeJudge callable, never directly.
-export const typesafeApiKey = defineSecret("TYPESAFE_API_KEY");
+export const typesafeApiKey = defineSecret("jev");
 export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");

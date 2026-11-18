@@ -89,7 +89,7 @@ vi.mock('firebase-functions/params', () => ({
 
 vi.mock('../../config/secrets', () => ({
   arcjetKey: { name: 'ARCJET_KEY' },
-  typesafeApiKey: { name: 'TYPESAFE_API_KEY' },
+  typesafeApiKey: { name: 'jev' },
 }));
 
 vi.mock('../security/arcjet', () => ({
