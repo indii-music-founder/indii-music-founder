@@ -19,6 +19,9 @@
  * Collection: users/{uid}/tool_approvals/{approvalId}
  */
 import {
+    toolApprovalClaimPatch, toolApprovalCompletionPatch, toolApprovalConsentPatch, toolApprovalDenyPatch,
+} from '@indii/shared';
+import {
     collection,
     doc,
     setDoc,
@@ -302,7 +305,7 @@ class ToolApprovalService {
                         }
                         // An earlier attempt may already have recorded consent; do not rewrite it.
                         if (current.status === 'pending') {
-                            transaction.update(approvalDocRef, { status: 'approved', resolvedAt: serverTimestamp() });
+                            transaction.update(approvalDocRef, toolApprovalConsentPatch(serverTimestamp()));
                         }
                     });
                     approval = await runTransaction(db, async transaction => {
@@ -316,7 +319,7 @@ class ToolApprovalService {
                         if (!matchesBinding(current) && !hasRecoverableBugReportShape(current)) {
                             throw new Error(`Approval ${approvalId} no longer matches its original tool call. Request it again.`);
                         }
-                        transaction.update(approvalDocRef, { status: 'claimed', claimedAt: serverTimestamp() });
+                        transaction.update(approvalDocRef, toolApprovalClaimPatch(serverTimestamp()));
                         return current;
                     });
                 } catch (error) {
@@ -413,13 +416,7 @@ class ToolApprovalService {
         if (!isComputerApproval) {
             this.boundCalls.delete(approvalId);
             try {
-                await updateDoc(approvalDocRef, {
-                    status: result.success ? 'executed' : 'failed',
-                    result: {
-                        success: result.success,
-                        ...(typeof result.error === 'string' ? { error: result.error } : {}),
-                    },
-                });
+                await updateDoc(approvalDocRef, toolApprovalCompletionPatch(result));
             } catch {
                 logger.error(`[ToolApprovalService] Approval ${approvalId} result could not be recorded; effect may have occurred`);
                 return unconfirmedApprovalResult(result, approvalId);
@@ -466,11 +463,7 @@ class ToolApprovalService {
             if (!current.exists() || current.data().status !== 'pending') {
                 throw new Error(`Approval ${approvalId} is no longer pending`);
             }
-            transaction.update(approvalDocRef, {
-                status: 'denied',
-                resolvedAt: serverTimestamp(),
-                ...(reason ? { denyReason: reason } : {}),
-            });
+            transaction.update(approvalDocRef, toolApprovalDenyPatch(serverTimestamp(), reason));
         });
         this.boundCalls.delete(approvalId);
         logger.info(`[ToolApprovalService] Approval ${approvalId} denied`);
