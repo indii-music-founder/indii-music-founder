@@ -171,6 +171,9 @@ actionlint
 jobs.json
 run.json
 
+# Vendored reference repositories for coding agents (local-only; run `npm run effect:sync-repo`)
+/repos/
+
 /scratch/
 
 # Security: browser/gh session cookies must never be tracked

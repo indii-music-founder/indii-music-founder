@@ -10,7 +10,12 @@
         "composite": true,
         "outDir": "dist",
         "rootDir": "src",
-        "noEmit": false
+        "noEmit": false,
+        "plugins": [
+            {
+                "name": "@effect/language-service"
+            }
+        ]
     },
     "include": [
         "src"

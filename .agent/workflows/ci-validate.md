@@ -48,6 +48,7 @@ Use the checks relevant to the changed files. A generated catalog must be curren
 | --- | --- |
 | Markdown/instructions | Source re-read, link/path check, focused diff, capability/policy validator when normative rules changed. |
 | Localized code logic | Targeted tests plus relevant typecheck/lint. |
+| Effect-TS code | `npm run effect:diagnostics` (or affected package `tsconfig.json`), targeted tests, and `npm run lint` (`effect-local/*` rules). |
 | Shared schema/API/state | Targeted tests, dependent typecheck, build/integration checks. |
 | Dependency/lock/runtime | Manifest-lock integrity, dependency drift, relevant build/tests, security/runtime review. |
 | UI | Structural tests plus approved available browser evidence when the real state is reachable. |

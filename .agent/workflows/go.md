@@ -11,7 +11,7 @@ description: Recursive motor for the active objective. Reviews progress, selects
 3. **Choose a unit:** One coherent contract with one decisive proof surface—not mechanically one micro-task.
 4. **Execute:** Reproduce/test, implement the smallest complete mechanism, and verify affected callers and boundaries.
 5. **Improve:** Run `/better` only on the bounded unit when a material quality gain remains.
-6. **Verify:** Use proportional tests, typecheck/lint, build/integration, or genuine UI/external evidence.
+6. **Verify:** Use proportional tests, typecheck/lint, build/integration, or genuine UI/external evidence (and `npm run effect:diagnostics` when `effect` is imported in modified packages).
 7. **Accumulate:** Keep related work uncommitted while the active objective still has units remaining. If the unit changed documented behavior, note it for the `/sweep` pass in `/middle` or `/end`; do not sweep per unit.
 8. **Repeat or close:** Continue with the next unit, or invoke `/end` when every acceptance criterion is proved.
 
