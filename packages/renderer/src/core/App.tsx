@@ -42,6 +42,7 @@ import { featureFlags } from '@/config/featureFlags';
 import { getPlatformOAuthCallbackProvider } from '@/modules/analytics/components/platformOAuthCallbackRoute';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PrintSpecDialog } from '@/components/ui/PrintSpecDialog';
+import { ShareSheet } from '@/components/share/ShareSheet';
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
@@ -204,6 +205,7 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
              */}
             <ConfirmDialog />
             <PrintSpecDialog />
+            <ShareSheet />
             {authLoading || !user ? (
                 authLoading ? <LoadingFallback /> : <UnauthenticatedApp />
             ) : (

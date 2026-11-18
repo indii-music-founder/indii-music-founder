@@ -43,7 +43,7 @@ const operatingPrinciples = [
 
 export default function PrinciplesSection() {
   return (
-    <section data-system-section="principles" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
+    <section id="principles" data-system-section="principles" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-black">
       <div className="pointer-events-none absolute right-0 top-1/2 h-[450px] w-[450px] -translate-y-1/2 rounded-full bg-amber-500/[0.04] blur-[160px]" />
       <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div

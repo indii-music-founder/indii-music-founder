@@ -159,7 +159,38 @@ describe('AgentChat Standby dispatch', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Commit voice' }));
         await waitFor(() => expect(text).toHaveValue('Voice message'));
         expect(screen.getByText('cover.png')).toBeInTheDocument();
+        expect(await screen.findByRole('alert')).toHaveTextContent('Message could not be sent to Studio. Check your connection and try again.');
         view.unmount();
+    });
+
+    it('restores typed draft and displays an actionable alert when sendCommand returns null or rejects', async () => {
+        mocks.sendCommand.mockResolvedValueOnce(null);
+        const view = render(<AgentChat onSendCommand={vi.fn()} isPaired />);
+        const text = await screen.findByPlaceholderText('Broadcast to Boardroom…');
+
+        fireEvent.change(text, { target: { value: 'Send press kit' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+        await waitFor(() => expect(text).toHaveValue('Send press kit'));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Message could not be sent to Studio. Check your connection and try again.');
+        expect(screen.getByRole('button', { name: 'Send message' })).toBeEnabled();
+        view.unmount();
+    });
+
+    it('settles cleanly without throwing if unmounted while an attachment upload is still pending', async () => {
+        let resolveUpload!: (url: string) => void;
+        mocks.uploadFile.mockReturnValueOnce(new Promise<string>(resolve => { resolveUpload = resolve; }));
+        const view = render(<AgentChat onSendCommand={vi.fn()} isPaired />);
+        await screen.findByPlaceholderText('Broadcast to Boardroom…');
+
+        const fileInput = view.container.querySelector('input[type="file"]')!;
+        fireEvent.change(fileInput, { target: { files: [new File(['image'], 'cover.png', { type: 'image/png' })] } });
+        expect(await screen.findByRole('status')).toHaveTextContent('Uploading attachment');
+
+        view.unmount();
+        resolveUpload('https://example.test/cover.png');
+        await Promise.resolve();
+        await Promise.resolve();
     });
 
     it('keeps the input enabled and queues a Studio command while presence is stale', async () => {

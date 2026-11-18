@@ -3,6 +3,7 @@
 @import "./styles/scrollbar.css";
 
 @plugin "tailwindcss-animate";
+@source "../../shared/src/share";
 
 @custom-variant dark (&:is(.dark *));
 
