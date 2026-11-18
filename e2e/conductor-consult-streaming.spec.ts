@@ -1,3 +1,4 @@
+import { aiStreamBody } from './fixtures/aiStream';
 import { test, expect } from './fixtures/auth';
 
 /**
@@ -15,11 +16,6 @@ import { test, expect } from './fixtures/auth';
 const SPECIALIST_REPLY = 'MARKETING_SPECIALIST_REPLY_42';
 const REPLY_CHUNKS = ['MARKETING_', 'SPECIALIST_', 'REPLY_42'];
 
-function sse(parts: Array<Record<string, unknown>>): string {
-    return parts
-        .map((p) => `data: ${JSON.stringify({ candidates: [{ content: { parts: [p], role: 'model' } }] })}\r\n\r\n`)
-        .join('');
-}
 
 test.describe('Conductor → Specialist consult (live UI)', () => {
     test.beforeEach(async ({ authedPage: page }) => {
@@ -42,7 +38,7 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
 
             if (isMarketing) {
                 // Specialist streams its reply in chunks (so the UI grows progressively).
-                const bodyLines = REPLY_CHUNKS.map(t => `data: ${JSON.stringify({ text: t })}\n`).join('');
+                const bodyLines = aiStreamBody(...REPLY_CHUNKS.map(t => ({ text: t })));
                 await route.fulfill({
                     status: 200,
                     contentType: 'text/event-stream',
@@ -59,18 +55,21 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'text/event-stream',
-                body: `data: ${JSON.stringify(conductorPayload)}\n`,
+                body: aiStreamBody(conductorPayload),
             });
         });
 
-        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        // The global CommandBar is no longer mounted (nothing imports it); the prompt
+        // lives in the agent module's Chat tab, as in agent-flows.spec.ts.
+        await page.goto('/agent', { waitUntil: 'domcontentloaded' });
         await page.locator('[data-testid="dev-bypass-button"]').click({ timeout: 10_000 }).catch(() => { });
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        await page.locator('[data-testid="agent-tab-chat"]').click();
+        const input = page.locator('[data-testid="agent-content-chat"]').getByTestId('main-prompt-input');
         await expect(input).toBeVisible({ timeout: 30_000 });
     });
 
     test('specialist reply renders in the chat', async ({ authedPage: page }) => {
-        const input = page.locator('[data-testid="command-bar"]').getByTestId('main-prompt-input');
+        const input = page.locator('[data-testid="agent-content-chat"]').getByTestId('main-prompt-input');
         await input.waitFor({ state: 'visible', timeout: 15_000 });
         await input.click({ force: true });
         await input.fill('Help me launch my new album');

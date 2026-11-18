@@ -1,3 +1,4 @@
+import { aiStreamBody } from './aiStream';
 import { test as base, Page, Route, Request } from "@playwright/test";
 
 /**
@@ -288,7 +289,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
         }
 
-        const streamBody = "data: " + JSON.stringify({ text, functionCalls }) + "\n\n" + "data: " + JSON.stringify({ complete: true }) + "\n\n";
+        const streamBody = aiStreamBody({ text, functionCalls });
         console.log(`[DEBUG] [E2E mock] userMessage: "${userMessage}", functionCalls:`, JSON.stringify(functionCalls));
         await route.fulfill({
           status: 200,
@@ -377,7 +378,9 @@ export async function setupE2EPage(page: Page): Promise<void> {
               code: "BOARDROOM_DISPATCH_READY",
               executedAgentIds: agentIds,
               deferredAgentIds: [],
-              maxIterationsPerAgent: 1,
+              // Mirror the server contract (BOARDROOM_MAX_ITERATIONS_PER_AGENT = 2 in
+              // packages/firebase/src/functions/billing/enforceOperationCost.ts).
+              maxIterationsPerAgent: 2,
               nextContinuationAgentId: null,
               leaseId: "e2e00000-0000-4000-8000-000000000001",
               leaseExpiresAtMs: Date.now() + 5 * 60_000,
@@ -562,13 +565,12 @@ export async function setupE2EPage(page: Page): Promise<void> {
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
         }
 
-        const streamChunk = JSON.stringify({ text, functionCalls });
-        const terminalChunk = JSON.stringify({ complete: true });
+
         await route.fulfill({
           status: 200,
           headers: corsHeaders,
           contentType: "text/event-stream",
-          body: `data: ${streamChunk}\n\ndata: ${terminalChunk}\n\n`,
+          body: aiStreamBody({ text, functionCalls }),
         });
         return;
       }
