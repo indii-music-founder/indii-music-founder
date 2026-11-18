@@ -19,7 +19,8 @@ export default defineConfig({
     // inside the shared browser context / dev server environment.
     fullyParallel: false,
     forbidOnly: !!process.env.CI,
-    retries: process.env.CI ? 2 : 0,
+    retries: process.env.CI ? 1 : 0,
+    maxFailures: process.env.CI ? 5 : 0,
     // Enforce serial worker execution for stable mocked tests
     workers: 1,
     reporter: [['html'], ['list']],

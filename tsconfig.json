@@ -22,6 +22,11 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -56,6 +61,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "_archive_pre_monorepo"
+    "_archive_pre_monorepo",
+    "repos"
   ]
 }

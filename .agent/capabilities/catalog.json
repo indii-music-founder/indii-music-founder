@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
   "sourceDigest": "c5dd9e7c33d2399b1a327a17349a6b0f8a9aa645e7c3a3f36f39d6ea030171e4",
+  "sourceDigest": "97b44a73ddef0bcf1a3b549d6defad3d52bedf94bb412245cb2790325fd57826",
+  "sourceDigest": "7aeebe1819e5a06103993e64ae755c99ba71a1d51a0d29a3b56f82eb6c2ecdf7",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -8,7 +10,11 @@
   "counts": {
     "certified": 38,
     "conditional": 71,
+    "certified": 37,
+    "conditional": 75,
     "quarantined": 98,
+    "conditional": 71,
+    "quarantined": 99,
     "deprecated": 1
   },
   "capabilities": [
@@ -1321,6 +1327,90 @@
       "idempotency": "Re-run only when the script is documented as repeat-safe.",
       "authenticity": "Local command success is local evidence only.",
       "reason": "Package script has not been explicitly reviewed for automatic routing.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:diagnostics",
+      "name": "npm run effect:diagnostics",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "effect-language-service diagnostics --project packages/shared/tsconfig.json",
+      "descriptionHash": "4e033ba9c189cd259c76741dcf4bf69943942df647f9ba54c112b1bc8fd5caed",
+      "contentHash": "5d4e5a2ba65fcf23430ee8c10d993da5ea1bdaf3e1c8c32bd842b9aa54d0b78c",
+      "state": "conditional",
+      "authority": "read-only-validation",
+      "prerequisites": [
+        "Effect packages are installed"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "effect-language-service diagnostics exits zero"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:sync-repo",
+      "name": "npm run effect:sync-repo",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "git -C repos/effect pull --ff-only 2>/dev/null || git clone --depth 1 https://github.com/Effect-TS/effect.git repos/effect",
+      "descriptionHash": "268daf4589d8662a2ad4dfb6c1112fd57d708831a8782c22809576134f7fc239",
+      "contentHash": "9fb91e66feeb2a032e6423de6e3f97e256cbd048d6ba6bcc06aae734656a852b",
+      "state": "conditional",
+      "authority": "local-execution",
+      "prerequisites": [
+        "Git network access to github.com/Effect-TS/effect is available"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "repos/effect/LLMS.md exists on disk"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
+      "conflicts": []
+    },
+    {
+      "id": "script:npm:effect:tsgo",
+      "name": "npm run effect:tsgo",
+      "kind": "script",
+      "registry": "package.json",
+      "path": "package.json",
+      "mutable": true,
+      "available": true,
+      "description": "effect-tsgo tsc --noEmit",
+      "descriptionHash": "d5f32db7f952c0e09b01298affec6cc94df14347d97827ea6b3971b396097f61",
+      "contentHash": "337bd95878fc90b0bb37482f3b86aecfeebc38ce320a3c2e916b851a89491c65",
+      "state": "conditional",
+      "authority": "read-only-validation",
+      "prerequisites": [
+        "Effect packages and @effect/tsgo are installed"
+      ],
+      "outputs": [
+        "Process exit code and script output"
+      ],
+      "verification": [
+        "effect-tsgo tsc exits zero"
+      ],
+      "failure": "Report the first logged root cause; do not mutate unrelated files.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Re-run only when the script is documented as repeat-safe.",
+      "authenticity": "Local command success is local evidence only.",
       "conflicts": []
     },
     {
@@ -3963,6 +4053,40 @@
       "lockHash": "d0f86a829c3687376943db94a44375aa3dc98928ee534f662f1130a3a4974c3e"
     },
     {
+      "id": "skill:vendored:entire-search",
+      "name": "entire-search",
+      "kind": "skill",
+      "registry": ".agents/skills",
+      "path": ".agents/skills/entire-search/SKILL.md",
+      "mutable": false,
+      "available": true,
+      "description": "Search Entire checkpoint history and transcripts with `entire search --json`. Use proactively when the user asks about previous work, commits, sessions, prompts, or historical context in this repository.",
+      "descriptionHash": "3683b7cb88997affad8b77d07f0f330d456e9f372ecf5eec69faf1e1622e972a",
+      "contentHash": "ad0ad29e1e66516790be7cbef15b5031d060ebf5f1f466374f4a653bdb81d3b6",
+      "state": "quarantined",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "The skill is installed",
+        "A skills-lock.json entry exists",
+        "Required tools are available"
+      ],
+      "outputs": [
+        "The upstream skill-defined result"
+      ],
+      "verification": [
+        "Use upstream checks plus repository-specific acceptance evidence"
+      ],
+      "failure": "Do not edit vendored content in place; use a certified local fallback or installer update.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Follow the upstream skill's repeat-safety rules.",
+      "authenticity": "Upstream examples are not evidence about this repository or live environment.",
+      "conflicts": [],
+      "locked": false,
+      "upstream": null,
+      "lockHash": null,
+      "reason": "Installed vendored skill has no skills-lock.json entry."
+    },
+    {
       "id": "skill:vendored:faceless-explainer",
       "name": "faceless-explainer",
       "kind": "skill",
@@ -5481,7 +5605,7 @@
       "available": true,
       "description": "Observational repository delivery gate. Validates the coherent task scope, runs proportional local checks and the unified CI gauntlet, then binds remote acceptance to the exact pushed SHA. It never performs speculative fixes, rewrites secrets, or creates validation commits.",
       "descriptionHash": "eccf88327d568af35420950360264a5d82f0eedd1633cb5934dc5023b7d57aef",
-      "contentHash": "e64edad23a8b5909d150b7b1a3d94ebce186d571dba6f94fea781e9fae8b3a0e",
+      "contentHash": "6d38b193cb623210d83d3664eed4ce17deee4c95519b3fd224edb6a8989a9136",
       "state": "certified",
       "authority": "observational-validation",
       "prerequisites": [
@@ -5587,6 +5711,35 @@
       "idempotency": "Reassess repository and external state before repeating.",
       "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
       "reason": "The legacy audit automatically fixes failures and moves/deletes root files instead of remaining observational.",
+      "conflicts": []
+    },
+    {
+      "id": "workflow:effect",
+      "name": "effect",
+      "kind": "workflow",
+      "registry": ".agent/workflows",
+      "path": ".agent/workflows/effect.md",
+      "mutable": true,
+      "available": true,
+      "description": "Effect-TS v4 workflow for Antigravity, Claude Code, and Codex teams. Syncs local reference source, loads v4 idioms, enforces accountability lint rules, and verifies with Effect Language Service diagnostics.",
+      "descriptionHash": "03e627755059773cfdbf6c89dcfea0d11a2c50fc8ce4b73a86abb84c1c251906",
+      "contentHash": "2344b897d85683972e8c50f4c4b57a7d993c9fad7b28ce3efa373ae395e953b9",
+      "state": "conditional",
+      "authority": "inherits-active-request",
+      "prerequisites": [
+        "Task touches Effect-TS code or typed Effect service boundaries",
+        "repos/effect/LLMS.md is present or synced via npm run effect:sync-repo"
+      ],
+      "outputs": [
+        "The workflow-defined result and its decisive evidence"
+      ],
+      "verification": [
+        "effect-language-service diagnostics, targeted vitest, and npm run lint pass"
+      ],
+      "failure": "Stop after bounded retries, report the exact blocker, and use a certified fallback.",
+      "fallback": "workflow:skill-skill",
+      "idempotency": "Reassess repository and external state before repeating.",
+      "authenticity": "Classify structural, simulated, local-real, and production-real evidence separately.",
       "conflicts": []
     },
     {
@@ -5774,7 +5927,7 @@
       "available": true,
       "description": "Recursive motor for the active objective. Reviews progress, selects one coherent verification unit, resolves blockers with bounded retries, and continues to evidence-backed completion without checkpoint or micro-fix commits.",
       "descriptionHash": "4754d59e1a5b4eee8f18d23fd53fb9719009e9b744712a3b668f5b5421ee69dc",
-      "contentHash": "a655c57b226b5b51eb90b4225d82e432d9b80b3a9bb67ab13aae4fbad3cda031",
+      "contentHash": "bf1f8aea91c7c87bb67a218ba183af7e8e28d9011c6e5adad7a5b07d35fcd13b",
       "state": "certified",
       "authority": "inherits-active-request",
       "prerequisites": [
@@ -6184,7 +6337,7 @@
       "available": true,
       "description": "Flagship orientation workflow for a new objective. Establishes source of truth, request mode, task profile, authority, repository state, capability route, and definition of done before mutation.",
       "descriptionHash": "d3113fa8bc4e707037a51f84e8c5b3a921b5ef75ad00854975b36211d0b51ce2",
-      "contentHash": "af6265e109c1492b1e37af64dc813d00eb5f6e47579e9d2af4dd39c0cf16e1ff",
+      "contentHash": "5189041a781ebd6638a9f42bda247560a530001466148df40ad9eaa3a49276bb",
       "state": "certified",
       "authority": "profile-bounded",
       "prerequisites": [

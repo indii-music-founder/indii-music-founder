@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { X } from 'lucide-react';
+import { ImageIcon, X } from 'lucide-react';
+import { ShareSheet } from '@/components/share/ShareSheet';
+import { SIGNATURE_BUTTON_BASE, SIGNATURE_BUTTON_TONES } from '@shared/share/signatureButton';
 import { buildArtistShareCard } from './artistShareCard';
 
 export default function ArtistShareCardModal({ name, email, onClose }: { name: string; email?: string; onClose: () => void }) {
@@ -37,6 +39,15 @@ export default function ArtistShareCardModal({ name, email, onClose }: { name: s
                 </div>
                 <p className="mt-4 text-center text-sm font-semibold">{name}</p>
                 <p className="mt-1 text-center text-xs text-stone-400">Scan to add this vCard to Contacts.</p>
+                <button
+                    type="button"
+                    onClick={() => void ShareSheet.call({ title: 'Social card', template: { kind: 'artist', artistName: name }, initialSize: 'story' })}
+                    className={`${SIGNATURE_BUTTON_BASE} ${SIGNATURE_BUTTON_TONES.indigo.button} mt-4 min-h-11 w-full text-sm`}
+                >
+                    <ImageIcon size={16} className={SIGNATURE_BUTTON_TONES.indigo.icon} />
+                    <span className={SIGNATURE_BUTTON_TONES.indigo.label}>Make a social card</span>
+                    <span aria-hidden="true" className={SIGNATURE_BUTTON_TONES.indigo.sweep} />
+                </button>
                 {email && <label className="mt-5 flex min-h-11 items-center gap-3 text-xs text-stone-200">
                     <input type="checkbox" checked={includeEmail} onChange={event => setIncludeEmail(event.target.checked)} />
                     Include my account email on the shared card

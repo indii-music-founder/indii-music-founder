@@ -53,6 +53,10 @@ vi.mock('firebase/firestore', () => ({
 }));
 vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => mockAuditArtwork) }));
 
+const { mockCelebrate, mockShareSheet } = vi.hoisted(() => ({ mockCelebrate: vi.fn(), mockShareSheet: vi.fn() }));
+vi.mock('@/components/share/CelebrationMoment', () => ({ CelebrationMoment: { call: mockCelebrate } }));
+vi.mock('@/components/share/ShareSheet', () => ({ ShareSheet: { call: mockShareSheet } }));
+
 const CANONICAL_TRACK = {
     id: 'SONIC-master-1',
     userId: 'user-1',
@@ -238,5 +242,47 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         });
         expect(screen.getByTestId('isrc-prerequisite-notice')).toBeInTheDocument();
         expect(screen.getByText(/Commercial Authority Notice/i)).toBeInTheDocument();
+    });
+
+    describe('milestone celebration', () => {
+        const submitValidRelease = async () => {
+            render(<SubmitReleaseModal open onClose={vi.fn()} />);
+            await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+            fillBasicMetadata();
+            fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
+            fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
+            fireEvent.click(screen.getByTestId('release-submit-button'));
+            await waitFor(() => expect(screen.getByTestId('release-done-button')).toBeInTheDocument());
+        };
+
+        beforeEach(() => {
+            window.localStorage.clear();
+        });
+
+        it('celebrates the first fully delivered release once, then offers a share card on later deliveries', async () => {
+            await submitValidRelease();
+            expect(mockCelebrate).toHaveBeenCalledTimes(1);
+            expect(mockCelebrate.mock.calls[0][0]).toMatchObject({
+                headline: 'First release delivered',
+                template: { kind: 'release', trackTitle: 'Album', artistName: 'Artist' },
+            });
+
+            fireEvent.click(screen.getByTestId('release-share-card-button'));
+            expect(mockShareSheet).toHaveBeenCalledWith(expect.objectContaining({ template: expect.objectContaining({ kind: 'release', trackTitle: 'Album' }) }));
+        });
+
+        it('does not celebrate a second delivery for the same user', async () => {
+            window.localStorage.setItem('indii:milestone:first-release-delivered:user-1', '2026-01-01');
+            await submitValidRelease();
+            expect(mockCelebrate).not.toHaveBeenCalled();
+            expect(screen.getByTestId('release-share-card-button')).toBeInTheDocument();
+        });
+
+        it('does not celebrate or offer a card when delivery is manual-only', async () => {
+            mockSubmitRelease.mockResolvedValueOnce({ status: 'success', sftp_skipped: true });
+            await submitValidRelease();
+            expect(mockCelebrate).not.toHaveBeenCalled();
+            expect(screen.queryByTestId('release-share-card-button')).toBeNull();
+        });
     });
 });

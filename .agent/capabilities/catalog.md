@@ -5,7 +5,14 @@
 - Source digest: `c5dd9e7c33d2399b1a327a17349a6b0f8a9aa645e7c3a3f36f39d6ea030171e4`
 - Certified: 38
 - Conditional: 71
+- Source digest: `97b44a73ddef0bcf1a3b549d6defad3d52bedf94bb412245cb2790325fd57826`
+- Certified: 37
+- Conditional: 75
 - Quarantined: 98
+- Source digest: `7aeebe1819e5a06103993e64ae755c99ba71a1d51a0d29a3b56f82eb6c2ecdf7`
+- Certified: 37
+- Conditional: 71
+- Quarantined: 99
 - Deprecated: 1
 
 The router may select only Certified entries or Conditional entries whose prerequisites pass. Runtime MCP, connector, browser, computer-use, and other host-native tools are added as a session overlay and must satisfy the same contract.
@@ -56,6 +63,9 @@ The router may select only Certified entries or Conditional entries whose prereq
 | `script:npm:dev:e2e-mock` | quarantined | local-execution | yes | package.json |
 | `script:npm:dev:web` | quarantined | local-execution | yes | package.json |
 | `script:npm:doctor` | quarantined | local-execution | yes | package.json |
+| `script:npm:effect:diagnostics` | conditional | read-only-validation | yes | package.json |
+| `script:npm:effect:sync-repo` | conditional | local-execution | yes | package.json |
+| `script:npm:effect:tsgo` | conditional | read-only-validation | yes | package.json |
 | `script:npm:electron:build` | quarantined | local-execution | yes | package.json |
 | `script:npm:electron:dev` | quarantined | local-execution | yes | package.json |
 | `script:npm:emulator:functions` | quarantined | local-execution | yes | package.json |
@@ -144,6 +154,7 @@ The router may select only Certified entries or Conditional entries whose prereq
 | `skill:vendored:developing-genkit-js` | conditional | inherits-active-request | yes | .agents/skills/developing-genkit-js/SKILL.md |
 | `skill:vendored:developing-genkit-python` | conditional | inherits-active-request | yes | .agents/skills/developing-genkit-python/SKILL.md |
 | `skill:vendored:embedded-captions` | conditional | inherits-active-request | yes | .agents/skills/embedded-captions/SKILL.md |
+| `skill:vendored:entire-search` | quarantined | inherits-active-request | yes | .agents/skills/entire-search/SKILL.md |
 | `skill:vendored:faceless-explainer` | conditional | inherits-active-request | yes | .agents/skills/faceless-explainer/SKILL.md |
 | `skill:vendored:figma` | conditional | inherits-active-request | yes | .agents/skills/figma/SKILL.md |
 | `skill:vendored:firebase-ai-logic-basics` | conditional | inherits-active-request | yes | .agents/skills/firebase-ai-logic-basics/SKILL.md |
@@ -195,6 +206,7 @@ The router may select only Certified entries or Conditional entries whose prereq
 | `workflow:d` | quarantined | inherits-active-request | yes | .agent/workflows/d.md |
 | `workflow:db-sync` | conditional | bounded-local-writes | yes | .agent/workflows/db-sync.md |
 | `workflow:devex-review` | quarantined | inherits-active-request | yes | .agent/workflows/devex-review.md |
+| `workflow:effect` | conditional | inherits-active-request | yes | .agent/workflows/effect.md |
 | `workflow:end` | certified | repository-delivery-when-authorized | yes | .agent/workflows/end.md |
 | `workflow:evolas-gauntlet` | conditional | bounded-local-writes | yes | .agent/workflows/evolas-gauntlet.md |
 | `workflow:factory` | quarantined | inherits-active-request | yes | .agent/workflows/factory.md |

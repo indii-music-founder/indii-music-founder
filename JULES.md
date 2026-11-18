@@ -230,6 +230,9 @@ npm run test:e2e               # Run Playwright E2E tests
 npm run lint                   # ESLint check (.ts, .tsx)
 npm run lint:fix               # Auto-fix lint issues
 npm run typecheck              # TypeScript type checking (tsc --noEmit)
+npm run effect:diagnostics     # Effect Language Service diagnostics
+npm run effect:tsgo            # Effect-patched tsgo typecheck
+npm run effect:sync-repo       # Clone or update @repos/effect reference source
 ```
 
 ### Deployment
@@ -292,7 +295,8 @@ import { AgentDef } from '@agents/creative';             // agents/*
 - `@typescript-eslint/no-explicit-any`: warn (not error)
 - `@typescript-eslint/no-unused-vars`: warn, with `^_` prefix ignored
 - `react-refresh/only-export-components`: warn
-- Ignored directories: `dist`, `landing-page`, `functions/lib`, `_archive_legacy`
+- `effect-local/*` (error): `no-disable-validation`, `prefer-option-from-nullable`, `pipe-max-arguments`, `no-effect-asvoid`, `no-effect-ignore`, `no-effect-catchallcause`, `no-silent-error-swallow`, `no-service-option`, `no-nested-layer-provide`
+- Ignored directories: `dist`, `repos/**`, `landing-page`, `functions/lib`, `_archive_legacy`
 
 ### TypeScript Configuration
 
@@ -300,6 +304,18 @@ import { AgentDef } from '@agents/creative';             // agents/*
 - Module resolution: bundler
 - JSX: react-jsx
 - `noUnusedLocals` and `noUnusedParameters`: disabled (false)
+- Language service plugin: `@effect/language-service` in root `tsconfig.json`
+
+---
+
+## Vendored Repositories & Effect-TS
+
+This project makes external reference repositories available locally under `@repos/` (gitignored via `/repos/` and excluded from editor search, watchers, auto-imports, TypeScript, Vitest, and ESLint; initialize or update with `npm run effect:sync-repo`):
+
+- **Use vendored repositories as read-only reference material** when working with related libraries.
+- **When writing Effect code**, read `docs/guides/effect-guide.md`, `docs/guides/reference-repos.md`, and `@repos/effect/LLMS.md` first, and inspect `@repos/effect/` (`ai-docs/src/`, `packages/effect/src/`) for idiomatic Effect v4 usage, tests, and API design instead of guessing or relying on web search snippets.
+- **Do not edit files under `@repos/`** unless explicitly asked.
+- **Do not import from `@repos/`** — application code must continue importing from normal package dependencies (e.g., `'effect'`).
 
 ---
 
@@ -627,6 +643,21 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | Desktop (Windows) | Electron | NSIS installer |
 | Desktop (Linux) | Electron | AppImage |
 | Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
+
+---
+
+## Entire Platform Standard (All Agents: Claude, Codex, Antigravity/Gemini)
+
+All coding agents (**Claude Code**, **Codex**, **Antigravity/Gemini**) must use **Entire** (`https://entire.com/gh/indii-music-founder/indii-music-founder`) instead of GitHub for Git operations, session/checkpoint capture, historical search, and code trails:
+
+- **Primary Remote (`origin`):** `entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder` (set via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`). Push and fetch through `origin` (`git push origin HEAD:main`), which automatically uploads captured agent sessions and checkpoints to Entire.
+- **No Direct GitHub Agent Workflows:** Do not use `gh pr`, `gh issue`, or direct `github.com` remotes for coding agent workflows. Use Entire CLI equivalents instead:
+  - `entire status` / `entire doctor` — verify Entire & agent hook health
+  - `entire search --json --compact "<query>"` — search past checkpoints and session transcripts
+  - `entire checkpoint explain <id>` — inspect reasoning and transcripts behind a checkpoint
+  - `entire trail` — manage trails across branches and changes (`entire agent-help trail`)
+  - `entire session` — inspect or resume cross-agent sessions
+- **Exact CLI Usage:** Always run `entire agent-help` (or `entire agent-help <command>`) rather than guessing flags.
 
 ---
 

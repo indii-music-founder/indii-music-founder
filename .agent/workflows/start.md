@@ -57,6 +57,14 @@ If not already active this session: source `TYPESAFE_API_KEY` (`.env` in the rep
 
 Skip activation for read-only or purely mechanical tasks.
 
+## 5.6 Activate Effect-TS (when in scope)
+
+Skip activation when the task does not touch `effect` code or typed Effect service boundaries. When Effect is in scope (or when deciding whether to use it for retries, typed errors, schemas, or resource lifecycles):
+
+- ensure `repos/effect/LLMS.md` is present on disk (run `npm run effect:sync-repo` if missing);
+- read [`docs/guides/effect-guide.md`](../../docs/guides/effect-guide.md) and `repos/effect/LLMS.md` (plus relevant `repos/effect/ai-docs/src/` examples) before writing Effect code;
+- route Effect tasks through [`/effect`](effect.md) and verify with `npm run effect:diagnostics` + `npm run lint`.
+
 ## Output
 
 ```text

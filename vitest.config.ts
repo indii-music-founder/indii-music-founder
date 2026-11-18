@@ -34,6 +34,7 @@ export default defineConfig({
       'e2e/**',
       'node_modules/**',
       '**/node_modules/**',
+      'repos/**',
       '.claude/**',
       '.agent/**',
       // Vendored agent skills ship their own upstream test suites. They are
