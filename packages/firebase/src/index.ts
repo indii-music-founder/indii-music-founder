@@ -260,6 +260,7 @@ export {
 
 // Attribution spine — smart-link redirect, conversion outbox flusher, presave registration, and webhooks
 export { smartLinkRedirect } from './marketing/smartLink';
+export { shareMeta } from './share/shareMeta';
 export { flushConversionEvents } from './marketing/flushConversionEvents';
 export { presaveRegister } from './marketing/presaveRegister';
 export { createPreSaveCampaign, getPreSaveCampaign, listPreSaveCampaigns } from './marketing/presaveCampaigns';
