@@ -21,10 +21,23 @@ describe('claimMilestone', () => {
         const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
         try {
             expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
+            // Guard against a no-op spy: the blocked path must actually be exercised.
+            expect(getItem).toHaveBeenCalled();
         } finally {
             getItem.mockRestore();
             setItem.mockRestore();
         }
+    });
+
+    it('never celebrates when the claim cannot be persisted', () => {
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
+        try {
+            expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
+            expect(spy).toHaveBeenCalled();
+        } finally {
+            spy.mockRestore();
+        }
+        expect(window.localStorage.getItem('indii:milestone:first-track-analyzed:u1')).toBeNull();
     });
 });
 
