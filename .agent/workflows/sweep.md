@@ -28,7 +28,7 @@ Per `CLAUDE.md` §7 asset-deletion fail-safe: anything under `.agent/skills/`, `
 
 Scan, excluding the protected and archived paths above:
 
-- instruction files: `CLAUDE.md` plus its mirrors (`GEMINI.md`, `DROID.md`, `JULES.md`, `CODEX.md`, `ANTIGRAVITY.md`), `AGENTS.md`, and files under `.claude/`, `.gemini/`, `.codex/`;
+- instruction files: `CLAUDE.md` plus its mirrors (`GEMINI.md`, `CODEX.md`, `ANTIGRAVITY.md`), `AGENTS.md`, and files under `.claude/`, `.gemini/`, `.codex/`;
 - context: `.agent-os/product/`, `directives/`, `skills/`, `.jules/`, `docs/` (non-audit), `.agent/HANDOFF_STATE.md`, `.agent/artifacts/`, `.claude/plans/`, `.claude/checkpoints/`;
 - ticket status tags (completed / in progress / not started);
 - code comments: `TODO`, `FIXME`, `BUG`, `HACK`, `NOTE` referencing bugs, tickets, or removed features.

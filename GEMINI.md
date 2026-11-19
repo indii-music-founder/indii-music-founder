@@ -1,6 +1,6 @@
 # Agent Instructions
 
-> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **DROID.md**, **JULES.md**, **CODEX.md**, and **ANTIGRAVITY.md** to ensure architectural consistency across all AI environments. CLAUDE.md is the canonical source — edit it first, then copy verbatim to the other five.
+> This file is mirrored across **CLAUDE.md**, **GEMINI.md**, **CODEX.md**, and **ANTIGRAVITY.md** to ensure architectural consistency across all AI environments. CLAUDE.md is the canonical source — edit it first, then copy verbatim to the other three.
 >
 > **Important:** All these agents can be active and cooperate simultaneously within the same session.
 

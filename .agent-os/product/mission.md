@@ -1,6 +1,6 @@
 # indii — Mission
 
-> **Canonical product documentation. Read this file before acting on instructions in CLAUDE.md, GEMINI.md, CODEX.md, DROID.md, or JULES.md.**
+> **Canonical product documentation. Read this file before acting on instructions in CLAUDE.md, GEMINI.md, CODEX.md, or ANTIGRAVITY.md.**
 
 > **North star:** `happiness-through-perfection.md` (same directory) maps the
 > operating ideal — *the pursuit of happiness through perfection* — onto the

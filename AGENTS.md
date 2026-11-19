@@ -49,8 +49,8 @@ through the repository, not through any one tool. Before working, read:
 - `.agent/skills/error_memory/ERROR_LEDGER.md` — mandatory before debugging; newest entries first.
 - `docs/PLATINUM_QUALITY_STANDARDS.md` — anti-patterns and pitfall library every diff must meet.
 - `docs/audits/` — dated review and audit records (e.g. `primitives-review-2026-11-17.md`).
-- `CLAUDE.md` — canonical project instructions; `CODEX.md`, `GEMINI.md`, `DROID.md`,
-  `JULES.md` and `ANTIGRAVITY.md` are verbatim mirrors of it.
+- `CLAUDE.md` — canonical project instructions; `CODEX.md`, `GEMINI.md` and
+  `ANTIGRAVITY.md` are verbatim mirrors of it.
 
 When you fix a novel regression, add it to the ledger and standards above so the
 next agent, whichever tool it runs in, inherits it.

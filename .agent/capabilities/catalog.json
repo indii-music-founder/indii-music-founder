@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "a39a6051cf902981ad8b316978cffb114f78307cb1809f05880f0603cd4e0bcc",
+  "sourceDigest": "ee89313ab8144759ed32c9cd5bb64754bb7988d0fc3692e800cc39871e981bd4",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -6361,7 +6361,7 @@
       "available": true,
       "description": "Observational audit of agent instructions, specs, plans, handoffs, and code notes against the current codebase and git history. Uses TypeSafe JEV as an advisory semantic triager; deterministic code and git evidence decide. Reports first; archives or edits only after named approval.",
       "descriptionHash": "81c1f9d8d20c78702abcc457e88b9423ec7228c3a9b736d0a6eac08b13a28535",
-      "contentHash": "1c59906c4be87ebf2443ad035d9fbc00c26cdc684dd48096a90cb1cf7a58d970",
+      "contentHash": "01d0de9dfeaf1b329f6f4fe3efceadab2a290a077062826cb9a5349cc32fe0f5",
       "state": "conditional",
       "authority": "read-only-until-approved",
       "prerequisites": [
