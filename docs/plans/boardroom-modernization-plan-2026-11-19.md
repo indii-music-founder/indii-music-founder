@@ -3,7 +3,7 @@
 > For Claude, Gemini, Codex, Droid, Jules, Antigravity. Read `CLAUDE.md` / `AGENTS.md` first.
 > **Ledger:** findings below become `ISSUE-1624+` in `.agent/test_ledger/OPEN_ISSUES_V4.md` (V4 is active; V3 is sealed).
 > **Claimed by:** _(agent + date per phase; edit this line before starting a phase)_
-> **Section 5 — Current State:** Phases 0-1 done. Phase 2 deployed in `faaf33b` (CI green, run 44561821844): ISSUE-1624/1625/1627/1628/1629/1654/1666/1667. Phase 2b: ISSUE-1656 (timeout overwrote Conductor answer) and ISSUE-1665 (seat timeout did not abort) repaired. All PARTIAL pending live acceptance. **Next:** ISSUE-1657 (15-min lease lock after reload) — planned client-only fix: store the READY leaseId in sessionStorage per tab, complete any orphaned stored lease before `getBoardroomDispatchPlan` in `AgentService.handleBoardroomSwarmFlow`, forget it after `completeBoardroomDispatchLease` succeeds (server already allows owner completion; no function deploy). Then Phase 3.
+> **Section 5 — Current State:** Phases 0-1 done. Phase 2 complete in code: `faaf33b` (ISSUE-1624/1625/1627/1628/1629/1654/1666/1667, CI green), `8ffaeb3` (ISSUE-1656, 1665), and the Phase 2c commit (ISSUE-1657 per-tab lease recovery). All PARTIAL pending live signed-in acceptance. Known gap on 1657: a closed (not reloaded) tab still waits out the 15-min server TTL; a server heartbeat/shorter TTL would close it. **Next:** Phase 3 (Faster) — claim it here.
 > Source plan text follows; ignore references to "this session" or session-branch tooling.
 
 # Plan: Boardroom modernization, OPEN_ISSUES_V4, and a plan shared with all agents

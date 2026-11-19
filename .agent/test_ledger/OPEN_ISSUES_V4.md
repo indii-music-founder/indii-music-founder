@@ -3497,7 +3497,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1657: After reload or failed release, the dispatch lease (15 min TTL, packages/firebase/src/functions/billing/enforc [O4]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — client repair landed 2026-11-19 (Phase 2c); awaiting exact-SHA CI and a real reload-mid-turn check
+- **Repair note:** the READY lease id is kept per tab in sessionStorage (boardroomLeaseRecovery.ts); the next turn in that tab completes any orphaned lease before requesting a plan, and a failed release is retried next turn. Server unchanged (owner completion already allowed); no function deploy. Tests boardroomLeaseRecovery.test.ts and AgentService.boardroom-capability-intent.test.ts. A crashed tab that is closed (not reloaded) still waits out the 15-minute TTL.
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O4 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

@@ -51,6 +51,7 @@ import {
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 import { isUserCancellation, errorText, USER_STOPPED_TEXT } from './flowFailure';
 import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from './boardroomRunTimeout';
+import { endBoardroomLeaseRun, forgetBoardroomLease, rememberBoardroomLease, releaseOrphanedBoardroomLease } from './boardroomLeaseRecovery';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -1438,12 +1439,15 @@ export class AgentService {
 
         let dispatchPlan: Readonly<BoardroomDispatchPlanContext>;
         try {
+            // A reload mid-turn leaves this tab's lease held for up to 15 minutes (ISSUE-1657).
+            await releaseOrphanedBoardroomLease(id => CostControlService.completeBoardroomDispatchLease(id));
             const serverPlan = await CostControlService.getBoardroomDispatchPlan(seatedAgents);
             dispatchPlan = Object.freeze({
                 ...serverPlan,
                 executedAgentIds: Object.freeze([...serverPlan.executedAgentIds]),
                 deferredAgentIds: Object.freeze([...serverPlan.deferredAgentIds]),
             });
+            if (dispatchPlan.leaseId) rememberBoardroomLease(dispatchPlan.leaseId);
         } catch (error) {
             logger.error('[AgentService] Boardroom dispatch admission failed closed:', error);
             useStore.getState().updateAgentMessage(initialResponseId, {
@@ -1747,9 +1751,13 @@ export class AgentService {
           }
         } finally {
             if (dispatchPlan.leaseId) {
-                CostControlService.completeBoardroomDispatchLease(dispatchPlan.leaseId).catch(error =>
-                    logger.warn('[AgentService] Boardroom dispatch lease release deferred to server expiry:', error)
-                );
+                const leaseId = dispatchPlan.leaseId;
+                CostControlService.completeBoardroomDispatchLease(leaseId)
+                    .then(() => forgetBoardroomLease(leaseId))
+                    .catch(error => {
+                        endBoardroomLeaseRun(leaseId);
+                        logger.warn('[AgentService] Boardroom dispatch lease release failed; the next turn in this tab will retry:', error);
+                    });
             }
         }
     }
