@@ -15,10 +15,9 @@ declare global {
 }
 
 test.describe('Boardroom Strategic Workflow Scenario', () => {
-    // FirebaseIntelligenceService paces model requests client-side (RateLimiter(10, 1):
-    // 10/min with a burst of 1, matching the backend generation window), so a turn
-    // with N parallel participants plus the autorater needs up to ~6s per request
-    // before its last request is even sent. Size waits to that documented pacing.
+    // FirebaseIntelligenceService paces model requests client-side
+    // (CLIENT_GENERATION_PACING: burst 9, then ~21/min, bounded by the server's 30/60s
+    // window). Later requests in a busy minute can still queue; keep generous waits.
     const PACED_TURN_TIMEOUT_MS = 60_000;
 
     test('should execute the complete flowchart dependency chain with dynamic seating and pulse unlock', async ({ authedPage: page }) => {

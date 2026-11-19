@@ -14,6 +14,7 @@
 import { auth, functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
+import { BOARDROOM_MAX_EXECUTED_AGENTS } from '@indii/shared';
 import { isTestHarnessRuntime } from '@/utils/e2eMode';
 import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
@@ -298,7 +299,7 @@ export class CostControlService {
       && (code === 'BOARDROOM_DISPATCH_READY' || code === 'BOARDROOM_DISPATCH_BUDGET_EXHAUSTED' || code === 'BOARDROOM_DISPATCH_ACTIVE_TURN')
       && Array.isArray(executedAgentIds)
       && Array.isArray(deferredAgentIds)
-      && executedAgentIds.length <= 9
+      && executedAgentIds.length <= BOARDROOM_MAX_EXECUTED_AGENTS
       && combined.length === agentIds.length
       && combined.every(agentId => typeof agentId === 'string')
       && new Set(combined).size === combined.length
