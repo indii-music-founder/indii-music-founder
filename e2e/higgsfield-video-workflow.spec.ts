@@ -225,7 +225,7 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
             }
         });
 
-        let currentProgress = await page.evaluate(() => {
+        const currentProgress = await page.evaluate(() => {
             const editorStore = (window as any).useVideoEditorStore;
             return editorStore ? editorStore.getState().progress : 0;
         });
@@ -247,7 +247,7 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
                     projectId: 'default'
                 };
                 store.getState().addToHistory(mockAsset);
-                store.getState().setActiveVideo ? store.getState().setActiveVideo(mockAsset) : null;
+                store.getState().setActiveVideo?.(mockAsset);
                 
                 editorStore.getState().setStatus('completed');
                 editorStore.getState().setProgress(100);
@@ -260,11 +260,12 @@ test.describe('Higgsfield-Inspired Video Workflow', () => {
         });
         expect(finalStatus).toBe('completed');
 
-        const historyContainsAsset = await page.evaluate(() => {
+        // addToHistory applies its write after a dynamic import of the store
+        // (creativeHistorySlice), so the history update is asynchronous: poll for it.
+        await expect.poll(() => page.evaluate(() => {
             const store = (window as any).useStore;
             return store ? store.getState().generatedHistory.some((item: any) => item.id === 'mock-veo-job-12345') : false;
-        });
-        expect(historyContainsAsset).toBe(true);
+        }), { timeout: 10_000 }).toBe(true);
 
         console.log('✓ Verified whole Systems by Vic-inspired video pipeline mock successfully!');
     });
