@@ -134,7 +134,7 @@ Service test: `createOrderCheckout` passes args through the `pod_createOrderChec
 
 ## WP-D — ledger + docs truth (do LAST, after A–C land)
 
-Append to `.agent/test_ledger/OPEN_ISSUES_V3.md` (append-only, same format):
+Append to `.agent/test_ledger/OPEN_ISSUES_V4.md` (append-only, same format):
 1. **ISSUE-1415** → `✅ FIXED (2026-08-28)` — evidence: run `33196608685` success on `dd3d72ed2` (tree contains `8edc335cb`'s Arcjet/rules fixes); all unit shards + rules-tests green; production deployed. The original failing tests do not reproduce on main.
 2. **ISSUE-1410** → `✅ FIXED (WP-A commit sha)` — live-object derivation + invoice-without-subscription guard + tests.
 3. **NEW ISSUE-1417** → document the phantom ProdigiProvider finding + `✅ FIXED (WP-B commit sha)` with the grep evidence.

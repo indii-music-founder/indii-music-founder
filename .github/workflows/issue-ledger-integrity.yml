@@ -3,7 +3,9 @@ name: Issue ledger integrity
 on:
   pull_request:
     paths:
-      - '.agent/test_ledger/OPEN_ISSUES_V3.md'
+      - '.agent/test_ledger/OPEN_ISSUES_V*.md'
+      - '.agent/test_ledger/archive/**'
+      - 'scripts/issue-ledger-config.mjs'
       - 'scripts/issue-ledger-integrity*.mjs'
       - 'scripts/issue-ledger-inventory*.mjs'
       - 'scripts/validate-issue-ledger.mjs'
@@ -11,7 +13,9 @@ on:
   push:
     branches: [main]
     paths:
-      - '.agent/test_ledger/OPEN_ISSUES_V3.md'
+      - '.agent/test_ledger/OPEN_ISSUES_V*.md'
+      - '.agent/test_ledger/archive/**'
+      - 'scripts/issue-ledger-config.mjs'
       - 'scripts/issue-ledger-integrity*.mjs'
       - 'scripts/issue-ledger-inventory*.mjs'
       - 'scripts/validate-issue-ledger.mjs'

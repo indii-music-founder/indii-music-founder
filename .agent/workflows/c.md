@@ -4,7 +4,7 @@ description: Engine C / C-Engine workflow to keep the exact pushed main SHA gree
 
 # Engine C — C-Engine (/c)
 
-> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V4.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
 
 **You are acting as Engine C / Agent C ("C" in the ABCD agent swarm).**
 Your exact job is to keep the system flowing, maintain green CI for the exact pushed `main` SHA, and act as the release gate. You are the **Continuous Coordinator** of a 4-engine team (A, B, C, D) that may be split across Codex, Claude, Gemini, or another AI app. Do exactly what is outlined here.
@@ -41,7 +41,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 
 ## 2. Swarm Coordination (The ABCD Protocol)
 - **Role Definition (ABCD):** **A finds** → **B fixes in one coherent `main` commit** → **C (you) ships** — guarantee CI goes green for that exact `main` SHA (green main deploys to Firebase) → **D verifies B's fixes and re-opens fakes.** You own getting the tree green and shipped: when a fix lands, make sure CI passes; if CI breaks, diagnose and fix the infra/pipeline (never green-by-deletion). A-Engine handles features, B-Engine fixes the ledger's bugs, D-Engine audits — you are the release gate.
-- **Claiming Work:** When you find an infrastructure or deployment issue in `.agent/test_ledger/OPEN_ISSUES_V3.md`, change its status to `🟡 IN PROGRESS (Agent C)`.
+- **Claiming Work:** When you find an infrastructure or deployment issue in `.agent/test_ledger/OPEN_ISSUES_V4.md`, change its status to `🟡 IN PROGRESS (Agent C)`.
 - **Conflict Avoidance:** Before reading or editing the ledger, require a clean tree, run `git fetch origin && git merge --ff-only origin/main`, and keep the sweep in the single coherent task commit. Never rebase or rewrite `main`, and never rewrite the ledger from a stale snapshot.
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` and let A or B try.
 
@@ -50,7 +50,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - If Agents A or B left uncommitted functional changes, first prove they belong to the current bounded task; include them in the one coherent task commit or report them as unrelated. Never create cleanup micro-commits.
 - Let `git_monitor_sync.js` handle the typechecking, testing, and pushing of these commits to `origin/main`. 
 - If `git_monitor_sync.js` fails due to merge conflicts or test failures, YOU must fix them.
-- **CI/CD Pipeline Monitoring:** Periodically check the GitHub Actions pipeline for `main`. Since `gh run list` may fail due to authentication, you must rely on the `/browser` agent or browser tooling to visually monitor `https://github.com/indii-music-founder/indii-music-founder/actions` for failed workflows (red X marks). If any failures pop up, log them to `.agent/test_ledger/OPEN_ISSUES_V3.md` and immediately diagnose and fix them.
+- **CI/CD Pipeline Monitoring:** Periodically check the GitHub Actions pipeline for `main`. Since `gh run list` may fail due to authentication, you must rely on the `/browser` agent or browser tooling to visually monitor `https://github.com/indii-music-founder/indii-music-founder/actions` for failed workflows (red X marks). If any failures pop up, log them to `.agent/test_ledger/OPEN_ISSUES_V4.md` and immediately diagnose and fix them.
 
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 

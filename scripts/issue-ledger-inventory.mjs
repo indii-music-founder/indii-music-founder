@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseIssueLedger } from './issue-ledger-integrity.mjs';
+import { ACTIVE_LEDGER } from './issue-ledger-config.mjs';
 
 // Anchor lifecycle words: “code complete, live proof pending” is not closed.
 export function classifyIssueStatus(status) {
@@ -45,7 +46,7 @@ export function inventoryIssueLedger(markdown) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const inventory = inventoryIssueLedger(readFileSync('.agent/test_ledger/OPEN_ISSUES_V3.md', 'utf8'));
+  const inventory = inventoryIssueLedger(readFileSync(ACTIVE_LEDGER, 'utf8'));
   if (process.argv.includes('--json')) {
     console.log(JSON.stringify(inventory, null, 2));
   } else {

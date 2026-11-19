@@ -8,14 +8,14 @@ description: >
   Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via
   `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet
   against the live module, documents pass/fail, logs new issues to
-  `.agent/test_ledger/OPEN_ISSUES_V3.md`, and produces a structured per-target report.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V3.md for a fixing agent.
+  `.agent/test_ledger/OPEN_ISSUES_V4.md`, and produces a structured per-target report.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V4.md for a fixing agent.
 ---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V3.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
-> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V3.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V4.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> **Ledger target:** the master ledger is `.agent/test_ledger/OPEN_ISSUES_V4.md`. Once `OPEN_ISSUES_V4.md` exists, use the highest-numbered unsealed `OPEN_ISSUES_V*.md` instead. Never write to a sealed ledger (V2 was sealed 2026-08-02).
 
 
 # /mega-test — Per-Menu-Item Multi-Dimensional Stress Test
@@ -23,7 +23,7 @@ description: >
 > **Purpose:** Test ONE left-menu item end-to-end against the live running application using an approved browser capability available in the current host, across 12 critical dimensions, plus its scoped unit/E2E/connection test surface.
 > **The unit of work is a menu item, NOT a version number.** `/mega-test road-manager`, not `/mega-test v5`.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
-> **Output:** Per-target pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES_V3.md`
+> **Output:** Per-target pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES_V4.md`
 
 ---
 
@@ -38,11 +38,11 @@ You DO:
 - Validate real outputs (images, videos, PDFs) end-to-end
 - Screenshot every meaningful state, error toast, and failure
 - Report PASS, PARTIAL, or FAIL per routine with dimensional scores
-- Append new issues to `.agent/test_ledger/OPEN_ISSUES_V3.md` using the standard format
+- Append new issues to `.agent/test_ledger/OPEN_ISSUES_V4.md` using the standard format
 
 You do NOT:
 - Read source code
-- Modify any files (except appending to `.agent/test_ledger/OPEN_ISSUES_V3.md` and the test report)
+- Modify any files (except appending to `.agent/test_ledger/OPEN_ISSUES_V4.md` and the test report)
 - Run terminal commands other than the scoped runner and checking the app is running
 - Diagnose root causes or suggest code fixes
 - Skip the target's connected modules — every menu item flows data somewhere
@@ -168,9 +168,9 @@ python3 execution/run_department_test.py <target>
 ```
 This executes the target's Vitest unit/integration tests, Playwright E2E specs, configured Python checks, and **connected-integration** tests. Capture the results — failures here become issues just like browser findings. Use `--dry-run` first if you want to see the surface before spending time.
 
-### Step 3 — Read .agent/test_ledger/OPEN_ISSUES_V3.md
+### Step 3 — Read .agent/test_ledger/OPEN_ISSUES_V4.md
 ```bash
-tail -30 .agent/test_ledger/OPEN_ISSUES_V3.md
+tail -30 .agent/test_ledger/OPEN_ISSUES_V4.md
 ```
 Note the last ISSUE number. Any new issues start at the next number.
 
@@ -197,7 +197,7 @@ Scan `docs/flowcharts/` for invariants touching this target (its module + every 
 4. **Observe** — watch PASS/FAIL across all 12 Dimensions (§6).
 5. **Screenshot** — capture every meaningful state (pass or fail).
 6. **Record** — append to the running report with dimensional scores.
-7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES_V3.md`.
+7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES_V4.md`.
 
 ### 4.2 Browser Capability Usage Rules
 When calling `browser_subagent`:
@@ -327,7 +327,7 @@ Maintain a running report, finalize as `artifacts/mega_<target>_<date>_results.m
 
 ---
 
-## 8. ISSUE FILING FORMAT (.agent/test_ledger/OPEN_ISSUES_V3.md)
+## 8. ISSUE FILING FORMAT (.agent/test_ledger/OPEN_ISSUES_V4.md)
 
 Append only. DO NOT edit existing entries.
 
@@ -377,7 +377,7 @@ Source of truth:
   execution/run_department_test.py                  ← scoped runner
 
 Output files:
-  .agent/test_ledger/OPEN_ISSUES_V3.md          ← Append new issues HERE
+  .agent/test_ledger/OPEN_ISSUES_V4.md          ← Append new issues HERE
   artifacts/mega_<target>_<date>_results.md  ← Session test report
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Append one-line summary
 ```

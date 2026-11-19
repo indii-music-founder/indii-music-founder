@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateIssueLedger } from './issue-ledger-integrity.mjs';
+import { ACTIVE_LEDGER } from './issue-ledger-config.mjs';
 
 const finding = (id, title, status = '🔴 OPEN', extra = '') =>
   `### ISSUE-${id}: ${title}\n\n- **Status:** ${status}\n${extra}\n`;
@@ -45,9 +46,9 @@ test('CLI reads committed and staged ledgers larger than the default subprocess 
   try {
     git('init', '--quiet');
     mkdirSync(join(cwd, '.agent/test_ledger'), { recursive: true });
-    writeFileSync(join(cwd, '.agent/test_ledger/OPEN_ISSUES_V3.md'),
+    writeFileSync(join(cwd, ACTIVE_LEDGER),
       finding(1, 'Large literal ledger') + 'Historical evidence.\n'.repeat(60_000));
-    git('add', '.agent/test_ledger/OPEN_ISSUES_V3.md');
+    git('add', ACTIVE_LEDGER);
     git('-c', 'user.name=Ledger Test', '-c', 'user.email=ledger@example.invalid', 'commit', '--quiet', '-m', 'Literal ledger input');
     const script = fileURLToPath(new URL('./validate-issue-ledger.mjs', import.meta.url));
     for (const args of [['HEAD'], ['HEAD', '--staged']]) {

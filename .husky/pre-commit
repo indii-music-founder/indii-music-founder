@@ -73,7 +73,7 @@ node scripts/check-test-quality.js || {
   exit 1
 }
 
-if git diff --cached --name-only | grep -Fxq '.agent/test_ledger/OPEN_ISSUES_V3.md'; then
+if git diff --cached --name-only | grep -Eq '^.agent/test_ledger/(OPEN_ISSUES_V[0-9]+\.md|archive/.*)$'; then
   echo "  3️⃣ d Checking issue ledger integrity..."
   node scripts/validate-issue-ledger.mjs HEAD --staged
 fi

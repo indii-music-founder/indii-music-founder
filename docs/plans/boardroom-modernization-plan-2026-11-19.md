@@ -1,9 +1,9 @@
 # Boardroom Modernization Plan (living, agent-neutral) — 2026-11-19
 
 > For Claude, Gemini, Codex, Droid, Jules, Antigravity. Read `CLAUDE.md` / `AGENTS.md` first.
-> **Ledger:** findings below become `ISSUE-1624+` in `.agent/test_ledger/OPEN_ISSUES_V4.md` (V4 is being created; until it exists, log to `OPEN_ISSUES_V3.md`).
+> **Ledger:** findings below become `ISSUE-1624+` in `.agent/test_ledger/OPEN_ISSUES_V4.md` (V4 is active; V3 is sealed).
 > **Claimed by:** _(agent + date per phase; edit this line before starting a phase)_
-> **Section 5 — Current State:** Phase 0 done (synced to `origin/main`). Phase 1 (V4 ledger migration + tooling) NOT started; only this plan and agent pointers are committed. Audits (UI + orchestration) complete, read-only, unverified at runtime. No Boardroom code changed.
+> **Section 5 — Current State:** Phase 0 done. Phase 1 done 2026-11-19: V3 sealed to archive, `OPEN_ISSUES_V4.md` created (107 migrated + ISSUE-1624..1686 from the U/O items), ledger scripts, CI, hook and agent docs repointed. Phases 2-7 NOT started; no Boardroom code changed. Audit findings are read-only, not runtime-verified.
 > Source plan text follows; ignore references to "this session" or session-branch tooling.
 
 # Plan: Boardroom modernization, OPEN_ISSUES_V4, and a plan shared with all agents

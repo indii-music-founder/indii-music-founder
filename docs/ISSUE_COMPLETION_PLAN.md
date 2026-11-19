@@ -2,7 +2,7 @@
 
 ## Contract and current baseline
 
-Execute against `.agent/test_ledger/OPEN_ISSUES_V3.md`; V2 and the root
+Execute against `.agent/test_ledger/OPEN_ISSUES_V4.md`; V2 and the root
 `OPEN_ISSUES.md` are historical. The October 29 reconciliation preserved the
 50 October 28 findings, ISSUE-1553–1602. The November 2 baseline also includes
 later numbered production findings through ISSUE-1623. Imported allegations

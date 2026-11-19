@@ -89,7 +89,7 @@ checks immediately afterwards:
 ## Active Founder Launch Station Tasks (October 2026)
 
 The historical launch station groups below are not a current engineering or
-release-acceptance verdict. Use the [active V3 ledger](../.agent/test_ledger/OPEN_ISSUES_V3.md)
+release-acceptance verdict. Use the [active V3 ledger](../.agent/test_ledger/OPEN_ISSUES_V4.md)
 for pending work and the owner table above for authorization boundaries. The
 [launch operations dossier](launch/FOUNDER_LAUNCH_OPERATIONS_DOSSIER.md) contains
 historical scripts, OAuth settings and clip storyboards; reconcile them with

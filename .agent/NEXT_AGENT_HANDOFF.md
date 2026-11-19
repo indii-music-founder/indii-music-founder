@@ -1,6 +1,6 @@
 # NEXT AGENT — FULL SESSION HANDOFF (2026-08-20, ~13:30 UTC)
 
-You are taking over the **indii-music-founder** repo. This document tells you exactly what the previous agent did, what is proven live, what remains, where to look, and what to be careful about. **Read `.agent/HANDOFF_STATE.md` and `.agent/test_ledger/OPEN_ISSUES_V3.md` first** — they carry the same history in the repo. Also read `CLAUDE.md`, `.agent/workflows/branch-safety.md` (direct-to-main is mandatory), and `.agent/REAL_USER_AUTHENTICITY.md` before any code, push, or live testing.
+You are taking over the **indii-music-founder** repo. This document tells you exactly what the previous agent did, what is proven live, what remains, where to look, and what to be careful about. **Read `.agent/HANDOFF_STATE.md` and `.agent/test_ledger/OPEN_ISSUES_V4.md` first** — they carry the same history in the repo. Also read `CLAUDE.md`, `.agent/workflows/branch-safety.md` (direct-to-main is mandatory), and `.agent/REAL_USER_AUTHENTICITY.md` before any code, push, or live testing.
 
 ---
 
@@ -99,7 +99,7 @@ Recent commit history (newest first):
 8. **Pre-commit gates are slow** (~60s+); pushes can time out — verify with `git rev-list --left-right --count origin/main...HEAD` after pushing, and re-push if 0/1.
 9. **Commit message rule:** conventional commits (`fix(scope): ...`). Multi-line bodies with em-dashes broke the husky parser once — keep it simple.
 
-**Ledger:** append to `.agent/test_ledger/OPEN_ISSUES_V3.md` only with verified facts. `.agent/HANDOFF_STATE.md` is the running handoff (currently dirty, uncommitted by design).
+**Ledger:** append to `.agent/test_ledger/OPEN_ISSUES_V4.md` only with verified facts. `.agent/HANDOFF_STATE.md` is the running handoff (currently dirty, uncommitted by design).
 
 ---
 

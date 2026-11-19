@@ -9,7 +9,7 @@ resolve ambiguity by reading the build plan and this repo's own conventions.
 
 ## 0. ORIENT (every run)
 - Read `docs/EVOLAS_BUILD_PLAN.md` in full.
-- Read `.agent/test_ledger/OPEN_ISSUES_V3.md` for any ISSUE-NNN entries
+- Read `.agent/test_ledger/OPEN_ISSUES_V4.md` for any ISSUE-NNN entries
   already tagged Evolas/persona (search `persona`, `fader`, `Evolas`).
 - Confirm test/lint/typecheck commands from `package.json` before assuming
   command names.
@@ -71,11 +71,11 @@ test/lint output.
 - If the sub-item surfaces a design gap not covered by the build plan
   (e.g. a fader axis that doesn't compile cleanly to language, a cache
   break-even that doesn't hold at expected volume), log it as a new
-  `ISSUE-NNN` entry in `.agent/test_ledger/OPEN_ISSUES_V3.md`, tagged
+  `ISSUE-NNN` entry in `.agent/test_ledger/OPEN_ISSUES_V4.md`, tagged
   `[Evolas]` in the title, and note it in `docs/EVOLAS_BUILD_PLAN.md` under
   the relevant phase if it changes the plan itself.
 - Do not create new standalone summary/notes files. Only
-  `OPEN_ISSUES_V3.md`, `EVOLAS_BUILD_PLAN.md` (plan changes only, not status
+  `OPEN_ISSUES_V4.md`, `EVOLAS_BUILD_PLAN.md` (plan changes only, not status
   logs), and code files change.
 
 ## 7. OUTPUT

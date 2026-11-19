@@ -21,7 +21,7 @@ Use `/sweep` to find outdated agent context before it sends an agent on a side q
 Per `CLAUDE.md` §7 asset-deletion fail-safe: anything under `.agent/skills/`, `.agent/workflows/`, `execution/`, or prefixed `indii-` is mission critical. If it looks outdated, put it under Conflicts as the question "What is `<asset>` used for?". Also never sweep:
 
 - `.agents/skills/` (vendored, read-only; changes go through the installer and `skills-lock.json`);
-- `.agent/test_ledger/OPEN_ISSUES_V3.md`, `.agent/skills/error_memory/ERROR_LEDGER.md`, `docs/audits/`, and existing `archive/` or `.agent/test_ledger/archive/` content. These are dated history by design;
+- `.agent/test_ledger/OPEN_ISSUES_V3.md`, `.agent/test_ledger/OPEN_ISSUES_V4.md`, `.agent/skills/error_memory/ERROR_LEDGER.md`, `docs/audits/`, and existing `archive/` or `.agent/test_ledger/archive/` content. These are dated history by design;
 - defensive regression comments whose `git log -S` reason has not been read.
 
 ## 1. Inventory
@@ -59,7 +59,7 @@ Use TypeSafe JEV where meaning, not a string, decides: does this note's describe
 
 Before reporting, run a separate verification pass (a fresh subagent if available, otherwise a clean re-check). Pass it only the specific claims and `path:line` references. Do **not** pass your hypothesis or any JEV score or verdict, so it cannot be steered toward agreement. Any rule, memory note, or spec that directly contradicts the code (renamed route, dropped sign-in method) is a **Conflict**, not automatically stale.
 
-Report in chat only. Do not create a report file or append to a ledger (`CLAUDE.md` §8 forbids standalone issue files; log a real defect in `.agent/test_ledger/OPEN_ISSUES_V3.md` only when the user asks).
+Report in chat only. Do not create a report file or append to a ledger (`CLAUDE.md` §8 forbids standalone issue files; log a real defect in `.agent/test_ledger/OPEN_ISSUES_V4.md` only when the user asks).
 
 ```text
 VERIFIED STALE: <path:line — evidence (code state + git log/blame result)>
