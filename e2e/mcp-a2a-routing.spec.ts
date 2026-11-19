@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
+import { answerJudgeQuestions } from './fixtures/judgeOverrides';
 
 test.describe('A2A Routing to MCP Tools', () => {
     test.beforeEach(async ({ authedPage: page }) => {
@@ -22,7 +23,10 @@ test.describe('A2A Routing to MCP Tools', () => {
         // Intercept the /mcpEndpoint/sse and /mcpEndpoint/message calls to simulate the Cloud Run MCP server
         await page.route('**/mcpEndpoint/sse', async (route) => {
             // Simulate SSE handshake
-            const sseResponse = `event: endpoint\ndata: /indii-music-founder/us-central1/mcpEndpoint/message\n\n`;
+            // The message endpoint must sit under the configured gateway (assertMcpTransportDestination),
+            // whose path includes the Firebase project id — derive it from the actual /sse request.
+            const ssePath = new URL(route.request().url()).pathname;
+            const sseResponse = `event: endpoint\ndata: ${ssePath.replace(/\/sse$/, '/message')}\n\n`;
             await route.fulfill({
                 status: 200,
                 contentType: 'text/event-stream',
@@ -62,6 +66,9 @@ test.describe('A2A Routing to MCP Tools', () => {
         });
 
         // Send a message specifically targeting the new MCP tool with arguments that match its schema
+        // This request asks the Boardroom to act on a Publicist tool: the real judge
+        // classifies it as an action and routes it to the Publicist.
+        await answerJudgeQuestions(page, { intent: 'action', specialist: 'publicist' });
         await page.fill('[data-testid="main-prompt-input"]', 'Generate a playlist pitch for releaseId "track-123" targeting the "RapCaviar" playlist with an aggressive angle.');
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 

@@ -44,7 +44,7 @@ import { isCapabilityQuestion } from './capabilityTruth';
 import { PRINT_TOOL_DECLARATIONS } from './definitions/PrintToolDeclarations';
 import { isFounderUserProfile } from './builders/AgentPromptBuilder';
 import {
-    validateBoardroomSteps, stepsFromBoardroomGraph, receiptForBoardroomStep, isBoardroomCapabilityOnly,
+    validateBoardroomSteps, stepsFromBoardroomGraph, boardroomAddressedAgents, withAddressedBoardroomSteps, receiptForBoardroomStep, isBoardroomCapabilityOnly,
     readyBoardroomSteps, formatBoardroomReceipt, boardroomDependencyField, boardroomRequestedSourceId,
     type BoardroomActionStep, type BoardroomStepReceipt,
 } from './orchestration/BoardroomActionPlan';
@@ -1290,7 +1290,7 @@ export class AgentService {
                 : route.type === 'parallel' && route.subtasks
                     ? route.subtasks.map((subtask, index) => ({ id: `step-${index}`, agentId: subtask.agentId, task: subtask.subtask, dependencies: [] }))
                     : [{ id: 'step-0', agentId: route.agentId || 'generalist', task: task.rawUserUtterance, dependencies: [] }];
-            steps.push(...routedSteps);
+            steps.push(...withAddressedBoardroomSteps(routedSteps, boardroomAddressedAgents(task.rawUserUtterance), task.rawUserUtterance));
         }
         validateBoardroomSteps(steps);
         signal?.throwIfAborted();

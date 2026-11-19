@@ -148,7 +148,44 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                 } catch (_e) { /* ignore parse errors for system instruction extraction */ }
                 const sysLower = systemInstruction.toLowerCase();
 
-                // 2. Identify the calling agent to isolate specialist responses from generalist seating
+                // 2. Routing fallbacks. Boardroom action turns are judged by TypeSafe
+                // (answers recorded from live Jev in fixtures/boardroomJudgments.json); when a
+                // judgment is below threshold the orchestrator asks the fast model instead
+                // (AgentOrchestrator: complexity prompt, fan-out, specialist router). Answer
+                // those as the scenario's model would.
+                const routingJson = (value: unknown) => { parts = [{ text: JSON.stringify(value) }]; };
+                const complexityQuery = /Analyze this request for complexity: "([^"]*)"/.exec(systemInstruction)?.[1];
+                const routedQuery = /USER REQUEST: "([^"]*)"/.exec(systemInstruction)?.[1];
+                const isFanOutPrompt = sysLower.includes('independent subtasks');
+                const isRollout = (q: string) => /rollout materials|schedule drafts/i.test(q);
+                if (complexityQuery !== undefined) {
+                    routingJson({ type: isRollout(complexityQuery) ? 'PARALLEL' : 'SIMPLE', reasoning: 'Scenario routing.' });
+                } else if (routedQuery !== undefined && isFanOutPrompt) {
+                    routingJson(isRollout(routedQuery)
+                        ? [
+                            { agentId: 'marketing', subtask: 'Draft the rollout EPK materials.' },
+                            { agentId: 'social', subtask: 'Schedule the announcement flyer drafts.' },
+                        ]
+                        : /generate the art|plan detroit advance/i.test(routedQuery)
+                            ? [
+                                { agentId: 'creative', subtask: 'Generate the album art.' },
+                                { agentId: 'road', subtask: 'Plan the Detroit advance.' },
+                            ]
+                            : [{ agentId: 'generalist', subtask: routedQuery }]);
+                } else if (routedQuery !== undefined) {
+                    // Roster changes (seat/unseat) belong to the Conductor.
+                    routingJson({ targetAgentId: 'generalist', ragCorpus: 'general', confidence: 0.9, reasoning: 'Scenario routing.' });
+                }
+                if (parts.length > 0) {
+                    await route.fulfill({
+                        status: 200,
+                        headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Content-Type': 'text/event-stream' },
+                        body: aiStreamBody({ candidates: [{ content: { role: 'model', parts }, finishReason: 'STOP' }] }),
+                    });
+                    return;
+                }
+
+                // 3. Identify the calling agent to isolate specialist responses from generalist seating
                 const firstLines = sysLower.split('\n').slice(0, 3).join('\n');
                 console.log(`[E2E:DEBUG] First lines of instructions: "${firstLines.replace(/\n/g, ' | ')}"`);
 
@@ -174,7 +211,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                         { text: "[Social Media Dept.]: Draft announcement flyer scheduled for Instagram & Twitter rollout." }
                     ];
                 } else {
-                    // 3. Main strategic workflow for the Generalist Conductor.
+                    // 4. Main strategic workflow for the Generalist Conductor.
                     // A Boardroom agent gets two steps (server BOARDROOM_MAX_ITERATIONS_PER_AGENT = 2)
                     // and tools are withheld on the final one, so the Conductor requests a turn's
                     // roster changes together (parallel function calls) and then summarizes.
