@@ -99,10 +99,14 @@ vi.mock('../config/secrets', () => ({
   printfulApiKey: {},
 }));
 
-vi.mock('@indii/shared', () => ({
-  buildConversionEventId: (parts: { platform: string; eventType: string; sourceId: string }) =>
-    `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
-}));
+vi.mock('@indii/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@indii/shared')>();
+  return {
+    ...actual,
+    buildConversionEventId: (parts: { platform: string; eventType: string; sourceId: string }) =>
+      `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
+  };
+});
 
 vi.mock('../marketing/conversionEventOutbox', () => ({
   enqueueConversionEvent: vi.fn(),
