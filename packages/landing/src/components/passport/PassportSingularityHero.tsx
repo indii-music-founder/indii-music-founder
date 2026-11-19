@@ -277,9 +277,9 @@ export default function PassportSingularityHero({
             <span>Entry Point</span>
             <span className="text-white/40">03</span>
           </div>
-          <div className="mt-1.5 text-sm font-bold text-white">100% Human Music</div>
+          <div className="mt-1.5 text-sm font-bold text-white">100% Human-Made Music</div>
           <p className="mt-1 text-xs leading-relaxed text-[#9AA1B2]">
-            Zero AI filler. Built for sovereign artists owning masters.
+            No AI-generated tracks get in. Built for artists who own their masters.
           </p>
         </div>
       </div>

@@ -351,6 +351,7 @@ export default function ArtistPassportPage() {
                     <button
                       key={stage.id}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setAnswers((prev) => ({ ...prev, careerStage: stage.id }))}
                       className={`text-left p-5 rounded-xl border transition-all ${
                         selected
@@ -399,6 +400,7 @@ export default function ArtistPassportPage() {
                     <button
                       key={g.id}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setAnswers((prev) => ({ ...prev, genre: g.id }))}
                       className={`text-left px-4 py-3.5 rounded-xl border transition-all flex items-center justify-between ${
                         selected
@@ -471,6 +473,7 @@ export default function ArtistPassportPage() {
                       <button
                         key={pro.id}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => setAnswers((prev) => ({ ...prev, proAffiliation: pro.id }))}
                         className={`text-left px-4 py-3 rounded-xl border text-sm transition-all flex items-center justify-between ${
                           selected
@@ -507,6 +510,7 @@ export default function ArtistPassportPage() {
                       <button
                         key={mlc.id}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => setAnswers((prev) => ({ ...prev, mlcRegistered: mlc.id }))}
                         className={`text-left px-4 py-3 rounded-xl border text-sm transition-all flex items-center justify-between ${
                           selected
@@ -557,6 +561,7 @@ export default function ArtistPassportPage() {
                       <button
                         key={dist.id}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => setAnswers((prev) => ({ ...prev, distributor: dist.id }))}
                         className={`text-left px-4 py-3 rounded-xl border text-sm transition-all flex items-center justify-between ${
                           selected
@@ -584,6 +589,7 @@ export default function ArtistPassportPage() {
                       <button
                         key={rel.id}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => setAnswers((prev) => ({ ...prev, releaseStatus: rel.id }))}
                         className={`text-left px-4 py-3 rounded-xl border text-sm transition-all flex items-center justify-between ${
                           selected
@@ -634,6 +640,7 @@ export default function ArtistPassportPage() {
                     <button
                       key={goal.id}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => handleGoalToggle(goal.id)}
                       className={`text-left px-4 py-3.5 rounded-xl border transition-all flex items-center justify-between ${
                         selected
