@@ -1,9 +1,13 @@
 import { aiStreamBody } from './aiStream';
 import boardroomJudgments from './boardroomJudgments.json' with { type: 'json' };
 
-function recordedBoardroomIntent(query: string): { choice: string; confidence: number } | null {
-  const intents = boardroomJudgments.intents as Record<string, { choice: string; confidence: number }>;
-  return intents[query.trim()] ?? null;
+type RecordedJudgment = { choice: string; confidence: number };
+type RecordedQuestion = 'intent' | 'complexity' | 'specialist' | 'corpus';
+/** Live Jev answer recorded by scripts/record-boardroom-judgments.mjs for this exact prompt. */
+function recordedBoardroomJudgment(query: unknown, question: RecordedQuestion): RecordedJudgment | null {
+  if (typeof query !== 'string') return null;
+  const judgments = boardroomJudgments.judgments as Record<string, Partial<Record<RecordedQuestion, RecordedJudgment>>>;
+  return judgments[query.trim()]?.[question] ?? null;
 }
 import { test as base, Page, Route, Request } from "@playwright/test";
 
@@ -408,14 +412,17 @@ export async function setupE2EPage(page: Page): Promise<void> {
         const state = (postData?.data?.state || postData?.state || {}) as { query?: unknown };
         const answers: Record<string, unknown> = {};
         for (const [key] of Object.entries(questions)) {
-          if (key === 'intent') {
-            // Answer the way the real judge did for this exact prompt (recorded from live
-            // TypeSafe by scripts/record-boardroom-judgments.mjs); unknown prompts stay
-            // `discussion`, which keeps the Boardroom read-only.
-            const recorded = typeof state.query === 'string' ? recordedBoardroomIntent(state.query) : null;
-            answers[key] = recorded
-              ? { type: 'choice', choice: recorded.choice, confidence: recorded.confidence }
-              : { type: 'choice', choice: 'discussion', confidence: 0.95 };
+          // Boardroom spec prompts are answered the way the real judge answered them
+          // (recorded from live TypeSafe by scripts/record-boardroom-judgments.mjs),
+          // including low-confidence answers the app must fall back from. Unknown
+          // prompts keep the defaults: `discussion` keeps the Boardroom read-only.
+          const recorded = key === 'intent' || key === 'complexity' || key === 'specialist' || key === 'corpus'
+            ? recordedBoardroomJudgment(state.query, key)
+            : null;
+          if (recorded) {
+            answers[key] = { type: 'choice', choice: recorded.choice, confidence: recorded.confidence };
+          } else if (key === 'intent') {
+            answers[key] = { type: 'choice', choice: 'discussion', confidence: 0.95 };
           } else if (key === 'complexity') {
             answers[key] = { choice: 'simple', confidence: 0.95 };
           } else {
