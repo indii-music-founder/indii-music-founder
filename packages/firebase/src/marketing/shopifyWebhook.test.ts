@@ -56,9 +56,13 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 // buildConversionEventId from shared
-vi.mock('@indii/shared', () => ({
-  buildConversionEventId: (parts: any) => `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
-}));
+vi.mock('@indii/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@indii/shared')>();
+  return {
+    ...actual,
+    buildConversionEventId: (parts: any) => `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
+  };
+});
 
 // Secret config
 vi.mock('../config/secrets', () => ({

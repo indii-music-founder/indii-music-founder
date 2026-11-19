@@ -31,9 +31,13 @@ vi.mock('firebase-functions/v2', () => ({
 }));
 
 // buildConversionEventId from shared
-vi.mock('@indii/shared', () => ({
-  buildConversionEventId: (parts: any) => `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
-}));
+vi.mock('@indii/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@indii/shared')>();
+  return {
+    ...actual,
+    buildConversionEventId: (parts: any) => `${parts.platform}:${parts.eventType}:${parts.sourceId}`,
+  };
+});
 
 import { emitSaleConversion } from './webhookHandler';
 
