@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { HttpsError } from "firebase-functions/v2/https";
+import { GENERATION_RATE_LIMIT } from "@indii/shared";
 
 interface RateLimitConfig {
     maxRequests: number;    // Max requests in window
@@ -79,7 +80,8 @@ export const RATE_LIMITS = {
     // surfaced as "Boardroom is temporarily at capacity" — the founder's image
     // request never completed. 30/min still bounds spend while letting a
     // normal swarm conversation proceed.
-    generation: { maxRequests: 30, windowMs: 60_000 },
+    // Shared with the studio client, which paces its own calls from it.
+    generation: { maxRequests: GENERATION_RATE_LIMIT.maxRequests, windowMs: GENERATION_RATE_LIMIT.windowMs },
     /** Standard API calls - 60 req/min */
     standard: { maxRequests: 60, windowMs: 60_000 },
     /** Auth/sensitive operations - 5 req/min */

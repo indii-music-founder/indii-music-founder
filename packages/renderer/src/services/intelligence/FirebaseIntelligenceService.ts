@@ -36,6 +36,7 @@ import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { logger } from '@/utils/logger';
 import { RateLimiter } from './RateLimiter';
+import { BOARDROOM_MAX_EXECUTED_AGENTS, GENERATION_RATE_LIMIT } from '@indii/shared';
 import { secureRandomInt } from '@/utils/crypto-random';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { estimateAgentStreamCost } from './billing/estimateAgentStreamCost';
@@ -200,6 +201,12 @@ export type { ChatMessage } from './types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
+/** Client generation pacing; see the rateLimiter field below. Exported for parity tests. */
+export const CLIENT_GENERATION_PACING = {
+    burst: BOARDROOM_MAX_EXECUTED_AGENTS,
+    ratePerMinute: GENERATION_RATE_LIMIT.maxRequests - BOARDROOM_MAX_EXECUTED_AGENTS,
+} as const;
+
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
@@ -216,9 +223,15 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     // File Service (Gemini API 2GB limit)
     public fileService = GeminiFileService.getInstance();
 
-    // Match the strict backend generation window so a nine-seat Boardroom turn
-    // is paced locally instead of self-throttling the shared gateway.
-    public rateLimiter: RateLimiter = new RateLimiter(10, 1);
+    // Client admission pacing derived from the server's generation limit
+    // (GENERATION_RATE_LIMIT: 30 requests per sliding 60s per endpoint).
+    // A full Boardroom wave (up to BOARDROOM_MAX_EXECUTED_AGENTS) starts at
+    // once; the refill rate is the remainder, so burst + rate x window never
+    // exceeds the server limit (9 + 21 = 30) and cannot trip "at capacity".
+    public rateLimiter: RateLimiter = new RateLimiter(
+        CLIENT_GENERATION_PACING.ratePerMinute,
+        CLIENT_GENERATION_PACING.burst,
+    );
 
     // Circuit Breakers
     public contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION!);
