@@ -274,6 +274,15 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                     parts = [{ text: responseText }];
                     console.log(`[E2E:MockAI] Spoke Agent response simulated for Executing ID "${executingAgentId}". Text length: ${responseText.length}`);
                 } else {
+                    // A Boardroom agent gets two steps (server BOARDROOM_MAX_ITERATIONS_PER_AGENT = 2)
+                    // and tools are withheld on the final one, so the Conductor requests a turn's
+                    // roster changes together (parallel function calls), then summarizes.
+                    const rosterToolStepDone = /\[Tool Call: (?:un)?seat_agent\(/.test(postData);
+                    const rosterTurn = (calls: Array<{ name: string; agent: string }>, opening: string, summary: string) => {
+                        parts = rosterToolStepDone
+                            ? [{ text: summary }]
+                            : [{ text: opening }, ...calls.map(({ name, agent }) => ({ functionCall: { name, args: { targetAgentId: agent } } }))];
+                    };
                     if (actualRequest.includes('done for today') || actualRequest.includes('Clear the table') || actualRequest.includes('clear the table')) {
                         if (normalized.includes('unseat_agent') && normalized.includes('targetagentid')) {
                             // Extract all target agent IDs being unseated in this request history
@@ -305,64 +314,28 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                         }
                     } else if (actualRequest.includes('artistic vibe') || actualRequest.includes('Brand and Music') || actualRequest.includes('align on')) {
                         // Turn 8: Seating Brand and Music
-                        const hasSeatedBrand = postData.includes('seated the brand agent');
-                        const hasSeatedMusic = postData.includes('seated the music agent');
 
-                        if (!hasSeatedBrand) {
-                            parts = [
-                                { text: "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'brand' } } }
-                            ];
-                        } else if (!hasSeatedMusic) {
-                            parts = [
-                                { text: "Brand is seated. Summoning Music Director next." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'music' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights. [Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks." }
-                            ];
-                        }
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'brand' }, { name: 'seat_agent', agent: 'music' }],
+                            "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.",
+                            "[Brand Agent]: I recommend a sleek, dark-mode visual theme with vibrant accent highlights. [Music Director]: Pinned to the 'Neon Phantom' vibe. We'll use custom synth bass hooks.",
+                        );
                     } else if (actualRequest.includes('social copy') || actualRequest.includes('Social and Publicist') || actualRequest.includes('press release')) {
                         // Turn 7: Seating Social and Publicist
-                        const hasSeatedSocial = postData.includes('seated the social agent');
-                        const hasSeatedPublicist = postData.includes('seated the publicist agent');
 
-                        if (!hasSeatedSocial) {
-                            parts = [
-                                { text: "[Executor]: Summoning Social and Publicist agents to outline copy and press releases." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'social' } } }
-                            ];
-                        } else if (!hasSeatedPublicist) {
-                            parts = [
-                                { text: "Social is seated. Summoning Publicist agent." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'publicist' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags. [Publicist Agent]: Press release draft is finalized for standard distribution outlets." }
-                            ];
-                        }
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'social' }, { name: 'seat_agent', agent: 'publicist' }],
+                            "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.",
+                            "[Social Agent]: I have drafted 3 Instagram caption templates with trending music hashtags. [Publicist Agent]: Press release draft is finalized for standard distribution outlets.",
+                        );
                     } else if (actualRequest.includes('marketing visual') || actualRequest.includes('Creative and Video') || actualRequest.includes('visual for this campaign')) {
                         // Turn 6: Seating Creative and Video
-                        const hasSeatedCreative = postData.includes('seated the creative agent');
-                        const hasSeatedVideo = postData.includes('seated the video agent');
 
-                        if (!hasSeatedCreative) {
-                            parts = [
-                                { text: "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'creative' } } }
-                            ];
-                        } else if (!hasSeatedVideo) {
-                            parts = [
-                                { text: "Creative is seated. Summoning Video agent next." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'video' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds. [Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic." }
-                            ];
-                        }
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'creative' }, { name: 'seat_agent', agent: 'video' }],
+                            "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.",
+                            "[Creative Director]: The design mockup utilizes neon glassmorphism backgrounds. [Video Agent]: Generating a 5-second dynamic teaser matching the aesthetic.",
+                        );
                     } else if (actualRequest.includes('split sheet') || actualRequest.includes('templates are we using')) {
                         // Turn 5: Ask Legal about licensing templates and split sheet agreements
                         parts = [
@@ -370,24 +343,12 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                         ];
                     } else if (actualRequest.includes('good to go') || actualRequest.includes('excused') || actualRequest.includes('thank you')) {
                         // Turn 4: Unseating Marketing and Finance
-                        const hasUnseatedMarketing = hasUnseated('marketing');
-                        const hasUnseatedFinance = hasUnseated('finance');
 
-                        if (!hasUnseatedMarketing) {
-                            parts = [
-                                { text: "[Executor]: Marketing and Finance, thank you for the budget details. You are excused." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'marketing' } } }
-                            ];
-                        } else if (!hasUnseatedFinance) {
-                            parts = [
-                                { text: "Marketing unseated. Excusing Finance." },
-                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'finance' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "Marketing and Finance have successfully left the Boardroom table." }
-                            ];
-                        }
+                        rosterTurn(
+                            [{ name: 'unseat_agent', agent: 'marketing' }, { name: 'unseat_agent', agent: 'finance' }],
+                            "[Executor]: Marketing and Finance, thank you for the budget details. You are excused.",
+                            "Marketing and Finance have successfully left the Boardroom table.",
+                        );
                     } else if (actualRequest.includes('check the agreements') || actualRequest.includes('Legal') || actualRequest.includes('legal')) {
                         // Turn 3: Summoning Legal
                         const hasSeatedLegal = postData.includes('seated the legal agent');
@@ -414,21 +375,11 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                         const hasSeatedFinance = postData.includes('seated the finance agent');
                         console.log(`[E2E:MockAI] Turn 1 Evaluated Seated States: hasSeatedMarketing=${hasSeatedMarketing}, hasSeatedFinance=${hasSeatedFinance}`);
 
-                        if (!hasSeatedMarketing) {
-                            parts = [
-                                { text: "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }
-                            ];
-                        } else if (!hasSeatedFinance) {
-                            parts = [
-                                { text: "Marketing is seated. Now seating Finance." },
-                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'finance' } } }
-                            ];
-                        } else {
-                            parts = [
-                                { text: "Marketing and Finance are both seated at the table. Ready to discuss the campaign budget!" }
-                            ];
-                        }
+                        rosterTurn(
+                            [{ name: 'seat_agent', agent: 'marketing' }, { name: 'seat_agent', agent: 'finance' }],
+                            "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.",
+                            "Marketing and Finance are both seated at the table. Ready to discuss the campaign budget!",
+                        );
                     }
                 }
 
@@ -444,7 +395,9 @@ test.describe('Boardroom Structural Multi-Turn Scenario', () => {
                     ]
                 };
 
-                const isSSE = route.request().url().includes('streamGenerateContent');
+                // The studio's agent endpoint is `generateContentStream` (Cloud Functions);
+                // Google's is `streamGenerateContent`. Both must end with the settlement marker.
+                const isSSE = /streamGenerateContent|generateContentStream/.test(route.request().url());
 
                 if (isSSE) {
                     await route.fulfill({
