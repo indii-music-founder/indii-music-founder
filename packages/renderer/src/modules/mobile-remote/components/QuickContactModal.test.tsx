@@ -8,8 +8,38 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import QuickContactModal from './QuickContactModal';
 
+const mockToast = vi.hoisted(() => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+}));
+
+const mockUploadFile = vi.hoisted(() => vi.fn());
+const mockCreateEncounter = vi.hoisted(() => vi.fn());
+const mockSaveManualContact = vi.hoisted(() => vi.fn());
+const mockDispatchTask = vi.hoisted(() => vi.fn());
+
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }),
+    useToast: () => mockToast,
+}));
+
+vi.mock('@/services/StorageService', () => ({
+    StorageService: {
+        uploadFile: mockUploadFile,
+    },
+}));
+
+vi.mock('@/services/encounters/EncounterService', () => ({
+    EncounterService: {
+        createEncounter: mockCreateEncounter,
+        saveManualContact: mockSaveManualContact,
+    },
+}));
+
+vi.mock('@/services/agent/RemoteRelayService', () => ({
+    remoteRelayService: {
+        dispatchTask: mockDispatchTask,
+    },
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -119,5 +149,165 @@ describe('QuickContactModal Component', () => {
             expect(ImageGeneration.generateImages).toHaveBeenCalled();
             expect(screen.getByText('Avatar Ready')).toBeDefined();
         });
+    });
+
+    it('reverts playback state, surfaces an error toast when audio.play() rejects, and recreates Audio after Redo', async () => {
+        const stopTrack = vi.fn();
+        const stream = { getTracks: () => [{ stop: stopTrack }] };
+        Object.defineProperty(navigator, 'mediaDevices', {
+            configurable: true,
+            value: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+        });
+
+        let blobCounter = 0;
+        const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation(() => `blob:take-${++blobCounter}`);
+        const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+        class MockRecorder {
+            static isTypeSupported = () => true;
+            state: 'inactive' | 'recording' = 'inactive';
+            mimeType = 'audio/webm';
+            ondataavailable: ((event: { data: Blob }) => void) | null = null;
+            onstop: (() => void) | null = null;
+            start() { this.state = 'recording'; }
+            stop() {
+                this.state = 'inactive';
+                this.ondataavailable?.({ data: new Blob(['audio-bytes'], { type: 'audio/webm' }) });
+                this.onstop?.();
+            }
+        }
+        vi.stubGlobal('MediaRecorder', MockRecorder);
+
+        const createdAudioUrls: string[] = [];
+        const audioInstances: Array<{ src: string; play: ReturnType<typeof vi.fn>; pause: ReturnType<typeof vi.fn>; onended: (() => void) | null; onerror: (() => void) | null }> = [];
+        class MockAudio {
+            src: string;
+            onended: (() => void) | null = null;
+            onerror: (() => void) | null = null;
+            pause = vi.fn();
+            play: ReturnType<typeof vi.fn>;
+            constructor(src: string) {
+                this.src = src;
+                createdAudioUrls.push(src);
+                this.play = vi.fn(() =>
+                    createdAudioUrls.length === 1
+                        ? Promise.reject(new DOMException('NotAllowedError'))
+                        : Promise.resolve(undefined)
+                );
+                audioInstances.push(this);
+            }
+        }
+        vi.stubGlobal('Audio', MockAudio);
+
+        try {
+            render(<QuickContactModal isOpen={true} onClose={vi.fn()} />);
+
+            // Record take 1
+            fireEvent.click(screen.getByRole('button', { name: /Tap to Speak/i }));
+            await waitFor(() => expect(screen.getByText('Listening...')).toBeDefined());
+            fireEvent.click(screen.getByRole('button', { name: /0:00/i }));
+            await waitFor(() => expect(screen.getByText('Audio Recorded')).toBeDefined());
+
+            // Click Play — first Audio.play() rejects
+            const playBtn = screen.getByRole('button', { name: /Play recording/i });
+            fireEvent.click(playBtn);
+            await waitFor(() => {
+                expect(mockToast.error).toHaveBeenCalledWith('Unable to play recording. Please try again.');
+            });
+            expect(screen.getByRole('button', { name: /Play recording/i })).toBeDefined();
+
+            // Click Redo to record take 2
+            fireEvent.click(screen.getByRole('button', { name: /Redo/i }));
+            await waitFor(() => expect(screen.getByText('Listening...')).toBeDefined());
+            fireEvent.click(screen.getByRole('button', { name: /0:00/i }));
+            await waitFor(() => expect(screen.getByText('Audio Recorded')).toBeDefined());
+
+            // Play take 2 — must construct a fresh Audio instance for blob:take-2, not reuse revoked blob:take-1
+            fireEvent.click(screen.getByRole('button', { name: /Play recording/i }));
+            await waitFor(() => {
+                expect(createdAudioUrls).toEqual(['blob:take-1', 'blob:take-2']);
+                expect(audioInstances[0]!.pause).toHaveBeenCalled();
+                expect(revokeObjectURL).toHaveBeenCalledWith('blob:take-1');
+            });
+            expect(createObjectURL).toHaveBeenCalledTimes(2);
+        } finally {
+            vi.unstubAllGlobals();
+            createObjectURL.mockRestore();
+            revokeObjectURL.mockRestore();
+        }
+    });
+
+    it('guards voice submit against rapid double-click and does not call onClose/onSaved after unmount', async () => {
+        const stopTrack = vi.fn();
+        Object.defineProperty(navigator, 'mediaDevices', {
+            configurable: true,
+            value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: stopTrack }] }) },
+        });
+        const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:voice-1');
+        const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+
+        class MockRecorder {
+            static isTypeSupported = () => true;
+            state: 'inactive' | 'recording' = 'inactive';
+            mimeType = 'audio/webm';
+            ondataavailable: ((event: { data: Blob }) => void) | null = null;
+            onstop: (() => void) | null = null;
+            start() { this.state = 'recording'; }
+            stop() {
+                this.state = 'inactive';
+                this.ondataavailable?.({ data: new Blob(['voice-bytes'], { type: 'audio/webm' }) });
+                this.onstop?.();
+            }
+        }
+        vi.stubGlobal('MediaRecorder', MockRecorder);
+
+        let resolveUpload!: (url: string) => void;
+        mockUploadFile.mockImplementation(() => new Promise<string>((resolve) => {
+            resolveUpload = resolve;
+        }));
+        mockCreateEncounter.mockResolvedValue({ id: 'enc-1' });
+        mockDispatchTask.mockResolvedValue(undefined);
+
+        const onClose = vi.fn();
+        const onSaved = vi.fn();
+
+        try {
+            const view = render(<QuickContactModal isOpen={true} onClose={onClose} onSaved={onSaved} />);
+
+            // Record audio
+            fireEvent.click(screen.getByRole('button', { name: /Tap to Speak/i }));
+            await waitFor(() => expect(screen.getByText('Listening...')).toBeDefined());
+            fireEvent.click(screen.getByRole('button', { name: /0:00/i }));
+            await waitFor(() => expect(screen.getByText('Audio Recorded')).toBeDefined());
+
+            // Double-click save synchronously before state settles
+            const saveBtn = screen.getByRole('button', { name: /Save & Extract Contact/i });
+            fireEvent.click(saveBtn);
+            fireEvent.click(saveBtn);
+
+            expect(mockUploadFile).toHaveBeenCalledTimes(1);
+            // Close button must be disabled while saving
+            expect(screen.getByRole('button', { name: 'Close contact modal' })).toBeDisabled();
+
+            // Unmount while upload is still pending
+            view.unmount();
+            resolveUpload('https://storage.test/voice.webm');
+            await new Promise((r) => setTimeout(r, 20));
+
+            expect(onClose).not.toHaveBeenCalled();
+            expect(onSaved).not.toHaveBeenCalled();
+        } finally {
+            vi.unstubAllGlobals();
+            createObjectURL.mockRestore();
+            revokeObjectURL.mockRestore();
+        }
+    });
+
+    it('dismisses on backdrop click when idle', () => {
+        const onClose = vi.fn();
+        render(<QuickContactModal isOpen={true} onClose={onClose} />);
+
+        fireEvent.click(screen.getByRole('dialog'));
+        expect(onClose).toHaveBeenCalledTimes(1);
     });
 });

@@ -37,6 +37,7 @@ interface CameraViewfinderModalProps {
 export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto, onVideo, onFallback }: CameraViewfinderModalProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const isMountedRef = useRef(true);
     const cameraGenerationRef = useRef(0);
     const recorderRef = useRef<MediaRecorder | null>(null);
     const discardRecordingRef = useRef(false);
@@ -55,15 +56,46 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
     const [audioLevel, setAudioLevel] = useState(0);
     const [horizon, setHorizon] = useState<number | null>(null);
 
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
     const stopCamera = useCallback(() => {
         cameraGenerationRef.current += 1;
         discardRecordingRef.current = true;
-        if (recorderRef.current?.state === 'recording') {
-            recorderRef.current.stop();
+        const activeRecorder = recorderRef.current;
+        if (activeRecorder) {
+            activeRecorder.ondataavailable = null;
+            activeRecorder.onerror = null;
+            activeRecorder.onstop = null;
+            if (activeRecorder.state === 'recording') {
+                activeRecorder.stop();
+            }
+            recorderRef.current = null;
         }
         streamRef.current?.getTracks().forEach(track => track.stop());
         streamRef.current = null;
         if (videoRef.current) videoRef.current.srcObject = null;
+    }, []);
+
+    const retryPreviewPlay = useCallback(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const generation = cameraGenerationRef.current;
+        void Promise.resolve(video.play())
+            .then(() => {
+                if (isMountedRef.current && generation === cameraGenerationRef.current) {
+                    setError(current => current === 'Tap the preview to start the camera.' ? null : current);
+                }
+            })
+            .catch(() => {
+                if (isMountedRef.current && generation === cameraGenerationRef.current) {
+                    setError('Tap the preview to start the camera.');
+                }
+            });
     }, []);
 
     useEffect(() => {
@@ -142,7 +174,22 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
             return;
         }
         const orientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> };
-        if (orientation.requestPermission) void orientation.requestPermission().catch(() => setError('Motion sensor permission was denied.'));
+        if (orientation.requestPermission) {
+            void Promise.resolve(orientation.requestPermission())
+                .then((result) => {
+                    if (!isMountedRef.current) return;
+                    if (result !== 'granted') {
+                        setError('Motion sensor permission was denied.');
+                    } else {
+                        setError(current => current === 'Motion sensor permission was denied.' ? null : current);
+                    }
+                })
+                .catch(() => {
+                    if (isMountedRef.current) {
+                        setError('Motion sensor permission was denied.');
+                    }
+                });
+        }
     };
 
     useEffect(() => {
@@ -170,11 +217,14 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
     const applyControl = async (constraint: Record<string, number | boolean>, onSuccess: () => void) => {
         const track = streamRef.current?.getVideoTracks()[0];
         if (!track) return;
+        const generation = cameraGenerationRef.current;
         try {
             await track.applyConstraints({ advanced: [constraint] } as MediaTrackConstraints);
+            if (!isMountedRef.current || generation !== cameraGenerationRef.current) return;
             onSuccess();
             setError(null);
         } catch {
+            if (!isMountedRef.current || generation !== cameraGenerationRef.current) return;
             setError('This camera could not apply that hardware setting.');
         }
     };
@@ -196,7 +246,7 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
         }
         context.drawImage(video, crop.sx, crop.sy, crop.width, crop.height, 0, 0, crop.width, crop.height);
         const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-        if (generation !== cameraGenerationRef.current) return;
+        if (!isMountedRef.current || generation !== cameraGenerationRef.current) return;
         if (!blob) {
             setError('Photo capture failed. Please retry.');
             setIsCapturing(false);
@@ -232,9 +282,20 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
         discardRecordingRef.current = false;
         recorderRef.current = recorder;
         recorder.ondataavailable = event => { if (event.data.size > 0) chunks.push(event.data); };
-        recorder.onerror = () => setError('Video recording failed. Please retry.');
+        recorder.onerror = () => {
+            if (discardRecordingRef.current || !isMountedRef.current) return;
+            if (recorderRef.current === recorder) {
+                recorderRef.current = null;
+            }
+            setIsRecording(false);
+            setIsFinalizingRecording(false);
+            setError('Video recording failed. Please retry.');
+        };
         recorder.onstop = () => {
-            if (discardRecordingRef.current) return;
+            if (discardRecordingRef.current || !isMountedRef.current) return;
+            if (recorderRef.current === recorder) {
+                recorderRef.current = null;
+            }
             setIsRecording(false);
             setIsFinalizingRecording(false);
             const type = recorder.mimeType || mimeType || 'video/webm';
@@ -271,7 +332,7 @@ export default function CameraViewfinderModal({ mode = 'photo', onClose, onPhoto
                 }}><FlipHorizontal className="h-6 w-6" /></button>
             </div>
             <div className="relative min-h-0 flex-1 overflow-hidden bg-stone-950">
-                <video ref={videoRef} playsInline autoPlay muted onClick={() => void videoRef.current?.play()} className="h-full w-full object-cover" style={{ transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
+                <video ref={videoRef} playsInline autoPlay muted onClick={retryPreviewPlay} className="h-full w-full object-cover" style={{ transform: facing === 'user' ? 'scaleX(-1)' : undefined }} />
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <div className="relative max-h-full max-w-full border border-white/60" style={{ aspectRatio: ratio.replace(':', '/'), height: ratio === '16:9' ? '50%' : '90%' }}>
                         {grid && <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">{Array.from({ length: 9 }, (_, index) => <span key={index} className="border border-white/25" />)}</div>}

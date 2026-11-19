@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { User, Phone, Mail, Building, FileText, Camera, Check, X, Loader2, Mic, Play, Pause, RotateCcw, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { EncounterService } from '@/services/encounters/EncounterService';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { useToast } from '@/core/context/ToastContext';
@@ -59,6 +59,8 @@ function audioExtensionForMimeType(mimeType: string): string {
 
 export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickContactModalProps) {
     const toast = useToast();
+    const prefersReducedMotion = useReducedMotion();
+    const isMountedRef = useRef(true);
     const [mode, setMode] = useState<'voice' | 'manual'>('voice');
 
     // Voice recording state
@@ -74,6 +76,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     const streamRef = useRef<MediaStream | null>(null);
     const timerRef = useRef<number | null>(null);
     const audioElementRef = useRef<HTMLAudioElement | null>(null);
+    const audioElementSrcRef = useRef<string | null>(null);
 
     // Photo/Avatar state
     const [cardPhoto, setCardPhoto] = useState<File | null>(null);
@@ -87,7 +90,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Manual form state (fallback for loud environments)
-    const manualSavingRef = useRef(false);
+    const savingRef = useRef(false);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
@@ -96,6 +99,23 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     const [notes, setNotes] = useState('');
 
     const [isSaving, setIsSaving] = useState(false);
+
+    const resetAudioElement = useCallback(() => {
+        if (audioElementRef.current) {
+            audioElementRef.current.onended = null;
+            audioElementRef.current.onerror = null;
+            audioElementRef.current.pause();
+            audioElementRef.current = null;
+        }
+        audioElementSrcRef.current = null;
+    }, []);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     // Cleanup URLs & streams on close/unmount
     const cleanupMedia = useCallback(() => {
@@ -117,10 +137,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             window.clearInterval(timerRef.current);
             timerRef.current = null;
         }
-        if (audioElementRef.current) {
-            audioElementRef.current.pause();
-            audioElementRef.current = null;
-        }
+        resetAudioElement();
         if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
         if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current);
         audioUrlRef.current = null;
@@ -134,7 +151,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         setIsRecording(false);
         setRecordingDuration(0);
         setIsPlayingAudio(false);
-    }, []);
+    }, [resetAudioElement]);
 
     useEffect(() => {
         if (!isOpen) cleanupMedia();
@@ -176,6 +193,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
         triggerHaptic(50);
         (document.activeElement as HTMLElement)?.blur();
 
+        resetAudioElement();
         if (audioUrlRef.current) {
             URL.revokeObjectURL(audioUrlRef.current);
             audioUrlRef.current = null;
@@ -220,6 +238,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 const effectiveMimeType = recorder.mimeType || mimeType || 'audio/webm';
                 const audioBlob = new Blob(chunks, { type: effectiveMimeType });
                 setCapturedAudioBlob(audioBlob);
+                resetAudioElement();
                 const nextUrl = URL.createObjectURL(audioBlob);
                 if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
                 audioUrlRef.current = nextUrl;
@@ -273,13 +292,31 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
             audioElementRef.current?.pause();
             setIsPlayingAudio(false);
         } else {
-            if (!audioElementRef.current) {
-                audioElementRef.current = new Audio(audioUrl);
-                audioElementRef.current.onended = () => setIsPlayingAudio(false);
-                audioElementRef.current.onerror = () => setIsPlayingAudio(false);
+            if (!audioElementRef.current || audioElementSrcRef.current !== audioUrl) {
+                resetAudioElement();
+                const nextAudio = new Audio(audioUrl);
+                nextAudio.onended = () => {
+                    if (audioElementRef.current === nextAudio && isMountedRef.current) {
+                        setIsPlayingAudio(false);
+                    }
+                };
+                nextAudio.onerror = () => {
+                    if (audioElementRef.current === nextAudio && isMountedRef.current) {
+                        setIsPlayingAudio(false);
+                        toast.error('Unable to play recording. Please try again.');
+                    }
+                };
+                audioElementRef.current = nextAudio;
+                audioElementSrcRef.current = audioUrl;
             }
-            audioElementRef.current.play();
+            const activeAudio = audioElementRef.current;
             setIsPlayingAudio(true);
+            void Promise.resolve(activeAudio.play()).catch(() => {
+                if (audioElementRef.current === activeAudio && isMountedRef.current) {
+                    setIsPlayingAudio(false);
+                    toast.error('Unable to play recording. Please try again.');
+                }
+            });
         }
     };
 
@@ -385,11 +422,14 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
     // ── Submit Handlers ───────────────────────────────────────────────────────
 
     const handleVoiceSubmit = async () => {
+        if (isSaving || savingRef.current) return;
         if (!capturedAudioBlob) {
             toast.error('Please record contact information first.');
             return;
         }
 
+        const submitSession = mediaSessionRef.current;
+        savingRef.current = true;
         setIsSaving(true);
         triggerHaptic([40, 80]);
 
@@ -436,26 +476,31 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
             triggerHaptic([50, 100, 50]);
             toast.success('Voice contact saved — parsing into Contacts!');
+            if (!isMountedRef.current || submitSession !== mediaSessionRef.current) return;
             handleClose();
             onSaved?.();
         } catch (error) {
             triggerHaptic([100, 150]);
             toast.error(error instanceof Error ? error.message : 'Failed to save voice contact.');
         } finally {
-            setIsSaving(false);
+            savingRef.current = false;
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
     };
 
     const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isSaving || manualSavingRef.current) return;
+        if (isSaving || savingRef.current) return;
         const trimmedName = name.trim();
         if (!trimmedName) {
             toast.error('Contact name is required.');
             return;
         }
 
-        manualSavingRef.current = true;
+        const submitSession = mediaSessionRef.current;
+        savingRef.current = true;
         setIsSaving(true);
         triggerHaptic([40, 80]);
 
@@ -469,14 +514,17 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
 
             triggerHaptic([50, 100, 50]);
             toast.success(`Saved contact: ${trimmedName}`);
+            if (!isMountedRef.current || submitSession !== mediaSessionRef.current) return;
             handleClose();
             onSaved?.();
         } catch (error) {
             triggerHaptic([100, 150]);
             toast.error(error instanceof Error ? error.message : 'Failed to save contact.');
         } finally {
-            manualSavingRef.current = false;
-            setIsSaving(false);
+            savingRef.current = false;
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -495,6 +543,11 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 aria-modal="true"
                 aria-labelledby="quick-contact-modal-title"
                 className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md"
+                onClick={(e) => {
+                    if (e.target === e.currentTarget && !isSaving) {
+                        handleClose();
+                    }
+                }}
                 onPointerDown={(e) => {
                     if ((e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
                         (document.activeElement as HTMLElement)?.blur();
@@ -502,10 +555,10 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                 }}
             >
                 <motion.div
-                    initial={{ y: '100%', opacity: 0 }}
+                    initial={prefersReducedMotion ? false : { y: '100%', opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: '100%', opacity: 0 }}
-                    transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+                    exit={prefersReducedMotion ? undefined : { y: '100%', opacity: 0 }}
+                    transition={prefersReducedMotion ? undefined : { type: 'spring', damping: 26, stiffness: 280 }}
                     className="w-full max-w-md bg-[#16120e] border border-white/10 rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh]"
                     style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
                 >
@@ -560,8 +613,9 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                             <button
                                 type="button"
                                 aria-label="Close contact modal"
+                                disabled={isSaving}
                                 onClick={handleClose}
-                                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
+                                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff66]"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -579,8 +633,8 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                     {isRecording && (
                                         <motion.div
                                             className="absolute -inset-4 rounded-full border-2 border-red-500/40"
-                                            animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0.2, 0.6] }}
-                                            transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                                            animate={prefersReducedMotion ? undefined : { scale: [1, 1.25, 1], opacity: [0.6, 0.2, 0.6] }}
+                                            transition={prefersReducedMotion ? undefined : { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
                                         />
                                     )}
 
@@ -628,6 +682,7 @@ export default function QuickContactModal({ isOpen, onClose, onSaved }: QuickCon
                                     <div className="flex items-center gap-2.5">
                                         <button
                                             type="button"
+                                            aria-label={isPlayingAudio ? 'Pause recording' : 'Play recording'}
                                             onClick={togglePlayAudio}
                                             className="w-9 h-9 rounded-xl bg-[#00ff66] text-[#061806] flex items-center justify-center cursor-pointer hover:bg-[#36D96F] transition-colors"
                                         >
