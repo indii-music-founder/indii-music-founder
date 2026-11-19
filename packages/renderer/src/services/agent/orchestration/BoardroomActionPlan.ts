@@ -1,5 +1,5 @@
 import type { AgentGraph, AgentResponse, ToolFunctionResult } from '../types';
-import { isHead } from '../departments';
+import { DEPARTMENTS, isHead } from '../departments';
 import { isCapabilityQuestion } from '../capabilityTruth';
 
 /** Exact IDs win; the longest unique label avoids confusing a variant with its parent. */
@@ -24,6 +24,58 @@ export function boardroomRequestedSourceId(query: string, sources: ReadonlyArray
 export function isBoardroomCapabilityOnly(query: string): boolean {
     return isCapabilityQuestion(query) &&
         !/^\s*(?:can|could)\s+(?:you|indii)\s+(?:generate|create|make|render)\b/i.test(query);
+}
+
+/** Role words people append to a department name when addressing it ("Creative Director"). */
+const ADDRESS_ROLE_SUFFIX = /\s+(?:director|manager|agent|department|dept\.?|team|lead|head|specialist)$/;
+
+/**
+ * Department heads the user addresses by name at the start of a request
+ * ("Creative and Video, let's …" → ['creative', 'video']). Only a leading
+ * address list counts — comma/colon-separated segments made solely of
+ * department names — so domain words in the body ("a marketing visual") never do.
+ */
+export function boardroomAddressedAgents(query: string): string[] {
+    const byName = new Map<string, string>();
+    for (const dept of Object.values(DEPARTMENTS)) {
+        byName.set(dept.headId.toLowerCase(), dept.headId);
+        byName.set(dept.displayName.toLowerCase(), dept.headId);
+    }
+    const resolve = (raw: string) => {
+        const name = raw.trim().toLowerCase();
+        return byName.get(name) ?? byName.get(name.replace(ADDRESS_ROLE_SUFFIX, ''));
+    };
+    // Segments before the request body: "Creative Director, Road & Finance: go."
+    const segments = query.normalize('NFKC').slice(0, 240).split(/[,:]/);
+    const addressed: string[] = [];
+    for (const segment of segments.slice(0, -1)) {
+        const names = segment.split(/\s*(?:&|\band\b)\s*/i).filter(name => name.trim());
+        const agentIds = names.map(resolve);
+        if (!names.length || agentIds.some(id => !id)) break;
+        for (const agentId of agentIds as string[]) if (!addressed.includes(agentId)) addressed.push(agentId);
+    }
+    return addressed;
+}
+
+/**
+ * When routing already handed the request to specialists, a specialist the user
+ * addressed by name must not be silently left out: append a step for each one
+ * (within the step budget). Conductor-routed plans are left alone — roster
+ * changes ("Marketing, you're excused") belong to the Conductor.
+ */
+export function withAddressedBoardroomSteps(steps: BoardroomActionStep[], addressed: readonly string[], task: string, maxSteps = 6): BoardroomActionStep[] {
+    if (!addressed.length || steps.some(step => step.agentId === 'generalist')) return steps;
+    const merged = [...steps];
+    const ids = new Set(merged.map(step => step.id));
+    for (const agentId of addressed) {
+        if (merged.length >= maxSteps) break;
+        if (merged.some(step => step.agentId === agentId)) continue;
+        let id = `addressed-${agentId}`;
+        for (let n = 2; ids.has(id); n++) id = `addressed-${agentId}-${n}`;
+        ids.add(id);
+        merged.push({ id, agentId, task, dependencies: [] });
+    }
+    return merged;
 }
 
 export interface BoardroomActionStep {

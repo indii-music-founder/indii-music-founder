@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
+import { validateBoardroomSteps, boardroomAddressedAgents, withAddressedBoardroomSteps, readyBoardroomSteps, receiptForBoardroomStep, formatBoardroomReceipt, isBoardroomCapabilityOnly, boardroomDependencyField, completedBoardroomToolResult, type BoardroomActionStep } from './BoardroomActionPlan';
 
 // Pure scheduling and receipt interpretation; no accounts, provider mocks,
 // persisted product data, or claims that a real customer action succeeded.
@@ -17,6 +17,27 @@ describe('Boardroom action ownership and evidence (structural only)', () => {
             expect(completedBoardroomToolResult('prepare_print_file', args, [{ name: 'prepare_print_file', args, result: incomplete }])).toBeNull();
         }
         expect(completedBoardroomToolResult('prepare_print_file', args, [])).toBeNull();
+    });
+    it('reads only a leading address list of department names', () => {
+        expect(boardroomAddressedAgents("Creative and Video, let's generate a marketing visual for this campaign.")).toEqual(['creative', 'video']);
+        expect(boardroomAddressedAgents("Social and Publicist, let's outline the social copy.")).toEqual(['social', 'publicist']);
+        expect(boardroomAddressedAgents('Creative Director, Road Manager & Finance: go.')).toEqual(['creative', 'road', 'finance']);
+        expect(boardroomAddressedAgents('Legal, what templates are we using?')).toEqual(['legal']);
+        // Domain words in the body, non-agent addressees and no address list do not count.
+        expect(boardroomAddressedAgents("Let's generate a marketing visual, then a video.")).toEqual([]);
+        expect(boardroomAddressedAgents('Thank you team, we are done for today.')).toEqual([]);
+        expect(boardroomAddressedAgents('Marketing and my manager, sync up.')).toEqual([]);
+        expect(boardroomAddressedAgents('Generate rollout materials and schedule drafts')).toEqual([]);
+    });
+    it('adds addressed specialists the router left out, but never rewrites Conductor-routed plans', () => {
+        const routed: BoardroomActionStep[] = [{ id: 'step-0', agentId: 'creative', task: 'Make a visual', dependencies: [] }];
+        expect(withAddressedBoardroomSteps(routed, ['creative', 'video'], 'Make a visual').map(step => step.agentId)).toEqual(['creative', 'video']);
+        expect(withAddressedBoardroomSteps(routed, ['creative'], 'Make a visual')).toEqual(routed);
+        const conductor: BoardroomActionStep[] = [{ id: 'step-0', agentId: 'generalist', task: "Marketing, you're excused", dependencies: [] }];
+        expect(withAddressedBoardroomSteps(conductor, ['marketing'], "Marketing, you're excused")).toEqual(conductor);
+        const merged = withAddressedBoardroomSteps(routed, ['video', 'social', 'music', 'brand', 'legal', 'finance'], 'Go');
+        expect(merged).toHaveLength(6);
+        expect(() => validateBoardroomSteps(merged)).not.toThrow();
     });
     it('keeps polite creation requests on the intent-routing path', () => {
         expect(isBoardroomCapabilityOnly('Can you make an image?')).toBe(false);
