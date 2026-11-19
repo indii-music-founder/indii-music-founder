@@ -14,16 +14,18 @@ describe('claimMilestone', () => {
         expect(window.localStorage.getItem('indii:milestone:first-track-analyzed:u1')).toBeTruthy();
     });
 
-    // Spy on Storage.prototype, not the instance: jsdom's Storage maps property
-    // definitions on the instance to named storage items, so an instance spy
-    // silently stores a "getItem" key and the real method never throws.
     it('never celebrates when storage is unavailable', () => {
-        const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        // Spy on the prototype: jsdom's Storage is a named-property object, so an
+        // instance-level spy can be stored as an item instead of intercepting calls.
+        const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
         try {
             expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
-            expect(spy).toHaveBeenCalled();
+            // Guard against a no-op spy: the blocked path must actually be exercised.
+            expect(getItem).toHaveBeenCalled();
         } finally {
-            spy.mockRestore();
+            getItem.mockRestore();
+            setItem.mockRestore();
         }
     });
 
