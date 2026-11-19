@@ -116,3 +116,7 @@ collapse, focus and exit controls accessible and clear about their effect.
 Read .entire/agent-guide.md for this repository's workflow, source inspection, and verification guidance.
 @.entire/agent-guide.md
 <!-- entire-agent:end -->
+
+## Boardroom Modernization (living plan)
+
+See `docs/plans/boardroom-modernization-plan-2026-11-19.md` for agent-neutral work cards and `.agent/test_ledger/OPEN_ISSUES_V4.md` (once created) for tracking. Update its Current State section before ending any session that touches Boardroom.
