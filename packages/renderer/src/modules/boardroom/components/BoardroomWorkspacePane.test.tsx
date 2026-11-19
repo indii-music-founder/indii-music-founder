@@ -31,7 +31,10 @@ vi.mock('@/config/typesafeJudgments', () => ({
 const mockStoreState: Record<string, any> = {};
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector: (state: Record<string, unknown>) => unknown) => selector(mockStoreState),
+    useStore: Object.assign(
+        (selector: (state: Record<string, unknown>) => unknown) => selector(mockStoreState),
+        { getState: () => mockStoreState },
+    ),
 }));
 
 vi.mock('zustand/react/shallow', () => ({
@@ -132,5 +135,39 @@ describe('BoardroomWorkspacePane', () => {
         mockStoreState.isCommandMenuOpen = true;
         view.rerender(<BoardroomWorkspacePane hasOverlayOpen={false} />);
         expect(screen.getByTestId('mock-browser-view')).toHaveAttribute('data-visible', 'false');
+    });
+    it('does not call the paid workspace judge per streamed token, only once the reply settles', async () => {
+        vi.useFakeTimers();
+        try {
+            mockStoreState.agentHistory = [
+                { id: 'u1', role: 'user', text: 'Plan the release rollout' },
+                { id: 'm1', role: 'model', text: 'Draft', isStreaming: true },
+            ];
+            const view = render(<BoardroomWorkspacePane />);
+
+            for (let i = 0; i < 25; i++) {
+                mockStoreState.agentHistory = [
+                    mockStoreState.agentHistory[0],
+                    { id: 'm1', role: 'model', text: `Draft token ${i}`, isStreaming: true },
+                ];
+                view.rerender(<BoardroomWorkspacePane />);
+                await vi.advanceTimersByTimeAsync(50);
+            }
+            await vi.advanceTimersByTimeAsync(5_000);
+            expect(mockJudgeRecommendation).not.toHaveBeenCalled();
+
+            mockStoreState.agentHistory = [
+                mockStoreState.agentHistory[0],
+                { id: 'm1', role: 'model', text: 'Final answer', isStreaming: false },
+            ];
+            view.rerender(<BoardroomWorkspacePane />);
+            view.rerender(<BoardroomWorkspacePane />);
+            await vi.advanceTimersByTimeAsync(5_000);
+
+            expect(mockJudgeRecommendation).toHaveBeenCalledTimes(1);
+            expect(mockJudgeRecommendation).toHaveBeenCalledWith(mockStoreState.agentHistory);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

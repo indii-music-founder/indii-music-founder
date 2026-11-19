@@ -54,19 +54,48 @@ export function BoardroomAgentFeedView() {
 
     const handleEmergencyAbort = async () => {
         setIsAborting(true);
-        if (typeof window !== 'undefined' && window.electronAPI?.computer?.abort) {
+        // Always stop the in-flight agent run (ISSUE-1629). On the web this was a
+        // toast-only no-op even though the store holds the run's AbortController.
+        const { agentAbortController, stopAgent } = useStore.getState();
+        const hadRun = Boolean(agentAbortController);
+        stopAgent();
+
+        const computer = typeof window !== 'undefined' ? window.electronAPI?.computer : undefined;
+        if (computer?.abort) {
             try {
-                await window.electronAPI.computer.abort();
+                await computer.abort();
                 setKillSwitchActive(true);
                 toast.success('Emergency Kill Switch activated — all autonomous actions halted.');
             } catch {
-                toast.error('Failed to trigger kill switch.');
+                toast.error(hadRun
+                    ? 'Stopped the current agent run, but the desktop kill switch failed.'
+                    : 'Failed to trigger kill switch.');
             } finally {
                 setIsAborting(false);
             }
+            return;
+        }
+        setIsAborting(false);
+        if (hadRun) {
+            toast.success('Stopped the current agent run.');
         } else {
-            setIsAborting(false);
-            toast.info('Emergency abort triggered for current session.');
+            toast.info('No agent run is in progress.');
+        }
+    };
+
+    const handleResumeAutonomy = async () => {
+        const computer = typeof window !== 'undefined' ? window.electronAPI?.computer : undefined;
+        if (!computer?.resetAbort) return;
+        try {
+            const res = await computer.resetAbort();
+            if (res.success) {
+                setKillSwitchActive(Boolean(res.data?.aborted));
+                toast.success('Kill switch cleared. Autonomous actions can run again.');
+            } else {
+                toast.error(res.error || 'Could not clear the kill switch.');
+            }
+        } catch {
+            toast.error('Could not clear the kill switch.');
         }
     };
 
@@ -139,6 +168,17 @@ export function BoardroomAgentFeedView() {
                     <ShieldAlert size={15} />
                     <span>{killSwitchActive ? 'Kill Switch Active' : 'Emergency Abort'}</span>
                 </button>
+                {killSwitchActive && (
+                    <button
+                        type="button"
+                        onClick={() => void handleResumeAutonomy()}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-colors border shrink-0 bg-white/5 hover:bg-white/10 text-gray-200 border-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                        title="Clear the kill switch so autonomous actions can run again"
+                        data-testid="boardroom-resume-autonomy-btn"
+                    >
+                        Resume Autonomy
+                    </button>
+                )}
             </div>
 
             {/* Rights Copilot Quick Launch Gateways */}

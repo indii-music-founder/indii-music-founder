@@ -13,13 +13,12 @@ import {
     Library,
     Headphones,
     ChevronRight,
-    Headphones as MusicIcon,
     type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
-import { DEPARTMENTS, getDepartmentOf } from '@/services/agent/departments';
+import { DEPARTMENTS } from '@/services/agent/departments';
 
 export interface AgentOrbitalConfig {
     readonly id: string;
@@ -478,7 +477,7 @@ export default function ParticipantSelector() {
                                         )}
                                     </motion.div>
                                 </TooltipTrigger>
-                                <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide z-[100]">
+                                <TooltipContent side="top" className="bg-[#1a1a1a] text-white border border-white/10 px-3 py-2 font-medium tracking-wide">
                                     <p className="text-white text-xs">
                                         <span className="font-bold">{agent.fullName}</span>
                                         <span className="opacity-70 ml-1.5">

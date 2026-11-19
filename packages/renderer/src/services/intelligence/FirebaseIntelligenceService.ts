@@ -754,7 +754,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
             try {
                 await this.rateLimiter.acquire(300_000, internalSignal);
-                return this.contentBreaker.execute(async () => {
+                // Must await: returning the bare promise ran `finally` immediately, which
+                // cleared the timeout and detached the user's Stop listener (ISSUE-1654).
+                return await this.contentBreaker.execute(async () => {
                     return this.withRetry(async () => {
                         // Check if already aborted
                         if (internalSignal.aborted) {

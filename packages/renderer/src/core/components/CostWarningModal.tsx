@@ -4,6 +4,7 @@ import { AlertTriangle, DollarSign } from 'lucide-react';
 import { useStore } from '../store';
 import { Button } from '@/components/ui/button';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { Z_LAYER } from '@/core/zLayers';
 
 export default function CostWarningModal() {
     const pendingCostWarning = useStore((state) => state.pendingCostWarning);
@@ -35,7 +36,7 @@ export default function CostWarningModal() {
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="cost-warning-title"
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                className={`fixed inset-0 ${Z_LAYER.modal} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
             >
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}

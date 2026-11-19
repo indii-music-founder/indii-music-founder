@@ -363,6 +363,33 @@ describe('FirebaseIntelligenceService', () => {
         vi.useRealTimers();
     });
 
+    it('keeps the timeout and user Stop attached for the whole non-streaming request (ISSUE-1654)', async () => {
+        vi.useFakeTimers();
+        try {
+            const hungFetch: typeof fetch = (_url, init) => new Promise<Response>((_resolve, reject) => {
+                init?.signal?.addEventListener('abort', () => {
+                    reject(new DOMException('Aborted', 'AbortError'));
+                }, { once: true });
+            });
+            vi.mocked(fetch).mockImplementationOnce(hungFetch).mockImplementationOnce(hungFetch);
+
+            const timedOut = service.generateContent('Hung request', undefined, undefined, undefined, undefined, { timeout: 25 });
+            const timeoutAssertion = expect(timedOut).rejects.toThrow('AI Request timed out');
+            await vi.advanceTimersByTimeAsync(30);
+            await timeoutAssertion;
+
+            const stop = new AbortController();
+            const stopped = service.generateContent('Hung request 2', undefined, undefined, undefined, undefined, { timeout: 0, signal: stop.signal });
+            const stopAssertion = expect(stopped).rejects.toThrow(/cancelled/i);
+            await vi.advanceTimersByTimeAsync(10);
+            stop.abort();
+            await vi.advanceTimersByTimeAsync(10);
+            await stopAssertion;
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('surfaces a mid-body stream abort as a clean retryable NETWORK_ERROR, not undici internals (ISSUE-1359)', async () => {
         // A Response whose body stream dies mid-read with undici's raw error.
         const abortingBody = new ReadableStream<Uint8Array>({

@@ -49,6 +49,7 @@ import {
     type BoardroomActionStep, type BoardroomStepReceipt,
 } from './orchestration/BoardroomActionPlan';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
+import { isUserCancellation, errorText, USER_STOPPED_TEXT } from './flowFailure';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -571,14 +572,24 @@ export class AgentService {
                 const galleryCountAfter = store.getState().generatedHistory?.length || 0;
                 const newItemsGenerated = galleryCountAfter > galleryCountBefore;
 
-                const errorMessage = err instanceof Error ? err.message : String(err);
+                const errorMessage = errorText(err);
 
                 const { updateAgentMessage } = store.getState();
                 const updateMsg = (id: string, updates: Partial<AgentMessage>) => {
                     updateAgentMessage(id, updates);
                 };
 
-                if (errorMessage.includes('Timeout')) {
+                if (isUserCancellation(err, executionSignal)) {
+                    updateMsg(responseId, {
+                        text: USER_STOPPED_TEXT,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Stopped by user',
+                            timestamp: Date.now(),
+                            type: 'logic'
+                        }]
+                    });
+                } else if (errorMessage.includes('Timeout')) {
                     if (isBoardroomMode) {
                         // A shared gallery can change because another request or
                         // device generated an asset. Only this run's receipts
@@ -621,7 +632,7 @@ export class AgentService {
                     }
                 } else {
                     updateMsg(responseId, {
-                        text: `❌ **Error:** ${(err as Error).message || 'The request failed.'}`,
+                        text: `❌ **Error:** ${errorMessage || 'The request failed.'}`,
                         thoughts: [{
                             id: uuidv4(),
                             text: 'Execution failed',
@@ -1515,6 +1526,8 @@ export class AgentService {
         const CHUNK_SIZE = 3;
         try {
           for (let i = 0; i < activeAgents.length; i += CHUNK_SIZE) {
+            // Stop means stop: do not seat, message or trace any further chunk (ISSUE-1666).
+            if (signal?.aborted) break;
             const chunkAgents = activeAgents.slice(i, i + CHUNK_SIZE);
             const chunkPromises = chunkAgents.map(async (agentId, chunkIdx) => {
                 const index = i + chunkIdx;

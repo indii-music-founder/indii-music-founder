@@ -7,6 +7,7 @@ import { RouterCallContext } from './transport/A2ATransport';
 import { logger } from '@/utils/logger';
 import { MY_AGENT_ID } from './A2AConfig';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { waitForHandoffDecision, describeHandoffFailure } from './handoffApproval';
 
 /**
  * Thrown when the router cannot produce an encrypted response (e.g. the sender's
@@ -210,6 +211,7 @@ class A2ARouter {
 
     // Swarm Feed Integration (ISSUE-063)
     let approved = true;
+    let handoffFailure: string | null = null;
     try {
       const { useStore } = await importWithRetry(() => import('@/core/store'));
       const addA2AMessage = useStore.getState().addA2AMessage;
@@ -232,16 +234,12 @@ class A2ARouter {
         });
 
         if (requiresApproval) {
-          approved = false;
-          let checks = 0;
-          while (!approved && checks < 300 && accountGeneration === this.accountGeneration) { // 5-minute timeout window matching execution limits
-            await new Promise(r => setTimeout(r, 1000));
-            const msg = useStore.getState().a2aMessages.find(m => m.id === msgId);
-            if (msg?.approved) {
-              approved = true;
-            }
-            checks++;
-          }
+          const decision = await waitForHandoffDecision(
+            () => useStore.getState().a2aMessages.find(m => m.id === msgId),
+            { isCancelled: () => accountGeneration !== this.accountGeneration },
+          );
+          approved = decision === 'approved';
+          if (decision !== 'approved') handoffFailure = describeHandoffFailure(decision, sourceAgentId, targetAgentId);
         }
       }
     } catch (e) {
@@ -249,7 +247,7 @@ class A2ARouter {
     }
 
     if (!approved) {
-      throw new Error(`Task handoff from ${sourceAgentId} to ${targetAgentId} timed out or was rejected by user.`);
+      throw new Error(handoffFailure ?? `Task handoff from ${sourceAgentId} to ${targetAgentId} timed out or was rejected by user.`);
     }
 
     if (accountGeneration !== this.accountGeneration) {

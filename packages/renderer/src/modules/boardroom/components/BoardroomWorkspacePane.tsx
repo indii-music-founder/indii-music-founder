@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { AgentMessage } from '@/core/store/slices/agent';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -24,6 +25,16 @@ import {
     type BoardroomWorkspaceRecommendation,
 } from '@/config/typesafeJudgments';
 
+const WORKSPACE_JUDGE_SETTLE_MS = 750;
+
+/** Stable key for a settled conversation; null while empty or while any reply streams. */
+function getSettledHistoryKey(history: AgentMessage[] | undefined): string | null {
+    if (!history || history.length === 0) return null;
+    if (history.some(message => message.isStreaming)) return null;
+    const last = history[history.length - 1];
+    return `${history.length}:${last.id}:${last.text?.length ?? 0}`;
+}
+
 interface BoardroomWorkspacePaneProps {
     hasOverlayOpen?: boolean;
 }
@@ -35,7 +46,8 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
         boardroomWorkspaceTab,
         setBoardroomWorkspaceTab,
         setBoardroomPreviewModuleId,
-        agentHistory,
+        historyLength,
+        settledHistoryKey,
         activeAgents,
         toggleAgent,
         soloAgent,
@@ -47,7 +59,8 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
             boardroomWorkspaceTab: state.boardroomWorkspaceTab,
             setBoardroomWorkspaceTab: state.setBoardroomWorkspaceTab,
             setBoardroomPreviewModuleId: state.setBoardroomPreviewModuleId,
-            agentHistory: state.agentHistory || [],
+            historyLength: state.agentHistory?.length ?? 0,
+            settledHistoryKey: getSettledHistoryKey(state.agentHistory),
             activeAgents: state.activeAgents || [],
             toggleAgent: state.toggleAgent,
             soloAgent: state.soloAgent,
@@ -56,21 +69,26 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
     );
 
     const [rawJevRecommendation, setJevRecommendation] = useState<BoardroomWorkspaceRecommendation | null>(null);
-    const jevRecommendation = agentHistory.length > 0 ? rawJevRecommendation : null;
+    const jevRecommendation = historyLength > 0 ? rawJevRecommendation : null;
 
+    // The workspace judge is a paid backend call. Run it once per settled reply,
+    // never per streamed token (ISSUE-1624): the key is null while any message streams.
     useEffect(() => {
+        if (!settledHistoryKey) return undefined;
         let isMounted = true;
-        if (agentHistory.length > 0) {
-            void judgeBoardroomWorkspaceRecommendation(agentHistory)
+        const timer = setTimeout(() => {
+            const history = useStore.getState().agentHistory ?? [];
+            void judgeBoardroomWorkspaceRecommendation(history)
                 .then(rec => {
                     if (isMounted) setJevRecommendation(rec);
                 })
                 .catch(() => {});
-        }
+        }, WORKSPACE_JUDGE_SETTLE_MS);
         return () => {
             isMounted = false;
+            clearTimeout(timer);
         };
-    }, [agentHistory]);
+    }, [settledHistoryKey]);
 
     const tabs: { id: BoardroomWorkspaceTab; label: string; icon: React.ElementType }[] = [
         { id: 'browser', label: 'Live Browser', icon: Globe },

@@ -50,6 +50,7 @@ vi.mock('@/components/motion-primitives/text-effect', () => ({
 
 // ── Import Under Test ──────────────────────────────────────────────────────
 
+import { useStore } from '@/core/store';
 import {
     BOARDROOM_MESSAGE_BATCH_SIZE,
     BoardroomConversationPanel,
@@ -408,5 +409,24 @@ describe('BoardroomConversationPanel', () => {
             'download',
             'cover-art.png',
         );
+    });
+    it('never ends a live reply from the UI after a quiet tool call (ISSUE-1627)', async () => {
+        vi.useFakeTimers();
+        const originalUpdate = useStore.getState().updateAgentMessage;
+        const updateAgentMessage = vi.fn();
+        useStore.setState({ updateAgentMessage });
+        try {
+            const messages = [
+                { id: 'user-1', role: 'user' as const, text: 'Make a video', timestamp: Date.now() },
+                { id: 'agent-1', role: 'model' as const, text: 'Rendering...', timestamp: Date.now(), agentId: 'video', isStreaming: true },
+            ];
+            render(<BoardroomConversationPanel messages={messages} />);
+            // Video generation can sit silently far longer than 60s; the service owns the timeout.
+            await vi.advanceTimersByTimeAsync(5 * 60_000);
+            expect(updateAgentMessage).not.toHaveBeenCalled();
+        } finally {
+            useStore.setState({ updateAgentMessage: originalUpdate });
+            vi.useRealTimers();
+        }
     });
 });

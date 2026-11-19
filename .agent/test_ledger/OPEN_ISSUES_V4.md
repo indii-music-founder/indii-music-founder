@@ -3094,7 +3094,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1624: A paid typesafeJudge Cloud Function call fires for **every streamed token** [U1]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** workspace judge now runs once per settled reply (settled-history key + 750ms debounce); regression test BoardroomWorkspacePane.test.tsx (26 calls for 25 tokens before, 1 after). Unit and structural checks only; not verified against the live app.
 - **Severity:** CRITICAL
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U1 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3106,7 +3107,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1625: The Boardroom root is z-[99999] (BoardroomModule.tsx:125) [U2]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** shared z-index scale core/zLayers.ts; Boardroom, CostWarningModal and toasts moved onto it, seat tooltip override removed; core/zLayers.test.ts. Unit and structural checks only; not verified against the live app.
 - **Severity:** CRITICAL
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U2 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3130,7 +3132,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1627: The "stale stream" cleanup sets isStreaming:false and **persists** it after 60s with no tokens (BoardroomConve [U4]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** UI 60s stream timer removed; AgentService timeout and recoverInterruptedMessages own stream completion; regression test in BoardroomConversationPanel.test.tsx. Unit and structural checks only; not verified against the live app.
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U4 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3142,7 +3145,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1628: Rejecting an agent-to-agent handoff does nothing [U5]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** tri-state handoff decision (rejected flag + waitForHandoffDecision) so Request Revision ends the router wait; tests handoffApproval.test.ts, SwarmCollaborationFeed.test.tsx. Pending-approval badge and mobile entry point remain under ISSUE-1636. Unit and structural checks only; not verified against the live app.
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U5 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3154,7 +3158,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1629: "Emergency Abort" is a no-op on the web (BoardroomAgentFeedView.tsx:67-70), even though the store has agentAbo [U6]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** Emergency Abort now stops the in-flight run (stopAgent) on web and desktop; desktop adds Resume Autonomy via computer.resetAbort; BoardroomAgentFeedView.test.tsx. Unit and structural checks only; not verified against the live app.
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U6 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3454,7 +3459,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1654: Non-streaming generateContent never enforces its 120s timeout or Stop, and never voids its cost reservation [O1]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** generateContent now uses return await inside try/finally so timeout, Stop and reservation voiding stay attached; regression test in FirebaseIntelligenceService.test.ts. Unit and structural checks only; not verified against the live app.
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O1 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3598,7 +3604,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1666: Stop doesn't break the swarm chunk loop (AS:1517); startTrace runs before the abort check (AgentExecutor.ts:88 [O13]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** swarm chunk loop breaks when the run signal is aborted; regression test in AgentService.boardroom-capability-intent.test.ts. Unit and structural checks only; not verified against the live app.
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O13 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3610,7 +3617,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1667: Stop during intent/planning shows a false "request failed" because abort reason is a string (agentUISlice.ts:1 [O14]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed in the Phase 2 commit (2026-11-19); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** Stop is detected via isUserCancellation (run signal, AppException CANCELLED, AbortError) and shown as "Stopped by user"; flowFailure.test.ts. Unit and structural checks only; not verified against the live app.
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O14 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

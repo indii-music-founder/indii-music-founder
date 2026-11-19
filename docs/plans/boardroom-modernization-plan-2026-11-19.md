@@ -3,7 +3,7 @@
 > For Claude, Gemini, Codex, Droid, Jules, Antigravity. Read `CLAUDE.md` / `AGENTS.md` first.
 > **Ledger:** findings below become `ISSUE-1624+` in `.agent/test_ledger/OPEN_ISSUES_V4.md` (V4 is active; V3 is sealed).
 > **Claimed by:** _(agent + date per phase; edit this line before starting a phase)_
-> **Section 5 — Current State:** Phase 0 done. Phase 1 done 2026-11-19: V3 sealed to archive, `OPEN_ISSUES_V4.md` created (107 migrated + ISSUE-1624..1686 from the U/O items), ledger scripts, CI, hook and agent docs repointed. Phases 2-7 NOT started; no Boardroom code changed. Audit findings are read-only, not runtime-verified.
+> **Section 5 — Current State:** Phase 0 and Phase 1 done (V4 live, CI green on `84693f7`). Phase 2 code landed 2026-11-19 for U1/ISSUE-1624, U2/1625, U4/1627, U5/1628 (router + feed; badge/mobile still U14), U6/1629, O1/1654, O13/1666, O14/1667, all PARTIAL pending exact-SHA CI and live acceptance. Remaining Phase 2 candidates (O3 timeout overwrite, O4 15-min lease lock, O12 per-seat timeout abort) not started. Phases 3-7 not started. Next agent: claim Phase 2 remainder or Phase 3.
 > Source plan text follows; ignore references to "this session" or session-branch tooling.
 
 # Plan: Boardroom modernization, OPEN_ISSUES_V4, and a plan shared with all agents

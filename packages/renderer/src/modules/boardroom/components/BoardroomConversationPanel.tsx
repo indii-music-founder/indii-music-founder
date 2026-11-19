@@ -1,7 +1,6 @@
 import { useMobile } from '@/hooks/useMobile';
-import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useRef, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { logger } from '@/utils/logger';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { BoardroomAssetStrip } from './BoardroomAssetStrip';
 import { BoardroomStarterCards } from './BoardroomStarterCards';
@@ -185,23 +184,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
         shouldFollowRef.current = distanceFromBottom <= 80;
     }, []);
 
-    // Auto-cleanup stale streaming states if execution hangs or connection is lost (Issue-022)
-    useEffect(() => {
-        const hasStreaming = messages.some(m => m.isStreaming);
-        if (hasStreaming) {
-            const timeout = setTimeout(() => {
-                import('@/core/store').then(({ useStore }) => {
-                    const state = useStore.getState();
-                    messages.forEach(msg => {
-                        if (msg.isStreaming) {
-                            state.updateAgentMessage(msg.id, { isStreaming: false });
-                        }
-                    });
-                }).catch((err) => logger.error('Failed to load store for stale-stream cleanup:', err));
-            }, 60000); // Max Swarm execution timeout is 60s
-            return () => clearTimeout(timeout);
-        }
-    }, [messages]);
+    // No UI-side stream timeout (ISSUE-1627). AgentService owns the run timeout
+    // (300s, 600s for generation) and clears isStreaming in every branch; reloads are
+    // recovered by recoverInterruptedMessages in agentSessionSlice. A shorter UI timer
+    // used to mark live tool calls as finished and persist that false state.
 
     if (messages.length === 0) {
         return (

@@ -20,6 +20,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 import { BoardroomRightRail } from './components/BoardroomRightRail';
 import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
+import { Z_LAYER } from '@/core/zLayers';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -122,7 +123,7 @@ export function BoardroomModule() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed inset-0 z-[99999] bg-bg-dark flex flex-col"
+                className={cn("fixed inset-0 bg-bg-dark flex flex-col", Z_LAYER.boardroom)}
             >
                 {/* Single Unified 48px Header Row */}
                 <div

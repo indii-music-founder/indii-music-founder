@@ -908,6 +908,49 @@ describe('AgentService request-bound approval guidance', () => {
         expect(completeBoardroomLease).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222');
     });
 
+    it('stops seating further chunks once the user presses Stop (ISSUE-1666)', async () => {
+        callBoardroomPlan.mockResolvedValueOnce({
+            type: 'BOARDROOM_DISPATCH_PLAN',
+            code: 'BOARDROOM_DISPATCH_READY',
+            executedAgentIds: ['generalist', 'marketing', 'legal', 'finance'],
+            deferredAgentIds: [],
+            maxIterationsPerAgent: 2,
+            nextContinuationAgentId: null,
+            leaseId: '33333333-3333-4333-8333-333333333333',
+            leaseExpiresAtMs: Date.now() + 60_000,
+            sideEffectOwnerAgentId: 'generalist',
+        });
+        const controller = new AbortController();
+        const messages: Array<Record<string, unknown>> = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeAgents: ['generalist', 'marketing', 'legal', 'finance'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn((message: Record<string, unknown>) => {
+                messages.push(message);
+                // The user presses Stop while the first chunk of seats is starting.
+                if (String(message.text).includes('Reviewing previous discussion')) controller.abort('User requested stop');
+            }),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            handleBoardroomSwarmFlow: (task: {rawUserUtterance: string}, attachments: undefined, context: AgentContext,
+                responseId: string, signal?: AbortSignal) => Promise<void>;
+        }).handleBoardroomSwarmFlow({rawUserUtterance: 'Review this release.'}, undefined, {}, 'response-0', controller.signal);
+
+        expect(capturedExecutions.map(execution => execution.agentId)).not.toContain('finance');
+        expect(messages.some(message => message.agentId === 'finance')).toBe(false);
+        expect(completeBoardroomLease).toHaveBeenCalledWith('33333333-3333-4333-8333-333333333333');
+    });
+
     it('submits no specialist call when the typed server plan exhausts the turn budget', async () => {
         callBoardroomPlan.mockResolvedValueOnce({
             type: 'BOARDROOM_DISPATCH_PLAN',

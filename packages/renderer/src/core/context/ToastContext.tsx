@@ -4,6 +4,7 @@ import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
 import { events } from '../events';
 import { usePresentMode } from '../presentMode';
+import { Z_LAYER } from '@/core/zLayers';
 
 /** Alert data from system events */
 interface AlertData {
@@ -145,7 +146,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             {children}
             {/* Item 342: aria-live="assertive" for error toasts, "polite" for informational */}
             {/* Present mode keeps the live regions for screen readers but hides them visually. */}
-            <div className={`fixed bottom-24 right-4 left-4 md:left-auto z-[100] flex flex-col gap-2 pointer-events-none${presenting ? ' opacity-0 [&_*]:pointer-events-none' : ''}`}>
+            <div className={`fixed bottom-24 right-4 left-4 md:left-auto ${Z_LAYER.toast} flex flex-col gap-2 pointer-events-none${presenting ? ' opacity-0 [&_*]:pointer-events-none' : ''}`}>
                 <div role="status" aria-live="assertive" aria-label="Error notifications" className="flex flex-col gap-2 items-end pointer-events-auto">
                     <AnimatePresence>
                         {toasts.filter(t => t.type === 'error').map(toast => (

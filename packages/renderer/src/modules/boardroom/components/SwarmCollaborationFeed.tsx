@@ -20,13 +20,13 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
     );
 
     const handleApprove = (msgId: string) => {
-        updateA2AMessage(msgId, { approved: true });
+        updateA2AMessage(msgId, { approved: true, rejected: false });
         toast.success('Handoff approved! Swarm execution resuming.');
     };
 
     const handleReject = (msgId: string) => {
-        updateA2AMessage(msgId, { approved: false });
-        toast.info('Revision requested.');
+        updateA2AMessage(msgId, { approved: false, rejected: true });
+        toast.info('Revision requested. The handoff was stopped.');
     };
 
     return (
@@ -86,15 +86,21 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                                                     <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2.5 py-1 rounded-md border border-green-500/20">
                                                         ✓ Approved
                                                     </span>
+                                                ) : msg.rejected ? (
+                                                    <span className="text-xs font-bold text-red-300 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20">
+                                                        Revision requested
+                                                    </span>
                                                 ) : (
                                                     <>
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleApprove(msg.id)}
                                                             className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 hover:bg-green-500/30 px-3 py-1.5 rounded-lg border border-green-500/30 transition-all font-semibold"
                                                         >
                                                             <Check size={12} /> Approve Handoff
                                                         </button>
-                                                        <button 
+                                                        <button
+                                                            type="button"
                                                             onClick={() => handleReject(msg.id)}
                                                             className="flex items-center gap-1 text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg border border-red-500/30 transition-all font-semibold"
                                                         >

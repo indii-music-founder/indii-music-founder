@@ -42,6 +42,8 @@ export interface A2AMessage {
     timestamp: number;
     requiresApproval?: boolean;
     approved?: boolean;
+    /** User asked for a revision; ends the router's approval wait (ISSUE-1628). */
+    rejected?: boolean;
 }
 
 export interface BoardroomSlice {
