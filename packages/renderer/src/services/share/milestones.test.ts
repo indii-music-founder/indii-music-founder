@@ -15,11 +15,15 @@ describe('claimMilestone', () => {
     });
 
     it('never celebrates when storage is unavailable', () => {
-        const spy = vi.spyOn(window.localStorage, 'getItem').mockImplementationOnce(() => { throw new Error('blocked'); });
+        // Spy on the prototype: jsdom's Storage is a named-property object, so an
+        // instance-level spy can be stored as an item instead of intercepting calls.
+        const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
         try {
             expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
         } finally {
-            spy.mockRestore();
+            getItem.mockRestore();
+            setItem.mockRestore();
         }
     });
 });
