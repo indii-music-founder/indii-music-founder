@@ -53,8 +53,9 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 // Mock useMobile to return desktop mode by default
+const mobileState = vi.hoisted(() => ({ isAnyPhone: false }));
 vi.mock('@/hooks/useMobile', () => ({
-    useMobile: () => ({ isAnyPhone: false, isMobile: false }),
+    useMobile: () => ({ isAnyPhone: mobileState.isAnyPhone, isMobile: mobileState.isAnyPhone }),
 }));
 
 // Mock agent registry for BoardroomConversationPanel's resolveAgentIdentity
@@ -116,6 +117,18 @@ describe('BoardroomModule', () => {
         mockStoreState.isBoardroomMode = false;
         const { container } = render(<BoardroomModule />);
         expect(container.firstChild).toBeNull();
+    });
+
+    it('does not put a literal "false" class on the seat button on phones (ISSUE-1651)', () => {
+        mobileState.isAnyPhone = true;
+        try {
+            render(<BoardroomModule />);
+            const seatButton = document.querySelector('button[aria-label="Seat agents"]') as HTMLElement;
+            expect(seatButton).not.toBeNull();
+            expect(seatButton.className.split(/\s+/)).not.toContain('false');
+        } finally {
+            mobileState.isAnyPhone = false;
+        }
     });
 
     it('renders the boardroom canvas when mode is on', () => {

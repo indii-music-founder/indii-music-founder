@@ -3424,6 +3424,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 ### ISSUE-1651: Classes that do nothing [U27]
 
 - **Status:** 🔴 OPEN
+- **Progress (2026-11-19):** literal `"false"` class on the phone header seat button removed (BoardroomModule.tsx; test in BoardroomModule.test.tsx). Still open: `animate-fadeIn`, `py-0.2`, unreachable `AnimatePresence` exit.
 - **Severity:** LOW
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U27 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

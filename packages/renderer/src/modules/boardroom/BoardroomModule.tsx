@@ -155,7 +155,7 @@ export function BoardroomModule() {
                         {(activeCount > 0 || isAnyPhone) && (
                             <button
                                 onClick={() => isAnyPhone && setIsMobileSeatingOpen(true)}
-                                className={`flex items-center gap-1 text-[10px] font-mono ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-gray-400 bg-white/[0.03] hover:bg-white/10 border-white/8'} px-2 py-0.5 rounded-md border transition-colors shrink-0 ${!isAnyPhone && 'cursor-default hover:bg-white/[0.03]'}`}
+                                className={`flex items-center gap-1 text-[10px] font-mono ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-gray-400 bg-white/[0.03] hover:bg-white/10 border-white/8'} px-2 py-0.5 rounded-md border transition-colors shrink-0 ${isAnyPhone ? '' : 'cursor-default hover:bg-white/[0.03]'}`}
                                 aria-label="Seat agents"
                             >
                                 <Users size={10} />
