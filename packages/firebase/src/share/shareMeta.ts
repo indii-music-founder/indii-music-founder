@@ -33,8 +33,9 @@ const SHELL_TTL_MS = 5 * 60_000;
 const SHELL_FETCH_TIMEOUT_MS = 4_000;
 const CACHE_SECONDS = 300;
 
-/** Only our own hosts may be fetched as a shell (no SSRF via Host headers). */
-const ALLOWED_HOST = /^(?:[a-z0-9-]+\.)*(?:indii\.music|web\.app|firebaseapp\.com)$/i;
+/** Only our own hosts and project Firebase Hosting targets may be fetched as a shell (no SSRF via Host headers). */
+const ALLOWED_HOST =
+    /^(?:(?:[a-z0-9-]+\.)*indii\.music|indii-music-(?:founder|studio)(?:--[a-z0-9-]+)?\.(?:web\.app|firebaseapp\.com))$/i;
 const DEFAULT_ORIGIN = {
     presave: 'https://app.indii.music',
     passport: 'https://indii.music',
@@ -175,16 +176,27 @@ export async function resolveShareMeta(route: ShareRoute, origin: string, deps: 
 }
 
 const shellCache = new Map<string, { html: string; fetchedAt: number }>();
+const shellInFlight = new Map<string, Promise<string>>();
 
 async function fetchShell(origin: string): Promise<string> {
     const cached = shellCache.get(origin);
     if (cached && Date.now() - cached.fetchedAt < SHELL_TTL_MS) return cached.html;
-    const response = await fetch(`${origin}/`, { signal: AbortSignal.timeout(SHELL_FETCH_TIMEOUT_MS), redirect: 'error' });
-    if (!response.ok) throw new Error(`Shell fetch failed: ${response.status}`);
-    const html = await response.text();
-    if (!/<\/head>/i.test(html)) throw new Error('Shell is not an HTML document');
-    shellCache.set(origin, { html, fetchedAt: Date.now() });
-    return html;
+    const pending = shellInFlight.get(origin);
+    if (pending) return pending;
+
+    const request = (async () => {
+        const response = await fetch(`${origin}/`, { signal: AbortSignal.timeout(SHELL_FETCH_TIMEOUT_MS), redirect: 'error' });
+        if (!response.ok) throw new Error(`Shell fetch failed: ${response.status}`);
+        const html = await response.text();
+        if (!/<\/head>/i.test(html)) throw new Error('Shell is not an HTML document');
+        shellCache.set(origin, { html, fetchedAt: Date.now() });
+        return html;
+    })().finally(() => {
+        shellInFlight.delete(origin);
+    });
+
+    shellInFlight.set(origin, request);
+    return request;
 }
 
 export const shareMeta = onRequest(

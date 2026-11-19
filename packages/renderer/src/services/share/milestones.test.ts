@@ -4,7 +4,6 @@ import { claimMilestone, isMilestoneSoundEnabled, setMilestoneSoundEnabled } fro
 describe('claimMilestone', () => {
     afterEach(() => {
         window.localStorage.clear();
-        vi.restoreAllMocks();
     });
 
     it('returns true exactly once per milestone and user', () => {
@@ -16,8 +15,12 @@ describe('claimMilestone', () => {
     });
 
     it('never celebrates when storage is unavailable', () => {
-        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
-        expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
+        const spy = vi.spyOn(window.localStorage, 'getItem').mockImplementationOnce(() => { throw new Error('blocked'); });
+        try {
+            expect(claimMilestone('first-track-analyzed', 'u1')).toBe(false);
+        } finally {
+            spy.mockRestore();
+        }
     });
 });
 

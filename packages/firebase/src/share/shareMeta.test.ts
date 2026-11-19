@@ -45,6 +45,9 @@ describe('resolveOrigin', () => {
     it('trusts only indii / Firebase hosting hosts', () => {
         expect(resolveOrigin('app.indii.music', route)).toBe('https://app.indii.music');
         expect(resolveOrigin('indii-music-founder--pr910-abc.web.app', route)).toBe('https://indii-music-founder--pr910-abc.web.app');
+        expect(resolveOrigin('indii-music-studio.web.app', route)).toBe('https://indii-music-studio.web.app');
+        expect(resolveOrigin('evil-attacker.web.app', route)).toBe('https://app.indii.music');
+        expect(resolveOrigin('phishing.firebaseapp.com', route)).toBe('https://app.indii.music');
         expect(resolveOrigin('evil.example.com', route)).toBe('https://app.indii.music');
         expect(resolveOrigin('indii.music.evil.com', route)).toBe('https://app.indii.music');
         expect(resolveOrigin(undefined, { kind: 'passport', code: 'x' })).toBe('https://indii.music');

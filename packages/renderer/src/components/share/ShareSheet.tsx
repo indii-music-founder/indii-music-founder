@@ -7,8 +7,8 @@
  * Mount `<ShareSheet />` once next to the other callable roots.
  */
 import { createCallable } from 'react-call';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Download, Loader2, Share2, AlertCircle } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Check, Copy, Download, Loader2, Share2, AlertCircle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,7 +43,10 @@ export const ShareSheet = createCallable<ShareSheetProps, ShareSheetResult>(({ c
     const [rendered, setRendered] = useState<{ size: ShareCardSize; blob: Blob; url: string; coverOmitted: boolean } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    const [copiedLink, setCopiedLink] = useState(false);
     const urlRef = useRef<string | null>(null);
+    const copyTimerRef = useRef<number | null>(null);
+    const radioRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
     const model = useMemo(() => buildShareCardModel(template, options), [template, options]);
 
@@ -67,21 +70,46 @@ export const ShareSheet = createCallable<ShareSheetProps, ShareSheetResult>(({ c
 
     useEffect(() => () => {
         if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+        if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
     }, []);
 
     const ready = rendered?.size === size ? rendered : null;
     const fileName = shareCardFileName(model, size);
     const dims = SHARE_CARD_DIMENSIONS[size];
+    const shareableHref = model.url ? `https://${model.url}` : undefined;
 
     const handleShare = async () => {
         if (!ready) return;
         setBusy(true);
         try {
-            const outcome = await shareOrDownloadImage(ready.blob, fileName, { title: model.title, text: model.callout });
+            const shareText = [model.callout, shareableHref].filter(Boolean).join(' — ') || undefined;
+            const outcome = await shareOrDownloadImage(ready.blob, fileName, { title: model.title, text: shareText });
             if (outcome !== 'cancelled') call.end(outcome);
         } finally {
             setBusy(false);
         }
+    };
+
+    const handleCopyLink = async () => {
+        if (!shareableHref) return;
+        try {
+            await navigator.clipboard.writeText(shareableHref);
+            setCopiedLink(true);
+            if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+            copyTimerRef.current = window.setTimeout(() => setCopiedLink(false), 2000);
+        } catch {
+            setError('Could not copy link on this device.');
+        }
+    };
+
+    const handleSizeKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+        let nextIndex = -1;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % SIZES.length;
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + SIZES.length) % SIZES.length;
+        if (nextIndex === -1) return;
+        event.preventDefault();
+        setSize(SIZES[nextIndex]);
+        radioRefs.current[nextIndex]?.focus();
     };
 
     const handleDownload = () => {
@@ -97,14 +125,17 @@ export const ShareSheet = createCallable<ShareSheetProps, ShareSheetResult>(({ c
                 <p id={descriptionId} className="mb-4 text-sm text-gray-400">Post it to your story, feed, or drop it in a chat.</p>
 
                 <div role="radiogroup" aria-label="Card size" className="mb-4 flex gap-2">
-                    {SIZES.map(option => (
+                    {SIZES.map((option, index) => (
                         <button
                             key={option}
+                            ref={(el) => { radioRefs.current[index] = el; }}
                             type="button"
                             role="radio"
                             aria-checked={size === option}
+                            tabIndex={size === option ? 0 : -1}
                             onClick={() => setSize(option)}
-                            className={`min-h-11 flex-1 rounded-lg border px-3 text-xs font-semibold transition-colors ${size === option ? 'border-white/40 bg-white/15 text-white' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}
+                            onKeyDown={(e) => handleSizeKeyDown(e, index)}
+                            className={`min-h-11 flex-1 rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-[3px] focus-visible:outline-indigo-400 focus-visible:outline-offset-2 ${size === option ? 'border-white/40 bg-white/15 text-white' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}
                         >
                             {SHARE_CARD_DIMENSIONS[option].label}
                         </button>
@@ -128,11 +159,17 @@ export const ShareSheet = createCallable<ShareSheetProps, ShareSheetResult>(({ c
                     <p className="mt-2 text-xs text-amber-400">Cover art couldn&apos;t be embedded from its host, so the card uses your brand disc instead.</p>
                 )}
 
-                <div className="mt-5 flex justify-end gap-3">
+                <div className="mt-5 flex flex-wrap justify-end gap-3">
+                    {shareableHref && (
+                        <Button variant="ghost" onClick={() => void handleCopyLink()} disabled={busy}>
+                            {copiedLink ? <Check size={16} className="mr-2 text-emerald-400" /> : <Copy size={16} className="mr-2" />}
+                            {copiedLink ? 'Copied' : 'Copy link'}
+                        </Button>
+                    )}
                     <Button variant="ghost" onClick={handleDownload} disabled={!ready || busy}>
                         <Download size={16} className="mr-2" /> Download
                     </Button>
-                    <button type="button" onClick={() => void handleShare()} disabled={!ready || busy} className={`${SIGNATURE_BUTTON_BASE} ${indigo.button} min-h-10 px-5 text-sm`}>
+                    <button type="button" onClick={() => void handleShare()} disabled={!ready || busy} className={`${SIGNATURE_BUTTON_BASE} ${indigo.button} min-h-10 px-5 text-sm focus-visible:outline-[3px] focus-visible:outline-indigo-400 focus-visible:outline-offset-2`}>
                         {busy ? <Loader2 size={16} className={`animate-spin ${indigo.icon}`} /> : <Share2 size={16} className={indigo.icon} />}
                         <span className={indigo.label}>Share</span>
                         <span aria-hidden="true" className={indigo.sweep} />
