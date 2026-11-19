@@ -551,7 +551,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         )}
                     >
                         <span>{bookmark.title}</span>
-                        <span className="text-[8px] font-mono uppercase opacity-50 px-1 py-0.2 rounded bg-black/40">
+                        <span className="text-[8px] font-mono uppercase opacity-50 px-1 py-0.5 rounded bg-black/40">
                             {bookmark.badge}
                         </span>
                     </button>
@@ -561,7 +561,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             {/* TypeSafe Jev Semantic Classification Banner */}
             {lastSemanticJudgment && (
                 <div
-                    className="flex items-center justify-between px-3 py-1 bg-indigo-950/50 border-b border-indigo-500/20 text-[11px] shrink-0 select-none animate-fadeIn"
+                    className="flex items-center justify-between px-3 py-1 bg-indigo-950/50 border-b border-indigo-500/20 text-[11px] shrink-0 select-none motion-safe:animate-in motion-safe:fade-in-0"
                     data-testid="boardroom-browser-jev-badge"
                 >
                     <div className="flex items-center gap-2 overflow-hidden">
