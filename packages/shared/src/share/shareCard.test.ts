@@ -8,10 +8,18 @@ import {
     displayUrl,
     shareCardFileName,
 } from './shareCardTemplates';
-import { wrapText } from './ShareCardRenderer';
+import { computeCoverCrop, wrapText } from './ShareCardRenderer';
 import { canShareFiles, shareOrDownloadImage } from './shareFile';
 
 const NOW = new Date(2026, 10, 18, 15, 30); // Nov 18 2026, local afternoon
+
+describe('computeCoverCrop', () => {
+    it('center-crops landscape and portrait cover images to a square without stretching', () => {
+        expect(computeCoverCrop(1920, 1080, 520, 520)).toEqual({ x: 420, y: 0, w: 1080, h: 1080 });
+        expect(computeCoverCrop(1080, 1920, 520, 520)).toEqual({ x: 0, y: 420, w: 1080, h: 1080 });
+        expect(computeCoverCrop(1000, 1000, 520, 520)).toEqual({ x: 0, y: 0, w: 1000, h: 1000 });
+    });
+});
 
 describe('describeCountdown', () => {
     it('counts calendar days, not 24h windows', () => {

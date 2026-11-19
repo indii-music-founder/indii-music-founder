@@ -278,6 +278,10 @@ export const QCPanel: React.FC = () => {
                     detail,
                     template: { kind: 'milestone', artistName, headline: 'First track analyzed', detail },
                     options: { brandColors: useStore.getState().userProfile?.brandKit?.colors },
+                    nextSteps: [
+                        { label: 'Prepare a release', moduleId: 'distribution' },
+                        { label: 'Launch a pre-save', moduleId: 'marketing' },
+                    ],
                 });
             }
 

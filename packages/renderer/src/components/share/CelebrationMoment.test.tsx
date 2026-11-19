@@ -43,9 +43,10 @@ describe('CelebrationMoment', () => {
         act(() => {
             result = CelebrationMoment.call({ headline: 'First track analyzed', template: { kind: 'milestone', headline: 'First track analyzed' } });
         });
-        const sound = await screen.findByRole('button', { name: 'Turn milestone sound on' });
+        const sound = await screen.findByRole('button', { name: 'Milestone sound' });
         expect(sound.getAttribute('aria-pressed')).toBe('false');
         fireEvent.click(sound);
+        expect(sound.getAttribute('aria-pressed')).toBe('true');
         expect(window.localStorage.getItem('indii:milestone-sound')).toBe('on');
 
         fireEvent.click(screen.getByRole('button', { name: 'Not now' }));

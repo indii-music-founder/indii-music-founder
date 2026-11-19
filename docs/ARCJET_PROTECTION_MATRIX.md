@@ -207,7 +207,7 @@ ISSUE-1543 remains open: endpoint admission gaps, device-bound App Check, verifi
 | `pod/printful.ts:156` | `pod_printfulCancelOrder` | `onCall` | Present | Present |
 | `pod/printful.ts:168` | `pod_printfulGenerateMockup` | `onCall` | Present | Present |
 | `releases/generateDownloadUrl.ts:8` | `generateReleaseDownloadUrl` | `onCall` | Present | Present |
-| `share/shareMeta.ts:190` | `shareMeta` | `onRequest` | Present | Present |
+| `share/shareMeta.ts:202` | `shareMeta` | `onRequest` | Present | Present |
 | `social/instagramMessaging.ts:57` | `sendInstagramMessageCallable` | `onCall` | Present | Present |
 | `social/instagramMessaging.ts:146` | `replyInstagramCommentCallable` | `onCall` | Present | Present |
 | `social/instagramMessaging.ts:211` | `getInstagramMediaCommentsCallable` | `onCall` | Present | Present |

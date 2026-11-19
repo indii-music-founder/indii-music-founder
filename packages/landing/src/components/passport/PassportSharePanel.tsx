@@ -3,7 +3,7 @@
  * (feed/story), shares or downloads it, and copies the public result link.
  * Inline (not a modal) so it needs no dialog system on the landing site.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Check, Copy, Download, Loader2, Share2 } from 'lucide-react';
 import { buildShareCardModel, shareCardFileName, type ShareCardSize } from '@shared/share/shareCardTemplates';
 import { renderShareCard } from '@shared/share/ShareCardRenderer';
@@ -26,6 +26,7 @@ export default function PassportSharePanel({ answers, assessmentId }: { answers:
   const [copied, setCopied] = useState(false);
   const urlRef = useRef<string | null>(null);
   const copyTimer = useRef<number | null>(null);
+  const radioRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const shareUrl = useMemo(() => buildPassportShareUrl(answers), [answers]);
   const model = useMemo(() => buildShareCardModel(passportCardTemplate(answers)), [answers]);
@@ -76,6 +77,17 @@ export default function PassportSharePanel({ answers, assessmentId }: { answers:
     }
   };
 
+  const handleSizeKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = -1;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % SIZES.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + SIZES.length) % SIZES.length;
+    if (nextIndex === -1) return;
+    event.preventDefault();
+    setError(null);
+    setSize(SIZES[nextIndex].id);
+    radioRefs.current[nextIndex]?.focus();
+  };
+
   return (
     <section aria-labelledby="passport-share-heading" className="no-print rounded-2xl border border-[#1F222A] bg-[#070709] p-6">
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:items-center">
@@ -94,14 +106,17 @@ export default function PassportSharePanel({ answers, assessmentId }: { answers:
             <p className="mt-1 text-sm text-[#8A8F9E]">Post your stage and let your circle find their own gaps. The link holds only your multiple-choice answers — no name or email.</p>
           </div>
           <div role="radiogroup" aria-label="Card size" className="flex gap-2">
-            {SIZES.map((option) => (
+            {SIZES.map((option, index) => (
               <button
                 key={option.id}
+                ref={(el) => { radioRefs.current[index] = el; }}
                 type="button"
                 role="radio"
                 aria-checked={size === option.id}
+                tabIndex={size === option.id ? 0 : -1}
                 onClick={() => { setError(null); setSize(option.id); }}
-                className={`min-h-11 flex-1 rounded-lg border px-3 text-xs font-mono uppercase tracking-wider transition-colors ${size === option.id ? 'border-[#FFB800]/50 bg-[#FFB800]/10 text-white' : 'border-white/10 bg-white/5 text-[#8A8F9E] hover:text-white'}`}
+                onKeyDown={(e) => handleSizeKeyDown(e, index)}
+                className={`min-h-11 flex-1 rounded-lg border px-3 text-xs font-mono uppercase tracking-wider transition-colors focus-visible:outline-[3px] focus-visible:outline-[#FFB800] focus-visible:outline-offset-2 ${size === option.id ? 'border-[#FFB800]/50 bg-[#FFB800]/10 text-white' : 'border-white/10 bg-white/5 text-[#8A8F9E] hover:text-white'}`}
               >
                 {option.label}
               </button>

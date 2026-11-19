@@ -45,16 +45,19 @@ export default function SectionShareChip({ section }: { section: SiteSection }) 
 
   return (
     <div className="pointer-events-none absolute right-4 top-28 z-30 md:right-8 md:top-32">
-    <button
-      type="button"
-      onClick={() => void handleClick()}
-      aria-label={state === 'idle' ? `Share the “${section.label}” section` : label}
-      className={`${SIGNATURE_BUTTON_BASE} ${gold.button} pointer-events-auto h-9 bg-black/60 px-3 text-xs backdrop-blur-md`}
-    >
-      {state === 'copied' ? <Check className={`h-3.5 w-3.5 ${gold.icon}`} /> : <Link2 className={`h-3.5 w-3.5 ${gold.icon}`} />}
-      <span className={gold.label} aria-live="polite">{label}</span>
-      <span aria-hidden="true" className={gold.sweep} />
-    </button>
+      <button
+        type="button"
+        onClick={() => void handleClick()}
+        aria-label={`Share the “${section.label}” section`}
+        className={`${SIGNATURE_BUTTON_BASE} ${gold.button} pointer-events-auto h-9 bg-black/60 px-3 text-xs backdrop-blur-md focus-visible:outline-[3px] focus-visible:outline-[#FFB800] focus-visible:outline-offset-2`}
+      >
+        {state === 'copied' ? <Check className={`h-3.5 w-3.5 ${gold.icon}`} aria-hidden="true" /> : <Link2 className={`h-3.5 w-3.5 ${gold.icon}`} aria-hidden="true" />}
+        <span className={gold.label} aria-hidden="true">{label}</span>
+        <span aria-hidden="true" className={gold.sweep} />
+      </button>
+      <span role="status" aria-live="polite" className="sr-only">
+        {state === 'copied' ? `${section.label} link copied` : state === 'failed' ? 'Copy failed' : ''}
+      </span>
     </div>
   );
 }
