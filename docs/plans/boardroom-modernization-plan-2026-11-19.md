@@ -3,7 +3,7 @@
 > For Claude, Gemini, Codex, Droid, Jules, Antigravity. Read `CLAUDE.md` / `AGENTS.md` first.
 > **Ledger:** findings below become `ISSUE-1624+` in `.agent/test_ledger/OPEN_ISSUES_V4.md` (V4 is active; V3 is sealed).
 > **Claimed by:** _(agent + date per phase; edit this line before starting a phase)_
-> **Section 5 — Current State:** Phase 0 and Phase 1 done (V4 live, CI green on `84693f7`). Phase 2 code landed 2026-11-19 for U1/ISSUE-1624, U2/1625, U4/1627, U5/1628 (router + feed; badge/mobile still U14), U6/1629, O1/1654, O13/1666, O14/1667, all PARTIAL pending exact-SHA CI and live acceptance. Remaining Phase 2 candidates (O3 timeout overwrite, O4 15-min lease lock, O12 per-seat timeout abort) not started. Phases 3-7 not started. Next agent: claim Phase 2 remainder or Phase 3.
+> **Section 5 — Current State:** Phases 0-1 done. Phase 2 deployed in `faaf33b` (CI green, run 44561821844): ISSUE-1624/1625/1627/1628/1629/1654/1666/1667. Phase 2b: ISSUE-1656 (timeout overwrote Conductor answer) and ISSUE-1665 (seat timeout did not abort) repaired. All PARTIAL pending live acceptance. **Next:** ISSUE-1657 (15-min lease lock after reload) — planned client-only fix: store the READY leaseId in sessionStorage per tab, complete any orphaned stored lease before `getBoardroomDispatchPlan` in `AgentService.handleBoardroomSwarmFlow`, forget it after `completeBoardroomDispatchLease` succeeds (server already allows owner completion; no function deploy). Then Phase 3.
 > Source plan text follows; ignore references to "this session" or session-branch tooling.
 
 # Plan: Boardroom modernization, OPEN_ISSUES_V4, and a plan shared with all agents

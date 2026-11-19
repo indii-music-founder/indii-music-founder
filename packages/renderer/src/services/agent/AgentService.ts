@@ -50,6 +50,7 @@ import {
 } from './orchestration/BoardroomActionPlan';
 import { liveConversationService } from '@/services/intelligence/LiveConversationService';
 import { isUserCancellation, errorText, USER_STOPPED_TEXT } from './flowFailure';
+import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from './boardroomRunTimeout';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -594,9 +595,18 @@ export class AgentService {
                         // A shared gallery can change because another request or
                         // device generated an asset. Only this run's receipts
                         // may certify a Boardroom action as complete.
-                        updateMsg(responseId, {
-                            text: 'This request is still running or waiting for approval. Completion has not been verified. Keep this tab open or use Stop to cancel.',
-                        });
+                        // Seat 0 shares responseId: never overwrite a real answer (ISSUE-1656).
+                        const existing = (store.getState().agentHistory as AgentMessage[]).find(m => m.id === responseId);
+                        if (canReplaceOnBoardroomTimeout(existing)) {
+                            updateMsg(responseId, { text: BOARDROOM_STILL_RUNNING_TEXT });
+                        } else {
+                            this.appendRunMessage(store, {
+                                id: uuidv4(),
+                                role: 'system',
+                                text: BOARDROOM_STILL_RUNNING_TEXT,
+                                timestamp: Date.now(),
+                            }, runSessionId);
+                        }
                     } else if (newItemsGenerated) {
                         logger.debug('[AgentService] Timeout grace: Generation detected in gallery');
                         updateMsg(responseId, {
@@ -1580,12 +1590,13 @@ export class AgentService {
 
                 try {
                     logger.debug(`[AgentService] Boardroom: executing agent ${agentId} (chunk ${i/CHUNK_SIZE})`);
-                    // Item: Add a safety timeout for swarm execution to prevent UI hangs
-                    const executionPromise = this.executor.execute(
+                    // Hard per-seat timeout that also aborts the seat and drops late events (ISSUE-1665).
+                    const result = await runSeatWithTimeout(({ signal: seatSignal, isLive }) => this.executor.execute(
                         agentId,
                         enhancedText,
                         context as PipelineContext,
                         (event) => {
+                            if (!isLive()) return;
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
                                 useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
@@ -1613,17 +1624,10 @@ export class AgentService {
                                 }
                             }
                         },
-                        signal,
+                        seatSignal,
                         undefined,
                         attachments
-                    );
-
-                    // Race against a 300-second (5 min) timeout for heavy swarm operations
-                    const timeoutPromise = new Promise<never>((_, reject) => 
-                        setTimeout(() => reject(new Error('Agent execution timed out (300s)')), 300000)
-                    );
-
-                    const result = await Promise.race([executionPromise, timeoutPromise]);
+                    ), { timeoutMs: BOARDROOM_SEAT_TIMEOUT_MS, parentSignal: signal });
 
                     logger.debug(`[AgentService] Boardroom: agent ${agentId} responded (${result?.text?.length || 0} chars)`);
 

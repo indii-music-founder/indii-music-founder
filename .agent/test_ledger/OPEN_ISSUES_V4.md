@@ -3484,7 +3484,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1656: The 300s overall timeout (AS:514, :582-588) overwrites the Conductor's finished reply (seat 0 reuses responseI [O3]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed 2026-11-19 (Phase 2b); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** Boardroom overall-timeout notice no longer replaces seat 0 real text; it is appended as a separate message (canReplaceOnBoardroomTimeout); regression test in AgentService.boardroom-capability-intent.test.ts. Unit and structural checks only.
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O3 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3592,7 +3593,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1665: Per-seat 300s timeout neither aborts work nor stops late writes; timer leaks (AS:1609-1613) [O12]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair landed 2026-11-19 (Phase 2b); awaiting exact-SHA CI and live signed-in acceptance
+- **Repair note:** per-seat runSeatWithTimeout aborts the seat signal on timeout, clears its timer and drops late tokens; tests boardroomRunTimeout.test.ts and AgentService.boardroom-capability-intent.test.ts. Unit and structural checks only.
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O12 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

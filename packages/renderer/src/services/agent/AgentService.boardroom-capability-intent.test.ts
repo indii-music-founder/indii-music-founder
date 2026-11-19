@@ -551,6 +551,50 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         });
     });
 
+    it('keeps the Conductor answer when the Boardroom run outlives the overall timeout (ISSUE-1656)', async () => {
+        vi.useFakeTimers();
+        try {
+            const messages: Array<Record<string, unknown>> = [];
+            const state = {
+                conversationMode: 'boardroom', activeSessionId: 'br-session',
+                currentProjectId: null, agentHistory: messages, generatedHistory: [],
+                addMessageToSession: vi.fn((_session: string, message: Record<string, unknown>) => messages.push(message)),
+                setAgentProcessing: vi.fn(),
+                updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                    const message = messages.find(entry => entry.id === id);
+                    if (message) Object.assign(message, update);
+                }),
+            };
+            const service = new AgentService();
+            let finishFlow: () => void = () => {};
+            const executeFlow = vi.fn((_text: string, _attachments: unknown, _context: unknown, id: string) => {
+                // Seat 0 (the Conductor) answers on the run's response id; later seats keep the run alive.
+                Object.assign(messages.find(message => message.id === id)!, {
+                    text: 'Conductor: here is the release plan.', isStreaming: false,
+                });
+                return new Promise<void>(resolve => { finishFlow = resolve; });
+            });
+            Object.assign(service, {
+                isWarmedUp: true,
+                getStore: vi.fn(async () => ({ getState: () => state, setState: vi.fn() })),
+                contextPipeline: { buildContext: vi.fn().mockResolvedValue({}) }, executeFlow,
+                addSystemMessage: vi.fn(),
+                triggerAutorater: vi.fn().mockResolvedValue(undefined),
+            });
+
+            const sending = service.sendMessage('Plan the release with the whole board');
+            await vi.advanceTimersByTimeAsync(301_000);
+            await sending;
+
+            const modelMessages = messages.filter(message => message.role !== 'user');
+            expect(modelMessages[0]?.text).toBe('Conductor: here is the release plan.');
+            expect(modelMessages.some(message => String(message.text).includes('still running'))).toBe(true);
+            finishFlow();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('executes repeated requests against fresh context instead of replaying an old response', async () => {
         const messages: Array<{ id: string; role: string; text: string }> = [];
         const state = {
@@ -949,6 +993,58 @@ describe('AgentService request-bound approval guidance', () => {
         expect(capturedExecutions.map(execution => execution.agentId)).not.toContain('finance');
         expect(messages.some(message => message.agentId === 'finance')).toBe(false);
         expect(completeBoardroomLease).toHaveBeenCalledWith('33333333-3333-4333-8333-333333333333');
+    });
+
+    it('aborts a timed-out seat and ignores its late tokens (ISSUE-1665)', async () => {
+        vi.useFakeTimers();
+        try {
+            callBoardroomPlan.mockResolvedValueOnce({
+                type: 'BOARDROOM_DISPATCH_PLAN',
+                code: 'BOARDROOM_DISPATCH_READY',
+                executedAgentIds: ['generalist'],
+                deferredAgentIds: [],
+                maxIterationsPerAgent: 2,
+                nextContinuationAgentId: null,
+                leaseId: '44444444-4444-4444-8444-444444444444',
+                leaseExpiresAtMs: Date.now() + 60_000,
+                sideEffectOwnerAgentId: 'generalist',
+            });
+            const messages: Array<Record<string, unknown>> = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+            const state = {
+                conversationMode: 'boardroom', activeAgents: ['generalist'], referencedAssets: [], agentHistory: messages,
+                addAgentMessage: vi.fn((message: Record<string, unknown>) => messages.push(message)),
+                updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                    const message = messages.find(entry => entry.id === id);
+                    if (message) Object.assign(message, update);
+                }),
+            };
+            const service = new AgentService();
+            (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+                vi.fn(async () => ({ getState: () => state }));
+            let seatSignal: AbortSignal | undefined;
+            let emit: ((event: { type: string; content: string }) => void) | undefined;
+            (service as unknown as { executor: object }).executor = {
+                execute: vi.fn((_agent: string, _task: string, _ctx: unknown,
+                    onProgress: (event: { type: string; content: string }) => void, signal: AbortSignal) => {
+                    seatSignal = signal;
+                    emit = onProgress;
+                    return new Promise(() => {});
+                }),
+            };
+
+            const run = (service as unknown as {
+                handleBoardroomSwarmFlow: (task: {rawUserUtterance: string}, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+            }).handleBoardroomSwarmFlow({rawUserUtterance: 'Review this release.'}, undefined, {}, 'response-0');
+            await vi.advanceTimersByTimeAsync(300_500);
+            await run;
+
+            expect(seatSignal?.aborted).toBe(true);
+            expect(String(messages[0]?.text)).toContain('timed out');
+            emit?.({ type: 'token', content: 'late token' });
+            expect(String(messages[0]?.text)).not.toContain('late token');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('submits no specialist call when the typed server plan exhausts the turn budget', async () => {
