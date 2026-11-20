@@ -3232,7 +3232,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1635: Workbench problems [U13]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — artifact targets select the Artifacts tab and requested file. Read failures show Retry, successful empty documents show an empty state, and superseded reads cannot overwrite the current view. Media thumbnails load lazily. Signed-in desktop acceptance remains pending.)
+- **Local evidence:** Two failing regressions reproduced errors stuck in loading and ignored external artifact targets. Jev (jev-1.14.0) recommended scoping the document state to each request.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U13 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

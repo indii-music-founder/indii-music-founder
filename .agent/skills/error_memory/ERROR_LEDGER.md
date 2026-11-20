@@ -1,3 +1,8 @@
+## 2026-11-20 Workbench kept loading after failed artifact reads
+
+- **Evidence:** ISSUE-1635. The reader shared a null value for pending, failed, and empty results. Incoming Workbench targets did not select the artifact tab or file.
+- **Prevention:** Tie document results to the current selection and retry. Keep pending, failure, and empty states distinct, and discard results when the selection changes.
+
 ## 2026-11-20 Agent prompt redaction changed asset IDs and failed image tools started visual corrections
 
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.

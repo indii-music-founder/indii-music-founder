@@ -120,6 +120,8 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 ## Pitfall Library (Pragmatic Rules)
 
+**Document readers need explicit outcomes.** Show pending, failed, and empty results separately. Scope content to the current selection and ignore results from earlier requests.
+
 - **Terminology & IP Protection (CRITICAL):** Never refer to the central orchestrator as "Agent Zero" or "AgentZero". It is 100% proprietary IP owned by New Detroit Music LLC, officially branded as the **indii Conductor** (or **Conductor**). Block any external/competitor framework terminology from prompt generation, comments, and documentation.
 - **Regex:** Prefer `(?:foo)?` (optional literal) over `foo?` (optional last char).
 - **Stale Chunks:** `window.location.reload()` is the ONLY valid recovery for dynamic import failures.

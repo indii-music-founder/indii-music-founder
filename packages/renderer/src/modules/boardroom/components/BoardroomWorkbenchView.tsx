@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -16,6 +16,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { HistoryItem } from '@/core/types/history';
 import { cn } from '@/lib/utils';
+import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
+
+type WorkbenchTab = 'assets' | 'artifacts' | 'canvas';
+type ArtifactRequest = { filename: string; attempt: number };
+type ArtifactRead = { request: ArtifactRequest } & (
+    { status: 'loaded'; content: string } | { status: 'failed' }
+);
 
 function isSafeExternalAssetUrl(rawUrl: string): boolean {
     try {
@@ -28,7 +35,6 @@ function isSafeExternalAssetUrl(rawUrl: string): boolean {
 
 export function BoardroomWorkbenchView() {
     const toast = useToast();
-    const artifactRequestIdRef = useRef(0);
     const {
         generatedHistory,
         boardroomWorkbenchTarget,
@@ -45,10 +51,32 @@ export function BoardroomWorkbenchView() {
         }))
     );
 
-    const [subTab, setSubTab] = useState<'assets' | 'artifacts' | 'canvas'>('assets');
+    const [tabOverride, setTabOverride] = useState<{
+        target: BoardroomWorkbenchTarget;
+        tab: WorkbenchTab;
+    } | null>(null);
+    const defaultTab = boardroomWorkbenchTarget?.kind === 'artifact'
+        ? 'artifacts'
+        : boardroomWorkbenchTarget?.kind === 'canvas' ? 'canvas' : 'assets';
+    const subTab = tabOverride && tabOverride.target === boardroomWorkbenchTarget ? tabOverride.tab : defaultTab;
+    const setSubTab = (tab: WorkbenchTab) => setTabOverride({ target: boardroomWorkbenchTarget, tab });
+
     const [artifacts, setArtifacts] = useState<{ filename: string }[]>([]);
-    const [activeArtifactContent, setActiveArtifactContent] = useState<string | null>(null);
-    const [selectedArtifactFile, setSelectedArtifactFile] = useState<string | null>(null);
+    const [artifactOverride, setArtifactOverride] = useState<{
+        target: BoardroomWorkbenchTarget;
+        filename: string;
+    } | null>(null);
+    const targetArtifact = boardroomWorkbenchTarget?.kind === 'artifact' ? boardroomWorkbenchTarget.filename : null;
+    const selectedArtifactFile = artifactOverride && artifactOverride.target === boardroomWorkbenchTarget
+        ? artifactOverride.filename
+        : targetArtifact ?? artifacts[0]?.filename ?? null;
+    const [attempt, setAttempt] = useState(0);
+    const [artifactRead, setArtifactRead] = useState<ArtifactRead | null>(null);
+    const artifactRequest = useMemo(() => subTab === 'artifacts' && selectedArtifactFile
+        ? { filename: selectedArtifactFile, attempt }
+        : null, [attempt, selectedArtifactFile, subTab]);
+    const currentRead = artifactRead?.request === artifactRequest ? artifactRead : null;
+    const activeArtifactContent = currentRead?.status === 'loaded' ? currentRead.content : null;
 
     // Selected asset from history: sync cleanly whenever store target changes while mounted
     const targetAssetKey =
@@ -66,23 +94,25 @@ export function BoardroomWorkbenchView() {
 
     const activeAsset = generatedHistory.find(i => i.id === selectedAssetId) || generatedHistory[0] || null;
 
-    const handleSelectArtifact = useCallback(async (filename: string) => {
-        const requestId = ++artifactRequestIdRef.current;
-        setSelectedArtifactFile(filename);
-        setActiveArtifactContent(null);
-        if (window.electronAPI?.agent?.readArtifact) {
+    useEffect(() => {
+        if (!artifactRequest) return;
+        let cancelled = false;
+        const read = async () => {
             try {
-                const res = await window.electronAPI.agent.readArtifact(filename);
-                if (requestId !== artifactRequestIdRef.current) return;
-                if (res.success && res.data) {
-                    setActiveArtifactContent(res.data);
+                const result = await window.electronAPI?.agent?.readArtifact?.(artifactRequest.filename);
+                if (cancelled) return;
+                if (result?.success && typeof result.data === 'string') {
+                    setArtifactRead({ request: artifactRequest, status: 'loaded', content: result.data });
+                } else {
+                    setArtifactRead({ request: artifactRequest, status: 'failed' });
                 }
             } catch {
-                if (requestId !== artifactRequestIdRef.current) return;
-                toast.error(`Failed to read artifact ${filename}`);
+                if (!cancelled) setArtifactRead({ request: artifactRequest, status: 'failed' });
             }
-        }
-    }, [toast]);
+        };
+        void read();
+        return () => { cancelled = true; };
+    }, [artifactRequest]);
 
     // Load artifacts if electron API is available
     useEffect(() => {
@@ -93,9 +123,6 @@ export function BoardroomWorkbenchView() {
                     const res = await window.electronAPI.agent.listArtifacts();
                     if (isMounted && res.success && res.data) {
                         setArtifacts(res.data);
-                        if (res.data.length > 0) {
-                            void handleSelectArtifact(res.data[0].filename);
-                        }
                     }
                 } catch {
                     // ignore
@@ -104,7 +131,7 @@ export function BoardroomWorkbenchView() {
         };
         void load();
         return () => { isMounted = false; };
-    }, [handleSelectArtifact]);
+    }, []);
 
     const handleExport = useCallback(async (item: HistoryItem) => {
         try {
@@ -235,7 +262,7 @@ export function BoardroomWorkbenchView() {
                                 >
                                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-black/60 shrink-0 flex items-center justify-center">
                                         {item.type === 'image' && item.url ? (
-                                            <img src={item.url} alt="" className="w-full h-full object-cover" />
+                                            <img src={item.url} alt="" loading="lazy" className="w-full h-full object-cover" />
                                         ) : item.type === 'video' ? (
                                             <Video size={16} className="text-cyan-400" />
                                         ) : item.type === 'music' ? (
@@ -344,7 +371,8 @@ export function BoardroomWorkbenchView() {
                                 <button
                                     key={art.filename}
                                     type="button"
-                                    onClick={() => handleSelectArtifact(art.filename)}
+                                    onClick={() => setArtifactOverride({ target: boardroomWorkbenchTarget, filename: art.filename })}
+                                    aria-pressed={selectedArtifactFile === art.filename}
                                     className={cn(
                                         "w-full flex items-center gap-2 p-2 rounded-xl text-left text-xs transition-all border truncate",
                                         selectedArtifactFile === art.filename
@@ -370,6 +398,7 @@ export function BoardroomWorkbenchView() {
                                     </h2>
                                     <button
                                         type="button"
+                                        disabled={!activeArtifactContent?.trim()}
                                         onClick={() => {
                                             if (activeArtifactContent && navigator.clipboard?.writeText) {
                                                 void navigator.clipboard
@@ -383,11 +412,28 @@ export function BoardroomWorkbenchView() {
                                         Copy Markdown
                                     </button>
                                 </div>
-                                <div className="prose prose-invert prose-sm leading-relaxed text-xs">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {activeArtifactContent || 'Loading document...'}
-                                    </ReactMarkdown>
-                                </div>
+                                {!currentRead ? (
+                                    <p role="status" className="text-xs text-white/60">Loading document...</p>
+                                ) : currentRead.status === 'failed' ? (
+                                    <div className="space-y-2 text-xs">
+                                        <p role="alert" className="text-rose-300">Could not read this document.</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAttempt(value => value + 1)}
+                                            className="rounded bg-white/10 px-2 py-1 text-white hover:bg-white/15"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                ) : currentRead.content.trim() ? (
+                                    <div className="prose prose-invert prose-sm leading-relaxed text-xs">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {currentRead.content}
+                                        </ReactMarkdown>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-white/60">This document is empty.</p>
+                                )}
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-white/40 h-full">
