@@ -55,4 +55,4 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
 - Tell the user that the "C-Engine" is online, wait for the background cron to fire, and immediately resume the cycle when it does.
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

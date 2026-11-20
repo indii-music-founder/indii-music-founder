@@ -30,7 +30,7 @@ Explicit `/start` remains honored at every tier; the tier changes only the amoun
 
 ## 3. Reconcile repository state when applicable
 
-Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, require current `main`, compare `origin/main...HEAD`, and inspect `git status --short`. Do not auto-rebase, branch, stash, stage, or overwrite unrelated work.
+Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, verify the current branch and its base under the shared policy, compare `origin/main...HEAD`, and inspect `git status --short`. Preserve unrelated work.
 
 For a read-only non-repository request, skip git mutation and report only the context needed.
 
@@ -59,11 +59,7 @@ Skip activation for read-only or purely mechanical tasks.
 
 ## 5.6 Activate Effect-TS (when in scope)
 
-Skip activation when the task does not touch `effect` code or typed Effect service boundaries. When Effect is in scope (or when deciding whether to use it for retries, typed errors, schemas, or resource lifecycles):
-
-- ensure `repos/effect/LLMS.md` is present on disk (run `npm run effect:sync-repo` if missing);
-- read [`docs/guides/effect-guide.md`](../../docs/guides/effect-guide.md) and `repos/effect/LLMS.md` (plus relevant `repos/effect/ai-docs/src/` examples) before writing Effect code;
-- route Effect tasks through [`/effect`](effect.md) and verify with `npm run effect:diagnostics` + `npm run lint`.
+When the task uses Effect or is considering it for retries, typed errors, schemas, services, or resource lifecycles, load [`/effect`](effect.md) as part of toolchain selection. Follow its setup and source guidance before deciding on the implementation, then use its verification steps for any Effect code changed.
 
 ## Output
 
@@ -78,4 +74,4 @@ DEFINITION OF DONE: <observable criteria>
 FIRST VERIFICATION UNIT: <next bounded action>
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

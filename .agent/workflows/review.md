@@ -25,4 +25,4 @@ Ask the user 1-2 highly targeted questions to specialize the agent for the upcom
 ## 4. Proceed to Execution
 - Do not begin execution until the user confirms the `[Alignment Summary]`.
 - Once confirmed, seamlessly transition into `/start` (if this is a new feature) or `/middle` (if this is mid-session continuation).
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

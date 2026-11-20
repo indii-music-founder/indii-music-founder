@@ -59,6 +59,6 @@ Run after the final edit (CLI-first so every team gets deterministic evidence):
 2. Strict lint with zero warnings (`npx eslint --max-warnings=0 <touched-files>`).
 3. Affected package TypeScript check (`npm run typecheck:renderer` / `npm run typecheck`) and `git diff --check`.
 4. Repo policy guards when workflows or capabilities change (`npm run validate:capabilities`, `npm run validate:mainline-workflows`).
-5. Deliver one coherent commit directly to `origin/main` via [`end.md`](end.md) and [`ci-validate.md`](ci-validate.md) using `git push origin HEAD:main` (if concurrent unrelated WIP occupies the shared working tree, commit and push cleanly from an isolated temporary worktree on `origin/main` without modifying the concurrent tree), then verify the exact pushed SHA in GitHub Actions.
+5. Deliver one coherent commit through [`/end`](end.md) and [`/ci-validate`](ci-validate.md). If unrelated work occupies the shared checkout, use an isolated checkout based on `origin/main`. Verify CI on the exact SHA that lands on `main`.
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

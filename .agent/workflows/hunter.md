@@ -265,8 +265,9 @@ If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if 
 
 1. **Commit all fixes:**
    ```bash
-   git add <hunter-task-files> && git commit -m "fix(hunter): [summary of all fixes applied]" && git push origin HEAD:main
+   git add <hunter-task-files> && git commit -m "fix(hunter): [summary of all fixes applied]"
    ```
+   Publish through [`/end`](end.md).
 
 2. **Update Error Ledger** (`.agent/skills/error_memory/ERROR_LEDGER.md`):
    ```
@@ -334,4 +335,4 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 3. **DO NOT LOG to Error Ledger / mem0.** The fixing agent owns the record-keeping after they fix.
 4. **Every finding gets characterized.** Severity, evidence, files, fix direction, verified-or-recon.
 5. **Every confirmed finding goes in `OPEN_ISSUES.md`.** The audit doc is supporting evidence only, not the source of truth.
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

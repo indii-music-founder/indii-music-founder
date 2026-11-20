@@ -2,9 +2,9 @@
 
 ## Mainline Delivery Standard
 
-This repository works directly on `main` and routes all agent Git traffic (`origin`) through **Entire** (`entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder`, dashboard `https://entire.com/gh/indii-music-founder/indii-music-founder`) instead of directly through GitHub. All coding agents (Antigravity/Gemini, Codex, Claude Code) must push, fetch, and manage trails, checkpoints, and sessions via Entire (`entire` CLI) rather than GitHub PRs or direct GitHub remotes. Do not create, switch to, push, or continue work on a task branch unless the user explicitly requests that branch workflow for the current task. Before any code, git, CI, or push action, read and obey `.agent/workflows/branch-safety.md`.
+**`main` is the delivery target.** Before any code, git, CI, or push action, read [the shared branch and delivery policy](.agent/workflows/branch-safety.md). All coding agents, including Codex, Claude Code, and Gemini/Antigravity, use it and keep `origin` on Entire.
 
-Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main` (which publishes the commit and its captured Entire checkpoint/session to Entire and mirrors to GitHub for Firebase CI/CD), then inspect the CI run for that exact SHA (for documentation-only commits, verify the `Docs and Policy Gate` run; if no remote CI is scheduled, explicitly report "Remote CI not scheduled" and document local verification rather than claiming green CI). Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
+This repository is an Entire GitHub mirror with a protected default branch. The standing policy authorizes a task branch and Entire Trail when delivering changes to protected `main`. Agents publish through Entire, merge when the applicable gates pass, and verify CI for the resulting `main` SHA. Use the `Docs and Policy Gate` for documentation changes and the applicable CI for application changes.
 
 ## Entire Agent Workflow & Completion Standard
 
@@ -18,9 +18,8 @@ search, and review trails:
   via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`).
 - **Sessions, Checkpoints & Trails:** Use `entire status`, `entire trail`,
   `entire checkpoint`, `entire search --json --compact`, and `entire session`
-  (run `entire agent-help` for exact flags). When the user requests a branch/trail
-  review workflow, publish via Entire (`origin`) and manage the change through
-  `entire trail` rather than opening GitHub PRs.
+  (run `entire agent-help` for exact flags). Publish task branches through Entire
+  and manage their changes through `entire trail` under the shared delivery policy.
 - **Authentication:** If an Entire push or command fails due to authentication,
   check `entire auth status` (or prompt the user for the official `entire login`
   flow) before calling the work blocked; never switch to an unauthorized

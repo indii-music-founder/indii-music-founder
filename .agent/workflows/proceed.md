@@ -20,12 +20,13 @@ Downgrade any completion claim that current state does not prove. When the hando
 
 ## 2. Reconcile repository state
 
-Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, require `main`, compare `origin/main...HEAD`, and inspect the dirty tree. Separate current-task files from unrelated work. Never auto-stash, auto-branch, rebase, stage, commit, or overwrite someone else's files.
+Before code, git, CI, or push actions, read [`branch-safety.md`](branch-safety.md). Fetch `origin`, verify the current branch and its base under the shared policy, compare `origin/main...HEAD`, and inspect the dirty tree. For a task branch, find its existing Entire Trail before resuming. Preserve unrelated work.
 
 ## 3. Recheck authority and prerequisites
 
 - preserve the original task authority; resuming does not add external, destructive, paid, or delivery permissions;
 - confirm credentials and tools are still available;
+- if the resumed unit uses or is considering Effect, recheck [`/effect`](effect.md) setup in the current checkout and reload its guidance when needed;
 - read `.agent/REAL_USER_AUTHENTICITY.md` before resuming a live-user or production proof path;
 - use `/skill-skill` if the original tool is stale, unavailable, quarantined, or repeatedly failing.
 
@@ -43,4 +44,4 @@ AUTHORITY / PREREQUISITES: <state>
 NEXT: <coherent verification unit or exact blocker>
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

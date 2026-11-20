@@ -6,7 +6,9 @@ description: Effect-TS v4 workflow for Antigravity, Claude Code, and Codex teams
 
 Use `/effect` when building, refactoring, or debugging typed async pipelines, schemas, or services using `effect` (`^4.1.4`). Skip this workflow for React UI components or tasks that do not use Effect.
 
-## 1. Ensure Local Reference Source
+## 1. Check Workspace Setup
+
+Effect v4 comes from the workspace dependencies. Check that the installed package resolves with `node -p "require('effect/package.json').version"`. If it is missing, follow the repo's normal dependency setup.
 
 Check that `repos/effect/LLMS.md` exists on disk. If missing or stale:
 
@@ -19,7 +21,7 @@ Treat `repos/effect/` as **read-only reference material** — never edit files u
 ## 2. Ground in Effect v4 Patterns Before Coding
 
 Read in order:
-1. [`docs/guides/effect-guide.md`](../../docs/guides/effect-guide.md) — project conventions and all 9 `effect-local/*` ESLint rules
+1. The [project Effect guide](../../docs/guides/effect-guide.md) and [reference repository guide](../../docs/guides/reference-repos.md) for local conventions and source layout
 2. `repos/effect/LLMS.md` — Effect v4 entry points and `ai-docs` index
 3. Relevant runnable examples in `repos/effect/ai-docs/src/` (e.g. `01_basics/`, `02_schema/`, `03_services/`, `04_errors/`, `05_resources/`)
 
@@ -43,4 +45,4 @@ npm run typecheck
 
 If another package uses Effect, pass its `tsconfig.json` to `effect-language-service diagnostics --project <pkg>/tsconfig.json`.
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

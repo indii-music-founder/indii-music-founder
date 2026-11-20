@@ -12,6 +12,7 @@ Use `/middle` during active implementation. The current user objective and accep
 - read [`branch-safety.md`](branch-safety.md) before code, git, CI, or push actions;
 - load the `/skill-skill` route or produce one when specialized tools are needed;
 - verify that every selected capability is Certified, or Conditional with prerequisites satisfied;
+- if this unit uses or is considering Effect, load [`/effect`](effect.md) before implementation and carry its verification steps into the unit;
 - preserve unrelated dirty files and do not run periodic git workflows that commit or push intermediate state;
 - **TypeSafe activation:** if the unit involves semantic classification, parsing, or judgment-shaped code and TypeSafe is not active this session, activate it per [`start.md`](start.md) §5.5 — key from `.env`/shell (never printed or committed), judgments through the `typesafeJudge` callable, questions/thresholds only in `packages/renderer/src/config/typesafeJudgments.ts`. Prefer a shadow-mode experiment (measure agreement on real fixtures) before putting any judgment on a live path.
 
@@ -53,4 +54,4 @@ Update a flowchart only when state, sequence, or ownership is genuinely difficul
 
 Continue until all acceptance criteria have decisive evidence, then run `/end`. Keep the task's related changes together for one coherent delivery; no checkpoint or micro-fix commits.
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
