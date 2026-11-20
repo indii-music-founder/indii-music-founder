@@ -179,7 +179,7 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                             }
                         }}
                         data-testid="boardroom-workspace-jev-suggestion"
-                        className="flex flex-wrap items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] text-indigo-200 transition-all shadow-sm group animate-fadeIn min-w-0 max-w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                        className="flex flex-wrap items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] text-indigo-200 transition-all shadow-sm group motion-safe:animate-in motion-safe:fade-in-0 min-w-0 max-w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                         title={jevRecommendation.reasoningHint}
                     >
                         <Sparkles size={11} className="text-indigo-400 group-hover:rotate-12 transition-transform shrink-0" />

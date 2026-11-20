@@ -73,7 +73,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                         indii Conductor • Orchestrator
                     </span>
                     {isConductorActive && (
-                        <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30">
+                        <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-400/30">
                             LEAD
                         </span>
                     )}
