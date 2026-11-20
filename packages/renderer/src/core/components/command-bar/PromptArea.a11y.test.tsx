@@ -41,6 +41,8 @@ const mockSetModule = vi.fn();
 const mockToggleAgentWindow = vi.fn();
 const mockSetChatChannel = vi.fn();
 const mockSetCommandBarDetached = vi.fn();
+let conversationMode = 'direct';
+let activeAgents: string[] = [];
 
 vi.mock('@/core/store', () => ({
   useStore: () => ({
@@ -56,7 +58,8 @@ vi.mock('@/core/store', () => ({
     setCommandBarInput: mockSetCommandBarInput,
     commandBarAttachments: [],
     setCommandBarAttachments: mockSetCommandBarAttachments,
-    conversationMode: 'direct',
+    conversationMode,
+    activeAgents,
     activeDepartmentId: null,
     directTargetAgentId: 'generalist',
     setConversationMode: vi.fn(),
@@ -80,9 +83,18 @@ vi.mock('motion/react', () => ({
 describe('PromptArea Accessibility', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    conversationMode = 'direct';
+    activeAgents = [];
     // Mock window.innerWidth for desktop
     Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
     window.dispatchEvent(new Event('resize'));
+  });
+
+  it.each([{ roster: [] }, { roster: ['finance.tax'] }])('shows the seating prompt for roster $roster', ({ roster }) => {
+    conversationMode = 'boardroom';
+    activeAgents = roster;
+    render(<PromptArea />);
+    expect(screen.getByPlaceholderText('Seat agents on the table to begin...')).toBeInTheDocument();
   });
 
   it('renders all action buttons with focus-visible styles', () => {
