@@ -3303,7 +3303,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1641: Attachment data URIs are rebuilt on every render (BoardroomConversationPanel.tsx:416) [U19]
 
-- **Status:** 🟡 PARTIAL (2026-11-20 — stable attachment objects now reuse their data URI through a WeakMap; a focused regression test is still needed. Live signed-in acceptance and team CI remain pending.)
+- **Status:** 🟡 PARTIAL (2026-11-20 — stable attachment objects now reuse their data URI through a WeakMap; focused tests verify conversion reuse and data URI preservation. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U19 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3327,7 +3327,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1643: AppShell.tsx:692-694 mounts BoardroomModule all the time, so its chunk (react-markdown and all the views) load [U21]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — AppShell now mounts the lazy Boardroom module only in Boardroom mode; local renderer typecheck and Boardroom suites pass. A focused AppShell mount regression, signed-in acceptance, and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U21 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

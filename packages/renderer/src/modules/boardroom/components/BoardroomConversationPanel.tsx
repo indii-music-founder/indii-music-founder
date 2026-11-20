@@ -45,6 +45,7 @@ import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
 } from '@/services/agent/AgentVisualIdentity';
+import { buildAttachmentDataUri } from './boardroomAttachmentDataUri';
 
 const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
     bot: Bot,
@@ -121,24 +122,6 @@ function attachmentDownloadName(index: number, mimeType: string, filename?: stri
 /**
  * Formats an attachment payload as a browser-usable data URI when base64 content exists.
  */
-const attachmentDataUriCache = new WeakMap<object, string>();
-
-function buildAttachmentDataUri(attachment: { base64?: string; mimeType?: string }): string {
-    const cached = attachmentDataUriCache.get(attachment);
-    if (cached !== undefined) return cached;
-    const { base64, mimeType = '' } = attachment;
-    if (!base64) {
-        return '';
-    }
-    if (base64.startsWith('data:')) {
-        attachmentDataUriCache.set(attachment, base64);
-        return base64;
-    }
-    const dataUri = `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
-    attachmentDataUriCache.set(attachment, dataUri);
-    return dataUri;
-}
-
 /**
  * BoardroomConversationPanel — Persistent, scrollable conversation feed
  * for the Boardroom split-panel layout.
