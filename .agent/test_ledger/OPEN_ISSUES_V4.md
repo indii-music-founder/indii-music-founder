@@ -3351,7 +3351,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1645: In the browser view, page loading and Pin share one isLoading flag [U31]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — navigation, Pin, and Reader have separate loading states. Native navigation failures now surface in the browser view. Tab retention and live Electron acceptance remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U31 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
