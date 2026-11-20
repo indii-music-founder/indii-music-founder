@@ -5,8 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { listSeatedManagerIds } from '@/services/agent/departments';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 import { X } from 'lucide-react';
-import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface MobileParticipantDrawerProps {
     isOpen: boolean;
@@ -19,19 +18,7 @@ export function MobileParticipantDrawer({ isOpen, onClose }: MobileParticipantDr
         agentId => resolveAgentVisualIdentity(agentId)
     );
 
-    const trapRef = useFocusTrap(isOpen);
-
-    useGlobalShortcut({
-        id: 'mobile-drawer-escape',
-        key: 'Escape',
-        priority: 'modal',
-        ignoreInput: true,
-        handler: (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onClose();
-        }
-    }, [onClose], isOpen);
+    const trapRef = useModalAccessibility(isOpen, onClose);
 
     return (
         <AnimatePresence>

@@ -3292,7 +3292,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1640: Hand-rolled modals have no dialog semantics, Escape or focus trap [U18]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — the Living Plans drawer, collaboration feed, and asset preview now use named modal semantics and the shared keyboard focus and Escape behavior. The mobile seat drawer uses the same top-dialog Escape handling. Signed-in accessibility acceptance remains pending.)
+- **Local evidence:** Three tests reproduced the missing dialog behavior before the repair. Afterward, the tests verified accessible dialog names, Escape, focus wrapping, and restoration to the asset trigger. Jev (jev-1.14.0) recommended reusing the shared modal hook.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U18 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

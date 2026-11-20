@@ -32,6 +32,17 @@ describe('SwarmCollaborationFeed approvals', () => {
         });
     });
 
+    it('exposes a modal name and dismisses the focused drawer on Escape', () => {
+        const onClose = vi.fn();
+        render(<SwarmCollaborationFeed isOpen onClose={onClose} />);
+        const dialog = screen.getByRole('dialog', { name: 'Swarm Collaboration Feed' });
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        const close = screen.getByRole('button', { name: 'Close collaboration feed' });
+        expect(close).toHaveFocus();
+        fireEvent.keyDown(close, { key: 'Escape', code: 'Escape' });
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
     it('records a rejection the router can act on (ISSUE-1628)', () => {
         render(<SwarmCollaborationFeed isOpen onClose={() => {}} />);
         fireEvent.click(screen.getByRole('button', { name: /request revision/i }));
