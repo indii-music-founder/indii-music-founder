@@ -2,6 +2,10 @@
 
 All coding agents use this policy. `main` is the delivery target and `origin` stays on Entire. The owner has authorized the task branch, Trail publication, and gated merge described here for normal repository delivery. This standing authorization supersedes older direct-push-only instructions. Approval is still required for scope changes and for actions outside normal repository delivery.
 
+## Solo-owner review policy
+
+All agents follow the same repository default. Publish task branches without GitHub review requests, required reviewer sign-off, or automatic code-review requirements. Treat review and findings as optional feedback when the owner requests a review. Continue to validate locally, follow applicable CI checks, and verify the exact SHA that lands on `main`. Keep the repository configured so routine delivery never waits for a human review or an automated code review.
+
 ## Start from current main
 
 1. Confirm that `origin` points to the repository's `entire://` remote. Fetch `origin`, inspect the branch and working tree, and use a clean checkout based on `origin/main` for new work. Preserve concurrent and unrelated changes.
