@@ -147,6 +147,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const [inputUrl, setInputUrl] = useState(boardroomBrowserUrl || 'https://artists.spotify.com');
     const [iframeKey, setIframeKey] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [isPinning, setIsPinning] = useState(false);
+    const [isExtractingReader, setIsExtractingReader] = useState(false);
     const [pageLoadFailed, setPageLoadFailed] = useState(false);
     const [canGoBack, setCanGoBack] = useState(false);
     const [canGoForward, setCanGoForward] = useState(false);
@@ -244,8 +246,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             window.removeEventListener('resize', syncBounds);
             window.removeEventListener('scroll', syncBounds, true);
             if (unsubscribeState) unsubscribeState();
-            // Hide on unmount or tab switch
-            void api.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false });
+            // The native view may already be disposed.
+            void api.setBounds({ x: 0, y: 0, width: 0, height: 0, visible: false }).catch(() => {});
         };
     }, [isNativeElectron, setBoardroomBrowserUrl, invalidatePage]);
 
@@ -254,6 +256,21 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         isVisibleRef.current = isVisible;
         syncBoundsRef.current?.();
     }, [isVisible]);
+
+    const runNativePageCommand = async (
+        command: () => Promise<{ success: boolean }>,
+        revision = pageRevision.current,
+    ) => {
+        try {
+            if ((await command()).success) return;
+        } catch {
+            // The IPC channel can close before returning a result.
+        }
+        if (revision === pageRevision.current) {
+            setIsLoading(false);
+            setPageLoadFailed(true);
+        }
+    };
 
     const handleNavigate = (targetUrl: string) => {
         const safeUrl = normalizeExternalHttpUrl(targetUrl);
@@ -270,8 +287,9 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         setIsPinned(false);
         setExtractedText(null);
 
-        if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.navigate(safeUrl);
+        const api = window.electronAPI?.boardroomBrowser;
+        if (api) {
+            void runNativePageCommand(() => api.navigate(safeUrl));
         }
     };
 
@@ -283,20 +301,23 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     };
 
     const handleBack = () => {
-        if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.goBack();
+        const api = window.electronAPI?.boardroomBrowser;
+        if (api) {
+            void runNativePageCommand(() => api.goBack());
         }
     };
 
     const handleForward = () => {
-        if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.goForward();
+        const api = window.electronAPI?.boardroomBrowser;
+        if (api) {
+            void runNativePageCommand(() => api.goForward());
         }
     };
 
     const handleReload = () => {
-        if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.reload();
+        const api = window.electronAPI?.boardroomBrowser;
+        if (api) {
+            void runNativePageCommand(() => api.reload());
         } else {
             setIsReaderMode(false);
             setIsLoading(true);
@@ -304,23 +325,30 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         }
     };
 
-    const handleOpenExternal = () => {
+    const handleOpenExternal = async () => {
         const target = normalizeExternalHttpUrl(inputUrl || boardroomBrowserUrl || 'https://artists.spotify.com');
         if (!target) {
             toast.error('Cannot open invalid or non-HTTP(S) URL externally.');
             return;
         }
-        if (isNativeElectron && window.electronAPI?.boardroomBrowser) {
-            void window.electronAPI.boardroomBrowser.openExternal(target);
+        const api = window.electronAPI?.boardroomBrowser;
+        if (api) {
+            try {
+                if ((await api.openExternal(target)).success) return;
+            } catch {
+                // Display the same failure for a rejected IPC call.
+            }
+            toast.error('Could not open the page in your browser.');
         } else {
             window.open(target, '_blank', 'noopener,noreferrer');
         }
     };
 
     const handlePinToContext = async () => {
+        if (isPinning || (isNativeElectron && (pageLoadFailed || isLoading))) return;
         const revision = pageRevision.current;
         try {
-            setIsLoading(true);
+            setIsPinning(true);
             let pageData = {
                 title: '',
                 url: boardroomBrowserUrl || inputUrl,
@@ -373,13 +401,14 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 toast.info('Page URL pinned, but its text could not be captured.');
             }
         } catch {
-            toast.error('Failed to capture webpage context.');
+            if (revision === pageRevision.current) toast.error('Failed to capture webpage context.');
         } finally {
-            setIsLoading(false);
+            setIsPinning(false);
         }
     };
 
     const handleExtractReader = async () => {
+        if (isExtractingReader) return;
         if (extractedText) {
             setIsReaderMode(prev => !prev);
             return;
@@ -387,7 +416,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
         const revision = pageRevision.current;
         try {
-            setIsLoading(true);
+            setIsExtractingReader(true);
             if (window.electronAPI?.agent?.extractWebPage) {
                 const res = await window.electronAPI.agent.extractWebPage(boardroomBrowserUrl || inputUrl);
                 if (revision !== pageRevision.current) return;
@@ -400,9 +429,9 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             }
             toast.error('Could not extract text for reader mode.');
         } catch {
-            toast.error('Could not extract text for reader mode.');
+            if (revision === pageRevision.current) toast.error('Could not extract text for reader mode.');
         } finally {
-            setIsLoading(false);
+            setIsExtractingReader(false);
         }
     };
 
@@ -502,7 +531,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 <button
                     type="button"
                     onClick={handlePinToContext}
-                    disabled={isNativeElectron && (pageLoadFailed || isLoading)}
+                    disabled={isPinning || (isNativeElectron && (pageLoadFailed || isLoading))}
+                    aria-busy={isPinning}
                     className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0",
                         isPinned
@@ -514,7 +544,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     data-testid="boardroom-browser-pin-btn"
                 >
                     {isPinned ? <Check size={12} /> : <Pin size={12} />}
-                    <span className="hidden @[500px]:inline">{isPinned ? 'Pinned' : 'Pin to Swarm'}</span>
+                    <span className="hidden @[500px]:inline">{isPinning ? 'Pinning…' : isPinned ? 'Pinned' : 'Pin to Swarm'}</span>
                 </button>
 
                 {/* Web Fallback Reader Mode Toggle */}
@@ -522,6 +552,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     <button
                         type="button"
                         onClick={handleExtractReader}
+                        disabled={isExtractingReader}
+                        aria-busy={isExtractingReader}
                         className={cn(
                             "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0",
                             isReaderMode
@@ -713,6 +745,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                 <button
                                     type="button"
                                     onClick={handleExtractReader}
+                                    disabled={isExtractingReader}
+                                    aria-busy={isExtractingReader}
                                     data-testid="boardroom-portal-reader-btn"
                                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                                 >
@@ -722,10 +756,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                 <button
                                     type="button"
                                     onClick={handlePinToContext}
+                                    disabled={isPinning}
+                                    aria-busy={isPinning}
                                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                                 >
                                     <Pin size={12} />
-                                    <span>Pin to Swarm</span>
+                                    <span>{isPinning ? 'Pinning…' : 'Pin to Swarm'}</span>
                                 </button>
                             </div>
                             <div className="pt-1 border-t border-white/5">

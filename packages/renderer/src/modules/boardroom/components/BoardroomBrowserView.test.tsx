@@ -37,7 +37,7 @@ describe('Boardroom page classification', () => {
         let onState!: (state: { url: string; title: string; isLoading: boolean; canGoBack: boolean; canGoForward: boolean; error: string | null }) => void;
         vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
         vi.stubGlobal('electronAPI', { boardroomBrowser: {
-            attach: vi.fn().mockResolvedValue({ success: true }), setBounds: vi.fn(),
+            attach: vi.fn().mockResolvedValue({ success: true }), setBounds: vi.fn().mockResolvedValue(undefined),
             onStateChange: (callback: typeof onState) => { onState = callback; return vi.fn(); },
         } });
         render(<BoardroomBrowserView />);
@@ -58,6 +58,52 @@ describe('Boardroom page classification', () => {
         expect(mocks.success).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole('button', { name: /ASCAP Portal/i }));
         expect(screen.queryByTestId('boardroom-browser-jev-badge')).not.toBeInTheDocument();
+    });
+
+    it('keeps Pin disabled until its own request finishes when the native page reports loaded', async () => {
+        type PageState = { isLoading: boolean; canGoBack: boolean; canGoForward: boolean };
+        let onStateChange!: (state: PageState) => void;
+        let finishPin!: (verdict: typeof fallback) => void;
+        const captureContext = vi.fn().mockResolvedValue({ success: false });
+        mocks.judge.mockImplementation(() => new Promise(resolve => { finishPin = resolve; }));
+        vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+        vi.stubGlobal('electronAPI', { boardroomBrowser: {
+            attach: vi.fn().mockResolvedValue({ success: true }),
+            setBounds: vi.fn().mockResolvedValue(undefined),
+            captureContext,
+            onStateChange: (listener: typeof onStateChange) => { onStateChange = listener; return vi.fn(); },
+        } });
+        render(<BoardroomBrowserView />);
+        const pin = screen.getByRole('button', { name: 'Pin page to swarm' });
+
+        fireEvent.click(pin);
+        await waitFor(() => expect(mocks.judge).toHaveBeenCalledTimes(1));
+        act(() => onStateChange({ isLoading: false, canGoBack: false, canGoForward: false }));
+
+        expect(pin).toBeDisabled();
+        fireEvent.click(pin);
+        expect(captureContext).toHaveBeenCalledTimes(1);
+        await act(async () => { finishPin(fallback); });
+        expect(pin).toBeEnabled();
+    });
+
+    it('shows a retryable page error when native navigation rejects', async () => {
+        const navigate = vi.fn().mockRejectedValue(new Error('Native view unavailable'));
+        vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+        vi.stubGlobal('electronAPI', { boardroomBrowser: {
+            attach: vi.fn().mockResolvedValue({ success: true }),
+            setBounds: vi.fn().mockResolvedValue(undefined),
+            navigate,
+            onStateChange: vi.fn(() => vi.fn()),
+        } });
+        render(<BoardroomBrowserView />);
+        fireEvent.change(screen.getByTestId('boardroom-browser-url-input'), {
+            target: { value: 'https://members.ascap.com' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Navigate to URL' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('could not be loaded');
+        expect(screen.getByRole('button', { name: 'Pin page to swarm' })).toBeDisabled();
     });
     it('reports an unavailable reader instead of claiming extraction succeeded', () => {
         render(<BoardroomBrowserView />);
