@@ -95,7 +95,7 @@ describe('BoardroomModule', () => {
     beforeEach(() => {
         Object.keys(mockStoreState).forEach(key => delete mockStoreState[key]);
         Object.assign(mockStoreState, {
-            activeAgents: [],
+            activeAgents: ['generalist'],
             agentHistory: [],
             toggleAgent: vi.fn(),
             setBoardroomMode: vi.fn(),
@@ -134,6 +134,12 @@ describe('BoardroomModule', () => {
     it('renders the boardroom canvas when mode is on', () => {
         render(<BoardroomModule />);
         expect(document.body.querySelector('[data-testid="boardroom-module"]')).not.toBeNull();
+    });
+
+    it('shows one active seat for a solo specialist without counting the conductor', () => {
+        mockStoreState.activeAgents = ['finance'];
+        render(<BoardroomModule />);
+        expect(screen.getByText('1 active')).toBeInTheDocument();
     });
 
     it('shows the empty state when no messages exist', () => {

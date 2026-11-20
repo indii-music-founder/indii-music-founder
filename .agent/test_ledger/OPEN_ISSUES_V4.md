@@ -3171,7 +3171,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1630: The conductor count and the conductor's state disagree [U7]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — the seat count, prompt guard and dispatch use the same selection rules. An unseated conductor stays unseated during individual roster edits. Seating all department heads still explicitly seats the conductor. Signed-in acceptance remains pending.)
+- **Local evidence:** The roster and header regressions failed before the repair. After the repair, 62 focused tests passed across seating, the header, the composer and dispatch. Jev (jev-1.14.0) selected preserving explicit conductor selection, with 0.82 confidence.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U7 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

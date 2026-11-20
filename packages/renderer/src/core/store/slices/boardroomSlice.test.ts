@@ -19,12 +19,27 @@ describe('Boardroom canonical department-head seating', () => {
     ])('rejects worker IDs received through %s', (_source, agentIds) => {
         const normalized = normalizeBoardroomAgentIds(agentIds);
 
-        expect(normalized[0]).toBe('generalist');
+        expect(normalized).not.toContain('generalist');
         expect(normalized).not.toContain('finance.tax');
         expect(normalized).not.toContain('legal.contracts');
         expect(normalized).not.toContain('finance.accounting');
         expect(normalized).not.toContain('unknown-agent');
         expect(new Set(normalized).size).toBe(normalized.length);
+    });
+
+    it('keeps the conductor unseated while changing the specialist roster', () => {
+        const store = createBoardroomStore();
+        store.getState().toggleAgent('generalist');
+        expect(normalizeBoardroomAgentIds(store.getState().activeAgents)).toEqual([]);
+
+        store.getState().toggleAgent('finance');
+        store.getState().addActiveAgent('legal');
+        store.getState().removeActiveAgent('finance');
+        expect(store.getState().activeAgents).toEqual(['legal']);
+        expect(normalizeBoardroomAgentIds(store.getState().activeAgents)).toEqual(['legal']);
+
+        store.getState().toggleAgent('generalist');
+        expect(store.getState().activeAgents).toEqual(['generalist', 'legal']);
     });
 
     it('rejects worker and unknown identifiers while preserving the conductor', () => {

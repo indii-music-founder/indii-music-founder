@@ -29,6 +29,7 @@ import { AgentModePicker } from '@/components/AgentModePicker';
 import { ProductSkillRegistry } from '@/services/agent/skills/ProductSkillRegistry';
 import { LiveConversationButton } from './LiveConversationButton';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 
 interface PromptAreaProps {
     className?: string;
@@ -186,7 +187,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     }, [activeSpeakingAgentId, directTargetAgentId, activeDepartmentId]);
 
     const isBoardroom = conversationMode === 'boardroom';
-    const isBoardroomBlocked = isBoardroom && (!activeAgents || activeAgents.length === 0);
+    const isBoardroomBlocked = isBoardroom && normalizeBoardroomAgentIds(activeAgents ?? []).length === 0;
 
 
     // Sync chatChannel (theme) with conversationMode

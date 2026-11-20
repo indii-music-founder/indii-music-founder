@@ -18,6 +18,7 @@ import {
     type BoardroomDispatchTask,
 } from './types';
 import { agentRegistry } from './registry';
+import { normalizeBoardroomAgentIds } from './departments';
 import { livingPlanService } from './LivingPlanService';
 
 // Workflow coordinator removed for indii Conductor standard routing
@@ -1255,8 +1256,9 @@ export class AgentService {
             !/^(?:yes|yep|yeah|sure|go ahead|continue|start)[.!?]*$/i.test(task.rawUserUtterance.trim())) {
             return this.handleBoardroomSwarmFlow(task, attachments, inheritExecutionTokenBudget(context, { ...context, isReadOnly: true }), responseId, signal);
         }
-        const soloSpecialist = sourceState.activeAgents?.length === 1 && sourceState.activeAgents[0] !== 'generalist'
-            ? sourceState.activeAgents[0]
+        const selectedAgents = normalizeBoardroomAgentIds(sourceState.activeAgents ?? []);
+        const soloSpecialist = selectedAgents.length === 1 && selectedAgents[0] !== 'generalist'
+            ? selectedAgents[0]
             : null;
         store.getState().updateAgentMessage(responseId, {
             agentId: soloSpecialist || 'generalist', text: '*(Understanding your request…)*', isStreaming: true,
@@ -1373,7 +1375,7 @@ export class AgentService {
                             chatHistoryString: scopedChatHistoryString,
                             conversationMode: step.agentId === 'generalist' ? 'boardroom' : 'department',
                             isReadOnly: false, boardroomExecution: { requestId: responseId, stepId: step.id, ownerAgentId: step.agentId, sourceId: requestedSourceId },
-                            seatedAgents: [...store.getState().activeAgents], assetReferences, signal } as PipelineContext;
+                            seatedAgents: normalizeBoardroomAgentIds(store.getState().activeAgents), assetReferences, signal } as PipelineContext;
                     inheritExecutionTokenBudget(context, stepContext);
                     dispatchStarted = true;
                     response = await this.executor.execute(step.agentId,
@@ -1423,7 +1425,7 @@ export class AgentService {
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
-        const seatedAgents = state.activeAgents && state.activeAgents.length > 0 ? state.activeAgents : [];
+        const seatedAgents = normalizeBoardroomAgentIds(state.activeAgents ?? []);
         const referencedAssets = state.referencedAssets || [];
         logger.debug('[AgentService] Boardroom swarm dispatch requested:', { agentCount: seatedAgents.length, agents: seatedAgents });
 

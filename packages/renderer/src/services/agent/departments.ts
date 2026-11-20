@@ -94,9 +94,8 @@ export function isValidHeadId(agentId: string): agentId is ValidAgentId {
 /**
  * Canonical public Boardroom roster boundary.
  *
- * The user communicates with the Indii Conductor. Only registered department
- * heads may be visible beside Indii; workers and unknown/stale identifiers are
- * intentionally discarded at every state and presentation boundary.
+ * Keep explicitly seated participants, including the conductor when seated.
+ * Only registered department heads may be seated beside the conductor.
  */
 export function normalizeBoardroomAgentIds(agentIds: readonly string[]): string[] {
     const managerIds = agentIds.filter(
@@ -104,7 +103,9 @@ export function normalizeBoardroomAgentIds(agentIds: readonly string[]): string[
             isValidHeadId(agentId) && agentIds.indexOf(agentId) === index
     );
 
-    return [BOARDROOM_CONDUCTOR_ID, ...managerIds];
+    return agentIds.includes(BOARDROOM_CONDUCTOR_ID)
+        ? [BOARDROOM_CONDUCTOR_ID, ...managerIds]
+        : managerIds;
 }
 
 /** Registered managers currently visible in the Boardroom, excluding Indii. */

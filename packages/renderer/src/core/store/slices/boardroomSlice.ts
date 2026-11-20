@@ -103,12 +103,12 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     boardroomWorkbenchTarget: null,
 
     toggleAgent: (agentId) => set((state) => {
-        if (agentId === BOARDROOM_CONDUCTOR_ID) {
-            return { activeAgents: state.activeAgents.includes(agentId)
-                ? state.activeAgents.filter(id => id !== agentId)
-                : [agentId, ...state.activeAgents] };
-        }
         const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
+        if (agentId === BOARDROOM_CONDUCTOR_ID) {
+            return { activeAgents: currentAgents.includes(agentId)
+                ? currentAgents.filter(id => id !== agentId)
+                : [agentId, ...currentAgents] };
+        }
         if (!isValidHeadId(agentId)) {
             return arraysEqual(currentAgents, state.activeAgents)
                 ? state
@@ -162,7 +162,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
 
         set((state) => {
             const existingHeads = new Set(state.activeAgents.filter(isValidHeadId));
-            const retainedAgents = normalizeBoardroomAgentIds(state.activeAgents);
+            const retainedAgents = normalizeBoardroomAgentIds([BOARDROOM_CONDUCTOR_ID, ...state.activeAgents]);
             const nextActiveAgents = [
                 ...retainedAgents,
                 ...headIds.filter(agentId => !existingHeads.has(agentId)),
