@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
-import { FolderGit2, Plus, ChevronDown, Pencil, Trash2, Check, X, Archive, ArchiveRestore } from 'lucide-react';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { navigateToModule } from '@/services/agent/tools/navigationOutcome';
+import { FolderGit2, Plus, ChevronDown, Pencil, Check, X, Archive, ArchiveRestore } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getAuth } from 'firebase/auth';
@@ -19,7 +21,6 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   const createNewProject = useStore(state => state.createNewProject);
   const updateProjectName = useStore(state => state.updateProjectName);
   const setProjectStatus = useStore(state => state.setProjectStatus);
-  const setModule = useStore(state => state.setModule);
 
   const { syncProject } = useProjectSync();
 
@@ -27,7 +28,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   const [isArchivesOpen, setIsArchivesOpen] = React.useState(false);
   const [isLoading, setLoading] = useState(false);
   const [pendingRename, setPendingRename] = useState<{ id: string; name: string } | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<string | null>(null);
+  const restoreArchiveFocus = useRef<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   useEffect(() => {
@@ -51,8 +53,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     initProjects();
   }, [loadProjects]);
 
-  const handleCreateProject = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCreateProject = async () => {
+    setIsOpen(true);
     const newName = `Project ${projects.length + 1}`;
     try {
       const newProjectId = await createNewProject(newName, 'creative', 'personal');
@@ -64,8 +66,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
-  const handleRenameProject = (e: React.MouseEvent, project: ProjectMetadata) => {
-    e.stopPropagation();
+  const handleRenameProject = (project: ProjectMetadata) => {
     setPendingRename({ id: project.id, name: project.name });
     setRenameValue(project.name);
   };
@@ -85,30 +86,28 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
     }
   };
 
-  const handleDeleteProject = (e: React.MouseEvent, project: ProjectMetadata) => {
-    e.stopPropagation();
-    if (project.name === 'Inbox') return; 
-    setPendingDelete(project.id);
+  const handleArchiveProject = (project: ProjectMetadata) => {
+    if (project.name === 'Inbox') return;
+    setPendingArchive(project.id);
   };
 
-  const commitDelete = async (project: ProjectMetadata) => {
+  const commitArchive = async (project: ProjectMetadata) => {
     try {
       await setProjectStatus(project.id, 'archived');
-      if (currentProjectId === project.id) {
-        const defaultProj = projects.find(p => p.name === 'Inbox' && p.status !== 'archived') || projects[0];
-        if (defaultProj) {
-          syncProject(defaultProj.id);
-        }
+      const current = useStore.getState();
+      if (current.currentProjectId === project.id) {
+        const remaining = current.projects.filter(p => p.id !== project.id && p.status !== 'archived');
+        const nextProject = remaining.find(p => p.name === 'Inbox') ?? remaining[0];
+        current.setProject(nextProject?.id ?? DEFAULT_PROJECT_ID);
       }
     } catch (err) {
-      Logger.error('ProjectList', 'Failed to delete project', err);
+      Logger.error('ProjectList', 'Failed to archive project', err);
     } finally {
-      setPendingDelete(null);
+      setPendingArchive(null);
     }
   };
 
-  const handleUnarchive = async (e: React.MouseEvent, project: ProjectMetadata) => {
-    e.stopPropagation();
+  const handleUnarchive = async (project: ProjectMetadata) => {
     try {
       await setProjectStatus(project.id, 'active');
     } catch (err) {
@@ -128,104 +127,133 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   const renderProject = (project: ProjectMetadata, isArchivedList = false) => {
     const isActive = currentProjectId === project.id;
     const isRenaming = pendingRename?.id === project.id;
-    const isConfirmingDelete = pendingDelete === project.id;
+    const isConfirmingArchive = pendingArchive === project.id;
 
-    if (isConfirmingDelete && !isArchivedList) {
+    if (isConfirmingArchive && !isArchivedList) {
       return (
-        <div key={project.id} className="w-[calc(100%-8px)] mx-1 flex items-center gap-1 px-3 py-2 text-xs rounded-lg bg-red-900/30 border border-red-500/30 mb-0.5">
+        <div key={`${project.id}-archive-confirmation`} className="w-[calc(100%-8px)] mx-1 flex items-center gap-1 px-3 py-2 text-xs rounded-lg bg-red-900/30 border border-red-500/30 mb-0.5">
           <span className="flex-1 text-red-300 truncate">Archive "{project.name}"?</span>
-          <button onClick={() => commitDelete(project)} className="p-1 hover:text-red-300 text-red-400" title="Confirm archive"><Check size={12} /></button>
-          <button onClick={() => setPendingDelete(null)} className="p-1 hover:text-gray-200 text-gray-400" title="Cancel"><X size={12} /></button>
+          <button
+            type="button"
+            autoFocus
+            onClick={() => void commitArchive(project)}
+            className="rounded p-1 text-red-400 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-red-300"
+            aria-label={`Confirm archive for ${project.name}`}
+          >
+            <Check size={12} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              restoreArchiveFocus.current = project.id;
+              setPendingArchive(null);
+            }}
+            className="rounded p-1 text-gray-400 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-white"
+            aria-label={`Cancel archive for ${project.name}`}
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
         </div>
       );
     }
 
+    const projectLabel = (
+      <>
+        {isArchivedList ? (
+          <Archive size={16} className="shrink-0 opacity-50" aria-hidden="true" />
+        ) : (
+          <FolderGit2 size={16} className={cn('shrink-0', isActive ? 'text-blue-400' : 'opacity-70')} aria-hidden="true" />
+        )}
+        {isSidebarOpen && <span className="truncate">{project.name}</span>}
+      </>
+    );
+
     return (
       <div
         key={project.id}
-        onClick={() => {
-          if (isRenaming || isArchivedList) return;
-          syncProject(project.id);
-          setModule('project-canvas');
-        }}
         className={cn(
-          "w-[calc(100%-8px)] mx-1 flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all duration-200 relative group overflow-hidden mb-0.5",
-          !isArchivedList && "cursor-pointer",
+          'relative mx-1 mb-0.5 flex w-[calc(100%-8px)] items-center gap-1 rounded-lg text-sm transition-colors group',
           isActive && !isArchivedList
-            ? "text-white font-bold bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10"
-            : "text-gray-400 font-medium hover:text-white hover:bg-white/5"
+            ? 'bg-white/12 font-bold text-white ring-1 ring-white/10'
+            : 'font-medium text-gray-400 hover:bg-white/5 hover:text-white'
         )}
       >
-        <div className="flex items-center gap-3 overflow-hidden flex-1">
-          {isActive && !isArchivedList && (
-            <motion.div
-              layoutId="active-project-pill"
-              className="absolute left-0 top-0 w-1 h-full bg-blue-500 rounded-r-md"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-          )}
-          
-          {isArchivedList ? (
-            <Archive size={16} className="relative z-10 shrink-0 opacity-50" />
-          ) : (
-            <FolderGit2
-              size={16}
-              className={cn(
-                "relative z-10 transition-transform duration-200 shrink-0 group-hover:scale-110",
-                isActive ? "text-blue-400" : "opacity-70 group-hover:opacity-100"
-              )}
-            />
-          )}
-          
-          {isSidebarOpen && (
-            isRenaming ? (
-              <input
-                autoFocus
-                className="flex-1 bg-transparent border-b border-blue-400 text-white text-sm outline-none py-0.5 relative z-10"
-                value={renameValue}
-                onChange={(e) => setRenameValue(e.target.value)}
-                onBlur={() => commitRename(project.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitRename(project.id);
-                  if (e.key === 'Escape') setPendingRename(null);
-                }}
-              />
-            ) : (
-              <span className={cn(
-                "truncate relative z-10 transition-all duration-200",
-                isActive && !isArchivedList ? "translate-x-1" : "group-hover:translate-x-0.5"
-              )}>
-                {project.name}
-              </span>
-            )
-          )}
-        </div>
+        {isActive && !isArchivedList && (
+          <motion.div
+            layoutId="active-project-pill"
+            className="pointer-events-none absolute left-0 top-0 h-full w-1 rounded-r-md bg-blue-500"
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          />
+        )}
+        {isRenaming && isSidebarOpen ? (
+          <input
+            autoFocus
+            aria-label={`Project name for ${project.name}`}
+            className="mx-3 my-2 min-w-0 flex-1 border-b border-blue-400 bg-transparent text-sm text-white outline-none"
+            value={renameValue}
+            onChange={(event) => setRenameValue(event.target.value)}
+            onBlur={() => void commitRename(project.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void commitRename(project.id);
+              if (event.key === 'Escape') setPendingRename(null);
+            }}
+          />
+        ) : isArchivedList ? (
+          <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">{projectLabel}</div>
+        ) : (
+          <button
+            type="button"
+            aria-label={`Open project ${project.name}`}
+            aria-current={isActive ? 'true' : undefined}
+            onClick={() => {
+              syncProject(project.id);
+              void navigateToModule(useStore, 'project-canvas');
+            }}
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400"
+          >
+            {projectLabel}
+          </button>
+        )}
 
         {isSidebarOpen && !isRenaming && (
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity relative z-10">
+          <div className="mr-2 flex items-center gap-1 text-gray-400">
             {isArchivedList ? (
-              <div title="Restore Project" className="flex">
-                <ArchiveRestore
-                  size={14}
-                  className="text-gray-400 hover:text-green-400 transition-colors cursor-pointer"
-                  onClick={(e) => handleUnarchive(e, project)}
-                />
-              </div>
+              <button
+                type="button"
+                aria-label={`Restore project ${project.name}`}
+                title="Restore project"
+                onClick={() => void handleUnarchive(project)}
+                className="rounded p-1 hover:text-green-400 focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <ArchiveRestore size={14} aria-hidden="true" />
+              </button>
             ) : (
               <>
-                <Pencil
-                  size={14}
-                  className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  onClick={(e) => handleRenameProject(e, project)}
-                />
+                <button
+                  type="button"
+                  aria-label={`Rename project ${project.name}`}
+                  title="Rename project"
+                  onClick={() => handleRenameProject(project)}
+                  className="rounded p-1 hover:text-white focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <Pencil size={14} aria-hidden="true" />
+                </button>
                 {project.name !== 'Inbox' && (
-                  <div title="Archive Project" className="flex">
-                    <Trash2
-                      size={14}
-                      className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
-                      onClick={(e) => handleDeleteProject(e, project)}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Archive project ${project.name}`}
+                    title="Archive project"
+                    ref={(button) => {
+                      if (button && restoreArchiveFocus.current === project.id) {
+                        restoreArchiveFocus.current = null;
+                        button.focus();
+                      }
+                    }}
+                    onClick={() => handleArchiveProject(project)}
+                    className="rounded p-1 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <Archive size={14} aria-hidden="true" />
+                  </button>
                 )}
               </>
             )}
@@ -238,26 +266,26 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
   return (
     <div className="mb-2">
       {isSidebarOpen && (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-expanded={isOpen}
-          className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors group"
-        >
-          <span className="whitespace-nowrap flex items-center gap-2">
+        <div className="mb-1 flex items-center">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            className="flex min-w-0 flex-1 items-center justify-between rounded px-4 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400"
+          >
             Projects
-          </span>
-          <div className="flex items-center gap-1">
-            <Plus
-              size={14}
-              className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-white"
-              onClick={handleCreateProject}
-            />
-            <ChevronDown
-              size={14}
-              className={cn("transition-transform duration-200", isOpen ? "rotate-180" : "")}
-            />
-          </div>
-        </button>
+            <ChevronDown size={14} className={cn('transition-transform', isOpen && 'rotate-180')} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Create project"
+            title="Create project"
+            onClick={() => void handleCreateProject()}
+            className="mr-2 rounded p-1 text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-white"
+          >
+            <Plus size={14} aria-hidden="true" />
+          </button>
+        </div>
       )}
 
       <AnimatePresence initial={false}>
@@ -279,6 +307,8 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
             {isSidebarOpen && archivedProjects.length > 0 && (
               <div className="mt-4">
                 <button
+                  type="button"
+                  aria-expanded={isArchivesOpen}
                   onClick={() => setIsArchivesOpen(!isArchivesOpen)}
                   className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-500 hover:text-gray-300 tracking-wider mb-1 transition-colors"
                 >
