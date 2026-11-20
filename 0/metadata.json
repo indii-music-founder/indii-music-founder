@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M7X4G5VXSRA3110CMSJFPCWZ",
+  "session_id": "01a1f93d-c286-7d62-bdb6-cb7269be9389",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-20T18:46:31.834408Z",
+  "branch": "codex/restore-firebase-catalog-deploy",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/deploy.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 329249,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12300160,
+    "output_tokens": 6309,
+    "api_call_count": 51
+  },
+  "redaction": {
+    "replacements": 143,
+    "layers": {
+      "betterleaks": 7,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 137,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}
