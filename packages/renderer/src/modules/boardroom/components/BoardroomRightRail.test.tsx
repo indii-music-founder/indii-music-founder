@@ -68,10 +68,10 @@ describe('BoardroomRightRail', () => {
         fireEvent.click(standardsTab);
 
         expect(screen.getByText('Standards & Resources')).toBeInTheDocument();
-        expect(screen.getByText('Operational Limits')).toBeInTheDocument();
-        expect(screen.getByText('Gemini 3 Pro')).toBeInTheDocument();
-        expect(screen.getByText('2,000,000 tokens')).toBeInTheDocument();
         expect(screen.getByText('Boardroom Standards')).toBeInTheDocument();
+        expect(screen.queryByText('Gemini 3 Pro')).not.toBeInTheDocument();
+        expect(screen.queryByText('2,000,000 tokens')).not.toBeInTheDocument();
+        expect(screen.queryByText('Optimal')).not.toBeInTheDocument();
     });
 
     it('switches between tabs and displays room presets actions', () => {
@@ -136,11 +136,11 @@ describe('BoardroomRightRail', () => {
         const standardsTab = screen.getByTitle('Standards & Resources');
         fireEvent.click(standardsTab);
 
-        expect(screen.getByText('Operational Limits')).toBeInTheDocument();
+        expect(screen.getByText('Boardroom Standards')).toBeInTheDocument();
 
         const closeBtn = screen.getByLabelText('Close Rail');
         fireEvent.click(closeBtn);
 
-        expect(screen.queryByText('Operational Limits')).not.toBeInTheDocument();
+        expect(screen.queryByText('Boardroom Standards')).not.toBeInTheDocument();
     });
 });

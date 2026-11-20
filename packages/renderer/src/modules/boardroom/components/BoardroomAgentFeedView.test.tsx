@@ -40,6 +40,12 @@ describe('BoardroomAgentFeedView emergency abort (ISSUE-1629)', () => {
         expect(mockStoreState.stopAgent).toHaveBeenCalledTimes(1);
     });
 
+    it('shows the empty graph state without claiming monitoring is active', () => {
+        render(<BoardroomAgentFeedView />);
+        expect(screen.getByText('No active graph pipeline currently running.')).toBeVisible();
+        expect(screen.queryByText('ACTIVE MONITOR')).not.toBeInTheDocument();
+    });
+
     it('also stops the agent run on desktop, and can resume after the kill switch', async () => {
         win.electronAPI = {
             computer: {

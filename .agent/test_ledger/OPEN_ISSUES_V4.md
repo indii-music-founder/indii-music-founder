@@ -3364,7 +3364,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1646: Hard-coded "live" telemetry [U22]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — removed unsupported model, quota, health, and monitoring claims. The governance popover reports unavailable estimates, and the activity feed still shows workflow and handoff state. Signed-in acceptance remains pending.)
+- **Local evidence:** Three regressions reproduced the unsupported status before the change. Jev (jev-1.14.0) recommended removing inferred values and retaining observed activity.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U22 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

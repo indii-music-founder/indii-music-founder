@@ -132,21 +132,16 @@ export function BoardroomAgentFeedView() {
 
     return (
         <div data-testid="boardroom-agent-feed-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
-            {/* Header Telemetry Bar */}
+            {/* Agent feed header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                        <Activity size={20} className="animate-pulse" />
+                        <Activity size={20} aria-hidden="true" />
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                            Autonomous Swarm Telemetry
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                                ACTIVE MONITOR
-                            </span>
-                        </h2>
+                        <h2 className="text-sm font-bold text-white">Agent Activity</h2>
                         <p className="text-xs text-white/50 mt-0.5">
-                            Live inspection of browser workers, computer-use actions, and inter-agent handoffs.
+                            Workflow steps and inter-agent handoffs.
                         </p>
                     </div>
                 </div>

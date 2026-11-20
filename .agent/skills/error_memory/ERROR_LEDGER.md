@@ -1,3 +1,8 @@
+## 2026-11-20 Boardroom telemetry showed default values as live status
+
+- **Evidence:** ISSUE-1646. Three UI regressions found hard-coded model and quota claims, a governance decision built from an empty run list, and an active monitor badge on an idle feed.
+- **Prevention:** Read live metrics from the current run or service. Show unavailable values when the view has no source. Keep an empty observation distinct from a measured zero.
+
 ## 2026-11-20 Agent prompt redaction changed asset IDs and failed image tools started visual corrections
 
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.

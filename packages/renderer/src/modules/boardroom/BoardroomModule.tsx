@@ -255,8 +255,8 @@ export function BoardroomModule() {
                                         ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/25"
                                         : "text-gray-300 hover:text-white hover:bg-white/10"
                                 )}
-                                title="Live Agent Computer Feed & Telemetry"
-                                aria-label="Toggle Live Agent Feed"
+                                title="Agent workflow activity and handoffs"
+                                aria-label="Toggle agent activity feed"
                             >
                                 <Radio size={11} className={boardroomWorkspaceLayout !== 'closed' && boardroomWorkspaceTab === 'agent-feed' ? "text-white" : "text-cyan-400"} />
                                 <span className="hidden lg:inline">Feed</span>

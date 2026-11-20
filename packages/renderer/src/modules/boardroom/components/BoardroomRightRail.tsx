@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     ShieldCheck,
-    Cpu,
     Bot,
     Layers,
     Sliders,
@@ -89,30 +88,6 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
                             {/* TAB 1: STANDARDS & RESOURCES */}
                             {activeTab === 'resources' && (
                                 <>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between text-[11px] font-bold text-white uppercase tracking-wider">
-                                            <span className="flex items-center gap-1.5 text-indigo-400">
-                                                <Cpu size={13} />
-                                                Operational Limits
-                                            </span>
-                                            <span className="text-emerald-400 font-mono text-[10px]">Optimal</span>
-                                        </div>
-                                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-1.5 font-mono text-[11px]">
-                                            <div className="flex justify-between">
-                                                <span className="text-white/40">Inference Core:</span>
-                                                <span className="text-white/90">Gemini 3 Pro</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-white/40">Context Horizon:</span>
-                                                <span className="text-white/90">2,000,000 tokens</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-white/40">Rate Quota:</span>
-                                                <span className="text-emerald-400">Normal (Active)</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between text-[11px] font-bold text-white uppercase tracking-wider">
                                             <span className="flex items-center gap-1.5 text-rose-400">
