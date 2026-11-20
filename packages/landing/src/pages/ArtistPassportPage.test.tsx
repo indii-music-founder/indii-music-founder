@@ -135,6 +135,18 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(screen.getByText(/Find my next steps/i)).toBeDefined();
   });
 
+  it('leads with the artist’s situation on a campaign entry', () => {
+    render(
+      <MemoryRouter initialEntries={['/passport?entry=first-song']}>
+        <ArtistPassportPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: 'You finished your first song. Now what?' })).toBeDefined();
+    expect(screen.getByText(/see which credits, ownership details, and release steps to check first/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /find my next steps/i })).toBeDefined();
+  });
+
   it('advances to Step 1 and validates career stage selection', () => {
     render(
       <MemoryRouter initialEntries={['/passport']}>
@@ -149,7 +161,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(screen.getByText(/Section 01 \/ Career Stage/i)).toBeDefined();
     expect(screen.getByText(/Where are you currently in your music journey\?/i)).toBeDefined();
 
-    const nextBtn = screen.getByText(/Next Step/i).closest('button');
+    const nextBtn = screen.getByRole<HTMLButtonElement>('button', { name: /^Next Step$/i });
     expect(nextBtn?.disabled).toBe(true);
 
     // Select Stage
@@ -171,7 +183,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     // Step 0 -> Step 1
     fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Now on Step 2
     expect(screen.getByText(/Section 02 \/ Musical Focus/i)).toBeDefined();
@@ -181,7 +193,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(screen.getByText(/Section 01 \/ Career Stage/i)).toBeDefined();
 
     // Next button should still be enabled because stage is already selected
-    const nextBtn = screen.getByText(/Next Step/i).closest('button');
+    const nextBtn = screen.getByRole<HTMLButtonElement>('button', { name: /^Next Step$/i });
     expect(nextBtn?.disabled).toBe(false);
   });
 
@@ -197,21 +209,21 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 2: Genre
     fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 3: Rights
     fireEvent.click(screen.getByText('ASCAP'));
     fireEvent.click(screen.getByText(/Yes — my compositions are registered with The MLC/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 4: Distribution
     fireEvent.click(screen.getByText('DistroKid'));
     fireEvent.click(screen.getByText(/Audio is in mixing or final mastering stages/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 5: Goals
     expect(screen.getByText(/Section 05 \/ Immediate Priorities/i)).toBeDefined();
@@ -252,15 +264,15 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
     fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
     fireEvent.click(screen.getByText('ASCAP'));
     fireEvent.click(screen.getByText(/Yes — my compositions are registered with The MLC/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
     fireEvent.click(screen.getByText('DistroKid'));
     fireEvent.click(screen.getByText(/Audio is in mixing or final mastering stages/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
     fireEvent.click(screen.getByText(/Improve royalty registration & collection tracking/i));
     fireEvent.click(screen.getByText(/Generate Assessment/i));
 
@@ -283,21 +295,21 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 2: Genre
     fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 3: Rights
     fireEvent.click(screen.getByText('ASCAP'));
     fireEvent.click(screen.getByText(/No — not registered with The MLC/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 4: Distribution
     fireEvent.click(screen.getByText('DistroKid'));
     fireEvent.click(screen.getByText(/Audio is in mixing or final mastering stages/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 5: Goals
     fireEvent.click(screen.getByText(/Improve royalty registration & collection tracking/i));
@@ -351,21 +363,21 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     // Step 1: Stage
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 2: Genre
     fireEvent.click(screen.getByText(/Electronic \/ Dance/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 3: Rights (PRO + MLC)
     fireEvent.click(screen.getByText('ASCAP'));
     fireEvent.click(screen.getByText(/No — not registered with The MLC/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 4: Distribution & Status
     fireEvent.click(screen.getByText('DistroKid'));
     fireEvent.click(screen.getByText(/Audio is in mixing or final mastering stages/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     // Step 5: Goals
     fireEvent.click(screen.getByText(/Improve royalty registration & collection tracking/i));
@@ -416,7 +428,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     );
     fireEvent.click(screen.getByText(/Find my next steps/i));
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     expect(screen.queryByLabelText(/Describe your sound/i)).toBeNull();
     fireEvent.click(screen.getByText(/Other \/ Custom Sound/i));
@@ -438,7 +450,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
 
     // Step 1 -> Step 2
     fireEvent.click(screen.getByText(/Building momentum/i));
-    fireEvent.click(screen.getByText(/Next Step/i));
+    fireEvent.click(screen.getByRole('button', { name: /^Next Step$/i }));
 
     const events = readPassportEventLog();
     const eventNames = events.map((e) => e.eventName);

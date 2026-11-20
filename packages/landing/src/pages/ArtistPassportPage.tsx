@@ -340,7 +340,7 @@ export default function ArtistPassportPage() {
                   Where are you currently in your music journey?
                 </h2>
                 <p className="text-sm text-[#8A8F9E] mt-1">
-                  We calibrate recommendations based on your operational complexity.
+                  Your answers help us suggest the right next step for this stage of your career.
                 </p>
               </div>
 
