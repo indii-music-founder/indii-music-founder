@@ -10,6 +10,7 @@ export interface FileSystemSlice {
     expandedFolderIds: string[];
     isFileSystemLoading: boolean;
     fileSystemError: string | null;
+    fileNodesLoadError: string | null;
     draggingFileNodeId: string | null;
 
     // Actions
@@ -32,17 +33,18 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
     expandedFolderIds: [],
     isFileSystemLoading: false,
     fileSystemError: null,
+    fileNodesLoadError: null,
     draggingFileNodeId: null,
 
     fetchFileNodes: async (projectId: string) => {
-        set({ isFileSystemLoading: true, fileSystemError: null });
+        set({ isFileSystemLoading: true, fileSystemError: null, fileNodesLoadError: null });
         try {
             const currentUserId = get().user?.uid;
             const nodes = await fileSystemService.getProjectNodes(projectId, currentUserId);
             set({ fileNodes: nodes });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch file nodes';
-            set({ fileSystemError: message });
+            set({ fileSystemError: message, fileNodesLoadError: message });
             logger.warn('Could not fetch file nodes for project:', { projectId, error });
         } finally {
             set({ isFileSystemLoading: false });

@@ -3,6 +3,13 @@
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.
 - **Prevention:** Preserve the documented identifier formats at the serialization boundary. Verify redaction with a prompt containing both IDs and payment text. Require a successful image receipt and loadable image bytes before proposing a correction. Recheck the originating turn before dispatching it.
 
+## 2026-11-20 Project Vault reported search failure on an empty project
+
+- **Files:** `packages/renderer/src/modules/files/FileDashboard.tsx` and `packages/renderer/src/core/store/slices/fileSystemSlice.ts`.
+- **Cause:** The vault rendered one filtered-empty message for all zero-row results and its icon-only view controls lacked accessible names.
+- **Fix:** Show separate loading, read error, first-use, and filtered-empty states. Keep the read error scoped to fetching file nodes and expose each view control's name and selection.
+- **Prevention:** Check whether a file query loaded and whether filters are active before choosing empty-state copy. Keep failed mutations separate from read failures.
+
 ## 2026-11-19 Boardroom Paid Judge Per Token, Overlay Hid Cost Approval, UI Timer Ended Live Replies, Handoff Reject No-Op, Missing Await Detached Timeout/Stop (PAID_CALL_IN_PER_TOKEN_EFFECT, FULLSCREEN_OVERLAY_ABOVE_AWAITED_MODAL, UI_TIMEOUT_SHORTER_THAN_SERVICE, TRISTATE_DECISION_AS_BOOLEAN, RETURN_WITHOUT_AWAIT_IN_TRY_FINALLY, STRING_ABORT_REASON_RENDERED_AS_ERROR)
 
 - **SEVERITY:** Critical/High (V4 ISSUE-1624, 1625, 1627, 1628, 1629, 1654, 1666, 1667.)
