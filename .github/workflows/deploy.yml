@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'artifacts/**'
-      - '.agent/**'
-      - 'deep-test-*.png'
+    paths:
+      - '**'
+      - '!**.md'
+      - '!docs/**'
+      - '!artifacts/**'
+      - '!.agent/**'
+      - '!deep-test-*.png'
+      # The catalog is checked by the deployment build. A repair must trigger a new run.
+      - '.agent/capabilities/catalog.json'
   workflow_dispatch:
 
 concurrency:
