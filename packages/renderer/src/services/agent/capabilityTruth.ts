@@ -390,6 +390,9 @@ export interface CapabilityOverclaimResult {
 }
 
 const CAPABILITY_OVERCLAIM_PATTERNS: RegExp[] = [
+    // Issue #934: A runtime registry describes configuration, not verification.
+    /\b(?:here (?:is|are) (?:the )?verified status of (?:our |the )?capabilities|(?:core|workspace|conductor) capabilities\s*\(active\s*(?:&|and)\s*verified\))/i,
+    /\b(?:performed|ran|completed)\s+(?:a\s+)?(?:comprehensive|full)\s+(?:check|audit)\s+of\s+(?:my|our|the)\s+backend\b/i,
     /\b(?:all|every)\s+(?:\d+\s+)?(?:departments?|department heads?|specialists?|agents?|systems?|capabilities?)\b[^.?!]{0,80}\b(?:(?:fully|completely|entirely)\s+)?(?:implemented|verified|operational|production[- ]ready|deployed|complete[d]?)\b/i,
     /\b(?:i|we|our team|the (?:app|application|platform|product|system|service))\b[^.?!]{0,30}\b(?:am|are|is|have|has|was|were)\s+(?:fully|completely|entirely)\s+(?:implemented|verified|operational|production[- ]ready)\b/i,
     /\ball\s+(?:systems?|departments?)\s+(?:are\s+)?(?:verified|operational|go)\b/i,

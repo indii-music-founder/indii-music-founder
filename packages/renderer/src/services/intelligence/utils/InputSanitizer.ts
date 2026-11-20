@@ -14,7 +14,7 @@ export class InputSanitizer {
 
     // PII & Secret Regexes
 
-    private static readonly CREDIT_CARD_REGEX = /\b(?:\d[ -]*?){13,19}\b/g;
+    private static readonly CREDIT_CARD_REGEX = /\b\d(?:[ -]*\d){12,18}\b/g;
     private static readonly KEY_VALUE_SECRET_REGEX = /\b(password|passwd|api_key|access_token|secret_key|private_key)(\s*[:=]\s*)([^\s]+)/gi;
     private static readonly STRIPE_KEY_REGEX = new RegExp('\\b(sk' + '_live_[0-9a-zA-Z]+)\\b', 'g');
 
@@ -73,7 +73,16 @@ export class InputSanitizer {
         let redacted = input;
 
         // Redact Credit Cards
-        redacted = redacted.replace(this.CREDIT_CARD_REGEX, '[REDACTED_CREDIT_CARD]');
+        redacted = redacted.replace(this.CREDIT_CARD_REGEX, (candidate, offset: number) => {
+            // The app generated these legacy IDs from Date.now(). Keep the
+            // exception specific to the ID format and the millisecond range.
+            const before = input.slice(Math.max(0, offset - 40), offset);
+            const after = input[offset + candidate.length];
+            const isTimestampId =
+                (/^1[5-9]\d{11}$/.test(candidate) && /"id"\s*:\s*"$/.test(before) && after === '"') ||
+                (/^(?:3000-)?1[5-9]\d{11}$/.test(candidate) && /\bprint-$/.test(before));
+            return isTimestampId ? candidate : '[REDACTED_CREDIT_CARD]';
+        });
 
         // Redact Key-Value Secrets (e.g. password: ***)
         redacted = redacted.replace(this.KEY_VALUE_SECRET_REGEX, '$1$2[REDACTED_SECRET]');

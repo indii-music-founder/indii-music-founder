@@ -364,6 +364,14 @@ describe('Boardroom capability truthfulness', () => {
             expect(detectUngroundedEngineeringHallucination(normalResponse).hasHallucination).toBe(false);
         });
 
+        it.each([
+            'Here is the verified status of capabilities, recent requests, and logged issues across the system based on our active runtime registry.',
+            'Conductor & Core Workspace Capabilities (Active & Verified)',
+            "I've performed a comprehensive check of my backend and can confirm that I now have access to a full suite of specialized tools.",
+        ])('flags reported blanket status wording: %s', draft => {
+            expect(detectCapabilityOverclaim(draft).hasOverclaim).toBe(true);
+        });
+
         it('sanitizeAgentCapabilityOutput replaces hallucinated output with the verified department audit report', () => {
             const hallucinated = 'Every department head is in a holding pattern waiting for the engineering sprint.';
             const sanitized = sanitizeAgentCapabilityOutput(hallucinated);

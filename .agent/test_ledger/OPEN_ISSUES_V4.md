@@ -3860,3 +3860,36 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ---
 
+
+### ISSUE-1687: Boardroom drafts still overclaim verified capability status
+
+- **Status:** 🟡 PARTIAL (2026-11-20). Deterministic checks cover the reported registry-based certification and comprehensive backend-check wording.
+- **Severity:** HIGH
+- **Module:** Boardroom capability truth
+- **Owner:** Boardroom orchestration
+- **Evidence:** [GitHub #934](https://github.com/indii-music-founder/indii-music-founder/issues/934) records intercepted Generalist, Video, Social, and Marketing drafts. The guardrail supplied a grounded response. See [the earlier repair for #917](https://entire.com/gh/indii-music-founder/-/trails/355/changes/indii-music-founder/355) and the historical #424 entry above.
+- **Impact:** Unverified drafts can claim that configured tools or departments were checked live.
+- **Fix:** Route the observed blanket certification wording to the existing grounded fallback.
+- **Acceptance:** In signed-in Studio, request capability status from the Conductor and the reported specialists. Verify that configured tools, recent evidence, and live verification remain distinct in the displayed responses.
+
+### ISSUE-1688: Direct-mode follow-ups time out and uploaded images fail batch editing
+
+- **Status:** 🟡 PARTIAL (2026-11-20). Upload selection, workspace context, and visual correction eligibility changed locally. The cause of the 120-second provider follow-up timeout still needs a current trace.
+- **Severity:** HIGH
+- **Module:** Direct agent chat and creative tools
+- **Owner:** Agent orchestration and Creative tools
+- **Evidence:** [GitHub #936](https://github.com/indii-music-founder/indii-music-founder/issues/936) records four symptoms. ISSUE-1654 covers timeout enforcement and cancellation on a related path.
+- **Impact:** The uploaded image may be unavailable to the edit tool. A failed tool or later text turn can trigger an unrelated visual correction.
+- **Fix:** Resolve upload indices against the turn's captured upload references. Derive agent scope from the same organization resolver as media storage. Require a successful image tool result and accessible image pixels for visual evaluation, and restrict correction to the originating turn.
+- **Acceptance:** Upload an image through Direct chat and batch-edit it through index 0. Preview the saved result and verify workspace consistency. Draft social copy and ask where the result is saved. Confirm the follow-up finishes without a timeout and text or failed turns produce no visual corrections.
+
+### ISSUE-1689: Prompt PII redaction alters timestamp-based creative and brand history IDs
+
+- **Status:** 🟡 PARTIAL (2026-11-20). Prompt sanitizer recognizes the reported legacy identifier formats. Signed-in acceptance is pending.
+- **Severity:** HIGH
+- **Module:** Agent prompt serialization
+- **Owner:** Agent runtime and Creative tools
+- **Evidence:** [GitHub #937](https://github.com/indii-music-founder/indii-music-founder/issues/937) reports corrupted print gallery IDs and brand health-history IDs. The prompt redactor matches the numeric portions as card candidates.
+- **Impact:** Tools cannot resolve an asset from the rewritten ID.
+- **Fix:** Preserve millisecond timestamps in the affected ID formats and retain normal redaction for payment text.
+- **Acceptance:** Generate a print-ready file and reuse the saved asset through the agent. Confirm the original gallery ID resolves and the brand health-history ID remains intact. Check that payment-card redaction remains effective with synthetic input in the isolated sanitizer test.
