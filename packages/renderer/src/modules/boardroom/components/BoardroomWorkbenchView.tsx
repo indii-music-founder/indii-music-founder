@@ -130,6 +130,7 @@ export function BoardroomWorkbenchView() {
             value: item.url,
             prompt: item.prompt,
             sourceType: item.type,
+            storageUri: item.storageUri,
             origin: 'boardroom_workbench',
         });
         toast.success(`Asset pinned to Boardroom references!`);

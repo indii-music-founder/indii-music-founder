@@ -27,7 +27,7 @@ import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSl
 import { EmailSlice, createEmailSlice } from './slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
-import { BoardroomSlice, ReferencedAsset, createBoardroomSlice } from './slices/boardroomSlice';
+import { BoardroomSlice, ReferencedAsset, createBoardroomSlice, deduplicateBoardroomReferences } from './slices/boardroomSlice';
 import { RegistrationSlice, createRegistrationSlice } from './slices/registrationSlice';
 import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
@@ -217,14 +217,16 @@ export function resetStoreForWorkspaceBoundary(): void {
 
 // Centralized event-driven context publisher to synchronize boardroom referenced assets
 useStore.subscribe((state, prevState) => {
-    if (state.generatedHistory === prevState.generatedHistory && 
+    if (state.conversationMode !== 'boardroom') return;
+    if (state.conversationMode === prevState.conversationMode &&
+        state.generatedHistory === prevState.generatedHistory &&
         state.distribution?.releases === prevState.distribution?.releases) {
         return;
     }
 
-    // Dynamic import to break circular dependency cycle
+    // Resolve the publisher before reading the workspace again.
     import('@/hooks/useBoardroomContextHandshake').then(({ publishBoardroomContextUpdate }) => {
-        publishBoardroomContextUpdate(state);
+        publishBoardroomContextUpdate(useStore.getState());
     }).catch(err => {
         console.error('Failed to import publishBoardroomContextUpdate dynamically', err);
     });
@@ -271,8 +273,8 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
     if (snapshot.activeAgents !== undefined) {
         rootUpdates.activeAgents = snapshot.activeAgents;
     }
-    if (snapshot.referencedAssets !== undefined) {
-        rootUpdates.referencedAssets = snapshot.referencedAssets;
+    if (Array.isArray(snapshot.referencedAssets)) {
+        rootUpdates.referencedAssets = deduplicateBoardroomReferences(snapshot.referencedAssets);
     }
     if (snapshot.currentModule !== undefined && isValidModule(snapshot.currentModule)) {
         rootUpdates.currentModule = snapshot.currentModule;

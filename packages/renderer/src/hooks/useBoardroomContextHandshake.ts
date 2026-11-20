@@ -1,6 +1,3 @@
-import { useEffect } from 'react';
-import { Logger } from '@/core/logger/Logger';
-import { useStore } from '@/core/store';
 import type { StoreState } from '@/core/store';
 import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
 import type { ReleaseStatus } from '@/services/distribution/types/distributor';
@@ -68,7 +65,10 @@ function buildDistributionReferencedAsset(release: NonNullable<StoreState['distr
  * Centrally publishes/synchronizes current workspace assets (Creative, Distribution)
  * into the Boardroom's referenced assets context.
  */
-export function publishBoardroomContextUpdate(state: StoreState) {
+export function publishBoardroomContextUpdate(state: Pick<StoreState,
+    'conversationMode' | 'generatedHistory' | 'distribution' | 'addAutomaticReferencedAssets'
+>) {
+    if (state.conversationMode !== 'boardroom') return;
     const newAssets: ReferencedAsset[] = [];
 
     // Gather recent Creative outputs
@@ -96,42 +96,5 @@ export function publishBoardroomContextUpdate(state: StoreState) {
         });
     }
 
-    // If we have new assets, add them to referenced assets
-    if (newAssets.length > 0) {
-        // Get current referenced assets and merge (avoid duplicates)
-        const currentAssets = state.referencedAssets || [];
-        const existingIds = new Set(currentAssets.map(a => a.id));
-
-        const assetsToAdd = newAssets.filter(asset => !existingIds.has(asset.id));
-
-        // Add assets to boardroom
-        assetsToAdd.forEach(asset => {
-            state.addReferencedAsset(asset);
-        });
-
-        if (import.meta.env.DEV && assetsToAdd.length > 0) {
-            Logger.info('BoardroomHandshake', `Boardroom context handshake: added ${assetsToAdd.length} assets`, { assetsToAdd });
-        }
-    }
-}
-
-/**
- * ISSUE-033 Fix: Automatic context handshake when entering Boardroom
- *
- * Gathers recent departmental outputs (Creative images, Distribution releases)
- * and auto-injects them as referenced assets so seated agents are aware of
- * studio outputs without manual user intervention.
- */
-export function useBoardroomContextHandshake() {
-    useEffect(() => {
-        const state = useStore.getState();
-
-        // Only run when entering boardroom mode
-        if (state.conversationMode !== 'boardroom') {
-            return;
-        }
-
-        publishBoardroomContextUpdate(state);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [useStore((state) => state.conversationMode)]);
+    if (newAssets.length) state.addAutomaticReferencedAssets(newAssets);
 }

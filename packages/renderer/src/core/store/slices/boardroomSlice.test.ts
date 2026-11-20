@@ -11,6 +11,35 @@ function createBoardroomStore() {
     return createStore<BoardroomSlice>()(createBoardroomSlice);
 }
 
+describe('Boardroom references', () => {
+    const art = { id: 'creative-cover', name: 'Cover', type: 'url' as const, value: 'gs://studio/cover.png' };
+    const manual = { ...art, id: 'asset-cover', value: 'https://studio.example/cover.png', storageUri: art.value };
+    const newer = { ...art, id: 'creative-new', value: 'gs://studio/new.png' };
+
+    it('deduplicates an automatic asset and its manual pin across their URLs', () => {
+        const { getState } = createBoardroomStore();
+        getState().addReferencedAsset(manual);
+        getState().addAutomaticReferencedAssets([art, art]);
+        expect(getState().referencedAssets).toEqual([manual]);
+    });
+
+    it('remembers removals and Clear All without excluding new assets or explicit pins', () => {
+        const { getState } = createBoardroomStore();
+        getState().addAutomaticReferencedAssets([art]);
+        getState().removeReferencedAsset(art.id);
+        getState().addAutomaticReferencedAssets([art, newer]);
+        expect(getState().referencedAssets).toEqual([newer]);
+
+        getState().clearReferencedAssets();
+        getState().addAutomaticReferencedAssets([art, newer]);
+        expect(getState().referencedAssets).toEqual([]);
+
+        getState().addReferencedAsset(manual);
+        getState().addAutomaticReferencedAssets([art, newer]);
+        expect(getState().referencedAssets).toEqual([manual]);
+    });
+});
+
 describe('Boardroom canonical department-head seating', () => {
     it.each([
         ['URL-restored state', ['finance.tax', 'legal']],

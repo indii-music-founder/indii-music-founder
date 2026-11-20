@@ -34,6 +34,29 @@ export interface ReferencedAsset {
     sourceType?: 'image' | 'video' | 'music' | 'text';
 }
 
+function referenceKeys(asset: ReferencedAsset): string[] {
+    const keys = [`id:${asset.id}`];
+    if (asset.type === 'url' && asset.value) keys.push(`url:${asset.value}`);
+    if (asset.storageUri) keys.push(`url:${asset.storageUri}`);
+    return keys;
+}
+
+function mergeReferences(current: ReferencedAsset[], incoming: readonly ReferencedAsset[], dismissed: readonly string[] = []) {
+    const seen = new Set([...dismissed, ...current.flatMap(referenceKeys)]);
+    const next = [...current];
+    for (const asset of incoming) {
+        const keys = referenceKeys(asset);
+        if (keys.some(key => seen.has(key))) continue;
+        keys.forEach(key => seen.add(key));
+        next.push(asset);
+    }
+    return next.length === current.length ? current : next;
+}
+
+export function deduplicateBoardroomReferences(assets: ReferencedAsset[]): ReferencedAsset[] {
+    return mergeReferences([], assets);
+}
+
 export interface A2AMessage {
     id: string;
     fromAgent: string;
@@ -49,6 +72,7 @@ export interface A2AMessage {
 export interface BoardroomSlice {
     activeAgents: string[];
     referencedAssets: ReferencedAsset[];
+    dismissedReferenceKeys: string[];
     a2aMessages: A2AMessage[];
     focusedHeadId: string | null;
 
@@ -79,6 +103,7 @@ export interface BoardroomSlice {
     openBoardroomAgentFeed: (layout?: 'split' | 'stage') => void;
 
     addReferencedAsset: (asset: ReferencedAsset) => void;
+    addAutomaticReferencedAssets: (assets: readonly ReferencedAsset[]) => void;
     removeReferencedAsset: (assetId: string) => void;
     clearReferencedAssets: () => void;
 
@@ -91,6 +116,7 @@ export interface BoardroomSlice {
 export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => ({
     activeAgents: [BOARDROOM_CONDUCTOR_ID],
     referencedAssets: [],
+    dismissedReferenceKeys: [],
     a2aMessages: [],
     focusedHeadId: null,
 
@@ -234,15 +260,33 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
         boardroomWorkspaceTab: 'agent-feed',
     })),
 
-    addReferencedAsset: (asset) => set((state) => ({
-        referencedAssets: [...state.referencedAssets, asset]
-    })),
+    addReferencedAsset: asset => set(state => {
+        const keys = referenceKeys(asset);
+        const dismissedReferenceKeys = state.dismissedReferenceKeys.filter(key => !keys.includes(key));
+        const referencedAssets = mergeReferences(state.referencedAssets, [asset]);
+        if (referencedAssets === state.referencedAssets &&
+            dismissedReferenceKeys.length === state.dismissedReferenceKeys.length) return state;
+        return { referencedAssets, dismissedReferenceKeys };
+    }),
 
-    removeReferencedAsset: (assetId) => set((state) => ({
-        referencedAssets: state.referencedAssets.filter(a => a.id !== assetId)
-    })),
+    addAutomaticReferencedAssets: assets => set(state => {
+        const referencedAssets = mergeReferences(state.referencedAssets, assets, state.dismissedReferenceKeys);
+        return referencedAssets === state.referencedAssets ? state : { referencedAssets };
+    }),
 
-    clearReferencedAssets: () => set({ referencedAssets: [] }),
+    removeReferencedAsset: assetId => set(state => {
+        const asset = state.referencedAssets.find(item => item.id === assetId);
+        if (!asset) return state;
+        return {
+            referencedAssets: state.referencedAssets.filter(item => item.id !== assetId),
+            dismissedReferenceKeys: [...new Set([...state.dismissedReferenceKeys, ...referenceKeys(asset)])],
+        };
+    }),
+
+    clearReferencedAssets: () => set(state => state.referencedAssets.length ? {
+        referencedAssets: [],
+        dismissedReferenceKeys: [...new Set([...state.dismissedReferenceKeys, ...state.referencedAssets.flatMap(referenceKeys)])],
+    } : state),
 
     addA2AMessage: (msg) => set((state) => ({
         a2aMessages: [...state.a2aMessages, msg]

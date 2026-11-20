@@ -12,6 +12,7 @@ import {
     RotateCcw,
     Sparkles,
     UserPlus,
+    X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
@@ -32,6 +33,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
     const soloAgent = useStore(state => state.soloAgent);
     const toggleAgent = useStore(state => state.toggleAgent);
     const referencedAssets = useStore(state => state.referencedAssets) || [];
+    const removeReferencedAsset = useStore(state => state.removeReferencedAsset);
     const clearReferencedAssets = useStore(state => state.clearReferencedAssets);
 
     const handleSeatAll = () => {
@@ -158,7 +160,14 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
                                                 {referencedAssets.map((asset) => (
                                                     <div key={asset.id} className="p-2 rounded bg-white/5 border border-white/5 flex items-center justify-between">
                                                         <span className="truncate max-w-[180px]">{asset.name}</span>
-                                                        <span className="text-[10px] uppercase font-mono text-white/40">{asset.type}</span>
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Remove reference: ${asset.name}`}
+                                                            onClick={() => removeReferencedAsset(asset.id)}
+                                                            className="shrink-0 rounded p-1.5 text-white/55 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2"
+                                                        >
+                                                            <X size={12} aria-hidden="true" />
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>

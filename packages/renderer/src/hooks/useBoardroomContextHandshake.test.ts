@@ -1,12 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { publishBoardroomContextUpdate } from './useBoardroomContextHandshake';
+import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
 
 describe('publishBoardroomContextUpdate', () => {
-    let addReferencedAsset: ReturnType<typeof vi.fn>;
+    const addAutomaticReferencedAssets = vi.fn<(assets: readonly ReferencedAsset[]) => void>();
 
     beforeEach(() => {
-        addReferencedAsset = vi.fn();
+        addAutomaticReferencedAssets.mockReset();
     });
 
     it('publishes durable creative assets with prompt and lineage metadata', () => {
@@ -46,13 +47,13 @@ describe('publishBoardroomContextUpdate', () => {
                     parentId: 'source-3',
                 },
             ] as any,
-            referencedAssets: [],
+            conversationMode: 'boardroom',
             distribution: { releases: [] } as any,
-            addReferencedAsset,
+            addAutomaticReferencedAssets,
         } as any);
 
-        expect(addReferencedAsset).toHaveBeenCalledTimes(3);
-        expect(addReferencedAsset).toHaveBeenCalledWith(expect.objectContaining({
+        expect(addAutomaticReferencedAssets).toHaveBeenCalledTimes(1);
+        expect(addAutomaticReferencedAssets).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({
             id: 'creative-img-1',
             value: 'gs://bucket/assets/img-1.png',
             prompt: 'Album cover',
@@ -60,17 +61,30 @@ describe('publishBoardroomContextUpdate', () => {
             parentId: 'source-1',
             storageUri: 'gs://bucket/assets/img-1.png',
             sourceType: 'image',
-        }));
-        expect(addReferencedAsset).toHaveBeenCalledWith(expect.objectContaining({
+        })]));
+        expect(addAutomaticReferencedAssets).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({
             id: 'creative-vid-1',
             value: 'gs://bucket/assets/vid-1.mp4',
             sourceType: 'video',
-        }));
-        expect(addReferencedAsset).toHaveBeenCalledWith(expect.objectContaining({
+        })]));
+        expect(addAutomaticReferencedAssets).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({
             id: 'creative-audio-1',
             value: 'gs://bucket/assets/audio-1.wav',
             sourceType: 'music',
-        }));
+        })]));
+    });
+
+    it('does not publish generated outputs outside Boardroom', () => {
+        publishBoardroomContextUpdate({
+            conversationMode: 'direct',
+            generatedHistory: [{
+                id: 'cover', type: 'image', url: 'https://studio.example/cover.png', prompt: 'Cover', timestamp: 3,
+                projectId: 'p1',
+            }],
+            distribution: { releases: [] } as any,
+            addAutomaticReferencedAssets,
+        });
+        expect(addAutomaticReferencedAssets).not.toHaveBeenCalled();
     });
 
     it('skips data-URI assets that are not durable enough for boardroom context', () => {
@@ -86,11 +100,11 @@ describe('publishBoardroomContextUpdate', () => {
                     origin: 'generated',
                 },
             ] as any,
-            referencedAssets: [],
+            conversationMode: 'boardroom',
             distribution: { releases: [] } as any,
-            addReferencedAsset,
+            addAutomaticReferencedAssets,
         } as any);
 
-        expect(addReferencedAsset).not.toHaveBeenCalled();
+        expect(addAutomaticReferencedAssets).not.toHaveBeenCalled();
     });
 });

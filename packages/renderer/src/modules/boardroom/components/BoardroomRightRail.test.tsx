@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const toggleAgent = vi.fn();
 const soloAgent = vi.fn();
 const clearReferencedAssets = vi.fn();
+const removeReferencedAsset = vi.fn();
 
 const storeState = {
     activeAgents: ['generalist', 'marketing', 'finance'],
     soloAgent,
     toggleAgent,
-    referencedAssets: [],
+    referencedAssets: [] as { id: string; name: string; type: string }[],
     clearReferencedAssets,
+    removeReferencedAsset,
 };
 
 vi.mock('@/core/store', () => ({
@@ -50,6 +52,7 @@ describe('BoardroomRightRail', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         storeState.activeAgents = ['generalist', 'marketing', 'finance'];
+        storeState.referencedAssets = [];
         storeState.soloAgent = soloAgent;
     });
 
@@ -72,6 +75,15 @@ describe('BoardroomRightRail', () => {
         expect(screen.getByText('Gemini 3 Pro')).toBeInTheDocument();
         expect(screen.getByText('2,000,000 tokens')).toBeInTheDocument();
         expect(screen.getByText('Boardroom Standards')).toBeInTheDocument();
+    });
+
+    it('offers a named remove action for each reference', () => {
+        storeState.referencedAssets = [{ id: 'cover', name: 'Album cover', type: 'url' }];
+        render(<BoardroomRightRail />);
+        fireEvent.click(screen.getByTitle('Standards & Resources'));
+        fireEvent.click(screen.getByRole('button', { name: 'Remove reference: Album cover' }));
+        expect(removeReferencedAsset).toHaveBeenCalledWith('cover');
+        expect(clearReferencedAssets).not.toHaveBeenCalled();
     });
 
     it('switches between tabs and displays room presets actions', () => {

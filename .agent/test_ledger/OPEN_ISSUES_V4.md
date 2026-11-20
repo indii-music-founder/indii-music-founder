@@ -3208,7 +3208,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1633: Referenced assets have several problems [U10]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — automatic references merge atomically against the current Boardroom workspace, deduplicate by ID or resource, and respect removals for the workspace session. The rail offers per-reference removal and browser pin IDs use UUIDs. Signed-in acceptance remains pending.)
+- **Local evidence:** Store regressions cover duplicate media, removal, Clear All, new output, and explicit pinning. Jev (jev-1.14.0) recommended the atomic merge and session dismissal approach.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U10 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

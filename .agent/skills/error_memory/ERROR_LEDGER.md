@@ -1,3 +1,8 @@
+## 2026-11-20 Boardroom auto-import replayed removed references
+
+- **Evidence:** ISSUE-1633. The deferred publisher captured a stale store snapshot, and reference removal only filtered the visible list.
+- **Prevention:** Read the current workspace after deferred loading. Merge automatic references inside one store update and honor session dismissal keys. Treat an explicit pin as a new user decision.
+
 ## 2026-11-20 Agent prompt redaction changed asset IDs and failed image tools started visual corrections
 
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.
