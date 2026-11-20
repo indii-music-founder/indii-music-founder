@@ -2,9 +2,7 @@
 
 ## Mainline Delivery Standard
 
-**`main` is the delivery target.** Before any code, git, CI, or push action, read [the shared branch and delivery policy](.agent/workflows/branch-safety.md). All coding agents, including Codex, Claude Code, and Gemini/Antigravity, use it and keep `origin` on Entire.
-
-This repository is an Entire GitHub mirror with a protected default branch. The standing policy authorizes a task branch and Entire Trail when delivering changes to protected `main`. Agents publish through Entire, merge when the applicable gates pass, and verify CI for the resulting `main` SHA. Use the `Docs and Policy Gate` for documentation changes and the applicable CI for application changes.
+**Publish each locally validated batch on a fresh task branch.** Before any code, Git, CI, or push action, read [the shared branch and delivery policy](.agent/workflows/branch-safety.md). All coding agents use Entire to publish from a branch based on current `origin/main`. The team handles review, remote CI, and merging to `main`.
 
 ## Entire Agent Workflow & Completion Standard
 
@@ -19,7 +17,7 @@ search, and review trails:
 - **Sessions, Checkpoints & Trails:** Use `entire status`, `entire trail`,
   `entire checkpoint`, `entire search --json --compact`, and `entire session`
   (run `entire agent-help` for exact flags). Publish task branches through Entire
-  and manage their changes through `entire trail` under the shared delivery policy.
+  under the shared delivery policy. Use `entire trail` when a Trail is requested.
 - **Authentication:** If an Entire push or command fails due to authentication,
   check `entire auth status` (or prompt the user for the official `entire login`
   flow) before calling the work blocked; never switch to an unauthorized

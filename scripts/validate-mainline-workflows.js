@@ -72,14 +72,8 @@ for (const name of ['CODEX.md', 'GEMINI.md', 'ANTIGRAVITY.md']) {
 }
 
 const monitor = fs.readFileSync(path.join(repoRoot, 'scripts', 'git_monitor_sync.js'), 'utf8');
-// Match the explicit direct-to-main push whether or not the call carries
-// extra options (e.g. timeout args): `runCommand('git push origin HEAD:main')`
-// or `runCommand('git push origin HEAD:main', false, TIMEOUTS.pushMs)`.
-if (!/runCommand\('git push origin HEAD:main'(?:,|\s*\))/.test(monitor)) {
-  failures.push('git_monitor_sync.js: missing explicit direct-to-main push');
-}
-if (/git pull --rebase|git push origin \$\{branchName\}/.test(monitor)) {
-  failures.push('git_monitor_sync.js: contains legacy branch/rebase behavior');
+if (/git push|git pull --rebase|gh (?:run|auth)/.test(monitor)) {
+  failures.push('git_monitor_sync.js: sync must not publish branches or poll GitHub');
 }
 
 if (failures.length > 0) {

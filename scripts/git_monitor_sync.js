@@ -16,15 +16,10 @@ if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Timeouts so a hung network call or validation run cannot stall the
-// monitor indefinitely with no visibility. Long validation steps get
-// generous caps; everything else fails fast.
+// Bound local Git inspection and remote fetches.
 const TIMEOUTS = {
     gitFetchMs: 60000,
     gitStatusMs: 30000,
-    validationMs: 1800000, // typecheck + full test run can take a while
-    pushMs: 120000,
-    ghMs: 60000,
 };
 
 function logMessage(message) {
@@ -137,27 +132,8 @@ async function executeSync() {
             behindCount = 0;
             syncPerformed = true;
         }
-        if (aheadCount > 1) {
-            throw new Error(`multiple-unpushed-commits-blocked:${aheadCount}`);
-        }
-        if (aheadCount === 1 && hasLocalChanges) {
-            throw new Error('unpushed-commit-with-dirty-worktree');
-        }
-
-        // Validate and push exactly one coherent mainline commit.
-        if (aheadCount === 1) {
-            logMessage('Verifying the single mainline commit before pushing...');
-
-            logMessage('Running typecheck validation...');
-            runCommand('npm run typecheck', false, TIMEOUTS.validationMs);
-
-            logMessage('Running tests validation...');
-            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads', false, TIMEOUTS.validationMs);
-
-            logMessage('Validation successful. Pushing explicit HEAD:main refspec...');
-            runCommand('git push origin HEAD:main', false, TIMEOUTS.pushMs);
-            logMessage('Push completed successfully.');
-            syncPerformed = true;
+        if (aheadCount > 0) {
+            logMessage('Local commits preserved. Publish validated work on a task branch through Entire.');
         }
     } catch (err) {
         logMessage(`Sync failed: ${err.message}`);
@@ -201,66 +177,6 @@ async function executeSync() {
     state.consecutiveNoChangesRuns = consecutiveNoChanges;
     state.lastCheckTime = new Date().toISOString();
     fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state, null, 2));
-
-    function checkGitHubActions() {
-        const currentSha = runCommand('git rev-parse HEAD', true);
-        logMessage(`Checking GitHub Actions for main SHA ${currentSha}...`);
-        try {
-            // Check authentication cleanly before proceeding
-            let authSuccess = false;
-            try {
-                execSync('gh auth status', { stdio: 'ignore', timeout: TIMEOUTS.ghMs });
-                authSuccess = true;
-            } catch (authError) {
-                if (process.env.GITHUB_TOKEN) {
-                    logMessage('gh auth status failed with GITHUB_TOKEN set. Retrying with cleared GITHUB_TOKEN...');
-                    const originalToken = process.env.GITHUB_TOKEN;
-                    delete process.env.GITHUB_TOKEN;
-                    try {
-                        execSync('gh auth status', { stdio: 'ignore', timeout: TIMEOUTS.ghMs });
-                        authSuccess = true;
-                    } catch (retryError) {
-                        process.env.GITHUB_TOKEN = originalToken; // restore if it still fails
-                    }
-                }
-            }
-
-            if (!authSuccess) {
-                logMessage('Warning: GitHub CLI (gh) is not authenticated or not installed. Run `gh auth login` to enable CI pipeline monitoring. Skipping.');
-                return;
-            }
-
-            const ghOutput = runCommand(`gh run list --branch main --commit ${currentSha} --limit 20 --json status,conclusion,name,url,createdAt,headBranch,headSha,databaseId`, false, TIMEOUTS.ghMs);
-            const runs = JSON.parse(ghOutput);
-            const matchingRuns = runs.filter(r => r.headBranch === 'main' && r.headSha === currentSha);
-            const failedRuns = matchingRuns.filter(r => r.conclusion === 'failure');
-
-            result.ci = matchingRuns.map(r => ({
-                name: r.name,
-                status: r.status,
-                conclusion: r.conclusion,
-                url: r.url,
-                headSha: r.headSha
-            }));
-
-            if (failedRuns.length > 0) {
-                for (const run of failedRuns) {
-                    logMessage(`CI FAILED for current main SHA: ${run.name} (${run.url}). Inspect this run's logs before changing code.`);
-                }
-            } else if (matchingRuns.some(r => r.status !== 'completed')) {
-                logMessage('CI is still in progress for the current main SHA. Do not push another commit yet.');
-            } else if (matchingRuns.length > 0 && matchingRuns.every(r => r.conclusion === 'success')) {
-                logMessage('CI is green for the current main SHA. Delivery cycle complete.');
-            } else {
-                logMessage('No CI run is visible yet for the current main SHA. Do not infer success.');
-            }
-        } catch (e) {
-            logMessage(`Warning: Could not check GitHub Actions. Error: ${e.message}`);
-        }
-    }
-
-    // Run the GitHub actions check
-    checkGitHubActions();
 
     logMessage('--- Git Monitor Sync Cycle Complete ---');
     console.log(JSON.stringify(result, null, 2));
