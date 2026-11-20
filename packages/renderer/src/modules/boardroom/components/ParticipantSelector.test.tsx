@@ -1,7 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { listHeadIds } from '@/services/agent/departments';
 
 const toggleAgent = vi.fn();
 const soloAgent = vi.fn();
@@ -81,6 +82,7 @@ describe('ParticipantSelector primary department head pills', () => {
         setActiveDepartmentId.mockClear();
         toggleAgentWindow.mockClear();
         storeState.focusedHeadId = null;
+        storeState.activeAgents = ['finance.tax', 'generalist', 'social', 'finance', 'unknown-agent'];
     });
 
     it('renders the 9 core department head pills on the boardroom table', () => {
@@ -101,6 +103,37 @@ describe('ParticipantSelector primary department head pills', () => {
         for (const headId of BOARDROOM_PRIMARY_HEAD_IDS) {
             expect(screen.getByTestId(`boardroom-seat-${headId}`)).toBeInTheDocument();
         }
+    });
+
+    it('shows every seated department head after convening the full roster', () => {
+        const headIds = listHeadIds();
+        storeState.activeAgents = ['generalist', ...headIds, 'finance.tax', 'unknown-agent'];
+        const measure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+            .mockReturnValue(new DOMRect(0, 0, 720, 500));
+        try {
+            render(<ParticipantSelector />);
+        } finally {
+            measure.mockRestore();
+        }
+
+        expect(screen.getAllByTestId(/^boardroom-seat-/)).toHaveLength(headIds.length);
+        for (const headId of headIds) {
+            expect(screen.getByTestId(`boardroom-seat-${headId}`)).toHaveAttribute('aria-pressed', 'true');
+        }
+        fireEvent.click(screen.getByTestId('boardroom-seat-distribution'));
+        expect(toggleAgent).toHaveBeenCalledWith('distribution');
+    });
+
+    it('provides a compact department list for narrow panes and allows seating an additional head', () => {
+        const { container } = render(<ParticipantSelector />);
+        const disclosure = container.querySelector('details')!;
+        expect(disclosure).not.toHaveAttribute('open');
+        disclosure.open = true;
+        const roster = screen.getByRole('group', { name: 'Department seats' });
+        const distribution = within(roster).getByRole('button', { name: 'Distribution Director' });
+        expect(distribution).toHaveAttribute('aria-pressed', 'false');
+        fireEvent.click(distribution);
+        expect(toggleAgent).toHaveBeenCalledWith('distribution');
     });
 
     it.each([

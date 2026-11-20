@@ -3196,7 +3196,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1632: Only 9 of the 23 heads have table seats [U9]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — selected department heads beyond the original nine appear in the measured multi-ring table when space permits. A collapsible roster gives access to all 23 heads in narrow panes. Signed-in layout acceptance remains pending.)
+- **Local evidence:** The full-roster regression found nine seats before the change and verifies 23 afterwards. A separate regression covers seating a head from the narrow roster. Jev (jev-1.14.0) recommended adapting the layout to the available space.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U9 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
