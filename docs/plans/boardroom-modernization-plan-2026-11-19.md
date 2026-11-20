@@ -16,7 +16,7 @@ Decisions already made:
 - **V3 → V4:** seal V3 the same way V2 was sealed (2026-08-02). V3 is copied as-is into the archive, the V3 file becomes a retirement notice, the 106 V3 items that aren't closed are copied into V4, and new findings start at **ISSUE-1624**. V3's highest ID is 1623, and nothing in the repo uses 1624 or higher.
 - **Scope:** write the ledger and the plan, then make the fixes in phases.
 - **Design:** keep the current layout (orbital table, chat panel, workspace pane, right rail). Fix speed and bugs, remove dead code, and move styling onto design tokens, with motion and accessibility in line. No redesign.
-- **Delivery:** `main` directly, following `.agent/workflows/branch-safety.md`. Each phase is one validated commit pushed with `git push origin HEAD:main`, and CI is checked for that exact SHA using the GitHub MCP `actions_list`/`get_job_logs`. If branch protection rejects a direct push, stop and ask before falling back to `claude/determined-johnson-3xr573` with a draft PR.
+- **Delivery:** Publish each locally validated batch on a fresh task branch through Entire. The team handles remote CI, review, and merging. Follow [the shared branch policy](../../.agent/workflows/branch-safety.md) wherever this plan describes older delivery steps.
 
 Machine state:
 - `node_modules` is empty, so this runs the `/walk` "drive to prime" step.
