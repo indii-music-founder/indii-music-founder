@@ -74,6 +74,9 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
 });
 
 const MemoPersonaResponseActions = React.memo(PersonaResponseActions);
+const MemoThoughtChain = React.memo(ThoughtChain);
+const MemoReactMarkdown = React.memo(ReactMarkdown);
+const REMARK_PLUGINS = [remarkGfm];
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -150,6 +153,45 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const firstVisibleMessageIndex = Math.max(0, messages.length - visibleMessageCount);
     const visibleMessages = messages.slice(firstVisibleMessageIndex);
     const agentsResponding = messages.some(message => message.role !== 'user' && message.isStreaming);
+    const markdownComponents = React.useMemo(() => ({
+        a: ({ node: _node, href, children, ...props }: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) => (
+            <a
+                {...props}
+                href={href}
+                onClick={(event) => {
+                    if (href && (href.startsWith('http://') || href.startsWith('https://')) &&
+                        !event.metaKey && !event.ctrlKey && openBoardroomBrowser) {
+                        event.preventDefault();
+                        openBoardroomBrowser(href, 'split');
+                    }
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-400 hover:text-indigo-300 underline break-all cursor-pointer"
+            >
+                {children}
+            </a>
+        ),
+        p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
+        ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
+        ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,
+        img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />,
+        pre: ({ node, ...props }) => (
+            <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
+        ),
+        code: ({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown; inline?: boolean }) => (
+            inline ? (
+                <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">{children}</code>
+            ) : (
+                <code {...props} className={`${className || ''} break-all`}>{children}</code>
+            )
+        ),
+        table: ({ node, ...props }) => (
+            <div className="overflow-x-auto max-w-full my-2 border border-white/10 rounded-lg">
+                <table {...props} className="min-w-full text-xs" />
+            </div>
+        ),
+    }), [openBoardroomBrowser]);
 
     // Start at the newest message and follow streaming updates while the user
     // remains near the bottom. Instant positioning avoids smooth-scroll jitter
@@ -318,7 +360,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     )}
 
                                     {!isUser && msg.thoughts && (
-                                        <ThoughtChain
+                                        <MemoThoughtChain
                                             thoughts={msg.thoughts}
                                             messageId={msg.id}
                                             compact
@@ -328,55 +370,12 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
                                     {/* Message Text */}
                                     <div className="message-content text-sm text-white/80 leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word] whitespace-pre-wrap min-w-0 max-w-full">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={{
-                                                a: ({ node: _node, href, children, ...props }: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) => (
-                                                    <a
-                                                        {...props}
-                                                        href={href}
-                                                        onClick={(e) => {
-                                                            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-                                                                if (!e.metaKey && !e.ctrlKey && openBoardroomBrowser) {
-                                                                    e.preventDefault();
-                                                                    openBoardroomBrowser(href, 'split');
-                                                                }
-                                                            }
-                                                        }}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-indigo-400 hover:text-indigo-300 underline break-all cursor-pointer"
-                                                    >
-                                                        {children}
-                                                    </a>
-                                                ),
-                                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
-                                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
-                                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,
-                                                img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />,
-                                                pre: ({ node, ...props }) => (
-                                                    <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
-                                                ),
-                                                code: ({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown; inline?: boolean }) => (
-                                                    inline ? (
-                                                        <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">
-                                                            {children}
-                                                        </code>
-                                                    ) : (
-                                                        <code {...props} className={`${className || ''} break-all`}>
-                                                            {children}
-                                                        </code>
-                                                    )
-                                                ),
-                                                table: ({ node, ...props }) => (
-                                                    <div className="overflow-x-auto max-w-full my-2 border border-white/10 rounded-lg">
-                                                        <table {...props} className="min-w-full text-xs" />
-                                                    </div>
-                                                )
-                                            }}
+                                        <MemoReactMarkdown
+                                            remarkPlugins={REMARK_PLUGINS}
+                                            components={markdownComponents}
                                         >
                                              {displayText}
-                                        </ReactMarkdown>
+                                        </MemoReactMarkdown>
                                     </div>
 
                                     {/* User/model message attachments (tracks, images, documents) */}

@@ -3120,7 +3120,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1626: The whole Boardroom re-renders on every token [U3]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — message-list work now scans streaming state once, keeps Markdown configuration stable, and memoizes ThoughtChain, Markdown, and response-action subtrees; regression coverage confirms those subtrees do not rerender on another message's token. A memoized full message row, module-preview render reduction, live acceptance, and team CI remain pending.)
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U3 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

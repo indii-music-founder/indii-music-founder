@@ -3,6 +3,8 @@ import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockPersonaResponseRender = vi.hoisted(() => vi.fn());
+const mockMarkdownRender = vi.hoisted(() => vi.fn());
+const mockThoughtChainRender = vi.hoisted(() => vi.fn());
 
 vi.mock("motion/react", () => ({
   motion: {
@@ -42,9 +44,16 @@ vi.mock("@/core/components/chat/PersonaResponseActions", () => ({
   },
 }));
 
+vi.mock("@/core/components/chat/ThoughtChain", () => ({
+  ThoughtChain: () => {
+    mockThoughtChainRender();
+    return <div data-testid="thought-chain" />;
+  },
+}));
+
 vi.mock("react-markdown", () => ({
   default: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
+    (mockMarkdownRender(), <div>{children}</div>)
   ),
 }));
 vi.mock("remark-gfm", () => ({ default: vi.fn() }));
@@ -59,6 +68,8 @@ import { BoardroomConversationPanel } from "./BoardroomConversationPanel";
 describe("BoardroomConversationPanel message rendering", () => {
   beforeEach(() => {
     mockPersonaResponseRender.mockClear();
+    mockMarkdownRender.mockClear();
+    mockThoughtChainRender.mockClear();
     HTMLElement.prototype.scrollTo = vi.fn();
   });
 
@@ -70,6 +81,7 @@ describe("BoardroomConversationPanel message rendering", () => {
       timestamp: 1,
       agentId: "marketing",
       isStreaming: false,
+      thoughts: [{ id: 'thought-1', type: 'logic' as const, text: 'Planning', timestamp: 1 }],
     };
     const firstStreamedMessage = {
       id: "streaming",
@@ -86,6 +98,8 @@ describe("BoardroomConversationPanel message rendering", () => {
     );
 
     expect(mockPersonaResponseRender).toHaveBeenCalledTimes(1);
+    expect(mockMarkdownRender).toHaveBeenCalledTimes(2);
+    expect(mockThoughtChainRender).toHaveBeenCalledTimes(1);
 
     rerender(
       <BoardroomConversationPanel
@@ -94,5 +108,7 @@ describe("BoardroomConversationPanel message rendering", () => {
     );
 
     expect(mockPersonaResponseRender).toHaveBeenCalledTimes(1);
+    expect(mockMarkdownRender).toHaveBeenCalledTimes(3);
+    expect(mockThoughtChainRender).toHaveBeenCalledTimes(1);
   });
 });

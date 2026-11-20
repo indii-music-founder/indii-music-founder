@@ -113,7 +113,7 @@ export function BoardroomJourney() {
         commandBarInput,
         activeAgents,
         referencedAssets,
-        agentHistory,
+        messageCount,
         addActiveAgent,
         soloAgent,
         setCommandBarInput,
@@ -122,7 +122,7 @@ export function BoardroomJourney() {
             commandBarInput: state.commandBarInput,
             activeAgents: state.activeAgents,
             referencedAssets: state.referencedAssets,
-            agentHistory: state.agentHistory,
+            messageCount: state.agentHistory?.length ?? 0,
             addActiveAgent: state.addActiveAgent,
             soloAgent: state.soloAgent,
             setCommandBarInput: state.setCommandBarInput,
@@ -131,16 +131,14 @@ export function BoardroomJourney() {
 
     const safeActiveAgents = useMemo(() => activeAgents || [], [activeAgents]);
     const safeAssets = useMemo(() => referencedAssets || [], [referencedAssets]);
-    const safeMessages = useMemo(() => agentHistory || [], [agentHistory]);
-
     const context = useMemo<BoardroomExecutiveContext>(
         () => ({
             prompt: (commandBarInput || '').trim(),
             activeAgents: safeActiveAgents,
             hasReferencedAssets: safeAssets.length > 0,
-            messageCount: safeMessages.length,
+            messageCount,
         }),
-        [commandBarInput, safeActiveAgents, safeAssets.length, safeMessages.length],
+        [commandBarInput, safeActiveAgents, safeAssets.length, messageCount],
     );
 
     const hasSignal = Boolean(
