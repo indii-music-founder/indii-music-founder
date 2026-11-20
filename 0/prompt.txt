@@ -1,0 +1,11 @@
+[https://github.com/indii-music-founder/indii-music-founder/issues](https://github.com/indii-music-founder/indii-music-founder/issues). OK this team of agents is going to be for handling anything that ends up in the issues page. For the record these are sent to you from the app itself that we're building through human approval created by the AI team in the software. Your job is to ultimately fix these items. First find out if they're on any open issues documents because we wanna make sure that we're you know doing proper coverage follow up, etc..
+
+---
+
+So why don't you triage all of this and make sure that this whole system that you're very, very fond of and aware of at this point, well aware of at this point. Make sure it works as a triple star, whatever they call that stuff, you know, that thing. That's what we need to be
+
+---
+
+<send_user_message_question_reply>
+[{"questionItemId":"[\"request_user_input_async\",\"call_b8d0443417ee45ebb341a77ed6caf485\",0]","question":"The clean main checkout needs Entire’s local Git hooks to capture this repair. May I enable the hooks in that checkout and attach this session before publishing?","answer":"Enable Entire hooks and attach this session"}]
+</send_user_message_question_reply>
