@@ -3255,7 +3255,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1637: In Electron, setBounds is sent over IPC on every captured scroll event, including each scroll triggered by a t [U15]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — native bounds updates now coalesce through requestAnimationFrame, skip unchanged rectangles, and absorb teardown rejections; focused browser-view tests pass locally. Live Electron acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U15 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

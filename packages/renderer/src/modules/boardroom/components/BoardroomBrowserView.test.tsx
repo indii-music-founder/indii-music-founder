@@ -93,6 +93,12 @@ describe('Boardroom page classification', () => {
     it('updates native bounds visibility when isVisible toggles without reattaching', () => {
         const attach = vi.fn().mockResolvedValue({ success: true });
         const setBounds = vi.fn().mockResolvedValue(undefined);
+        const callbacks: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            callbacks.push(callback);
+            return callbacks.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', vi.fn());
         vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
         vi.stubGlobal('electronAPI', {
             boardroomBrowser: {
@@ -114,12 +120,40 @@ describe('Boardroom page classification', () => {
         });
 
         const view = render(<BoardroomBrowserView isVisible={true} />);
+        act(() => callbacks.shift()?.(0));
         expect(attach).toHaveBeenCalledTimes(1);
         expect(setBounds).toHaveBeenLastCalledWith(expect.objectContaining({ visible: true }));
 
         view.rerender(<BoardroomBrowserView isVisible={false} />);
+        act(() => callbacks.shift()?.(0));
         expect(attach).toHaveBeenCalledTimes(1);
         expect(setBounds).toHaveBeenLastCalledWith(expect.objectContaining({ visible: false }));
+    });
+
+    it('coalesces native bounds updates during scroll into one animation frame', () => {
+        const callbacks: FrameRequestCallback[] = [];
+        const setBounds = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            callbacks.push(callback);
+            return callbacks.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', vi.fn());
+        vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+        vi.stubGlobal('electronAPI', { boardroomBrowser: {
+            attach: vi.fn().mockResolvedValue({ success: true }),
+            setBounds,
+            onStateChange: vi.fn(() => vi.fn()),
+        } });
+
+        render(<BoardroomBrowserView />);
+        window.dispatchEvent(new Event('scroll'));
+        window.dispatchEvent(new Event('scroll'));
+        window.dispatchEvent(new Event('scroll'));
+
+        expect(callbacks).toHaveLength(1);
+        expect(setBounds).not.toHaveBeenCalled();
+        act(() => callbacks[0]?.(0));
+        expect(setBounds).toHaveBeenCalledTimes(1);
     });
 
     it('hardens the web fallback iframe and reloads it cleanly', () => {

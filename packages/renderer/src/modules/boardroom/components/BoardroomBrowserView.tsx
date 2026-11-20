@@ -205,16 +205,29 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         });
 
         const syncBounds = () => {
-            if (!containerRef.current) return;
-            const rect = containerRef.current.getBoundingClientRect();
-            void api.setBounds({
-                x: Math.round(rect.left),
-                y: Math.round(rect.top),
-                width: Math.round(rect.width),
-                height: Math.round(rect.height),
-                visible: isVisibleRef.current && rect.width > 20 && rect.height > 20,
+            if (boundsFrame !== null) return;
+            boundsFrame = window.requestAnimationFrame(() => {
+                boundsFrame = null;
+                if (!containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const bounds = {
+                    x: Math.round(rect.left),
+                    y: Math.round(rect.top),
+                    width: Math.round(rect.width),
+                    height: Math.round(rect.height),
+                    visible: isVisibleRef.current && rect.width > 20 && rect.height > 20,
+                };
+                const boundsKey = `${bounds.x},${bounds.y},${bounds.width},${bounds.height},${bounds.visible}`;
+                if (boundsKey === lastBoundsKey) return;
+                lastBoundsKey = boundsKey;
+                void api.setBounds(bounds).catch(() => {
+                    // The native view may be disposed while the renderer is tearing down.
+                });
             });
         };
+
+        let boundsFrame: number | null = null;
+        let lastBoundsKey: string | null = null;
 
         syncBoundsRef.current = syncBounds;
         syncBounds();
@@ -226,6 +239,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
         return () => {
             syncBoundsRef.current = null;
+            if (boundsFrame !== null) window.cancelAnimationFrame(boundsFrame);
             observer.disconnect();
             window.removeEventListener('resize', syncBounds);
             window.removeEventListener('scroll', syncBounds, true);
