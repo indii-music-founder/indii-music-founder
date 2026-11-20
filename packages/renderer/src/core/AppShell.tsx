@@ -689,9 +689,11 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
 
                 <UnifiedCommandMenu />
 
-                <Suspense fallback={null}>
-                    <BoardroomModule />
-                </Suspense>
+                {conversationMode === 'boardroom' && (
+                    <Suspense fallback={null}>
+                        <BoardroomModule />
+                    </Suspense>
+                )}
 
                 {!presenting && (
                     <>

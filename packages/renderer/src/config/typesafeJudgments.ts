@@ -196,6 +196,12 @@ export async function refineInjectionRisk(
 export const JUDGMENT_FAILURE_COOLDOWN_MS = 5 * 60 * 1000;
 let lastJudgmentFailureAt = 0;
 const judgmentFailureTimes = new Map<string, number>();
+const BOARDROOM_EXECUTIVE_JUDGMENT_CACHE_TTL_MS = 5_000;
+const BOARDROOM_EXECUTIVE_JUDGMENT_CACHE_LIMIT = 32;
+const boardroomExecutiveJudgmentCache = new Map<string, {
+    expiresAt: number;
+    promise: Promise<BoardroomExecutiveVerdict>;
+}>();
 
 export function judgmentsAvailable(scope?: string): boolean {
     if (!typesafeJudgmentsEnabled()) return false;
@@ -222,6 +228,7 @@ export function noteJudgmentFailure(err: unknown, context: string, scope: string
 export function __resetJudgmentCooldownForTests(): void {
     lastJudgmentFailureAt = 0;
     judgmentFailureTimes.clear();
+    boardroomExecutiveJudgmentCache.clear();
 }
 export function typesafeJudgmentsEnabled(): boolean {
     return featureFlags.isEnabled(FEATURE_FLAG_NAMES.TYPESAFE_JUDGMENTS);
@@ -10304,7 +10311,7 @@ export function boardroomExecutiveMissionQuestion() {
     };
 }
 
-export async function judgeBoardroomExecutiveIntent(
+export function judgeBoardroomExecutiveIntent(
     context: BoardroomExecutiveContext,
 ): Promise<BoardroomExecutiveVerdict> {
     const fallback = deterministicBoardroomExecutiveFallback(context);
@@ -10314,9 +10321,41 @@ export async function judgeBoardroomExecutiveIntent(
         (context.activeAgents || []).some(id => id !== 'generalist');
 
     if (!judgmentsAvailable("judgeBoardroomExecutiveIntent") || !hasSignal) {
-        return fallback;
+        return Promise.resolve(fallback);
     }
 
+    const requestKey = JSON.stringify({
+        prompt: (context.prompt || '').slice(0, 500),
+        activeAgents: (context.activeAgents || []).slice(0, 12),
+        hasReferencedAssets: Boolean(context.hasReferencedAssets),
+        messageCount: context.messageCount,
+    });
+    const now = Date.now();
+    const cached = boardroomExecutiveJudgmentCache.get(requestKey);
+    if (cached && cached.expiresAt > now) {
+        boardroomExecutiveJudgmentCache.delete(requestKey);
+        boardroomExecutiveJudgmentCache.set(requestKey, cached);
+        return cached.promise;
+    }
+    if (cached) boardroomExecutiveJudgmentCache.delete(requestKey);
+
+    const promise = requestBoardroomExecutiveIntent(context, fallback);
+    boardroomExecutiveJudgmentCache.set(requestKey, {
+        expiresAt: now + BOARDROOM_EXECUTIVE_JUDGMENT_CACHE_TTL_MS,
+        promise,
+    });
+    while (boardroomExecutiveJudgmentCache.size > BOARDROOM_EXECUTIVE_JUDGMENT_CACHE_LIMIT) {
+        const oldestKey = boardroomExecutiveJudgmentCache.keys().next().value;
+        if (oldestKey === undefined) break;
+        boardroomExecutiveJudgmentCache.delete(oldestKey);
+    }
+    return promise;
+}
+
+async function requestBoardroomExecutiveIntent(
+    context: BoardroomExecutiveContext,
+    fallback: BoardroomExecutiveVerdict,
+): Promise<BoardroomExecutiveVerdict> {
     try {
         const judgeFn = httpsCallable<
             { state: Record<string, unknown>; questions: Record<string, unknown> },

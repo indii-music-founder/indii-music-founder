@@ -57,7 +57,7 @@ export const PREVIEW_MODULES: readonly ModuleOption[] = [
     { id: 'notes', title: 'Founder Notes', agentId: 'notes', icon: FileText },
 ];
 
-export function BoardroomModulePreview() {
+function BoardroomModulePreviewContent() {
     const {
         boardroomPreviewModuleId,
         setBoardroomPreviewModuleId,
@@ -241,4 +241,6 @@ export function BoardroomModulePreview() {
         </div>
     );
 }
+
+export const BoardroomModulePreview = React.memo(BoardroomModulePreviewContent);
 export default BoardroomModulePreview;

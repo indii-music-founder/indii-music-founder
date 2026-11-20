@@ -14,12 +14,14 @@ vi.mock('motion/react', () => ({
 // Mock store
 const mockAddActiveAgent = vi.fn();
 const mockSetCommandBarInput = vi.fn();
+let mockCommandBarInput = '';
 
 vi.mock('@/core/store', () => ({
     useStore: (selector: (state: Record<string, unknown>) => unknown) =>
         selector({
             addActiveAgent: mockAddActiveAgent,
             setCommandBarInput: mockSetCommandBarInput,
+            commandBarInput: mockCommandBarInput,
         }),
 }));
 
@@ -32,6 +34,7 @@ import { BoardroomStarterCards, EXECUTIVE_STARTER_CARDS } from './BoardroomStart
 describe('BoardroomStarterCards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockCommandBarInput = '';
     });
 
     it('renders all 4 executive starter cards with title and badge', () => {
@@ -57,6 +60,13 @@ describe('BoardroomStarterCards', () => {
         expect(mockSetCommandBarInput).toHaveBeenCalledWith(
             expect.stringContaining('Draft a standard 50/50 co-writer split sheet')
         );
+    });
+
+    it('preserves a draft when a starter card is selected', () => {
+        mockCommandBarInput = 'Keep my existing draft';
+        render(<BoardroomStarterCards />);
+        fireEvent.click(screen.getByTestId('starter-card-split-sheet'));
+        expect(mockSetCommandBarInput).not.toHaveBeenCalled();
     });
 
     it('triggers action on keyboard Enter or Space', () => {

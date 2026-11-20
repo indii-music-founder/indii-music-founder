@@ -45,6 +45,7 @@ import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
 } from '@/services/agent/AgentVisualIdentity';
+import { buildAttachmentDataUri } from './boardroomAttachmentDataUri';
 
 const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
     bot: Bot,
@@ -71,6 +72,11 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
     utensils: Utensils,
     video: Video,
 });
+
+const MemoPersonaResponseActions = React.memo(PersonaResponseActions);
+const MemoThoughtChain = React.memo(ThoughtChain);
+const MemoReactMarkdown = React.memo(ReactMarkdown);
+const REMARK_PLUGINS = [remarkGfm];
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -119,16 +125,6 @@ function attachmentDownloadName(index: number, mimeType: string, filename?: stri
 /**
  * Formats an attachment payload as a browser-usable data URI when base64 content exists.
  */
-function buildAttachmentDataUri(base64: string | undefined, mimeType: string): string {
-    if (!base64) {
-        return '';
-    }
-    if (base64.startsWith('data:')) {
-        return base64;
-    }
-    return `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
-}
-
 /**
  * BoardroomConversationPanel — Persistent, scrollable conversation feed
  * for the Boardroom split-panel layout.
@@ -156,6 +152,46 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
         : 'empty';
     const firstVisibleMessageIndex = Math.max(0, messages.length - visibleMessageCount);
     const visibleMessages = messages.slice(firstVisibleMessageIndex);
+    const agentsResponding = messages.some(message => message.role !== 'user' && message.isStreaming);
+    const markdownComponents = React.useMemo(() => ({
+        a: ({ node: _node, href, children, ...props }: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) => (
+            <a
+                {...props}
+                href={href}
+                onClick={(event) => {
+                    if (href && (href.startsWith('http://') || href.startsWith('https://')) &&
+                        !event.metaKey && !event.ctrlKey && openBoardroomBrowser) {
+                        event.preventDefault();
+                        openBoardroomBrowser(href, 'split');
+                    }
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-400 hover:text-indigo-300 underline break-all cursor-pointer"
+            >
+                {children}
+            </a>
+        ),
+        p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
+        ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
+        ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,
+        img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />,
+        pre: ({ node, ...props }) => (
+            <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
+        ),
+        code: ({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown; inline?: boolean }) => (
+            inline ? (
+                <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">{children}</code>
+            ) : (
+                <code {...props} className={`${className || ''} break-all`}>{children}</code>
+            )
+        ),
+        table: ({ node, ...props }) => (
+            <div className="overflow-x-auto max-w-full my-2 border border-white/10 rounded-lg">
+                <table {...props} className="min-w-full text-xs" />
+            </div>
+        ),
+    }), [openBoardroomBrowser]);
 
     // Start at the newest message and follow streaming updates while the user
     // remains near the bottom. Instant positioning avoids smooth-scroll jitter
@@ -189,10 +225,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     // recovered by recoverInterruptedMessages in agentSessionSlice. A shorter UI timer
     // used to mark live tool calls as finished and persist that false state.
 
-    if (messages.length === 0) {
-        return (
-            <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
-                {/* Empty State — centered vertically in the available space with executive starter cards */}
+    return (
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+            {messages.length === 0 ? (
+                /* Empty State — centered vertically while preserving the prompt below. */
                 <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-center text-center p-6 min-w-0 space-y-4">
                     <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-3">
@@ -220,16 +256,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                     <BoardroomStarterCards compact={isAnyPhone} />
                 </div>
 
-                {/* Prompt Area — always visible so users can start the conversation */}
-                <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
-                    <PromptArea isDocked className="w-full max-w-none min-w-0" />
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+            ) : (
+                <>
             {/* Panel Header */}
             <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 shrink-0 min-w-0">
                 <MessageSquare size={14} className="text-indigo-400 shrink-0" />
@@ -276,7 +304,6 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         // there is never a dead gap where the user cannot tell
                         // indii is working (observed 30s+ of silence before the
                         // first token).
-                        const agentsResponding = messages.some(m => m.role !== 'user' && m.isStreaming);
                         const userAwaitingResponse = isUser && agentsResponding;
 
                         return (
@@ -333,7 +360,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     )}
 
                                     {!isUser && msg.thoughts && (
-                                        <ThoughtChain
+                                        <MemoThoughtChain
                                             thoughts={msg.thoughts}
                                             messageId={msg.id}
                                             compact
@@ -343,55 +370,12 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
                                     {/* Message Text */}
                                     <div className="message-content text-sm text-white/80 leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word] whitespace-pre-wrap min-w-0 max-w-full">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={{
-                                                a: ({ node: _node, href, children, ...props }: React.ComponentPropsWithoutRef<'a'> & { node?: unknown }) => (
-                                                    <a
-                                                        {...props}
-                                                        href={href}
-                                                        onClick={(e) => {
-                                                            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-                                                                if (!e.metaKey && !e.ctrlKey && openBoardroomBrowser) {
-                                                                    e.preventDefault();
-                                                                    openBoardroomBrowser(href, 'split');
-                                                                }
-                                                            }
-                                                        }}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-indigo-400 hover:text-indigo-300 underline break-all cursor-pointer"
-                                                    >
-                                                        {children}
-                                                    </a>
-                                                ),
-                                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
-                                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
-                                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,
-                                                img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />,
-                                                pre: ({ node, ...props }) => (
-                                                    <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
-                                                ),
-                                                code: ({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown; inline?: boolean }) => (
-                                                    inline ? (
-                                                        <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">
-                                                            {children}
-                                                        </code>
-                                                    ) : (
-                                                        <code {...props} className={`${className || ''} break-all`}>
-                                                            {children}
-                                                        </code>
-                                                    )
-                                                ),
-                                                table: ({ node, ...props }) => (
-                                                    <div className="overflow-x-auto max-w-full my-2 border border-white/10 rounded-lg">
-                                                        <table {...props} className="min-w-full text-xs" />
-                                                    </div>
-                                                )
-                                            }}
+                                        <MemoReactMarkdown
+                                            remarkPlugins={REMARK_PLUGINS}
+                                            components={markdownComponents}
                                         >
                                              {displayText}
-                                        </ReactMarkdown>
+                                        </MemoReactMarkdown>
                                     </div>
 
                                     {/* User/model message attachments (tracks, images, documents) */}
@@ -399,7 +383,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             {msg.attachments.map((att, i) => {
                                                 const mimeType = att.mimeType || '';
-                                                const dataUri = buildAttachmentDataUri(att.base64, mimeType);
+                                                const dataUri = buildAttachmentDataUri(att);
                                                 const displayName = att.filename || attachmentDownloadName(i, mimeType, att.filename);
                                                 const mimeSubtype = (mimeType.split('/')[1] || 'file').split(';')[0] || 'file';
 
@@ -482,7 +466,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         </div>
                                     )}
                                     {!isUser && !msg.isStreaming && (
-                                        <PersonaResponseActions text={displayText} metadata={msg.metadata} />
+                                        <MemoPersonaResponseActions text={displayText} metadata={msg.metadata} />
                                     )}
                                 </div>
                             </motion.div>
@@ -494,7 +478,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 <div className="h-4 w-full shrink-0" />
             </div>
 
-            {/* Inline PromptArea for Boardroom */}
+                </>
+            )}
+
+            {/* Keep PromptArea in one reconciliation position as messages arrive. */}
             <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
                 <PromptArea isDocked className="w-full max-w-none min-w-0" />
             </div>

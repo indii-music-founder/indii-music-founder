@@ -3120,7 +3120,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1626: The whole Boardroom re-renders on every token [U3]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — message-list work now scans streaming state once, keeps Markdown configuration stable, memoizes ThoughtChain/Markdown/response-action subtrees, and isolates the department preview from parent token updates; focused regressions cover both. A memoized full message row, live acceptance, and team CI remain pending.)
 - **Severity:** HIGH
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U3 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3255,7 +3255,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1637: In Electron, setBounds is sent over IPC on every captured scroll event, including each scroll triggered by a t [U15]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — native bounds updates now coalesce through requestAnimationFrame, skip unchanged rectangles, and absorb teardown rejections; focused browser-view tests pass locally. Live Electron acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U15 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3267,7 +3267,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1638: Both BoardroomJourney.tsx:158-173 and BoardroomStarterCards.tsx:106-135 call judgeBoardroomExecutiveIntent on  [U16]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — identical bounded Jev requests share a short-lived in-flight/result promise, and starter-card selection preserves a nonblank draft; focused regression tests pass locally. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U16 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3303,7 +3303,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1641: Attachment data URIs are rebuilt on every render (BoardroomConversationPanel.tsx:416) [U19]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — stable attachment objects now reuse their data URI through a WeakMap; focused tests verify conversion reuse and data URI preservation. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U19 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3315,7 +3315,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1642: PromptArea remounts when the first message arrives (BoardroomConversationPanel.tsx:239 vs :513), losing focus  [U20]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — PromptArea now retains a stable tree position; the focused first-message regression and conversation panel suite pass locally. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U20 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3327,7 +3327,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1643: AppShell.tsx:692-694 mounts BoardroomModule all the time, so its chunk (react-markdown and all the views) load [U21]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — AppShell now mounts the lazy Boardroom module only in Boardroom mode; local renderer typecheck and Boardroom suites pass. A focused AppShell mount regression, signed-in acceptance, and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U21 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
