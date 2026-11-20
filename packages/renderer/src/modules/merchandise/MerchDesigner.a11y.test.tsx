@@ -57,6 +57,33 @@ vi.mock('@/core/store', () => ({
 }));
 
 describe('MerchDesigner Accessibility', () => {
+  it.each([
+    ['Assets', 'Layers'],
+    ['Layers', 'Assets'],
+  ])('preserves the collapsed %s panel after leaving Focus Canvas', (collapsed, expanded) => {
+    render(
+      <MemoryRouter>
+        <ToastProvider>
+          <MerchDesigner />
+        </ToastProvider>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: `Collapse ${collapsed} Panel` }));
+    const focus = screen.getByRole('button', { name: /^Focus Canvas Mode/ });
+    focus.focus();
+    fireEvent.click(focus);
+    const exit = screen.getByRole('button', { name: 'Exit Focus Canvas Mode' });
+    expect(exit).toHaveFocus();
+    expect(screen.queryByRole('complementary', { name: /assets panel|layers panel/i })).not.toBeInTheDocument();
+    fireEvent.click(exit);
+
+    expect(screen.getByRole('button', { name: `Expand ${collapsed} Panel` })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: `Collapse ${expanded} Panel` })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: `${expanded} panel` })).toBeVisible();
+    expect(screen.queryByRole('complementary', { name: `${collapsed} panel` })).not.toBeInTheDocument();
+  });
+
   it('renders accessible color pickers', async () => {
     render(
       <MemoryRouter>

@@ -3,6 +3,11 @@
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.
 - **Prevention:** Preserve the documented identifier formats at the serialization boundary. Verify redaction with a prompt containing both IDs and payment text. Require a successful image receipt and loadable image bytes before proposing a correction. Recheck the originating turn before dispatching it.
 
+## 2026-11-20 Merchandise Focus Canvas reset collapsed panels
+
+- **Evidence:** ISSUE-1459 Run98. Focus mode overwrote panel visibility and reopened both panels on exit.
+- **Prevention:** Keep panel expansion as a user preference. Derive temporary visibility from focus mode and retain the exit control's identity.
+
 ## 2026-11-19 Boardroom Paid Judge Per Token, Overlay Hid Cost Approval, UI Timer Ended Live Replies, Handoff Reject No-Op, Missing Await Detached Timeout/Stop (PAID_CALL_IN_PER_TOKEN_EFFECT, FULLSCREEN_OVERLAY_ABOVE_AWAITED_MODAL, UI_TIMEOUT_SHORTER_THAN_SERVICE, TRISTATE_DECISION_AS_BOOLEAN, RETURN_WITHOUT_AWAIT_IN_TRY_FINALLY, STRING_ABORT_REASON_RENDERED_AS_ERROR)
 
 - **SEVERITY:** Critical/High (V4 ISSUE-1624, 1625, 1627, 1628, 1629, 1654, 1666, 1667.)
