@@ -3183,7 +3183,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1631: Worker seat buttons do nothing (ParticipantSelector.tsx:535 → the slice rejects non-heads) [U8]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — worker entries now open their owning department conversation instead of attempting to seat unsupported worker IDs in Boardroom; focused ParticipantSelector coverage passes locally. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U8 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

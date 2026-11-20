@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
-import { DEPARTMENTS } from '@/services/agent/departments';
+import { DEPARTMENTS, getDepartmentOf } from '@/services/agent/departments';
 
 export interface AgentOrbitalConfig {
     readonly id: string;
@@ -248,6 +248,12 @@ export default function ParticipantSelector() {
         focusedHeadId,
         setFocusedHeadId,
         activeGraphExecution,
+        conversationMode,
+        activeDepartmentId,
+        setConversationMode,
+        setActiveDepartmentId,
+        isAgentOpen,
+        toggleAgentWindow,
     } = useStore(
         useShallow(state => ({
             activeAgents: state.activeAgents,
@@ -256,6 +262,12 @@ export default function ParticipantSelector() {
             focusedHeadId: state.focusedHeadId,
             setFocusedHeadId: state.setFocusedHeadId,
             activeGraphExecution: state.activeGraphExecution,
+            conversationMode: state.conversationMode,
+            activeDepartmentId: state.activeDepartmentId,
+            setConversationMode: state.setConversationMode,
+            setActiveDepartmentId: state.setActiveDepartmentId,
+            isAgentOpen: state.isAgentOpen,
+            toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
 
@@ -524,19 +536,30 @@ export default function ParticipantSelector() {
 
                                         {workerIds.map((workerId) => {
                                             const workerIdentity = resolveAgentVisualIdentity(workerId);
-                                            const isWorkerActive = activeAgents.includes(workerId);
+                                            const department = getDepartmentOf(workerId);
+                                            const isDepartmentOpen = conversationMode === 'department' &&
+                                                activeDepartmentId === department?.id;
                                             const isWorkerExecuting = executingAgentIds.includes(workerId);
 
                                             return (
                                                 <button
                                                     key={workerId}
                                                     type="button"
-                                                    onClick={() => toggleAgent(workerId)}
+                                                    onClick={() => {
+                                                        if (!department) return;
+                                                        setActiveDepartmentId(department.id);
+                                                        setConversationMode('department');
+                                                        if (!isAgentOpen) toggleAgentWindow();
+                                                    }}
+                                                    aria-label={`Open ${department?.displayName ?? 'department'} department for ${workerIdentity.displayName}`}
+                                                    aria-pressed={isDepartmentOpen}
+                                                    title={`Open ${department?.displayName ?? 'department'} department to work with its specialists`}
+                                                    data-testid={`boardroom-worker-${workerId}`}
                                                     className={cn(
                                                         "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all border",
                                                         isWorkerExecuting
                                                             ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold animate-pulse"
-                                                            : isWorkerActive
+                                                            : isDepartmentOpen
                                                                 ? "bg-white/15 border-white/30 text-white font-semibold"
                                                                 : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white"
                                                     )}
@@ -546,7 +569,7 @@ export default function ParticipantSelector() {
                                                     </span>
                                                     <span className={cn(
                                                         "w-1.5 h-1.5 rounded-full shrink-0",
-                                                        isWorkerActive ? "bg-emerald-400" : "bg-white/20"
+                                                        isDepartmentOpen ? "bg-emerald-400" : "bg-white/20"
                                                     )} />
                                                 </button>
                                             );

@@ -6,14 +6,23 @@ import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity
 const toggleAgent = vi.fn();
 const soloAgent = vi.fn();
 const setFocusedHeadId = vi.fn();
+const setConversationMode = vi.fn();
+const setActiveDepartmentId = vi.fn();
+const toggleAgentWindow = vi.fn();
 
 const storeState = {
     activeAgents: ['finance.tax', 'generalist', 'social', 'finance', 'unknown-agent'],
     activeGraphExecution: null,
-    focusedHeadId: null,
+    focusedHeadId: null as string | null,
     toggleAgent,
     soloAgent,
     setFocusedHeadId,
+    conversationMode: 'boardroom',
+    activeDepartmentId: null,
+    setConversationMode,
+    setActiveDepartmentId,
+    isAgentOpen: false,
+    toggleAgentWindow,
 };
 
 vi.mock('@/core/store', () => ({
@@ -68,6 +77,10 @@ describe('ParticipantSelector primary department head pills', () => {
         toggleAgent.mockClear();
         soloAgent.mockClear();
         setFocusedHeadId.mockClear();
+        setConversationMode.mockClear();
+        setActiveDepartmentId.mockClear();
+        toggleAgentWindow.mockClear();
+        storeState.focusedHeadId = null;
     });
 
     it('renders the 9 core department head pills on the boardroom table', () => {
@@ -143,5 +156,17 @@ describe('ParticipantSelector primary department head pills', () => {
         const expandFinanceBtn = screen.getByLabelText('Expand Finance sub-agents');
         fireEvent.click(expandFinanceBtn);
         expect(setFocusedHeadId).toHaveBeenCalledWith('finance');
+    });
+
+    it('opens the owning department when a worker is chosen', () => {
+        storeState.focusedHeadId = 'finance';
+        render(<ParticipantSelector />);
+
+        fireEvent.click(screen.getByTestId('boardroom-worker-finance.tax'));
+
+        expect(setActiveDepartmentId).toHaveBeenCalledWith('finance');
+        expect(setConversationMode).toHaveBeenCalledWith('department');
+        expect(toggleAgentWindow).toHaveBeenCalledTimes(1);
+        expect(toggleAgent).not.toHaveBeenCalledWith('finance.tax');
     });
 });
