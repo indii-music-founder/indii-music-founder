@@ -31,6 +31,12 @@
   3. Added `sendingRef`, `requestSeqRef`, post-`sendCommand` unmount cancellation (`cancelCommand` + immediate return), `try/catch` around timeout `cancelCommand`, stale-cancel isolation in `handleCancel`, `isMountedRef` guards across async callbacks, `role="alert"` on errors, explicit button types/labels, and `useReducedMotion()`.
 - **PREVENTION:** Always destroy and recreate cached `Audio` elements whenever their underlying `blob:` URL is revoked or replaced; guard every post-`await` side effect (`sendCommand`, `applyConstraints`, `cancelCommand`, `uploadFile`) with mount lifetime AND monotonic request/generation IDs; wrap every async `setTimeout` callback in `try/catch`; and treat `DeviceOrientationEvent.requestPermission()` non-`'granted'` resolutions the same as rejections.
 
+## 2026-11-20 Merchandise fallback could override navigation to other modules
+
+- **Cause:** The module router matched every unknown path and redirected to Merchandise while the app shell still had the old module mounted.
+- **Fix:** Limit the fallback to the module's route prefix. Route regressions run while the original module is mounted and verify the destination URL survives.
+- **Prevention:** Scope module-local redirects to routes owned by that module, including when the browser path and the shell's selected module update on separate renders.
+
 ## 2026-11-18 Boardroom E2E Mocks Drifted From Real Contracts & Roster Tools Blocked in Read-Only Boardroom (BOARDROOM_ROSTER_TOOLS_BLOCKED_READ_ONLY, E2E_MOCK_CONTRACT_DRIFT, E2E_TIMEOUT_BELOW_CLIENT_PACING, DEV_BUILD_DROPS_CONSOLE)
 
 - **SEVERITY:** High (the Conductor could never seat/unseat agents in the Boardroom; eight agent/Boardroom e2e specs were red on every PR, hiding real regressions.)
