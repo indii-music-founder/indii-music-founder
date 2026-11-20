@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "f3b5cd16755e78e3382f6c11a13b69fbf47b5362fbe528a64fd6c74450a912fc",
+  "sourceDigest": "a5762048a673649877809af4f11095a93eafb799d8dfcd210f3a6a1e68480c55",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5542,7 +5542,7 @@
       "available": true,
       "description": "All coding agents use this policy. `main` is the delivery target and `origin` stays on Entire. The owner has authorized the task branch, Trail publication, and gated merge described here for normal repository delivery. This standing authorization supersedes older direct-push-only instructions. Approval is still required for scope changes and for actions outside normal repository delivery.",
       "descriptionHash": "d451a0b89478472a3e8fb15d241f09f48b1cabc3c5b557ba917f5273579a865e",
-      "contentHash": "99e6f91a84ab24bc63156f739ab9b05f0b8a5e756b238dca675bac8409bcf2cf",
+      "contentHash": "934651e2a56837e1a51a52d0cd09aa6485a8e51b8a9f0f00ced11f9639eaa6a3",
       "state": "certified",
       "authority": "policy-only",
       "prerequisites": [
