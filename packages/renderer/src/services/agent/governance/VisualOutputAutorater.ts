@@ -20,6 +20,28 @@ export const IMAGE_TOOL_NAMES = [
     'edit_image',
 ] as const;
 
+/** Read the output reference from the runtime's tool-result envelope. */
+export function visualToolOutput(thought: { toolName?: string; type?: string; text?: string }): { id?: string; url?: string } | undefined {
+    if (thought.type !== 'tool_result' || !VisualOutputAutorater.isImageTool(thought.toolName ?? '')) return;
+    if (!thought.text?.startsWith('Success: ')) return;
+
+    const marker = '[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ';
+    const markerIndex = thought.text.lastIndexOf(marker);
+    const json = markerIndex < 0 ? thought.text.slice('Success: '.length) : thought.text.slice(markerIndex + marker.length);
+    try {
+        const result = JSON.parse(json);
+        if (!result || typeof result !== 'object') return;
+        const id = result.image_id ?? result.image_ids?.[0] ?? result.id;
+        const url = result.url ?? result.urls?.[0];
+        const outputId = typeof id === 'string' && id ? id : undefined;
+        const inlineUrl = typeof url === 'string' && /^data:image\/[a-z0-9.+-]+;base64,/i.test(url) &&
+            !url.includes('[elided ') ? url : undefined;
+        if (outputId || inlineUrl) return { id: outputId, url: inlineUrl };
+    } catch {
+        // A human-readable receipt does not prove an image was created.
+    }
+}
+
 /**
  * Pass thresholds — tunable at the top of the file per acceptance criteria 3.3.
  * An image passes only when ALL conditions are met.

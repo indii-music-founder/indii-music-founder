@@ -132,6 +132,8 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 - **Shared-Budget Reservations & Claim Terminal States:** Never `reserve(budget.remaining)` on an execution budget shared across agents — size the hold to the call (`estimateSemanticCallTokens`). Every idempotency claim must settle definitive, pre-side-effect refusals as a retryable terminal state; only genuinely ambiguous outcomes may stay `claimed`. (See ERROR_LEDGER 2026-11-17 `TOKEN_HOLD_AND_STUCK_CLAIM`.)
 - **Component Teardown Hygiene (`unmount()` on Root/App Mounts):** Any unit test that renders `<App />` or top-level layout shells hosting active background effects (polling loops, event bus subscriptions, `AlwaysOnMemoryEngine`, logger listeners) MUST capture `const { unmount } = render(...)` and call `unmount()` in an `afterEach` hook or before test completion. Failing to unmount leaves background effects attempting to stream console logs or state across closing Vitest IPC channels, causing `EnvironmentTeardownError: Closing rpc while "onUserConsoleLog" was pending`. (See ERROR_LEDGER 2026-09-05 `VITEST_RPC_TEARDOWN_APP_UNMOUNT`.)
 
+- **Agent output and identifier integrity:** Keep supported identifiers intact when redacting prompt text, and exercise identifiers and payment text together in regression tests. Visual correction requires a successful image receipt, readable pixels, and the original turn still active.
+
 ---
 
 ## Enforcement

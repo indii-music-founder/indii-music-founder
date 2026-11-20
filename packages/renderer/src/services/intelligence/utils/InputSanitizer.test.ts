@@ -46,6 +46,17 @@ describe('InputSanitizer', () => {
             expect(result).not.toContain('4111');
         });
 
+        it('keeps app timestamp IDs while redacting payment numbers in the same prompt', () => {
+            const prompt = '{"assetReferences":[{"id":"print-1792000000000"},{"id":"print-3000-1792000000000"}],"healthHistory":[{"id":"1792000000000"}],"id":"4222222222222","notes":"4111 2222 3333 4444"}';
+            const result = JSON.parse(InputSanitizer.sanitize(prompt));
+            expect(result.assetReferences).toEqual([
+                { id: 'print-1792000000000' }, { id: 'print-3000-1792000000000' },
+            ]);
+            expect(result.healthHistory).toEqual([{ id: '1792000000000' }]);
+            expect(result.id).toBe('[REDACTED_CREDIT_CARD]');
+            expect(result.notes).toBe('[REDACTED_CREDIT_CARD]');
+        });
+
         it('should redact sensitive keys like API Keys or Passwords', () => {
             const inputs = [
                 'password: superSecretPassword123',

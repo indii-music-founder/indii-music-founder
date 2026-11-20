@@ -4,6 +4,7 @@ import type { AgentMessage } from '@/core/store';
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
 import { AgentContext, ProjectHandle, DistributorInfo } from '../types';
+import { OrganizationService } from '@/services/OrganizationService';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 export class ContextResolver {
@@ -41,8 +42,15 @@ export class ContextResolver {
 
         return {
             projectId: currentProjectId,
-            orgId: currentOrganizationId,
+            orgId: OrganizationService.getCurrentOrgId() ?? (currentOrganizationId === 'org-default' ? 'personal' : currentOrganizationId),
             projectHandle,
+            assetReferences: conversationMode === 'direct'
+                ? state.uploadedImages?.map((asset, index) => ({
+                    id: asset.id,
+                    alias: `upload-${index}`,
+                    url: asset.storageUri || asset.url,
+                }))
+                : undefined,
             userProfile,
             brandKit,
             activeModule: currentModule,

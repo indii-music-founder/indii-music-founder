@@ -6,6 +6,7 @@ import {
     VISUAL_THRESHOLDS,
     MAX_CORRECTION_ATTEMPTS,
     IMAGE_TOOL_NAMES,
+    visualToolOutput,
 } from './VisualOutputAutorater';
 
 // ============================================================================
@@ -106,6 +107,25 @@ const edgeCaseOverallFalseHighScores: VisualEvaluationScore = {
 // ============================================================================
 // Tests
 // ============================================================================
+
+describe('visual tool output receipts', () => {
+    it.each([
+        { type: 'tool_result', toolName: 'batch_edit_images', text: 'Error: Could not process image data from uploads.' },
+        { type: 'tool_result', toolName: 'generate_social_post', text: 'Success: {"image_id":"existing"}' },
+        { type: 'thought', toolName: 'generate_image', text: 'Success: {"image_id":"existing"}' },
+        { type: 'tool_result', toolName: 'generate_image', text: 'Success: no saved image receipt' },
+    ])('rejects non-artifact evidence from $toolName', thought => {
+        expect(visualToolOutput(thought)).toBeUndefined();
+    });
+
+    it('reads the generated artifact ID from a successful batch-edit receipt', () => {
+        expect(visualToolOutput({
+            type: 'tool_result',
+            toolName: 'batch_edit_images',
+            text: 'Success: Edited one image.\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: {"image_ids":["edited-1"]}',
+        })).toEqual({ id: 'edited-1', url: undefined });
+    });
+});
 
 describe('VisualOutputAutorater', () => {
     beforeEach(() => {
