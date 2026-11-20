@@ -1,3 +1,8 @@
+## 2026-11-20 Merchandise property edits skipped undo and autosave
+
+- **Evidence:** ISSUE-1459. The editor updated Fabric properties and rendered the canvas without emitting the event used by history and autosave.
+- **Prevention:** Record the pre-edit state before committing an explicit property edit, then notify the canvas listeners and checkpoint the new state.
+
 ## 2026-11-20 Agent prompt redaction changed asset IDs and failed image tools started visual corrections
 
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.

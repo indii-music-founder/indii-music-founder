@@ -10,6 +10,8 @@ import type {
 
 import { debounce } from '@/lib/debounce';
 
+const FONT_FAMILIES = ['Inter, sans-serif', 'Arial', 'Georgia', 'Times New Roman', 'Courier New'];
+
 export interface LayersPanelProps {
     layers: CanvasObject[];
     selectedLayer: CanvasObject | null;
@@ -27,7 +29,9 @@ const LayerProperties: React.FC<{
     key?: React.Key;
 }> = ({ layer, onUpdateProperty }) => {
     // Cast to text object type for text-specific properties
-    const textObj = layer.fabricObject as FabricTextObject;
+    const textObj = layer.fabricObject as FabricTextObject & { text?: string };
+    const text = textObj.text ?? '';
+    const fontFamily = textObj.fontFamily || FONT_FAMILIES[0]!;
     // Initialize state from props - key={layer.id} will ensure reset
     const [localOpacity, setLocalOpacity] = useState(
         layer.fabricObject.opacity ? Math.round(layer.fabricObject.opacity * 100) : 100
@@ -49,7 +53,7 @@ const LayerProperties: React.FC<{
     const debouncedFontSizeUpdate = useMemo(() => debounce(_fontSizeCb, 150), [_fontSizeCb]);
 
     return (
-        <MerchCard className="p-4">
+        <MerchCard className="max-h-[60%] shrink-0 overflow-y-auto p-4">
             <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Properties</h4>
             <div className="space-y-3">
                 {/* Opacity */}
@@ -76,6 +80,32 @@ const LayerProperties: React.FC<{
                 {/* Text-specific properties */}
                 {layer.type === 'text' && (
                     <>
+                        <div>
+                            <label htmlFor={`text-content-${layer.id}`} className="mb-1.5 block text-xs text-neutral-400">Text content</label>
+                            <textarea
+                                key={text}
+                                id={`text-content-${layer.id}`}
+                                defaultValue={text}
+                                rows={2}
+                                onBlur={event => {
+                                    const value = event.currentTarget.value;
+                                    if (value !== textObj.text) onUpdateProperty?.(layer, 'text', value);
+                                }}
+                                className="w-full rounded border border-white/10 bg-neutral-900 px-2 py-1.5 text-sm text-white focus:border-[#FFE135]"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor={`font-family-${layer.id}`} className="mb-1.5 block text-xs text-neutral-400">Font family</label>
+                            <select
+                                id={`font-family-${layer.id}`}
+                                value={fontFamily}
+                                onChange={event => onUpdateProperty?.(layer, 'fontFamily', event.currentTarget.value)}
+                                className="w-full rounded border border-white/10 bg-neutral-900 px-2 py-1.5 text-sm text-white focus:border-[#FFE135]"
+                            >
+                                {!FONT_FAMILIES.includes(fontFamily) && <option value={fontFamily}>{fontFamily}</option>}
+                                {FONT_FAMILIES.map(family => <option key={family} value={family}>{family}</option>)}
+                            </select>
+                        </div>
                         <div>
                             <label htmlFor={`fontsize-${layer.id}`} className="text-xs text-neutral-400 block mb-1.5">Font Size</label>
                             <input
@@ -166,7 +196,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     return (
         <div className="space-y-4 flex flex-col h-full overflow-hidden">
             {/* Layers List */}
-            <MerchCard className="flex-1 p-4 overflow-hidden flex flex-col">
+            <MerchCard className="flex min-h-0 flex-1 flex-col overflow-hidden p-4">
                 <div className="flex items-center gap-2 mb-4">
                     <Layers size={16} className="text-[#FFE135]" />
                     <h4 className="text-sm font-bold text-white">Layers</h4>

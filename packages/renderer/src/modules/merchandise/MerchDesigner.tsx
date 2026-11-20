@@ -1,4 +1,6 @@
 import { setDesignArtboard, restoreDesignCanvas } from './designArtboard';
+import { commitLayerProperty } from './commitLayerProperty';
+import type { LayerPropertyValue } from './types/fabric-extensions';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import * as fabric from 'fabric';
@@ -303,10 +305,9 @@ export default function MerchDesigner() {
         fabricCanvasRef.current.renderAll();
     }, []);
 
-    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: string | number | boolean | object | null) => {
-        layer.fabricObject.set({ [property]: value });
-        fabricCanvasRef.current?.renderAll();
-    }, []);
+    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: LayerPropertyValue) => {
+        commitLayerProperty(fabricCanvasRef.current, layer.fabricObject, property, value, saveState);
+    }, [saveState]);
 
     // Export to Showroom
     const handleExportToShowroom = useCallback(() => {

@@ -91,6 +91,7 @@ describe('MerchDesigner Accessibility', () => {
 
     const redoBtn = screen.getAllByRole('button', { name: /redo/i })[0];
     expect(redoBtn).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Merchandise design preview' })).toBeInTheDocument();
   });
 
   it('renders accessible asset library tools', () => {
