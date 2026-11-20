@@ -5932,6 +5932,19 @@ describe('judgeBoardroomExecutiveIntent (Judgment 82)', () => {
         expect(mocks.httpsCallable).toHaveBeenCalledWith('typesafeJudge');
     });
 
+    it('shares one paid judgment for overlapping identical Boardroom recommendations', async () => {
+        mocks.enabled.mockReturnValue(true);
+        let resolveJudgment: ((value: { data: { answers: { mission: { choice: string; confidence: number } } } }) => void) | undefined;
+        const callable = vi.fn(() => new Promise(resolve => { resolveJudgment = resolve; }));
+        mocks.httpsCallable.mockReturnValue(callable);
+
+        const first = judgeBoardroomExecutiveIntent(baseContext);
+        const second = judgeBoardroomExecutiveIntent({ ...baseContext });
+        expect(mocks.httpsCallable).toHaveBeenCalledTimes(1);
+        resolveJudgment?.({ data: { answers: { mission: { choice: 'split_rights', confidence: 0.9 } } } });
+        await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+    });
+
     it('falls back deterministically when the Jev callable fails', async () => {
         mocks.enabled.mockReturnValue(true);
         mocks.httpsCallable.mockReturnValue(async () => {

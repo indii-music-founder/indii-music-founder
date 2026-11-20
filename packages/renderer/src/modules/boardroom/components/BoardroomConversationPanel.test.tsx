@@ -80,6 +80,15 @@ describe('BoardroomConversationPanel', () => {
         expect(screen.getByTestId('prompt-area')).toBeInTheDocument();
     });
 
+    it('keeps the prompt mounted when the first message arrives', () => {
+        const { rerender } = render(<BoardroomConversationPanel messages={[]} />);
+        const prompt = screen.getByTestId('prompt-area');
+        rerender(<BoardroomConversationPanel messages={[
+            { id: 'first', role: 'model', text: 'Started', timestamp: 1, agentId: 'marketing' },
+        ]} />);
+        expect(screen.getByTestId('prompt-area')).toBe(prompt);
+    });
+
     // --- Messages Rendering ---
 
     it('renders messages when provided', () => {

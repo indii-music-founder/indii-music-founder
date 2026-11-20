@@ -140,7 +140,9 @@ export const BoardroomStarterCards: React.FC<BoardroomStarterCardsProps> = ({ co
         // Seat required agents for this business domain
         card.agentIds.forEach(id => addActiveAgent(id));
         // Populate command prompt
-        setCommandBarInput(card.prompt);
+        if (!commandBarInput?.trim()) {
+            setCommandBarInput(card.prompt);
+        }
     };
 
     return (

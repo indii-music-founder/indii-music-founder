@@ -3267,7 +3267,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1638: Both BoardroomJourney.tsx:158-173 and BoardroomStarterCards.tsx:106-135 call judgeBoardroomExecutiveIntent on  [U16]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — identical bounded Jev requests share a short-lived in-flight/result promise, and starter-card selection preserves a nonblank draft; focused regression tests pass locally. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U16 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3303,7 +3303,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1641: Attachment data URIs are rebuilt on every render (BoardroomConversationPanel.tsx:416) [U19]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — stable attachment objects now reuse their data URI through a WeakMap; a focused regression test is still needed. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U19 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3315,7 +3315,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1642: PromptArea remounts when the first message arrives (BoardroomConversationPanel.tsx:239 vs :513), losing focus  [U20]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — PromptArea now retains a stable tree position; the focused first-message regression and conversation panel suite pass locally. Live signed-in acceptance and team CI remain pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U20 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

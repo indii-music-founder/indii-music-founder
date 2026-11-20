@@ -135,7 +135,7 @@ export function BoardroomJourney() {
 
     const context = useMemo<BoardroomExecutiveContext>(
         () => ({
-            prompt: commandBarInput || '',
+            prompt: (commandBarInput || '').trim(),
             activeAgents: safeActiveAgents,
             hasReferencedAssets: safeAssets.length > 0,
             messageCount: safeMessages.length,

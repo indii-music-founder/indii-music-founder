@@ -72,6 +72,8 @@ const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.fre
     video: Video,
 });
 
+const MemoPersonaResponseActions = React.memo(PersonaResponseActions);
+
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
 }
@@ -119,14 +121,22 @@ function attachmentDownloadName(index: number, mimeType: string, filename?: stri
 /**
  * Formats an attachment payload as a browser-usable data URI when base64 content exists.
  */
-function buildAttachmentDataUri(base64: string | undefined, mimeType: string): string {
+const attachmentDataUriCache = new WeakMap<object, string>();
+
+function buildAttachmentDataUri(attachment: { base64?: string; mimeType?: string }): string {
+    const cached = attachmentDataUriCache.get(attachment);
+    if (cached !== undefined) return cached;
+    const { base64, mimeType = '' } = attachment;
     if (!base64) {
         return '';
     }
     if (base64.startsWith('data:')) {
+        attachmentDataUriCache.set(attachment, base64);
         return base64;
     }
-    return `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
+    const dataUri = `data:${mimeType || 'application/octet-stream'};base64,${base64}`;
+    attachmentDataUriCache.set(attachment, dataUri);
+    return dataUri;
 }
 
 /**
@@ -156,6 +166,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
         : 'empty';
     const firstVisibleMessageIndex = Math.max(0, messages.length - visibleMessageCount);
     const visibleMessages = messages.slice(firstVisibleMessageIndex);
+    const agentsResponding = messages.some(message => message.role !== 'user' && message.isStreaming);
 
     // Start at the newest message and follow streaming updates while the user
     // remains near the bottom. Instant positioning avoids smooth-scroll jitter
@@ -189,10 +200,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     // recovered by recoverInterruptedMessages in agentSessionSlice. A shorter UI timer
     // used to mark live tool calls as finished and persist that false state.
 
-    if (messages.length === 0) {
-        return (
-            <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
-                {/* Empty State — centered vertically in the available space with executive starter cards */}
+    return (
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+            {messages.length === 0 ? (
+                /* Empty State — centered vertically while preserving the prompt below. */
                 <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-center text-center p-6 min-w-0 space-y-4">
                     <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-3">
@@ -220,16 +231,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                     <BoardroomStarterCards compact={isAnyPhone} />
                 </div>
 
-                {/* Prompt Area — always visible so users can start the conversation */}
-                <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
-                    <PromptArea isDocked className="w-full max-w-none min-w-0" />
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
+            ) : (
+                <>
             {/* Panel Header */}
             <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 shrink-0 min-w-0">
                 <MessageSquare size={14} className="text-indigo-400 shrink-0" />
@@ -276,7 +279,6 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         // there is never a dead gap where the user cannot tell
                         // indii is working (observed 30s+ of silence before the
                         // first token).
-                        const agentsResponding = messages.some(m => m.role !== 'user' && m.isStreaming);
                         const userAwaitingResponse = isUser && agentsResponding;
 
                         return (
@@ -399,7 +401,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         <div className="mt-3 flex flex-wrap gap-3">
                                             {msg.attachments.map((att, i) => {
                                                 const mimeType = att.mimeType || '';
-                                                const dataUri = buildAttachmentDataUri(att.base64, mimeType);
+                                                const dataUri = buildAttachmentDataUri(att);
                                                 const displayName = att.filename || attachmentDownloadName(i, mimeType, att.filename);
                                                 const mimeSubtype = (mimeType.split('/')[1] || 'file').split(';')[0] || 'file';
 
@@ -482,7 +484,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         </div>
                                     )}
                                     {!isUser && !msg.isStreaming && (
-                                        <PersonaResponseActions text={displayText} metadata={msg.metadata} />
+                                        <MemoPersonaResponseActions text={displayText} metadata={msg.metadata} />
                                     )}
                                 </div>
                             </motion.div>
@@ -494,7 +496,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 <div className="h-4 w-full shrink-0" />
             </div>
 
-            {/* Inline PromptArea for Boardroom */}
+                </>
+            )}
+
+            {/* Keep PromptArea in one reconciliation position as messages arrive. */}
             <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
                 <PromptArea isDocked className="w-full max-w-none min-w-0" />
             </div>
