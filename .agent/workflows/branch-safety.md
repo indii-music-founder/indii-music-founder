@@ -1,33 +1,24 @@
-# Mainline Delivery Gate — Mandatory for Every Slash Workflow
+# Mainline delivery through Entire
 
-> This is a hard stop, not advice. The repository operates directly on `main`. Do not create, use, or push a task branch unless the user explicitly requests that exact branch workflow.
+All coding agents use this policy. `main` is the delivery target and `origin` stays on Entire. The owner has authorized the task branch, Trail publication, and gated merge described here for normal repository delivery. This standing authorization supersedes older direct-push-only instructions. Approval is still required for scope changes and for actions outside normal repository delivery.
 
-## Non-negotiable rules
+## Start from current main
 
-1. **Use `main` as the single delivery lane.** Before changing code, run `git fetch origin`, confirm the current branch is `main`, confirm the worktree does not contain unrelated changes, and fast-forward local `main` to `origin/main`. Do not begin work from a stale local commit.
-2. **No automatic branch creation.** Slash workflows, agents, tests, fixes, checkpoints, and CI recovery all remain on `main`. A branch or PR is allowed only when the user explicitly requests it for the current task.
-3. **One coherent commit at a time.** Collect the task's related changes, run the relevant local validation, and create one purposeful commit. Do not emit session-checkpoint, save-state, polling, or one-commit-per-micro-fix history. Never mix unrelated work into the commit.
-4. **Synchronize without rewriting history.** Immediately before committing or pushing, fetch again and require local `main` to be based on current `origin/main`. If `origin/main` advanced, stop and integrate it safely before continuing. Never force-push, reset, or rewrite `main`.
-5. **Push only the validated commit directly to `origin/main`.** Use an explicit refspec: `git push origin HEAD:main`. Never run an ambiguous push and never push a different local branch to `main`.
-6. **CI is the remote acceptance gate.** After the push, identify the workflow run for the exact pushed SHA and inspect its actual logs. Commits that only modify documentation, `.agent/`, or `docs/` trigger the `Docs and Policy Gate` (`docs-gate.yml`) rather than full application build or deployment workflows. If a commit touches only paths where no remote CI workflow is scheduled, the agent must explicitly state "Remote CI not scheduled for this path" alongside the executed local checks; never claim "CI green" from an empty check list. If a workflow fails, fix only the observed root cause on `main`, validate, make one follow-up commit, push, and repeat until that SHA's successor is green. Do not guess, delete tests, weaken assertions, or open side branches to hide a red run.
-7. **A green run ends the delivery cycle.** Report the pushed SHA, local validation, CI run URL/status, and any follow-up fix SHA. Do not continue adding opportunistic changes after green.
+1. Confirm that `origin` points to the repository's `entire://` remote. Fetch `origin`, inspect the branch and working tree, and use a clean checkout based on `origin/main` for new work. Preserve concurrent and unrelated changes.
+2. Keep the active task to one coherent, locally validated commit. Stage only task files. Check the latest `origin/main` again before publication. If it moved, integrate it safely and rerun affected checks. Preserve existing history.
+3. Use the Trail route below immediately for this GitHub mirror. For a repository where Entire permits direct pushes, the direct route is `git push origin HEAD:main` from current local `main` only. If Entire rejects it with a protected-branch error, preserve the verified commit and use the Trail route. A transport, permission, or authentication error requires its own diagnosis.
 
-## Required pre-push evidence
+## Publish and land through a Trail
 
-```bash
-git fetch origin
-test "$(git branch --show-current)" = "main"
-git merge-base --is-ancestor origin/main HEAD
-git rev-list --left-right --count origin/main...HEAD
-git status --short
-```
+1. Use one task-specific branch based on `origin/main`, with a unique name such as `codex/<task>`, `claude/<task>`, or `antigravity/<task>`. Keep an existing validated commit if its base is current. If the commit was made on local `main` and the base moved, copy the task changes to a fresh branch from `origin/main` and validate again. Leave unrelated branches and local `main` history intact.
+2. Use `entire agent-help trail` and the subcommand help for installed CLI flags. Use `entire trail show` on the current branch to find a linked change. Reuse the existing Trail for the task. For new work, run `entire trail create --base main --branch <task-branch> --type task --title <title> --body <scope-and-verification>` from the task checkout. It publishes the committed branch through `origin` and links the change. If linking fails after a branch or Trail was created, recover that existing state with `entire trail link`.
+3. Keep the Trail description current. Use `entire trail show` to verify the branch, base, and gates. Wait for any scheduled checks for the exact task SHA, inspect failures, and fix observed root causes on the task branch. Use `entire trail merge --dry-run` to check readiness, then `entire trail merge` when all applicable gates pass. Use the full Trail or change URL in status reports.
+4. Keep monitoring through merge and post-merge CI. Ask the user only for a gate that explicitly requires their approval, missing or expired credentials, or a decision outside the authorized scope. For authorization, surface the official flow and wait. Preserve protections, required checks, and approval gates.
 
-Expected immediately before the commit: `main`, clean except for the current task, and zero historical divergence. Expected immediately before the push: `main` is zero behind and exactly one coherent validated commit ahead.
+## Verify the commit that lands
 
-## Explicit branch exception
+Fetch `origin` after merge and identify the exact commit produced by the Trail merge on `main`. Inspect that SHA's expected CI runs and logs. Documentation and policy changes use the `Docs and Policy Gate`. For application changes, monitor the applicable build, deploy, and acceptance checks. When the scope includes deployment, verify the requested behavior in the deployed environment under the [real-user authenticity standard](../REAL_USER_AUTHENTICITY.md).
 
-If the user explicitly requests a branch, state the branch name and purpose, create it from current `origin/main`, keep it task-specific, and do not merge, rebase, force-push, delete, or open a PR without the user's matching instruction. After that task, return to the mainline standard.
+If an expected run fails, fix only its logged root cause and deliver the follow-up through the same route. Report the landed SHA, checks, CI run URLs, and any verified deployment outcome. If the workflow triggers exclude the changed paths, report "Remote CI not scheduled for this path" and give the local verification. Stop after the relevant gates and requested acceptance checks pass.
 
-## Legacy branch recovery
-
-Do not merge the existing stale branches into `main`. Preserve them until separately authorized for cleanup. Recover only explicitly requested changes by applying their minimal patch directly to current `main`, validating it, and delivering it through the single-mainline cycle above.
+Never force-push or rewrite `main`, manually create checkpoint commits, circumvent a merge gate, or change the remote to deliver a task. Other branch workflows and changes to repository settings require separate authorization.

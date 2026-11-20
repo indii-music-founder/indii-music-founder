@@ -45,4 +45,4 @@ If the task requires a repository artifact, update the relevant existing map whe
 
 If a conversational diagram is sufficient, return it without writing the repository.
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

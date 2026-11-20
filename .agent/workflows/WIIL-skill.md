@@ -200,4 +200,4 @@ Beyond `.agent/skills/`, three additional skill registries exist. The generated 
 ---
 
 *(Note: Any legacy `/live_test_*.md` files or undocumented one-off commands have been deprecated in favor of this standardized suite).*
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

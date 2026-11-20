@@ -38,9 +38,9 @@ When the `/auto-fix` workflow is triggered, Antigravity should autonomously find
    ```bash
    git add <auto-fix-task-files>
    git commit -m "fix(auto): resolve Sentry/CodeRabbit issues - integration tests passing"
-   git push origin HEAD:main
    ```
+   Publish through [`/end`](end.md).
 
 5. **Report**
    Summarize the fixed issues and provide the user with a brief report.
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

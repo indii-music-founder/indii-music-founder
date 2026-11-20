@@ -45,18 +45,18 @@ git status --short && git branch --show-current
 
 Summarize what is uncommitted. If the working tree is clean, skip to Phase 2.
 
-### Step 2 — Require current main and isolate task scope
+### Step 2 — Check the mainline base and isolate task scope
 
-Do not create a branch. Fetch and require current `main`; if unrelated changes already exist, stop and report them rather than bundling them into the sweep:
+Follow the shared branch policy and fetch current `origin/main`; if unrelated changes already exist, stop and report them rather than bundling them into the sweep:
 
 ```bash
 git fetch origin
-test "$(git branch --show-current)" = "main"
+git branch --show-current
 git merge-base --is-ancestor origin/main HEAD
 git status --short
 ```
 
-> **Rule:** Never sweep across unrelated dirty work. Keep this sweep to one coherent validated commit on `main`.
+> **Rule:** Never sweep across unrelated dirty work. Keep this sweep to one coherent validated commit for delivery to `main`.
 
 ---
 
@@ -197,7 +197,7 @@ All lint errors must be resolved. Warnings are acceptable but document them.
 
 ### Step 10 — Keep fixes uncommitted until the closed loop completes
 
-Do not commit or push at this phase. Keep all related sweep files together so the completed fix, regression coverage, ledger evidence, and test history become one coherent `main` commit after Phase 8 passes.
+Do not commit or push at this phase. Keep all related sweep files together so the completed fix, regression coverage, ledger evidence, and test history become one coherent commit for delivery after Phase 8 passes.
 
 ---
 
@@ -363,7 +363,7 @@ Any newly discovered bugs (not regressions) are logged as OPEN and deferred to n
 echo "## $(date +%Y-%m-%d) — issue-sweep + Mega Test V<N> — <PASS>✅ <FAIL>❌ <NEW> new issues" >> .agent/test_ledger/REAL_TEST_HISTORY.md
 ```
 
-After all Phase 8 verification passes, stage only the sweep's related files, create one structured commit on `main`, push with `git push origin HEAD:main`, and monitor the exact CI SHA until green.
+After all Phase 8 verification passes, stage only the sweep's related files, deliver one structured commit through [`/end`](end.md), and monitor exact-SHA CI on `main` until green.
 
 ---
 
@@ -462,4 +462,4 @@ Related workflows:
   /auto-fix    → Lightweight version of Phase 2+3 only (no test plan)
   /ci-validate → Run all 4 test shards locally before pushing to main
 ```
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

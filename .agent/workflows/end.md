@@ -26,7 +26,7 @@ No placeholders, debug residue, secrets, generated junk, or unintended files may
 
 ## 4. Run proportional final proof
 
-Use the verification matrix in [`ci-validate.md`](ci-validate.md). For repository delivery, run the full observational `/ci-validate` local gate. A failure returns to `/middle`; fix only the logged in-scope cause and rerun the invalidated checks.
+Use the verification matrix in [`ci-validate.md`](ci-validate.md). If the final diff changes Effect code, confirm the [`/effect`](effect.md) diagnostics for each affected package, targeted tests, and lint results cover the final diff. Rerun any checks invalidated by later edits. For repository delivery, run the full observational `/ci-validate` local gate. A failure returns to `/middle`; fix only the logged in-scope cause and rerun the invalidated checks.
 
 ## 5. Deliver when authorized
 
@@ -34,13 +34,13 @@ When the tree is clean for this objective and local validation passes:
 
 1. stage only explicitly listed task files;
 2. inspect the complete staged diff;
-3. create one conventional task commit on `main`;
-4. push only with `git push origin HEAD:main`;
-5. locate the remote CI run for that exact SHA;
+3. create one conventional commit for the task;
+4. publish and land it through [the shared delivery policy](branch-safety.md);
+5. locate the remote CI run for the exact commit that landed on `main`;
 6. wait for its final result and inspect actual failed logs if red;
 7. repair only logged root causes through `/middle` until the successor SHA is green.
 
-Missing GitHub credentials require the official `gh auth login` flow. Never harvest a PAT from `.env` or switch identities.
+For missing or expired Entire authorization, return the official Entire sign-in flow and wait for the user.
 
 ## 6. No post-gate edits
 
@@ -57,4 +57,4 @@ AUTHENTICITY: <structural | simulated | local-real | production-real>
 REMAINING: <none or exact blocker>
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

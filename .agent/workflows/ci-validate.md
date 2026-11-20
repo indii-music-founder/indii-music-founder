@@ -12,7 +12,7 @@ Read [`branch-safety.md`](branch-safety.md), then record:
 
 ```bash
 git fetch origin
-test "$(git branch --show-current)" = "main"
+git branch --show-current
 git rev-list --left-right --count origin/main...HEAD
 git status --short
 git log origin/main..HEAD --oneline
@@ -20,7 +20,7 @@ git log origin/main..HEAD --oneline
 
 Require:
 
-- current `main` and zero commits behind `origin/main`;
+- the branch allowed by [the shared delivery policy](branch-safety.md), based on current `origin/main`;
 - at most one coherent unpublished task commit;
 - a worktree that is clean for this objective;
 - unrelated dirty files listed and excluded;
@@ -81,13 +81,13 @@ Known exceptions are evidence, not folklore. An ignored flake or warning needs a
 ## 4. Credential and secret boundary
 
 - Use `gh auth status` to inspect GitHub authentication.
-- Missing or expired authorization requires the official `gh auth login` flow.
+- Missing or expired authorization requires the service's official sign-in flow.
 - Never read a PAT from `.env`, export tokens through shell construction, switch accounts, infer a secret value, or overwrite repository secrets during validation.
 - A secret change requires an explicit target, trusted source value, and separate user authority.
 
 ## 5. Local verdict and delivery handoff
 
-When local checks pass, emit a local verdict. `/end` owns explicit staging, full staged-diff review, the one coherent commit, and `git push origin HEAD:main`.
+When local checks pass, emit a local verdict. `/end` owns explicit staging, full staged-diff review, the one coherent commit, and delivery through [the shared Entire route](branch-safety.md).
 
 Any edit after the local verdict invalidates the affected verdict and requires rerun.
 
@@ -120,4 +120,4 @@ Return this in the task report or CI job summary without modifying the validated
 }
 ```
 
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.

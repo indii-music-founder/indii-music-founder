@@ -51,7 +51,7 @@ If exactly one coherent commit is ahead of `origin/main`, `/get-git` executes:
 
 - `npm run typecheck`
 - `npm test -- --run`
-- `git push origin HEAD:main` (only if typecheck and tests pass and `main` is zero commits behind).
+- Deliver the validated commit through [`/end`](end.md) if the checks pass.
 
 If validation fails, the push is blocked to protect the remote build.
 
@@ -77,4 +77,4 @@ If safe to proceed, execute `/issue sync` to:
 **Output the sync status (performed/idle), the next scheduled cron interval, and the status of any newly fixed issues or CI pipelines.**
 
 > **Note on polish:** `/get-git` is a sync-and-validate utility — do NOT run `/better` here. Polish belongs to `/go` (per task) and `/end` (final pass).
-> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
+> **Mainline delivery gate:** Read [`branch-safety.md`](branch-safety.md) before code, git, or CI actions. It defines delivery through Entire, including the automatic Trail route for protected `main`.
