@@ -19,11 +19,15 @@ export function BoardroomAgentFeedView() {
     const toast = useToast();
     const {
         activeGraphExecution,
+        agentHistory,
+        isAgentProcessing,
         a2aMessages,
         openBoardroomBrowser,
     } = useStore(
         useShallow(state => ({
             activeGraphExecution: state.activeGraphExecution,
+            agentHistory: state.agentHistory,
+            isAgentProcessing: state.isAgentProcessing,
             a2aMessages: state.a2aMessages || [],
             openBoardroomBrowser: state.openBoardroomBrowser,
         }))
@@ -129,6 +133,7 @@ export function BoardroomAgentFeedView() {
 
     const graphNodes = activeGraphExecution?.graph?.nodes || [];
     const nodeStates = activeGraphExecution?.nodeStates || {};
+    const missionSteps = agentHistory?.filter(message => message.metadata?.boardroomStepId).slice(-12).reverse() ?? [];
 
     return (
         <div data-testid="boardroom-agent-feed-view" className="h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-y-auto custom-scrollbar p-6 space-y-6">
@@ -136,13 +141,13 @@ export function BoardroomAgentFeedView() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                        <Activity size={20} className="animate-pulse" />
+                        <Activity size={20} className={isAgentProcessing ? "motion-safe:animate-pulse" : undefined} />
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-white flex items-center gap-2">
                             Autonomous Swarm Telemetry
                             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                                ACTIVE MONITOR
+                                {isAgentProcessing ? 'Mission active' : 'Monitoring'}
                             </span>
                         </h2>
                         <p className="text-xs text-white/50 mt-0.5">
@@ -214,6 +219,25 @@ export function BoardroomAgentFeedView() {
                     ))}
                 </div>
             </div>
+
+            <section aria-label="Boardroom mission steps" className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white/80">Boardroom mission steps</h3>
+                {missionSteps.length === 0 && <p className="text-xs text-white/60">No mission steps yet.</p>}
+                {missionSteps.map(step => (
+                    <article key={step.id} className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs">
+                        <div className="flex justify-between gap-2 font-semibold">
+                            <span>{step.agentId}</span>
+                            <span>{step.isStreaming
+                                ? !isAgentProcessing ? 'Interrupted'
+                                    : step.metadata?.boardroomStepStatus === 'awaiting_approval' ? 'Awaiting approval' : 'In progress'
+                                : 'Step receipt'}</span>
+                        </div>
+                        {step.isStreaming ? (
+                            <p className="mt-2 text-white/70">{step.thoughts?.at(-1)?.toolName ?? step.text}</p>
+                        ) : <p className="mt-2 whitespace-pre-wrap text-white/70">{step.text}</p>}
+                    </article>
+                ))}
+            </section>
 
             {/* Swarm Graph Execution Monitor */}
             <div className="space-y-3">

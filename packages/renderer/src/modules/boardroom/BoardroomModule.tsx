@@ -9,7 +9,7 @@ import { BoardroomConversationPanel } from './components/BoardroomConversationPa
 import { useMobile } from '@/hooks/useMobile';
 import { BoardroomJourney } from './components/BoardroomJourney';
 
-import { ArrowLeft, Users, Layers, Network, Globe, LayoutGrid, Radio } from 'lucide-react';
+import { ArrowLeft, Users, Layers, Network, Globe, LayoutGrid, Radio, MessageSquare, PanelLeft, X } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
@@ -22,22 +22,6 @@ import { BoardroomRightRail } from './components/BoardroomRightRail';
 import { normalizeBoardroomAgentIds } from '@/services/agent/departments';
 import { Z_LAYER } from '@/core/zLayers';
 
-/**
- * BoardroomModule — The virtual multi-agent boardroom.
- *
- * Split-panel layout:
- * - Left:  Orbital visualization (glassmorphic oval + agent icons)
- * - Right: Persistent, scrollable conversation panel
- *
- * On mobile, the orbital ring collapses and the conversation panel
- * takes full width for a chat-focused experience.
- *
- * Architecture:
- * - BoardroomTable            → Glassmorphic oval with core glow + status
- * - ParticipantSelector       → Draggable agent icons around the perimeter
- * - BoardroomConversationPanel → Full-height scrollable message feed
- *
- * */
 export function BoardroomModule() {
     const toast = useToast();
     const { 
@@ -76,7 +60,31 @@ export function BoardroomModule() {
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
     const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
+    const [isTableOpen, setIsTableOpen] = React.useState(false);
+    const [isDiscussionOpen, setIsDiscussionOpen] = React.useState(false);
+    const [isRailOpen, setIsRailOpen] = React.useState(false);
+    const discussionTrigger = React.useRef<HTMLButtonElement>(null);
+    const discussionClose = React.useRef<HTMLButtonElement>(null);
+    const returnDiscussionFocus = React.useRef(false);
+    const workspaceOpen = boardroomWorkspaceLayout !== 'closed';
+    const [workspaceVisited, setWorkspaceVisited] = React.useState(workspaceOpen);
+    if (workspaceOpen && !workspaceVisited) setWorkspaceVisited(true);
+    const showTable = !isAnyPhone && (!workspaceOpen || isTableOpen);
+    const showDiscussion = workspaceOpen && isDiscussionOpen;
     const hasTrackedBoardroomView = React.useRef(false);
+
+    React.useLayoutEffect(() => {
+        if (showDiscussion) discussionClose.current?.focus();
+        else if (returnDiscussionFocus.current) {
+            returnDiscussionFocus.current = false;
+            discussionTrigger.current?.focus();
+        }
+    }, [showDiscussion]);
+
+    const closeDiscussion = () => {
+        returnDiscussionFocus.current = true;
+        setIsDiscussionOpen(false);
+    };
 
     // Staged Handoff Hook Interceptor
     React.useEffect(() => {
@@ -171,6 +179,42 @@ export function BoardroomModule() {
 
                     {/* Right: Consolidated Utility Dock */}
                     <div className="flex items-center gap-1.5 shrink-0 justify-end">
+                        {workspaceOpen && (
+                            <>
+                                {!isAnyPhone && (
+                                    <button
+                                        type="button"
+                                        aria-label={showTable ? 'Hide table' : 'Show table'}
+                                        aria-expanded={showTable}
+                                        onClick={() => setIsTableOpen(value => !value)}
+                                        className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                    >
+                                        <PanelLeft size={16} />
+                                    </button>
+                                )}
+                                <button
+                                    ref={discussionTrigger}
+                                    type="button"
+                                    aria-label="Discussion"
+                                    aria-expanded={showDiscussion}
+                                    aria-controls="boardroom-discussion"
+                                    onClick={() => showDiscussion ? closeDiscussion() : setIsDiscussionOpen(true)}
+                                    className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                >
+                                    <MessageSquare size={16} />
+                                </button>
+                            </>
+                        )}
+                        {!workspaceOpen && (
+                            <button
+                                type="button"
+                                aria-label="Open workspace"
+                                onClick={() => setBoardroomWorkspaceLayout('split')}
+                                className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400 md:hidden"
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                        )}
                         {/* Boardroom Multi-Use Workspace Switchers */}
                         <div className="hidden md:flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6" data-testid="boardroom-workspace-dock">
                             <button
@@ -266,16 +310,16 @@ export function BoardroomModule() {
                 </div>
 
                 {/* Split-Panel Content */}
-                <div className="flex-1 flex min-h-0 min-w-0 w-full overflow-hidden">
+                <div className="relative flex-1 flex min-h-0 min-w-0 w-full overflow-hidden">
                     {/* Left: Orbital Visualization — rendered when not on mobile and not full-stage */}
-                    {!isAnyPhone && boardroomWorkspaceLayout !== 'stage' && (
+                    {showTable && (
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 200 }}
                             className={cn(
                                 "relative shrink-0 flex items-center justify-center p-4 lg:p-5 transition-all duration-300 min-w-0 overflow-hidden",
-                                boardroomWorkspaceLayout === 'split' ? "w-[28%]" : "w-[55%]"
+                                workspaceOpen ? "absolute inset-y-0 left-0 z-30 w-full max-w-lg border-r border-white/10 bg-zinc-950" : "w-[55%]"
                             )}
                             data-testid="boardroom-orbital-panel"
                         >
@@ -296,37 +340,54 @@ export function BoardroomModule() {
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.2 }}
-                            className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden relative z-10 isolate"
+                            hidden={!workspaceOpen}
+                            className={cn("flex-1 min-w-0 min-h-0 flex-col overflow-hidden relative z-10 isolate", workspaceOpen ? "flex" : "hidden")}
                             data-testid="boardroom-workspace-container"
                         >
                             <BoardroomWorkspacePane
-                                hasOverlayOpen={isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen}
+                                hasOverlayOpen={!workspaceOpen || isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen || showTable || showDiscussion || isRailOpen}
                             />
                         </motion.div>
                     )}
 
-                    {/* Right: Persistent Conversation Panel */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
+                    <div
+                        id="boardroom-discussion"
+                        hidden={workspaceOpen && !showDiscussion}
                         className={cn(
-                            "flex flex-col min-h-0 min-w-0 bg-white/1 overflow-hidden transition-all duration-300 relative z-20 isolate",
-                            isAnyPhone ? "flex-1" :
-                            boardroomWorkspaceLayout === 'closed' ? "flex-1 border-l border-white/5" :
-                            boardroomWorkspaceLayout === 'stage' ? "w-[36%] shrink-0 border-l border-white/5" :
-                            "w-[32%] shrink-0 border-l border-white/5"
+                            "flex-col min-h-0 min-w-0 bg-zinc-950 overflow-hidden border-l border-white/10 z-30",
+                            workspaceOpen && !showDiscussion ? "hidden" : "flex",
+                            workspaceOpen
+                                ? cn("absolute inset-y-0 w-full max-w-md shadow-2xl", isAnyPhone ? "right-0" : "right-14")
+                                : "relative flex-1"
                         )}
+                        onKeyDown={event => {
+                            if (showDiscussion && event.key === 'Escape' && !event.defaultPrevented) {
+                                event.stopPropagation();
+                                closeDiscussion();
+                            }
+                        }}
                         data-testid="boardroom-conversation-container"
                     >
+                        {showDiscussion && (
+                            <button
+                                ref={discussionClose}
+                                type="button"
+                                onClick={closeDiscussion}
+                                className="m-2 self-end rounded-lg p-2 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                aria-label="Close discussion"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
                         <BoardroomConversationPanel messages={boardroomMessages} />
-                    </motion.div>
+                    </div>
 
                     {/* Dedicated Boardroom Right Vertical Rail */}
                     {!isAnyPhone && (
                         <BoardroomRightRail
                             onOpenLivingPlans={() => setIsTrackerOpen(true)}
                             onOpenSwarmFeed={() => setIsSwarmFeedOpen(true)}
+                            onOpenChange={setIsRailOpen}
                         />
                     )}
                 </div>

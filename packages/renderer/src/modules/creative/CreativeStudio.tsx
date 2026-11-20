@@ -123,7 +123,7 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
 // Lazy load StudioControlsPanel for mobile controls tab
 const StudioControlsPanel = lazy(() => import('@/core/components/right-panel/StudioControlsPanel'));
 
-export default function CreativeStudio({ initialMode }: { initialMode?: 'image' | 'video' }) {
+export default function CreativeStudio({ initialMode, embedded = false }: { initialMode?: 'image' | 'video'; embedded?: boolean }) {
     const creativeScope = useStore(state => JSON.stringify([state.user?.uid, state.currentOrganizationId, state.currentProjectId]));
     const {
         viewMode, setViewMode,
@@ -607,7 +607,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     return (
         <ModuleErrorBoundary moduleName="Studio">
             <div data-testid="creative-studio-container" className="flex flex-col h-full w-full bg-background selection:bg-dept-creative/30">
-                <CreativeNavbar data-testid="creative-navbar" />
+                <CreativeNavbar data-testid="creative-navbar" embedded={embedded} />
 
                 {/* Mobile Tab Switcher */}
                 <div className="md:hidden flex border-b border-white/10 bg-background shrink-0">

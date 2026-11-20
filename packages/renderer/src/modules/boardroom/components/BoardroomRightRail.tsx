@@ -15,18 +15,38 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
-import { BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
+import { AVAILABLE_AGENTS, BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
 
 interface BoardroomRightRailProps {
     onOpenLivingPlans?: () => void;
     onOpenSwarmFeed?: () => void;
+    onOpenChange?: (open: boolean) => void;
 }
 
-type RailTab = 'resources' | 'presets' | 'feed' | 'plans';
+type RailTab = 'resources' | 'presets' | 'feed' | 'plans' | 'team';
 
-export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: BoardroomRightRailProps) {
+export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenChange }: BoardroomRightRailProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const [activeTab, setActiveTab] = React.useState<RailTab>('resources');
+
+    const [selectedAgent, setSelectedAgent] = React.useState<string | null>(null);
+    const opener = React.useRef<HTMLButtonElement | null>(null);
+    const closeButton = React.useRef<HTMLButtonElement>(null);
+    const history = useStore(state => state.agentHistory);
+    const isAgentProcessing = useStore(state => state.isAgentProcessing);
+    const a2aMessages = useStore(state => state.a2aMessages);
+    const latestStep = history?.slice().reverse().find(message => message.agentId === selectedAgent && message.metadata?.boardroomStepId);
+    const latestHandoff = a2aMessages?.slice().reverse().find(message => message.toAgent === selectedAgent);
+
+    React.useEffect(() => {
+        onOpenChange?.(isOpen);
+        if (isOpen) closeButton.current?.focus();
+    }, [isOpen, activeTab, onOpenChange]);
+
+    const close = () => {
+        setIsOpen(false);
+        opener.current?.focus();
+    };
 
     const activeAgents = useStore(state => state.activeAgents) || [];
     const soloAgent = useStore(state => state.soloAgent);
@@ -53,30 +73,44 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
         { id: 'plans' as const, icon: Layers, label: 'Living Plans' },
     ];
 
+    const agents = [
+        { id: 'generalist', name: 'Conductor', icon: Sparkles, color: 'text-emerald-300' },
+        ...AVAILABLE_AGENTS.map(agent => ({
+            id: agent.id, name: agent.shortTitle, icon: agent.icon, color: agent.brightText,
+        })),
+    ];
+
     return (
         <aside
             data-testid="boardroom-right-rail"
-            className="h-full border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl shrink-0 flex flex-row overflow-hidden z-40 shadow-2xl relative"
+            className="h-full border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl shrink-0 flex flex-row z-40 shadow-2xl relative"
         >
             {/* Popout Content Panel */}
             <AnimatePresence mode="wait">
                 {isOpen && (
                     <motion.div
                         key={activeTab}
-                        initial={{ width: 0, opacity: 0 }}
-                        animate={{ width: 320, opacity: 1 }}
-                        exit={{ width: 0, opacity: 0 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-                        className="h-full flex flex-col border-r border-white/5 overflow-hidden bg-black/40"
+                        className="absolute right-full top-0 h-full w-[min(22rem,calc(100vw-3.5rem))] flex flex-col border-r border-white/10 overflow-hidden bg-zinc-950 shadow-2xl"
+                        onKeyDown={event => {
+                            if (event.key === 'Escape' && !event.defaultPrevented) {
+                                event.stopPropagation();
+                                close();
+                            }
+                        }}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
                             <span className="text-xs font-bold uppercase tracking-wider text-white/80">
-                                {tabs.find(t => t.id === activeTab)?.label}
+                                {activeTab === 'team' ? agents.find(agent => agent.id === selectedAgent)?.name ?? 'Add agent' : tabs.find(t => t.id === activeTab)?.label}
                             </span>
                             <button
                                 type="button"
-                                onClick={() => setIsOpen(false)}
+                                ref={closeButton}
+                                onClick={close}
                                 className="p-1 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all"
                                 aria-label="Close Rail"
                             >
@@ -86,6 +120,42 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
 
                         {/* Content Body */}
                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar text-xs text-white/70 space-y-4">
+                            {activeTab === 'team' && (
+                                selectedAgent ? (
+                                    <div className="space-y-3">
+                                        <p>{isAgentProcessing && latestStep?.isStreaming
+                                            ? latestStep.metadata?.boardroomStepStatus === 'awaiting_approval' ? 'Awaiting approval' : 'Working on assigned step'
+                                            : 'Idle'}</p>
+                                        {typeof latestStep?.metadata?.boardroomStepTask === 'string' && (
+                                            <p className="whitespace-pre-wrap break-words">{latestStep.metadata.boardroomStepTask}</p>
+                                        )}
+                                        {latestStep?.thoughts?.at(-1)?.toolName && (
+                                            <p>Latest tool: {latestStep.thoughts.at(-1)?.toolName}</p>
+                                        )}
+                                        {latestHandoff && (
+                                            <p>{latestHandoff.requiresApproval && !latestHandoff.approved ? 'Approval requested' : 'Latest handoff'} from {latestHandoff.fromAgent}</p>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="rounded-lg border border-white/15 p-2 hover:bg-white/10"
+                                            onClick={() => toggleAgent(selectedAgent)}
+                                        >
+                                            {activeAgents.includes(selectedAgent) ? 'Unseat agent' : 'Seat agent'}
+                                        </button>
+                                    </div>
+                                ) : agents.map(agent => (
+                                    <button
+                                        key={agent.id}
+                                        type="button"
+                                        aria-pressed={activeAgents.includes(agent.id)}
+                                        onClick={() => toggleAgent(agent.id)}
+                                        className="flex w-full items-center justify-between rounded-lg border border-white/10 p-2 hover:bg-white/10"
+                                    >
+                                        <span>{agent.name}</span>
+                                        <span>{activeAgents.includes(agent.id) ? 'Seated' : 'Seat'}</span>
+                                    </button>
+                                ))
+                            )}
                             {/* TAB 1: STANDARDS & RESOURCES */}
                             {activeTab === 'resources' && (
                                 <>
@@ -277,10 +347,60 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
             </AnimatePresence>
 
             {/* Vertical Icon Rail */}
-            <div className="w-12 shrink-0 flex flex-col items-center py-4 gap-3 bg-black/60">
+            <div className="w-14 shrink-0 flex flex-col items-center overflow-y-auto py-3 gap-2 bg-black/60">
+                {agents.filter(agent => agent.id === 'generalist' || activeAgents.includes(agent.id)).map(agent => {
+                    const working = isAgentProcessing && history?.some(message =>
+                        message.agentId === agent.id && message.isStreaming && message.metadata?.boardroomStepId);
+                    const approval = (isAgentProcessing && history?.some(message =>
+                        message.agentId === agent.id && message.isStreaming && message.metadata?.boardroomStepStatus === 'awaiting_approval'))
+                        || a2aMessages?.some(message => message.toAgent === agent.id && message.requiresApproval && !message.approved);
+                    const status = approval ? 'Approval requested' : working ? 'Working' : 'Idle';
+                    return (
+                        <button
+                            key={agent.id}
+                            type="button"
+                            title={`${agent.name} · ${status}`}
+                            aria-label={`${agent.name} · ${status}`}
+                            aria-expanded={isOpen && activeTab === 'team' && selectedAgent === agent.id}
+                            onClick={event => {
+                                opener.current = event.currentTarget;
+                                setSelectedAgent(agent.id);
+                                setActiveTab('team');
+                                setIsOpen(true);
+                            }}
+                            className={cn("relative shrink-0 rounded-full border border-white/10 bg-white/5 p-2.5 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400", agent.color)}
+                        >
+                            <agent.icon size={16} />
+                            {working && <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-emerald-400 motion-safe:animate-pulse" />}
+                            {approval && <span aria-hidden="true" className="absolute -right-1 -top-1 rounded-full bg-amber-300 px-1 text-[10px] font-bold text-black">!</span>}
+                        </button>
+                    );
+                })}
                 <button
                     type="button"
-                    onClick={() => setIsOpen(prev => !prev)}
+                    title="Add agent"
+                    aria-label="Add agent"
+                    aria-expanded={isOpen && activeTab === 'team' && !selectedAgent}
+                    onClick={event => {
+                        opener.current = event.currentTarget;
+                        setSelectedAgent(null);
+                        setActiveTab('team');
+                        setIsOpen(true);
+                    }}
+                    className="shrink-0 rounded-lg p-2 text-white/60 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                >
+                    <UserPlus size={16} />
+                </button>
+                <button
+                    type="button"
+                    onClick={event => {
+                        opener.current = event.currentTarget;
+                        if (isOpen) close();
+                        else {
+                            setActiveTab('resources');
+                            setIsOpen(true);
+                        }
+                    }}
                     className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors mb-2"
                     title={isOpen ? 'Collapse Rail' : 'Expand Boardroom Standards & Tools'}
                     aria-label={isOpen ? 'Collapse Rail' : 'Expand Rail'}
@@ -295,9 +415,10 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed }: Board
                         <button
                             key={id}
                             type="button"
-                            onClick={() => {
+                            onClick={event => {
+                                opener.current = event.currentTarget;
                                 if (isOpen && activeTab === id) {
-                                    setIsOpen(false);
+                                    close();
                                 } else {
                                     setActiveTab(id);
                                     setIsOpen(true);

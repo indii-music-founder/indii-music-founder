@@ -1,6 +1,7 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { DirectorTools } from '../tools/DirectorTools';
+import { CoreTools } from '../tools/CoreTools';
 import { CanvasTools } from '../tools/CanvasTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
@@ -54,6 +55,7 @@ export const CreativeAgent: AgentConfig = {
             list_stored_assets: StorageTools.list_files,
             search_stored_assets: StorageTools.search_files,
             generate_image: DirectorTools.generate_image,
+            update_prompt: CoreTools.update_prompt,
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
             generate_high_res_asset: DirectorTools.generate_high_res_asset,
@@ -167,6 +169,18 @@ export const CreativeAgent: AgentConfig = {
                         query: { type: 'STRING', description: 'Search words to match against prompts, type, or source.' }
                     },
                     required: ['query']
+                }
+            },
+            {
+                name: 'update_prompt',
+                description: 'For an assigned Boardroom Creative mission, open Image Studio in the Boardroom and stage an editable draft for artist review. Use this when the artist asks to prepare or preview a draft. Does not generate an image.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        text: { type: 'STRING', description: 'The image prompt to stage in Studio Preview.' },
+                        aspectRatio: { type: 'STRING', description: 'Optional Image Studio aspect ratio, such as 1:1, 16:9, or 9:16.' }
+                    },
+                    required: ['text']
                 }
             },
             {

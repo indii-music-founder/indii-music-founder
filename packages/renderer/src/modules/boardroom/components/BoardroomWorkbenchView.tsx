@@ -28,6 +28,7 @@ function isSafeExternalAssetUrl(rawUrl: string): boolean {
 
 export function BoardroomWorkbenchView() {
     const toast = useToast();
+    const openStudio = useStore(state => state.openBoardroomModulePreview);
     const artifactRequestIdRef = useRef(0);
     const {
         generatedHistory,
@@ -45,7 +46,14 @@ export function BoardroomWorkbenchView() {
         }))
     );
 
-    const [subTab, setSubTab] = useState<'assets' | 'artifacts' | 'canvas'>('assets');
+    const requestedTab = boardroomWorkbenchTarget?.kind === 'canvas' ? 'canvas' : 'assets';
+    const [tabOverride, setTabOverride] = useState<{
+        target: typeof boardroomWorkbenchTarget;
+        tab: 'assets' | 'artifacts' | 'canvas';
+    }>();
+    const subTab = tabOverride?.target === boardroomWorkbenchTarget ? tabOverride.tab : requestedTab;
+    const setSubTab = (tab: typeof subTab) => setTabOverride({ target: boardroomWorkbenchTarget, tab });
+    const requestedPanel = boardroomWorkbenchTarget?.kind === 'canvas' ? boardroomWorkbenchTarget.panelId : null;
     const [artifacts, setArtifacts] = useState<{ filename: string }[]>([]);
     const [activeArtifactContent, setActiveArtifactContent] = useState<string | null>(null);
     const [selectedArtifactFile, setSelectedArtifactFile] = useState<string | null>(null);
@@ -64,7 +72,7 @@ export function BoardroomWorkbenchView() {
             ? userAssetOverride.itemId
             : targetAssetKey || generatedHistory[0]?.id || null;
 
-    const activeAsset = generatedHistory.find(i => i.id === selectedAssetId) || generatedHistory[0] || null;
+    const activeAsset = generatedHistory.find(i => i.id === selectedAssetId) ?? null;
 
     const handleSelectArtifact = useCallback(async (filename: string) => {
         const requestId = ++artifactRequestIdRef.current;
@@ -193,7 +201,7 @@ export function BoardroomWorkbenchView() {
                         <FileText size={13} />
                         <span>Artifacts & Splits ({artifacts.length})</span>
                     </button>
-                    {canvasPanels.length > 0 && (
+                    {(requestedPanel || canvasPanels.length > 0) && (
                         <button
                             type="button"
                             role="tab"
@@ -215,9 +223,9 @@ export function BoardroomWorkbenchView() {
 
             {/* Sub-tab 1: Generated Assets */}
             {subTab === 'assets' && (
-                <div className="flex-1 flex flex-col md:flex-row min-h-0 min-w-0 overflow-hidden">
+                <div className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden">
                     {/* Left Thumbnails List */}
-                    <div className="w-full md:w-56 border-b md:border-b-0 md:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex md:flex-col gap-2 shrink-0 bg-black/40">
+                    <div className="w-full @[640px]:w-56 border-b @[640px]:border-b-0 @[640px]:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex @[640px]:flex-col gap-2 shrink-0 bg-black/40">
                         {generatedHistory.length === 0 ? (
                             <p className="text-xs text-white/30 text-center p-6 italic">No assets generated yet.</p>
                         ) : (
@@ -325,7 +333,16 @@ export function BoardroomWorkbenchView() {
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-white/40">
                                 <ImageIcon size={32} className="opacity-30 mb-2" />
-                                <p className="text-xs">Select or generate an asset to inspect.</p>
+                                <p className="text-xs">{targetAssetKey ? 'The requested asset is unavailable.' : 'Select or generate an asset to inspect.'}</p>
+                                {!generatedHistory.length && (
+                                    <button
+                                        type="button"
+                                        onClick={() => openStudio('creative')}
+                                        className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
+                                    >
+                                        Open Studio
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -334,9 +351,9 @@ export function BoardroomWorkbenchView() {
 
             {/* Sub-tab 2: Artifacts & Split Sheets */}
             {subTab === 'artifacts' && (
-                <div className="flex-1 flex flex-col md:flex-row min-h-0 min-w-0 overflow-hidden">
+                <div className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden">
                     {/* Artifacts List */}
-                    <div className="w-full md:w-56 border-b md:border-b-0 md:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex md:flex-col gap-1.5 shrink-0 bg-black/40">
+                    <div className="w-full @[640px]:w-56 border-b @[640px]:border-b-0 @[640px]:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex @[640px]:flex-col gap-1.5 shrink-0 bg-black/40">
                         {artifacts.length === 0 ? (
                             <p className="text-xs text-white/30 text-center p-6 italic">No artifacts saved.</p>
                         ) : (
@@ -403,7 +420,10 @@ export function BoardroomWorkbenchView() {
             {subTab === 'canvas' && (
                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
                     <div className="max-w-3xl mx-auto space-y-4">
-                        {canvasPanels.map((panel) => (
+                        {requestedPanel && !canvasPanels.some(panel => panel.id === requestedPanel) && (
+                            <p role="status">The requested canvas panel is unavailable.</p>
+                        )}
+                        {canvasPanels.filter(panel => !requestedPanel || panel.id === requestedPanel).map((panel) => (
                             <div key={panel.id} className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
                                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                                     <div className="flex items-center gap-2">

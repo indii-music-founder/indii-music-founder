@@ -16,9 +16,9 @@ import AgentCapabilityRegistry from './AgentCapabilityRegistry';
 import CreativeJourney from './CreativeJourney';
 import CanvasModePicker from './CanvasModePicker';
 
-interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
+interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { embedded?: boolean }
 
-export default function CreativeNavbar(props: CreativeNavbarProps) {
+export default function CreativeNavbar({ embedded = false, ...props }: CreativeNavbarProps) {
     const {
         creativePrompt,
         setCreativePrompt,
@@ -73,14 +73,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     return (
         <div {...props} className={`flex flex-col z-20 relative bg-[#060608]/90 backdrop-blur-xl border-b border-white/6 select-none ${props.className || ''}`}>
             {/* Single Compact Header Row */}
-            <div className="flex items-center justify-between px-3 md:px-4 py-2 h-12 gap-2">
+            <div className={`flex items-center gap-2 px-3 py-2 ${embedded ? 'flex-wrap' : 'h-12 justify-between md:px-4'}`}>
                 {/* Left: Branding & Tabs */}
-                <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                <div className={`flex items-center gap-2 min-w-0 ${embedded ? 'basis-full flex-wrap' : 'flex-1 md:gap-3'}`}>
                     {/* ISSUE-1375: Back/Forward navigation — one-click return
                         to the previous page (module) and previous view
                         (studio/canvas and every other creative view). */}
                     <div className="flex items-center gap-0.5 shrink-0 bg-white/[0.03] p-0.5 rounded-lg border border-white/5">
                         <button
+                            hidden={embedded}
                             onClick={() => void goBackModule()}
                             disabled={!canGoBackModule}
                             title="Exit Module: Back to previous dashboard/module"
@@ -90,7 +91,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         >
                             <ArrowLeft size={14} />
                         </button>
-                        <div className="h-3 w-px bg-white/10 mx-0.5" />
+                        <div hidden={embedded} className="h-3 w-px bg-white/10 mx-0.5" />
                         <button
                             onClick={() => viewModeBack()}
                             disabled={!canGoBackView}
@@ -134,7 +135,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
 
                 <CanvasModePicker />
 
-                <div className="hidden md:flex items-center gap-1.5 shrink-0 overflow-hidden max-w-[40%] justify-end">
+                <div className={`items-center gap-1.5 ${embedded ? 'flex flex-wrap' : 'hidden md:flex shrink-0 overflow-hidden max-w-[40%] justify-end'}`}>
                     <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
                         <button
                             onClick={togglePromptBuilder}
