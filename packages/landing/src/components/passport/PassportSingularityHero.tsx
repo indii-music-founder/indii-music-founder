@@ -174,25 +174,19 @@ export default function PassportSingularityHero({
         </button>
       </div>
 
-      {entry && (
-        <div className="mx-auto mt-4 max-w-xl rounded-xl border border-[#FFB800]/35 bg-black/80 p-4 backdrop-blur-md">
-          <h2 className="text-xl font-bold text-[#FFB800]">{entry.hook}</h2>
-          <p className="mt-2 text-sm text-white/80">{entry.answer}</p>
-        </div>
-      )}
-
       {/* Headline & Lead anchored cleanly above the accretion horizon (no hard box edges) */}
       <div className="relative mx-auto mt-5 max-w-4xl px-6 py-4 bg-[radial-gradient(ellipse_at_50%_48%,rgba(0,0,0,0.68)_0%,rgba(0,0,0,0.28)_45%,transparent_70%)]">
         <h1 className="text-4xl font-black leading-[1.03] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] sm:text-5xl md:text-6xl">
-          How ready is your music{' '}
+          {entry?.situation ?? 'How ready is your music'}{' '}
           <span className="inline-block bg-gradient-to-r from-[#FFF6D6] via-[#FFD700] to-[#FFB800] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(255,184,0,0.35)]">
-            for business?
+            {entry ? 'Now what?' : 'for business?'}
           </span>
         </h1>
 
         <p className="mx-auto mt-3.5 max-w-xl text-base leading-relaxed text-[#E2E6F0] drop-shadow-[0_2px_14px_rgba(0,0,0,0.98)] sm:text-lg">
-          Find potential gaps in your mechanical royalty registrations, release preparation, and business
-          operations in about two minutes.
+          {entry?.id === 'first-song'
+            ? 'In two minutes, see which credits, ownership details, and release steps to check first.'
+            : entry?.answer ?? 'Answer a few questions about your music business to see what to check next. It takes about two minutes.'}
         </p>
       </div>
 
@@ -265,9 +259,9 @@ export default function PassportSingularityHero({
             <span>Royalty Radar</span>
             <span className="text-white/40">02</span>
           </div>
-          <div className="mt-1.5 text-sm font-bold text-white">MLC, PRO & Sync Audit</div>
+          <div className="mt-1.5 text-sm font-bold text-white">Royalty registrations & splits</div>
           <p className="mt-1 text-xs leading-relaxed text-[#9AA1B2]">
-            Uncover uncollected mechanicals, splits, and metadata gaps.
+            See which royalty registrations and split records to check next.
           </p>
         </div>
 

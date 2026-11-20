@@ -303,7 +303,7 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Prepare releases and delivery-ready packages.');
     expect(text).toContain('DDEX ERN 4.3');
     expect(text).toContain('Finished music → Plan → Register → Prepare delivery → Campaign → Release → Track → Repeat');
-    expect(text).toContain('Real product clip planned');
+    expect(text).toContain('Watch how a release package comes together');
     expect(text).toContain('Mastered Audio → Release Metadata → Schema Verification → Delivery-Ready Package');
     expect(container.querySelector('button[aria-label="Register: Know what you own and what still needs to be registered."]')).not.toBeNull();
     expect(container.querySelector('button[aria-label="Track: Track income, expenses, and splits together."]')).not.toBeNull();

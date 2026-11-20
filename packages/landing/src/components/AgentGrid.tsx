@@ -314,15 +314,12 @@ export default function AgentGrid() {
                   <div
                     className="mt-12 rounded-xl border border-white/15 bg-black/60 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                   >
-                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-3">
-                      <div className="flex items-center gap-2">
-                        <PlayCircle size={20} className="text-[#FFB800] drop-shadow-[0_0_10px_rgba(255,184,0,0.4)]" />
-                        <span className="font-mono text-[9px] uppercase font-bold tracking-[0.22em] text-[#FFB800]">
-                          Real product clip planned
-                        </span>
-                      </div>
-                      <span className="font-mono text-[9px] text-white/40">1080p HD • Synchronized VTT</span>
-                    </div>
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                      <PlayCircle size={20} aria-hidden="true" className="shrink-0 text-[#FFB800]" />
+                      {active.id === 'prepare-delivery'
+                        ? 'Watch how a release package comes together'
+                        : `${active.name} walkthrough`}
+                    </h3>
                     <div className="mt-4 overflow-hidden rounded-lg border border-white/10 bg-black">
                       <video
                         key={active.clipUrl}
@@ -343,10 +340,6 @@ export default function AgentGrid() {
                         Your browser does not support HTML5 video playback.
                       </video>
                     </div>
-                    <p className="mt-3 text-sm font-bold text-white">{active.name} / founder walkthrough</p>
-                    <p className="mt-1 text-xs leading-relaxed text-white/60">
-                      Click to play authentic product capture with synchronized captions.
-                    </p>
                   </div>
                 </aside>
               </div>
