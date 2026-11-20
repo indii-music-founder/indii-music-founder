@@ -232,7 +232,7 @@ function BoardroomModulePreviewContent() {
 
             {/* In-Place Module Viewport */}
             <div className="flex-1 relative min-h-0 min-w-0 bg-[#06060a] overflow-auto custom-scrollbar">
-                <ModuleErrorBoundary moduleName={boardroomPreviewModuleId}>
+                <ModuleErrorBoundary key={boardroomPreviewModuleId} moduleName={boardroomPreviewModuleId}>
                     <Suspense fallback={<LoadingFallback />}>
                         {renderActiveModuleComponent()}
                     </Suspense>

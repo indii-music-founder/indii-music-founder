@@ -3339,7 +3339,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1644: The ModuleErrorBoundary in BoardroomModulePreview.tsx:235 has no key, so one crashed module blocks every other [U30]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — switching departments now resets the preview error boundary. A local regression reproduces the stuck fallback and verifies that the healthy department loads after switching. Signed-in acceptance remains pending.)
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U30 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
