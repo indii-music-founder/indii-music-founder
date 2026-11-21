@@ -1,4 +1,6 @@
 import { setDesignArtboard, restoreDesignCanvas } from './designArtboard';
+import { commitLayerProperty } from './commitLayerProperty';
+import type { LayerPropertyValue } from './types/fabric-extensions';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import * as fabric from 'fabric';
@@ -83,9 +85,11 @@ export default function MerchDesigner() {
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
-    const [showLeftPanel, setShowLeftPanel] = useState(true);
-    const [showRightPanel, setShowRightPanel] = useState(true);
+    const [assetsExpanded, setAssetsExpanded] = useState(true);
+    const [layersExpanded, setLayersExpanded] = useState(true);
     const [isFocusMode, setIsFocusMode] = useState(false);
+    const showLeftPanel = assetsExpanded && !isFocusMode;
+    const showRightPanel = layersExpanded && !isFocusMode;
 
     const toast = useToast();
 
@@ -303,10 +307,9 @@ export default function MerchDesigner() {
         fabricCanvasRef.current.renderAll();
     }, []);
 
-    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: string | number | boolean | object | null) => {
-        layer.fabricObject.set({ [property]: value });
-        fabricCanvasRef.current?.renderAll();
-    }, []);
+    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: LayerPropertyValue) => {
+        commitLayerProperty(fabricCanvasRef.current, layer.fabricObject, property, value, saveState);
+    }, [saveState]);
 
     // Export to Showroom
     const handleExportToShowroom = useCallback(() => {
@@ -630,33 +633,25 @@ export default function MerchDesigner() {
                         <div className="flex items-center gap-2">
                             {/* Panel Toggles */}
                             <div className="hidden md:flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10">
-                                <IconButton
-                                    icon={showLeftPanel ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
-                                    onClick={() => setShowLeftPanel(prev => !prev)}
-                                    title={showLeftPanel ? "Collapse Assets Panel" : "Expand Assets Panel"}
-                                />
+                                {!isFocusMode && (
+                                    <IconButton
+                                        icon={assetsExpanded ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
+                                        onClick={() => setAssetsExpanded(prev => !prev)}
+                                        title={assetsExpanded ? "Collapse Assets Panel" : "Expand Assets Panel"}
+                                    />
+                                )}
                                 <IconButton
                                     icon={isFocusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-                                    onClick={() => {
-                                        setIsFocusMode(prev => {
-                                            const next = !prev;
-                                            if (next) {
-                                                setShowLeftPanel(false);
-                                                setShowRightPanel(false);
-                                            } else {
-                                                setShowLeftPanel(true);
-                                                setShowRightPanel(true);
-                                            }
-                                            return next;
-                                        });
-                                    }}
-                                    title={isFocusMode ? "Exit Focus Canvas Mode" : "Focus Canvas Mode (Fullscreen)"}
+                                    onClick={() => setIsFocusMode(prev => !prev)}
+                                    title={isFocusMode ? "Exit Focus Canvas Mode" : "Focus Canvas Mode"}
                                 />
-                                <IconButton
-                                    icon={showRightPanel ? <PanelRightClose size={15} /> : <PanelRight size={15} />}
-                                    onClick={() => setShowRightPanel(prev => !prev)}
-                                    title={showRightPanel ? "Collapse Layers Panel" : "Expand Layers Panel"}
-                                />
+                                {!isFocusMode && (
+                                    <IconButton
+                                        icon={layersExpanded ? <PanelRightClose size={15} /> : <PanelRight size={15} />}
+                                        onClick={() => setLayersExpanded(prev => !prev)}
+                                        title={layersExpanded ? "Collapse Layers Panel" : "Expand Layers Panel"}
+                                    />
+                                )}
                             </div>
 
                             {/* Help Button */}
@@ -697,7 +692,7 @@ export default function MerchDesigner() {
                     <div className="flex-1 flex gap-6 min-h-0 relative">
                         {/* Left Panel - Assets */}
                         {showLeftPanel && (
-                            <div className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200">
+                            <aside aria-label="Assets panel" className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200">
                                 {/* Tool Buttons */}
                                 <div className="flex gap-2 mb-4">
                                     <ToolButton
@@ -727,7 +722,7 @@ export default function MerchDesigner() {
                                     onAddAsset={handleAddAsset}
                                     onGenerateAutonomous={() => setShowAutonomousDialog(true)}
                                 />
-                            </div>
+                            </aside>
                         )}
 
                         {/* Center Canvas */}
@@ -773,7 +768,7 @@ export default function MerchDesigner() {
 
                         {/* Right Panel - Layers & Properties */}
                         {showRightPanel && (
-                            <div className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+                            <aside aria-label="Layers panel" className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
                                 <LayersPanel
                                     layers={layers}
                                     selectedLayer={selectedLayer}
@@ -784,7 +779,7 @@ export default function MerchDesigner() {
                                     onReorderLayer={handleReorderLayer}
                                     onUpdateProperty={handleUpdateProperty}
                                 />
-                            </div>
+                            </aside>
                         )}
 
 

@@ -149,7 +149,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
 export const BASE_TOOLS = `
 AVAILABLE TOOLS:
 1. set_mode(mode: string) - Switch studio mode.
-2. update_prompt(text: string) - Write text into the prompt box.
+2. update_prompt(text: string, aspectRatio?: string) - Stage an editable Image Studio draft from an assigned Boardroom Creative mission.
 3. generate_image(prompt: string, style?: string, width?: number, height?: number, sourceImages?: string[], referenceAssetIndex?: number, uploadedImageIndex?: number) - Generate images.
 4. update_uploaded_image_metadata(uploadedImageIndex: number, category?: string, tags?: string[], subject?: string) - Update metadata for an uploaded image.
 5. read_history() - Read recent chat history.

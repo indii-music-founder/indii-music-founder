@@ -894,6 +894,8 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
 
 ### ISSUE-1459: Creative controls lack labels, selected-state semantics and setup navigation
 
+- **Merchandise text layers update (2026-11-20):** The Properties panel has labeled text and font controls, keeps imported font names selectable, and labels the canvas preview. Committed edits notify Fabric listeners and establish undo checkpoints before and after the change. Jev (jev-1.14.0) recommended committing edits at control boundaries. Signed-in keyboard and screen-reader acceptance remains pending.
+
 - **Studio Controls update (2026-11-14):** Create/History, Image/Video/Both, Flash/Pro, and Precise reference matching now expose their actual state through `aria-pressed`. The panel collapse button has an explicit accessible name. Existing structural tests now query names/pressed state and verify tab changes rather than finding the collapse control through an icon. Focused suite: 19/19; full repository typecheck passed; scoped ESLint: zero errors, two existing unused-import warnings. Jev `jev-1.14.0` scored the accessible-state improvement 0.94. Genuine keyboard/screen-reader acceptance remains pending; status stays PARTIAL.
 
 - **Status:** 🟡 PARTIAL — implementation updated; genuine user acceptance pending (2026-10-07)
@@ -911,11 +913,19 @@ Full `/issue-sweep` executed across Sentry, GitHub Pull Requests, GitHub Issues,
 - **Version History follow-up (2026-10-23):** The Merchandise Version History surface now exposes a named modal dialog, a named close button, focus trap/return and Escape handling through the shared modal hook, and expanded state on date groups. Genuine screen-reader and owner workflow acceptance remain outstanding.
 - **Additional code progress (2026-10-23):** Merchandise Keyboard Shortcuts now exposes a named modal dialog and close control, traps/restores keyboard focus through the shared modal hook, and no longer spreads a React key through props. Founder Registration's seven prerequisite toggles now announce the specific prerequisite and pressed state. Focused semantic interaction tests pass; a genuine screen-reader pass and owner setup remain outstanding, so this issue stays PARTIAL.
 
+- **Focus Canvas follow-up (2026-11-20):** Entering Focus Canvas temporarily hides the two work panels. Exiting restores each panel's previous visibility and leaves focus on the same control. Two local regressions cover the Assets and Layers cases from Run98. Jev (jev-1.14.0) recommended separating panel preferences from temporary focus mode.
+
 ### Investigation notes — not confirmed defects / not completed acceptance
 
 - Run102 (2026-10-06): Exit Studio→Home and existing Video Test Project→Project Canvas both retain `/merch` URL (ISSUE-1471 route/content scope). Project entries/archive generic, no selected project name in canvas heading. File Explorer opens zero-count vault with empty query, filter-style No files found wording/no visible add next step/two unnamed controls (ISSUE-1459). Global creations versus empty project vault scope not proven data loss. HQ's DDEX Scheduled, Action Required escrow, WAV48kHz and 100% Safe badges need data provenance review; not confirmed mock records. No data edits/archive/upload.
+- Run102 File Explorer follow-up (ISSUE-1459): Local renderer coverage now distinguishes loading, a failed read with retry, an empty project with a Creative Studio action, and filters with no matches. The grid and list controls expose accessible names and selected state. The Creative Studio destination and assistive-technology flow still need real-user verification.
+
+- Run102 Project Canvas follow-up: The workspace shows the selected project name in its visible heading and accessible workspace name. When the selected project metadata is unavailable, the heading reads Project Canvas. Component tests verify both states. Live navigation, URL changes, and project archive behavior remain unverified.
 
 - Run101 (2026-10-06), Merchandise Text tool adds one selected layer and notification. Properties exposes named Font Size/Color/Blend controls but no text-content or font-family input/edit guidance in accessible UI; layer display leaks timestamp/random object ID. Canvas lacks accessible label, role, or tab stop (ISSUE-1459). Font Size changed 60→48; one Undo removed the entire text layer rather than restoring size, indicating property edit isn't a distinct undo step. Final canvas restored to zero layers, no explicit save/export. Autosave persistence not verified.
+
+- Run102 project sidebar follow-up: Project actions now use named keyboard-operable buttons, expose the selected project and archive disclosure state, and restore focus when archive confirmation is cancelled. Archiving the selected project sends the user to an active project or the default workspace. Renderer tests cover opening, confirming, cancelling, and restoring. Live screen-reader and archive persistence checks remain open.
+- Run102 Merchandise route follow-up (ISSUE-1471): A local React Router regression reproduced /merch overriding transitions to /dashboard and /project-canvas while MerchStudio was still mounted. The fallback now applies only to Merchandise URLs. The regression covers both destinations, preserves the incoming query, and verifies that the Designer route and unknown Merchandise path keep working. Live navigation remains unverified.
 
 - Run100 (2026-10-06): Merchandise template discovery/filter/close passed: ten labeled templates, Tour Posters (1) returns one template, named dismissal works. Placeholder dates/names are visibly template examples, not evidence of mocked persisted bookings. No template applied or content saved.
 
@@ -3196,7 +3206,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1632: Only 9 of the 23 heads have table seats [U9]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — selected department heads beyond the original nine appear in the measured multi-ring table when space permits. A collapsible roster gives access to all 23 heads in narrow panes. Signed-in layout acceptance remains pending.)
+- **Local evidence:** The full-roster regression found nine seats before the change and verifies 23 afterwards. A separate regression covers seating a head from the narrow roster. Jev (jev-1.14.0) recommended adapting the layout to the available space.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U9 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3208,7 +3219,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1633: Referenced assets have several problems [U10]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — automatic references merge atomically against the current Boardroom workspace, deduplicate by ID or resource, and respect removals for the workspace session. The rail offers per-reference removal and browser pin IDs use UUIDs. Signed-in acceptance remains pending.)
+- **Local evidence:** Store regressions cover duplicate media, removal, Clear All, new output, and explicit pinning. Jev (jev-1.14.0) recommended the atomic merge and session dismissal approach.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U10 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3232,7 +3244,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1635: Workbench problems [U13]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — artifact targets select the Artifacts tab and requested file. Read failures show Retry, successful empty documents show an empty state, and superseded reads cannot overwrite the current view. Media thumbnails load lazily. Signed-in desktop acceptance remains pending.)
+- **Local evidence:** Two failing regressions reproduced errors stuck in loading and ignored external artifact targets. Jev (jev-1.14.0) recommended scoping the document state to each request.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U13 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3292,7 +3305,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1640: Hand-rolled modals have no dialog semantics, Escape or focus trap [U18]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — the Living Plans drawer, collaboration feed, and asset preview now use named modal semantics and the shared keyboard focus and Escape behavior. The mobile seat drawer uses the same top-dialog Escape handling. Signed-in accessibility acceptance remains pending.)
+- **Local evidence:** Three tests reproduced the missing dialog behavior before the repair. Afterward, the tests verified accessible dialog names, Escape, focus wrapping, and restoration to the asset trigger. Jev (jev-1.14.0) recommended reusing the shared modal hook.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U18 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
@@ -3364,7 +3378,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1646: Hard-coded "live" telemetry [U22]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-20 — removed unsupported model, quota, health, and monitoring claims. The governance popover reports unavailable estimates, and the activity feed still shows workflow and handoff state. Signed-in acceptance remains pending.)
+- **Local evidence:** Three regressions reproduced the unsupported status before the change. Jev (jev-1.14.0) recommended removing inferred values and retaining observed activity.
 - **Severity:** MEDIUM
 - **Module:** Boardroom UI (packages/renderer/src/modules/boardroom)
 - **Plan item:** U22 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
-import { DEPARTMENTS, getDepartmentOf } from '@/services/agent/departments';
+import { DEPARTMENTS, getDepartmentOf, listHeadIds } from '@/services/agent/departments';
 
 export interface AgentOrbitalConfig {
     readonly id: string;
@@ -241,6 +241,7 @@ export function calculateParticipantSeatLayout(
 
 export default function ParticipantSelector() {
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const [tableSize, setTableSize] = React.useState({ width: 0, height: 0 });
     const {
         activeAgents,
         toggleAgent,
@@ -270,6 +271,29 @@ export default function ParticipantSelector() {
             toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
+
+    React.useLayoutEffect(() => {
+        const table = containerRef.current;
+        if (!table) return;
+        const measure = () => {
+            const { width, height } = table.getBoundingClientRect();
+            setTableSize(previous =>
+                previous.width === width && previous.height === height ? previous : { width, height }
+            );
+        };
+        measure();
+        if (typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(measure);
+        observer.observe(table);
+        return () => observer.disconnect();
+    }, []);
+
+    const extraHeadIds = listHeadIds().filter(id => !AVAILABLE_AGENTS.some(agent => agent.id === id));
+    const seatedExtraIds = extraHeadIds.filter(id => activeAgents.includes(id));
+    const denseSeatIds = [...AVAILABLE_AGENTS.map(agent => agent.id), ...seatedExtraIds];
+    const denseLayout = seatedExtraIds.length > 0 && tableSize.width >= 480 && tableSize.height >= 360
+        ? calculateParticipantSeatLayout(denseSeatIds.length, tableSize.width, tableSize.height)
+        : null;
 
     const executingAgentIds = React.useMemo(() => {
         if (!activeGraphExecution || !activeGraphExecution.nodeStates) return [];
@@ -326,15 +350,97 @@ export default function ParticipantSelector() {
         toggleAgent(agentId);
     };
 
+    const renderWorkerButton = (workerId: string) => {
+        const workerIdentity = resolveAgentVisualIdentity(workerId);
+        const department = getDepartmentOf(workerId);
+        const isDepartmentOpen = conversationMode === 'department' &&
+            activeDepartmentId === department?.id;
+        const isWorkerExecuting = executingAgentIds.includes(workerId);
+
+        return (
+            <button
+                key={workerId}
+                type="button"
+                onClick={() => {
+                    if (!department) return;
+                    setActiveDepartmentId(department.id);
+                    setConversationMode('department');
+                    if (!isAgentOpen) toggleAgentWindow();
+                }}
+                aria-label={`Open ${department?.displayName ?? 'department'} department for ${workerIdentity.displayName}`}
+                aria-pressed={isDepartmentOpen}
+                title={`Open ${department?.displayName ?? 'department'} department to work with its specialists`}
+                data-testid={`boardroom-worker-${workerId}`}
+                className={cn(
+                    "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all border",
+                    isWorkerExecuting
+                        ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold animate-pulse"
+                        : isDepartmentOpen
+                            ? "bg-white/15 border-white/30 text-white font-semibold"
+                            : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                )}
+            >
+                <span className="truncate pr-2">
+                    {workerIdentity.displayName}
+                </span>
+                <span className={cn(
+                    "w-1.5 h-1.5 rounded-full shrink-0",
+                    isDepartmentOpen ? "bg-emerald-400" : "bg-white/20"
+                )} />
+            </button>
+        );
+    };
+
     return (
         <div
             ref={containerRef}
             className="absolute inset-0 pointer-events-none"
-            data-layout-rings="1"
+            data-layout-rings={denseLayout?.ringCounts.length ?? 1}
             onClick={() => focusedHeadId && setFocusedHeadId(null)}
         >
             <TooltipProvider delayDuration={50}>
-                {AVAILABLE_AGENTS.map((agent, index) => {
+                {denseLayout && denseSeatIds.map((id, index) => {
+                    const seat = denseLayout.seats[index];
+                    if (!seat) return null;
+                    const identity = resolveAgentVisualIdentity(id);
+                    const isActive = activeAgents.includes(id);
+                    const isExecuting = isAgentExecuting(id);
+                    return (
+                        <Tooltip key={id}>
+                            <TooltipTrigger asChild>
+                                <motion.button
+                                    type="button"
+                                    data-testid={`boardroom-seat-${id}`}
+                                    data-agent-id={id}
+                                    data-seat-ring={seat.ring}
+                                    aria-label={identity.displayName}
+                                    aria-pressed={isActive}
+                                    onClick={event => handleBadgeClick(event, id)}
+                                    drag
+                                    dragSnapToOrigin
+                                    onDragEnd={(event, info) => handleDragEnd(event, info, id, isActive)}
+                                    className={cn(
+                                        'pointer-events-auto absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border bg-bg-dark text-xs font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-white',
+                                        isExecuting && 'motion-safe:animate-pulse ring-2 ring-emerald-400',
+                                    )}
+                                    style={{
+                                        left: seat.x,
+                                        top: seat.y,
+                                        width: denseLayout.seatDiameter,
+                                        height: denseLayout.seatDiameter,
+                                        backgroundColor: isActive ? identity.surface : undefined,
+                                        borderColor: isActive ? identity.accent : identity.border,
+                                        color: isActive ? identity.accent : identity.foreground,
+                                    }}
+                                >
+                                    {identity.initials}
+                                </motion.button>
+                            </TooltipTrigger>
+                            <TooltipContent>{identity.displayName}</TooltipContent>
+                        </Tooltip>
+                    );
+                })}
+                {!denseLayout && AVAILABLE_AGENTS.map((agent, index) => {
                     const isActive = activeAgents.includes(agent.id);
                     const isExecuting = isAgentExecuting(agent.id);
                     const isSoloed = activeAgents.length === 1 && activeAgents[0] === agent.id;
@@ -534,46 +640,7 @@ export default function ParticipantSelector() {
                                             </span>
                                         </div>
 
-                                        {workerIds.map((workerId) => {
-                                            const workerIdentity = resolveAgentVisualIdentity(workerId);
-                                            const department = getDepartmentOf(workerId);
-                                            const isDepartmentOpen = conversationMode === 'department' &&
-                                                activeDepartmentId === department?.id;
-                                            const isWorkerExecuting = executingAgentIds.includes(workerId);
-
-                                            return (
-                                                <button
-                                                    key={workerId}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (!department) return;
-                                                        setActiveDepartmentId(department.id);
-                                                        setConversationMode('department');
-                                                        if (!isAgentOpen) toggleAgentWindow();
-                                                    }}
-                                                    aria-label={`Open ${department?.displayName ?? 'department'} department for ${workerIdentity.displayName}`}
-                                                    aria-pressed={isDepartmentOpen}
-                                                    title={`Open ${department?.displayName ?? 'department'} department to work with its specialists`}
-                                                    data-testid={`boardroom-worker-${workerId}`}
-                                                    className={cn(
-                                                        "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition-all border",
-                                                        isWorkerExecuting
-                                                            ? "bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold animate-pulse"
-                                                            : isDepartmentOpen
-                                                                ? "bg-white/15 border-white/30 text-white font-semibold"
-                                                                : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-                                                    )}
-                                                >
-                                                    <span className="truncate pr-2">
-                                                        {workerIdentity.displayName}
-                                                    </span>
-                                                    <span className={cn(
-                                                        "w-1.5 h-1.5 rounded-full shrink-0",
-                                                        isDepartmentOpen ? "bg-emerald-400" : "bg-white/20"
-                                                    )} />
-                                                </button>
-                                            );
-                                        })}
+                                        {workerIds.map(renderWorkerButton)}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -581,6 +648,53 @@ export default function ParticipantSelector() {
                     );
                 })}
             </TooltipProvider>
+            <details
+                className="absolute inset-x-0 bottom-0 z-40 text-xs text-white"
+                onClick={event => event.stopPropagation()}
+            >
+                <summary className="pointer-events-auto w-fit cursor-pointer rounded-md border border-white/15 bg-bg-dark px-2 py-1.5 focus-visible:outline focus-visible:outline-2">
+                    Departments{seatedExtraIds.length > 0 && !denseLayout ? ` (+${seatedExtraIds.length} seated)` : ''}
+                </summary>
+                <div role="group" aria-label="Department seats" className="pointer-events-auto absolute bottom-full left-0 mb-1 max-h-[min(50vh,18rem)] w-52 max-w-full overflow-y-auto rounded-md border border-white/15 bg-bg-dark p-1 shadow-xl">
+                    {listHeadIds().map(id => {
+                        const identity = resolveAgentVisualIdentity(id);
+                        const isActive = activeAgents.includes(id);
+                        const workerIds = DEPARTMENTS[id]?.workerIds ?? [];
+                        return (
+                            <div key={id}>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        type="button"
+                                        aria-pressed={isActive}
+                                        onClick={event => handleBadgeClick(event, id)}
+                                        className="min-w-0 flex-1 rounded px-2 py-2 text-left hover:bg-white/10 aria-pressed:bg-white/15"
+                                    >
+                                        {identity.displayName}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label={`Solo ${identity.displayName}`}
+                                        onClick={() => soloAgent(id)}
+                                        className="rounded px-2 py-2 text-white/70 hover:bg-white/10"
+                                    >
+                                        Solo
+                                    </button>
+                                </div>
+                                {denseLayout && workerIds.length > 0 && (
+                                    <details className="mb-1 pl-2">
+                                        <summary className="cursor-pointer py-1 text-white/70">
+                                            {DEPARTMENTS[id]?.displayName} sub-agents
+                                        </summary>
+                                        <div className="grid gap-1 pb-1">
+                                            {workerIds.map(renderWorkerButton)}
+                                        </div>
+                                    </details>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </details>
         </div>
     );
 }

@@ -74,4 +74,16 @@ describe('applyWorkspaceSnapshot', () => {
 
         expect(useStore.getState().conversationMode).toBe('orchestrated');
     });
+
+    it('publishes the latest workspace state when a Boardroom context update is queued', async () => {
+        const { useStore } = await import('@/core/store');
+        const { publishBoardroomContextUpdate } = await import('@/hooks/useBoardroomContextHandshake');
+        vi.mocked(publishBoardroomContextUpdate).mockClear();
+
+        useStore.setState({ conversationMode: 'boardroom' });
+        useStore.setState({ conversationMode: 'direct' });
+
+        await vi.waitFor(() => expect(publishBoardroomContextUpdate).toHaveBeenCalledOnce());
+        expect(publishBoardroomContextUpdate).toHaveBeenCalledWith(useStore.getState());
+    });
 });

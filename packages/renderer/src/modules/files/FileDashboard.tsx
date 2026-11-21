@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { FileNode } from '@/services/FileSystemService';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
+import { navigateToModule } from '@/services/agent/tools/navigationOutcome';
 import { cn } from '@/lib/utils';
 import FilePreview from './FilePreview';
 import { NavItem } from './components/NavItem';
@@ -48,14 +49,18 @@ import {
 type TrashSourceFilter = 'all' | 'user' | 'agent';
 
 export default function FileDashboard() {
-    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode, fetchFileNodes, setModule } = useStore(
+    const {
+        fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode,
+        fetchFileNodes, isFileSystemLoading, fileNodesLoadError,
+    } = useStore(
         useShallow(state => ({
             fileNodes: state.fileNodes,
             currentProjectId: state.currentProjectId,
             selectedFileNodeId: state.selectedFileNodeId,
             setSelectedFileNode: state.setSelectedFileNode,
             fetchFileNodes: state.fetchFileNodes,
-            setModule: state.setModule,
+            isFileSystemLoading: state.isFileSystemLoading,
+            fileNodesLoadError: state.fileNodesLoadError,
         }))
     );
 
@@ -105,9 +110,11 @@ export default function FileDashboard() {
     }, [activeTab, loadTrashItems]);
 
     // Filter active nodes
+    const activeQuery = searchQuery.trim().toLowerCase();
+    const hasActiveFilters = activeQuery.length > 0 || filterType !== 'all';
     const displayActiveNodes = fileNodes.filter((node: FileNode) => {
         if (node.isTrashed) return false;
-        const matchesSearch = node.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = node.name.toLowerCase().includes(activeQuery);
         const matchesFilter = filterType === 'all' || node.fileType === filterType;
         return matchesSearch && matchesFilter;
     });
@@ -411,7 +418,8 @@ export default function FileDashboard() {
                     <div className="relative w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <input
-                            type="text"
+                            type="search"
+                            aria-label={activeTab === 'trash' ? 'Search trash' : 'Search project files'}
                             placeholder={activeTab === 'trash' ? 'Search trash items, paths...' : 'Search files, folders...'}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
@@ -424,6 +432,7 @@ export default function FileDashboard() {
                             <div className="flex items-center gap-2 mr-4">
                                 <span className="text-xs text-gray-400">Provenance:</span>
                                 <select
+                                    aria-label="Trash provenance"
                                     value={sourceFilter}
                                     onChange={e => setSourceFilter(e.target.value as TrashSourceFilter)}
                                     className="bg-black/30 border border-white/10 rounded-md text-xs text-gray-200 px-2 py-1 focus:outline-none"
@@ -456,7 +465,7 @@ export default function FileDashboard() {
                         <div className="flex items-center gap-1 bg-black/20 p-1 rounded-lg border border-white/5 mr-1 select-none">
                             <button
                                 data-testid="project-view-canvas"
-                                onClick={() => setModule('project-canvas')}
+                                onClick={() => void navigateToModule(useStore, 'project-canvas')}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
                             >
                                 <LayoutGrid size={14} />
@@ -473,12 +482,18 @@ export default function FileDashboard() {
 
                         <div className="flex items-center gap-2 bg-black/20 p-1 rounded-lg border border-white/5">
                             <button
+                                type="button"
+                                aria-label="Grid view"
+                                aria-pressed={viewMode === 'grid'}
                                 onClick={() => setViewMode('grid')}
                                 className={cn('p-2 rounded-md transition-colors', viewMode === 'grid' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300')}
                             >
                                 <Grid size={16} />
                             </button>
                             <button
+                                type="button"
+                                aria-label="List view"
+                                aria-pressed={viewMode === 'list'}
                                 onClick={() => setViewMode('list')}
                                 className={cn('p-2 rounded-md transition-colors', viewMode === 'list' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300')}
                             >
@@ -496,13 +511,39 @@ export default function FileDashboard() {
                                 <Folder size={48} className="mb-4 opacity-20" />
                                 <p>Select a project to view files</p>
                             </div>
+                        ) : isFileSystemLoading ? (
+                            <p role="status" className="p-6 text-center text-sm text-gray-400">Loading project files…</p>
+                        ) : fileNodesLoadError ? (
+                            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                                <p role="alert" className="text-sm text-gray-300">Could not load project files.</p>
+                                <button type="button" onClick={() => void fetchFileNodes(currentProjectId)} className="rounded-md bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/15">
+                                    Retry
+                                </button>
+                            </div>
                         ) : displayActiveNodes.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                    <Search size={32} className="opacity-20" />
+                                    {hasActiveFilters ? <Search size={32} className="opacity-20" /> : <Folder size={32} className="opacity-20" />}
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-300 mb-2">No files found</h3>
-                                <p className="text-sm">We couldn't find any active resources matching your criteria.</p>
+                                <h3 className="mb-2 text-xl font-semibold text-gray-300">
+                                    {hasActiveFilters ? 'No matching files' : 'No project files yet'}
+                                </h3>
+                                {hasActiveFilters ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSearchQuery(''); setFilterType('all'); }}
+                                        className="rounded-md bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/15"
+                                    >
+                                        Clear search and filters
+                                    </button>
+                                ) : (
+                                    <>
+                                        <p className="mb-3 text-center text-sm">Media saved to this project appears here.</p>
+                                        <button type="button" onClick={() => void navigateToModule(useStore, 'creative')} className="rounded-md bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/15">
+                                            Open Creative Studio
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <div className={cn('grid gap-4', viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'grid-cols-1')}>

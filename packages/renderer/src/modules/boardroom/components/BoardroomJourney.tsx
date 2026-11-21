@@ -3,7 +3,6 @@ import {
     ChevronDown,
     Compass,
     DollarSign,
-    GitMerge,
     Music2,
     PackageCheck,
     Palette,
@@ -13,7 +12,6 @@ import {
     Sparkles,
     Target,
     UserPlus,
-    WalletCards,
     type LucideIcon,
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -26,8 +24,6 @@ import {
     type BoardroomExecutiveVerdict,
 } from '@/config/typesafeJudgments';
 import { BOARDROOM_PRIMARY_HEAD_IDS } from './ParticipantSelector';
-import { boardroomMetaHarnessService } from '@/services/business-harness';
-import { auth } from '@/services/firebase';
 
 export interface BoardroomMissionOption {
     id: BoardroomExecutiveMission;
@@ -222,21 +218,6 @@ export function BoardroomJourney() {
         useStore.setState({ activeAgents: ['generalist'] });
     };
 
-    // Meta-Harness Governance telemetry (compact popover replacement for the 3-card row)
-    const userId = auth.currentUser?.uid ?? null;
-    const decision = useMemo(() => {
-        if (!userId) return null;
-        try {
-            return boardroomMetaHarnessService.createDecision({
-                userId,
-                requestedAction: 'cross-domain music business action',
-                runs: [],
-            });
-        } catch {
-            return null;
-        }
-    }, [userId]);
-
     const showRecommendation = hasSignal && recommendation.confidence >= 0.5;
 
     return (
@@ -391,7 +372,7 @@ export function BoardroomJourney() {
                     aria-expanded={isGovernanceOpen}
                     aria-controls="boardroom-governance-digest"
                     aria-label="Meta Harness Governance"
-                    title="Inspect Meta-Harness legal & cost governance"
+                    title="Meta-Harness governance information"
                     onClick={() => {
                         setIsGovernanceOpen(value => !value);
                         setIsMissionsOpen(false);
@@ -400,7 +381,7 @@ export function BoardroomJourney() {
                     className="hidden md:inline-flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/[0.02] px-2 py-1 text-[10px] font-mono text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400"
                 >
                     <Shield size={11} aria-hidden="true" className="text-emerald-400" />
-                    <span>{decision ? decision.mode.replace('_', ' ') : 'Harness'}</span>
+                    <span>Harness</span>
                     <ChevronDown
                         size={10}
                         aria-hidden="true"
@@ -416,43 +397,8 @@ export function BoardroomJourney() {
                         data-testid="boardroom-governance-popover"
                         className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-white/10 bg-[#0d0d12]/98 p-3 shadow-2xl backdrop-blur-2xl"
                     >
-                        <div className="mb-2 flex items-center justify-between border-b border-white/5 pb-1.5">
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400">
-                                Meta-Harness Telemetry
-                            </span>
-                            <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-mono text-emerald-300">
-                                Active
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            <div className="rounded-lg border border-white/5 bg-black/30 p-2">
-                                <div className="flex items-center gap-1 text-white/40 mb-0.5">
-                                    <GitMerge size={11} />
-                                    <span className="text-[8px] font-bold uppercase tracking-wider">Mode</span>
-                                </div>
-                                <p className="text-[11px] font-bold capitalize text-white/90 truncate">
-                                    {decision ? decision.mode.replace('_', ' ') : 'standard'}
-                                </p>
-                            </div>
-                            <div className="rounded-lg border border-white/5 bg-black/30 p-2">
-                                <div className="flex items-center gap-1 text-white/40 mb-0.5">
-                                    <Shield size={11} />
-                                    <span className="text-[8px] font-bold uppercase tracking-wider">Legal</span>
-                                </div>
-                                <p className="text-[11px] font-bold capitalize text-white/90 truncate">
-                                    {decision?.legalRisk ?? 'low'}
-                                </p>
-                            </div>
-                            <div className="rounded-lg border border-white/5 bg-black/30 p-2">
-                                <div className="flex items-center gap-1 text-white/40 mb-0.5">
-                                    <WalletCards size={11} />
-                                    <span className="text-[8px] font-bold uppercase tracking-wider">Cost</span>
-                                </div>
-                                <p className="text-[11px] font-bold text-white/90 truncate">
-                                    {decision ? `$${decision.costImpact.total.toFixed(0)}` : '$0'}
-                                </p>
-                            </div>
-                        </div>
+                        <p className="mb-2 text-xs font-semibold text-white">Meta-Harness Governance</p>
+                        <p className="text-xs text-gray-400">Risk and cost estimates are unavailable in this view.</p>
                     </div>
                 )}
             </div>

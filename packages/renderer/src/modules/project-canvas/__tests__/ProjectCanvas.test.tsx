@@ -83,6 +83,10 @@ describe('ProjectCanvas Component', () => {
         localStorage.clear();
         useStore.setState({
             currentProjectId: 'proj_1',
+            projects: [
+                { id: 'proj_2', name: 'Other Project', type: 'creative', orgId: 'org_1', lastModified: 0, assetCount: 0 },
+                { id: 'proj_1', name: 'Test Music Video', type: 'creative', orgId: 'org_1', lastModified: 0, assetCount: 0 },
+            ],
             currentCanvas: mockDocument,
             canvasBlocks: [mockTextBlock, mockAssetBlock],
             canvasEdges: [],
@@ -105,6 +109,20 @@ describe('ProjectCanvas Component', () => {
         expect(screen.getByRole('button', { name: /Select tool/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Pan tool/i })).toBeInTheDocument();
         expect(screen.getByText('Saved')).toBeInTheDocument();
+    });
+
+    it('identifies the selected project by its name', () => {
+        render(<ProjectCanvas />);
+
+        expect(screen.getByRole('heading', { name: 'Test Music Video' })).toBeVisible();
+        expect(screen.getByRole('application', { name: 'Project Canvas for Test Music Video' })).toBeVisible();
+    });
+
+    it('uses a generic heading when the selected project is unavailable', () => {
+        useStore.setState({ projects: useStore.getState().projects.filter(project => project.id === 'proj_2') });
+        render(<ProjectCanvas />);
+
+        expect(screen.getByRole('heading', { name: 'Project Canvas' })).toBeVisible();
     });
 
     it('selects a block on click', () => {

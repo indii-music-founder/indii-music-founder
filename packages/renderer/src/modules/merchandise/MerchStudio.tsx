@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useMatch } from 'react-router-dom';
 import MerchDashboard from './MerchDashboard';
 import MerchDesigner from './MerchDesigner';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -16,6 +16,10 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
  *   /merch/*        → Redirect to /merch
  */
 export default function MerchStudio() {
+    const isMerchRoute = useMatch('/merch/*');
+    // The Studio shell can still be mounted as the URL moves to another module.
+    if (!isMerchRoute) return null;
+
     return (
         <ModuleErrorBoundary moduleName="Merchandise">
             <Routes>
@@ -23,8 +27,7 @@ export default function MerchStudio() {
                 <Route path="/merch/design" element={<MerchDesigner />} />
                 <Route path="/merch/catalog" element={<MerchDashboard />} />
                 <Route path="/merch/settings" element={<MerchDashboard />} />
-                {/* Catch all for this module - redirect to dashboard root */}
-                <Route path="*" element={<Navigate to="/merch" replace />} />
+                <Route path="/merch/*" element={<Navigate to="/merch" replace />} />
             </Routes>
         </ModuleErrorBoundary>
     );

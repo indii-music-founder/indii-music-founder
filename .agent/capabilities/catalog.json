@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "19dab11bd2766e7c3bf7469b616046d51121de3b3ceb6bc05b6b52cd6fb027bf",
+  "sourceDigest": "3860d954626def8d2a7de179746072a7052b4374e4b79d8e2aecc07f9f306e0d",
   "contract": ".agent/capabilities/CONTRACT.md",
   "registry": ".agent/capabilities/registry.json",
   "routingEvals": ".agent/capabilities/routing-evals.json",
@@ -5540,9 +5540,9 @@
       "path": ".agent/workflows/branch-safety.md",
       "mutable": true,
       "available": true,
-      "description": "Coding agents publish locally validated work on task branches through Entire. The team handles review, remote CI, and merging to `main`.",
-      "descriptionHash": "26d135bbd988d99120aa886108e16e4ee7b2404ef87488bfedf80f87b90da95a",
-      "contentHash": "ca5a81a58baadeaabbb642c0446ba4d2b7033e472179034fd6cebdcd6879d008",
+      "description": "Coding agents publish locally validated work on task branches through Entire. The repository owner handles remote CI and merging to `main`.",
+      "descriptionHash": "b8f304e1633fbe6c401d7af9a8a79f62c7f29b91ed14aa00a99807576075f1d5",
+      "contentHash": "b8d887e85f948b13c8ce79f37a3e467e0c8a20aef2a54bb24c423af0ca12cb7c",
       "state": "certified",
       "authority": "policy-only",
       "prerequisites": [

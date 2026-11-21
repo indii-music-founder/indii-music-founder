@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { File } from 'lucide-react';
 
@@ -20,7 +20,11 @@ vi.mock('motion/react', () => ({
 }));
 
 let mockStore: Record<string, unknown> = {};
-vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
+vi.mock('@/core/store', () => ({
+    useStore: Object.assign((selector: (state: Record<string, unknown>) => unknown) => selector(mockStore), {
+        getState: () => mockStore,
+    }),
+}));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 vi.mock('@/services/FileSystemService', () => ({ FileNode: {} }));
@@ -37,6 +41,7 @@ describe('FileDashboard', () => {
             selectedFileNodeId: null,
             setSelectedFileNode: vi.fn(),
             fetchFileNodes: vi.fn().mockResolvedValue(undefined),
+            setModule: vi.fn(),
         };
     });
 
@@ -62,6 +67,52 @@ describe('FileDashboard', () => {
     it('loads the selected project files when opened', () => {
         render(<FileDashboard />);
         expect(mockStore.fetchFileNodes).toHaveBeenCalledWith('proj-1');
+    });
+
+    it('offers the existing Creative Studio route when the project vault is empty', () => {
+        render(<FileDashboard />);
+        expect(screen.getByRole('heading', { name: 'No project files yet' })).toBeVisible();
+        fireEvent.click(screen.getByRole('button', { name: 'Open Creative Studio' }));
+        expect(mockStore.setModule).toHaveBeenCalledWith('creative');
+    });
+
+    it('labels view controls and lets users clear a search with no matches', () => {
+        render(<FileDashboard />);
+        const grid = screen.getByRole('button', { name: 'Grid view' });
+        const list = screen.getByRole('button', { name: 'List view' });
+        expect(grid).toHaveAttribute('aria-pressed', 'true');
+        fireEvent.click(list);
+        expect(list).toHaveAttribute('aria-pressed', 'true');
+
+        const search = screen.getByRole('searchbox', { name: 'Search project files' });
+        fireEvent.change(search, { target: { value: 'missing' } });
+        expect(screen.getByRole('heading', { name: 'No matching files' })).toBeVisible();
+        fireEvent.click(screen.getByRole('button', { name: 'Clear search and filters' }));
+        expect(search).toHaveValue('');
+        expect(screen.getByRole('heading', { name: 'No project files yet' })).toBeVisible();
+    });
+
+    it('reports a failed read and retries the selected project', () => {
+        mockStore.fileNodesLoadError = 'Permission denied';
+        render(<FileDashboard />);
+        expect(screen.getByRole('alert')).toHaveTextContent('Could not load project files.');
+        expect(screen.queryByText('No project files yet')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(mockStore.fetchFileNodes).toHaveBeenNthCalledWith(2, 'proj-1');
+    });
+
+    it('keeps the vault visible after a mutation error', () => {
+        mockStore.fileSystemError = 'Could not rename file';
+        render(<FileDashboard />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'No project files yet' })).toBeVisible();
+    });
+
+    it('indicates that project files are loading', () => {
+        mockStore.isFileSystemLoading = true;
+        render(<FileDashboard />);
+        expect(screen.getByRole('status')).toHaveTextContent('Loading project files');
+        expect(screen.queryByText('No project files yet')).not.toBeInTheDocument();
     });
 });
 

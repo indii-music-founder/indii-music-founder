@@ -15,6 +15,7 @@ import {
     Plus,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { secureUUIDv4 } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import {
@@ -386,7 +387,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 : `[${classificationSource}: ${semantics.categoryLabel} | Owner: ${semantics.recommendedDepartment.toUpperCase()}]\nPage text was not captured; only the URL is available.`;
 
             addReferencedAsset({
-                id: `web-${Date.now()}`,
+                id: `web-${secureUUIDv4()}`,
                 name: pageData.title || pageData.url,
                 type: 'url',
                 value: pageData.url,

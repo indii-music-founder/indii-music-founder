@@ -195,18 +195,23 @@ describe('BoardroomModule', () => {
         expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('split');
     });
 
-    it('renders workspace pane in split layout alongside the orbital table', () => {
+    it('opens the workspace with table and discussion folded away', () => {
         mockStoreState.boardroomWorkspaceLayout = 'split';
         mockStoreState.boardroomWorkspaceTab = 'browser';
 
         render(<BoardroomModule />);
-        const orbitalPanel = screen.getByTestId('boardroom-orbital-panel');
-        const workspaceContainer = screen.getByTestId('boardroom-workspace-container');
-        const conversationContainer = screen.getByTestId('boardroom-conversation-container');
-
-        expect(orbitalPanel).toHaveClass('min-w-0', 'overflow-hidden');
-        expect(workspaceContainer).toHaveClass('min-w-0', 'overflow-hidden', 'isolate', 'z-10');
-        expect(conversationContainer).toHaveClass('min-w-0', 'overflow-hidden', 'isolate', 'z-20');
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-conversation-container')).not.toBeVisible();
+        fireEvent.click(screen.getByRole('button', { name: 'Show table' }));
+        expect(screen.getByTestId('boardroom-orbital-panel')).toHaveClass('absolute');
+        fireEvent.click(screen.getByRole('button', { name: 'Hide table' }));
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Discussion' }));
+        expect(screen.getByTestId('boardroom-conversation-container')).toBeVisible();
+        expect(screen.getByRole('button', { name: 'Close discussion' })).toHaveFocus();
+        fireEvent.click(screen.getByRole('button', { name: 'Close discussion' }));
+        expect(screen.getByRole('button', { name: 'Discussion' })).toHaveFocus();
+        expect(screen.getByTestId('boardroom-workspace-container')).toHaveClass('min-w-0', 'overflow-hidden');
         expect(screen.getByTestId('boardroom-workspace-pane')).toBeInTheDocument();
     });
 

@@ -2,7 +2,7 @@
 
 ## Mainline Delivery Standard
 
-**Publish each locally validated batch on a fresh task branch.** Before any code, Git, CI, or push action, read [the shared branch and delivery policy](.agent/workflows/branch-safety.md). All coding agents use Entire to publish from a branch based on current `origin/main`. The team handles review, remote CI, and merging to `main`.
+**Publish each locally validated batch on a fresh task branch.** Before any code, Git, CI, or push action, read [the shared branch and delivery policy](.agent/workflows/branch-safety.md). All coding agents use Entire to publish from a branch based on current `origin/main`. Routine changes use local validation and CI. Request code review only when the repository owner asks for it.
 
 ## Entire Agent Workflow & Completion Standard
 

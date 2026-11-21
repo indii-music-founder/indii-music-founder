@@ -1,22 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import {
-    Palette,
-    Scale,
-    DollarSign,
-    Library,
-    Target,
-    Share2,
-    Briefcase,
-    PackageCheck,
-    Key,
-    GitBranch,
-    FileText,
-    ExternalLink,
-    ChevronDown,
-} from 'lucide-react';
-import type { ModuleId } from '@/core/constants';
+import { ExternalLink, ChevronDown } from 'lucide-react';
+import { PREVIEW_MODULES } from './boardroomPreviewModules';
 import { cn } from '@/lib/utils';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -34,28 +20,6 @@ const RegistrationCenter = lazy(() => import('@/modules/registration/Registratio
 const SocialDashboard = lazy(() => import('@/modules/social/SocialDashboard'));
 const BrandManager = lazy(() => import('@/modules/marketing/components/BrandManager'));
 const NotesModule = lazy(() => import('@/modules/notes/NotesModule'));
-
-interface ModuleOption {
-    id: ModuleId;
-    title: string;
-    agentId: string;
-    icon: React.ElementType;
-}
-
-export const PREVIEW_MODULES: readonly ModuleOption[] = [
-    { id: 'creative', title: 'Creative Studio', agentId: 'creative', icon: Palette },
-    { id: 'publishing', title: 'Publishing', agentId: 'publishing', icon: Library },
-    { id: 'finance', title: 'Finance', agentId: 'finance', icon: DollarSign },
-    { id: 'legal', title: 'Legal & Split Sheets', agentId: 'legal', icon: Scale },
-    { id: 'marketing', title: 'Marketing', agentId: 'marketing', icon: Target },
-    { id: 'social', title: 'Social Rollout', agentId: 'social', icon: Share2 },
-    { id: 'brand', title: 'Brand Identity', agentId: 'brand', icon: Briefcase },
-    { id: 'distribution', title: 'Distribution', agentId: 'distribution', icon: PackageCheck },
-    { id: 'registration', title: 'Registration Center', agentId: 'registration', icon: Key },
-    { id: 'licensing', title: 'Licensing', agentId: 'licensing', icon: Key },
-    { id: 'workflow', title: 'Workflow Lab', agentId: 'workflow', icon: GitBranch },
-    { id: 'notes', title: 'Founder Notes', agentId: 'notes', icon: FileText },
-];
 
 function BoardroomModulePreviewContent() {
     const {
@@ -106,14 +70,16 @@ function BoardroomModulePreviewContent() {
     // Seated agent priority pills
     const seatedOptions = PREVIEW_MODULES.filter(m => activeAgents.includes(m.agentId));
 
-    const handleExitToStudio = () => {
-        setModule(boardroomPreviewModuleId);
-        setConversationMode('direct');
+    const handleExitToStudio = async () => {
+        await setModule(boardroomPreviewModuleId);
+        if (useStore.getState().currentModule === boardroomPreviewModuleId) {
+            setConversationMode('direct');
+        }
     };
 
     const renderActiveModuleComponent = () => {
         switch (boardroomPreviewModuleId) {
-            case 'creative': return <CreativeStudio />;
+            case 'creative': return <CreativeStudio embedded />;
             case 'publishing': return <PublishingDashboard />;
             case 'finance': return <FinanceDashboard />;
             case 'legal': return <LegalDashboard />;
@@ -125,7 +91,7 @@ function BoardroomModulePreviewContent() {
             case 'licensing': return <LicensingDashboard />;
             case 'workflow': return <WorkflowLab />;
             case 'notes': return <NotesModule />;
-            default: return <CreativeStudio />;
+            default: return <CreativeStudio embedded />;
         }
     };
 

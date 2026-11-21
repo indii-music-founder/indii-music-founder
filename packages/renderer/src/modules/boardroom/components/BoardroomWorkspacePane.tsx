@@ -7,18 +7,14 @@ import {
     LayoutGrid,
     Layers,
     Radio,
-    Maximize2,
-    Columns,
     X,
     Sparkles,
-    Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BoardroomBrowserView } from './BoardroomBrowserView';
 import { BoardroomModulePreview } from './BoardroomModulePreview';
 import { BoardroomWorkbenchView } from './BoardroomWorkbenchView';
 import { BoardroomAgentFeedView } from './BoardroomAgentFeedView';
-import { AVAILABLE_AGENTS } from './ParticipantSelector';
 import type { BoardroomWorkspaceTab } from '@/core/store/slices/boardroomSlice';
 import {
     judgeBoardroomWorkspaceRecommendation,
@@ -41,32 +37,31 @@ interface BoardroomWorkspacePaneProps {
 
 export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWorkspacePaneProps) {
     const {
-        boardroomWorkspaceLayout,
         setBoardroomWorkspaceLayout,
         boardroomWorkspaceTab,
         setBoardroomWorkspaceTab,
         setBoardroomPreviewModuleId,
         historyLength,
         settledHistoryKey,
-        activeAgents,
-        toggleAgent,
-        soloAgent,
         isCommandMenuOpen,
     } = useStore(
         useShallow(state => ({
-            boardroomWorkspaceLayout: state.boardroomWorkspaceLayout,
             setBoardroomWorkspaceLayout: state.setBoardroomWorkspaceLayout,
             boardroomWorkspaceTab: state.boardroomWorkspaceTab,
             setBoardroomWorkspaceTab: state.setBoardroomWorkspaceTab,
             setBoardroomPreviewModuleId: state.setBoardroomPreviewModuleId,
             historyLength: state.agentHistory?.length ?? 0,
             settledHistoryKey: getSettledHistoryKey(state.agentHistory),
-            activeAgents: state.activeAgents || [],
-            toggleAgent: state.toggleAgent,
-            soloAgent: state.soloAgent,
             isCommandMenuOpen: state.isCommandMenuOpen ?? false,
         }))
     );
+
+    const [visitedTabs, setVisitedTabs] = useState<ReadonlySet<BoardroomWorkspaceTab>>(
+        () => new Set([boardroomWorkspaceTab]),
+    );
+    if (!visitedTabs.has(boardroomWorkspaceTab)) {
+        setVisitedTabs(new Set([...visitedTabs, boardroomWorkspaceTab]));
+    }
 
     const [rawJevRecommendation, setJevRecommendation] = useState<BoardroomWorkspaceRecommendation | null>(null);
     const jevRecommendation = historyLength > 0 ? rawJevRecommendation : null;
@@ -97,7 +92,6 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
         { id: 'agent-feed', label: 'Agent Live Feed', icon: Radio },
     ];
 
-    const isStage = boardroomWorkspaceLayout === 'stage';
     const recommendedTabMeta = jevRecommendation
         ? tabs.find(t => t.id === jevRecommendation.recommendedTab)
         : undefined;
@@ -142,18 +136,8 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                     })}
                 </div>
 
-                {/* Right: Stage / Split toggle & Close button */}
+                {/* Close workspace */}
                 <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                    <button
-                        type="button"
-                        onClick={() => setBoardroomWorkspaceLayout(isStage ? 'split' : 'stage')}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                        title={isStage ? "Switch to Split 3-Pane View" : "Maximize Workspace to Full Left Stage"}
-                        aria-label="Toggle Layout"
-                        data-testid="boardroom-workspace-layout-toggle"
-                    >
-                        {isStage ? <Columns size={14} /> : <Maximize2 size={14} />}
-                    </button>
                     <button
                         type="button"
                         onClick={() => setBoardroomWorkspaceLayout('closed')}
@@ -192,75 +176,23 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                 </div>
             )}
 
-            {/* Inline Mini Seated Roster Bar (Rendered when in 'stage' mode to keep table controls accessible) */}
-            {isStage && (
-                <div className="flex items-center gap-1 px-3 py-1.5 bg-black/40 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0 text-xs">
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-white/40 uppercase tracking-wider shrink-0 mr-1">
-                        <Users size={11} className="text-indigo-400" />
-                        <span>Seated Swarm:</span>
+            <div className="flex-1 relative min-h-0 min-w-0 overflow-hidden">
+                {visitedTabs.has('browser') && (
+                    <div hidden={boardroomWorkspaceTab !== 'browser'} className="h-full">
+                        <BoardroomBrowserView isVisible={boardroomWorkspaceTab === 'browser' && !hasOverlayOpen && !isCommandMenuOpen} />
                     </div>
-
-                    {/* Conductor Pill */}
-                    <button
-                        type="button"
-                        onClick={() => toggleAgent('generalist')}
-                        className={cn(
-                            "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all shrink-0 border",
-                            activeAgents.includes('generalist')
-                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
-                                : "bg-white/5 text-white/40 border-white/5"
-                        )}
-                    >
-                        <Sparkles size={10} />
-                        <span>Conductor</span>
-                    </button>
-
-                    {/* Department Heads */}
-                    {AVAILABLE_AGENTS.map(agent => {
-                        const isSeated = activeAgents.includes(agent.id);
-                        const Icon = agent.icon;
-
-                        return (
-                            <button
-                                key={agent.id}
-                                type="button"
-                                onClick={(e) => {
-                                    if (e.altKey) {
-                                        soloAgent(agent.id);
-                                    } else {
-                                        toggleAgent(agent.id);
-                                    }
-                                }}
-                                className={cn(
-                                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all shrink-0 border",
-                                    isSeated
-                                        ? `${agent.brightBg} ${agent.brightText} ${agent.brightBorder} shadow-xs`
-                                        : "bg-white/5 text-white/40 hover:text-white/80 border-white/5"
-                                )}
-                                title={`${agent.fullName} (Click to toggle, Option+Click to Solo)`}
-                            >
-                                <Icon size={10} />
-                                <span>{agent.shortTitle}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Active Workspace View Body */}
-            <div className="flex-1 relative min-h-0 min-w-0 overflow-hidden flex flex-col">
-                {boardroomWorkspaceTab === 'browser' && (
-                    <BoardroomBrowserView isVisible={!hasOverlayOpen && !isCommandMenuOpen} />
                 )}
-                {boardroomWorkspaceTab === 'module' && (
-                    <BoardroomModulePreview />
+                {visitedTabs.has('module') && (
+                    <div hidden={boardroomWorkspaceTab !== 'module'} className="h-full">
+                        <BoardroomModulePreview />
+                    </div>
                 )}
-                {boardroomWorkspaceTab === 'workbench' && (
-                    <BoardroomWorkbenchView />
+                {visitedTabs.has('workbench') && (
+                    <div hidden={boardroomWorkspaceTab !== 'workbench'} className="h-full">
+                        <BoardroomWorkbenchView />
+                    </div>
                 )}
-                {boardroomWorkspaceTab === 'agent-feed' && (
-                    <BoardroomAgentFeedView />
-                )}
+                {boardroomWorkspaceTab === 'agent-feed' && <BoardroomAgentFeedView />}
             </div>
         </section>
     );

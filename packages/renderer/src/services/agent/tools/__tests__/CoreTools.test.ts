@@ -120,12 +120,59 @@ describe('CoreTools', () => {
     });
 
     describe('update_prompt', () => {
-        it('should return updated text', async () => {
+        const mission = {
+            boardroomExecution: { requestId: 'mission', stepId: 'step', ownerAgentId: 'creative' },
+            projectId: 'project-123',
+        };
+
+        it('requires an assigned Creative mission to stage a draft', async () => {
             const result = await CoreTools.update_prompt({ text: 'New prompt' });
 
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('BOARDROOM_CREATIVE_REQUIRED');
+        });
+
+        it('stages an editable draft with the requested aspect ratio', async () => {
+            const studio = {
+                ...mockStoreState,
+                conversationMode: 'boardroom',
+                creativePrompt: '',
+                studioControls: { aspectRatio: '1:1' },
+                setCreativePrompt: vi.fn(),
+                setStudioControls: vi.fn((controls: { aspectRatio: string }) => {
+                    studio.studioControls = controls;
+                }),
+                setGenerationMode: vi.fn(),
+                setViewMode: vi.fn(),
+                openBoardroomModulePreview: vi.fn(),
+            };
+            vi.mocked(useStore.getState).mockReturnValue(studio as unknown as ReturnType<typeof useStore.getState>);
+
+            const result = await CoreTools.update_prompt({ text: ' New prompt ', aspectRatio: '16:9' }, mission);
+
             expect(result.success).toBe(true);
-            expect(result.data.text).toBe('New prompt');
-            expect(result.data.message).toContain('Prompt updated');
+            expect(result.data).toMatchObject({ text: 'New prompt', aspectRatio: '16:9' });
+            expect(studio.setCreativePrompt).toHaveBeenCalledWith('New prompt');
+            expect(studio.setGenerationMode).toHaveBeenCalledWith('image');
+            expect(studio.setViewMode).toHaveBeenCalledWith('canvas');
+            expect(studio.openBoardroomModulePreview).toHaveBeenCalledWith('creative');
+        });
+
+        it('preserves an existing artist draft', async () => {
+            const studio = {
+                ...mockStoreState,
+                conversationMode: 'boardroom',
+                creativePrompt: 'Artist draft',
+                setCreativePrompt: vi.fn(),
+                openBoardroomModulePreview: vi.fn(),
+            };
+            vi.mocked(useStore.getState).mockReturnValue(studio as unknown as ReturnType<typeof useStore.getState>);
+
+            const result = await CoreTools.update_prompt({ text: 'Replacement' }, mission);
+
+            expect(result.metadata?.errorCode).toBe('STUDIO_DRAFT_EXISTS');
+            expect(studio.setCreativePrompt).not.toHaveBeenCalled();
+            expect(studio.openBoardroomModulePreview).not.toHaveBeenCalled();
         });
     });
 
