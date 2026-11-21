@@ -3921,3 +3921,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Impact:** The Conductor cannot guide the artist to a shared tab or report the active workspace and recent mission activity.
 - **Fix:** Use the same tab state as the visible workspace. Limit tab changes to an active Conductor mission in the originating conversation and project. Return workspace and mission status without message contents or browser data. Navigate directly on desktop through the existing validated browser bridge. On web, show the external-open fallback for Google Fonts. The approval-gated font download contains the licensed bundled WOFF2 and its OFL text.
 - **Acceptance:** In signed-in Boardroom, ask the Conductor to open each shared tab and compare the active view with the returned receipt. Ask for workspace and Feed status, then switch sessions and verify the prior turn cannot affect the new session. Open Google Fonts on desktop and verify the web external-open fallback. Approve a bundled font download and inspect the archive for the file and license. Confirm that selecting an existing gallery item opens it in Workbench and that Feed status reflects visible activity.
+
+### ISSUE-1691: Five e2e specs fail on main and turn every PR red
+
+- **Status:** 🟡 PARTIAL — WP0 in progress on branch claude/wp0-green-ci (2026-11-21): 2 of 5 specs repaired locally; Detroit Techno and the two MCP specs still open
+- **Severity:** 🟠 HIGH
+- **Module:** e2e / CI
+- **Evidence:** base run actions/runs/44874990405 (shard 2: detroit-techno-onboarding:120, distribution-workflow:178, indii-macro-flywheel:61; shard 3: mcp-a2a-routing:22, mcp-boardroom-collaboration:22).
+- **Findings so far:**
+  - indii-macro-flywheel: real app-support bug. `FirestoreService` e2e mock mode emitted `subscribe` once on mount and never again, so a campaign created afterwards never appeared. Fixed by notifying open subscribers on every mock write (`FirestoreService.e2eSubscribe.test.ts`). The spec's original strict assertion now passes unchanged.
+  - distribution-workflow: spec drift from ISSUE-969, which requires a real hashed master and a staged cover before a release can submit. The mocked suite has neither, so the test now verifies the gate (submit disabled, missing-asset message) instead of delivery. Full submission still needs a genuine account with an ingested master and remains unverified.
+- **Impact:** every PR is red on the same specs, hiding real regressions.
+- **Acceptance:** all five specs pass in CI, or carry a skip that names the missing service and is recorded here.
