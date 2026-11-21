@@ -654,7 +654,7 @@ export const ORCHESTRATION_PATH_MIN_CONFIDENCE = 0.70;
 export const BOARDROOM_INTENT_QUESTION = {
     type: 'choice' as const,
     instructions: 'Classify the current user utterance using recent conversation only to resolve references. ' +
-        'Choose action only when the user is asking to perform work now, including polite can-you requests and requests to open or switch a Boardroom workspace tab. ' +
+        'Choose action only when the user is asking to perform work now, including polite can-you requests and requests to open or switch a Boardroom workspace tab, navigate its Live Browser, or download a font. ' +
         'Capability questions ask what is possible or whether a feature exists, without requesting execution. ' +
         'Discussion includes greetings, social conversation, readiness/status questions, planning-only requests, advice, brainstorming, and explicit instructions not to execute. ' +
         'Do not infer a request to execute a previous task from a greeting or a question asking whether you are available. ' +
@@ -678,7 +678,7 @@ export const SPECIALIST_ROUTE_QUESTION = {
         'vinyl sleeve, poster, cassette, or CD) belong to "creative" (Creative Director). ' +
         'Route to "merchandise" only for garment manufacturing specs, print-on-demand fulfillment, SKU pricing, ' +
         'or storefront drop configuration when the visual mockup is not the primary visual compositing task. ' +
-        'Bug reports, GitHub issue filing, feature requests, and Boardroom workspace tab switching or inspection belong to "generalist".',
+        'Bug reports, GitHub issue filing, feature requests, and Boardroom workspace tab switching or inspection, Live Browser navigation, and bundled font downloads belong to "generalist".',
     criteria: {
         generalist: 'General coordination, multi-domain questions, bug reports, issue filing, or feature requests.',
         creative: 'Visual art generation, image editing, print/DPI preparation, and visual product/apparel mockups (placing a logo or artwork onto a t-shirt, hoodie, vinyl, poster, cassette, or CD).',

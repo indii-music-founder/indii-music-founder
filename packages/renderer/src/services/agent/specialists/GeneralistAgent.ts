@@ -53,7 +53,7 @@ export class GeneralistAgent extends BaseAgent {
         'report_bug', 'request_feature',
         'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
         'seat_agent', 'seat_all_department_heads', 'unseat_agent',
-        'open_boardroom_workspace_tab', 'get_boardroom_workspace_status',
+        'open_boardroom_workspace_tab', 'get_boardroom_workspace_status', 'download_boardroom_font',
         'list_trash', 'move_to_trash', 'restore_from_trash',
         'canvas_inspect', 'canvas_push', 'canvas_clear', 'draw_shape', 'canvas_get_project_canvas',
         'blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'
@@ -155,14 +155,25 @@ export class GeneralistAgent extends BaseAgent {
         const functionDeclarations: FunctionDeclaration[] = [
             {
                 name: 'open_boardroom_workspace_tab',
-                description: 'Open the requested shared Boardroom tab. Use only when the artist asks to open or switch the visible workspace. Opening Live Browser does not navigate to a website or download a file.',
+                description: 'Open the requested shared Boardroom tab. Use only when the artist asks to open or switch the visible workspace. Provide Google Fonts or the exact HTTPS address the artist supplied on desktop to navigate Live Browser or a gallery asset ID to select it in Workbench. This tool does not download files.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
                         tab: { type: 'STRING', enum: ['browser', 'module', 'workbench', 'agent-feed'] },
+                        browserUrl: { type: 'STRING', description: 'Optional Google Fonts catalog or specimen URL, or the exact HTTPS address supplied by the artist on desktop. Use only with browser.' },
+                        workbenchAssetId: { type: 'STRING', description: 'Optional exact gallery asset ID from this project. Use only with workbench.' },
                         studioModule: { type: 'STRING', description: 'Optional Studio module ID, such as creative. Use only with the module tab.' },
                     },
                     required: ['tab'],
+                },
+            },
+            {
+                name: 'download_boardroom_font',
+                description: 'After artist approval, request a browser download of an archive with the WOFF2 and license for Montserrat, Archivo Black, or Space Mono. The receipt confirms the request, not that the file finished saving.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: { family: { type: 'STRING', enum: ['Montserrat', 'Archivo Black', 'Space Mono'] } },
+                    required: ['family'],
                 },
             },
             {

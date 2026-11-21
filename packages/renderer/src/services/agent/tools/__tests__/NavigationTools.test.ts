@@ -4,6 +4,11 @@ const state = vi.hoisted(() => ({
     currentModule: 'dashboard',
     currentProjectId: 'project-1',
     activeSessionId: 'session-1',
+    a2aMessages: [],
+    activeGraphExecution: { nodeStates: { step: { status: 'STEP_COMPLETE' } } },
+    generatedHistory: [{ id: 'asset-1', projectId: 'project-1' }, { id: 'asset-2', projectId: 'other' }],
+    openBoardroomBrowser: vi.fn(),
+    openBoardroomWorkbench: vi.fn(),
     agentHistory: [{ id: 'mission', agentId: 'generalist', metadata: {
         boardroomStepId: 'step', boardroomStepStatus: 'complete', boardroomStepTask: 'private content',
     } }],
@@ -131,6 +136,39 @@ describe('Boardroom workspace tools (structural only)', () => {
         expect(state.setBoardroomWorkspaceTab).not.toHaveBeenCalled();
     });
 
+    it('opens the public font catalog without claiming that web embedded it', async () => {
+        const result = await NavigationTools.open_boardroom_workspace_tab({
+            tab: 'browser', browserUrl: 'https://fonts.google.com/',
+        }, { ...context, boardroomTask: { rawUserUtterance: 'Open Google Fonts in Live Browser' } });
+        expect(state.openBoardroomBrowser).toHaveBeenCalledWith('https://fonts.google.com/');
+        expect(result.data).toEqual({ tab: 'browser', pageLoaded: false, requiresExternalOpen: true });
+    });
+
+    it('ignores browser destinations that came from somewhere other than the artist’s request', async () => {
+        const result = await NavigationTools.open_boardroom_workspace_tab({
+            tab: 'browser', browserUrl: 'https://fonts.google.com/',
+        }, { ...context, boardroomTask: { rawUserUtterance: 'What is active?' } });
+        expect(result.success).toBe(false);
+        expect(state.openBoardroomBrowser).not.toHaveBeenCalled();
+    });
+
+    it('selects a current project gallery asset and refuses one from a different project', async () => {
+        state.openBoardroomWorkbench.mockImplementationOnce(target => {
+            state.boardroomWorkbenchTarget = target;
+            state.boardroomWorkspaceTab = 'workbench';
+            state.boardroomWorkspaceLayout = 'split';
+        });
+        const result = await NavigationTools.open_boardroom_workspace_tab({
+            tab: 'workbench', workbenchAssetId: 'asset-1',
+        }, context);
+        expect(result.data).toEqual({ tab: 'workbench', layout: 'split', workbenchAssetId: 'asset-1' });
+        const otherProject = await NavigationTools.open_boardroom_workspace_tab({
+            tab: 'workbench', workbenchAssetId: 'asset-2',
+        }, context);
+        expect(otherProject.success).toBe(false);
+        expect(state.openBoardroomWorkbench).toHaveBeenCalledTimes(1);
+    });
+
     it('reports status without returning the mission text or asset ID', async () => {
         const result = await NavigationTools.get_boardroom_workspace_status({}, { ...context, isReadOnly: true });
         expect(result.success).toBe(true);
@@ -139,6 +177,8 @@ describe('Boardroom workspace tools (structural only)', () => {
             layout: 'closed',
             studioModule: 'creative',
             workbenchSelectionKind: 'asset',
+            handoffCount: 0,
+            workflowStatuses: ['STEP_COMPLETE'],
             missionActivity: [{ agentId: 'generalist', status: 'complete' }],
         });
     });

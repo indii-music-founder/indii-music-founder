@@ -3912,10 +3912,10 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1690: Conductor cannot open or inspect the shared Boardroom workspace tabs
 
-- **Status:** 🟡 PARTIAL — shared tab selection and workspace status are wired locally. Browser navigation, downloads, and signed-in acceptance remain open.
+- **Status:** 🟡 PARTIAL — shared tab selection, desktop HTTPS and Google Fonts navigation, approved bundled font downloads, gallery asset selection, and bounded Feed status are wired. Signed-in browser and desktop acceptance remain open.
 - **Severity:** HIGH
 - **Module:** Boardroom workspace and Conductor
 - **Evidence:** [GitHub #956](https://github.com/indii-music-founder/indii-music-founder/issues/956). The center workspace exposes Live Browser, Studio Preview, Asset Workbench, and Agent Live Feed to the artist. Existing assigned Creative missions can already open Studio Preview and stage an image prompt.
 - **Impact:** The Conductor cannot guide the artist to a shared tab or report the active workspace and recent mission activity.
-- **Fix:** Use the same tab state as the visible workspace. Limit tab changes to an active Conductor mission in the originating conversation and project. Return workspace and mission status without message contents or browser data.
-- **Acceptance:** In signed-in Boardroom, ask the Conductor to open each shared tab and compare the active view with the returned receipt. Ask for workspace and Feed status, then switch sessions and verify the prior turn cannot affect the new session. Browser navigation and downloads, shared asset operations, and full Feed interaction need separate verification.
+- **Fix:** Use the same tab state as the visible workspace. Limit tab changes to an active Conductor mission in the originating conversation and project. Return workspace and mission status without message contents or browser data. Navigate directly on desktop through the existing validated browser bridge. On web, show the external-open fallback for Google Fonts. The approval-gated font download contains the licensed bundled WOFF2 and its OFL text.
+- **Acceptance:** In signed-in Boardroom, ask the Conductor to open each shared tab and compare the active view with the returned receipt. Ask for workspace and Feed status, then switch sessions and verify the prior turn cannot affect the new session. Open Google Fonts on desktop and verify the web external-open fallback. Approve a bundled font download and inspect the archive for the file and license. Confirm that selecting an existing gallery item opens it in Workbench and that Feed status reflects visible activity.
