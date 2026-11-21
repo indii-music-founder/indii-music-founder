@@ -22,6 +22,14 @@ const DOMAIN_OR_ACTION_PATTERNS = [
     /\b(sign|contract|distribute|release|master|royalties|split|sync|pitch|upload|generate|create|build|render|track|audit|review|analyze|export|import|legal|finance|tax|keeper)\b/i,
 ];
 
+/** Greetings, thanks and goodbyes: replies that never depend on the conversation. */
+const SOCIAL_PLEASANTRY_PATTERNS = [0, 1, 2, 4, 6].map(index => TRIVIAL_PATTERNS[index]!);
+
+export function isSocialPleasantry(text: string): boolean {
+    const lower = text.trim().toLowerCase();
+    return lower.length > 0 && SOCIAL_PLEASANTRY_PATTERNS.some(p => p.test(lower));
+}
+
 export function isTrivialInput(text: string): boolean {
     const trimmed = text.trim();
     if (!trimmed) return true;
