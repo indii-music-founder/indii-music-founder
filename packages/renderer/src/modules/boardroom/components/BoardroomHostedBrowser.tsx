@@ -178,6 +178,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                 socket.binaryType = 'blob';
                 socket.onopen = () => {
                     socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current, resumeId: resumeId.current }));
+                    socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current }));
                 };
                 socket.onmessage = event => {
                     if (!mounted) return;
@@ -274,6 +275,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                     setReady(false);
                     setClosed(true);
                     setError(previous => previous || 'The live browser disconnected. Reconnect to resume browsing.');
+                    setError(previous => previous || 'The live browser disconnected. Reconnect to reopen the current address.');
                 };
             } catch {
                 if (mounted) {
@@ -291,6 +293,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
             unsubscribe();
             revoke();
             connection?.close(1000);
+            connection?.close();
             if (frameRef.current) URL.revokeObjectURL(frameRef.current);
             frameRef.current = '';
             stateRef.current = undefined;

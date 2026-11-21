@@ -22,6 +22,7 @@ import {
     judgeBoardroomWebpageSemantics,
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
+import { resolveBoardroomBrowserEndpoint } from './boardroomBrowserEndpoint';
 
 interface QuickBookmark {
     id: string;
@@ -53,6 +54,12 @@ const hostedEndpoint = import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true'
         ? 'ws://127.0.0.1:4245/boardroom'
         : 'wss://boardroom-browser-148015878263.us-central1.run.app/boardroom'
     : undefined;
+const hostedEndpoint = resolveBoardroomBrowserEndpoint({
+    enabled: import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true',
+    configuredEndpoint: import.meta.env.VITE_BOARDROOM_BROWSER_URL,
+    isDev: import.meta.env.DEV,
+    hostname: typeof window === 'undefined' ? '' : window.location.hostname,
+});
 
 function normalizeExternalHttpUrl(rawInput: string): string | null {
     const trimmed = rawInput.trim();

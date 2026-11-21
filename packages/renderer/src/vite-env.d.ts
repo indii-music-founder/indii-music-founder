@@ -51,6 +51,10 @@ interface ImportMetaEnv {
     // EPK / Press
     readonly VITE_EPK_BASE_URL?: string
 
+    // Boardroom hosted browser (disabled until its worker is deployed and verified)
+    readonly VITE_BOARDROOM_BROWSER_ENABLED?: string
+    readonly VITE_BOARDROOM_BROWSER_URL?: string
+
 
     // Observability
     readonly VITE_SENTRY_DSN?: string

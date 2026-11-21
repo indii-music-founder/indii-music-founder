@@ -33,6 +33,8 @@ function releaseSession(owner: string, entry: SessionEntry) {
     }
   })().catch(() => {});
 }
+const sessions = new Map<string, WebSocket>();
+const maxSessions = 4;
 function assignmentFrom(input: unknown): BoardroomAssignment {
   if (!input || typeof input !== 'object') throw new Error('Mission assignment required');
   const { requestId, stepId, agentId } = input as Record<string, unknown>;
@@ -78,6 +80,19 @@ sockets.on('connection', socket => {
     entry.browser.control.disconnect();
     entry.socket = undefined;
     entry.detachTimer = setTimeout(releaseSession, Math.min(reconnectWindow, entry.expiresAt - Date.now()), owner, entry);
+  const lifetime = setTimeout(() => socket.close(1000, 'Session expired'), 15 * 60_000);
+  const send = (event: object) => {
+    if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event));
+  };
+  socket.once('close', () => {
+    activeDownload?.abort();
+    clearTimeout(authTimeout);
+    clearTimeout(lifetime);
+    const release = () => {
+      if (owner && sessions.get(owner) === socket) sessions.delete(owner);
+    };
+    if (session) void session.close().catch(() => {}).finally(release);
+    else release();
   });
 
   socket.once('message', raw => {
@@ -94,6 +109,7 @@ sockets.on('connection', socket => {
       const resumed = previous && previous.id === message.resumeId
         && !previous.socket && previous.browser && previous.expiresAt > Date.now();
       if (!resumed && (sessions.size >= maxSessions || previous)) {
+      if (sessions.size >= maxSessions || sessions.has(identity.uid)) {
         send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
         socket.close(1008);
         return;
@@ -106,6 +122,9 @@ sockets.on('connection', socket => {
       lifetime = setTimeout(() => socket.close(1000, 'Session expired'), entry.expiresAt - Date.now());
       clearTimeout(authTimeout);
       session = entry.browser ?? await BoardroomSession.open(process.env.CHROME_BIN);
+      sessions.set(owner, socket);
+      clearTimeout(authTimeout);
+      session = await BoardroomSession.open(process.env.CHROME_BIN);
       if (socket.readyState !== WebSocket.OPEN) {
         await session.close();
         return;
@@ -127,6 +146,7 @@ sockets.on('connection', socket => {
       if (resumed) active.control.reconnect();
       else await active.navigateAsArtist(message.url, active.control.state);
       send({ type: 'session', resumeId: entry.id });
+      await active.navigateAsArtist(message.url, active.control.state);
       await sendFrame();
 
       socket.on('message', rawInput => {
