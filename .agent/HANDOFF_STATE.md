@@ -5,6 +5,28 @@
 - Streaming prepares request headers alongside quota and rate checks. A Stop during preflight prevents reservation.
 - Four focused structural suites passed (112 tests) on the branch based on main at 90f4d5aba. The broader local suite hit one Keeper context-clear assertion and two milestone storage assertions. All three also reproduced on the unchanged main checkout with Node 25.9.0. Check branch CI before attributing them to this change. Signed-in acceptance and first-response and full-turn timing remain unverified.
 
+---
+
+# Boardroom and V4 issue handoff — 2026-11-21
+
+Continue the unfinished V3 findings in [OPEN_ISSUES_V4.md](test_ledger/OPEN_ISSUES_V4.md), using the [Boardroom modernization plan](../docs/plans/boardroom-modernization-plan-2026-11-19.md) for the Boardroom work. Start from current `origin/main` and check the ledger and recent branches for ownership before picking up an item.
+
+## Delivered and verified
+
+- **ISSUE-1664:** Discussion seats get separate executor contexts while retaining the same frozen user request. Published as `629927dbd`; merged as `90f4d5aba`. All 34 focused Boardroom dispatch and executor tests passed, along with renderer type checking, scoped lint, and ledger validation. Signed-in concurrent-seat acceptance is still open.
+- **ISSUE-1663:** The other agent's recent-gallery fix is on `main` as `77f69132f`. Signed-in gallery and attachment checks remain open. A superseded local draft was left unpublished. Start from the landed fix for future changes.
+- **Run102 follow-ups:** `main` contains the Project Vault states (`d73b1438a`), Project Canvas heading (`050f72915`), accessible sidebar controls (`82e367b24`), and the scoped Merchandise redirect (`6a6cd8adb`). The focused checks were structural. Live navigation, screen-reader behavior, and archive persistence still need verification.
+
+## Next repair
+
+1. **ISSUE-1660 (O7).** Start in `AgentService.ts` at the action-step `executor.execute` callback and follow the final receipt through `BoardroomActionPlan.ts`. The callback handles tool events but drops tokens. The subsequent update replaces the row with receipt text. Reproduce a step that emits tokens and returns meaningful final text, then verify that progress appears and the final result retains the response and factual receipt. Preserve approval, cancellation, and uncertain-outcome handling.
+2. **ISSUE-1669 (O16).** Cover switching sessions during a multi-seat run. Discussion dispatch still reads and writes through the active session. Verify that late messages and thoughts stay with the session that started the run, including after changing the active session and returning.
+3. **ISSUE-1661 (O8).** Reassess before editing. Direct-provider chat already consumes `historicalSummary`. Trace what Boardroom seats receive and measure whether building the summary blocks a path that discards it.
+
+Jev 1.14.0 advised using a distinct context per discussion seat, in agreement with the regression. This was a synthetic advisory call with no renderer integration or credential material in the diff. Token counts were not captured. Publish coherent, locally validated fixes on fresh Entire branches. The repository owner handles remote CI and merging.
+
+---
+
 # Mobile Remote Contact Audio/Submit, Camera Viewfinder & GenerationMonitor Primitives (`/PP`) — Delivered on `main` (2026-11-18)
 
 Delivered on `main` (`ERROR_LEDGER` IDs: `QUICK_CONTACT_AUDIO_PLAYBACK_AND_SUBMIT_LIFECYCLE`, `CAMERA_VIEWFINDER_PLAY_CONTROL_AND_RECORDER_LIFECYCLE`, `GENERATION_MONITOR_UNMOUNT_TIMEOUT_AND_CANCEL_RACES`):
