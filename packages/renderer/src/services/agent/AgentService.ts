@@ -53,6 +53,7 @@ import { liveConversationService } from '@/services/intelligence/LiveConversatio
 import { isUserCancellation, errorText, USER_STOPPED_TEXT } from './flowFailure';
 import { BOARDROOM_SEAT_TIMEOUT_MS, BOARDROOM_STILL_RUNNING_TEXT, canReplaceOnBoardroomTimeout, runSeatWithTimeout } from './boardroomRunTimeout';
 import { endBoardroomLeaseRun, forgetBoardroomLease, rememberBoardroomLease, releaseOrphanedBoardroomLease } from './boardroomLeaseRecovery';
+import { buildGalleryManifestEntries } from './galleryAssets';
 
 /**
  * Per-send options. `conversationModeOverride` + `targetOverride` exist for
@@ -1543,10 +1544,7 @@ export class AgentService {
             ...(state.uploadedImages ?? []).map((asset, index) => ({
                 alias: `upload-${index}`, type: 'image', name: (asset.prompt || asset.id).slice(0, 200),
             })),
-            ...(state.generatedHistory ?? []).slice(-20).map((asset, index, recent) => ({
-                alias: `gallery-${(state.generatedHistory ?? []).length - recent.length + index}`,
-                type: asset.type, name: (asset.prompt || asset.id).slice(0, 200),
-            })),
+            ...buildGalleryManifestEntries(state.generatedHistory),
         ];
         const attachedFileNote = allAttachments.length === 0
             ? ''

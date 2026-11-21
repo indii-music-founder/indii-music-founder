@@ -56,6 +56,7 @@ import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
 import { getReflectionLoop } from './ReflectionLoop';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { latestGeneratedItem } from './galleryAssets';
 
 const BOARDROOM_SINGLE_OWNER_TOOL_NAMES = new Set(['generate_image', 'indii_image_gen']);
 
@@ -1352,7 +1353,7 @@ The dynamic server snapshot could not be loaded this session. Do not claim any u
                     const { useStore } = await importWithRetry(() => import('@/core/store'));
                     const generatedHistory = useStore.getState().generatedHistory || [];
                     if (generatedHistory.length > 0) {
-                        const lastItem = generatedHistory[generatedHistory.length - 1];
+                        const lastItem = latestGeneratedItem(generatedHistory);
                         if (lastItem && lastItem.url && lastItem.url.startsWith('data:image/')) {
                             const match = lastItem.url.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
                             if (match && match[1] && match[2]) {
