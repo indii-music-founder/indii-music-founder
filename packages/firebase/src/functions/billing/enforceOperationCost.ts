@@ -254,15 +254,18 @@ function parseBoardroomDispatchAgentIds(value: unknown): string[] {
   return normalized;
 }
 
-function parseBoardroomDispatchLeaseId(value: unknown): string {
+function parseBoardroomDispatchRelease(value: unknown): { leaseId: string; abandoned: boolean } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new HttpsError('invalid-argument', 'A Boardroom lease payload is required.');
   }
-  const leaseId = (value as Record<string, unknown>).leaseId;
+  const { leaseId, abandoned } = value as Record<string, unknown>;
   if (typeof leaseId !== 'string' || !UUID_PATTERN.test(leaseId)) {
     throw new HttpsError('invalid-argument', 'leaseId is invalid.');
   }
-  return leaseId;
+  if (abandoned !== undefined && typeof abandoned !== 'boolean') {
+    throw new HttpsError('invalid-argument', 'abandoned must be a boolean.');
+  }
+  return { leaseId, abandoned: abandoned === true };
 }
 
 function timestampMillis(value: unknown): number | null {
@@ -1405,6 +1408,7 @@ export async function buildBoardroomDispatchPlan(params: {
 export async function completeBoardroomDispatchLease(params: {
   userId: string;
   leaseId: string;
+  abandoned?: boolean;
 }): Promise<void> {
   const db = admin.firestore();
   const stateRef = db.doc(`users/${params.userId}/boardroomDispatchState/current`);
@@ -1432,7 +1436,7 @@ export async function completeBoardroomDispatchLease(params: {
       && typeof activeLease.remainingSlotsByAgent === 'object'
       ? activeLease.remainingSlotsByAgent as Record<string, unknown>
       : {};
-    if (executedAgentIds.some(agentId => Number(remainingSlotsByAgent[agentId]) >= BOARDROOM_MAX_ITERATIONS_PER_AGENT)) {
+    if (!params.abandoned && executedAgentIds.some(agentId => Number(remainingSlotsByAgent[agentId]) >= BOARDROOM_MAX_ITERATIONS_PER_AGENT)) {
       throw new Error('Boardroom dispatch cannot complete before every planned agent starts.');
     }
     const sideEffectReservationId = typeof activeLease.sideEffectReservationId === 'string'
@@ -1517,7 +1521,7 @@ export const completeBoardroomAgentStreamDispatch = onCall(
     const { userId } = await requireCostCallableAdmission(request, 'complete-boardroom-agent-stream');
     await completeBoardroomDispatchLease({
       userId,
-      leaseId: parseBoardroomDispatchLeaseId(request.data),
+      ...parseBoardroomDispatchRelease(request.data),
     });
     return { completed: true };
   },

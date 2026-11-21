@@ -1463,7 +1463,7 @@ export class AgentService {
         let dispatchPlan: Readonly<BoardroomDispatchPlanContext>;
         try {
             // A reload mid-turn leaves this tab's lease held for up to 15 minutes (ISSUE-1657).
-            await releaseOrphanedBoardroomLease(id => CostControlService.completeBoardroomDispatchLease(id));
+            await releaseOrphanedBoardroomLease(id => CostControlService.completeBoardroomDispatchLease(id, true));
             const serverPlan = await CostControlService.getBoardroomDispatchPlan(seatedAgents);
             dispatchPlan = Object.freeze({
                 ...serverPlan,
@@ -1773,12 +1773,14 @@ export class AgentService {
         } finally {
             if (dispatchPlan.leaseId) {
                 const leaseId = dispatchPlan.leaseId;
-                CostControlService.completeBoardroomDispatchLease(leaseId)
-                    .then(() => forgetBoardroomLease(leaseId))
-                    .catch(error => {
-                        endBoardroomLeaseRun(leaseId);
-                        logger.warn('[AgentService] Boardroom dispatch lease release failed; the next turn in this tab will retry:', error);
-                    });
+                try {
+                    // Keep the turn occupied until release is acknowledged so the queued turn can acquire a new lease.
+                    await CostControlService.completeBoardroomDispatchLease(leaseId, signal?.aborted === true);
+                    forgetBoardroomLease(leaseId);
+                } catch (error) {
+                    endBoardroomLeaseRun(leaseId);
+                    logger.warn('[AgentService] Boardroom dispatch lease release failed; the next turn in this tab will retry:', error);
+                }
             }
         }
     }
