@@ -19,7 +19,6 @@ import Hero from './components/sections/Hero';
 import NowWhatSection from './components/sections/NowWhatSection';
 import WaitlistSection from './components/sections/WaitlistSection';
 import FooterSection from './components/sections/FooterSection';
-import ExperienceShell from './components/ExperienceShell';
 import SectionShareChip from './components/SectionShareChip';
 import { findSiteSection } from '@shared/share/siteSections';
 
@@ -34,7 +33,6 @@ const AppStudioShowcase = lazy(() => import('./components/AppStudioShowcase'));
 const LegacyComparison = lazy(() => import('./components/LegacyComparison'));
 const DetroitSection = lazy(() => import('./components/sections/DetroitSection'));
 const ThesisSection = lazy(() => import('./components/sections/ThesisSection'));
-const StatsBand = lazy(() => import('./components/sections/StatsBand'));
 const PrinciplesSection = lazy(() => import('./components/sections/PrinciplesSection'));
 const OnboardingSection = lazy(() => import('./components/sections/OnboardingSection'));
 const FounderAccessSection = lazy(() => import('./components/sections/FounderAccessSection'));
@@ -148,7 +146,7 @@ function LazySection({ id, children }: { id?: string; children: React.ReactNode 
   );
 }
 
-const ambientStars = Array.from({ length: 72 }, (_, index) => ({
+const ambientStars = Array.from({ length: 48 }, (_, index) => ({
   left: `${(index * 37.31) % 100}%`,
   top: `${(index * 61.73) % 100}%`,
   size: `${index % 9 === 0 ? 2 : index % 4 === 0 ? 1.5 : 1}px`,
@@ -384,24 +382,15 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             />
           ))}
         </div>
-        {/* Warm Studio Atmospheric Lighting — Champagne Gold pools + Molten Ruby embers + Petroleum Teal accents on Gloss Piano Black */}
-        <div className="absolute left-1/2 top-[-20rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.12] via-[#FFB800]/[0.06] to-transparent blur-[160px]" />
-        {/* Molten Ruby Kiln Core — Subsurface arousal and urgency pulse */}
-        <div className="absolute left-[55%] top-[-8rem] h-[48rem] w-[48rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#E53935]/[0.07] via-[#C62828]/[0.03] to-transparent blur-[180px]" />
-        <div className="absolute right-[-14rem] top-[30rem] h-[50rem] w-[50rem] rounded-full bg-[#00B8D4]/[0.05] blur-[180px]" />
-        <div className="absolute left-[-14rem] top-[90rem] h-[50rem] w-[50rem] rounded-full bg-amber-500/[0.06] blur-[180px]" />
-        {/* Deep Crimson Horizon pool */}
-        <div className="absolute left-[30%] top-[140rem] h-[42rem] w-[42rem] rounded-full bg-[#D50032]/[0.04] blur-[190px]" />
-        <div className="absolute right-[-10rem] top-[170rem] h-[45rem] w-[45rem] rounded-full bg-[#00B8D4]/[0.04] blur-[180px]" />
-        <div className="absolute left-1/2 top-[260rem] h-[55rem] w-[55rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.08] via-[#E53935]/[0.04] to-transparent blur-[180px]" />
+        {/* Atmosphere: three restrained light pools on piano black. */}
+        <div className="absolute left-1/2 top-[-20rem] h-[65rem] w-[65rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-500/[0.10] via-[#FFB800]/[0.05] to-transparent blur-[160px]" />
+        <div className="absolute right-[-14rem] top-[40rem] h-[50rem] w-[50rem] rounded-full bg-[#00B8D4]/[0.04] blur-[180px]" />
+        <div className="absolute left-[-14rem] top-[140rem] h-[50rem] w-[50rem] rounded-full bg-amber-500/[0.05] blur-[180px]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,transparent_20%,#000000_85%)]" />
-        <div className="absolute inset-0 opacity-[0.02] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
-      <ExperienceShell />
-
-      <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 shadow-[0_10px_35px_rgba(0,0,0,0.7)] backdrop-blur-2xl" aria-label="Main navigation">
-        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black shadow-[0_1px_15px_rgba(255,184,0,0.3),0_1px_25px_rgba(229,57,53,0.15)]">
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-amber-400/20 bg-[#14100C]/85 backdrop-blur-xl" aria-label="Main navigation">
+        <div className="flex min-h-7 items-center justify-center gap-3 border-b border-amber-400/30 bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-black">
           <span>Founding Artist Beta — working software, still being refined</span>
           <span className="opacity-40">•</span>
           <a href="/passport" className="underline font-extrabold decoration-black/40 underline-offset-2 hover:decoration-black">
@@ -409,14 +398,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           </a>
         </div>
         <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
-          <a href="#home" className="text-[15px] font-black tracking-[-0.025em] text-white transition-all hover:text-[#FFB800] hover:[text-shadow:0_0_15px_rgba(255,184,0,0.7)]" aria-label="indii.music home">
+          <a href="#home" className="text-[15px] font-black tracking-[-0.025em] text-white transition-all hover:text-[#FFB800]" aria-label="indii.music home">
             indii.music
           </a>
 
           <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/50 md:flex">
-            <a href="/passport" className="py-2 text-[#FFB800] hover:text-[#FFB800]/80 font-bold transition-colors">
-              Business Audit
-            </a>
             <a href="#capabilities" className="py-2 transition-colors hover:text-white">
               Release lifecycle
             </a>
@@ -431,7 +417,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 Thesis
               </button>
             )}
-            <a href="#founder-access" className="py-2 font-bold text-[#FFB800] [text-shadow:0_0_10px_rgba(255,184,0,0.5)] transition-colors hover:text-amber-300">
+            <a href="#founder-access" className="py-2 font-bold text-[#FFB800] transition-colors hover:text-amber-300">
               Founding Owner
             </a>
           </div>
@@ -451,7 +437,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               target={previewEnabled ? '_blank' : undefined}
               rel={previewEnabled ? 'noopener noreferrer' : undefined}
               onClick={() => trackPreview('nav')}
-              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-2.5 text-xs font-black text-black shadow-[0_0_20px_rgba(255,184,0,0.45),0_0_35px_rgba(229,57,53,0.25)] transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(255,184,0,0.65),0_0_45px_rgba(229,57,53,0.4)] md:px-5"
+              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-4 py-2.5 text-xs font-black text-black transition-all hover:brightness-110 md:px-5"
             >
               <span>{previewEnabled ? (loading ? 'Verifying…' : user ? 'Resume session' : 'Enter preview') : 'Get access'}</span>
               <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
@@ -490,10 +476,6 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           <ThesisSection setIsThesisOpen={setIsThesisOpen} />
         </LazySection>
       )}
-
-      <LazySection>
-        <StatsBand />
-      </LazySection>
 
       <LazySection id="legacy-shift">
         <LegacyComparison />

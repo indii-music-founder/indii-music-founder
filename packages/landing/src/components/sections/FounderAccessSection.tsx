@@ -33,7 +33,7 @@ export default function FounderAccessSection({ trackPreview }: FounderAccessSect
         <div className="grid gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-24">
           <motion.div initial={{ opacity: 0, y: 25 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}>
             <div className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.5)]">Founding Artist Beta / one-time software license</div>
-            <h2 className="text-6xl font-black leading-[0.85] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10rem]">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
               Founding Owner
               <span className="block text-[#FFB800] [text-shadow:0_0_45px_rgba(255,184,0,0.6)]">License.</span>
             </h2>

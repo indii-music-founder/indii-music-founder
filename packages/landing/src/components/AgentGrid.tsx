@@ -205,7 +205,7 @@ export default function AgentGrid() {
             </div>
           </div>
           <div>
-            <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.5rem]">
+            <h2 className="max-w-5xl text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
               Run the whole release.
               <span className="block text-amber-400">Keep the context connected.</span>
             </h2>

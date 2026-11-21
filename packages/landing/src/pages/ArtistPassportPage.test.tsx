@@ -231,8 +231,8 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     expect(generateBtn?.disabled).toBe(true);
 
     const goal1 = screen.getByText(/Improve royalty registration & collection tracking/i);
-    const goal2 = screen.getByText(/Grow fan base, streaming reach & direct-to-fan engagement/i);
-    const goal3 = screen.getByText(/Package catalog for film, TV & sync licensing opportunities/i);
+    const goal2 = screen.getByText(/Grow my fanbase and streaming audience/i);
+    const goal3 = screen.getByText(/Get my music ready for film, TV and sync licensing/i);
 
     // Select goal 1
     fireEvent.click(goal1);
@@ -391,9 +391,9 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
     const ctaLink = screen.getByText(/Claim Your Artist Passport & Enter Studio/i).closest('a');
     expect(ctaLink?.getAttribute('href')).toContain('source=founder_dm');
 
-    // Check Platform Guide & Wiki landing page bridge
-    expect(screen.getByText(/Explore Platform Guide & System Wiki/i)).toBeDefined();
-    const wikiLink = screen.getByText(/Explore Platform Guide & System Wiki/i).closest('a');
+    // Check the product-tour link back to the landing page
+    expect(screen.getByText(/See how indii.music works/i)).toBeDefined();
+    const wikiLink = screen.getByText(/See how indii.music works/i).closest('a');
     expect(wikiLink?.getAttribute('href')).toContain('from=passport');
     expect(wikiLink?.getAttribute('href')).toContain('source=founder_dm');
     expect(wikiLink?.getAttribute('href')).toContain('#studio-preview');
@@ -406,7 +406,7 @@ describe('ArtistPassportPage Component UI & Navigation Flow', () => {
       </MemoryRouter>
     );
 
-    const heroWikiLink = screen.getByText(/Explore Platform Guide & Wiki/i).closest('a');
+    const heroWikiLink = screen.getByText(/See how indii.music works/i).closest('a');
     expect(heroWikiLink).toBeDefined();
     expect(heroWikiLink?.getAttribute('href')).toContain('from=passport_hero');
     expect(heroWikiLink?.getAttribute('href')).toContain('source=tiktok_ad');

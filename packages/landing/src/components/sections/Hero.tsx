@@ -49,7 +49,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       <div
         className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[1100px] blur-[150px] opacity-85"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.14) 0%, rgba(229,57,53,0.07) 35%, rgba(0,184,212,0.05) 60%, transparent 75%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,184,0,0.12) 0%, rgba(0,184,212,0.04) 60%, transparent 75%)',
         }}
       />
 
@@ -75,7 +75,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
               }}
               className={`mr-[0.18em] inline-block last:mr-0 ${
                 word === 'music' || word === 'away.'
-                  ? 'text-[#FFB800] [text-shadow:0_0_45px_rgba(255,184,0,0.75)] font-black'
+                  ? 'text-[#FFB800] [text-shadow:0_0_40px_rgba(255,184,0,0.35)] font-black'
                   : ''
               }`}
             >
@@ -83,7 +83,7 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
                 <span className="relative inline-flex items-baseline" aria-hidden="true">
                   <span className="relative inline-block">
                     <motion.span
-                      className="absolute -top-[0.16em] left-[50%] -translate-x-1/2 text-[0.30em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
+                      className="absolute -top-[0.16em] left-[50%] -translate-x-1/2 text-[0.30em] font-black text-[#FFB800]"
                       animate={{ scale: [1, 1.2, 1], opacity: [0.85, 1, 0.85] }}
                       transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                     >
@@ -102,150 +102,73 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
           ))}
         </h1>
 
-        {/* Headline first, then the category explanation and canonical tagline. */}
+        {/* One promise, one explanation, one action. */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.62, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mt-5 flex flex-col gap-2 md:mt-6"
+          className="relative mt-6 max-w-3xl md:mt-8"
         >
-          <p className="text-lg font-black tracking-[-0.025em] text-white sm:text-xl md:text-2xl lg:text-3xl">
+          <p className="text-xl font-black tracking-[-0.025em] text-white md:text-2xl lg:text-3xl">
             The operating system for your music independence.
           </p>
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[0.22em] text-white/55">
-            <span className="font-bold text-white">{INDII_BRAND.name}</span>
-            <span aria-hidden="true" className="h-px w-7 bg-white/25" />
-            <span className="normal-case tracking-[0.16em]">{INDII_BRAND.tagline}</span>
+          <p className="mt-3 text-base font-medium leading-relaxed text-white/75 md:text-lg">
+            indii.music brings the business behind your music together—from planning and rights to distribution preparation, campaigns, and money.
           </p>
-        </motion.div>
+          <p className="mt-2 font-mono text-[11px] normal-case tracking-[0.16em] text-white/50">{INDII_BRAND.tagline}</p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.72, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative mt-7 grid gap-6 border-t border-white/15 pt-6 lg:grid-cols-[1.1fr_0.9fr] xl:gap-8"
-        >
-          {/* Left Column: Hero Manifesto & Gatekeeper Card */}
-          <div>
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
-              <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]" />
-              Run the business behind your music
-            </div>
-
-            <h2 className="mt-2 text-xl font-black tracking-tight text-white md:text-2xl lg:text-3xl">
-              One connected workspace. <span className="text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)]">Your direction.</span>
-            </h2>
-
-            <p className="mt-2.5 text-base font-medium leading-relaxed text-white/80 md:text-lg">
-              indii.music brings the business behind your music together—from planning and rights to distribution preparation, campaigns, and money.
-            </p>
-
-            {/* No More Gatekeepers / Handlers Card */}
-            <div className="mt-5 lacquer-card-gold relative overflow-hidden rounded-2xl p-5 md:p-6 shadow-[0_20px_60px_rgba(0,0,0,0.9)]">
-              <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.4)]">
-                  The Freedom Principle©
-                </span>
-                <span className="rounded-full bg-white/[0.04] px-3 py-1 font-mono text-[9px] font-bold text-amber-300/90 border border-amber-400/30">
-                  Artist-controlled workspace
-                </span>
-              </div>
-
-              <div className="mt-3.5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
-                  <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#2196F3] shadow-[0_0_8px_#2196F3]" />
-                    The release stays connected
-                  </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/70">
-                    Keep assets, rights, plans, campaigns, and financial records attached to the same project.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/60 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all hover:border-white/20">
-                  <div className="text-xs font-black uppercase tracking-wider text-white/90 flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
-                    Connected Intelligence©
-                  </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/70">
-                    Connected specialists help prepare the work while you remain the artist and decision-maker. Tell your brand manager your visual direction, and the art department already knows your guidelines.
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <a
+              href={previewHref}
+              target={previewEnabled ? '_blank' : undefined}
+              rel={previewEnabled ? 'noopener noreferrer' : undefined}
+              onClick={() => {
+                trackPreview('hero');
+                pulseHero(1);
+              }}
+              onMouseEnter={() => pulseHero(0.55)}
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-6 py-3.5 text-sm font-black text-black transition-all hover:brightness-110"
+            >
+              <span>
+                {previewEnabled
+                  ? founder
+                    ? 'Enter Founder Preview'
+                    : 'Enter indii.music'
+                  : 'Get Founding Artist access'}
+              </span>
+              <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+            </a>
+            <a
+              href={getStudioUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackPreview('hero_login')}
+              className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3.5 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+            >
+              Log in
+            </a>
+            <a
+              href="#studio-preview"
+              onClick={(e) => {
+                e.preventDefault();
+                trackPreview('hero_watch_video');
+                setIsVideoModalOpen(true);
+              }}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 px-2 py-3.5 text-sm font-bold text-white/75 transition-colors hover:text-white"
+            >
+              <Play size={13} fill="currentColor" />
+              See how indii.music works
+            </a>
           </div>
 
-          {/* Right Column: Primary CTAs & Product Status */}
-          <div className="lacquer-card relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 md:p-6 shadow-[0_25px_70px_rgba(0,0,0,0.95)]">
-            <div className="absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-            <div>
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[#FFB800]">
-                <span className="h-2 w-2 rounded-full bg-[#00C853] shadow-[0_0_10px_#00C853]" />
-                Working software / Founding Artist Beta
-              </div>
-              <p className="mt-2.5 text-sm md:text-base text-white/90 leading-relaxed">
-                Join the waitlist for working software that is still being refined with independent artists.
-              </p>
-
-              <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                <a
-                  href={previewHref}
-                  target={previewEnabled ? '_blank' : undefined}
-                  rel={previewEnabled ? 'noopener noreferrer' : undefined}
-                  onClick={() => {
-                    trackPreview('hero');
-                    pulseHero(1);
-                  }}
-                  onMouseEnter={() => pulseHero(0.55)}
-                  className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FFB800] to-[#E65100] px-5 py-3 text-xs md:text-sm font-black text-black shadow-[0_0_28px_rgba(255,184,0,0.48),0_0_45px_rgba(229,57,53,0.28)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(255,184,0,0.7),0_0_55px_rgba(229,57,53,0.45)]"
-                >
-                  <span>
-                    {previewEnabled
-                      ? founder
-                        ? 'Enter Founder Preview'
-                        : 'Enter indii.music'
-                      : 'Get Founding Artist access'}
-                  </span>
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
-                </a>
-                <a
-                  href={getStudioUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackPreview('hero_login')}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-5 py-3 text-xs md:text-sm font-bold text-white shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all hover:border-amber-400/50 hover:text-amber-300"
-                >
-                  Log in
-                </a>
-                <a
-                  href="#studio-preview"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    trackPreview('hero_watch_video');
-                    setIsVideoModalOpen(true);
-                  }}
-                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-xs md:text-sm font-bold text-white/80 backdrop-blur-md transition-all hover:border-[#FFB800]/50 hover:bg-white/[0.06] hover:text-white cursor-pointer"
-                >
-                  <Play size={13} fill="currentColor" />
-                  See how indii.music works
-                </a>
-              </div>
-            </div>
-
-            <div className="mt-6 border-t border-white/10 pt-3.5">
-              <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
-                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <span className="block font-black text-white [text-shadow:0_0_8px_rgba(255,255,255,0.4)]">Keep</span> Your rights
-                </div>
-                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <span className="block font-black text-[#FFB800] [text-shadow:0_0_8px_rgba(255,184,0,0.5)]">0%</span> Royalty Cut
-                </div>
-                <div className="rounded-xl bg-black/70 p-2 text-white/80 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <span className="block font-black text-[#00C853] [text-shadow:0_0_8px_rgba(0,200,83,0.5)]">Live</span> Working beta
-                </div>
-              </div>
-            </div>
-          </div>
+          <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
+            <span className="h-2 w-2 rounded-full bg-[#00C853]" aria-hidden="true" />
+            <span>Working software / Founding Artist Beta</span>
+            <span aria-hidden="true" className="text-white/25">·</span>
+            <span>Keep your rights</span>
+            <span aria-hidden="true" className="text-white/25">·</span>
+            <span>0% royalty cut</span>
+          </p>
         </motion.div>
 
         {/* Live Studio Surface / Hero Screenshot Carousel */}

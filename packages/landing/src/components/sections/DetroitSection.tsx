@@ -41,7 +41,7 @@ export default function DetroitSection() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.055em] text-white md:text-7xl lg:text-[7rem]">
+          <h2 className="max-w-5xl text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Built in Detroit for your work
             <span className="block text-[#FFB800] [text-shadow:0_0_35px_rgba(255,184,0,0.5)]">behind the music scene.</span>
           </h2>

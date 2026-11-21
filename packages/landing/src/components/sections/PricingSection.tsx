@@ -93,7 +93,7 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
           className="mx-auto max-w-4xl text-center"
         >
           <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-amber-400">Founding Artist Beta pricing</div>
-          <h2 className="mt-6 text-5xl font-black leading-[0.95] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl">
+          <h2 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Choose the stage that fits
             <span className="block text-amber-400 [text-shadow:0_0_35px_rgba(255,184,0,0.4)]">your career now.</span>
           </h2>
@@ -214,67 +214,9 @@ export default function PricingSection({ onPlanSelect }: PricingSectionProps) {
             );
           })}
         </div>
-        <div className="relative mt-10 overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/[0.07] via-[#0a0805]/95 to-black/95 p-6 shadow-[0_20px_60px_rgba(255,184,0,0.08)] md:p-8">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] specular-line-gold" />
-          <div className="grid gap-6 md:grid-cols-[0.9fr_1.6fr] md:items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800]" aria-hidden="true" />
-                Term Commitments & Savings
-              </div>
-              <p className="mt-4 text-2xl font-black tracking-tight text-white md:text-3xl">
-                Monthly, quarterly, six-month, or annual.
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-white/65">
-                Pay upfront to lock in deeper beta discounts — click a term to preview your exact upfront savings above.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {([
-                { id: 'quarterly', period: 'Quarterly', pct: '15% OFF', discount: 'About 15% off the first 3 months', highlight: false, tag: '3-month lock' },
-                { id: 'six-month', period: 'Six-month', pct: '30% OFF', discount: 'About 30% off the first 6 months', highlight: false, tag: '6-month lock' },
-                { id: 'annual', period: 'Annual', pct: '50% OFF', discount: '50% off the first year', highlight: true, tag: 'Best upfront value' },
-              ] as const).map((term) => {
-                const active = billingCycle === term.id;
-                return (
-                  <button
-                    key={term.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setBillingCycle(term.id)}
-                    className={`group relative flex flex-col justify-between rounded-xl border p-4 text-left transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FFB800] ${
-                      active
-                        ? 'border-[#FFB800] bg-gradient-to-b from-amber-500/20 to-amber-500/[0.05] shadow-[0_0_28px_rgba(255,184,0,0.22)]'
-                        : term.highlight
-                          ? 'border-amber-400/50 bg-amber-500/[0.09] hover:border-[#FFB800] hover:bg-amber-500/[0.14]'
-                          : 'border-white/15 bg-white/[0.03] hover:border-amber-400/50 hover:bg-white/[0.06]'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-white">{term.period}</span>
-                        {term.highlight && (
-                          <span className="rounded-full bg-[#FFB800] px-2 py-0.5 font-mono text-[8px] font-black uppercase tracking-[0.14em] text-black">
-                            Half off
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-3 text-2xl font-black tracking-tight text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.3)]">
-                        {term.pct}
-                      </div>
-                    </div>
-                    <div className="mt-2 font-mono text-[10px] uppercase leading-snug tracking-[0.12em] text-amber-200/85">
-                      {term.discount}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
         <div className="mt-6 flex flex-col gap-3 text-xs leading-relaxed text-white/40 md:flex-row md:items-start md:justify-between">
           <p className="max-w-2xl">
-            These are introductory beta prices and may change after real operating costs are measured. Select a billing rhythm above to see the total charge
+            These are introductory beta prices and may change after real operating costs are measured. Select a billing schedule above to see the total charge
             and approximate monthly equivalent now. Prepaid discounts apply only to the first term; subsequent terms renew at the regular price shown. Totals are rounded to whole dollars, before applicable tax.
           </p>
           <p className="max-w-lg md:text-right">

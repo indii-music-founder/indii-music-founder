@@ -50,7 +50,7 @@ export default function ThesisSection({ setIsThesisOpen }: ThesisSectionProps) {
           className="mx-auto max-w-6xl py-20 text-center"
         >
           <Film size={28} className="mx-auto mb-8 text-[#FFB800] drop-shadow-[0_0_25px_rgba(255,184,0,0.9)]" />
-          <h2 className="text-6xl font-black uppercase leading-[0.82] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10.5rem]">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Read the
             <span className="block text-[#FFB800] [text-shadow:0_0_55px_rgba(255,184,0,0.7)]">argument.</span>
           </h2>

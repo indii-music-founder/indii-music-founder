@@ -58,10 +58,6 @@ vi.mock('./lib/previewAccess', () => ({
   isFounderPreviewEnabled: () => false,
 }));
 
-vi.mock('./components/ExperienceShell', () => ({
-  default: () => null,
-}));
-
 // framer-motion's whileInView and the page's LazySection both use
 // IntersectionObserver. jsdom 26 ships its own implementation; force the
 // controllable stub so the deferred-sections contract is deterministic.
@@ -117,7 +113,6 @@ describe('home page preservation (founder mode)', () => {
       import('./components/LegacyComparison'),
       import('./components/sections/DetroitSection'),
       import('./components/sections/ThesisSection'),
-      import('./components/sections/StatsBand'),
       import('./components/sections/PrinciplesSection'),
       import('./components/sections/OnboardingSection'),
       import('./components/sections/FounderAccessSection'),
@@ -152,7 +147,7 @@ describe('home page preservation (founder mode)', () => {
       // Modules are pre-warmed in beforeAll, so this resolves quickly.
       for (let i = 0; i < 40; i++) {
         const markers = container.querySelectorAll('[data-system-section]').length;
-        if (markers >= 14) break; // hero, waitlist, footer + the 11 deferred sections
+        if (markers >= 13) break; // hero, waitlist, footer + the 10 deferred sections
         await new Promise((resolve) => setTimeout(resolve, 50));
       }
     });
@@ -184,20 +179,17 @@ describe('home page preservation (founder mode)', () => {
     expect(normalized(text)).toContain(normalized('Run your music career without giving $ıt away.'));
     expect(text).toContain('The operating system for your music independence.');
     expect(text).toContain('music business at the speed of you');
-    expect(text).toContain('Run the business behind your music');
-    expect(text).toContain('One connected workspace.');
     expect(text).toContain('Get Founding Artist access');
     expect(text).toContain('Log in');
     expect(text).toContain('See how indii.music works');
     expect(text).toContain('Working software / Founding Artist Beta');
+    expect(text).toContain('Keep your rights');
+    expect(text).toContain('0% royalty cut');
     // The "$ıt" wordplay must survive intact.
     expect(text).toContain('ıt');
     // The public page must not revive unsupported legacy promises.
     await revealSections();
     const revealed = container.textContent ?? '';
-    expect(revealed).toContain('The Freedom Principle');
-    expect(revealed).toContain('Keep Your rights');
-    expect(revealed).toContain('0% Royalty Cut');
     expect(revealed).not.toContain('Distribution is the last gatekeeper standing');
     expect(revealed).not.toContain('Direct Distribution Pipeline');
     expect(revealed).not.toContain('No Handlers. 24 Specialists.');
@@ -226,16 +218,11 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Read the');
     expect(text).toContain('argument.');
     expect(text).toContain('Launch cinematic thesis');
-    expect(text).toContain('One workspace');
-    expect(text).toContain('Connected work');
-    expect(text).toContain('Shared project context');
     expect(text).toContain('Artist Review');
-    expect(text).toContain('0% royalty share');
     expect(text).toContain('Stop explaining your brand');
     expect(text).toContain('to generic software.');
     expect(text).toContain('Your Living Master Directive');
     expect(text).toContain('Your 23-Piece Dedicated Team');
-    expect(text).toContain('Instant Brand Sync');
     expect(text).toContain('Run the whole release.');
     expect(text).toContain('Keep the context connected.');
     expect(text).toContain('One direction.');
@@ -280,7 +267,6 @@ describe('home page preservation (founder mode)', () => {
       'waitlist',
       'detroit',
       'thesis',
-      'stats',
       'legacy',
       'capabilities',
       'overlooked-work',
@@ -339,10 +325,6 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('$22');
     expect(text).toContain('$55');
     expect(text).toContain('$110');
-    expect(text).toContain('Monthly, quarterly, six-month, or annual.');
-    expect(text).toContain('About 15% off the first 3 months');
-    expect(text).toContain('About 30% off the first 6 months');
-    expect(text).toContain('50% off the first year');
     expect(text).toContain('checkout remains closed until plan entitlements are verified');
     expect(text).toContain('Purchased extra capacity will not expire');
     expect(container.querySelector('[role="group"][aria-label="Billing schedule"]')).not.toBeNull();

@@ -17,13 +17,6 @@ export interface PassportSingularityHeroProps {
   onAnchorElement: (el: HTMLDivElement | null) => void;
 }
 
-const ORBITAL_SIGNALS = [
-  { label: 'MLC · Mechanicals', angleClass: '-left-4 top-6 lg:-left-20 lg:top-8', dot: 'bg-[#FFB800]' },
-  { label: 'PRO · Splits & Cues', angleClass: '-right-4 top-8 lg:-right-20 lg:top-10', dot: 'bg-[#00F0FF]' },
-  { label: 'ISRC · Master Rights', angleClass: '-left-6 top-[44%] lg:-left-24 lg:top-[42%]', dot: 'bg-[#FE2E9A]' },
-  { label: 'Sync · Release Prep', angleClass: '-right-6 top-[44%] lg:-right-24 lg:top-[42%]', dot: 'bg-[#FFB800]' },
-] as const;
-
 export default function PassportSingularityHero({
   entry,
   referralQuery,
@@ -132,20 +125,6 @@ export default function PassportSingularityHero({
             </linearGradient>
           </defs>
         </svg>
-
-        {ORBITAL_SIGNALS.map((sig) => (
-          <div
-            key={sig.label}
-            className={`absolute ${sig.angleClass} flex items-center gap-2 rounded-full border bg-black/75 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] backdrop-blur-md transition-all duration-500 ${
-              pullActive
-                ? 'scale-95 border-[#FFB800]/55 text-[#FFD700] shadow-[0_0_20px_rgba(255,184,0,0.22)]'
-                : 'border-white/15 text-[#9AA1B2]'
-            }`}
-          >
-            <span className={`h-1.5 w-1.5 rounded-full ${sig.dot}`} />
-            <span>{sig.label}</span>
-          </div>
-        ))}
       </div>
 
       {/* Top Eyebrow + WCAG 2.2.2 Motion Control */}
@@ -234,7 +213,7 @@ export default function PassportSingularityHero({
           onClick={onExploreGuide}
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/80 px-6 text-sm font-semibold text-white/90 backdrop-blur-md transition-all hover:border-[#FFB800]/55 hover:bg-black/95 hover:text-white focus-visible:outline-[3px] focus-visible:outline-[#FFB800] focus-visible:outline-offset-[3px] sm:w-auto"
         >
-          <span>Explore Platform Guide & Wiki</span>
+          <span>See how indii.music works</span>
           <Compass className="h-4 w-4 text-[#FFB800]" aria-hidden="true" />
         </Link>
       </div>

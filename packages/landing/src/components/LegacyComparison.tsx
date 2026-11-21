@@ -98,7 +98,7 @@ export default function LegacyComparison() {
             Four core breakthroughs
           </div>
 
-          <h2 className="mt-6 text-4xl font-black leading-tight tracking-[-0.05em] text-white sm:text-6xl md:text-7xl">
+          <h2 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Stop explaining your brand{' '}
             <span className="text-amber-400 [text-shadow:0_0_30px_rgba(255,184,0,0.35)]">to generic software.</span>
           </h2>

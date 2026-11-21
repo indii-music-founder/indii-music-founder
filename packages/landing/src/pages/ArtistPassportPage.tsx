@@ -710,9 +710,42 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
-              <PassportSharePanel answers={answers} assessmentId={assessmentId} />
-
               {entry && <aside className="rounded-xl border border-[#FFB800]/30 p-5"><h2 className="font-bold text-[#FFB800]">{entry.hook}</h2><p className="mt-2 text-sm text-white/70">{entry.answer} Your personalized priorities below come from your answers.</p></aside>}
+
+              {/* 3. Top 3 Actionable Next Steps */}
+              <div className="p-6 sm:p-8 rounded-2xl bg-[#070709] border border-[#1F222A] space-y-6">
+                <div>
+                  <span className="text-xs font-mono uppercase tracking-widest text-[#FFB800]">
+                    Your 3-Step Immediate Roadmap
+                  </span>
+                  <h3 className="text-xl font-bold text-white mt-1">Recommended Next Actions</h3>
+                  <p className="text-xs text-[#8A8F9E] mt-0.5">
+                    Now what? Start with your selected priorities, then review the next relevant business task.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {diagnosticReport.steps.map((st) => (
+                    <div key={st.stepNumber} className="p-4 rounded-xl bg-black/60 border border-[#1F222A] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-[#FFB800]">{`STEP 0${st.stepNumber}`}</span>
+                        <span
+                          className="text-[9px] font-mono px-2 py-0.5 rounded"
+                          style={{
+                            backgroundColor: `${st.departmentColor}15`,
+                            color: st.departmentColor,
+                            border: `1px solid ${st.departmentColor}30`,
+                          }}
+                        >
+                          {st.department}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-white">{st.title}</div>
+                      <p className="text-[11px] text-[#8A8F9E] leading-relaxed">{st.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* Diagnostic Cards Grid */}
               <div className="grid gap-6 md:grid-cols-2">
@@ -779,109 +812,7 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
-              {/* 3. Top 3 Actionable Next Steps */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-[#070709] border border-[#1F222A] space-y-6">
-                <div>
-                  <span className="text-xs font-mono uppercase tracking-widest text-[#FFB800]">
-                    Your 3-Step Immediate Roadmap
-                  </span>
-                  <h3 className="text-xl font-bold text-white mt-1">Recommended Next Actions</h3>
-                  <p className="text-xs text-[#8A8F9E] mt-0.5">
-                    Now what? Start with your selected priorities, then review the next relevant business task.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {diagnosticReport.steps.map((st) => (
-                    <div key={st.stepNumber} className="p-4 rounded-xl bg-black/60 border border-[#1F222A] space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono font-bold text-[#FFB800]">{`STEP 0${st.stepNumber}`}</span>
-                        <span
-                          className="text-[9px] font-mono px-2 py-0.5 rounded"
-                          style={{
-                            backgroundColor: `${st.departmentColor}15`,
-                            color: st.departmentColor,
-                            border: `1px solid ${st.departmentColor}30`,
-                          }}
-                        >
-                          {st.department}
-                        </span>
-                      </div>
-                      <div className="text-sm font-bold text-white">{st.title}</div>
-                      <p className="text-[11px] text-[#8A8F9E] leading-relaxed">{st.detail}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 4. How indii.music Helps - The Virtual Team */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-[#070709] border border-[#FFB800]/30 shadow-[0_0_30px_rgba(255,184,0,0.06)] space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#FFB800]" />
-                      <span className="text-xs font-mono uppercase tracking-widest text-[#FFB800]">
-                        Your Personal Artist Operations Team
-                      </span>
-                    </div>
-                    <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
-                      The indii Virtual Team Assigned To Your Catalog
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8A8F9E] mt-1 max-w-2xl">
-                      Based on your priorities, indii configures specialist AI agents to autonomously handle the administrative, technical, and marketing tasks major artists delegate to managers and attorneys.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-[#FFB800] bg-[#FFB800]/10 border border-[#FFB800]/20 px-3 py-1.5 rounded-lg whitespace-nowrap self-start sm:self-auto">
-                    23 Domain Specialists • Matched For You
-                  </span>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {diagnosticReport.matchedSpecialists.map((spec) => (
-                    <div
-                      key={spec.name}
-                      className="p-4 rounded-xl bg-black/70 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between space-y-3"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className="text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                            style={{
-                              backgroundColor: `${spec.color}18`,
-                              color: spec.color,
-                              border: `1px solid ${spec.color}35`,
-                            }}
-                          >
-                            {spec.badge || spec.department}
-                          </span>
-                          <span className="text-[10px] font-mono text-[#8A8F9E]">
-                            {spec.department}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                            <span
-                              className="w-2 h-2 rounded-full inline-block"
-                              style={{ backgroundColor: spec.color, boxShadow: `0 0 6px ${spec.color}` }}
-                            />
-                            {spec.name}
-                          </div>
-                          <div className="text-xs text-[#8A8F9E] mt-0.5 font-medium">{spec.role}</div>
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-white/5">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-white/50 block mb-1">
-                          Automates for you:
-                        </span>
-                        <p className="text-xs text-white/80 leading-relaxed font-normal">
-                          {spec.automates}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <PassportSharePanel answers={answers} assessmentId={assessmentId} />
 
               {/* 5. Lead Capture & Account Creation Handoff */}
               <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#0e0e12] to-[#070709] border border-[#FFB800]/30 shadow-[0_0_35px_rgba(255,184,0,0.1)] space-y-6">
@@ -1026,42 +957,18 @@ export default function ArtistPassportPage() {
                 </div>
               </div>
 
-              {/* 6. Platform Guide & System Blueprint Bridge */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#121318] via-[#090A0E] to-[#050507] border border-white/10 space-y-4 no-print">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/15 bg-white/5 text-[11px] font-mono text-[#8A8F9E] uppercase tracking-wider">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#FFB800]" />
-                    <span>Platform Guide & System Blueprint</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-[#8A8F9E]">
-                    System Architecture • Free Tools
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                    Explore the Complete indii.music System Wiki & Architecture
-                  </h3>
-                  <p className="text-sm text-[#8A8F9E] leading-relaxed max-w-2xl">
-                    Take your time. Read our comprehensive platform documentation, inspect our 0% royalty guarantee, explore the live studio preview, and see how our 23 AI specialist agents coordinate your release operations.
-                  </p>
-                </div>
-
-                <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                  <Link
-                    to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#studio-preview`}
-                    onClick={() => trackPassportEvent('freebie_clicked', { cta: 'platform_wiki_explored' }, assessmentId)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 hover:border-[#FFB800]/50 transition-all group"
-                  >
-                    <span>Explore Platform Guide & System Wiki</span>
-                    <ArrowRight className="w-4 h-4 text-[#FFB800] transition-transform group-hover:translate-x-1" />
-                  </Link>
-
-                  <span className="text-xs font-mono text-[#8A8F9E]">
-                    Zero sign-up required to explore
-                  </span>
-                </div>
-              </div>
+              {/* 5. Quiet pointer to the product tour (replaces the old wiki promo block) */}
+              <p className="text-center text-sm text-[#8A8F9E] no-print">
+                Want to see the studio first?{' '}
+                <Link
+                  to={`/${referralQuery}${referralQuery.includes('?') ? '&' : '?'}from=passport${assessmentId ? `&assessmentId=${encodeURIComponent(assessmentId)}` : ''}#studio-preview`}
+                  onClick={() => trackPassportEvent('freebie_clicked', { cta: 'platform_wiki_explored' }, assessmentId)}
+                  className="font-semibold text-white underline decoration-[#FFB800]/60 underline-offset-4 transition-colors hover:text-[#FFB800]"
+                >
+                  See how indii.music works
+                </Link>
+                . No sign-up needed.
+              </p>
             </motion.div>
           )}
 

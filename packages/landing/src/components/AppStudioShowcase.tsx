@@ -166,7 +166,7 @@ export default function AppStudioShowcase() {
             <Zap size={13} />
             Inside the Workspace
           </div>
-          <h2 className="mt-6 text-4xl font-black leading-tight tracking-[-0.045em] text-white sm:text-6xl md:text-7xl">
+          <h2 className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Start with finished music. <br />
             <span className="text-amber-400">Leave with a campaign.</span>
           </h2>

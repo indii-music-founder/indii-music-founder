@@ -30,20 +30,10 @@ export interface RecommendedStep {
   departmentColor: string;
 }
 
-export interface MatchedSpecialist {
-  name: string;
-  role: string;
-  department: string;
-  color: string;
-  automates: string;
-  badge: string;
-}
-
 export interface DiagnosticReport {
   rights: RightsObservation;
   release: ReleaseObservation;
   steps: RecommendedStep[];
-  matchedSpecialists: MatchedSpecialist[];
 }
 
 export const CAREER_STAGES = [
@@ -136,19 +126,19 @@ export const RELEASE_STATUS_OPTIONS = [
 
 export const GOAL_OPTIONS = [
   { id: 'Improve royalty registration and tracking', label: 'Improve royalty registration & collection tracking' },
-  { id: 'Grow audience and fan engagement', label: 'Grow fan base, streaming reach & direct-to-fan engagement' },
-  { id: 'Plan and market a release', label: 'Plan & coordinate an upcoming multi-week release campaign' },
-  { id: 'Organize rights, collaborators, and splits', label: 'Organize collaborator split sheets & legal contracts' },
-  { id: 'Pursue sync licensing opportunities', label: 'Package catalog for film, TV & sync licensing opportunities' },
-  { id: 'Create promotional content', label: 'Generate 9:16 vertical videos, teasers & social promo assets' },
-  { id: 'Better understand music-business finances', label: 'Understand music business finances & master profitability' },
-  { id: 'Claim uncollected black-box royalties', label: 'Claim uncollected mechanicals sitting in distributor black-box pools' },
-  { id: 'Establish authoritative metadata registry', label: 'Establish verified ISRC, ISWC & UPC metadata records before DSP delivery' },
-  { id: 'Audit master audio for streaming compliance', label: 'Audit sound master for loudness (-14 LUFS) & true peak compliance' },
-  { id: 'Automate co-producer split payouts', label: 'Automate royalty waterfall payouts for co-producers & bandmates' },
-  { id: 'File official copyright registrations', label: 'Register sound recordings & lyrics with the U.S. Copyright Office (eCO)' },
-  { id: 'Build editorial pitch & EPK materials', label: 'Build an Electronic Press Kit (EPK) & pitch materials for playlist editors' },
-  { id: 'Clear samples and prevent copyright strikes', label: 'Document beat/sample clearance paper trails to avoid automated takedowns' },
+  { id: 'Grow audience and fan engagement', label: 'Grow my fanbase and streaming audience' },
+  { id: 'Plan and market a release', label: 'Plan and run a release campaign' },
+  { id: 'Organize rights, collaborators, and splits', label: 'Organize collaborator splits and contracts' },
+  { id: 'Pursue sync licensing opportunities', label: 'Get my music ready for film, TV and sync licensing' },
+  { id: 'Create promotional content', label: 'Make short vertical videos and promo assets' },
+  { id: 'Better understand music-business finances', label: 'Understand my music income and expenses' },
+  { id: 'Claim uncollected black-box royalties', label: 'Find royalties I may not have collected yet' },
+  { id: 'Establish authoritative metadata registry', label: 'Get song and release IDs in order before delivery (ISRC, UPC)' },
+  { id: 'Audit master audio for streaming compliance', label: 'Check that my masters meet streaming loudness standards' },
+  { id: 'Automate co-producer split payouts', label: 'Pay co-producers and bandmates their share' },
+  { id: 'File official copyright registrations', label: 'Register my recordings and lyrics with the U.S. Copyright Office' },
+  { id: 'Build editorial pitch & EPK materials', label: 'Build a press kit and pitch materials for playlist editors' },
+  { id: 'Clear samples and prevent copyright strikes', label: 'Keep sample clearance records to avoid takedowns' },
 ];
 
 export const INITIAL_ANSWERS: PassportAnswers = {
@@ -259,94 +249,6 @@ export function evaluatePassport(answers: PassportAnswers): DiagnosticReport {
   addStep('Choose one achievable business task', 'Set a task, an owner, and a completion date based on your current priorities.', 'Conductor Orchestrator');
   addStep('Organize your project records', 'Gather credits, agreements, assets, and release links in one place before starting the next task.', 'Conductor Orchestrator');
 
-  // 4. Specialist Team Mapping (Dynamically tailored to chosen goals & career stage)
-  const specialistPool: MatchedSpecialist[] = [
-    {
-      name: 'Publishing Administrator',
-      role: 'Dual-Royalty & MLC Verification',
-      department: 'Publishing & Royalties',
-      color: '#8BC34A',
-      automates: 'Scans CMO and MLC registries to ensure mechanical and performance royalties never leak into unclaimed pools.',
-      badge: 'RIGHTS PROTECTION',
-    },
-    {
-      name: 'Sonic Director',
-      role: 'True Peak & Dynamic Range Verification',
-      department: 'Audio Engineering',
-      color: '#FFB800',
-      automates: 'Inspects WAV masters for inter-sample clipping (-1.0 dBTP), dynamic range, and -14 LUFS DSP streaming standards.',
-      badge: 'AUDIO COMPLIANCE',
-    },
-    {
-      name: 'Distribution Chief',
-      role: 'DDEX Metadata & Store Packaging',
-      department: 'Distribution Operations',
-      color: '#2196F3',
-      automates: 'Validates ISRC/UPC check digits and packages release metadata into standard DDEX feeds for global DSP delivery.',
-      badge: 'CATALOG DELIVERY',
-    },
-    {
-      name: 'Legal Counsel',
-      role: 'Collaborator Splits & Contract Review',
-      department: 'Legal & Business Affairs',
-      color: '#B0BEC5',
-      automates: 'Drafts binding split sheets and work-for-hire agreements, mathematically locking co-writer shares to 100.00%.',
-      badge: 'LEGAL INFRASTRUCTURE',
-    },
-  ];
-
-  if (answers.goals.includes('Pursue sync licensing opportunities')) {
-    specialistPool.push({
-      name: 'Sync Licensing Specialist',
-      role: 'Instrumental & Stems Packaging',
-      department: 'Sync & Media Licensing',
-      color: '#00E5FF',
-      automates: 'Builds one-stop clearance packages with clean instrumentals, broadcast wav metadata, and verified master ownership.',
-      badge: 'SYNC LICENSING',
-    });
-  }
-
-  if (answers.goals.includes('Create promotional content')) {
-    specialistPool.push({
-      name: 'Creative Director',
-      role: '9:16 Vertical Video & Teasers',
-      department: 'Visual & Social Media',
-      color: '#00FF66',
-      automates: 'Translates 16:9 studio footage into high-converting 9:16 vertical cutdowns and Spotify Canvas loops.',
-      badge: 'VIRAL CONTENT',
-    });
-  }
-
-  if (
-    answers.goals.includes('Better understand music-business finances') ||
-    answers.goals.includes('Automate co-producer split payouts')
-  ) {
-    specialistPool.push({
-      name: 'Financial Comptroller',
-      role: 'Royalty Waterfall & Payout Automation',
-      department: 'Finance & Accounting',
-      color: '#FF7043',
-      automates: 'Calculates recouped master advances and routes net streaming royalties into automated collaborator split payouts.',
-      badge: 'FINANCIAL ACCURACY',
-    });
-  }
-
-  if (
-    answers.goals.includes('Build editorial pitch & EPK materials') ||
-    answers.goals.includes('Grow audience and fan engagement')
-  ) {
-    specialistPool.push({
-      name: 'Campaign Publicist',
-      role: 'EPK & Curated Playlist Pitching',
-      department: 'Marketing & PR',
-      color: '#AB47BC',
-      automates: 'Synthesizes artist biography, press quotes, and sonic tags into pitch-ready dossiers for DSP editors and tastemakers.',
-      badge: 'EDITORIAL REACH',
-    });
-  }
-
-  const matchedSpecialists = specialistPool.slice(0, 6);
-
-  return { rights, release, steps, matchedSpecialists };
+  return { rights, release, steps };
 }
 

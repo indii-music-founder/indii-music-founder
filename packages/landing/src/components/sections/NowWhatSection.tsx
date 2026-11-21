@@ -210,7 +210,7 @@ export default function NowWhatSection() {
               </p>
               <h2
                 id="now-what-heading"
-                className="mt-2 text-5xl font-black leading-[0.95] tracking-[-0.05em] text-[#FFB800] [text-shadow:0_0_40px_rgba(255,184,0,0.45)] sm:text-6xl md:text-7xl"
+                className="mt-2 text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white"
               >
                 Now what?
               </h2>
