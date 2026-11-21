@@ -1,0 +1,97 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M7ZRAMTPEXZ4BNHDXTMWAFPV",
+  "session_id": "01a1f932-d184-7420-ba93-33b49c6c8a97",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-21T19:11:31.387539Z",
+  "branch": "fix/boardroom-mcp-sse-e2e",
+  "checkpoints_count": 13,
+  "save_step_count": 13,
+  "files_touched": [
+    ".agent/capabilities/catalog.json",
+    ".agent/capabilities/catalog.md",
+    ".agent/capabilities/registry.json",
+    ".agent/workflows/pp.md",
+    "AGENTS.md",
+    "e2e/fixtures/auth.ts",
+    "e2e/mcp-a2a-routing.spec.ts",
+    "e2e/mcp-boardroom-collaboration.spec.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "a2d777947fc0",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 421394,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 22998016,
+    "output_tokens": 30459,
+    "api_call_count": 162,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 523,
+    "layers": {
+      "betterleaks": 2,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 1675,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-codex-middle-2026-11-20T14:25:33.025193Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "middle"
+      },
+      "source": {
+        "agent": "codex",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "27c532c16433",
+      "timestamp": "2026-11-20T14:25:33.025193Z",
+      "native": {
+        "command": "/middle"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/middle",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-codex-go-2026-11-20T14:27:15.06095Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "go"
+      },
+      "source": {
+        "agent": "codex",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "5abd1e263af7",
+      "timestamp": "2026-11-20T14:27:15.06095Z",
+      "native": {
+        "command": "/go"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/go",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 13
+  }
+}
