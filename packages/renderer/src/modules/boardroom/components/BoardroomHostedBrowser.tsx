@@ -37,6 +37,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
     const [frame, setFrame] = useState('');
     const [url, setUrl] = useState(initialUrl);
     const lastPage = useRef(initialUrl);
+    const resumeId = useRef<string>();
     const [text, setText] = useState('');
     const [reader, setReader] = useState<BoardroomBrowserPage>();
     const [controller, setController] = useState<BrowserState['controller']>('artist');
@@ -176,6 +177,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                 socketRef.current = socket;
                 socket.binaryType = 'blob';
                 socket.onopen = () => {
+                    socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current, resumeId: resumeId.current }));
                     socket.send(JSON.stringify({ type: 'open', token, url: lastPage.current }));
                 };
                 socket.onmessage = event => {
@@ -205,6 +207,9 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                     }
                     const message = JSON.parse(event.data);
                     switch (message.type) {
+                        case 'session':
+                            if (typeof message.resumeId === 'string') resumeId.current = message.resumeId;
+                            break;
                         case 'state':
                             if (stateRef.current?.url !== message.url) {
                                 lastPage.current = message.url;
@@ -269,6 +274,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                     pendingFont.current?.reject(new Error('The live browser disconnected.'));
                     setReady(false);
                     setClosed(true);
+                    setError(previous => previous || 'The live browser disconnected. Reconnect to resume browsing.');
                     setError(previous => previous || 'The live browser disconnected. Reconnect to reopen the current address.');
                 };
             } catch {
@@ -286,6 +292,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
             unregisterDownload();
             unsubscribe();
             revoke();
+            connection?.close(1000);
             connection?.close();
             if (frameRef.current) URL.revokeObjectURL(frameRef.current);
             frameRef.current = '';

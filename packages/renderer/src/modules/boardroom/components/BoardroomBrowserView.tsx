@@ -49,6 +49,11 @@ interface BoardroomBrowserViewProps {
 
 const BoardroomHostedBrowser = lazy(() => import('./BoardroomHostedBrowser'));
 const BoardroomWebSearch = lazy(() => import('./BoardroomWebSearch'));
+const hostedEndpoint = import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true'
+    ? import.meta.env.DEV && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        ? 'ws://127.0.0.1:4245/boardroom'
+        : 'wss://boardroom-browser-148015878263.us-central1.run.app/boardroom'
+    : undefined;
 const hostedEndpoint = resolveBoardroomBrowserEndpoint({
     enabled: import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true',
     configuredEndpoint: import.meta.env.VITE_BOARDROOM_BROWSER_URL,

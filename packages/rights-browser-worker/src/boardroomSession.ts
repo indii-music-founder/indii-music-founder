@@ -49,6 +49,12 @@ export class BoardroomSession {
         executablePath: chromePath,
         chromiumSandbox: true,
         proxy: { server: proxy.url, bypass: '<-loopback>' },
+        args: [
+          '--disable-quic',
+          '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
+          // Use the Chromium namespace sandbox on Linux runtimes that prohibit setuid.
+          ...(process.platform === 'linux' ? ['--disable-setuid-sandbox'] : []),
+        ],
         args: ['--disable-quic', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp'],
       });
       const context = await browser.newContext({ viewport, serviceWorkers: 'block', acceptDownloads: true });
