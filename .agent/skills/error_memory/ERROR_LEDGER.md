@@ -1,7 +1,44 @@
+## 2026-11-20 Creative mission tool checks still expected an unrestricted prompt update
+
+- **Evidence:** The combined branch unit suite failed because `CoreTools.test.ts` expected `update_prompt` to succeed without a mission, and the tool summary still described a generic prompt write.
+- **Prevention:** Update tool declarations and unit tests when a tool gains a prerequisite. Exercise both refusal and success with the typed mission context, and assert that existing artist drafts are preserved.
+
+## 2026-11-20 Boardroom telemetry showed default values as live status
+
+- **Evidence:** ISSUE-1646. Three UI regressions found hard-coded model and quota claims, a governance decision built from an empty run list, and an active monitor badge on an idle feed.
+- **Prevention:** Read live metrics from the current run or service. Show unavailable values when the view has no source. Keep an empty observation distinct from a measured zero.
+
+## 2026-11-20 Workbench kept loading after failed artifact reads
+
+- **Evidence:** ISSUE-1635. The reader shared a null value for pending, failed, and empty results. Incoming Workbench targets did not select the artifact tab or file.
+- **Prevention:** Tie document results to the current selection and retry. Keep pending, failure, and empty states distinct, and discard results when the selection changes.
+
+## 2026-11-20 Boardroom auto-import replayed removed references
+
+- **Evidence:** ISSUE-1633. The deferred publisher captured a stale store snapshot, and reference removal only filtered the visible list.
+- **Prevention:** Read the current workspace after deferred loading. Merge automatic references inside one store update and honor session dismissal keys. Treat an explicit pin as a new user decision.
+
+## 2026-11-20 Merchandise property edits skipped undo and autosave
+
+- **Evidence:** ISSUE-1459. The editor updated Fabric properties and rendered the canvas without emitting the event used by history and autosave.
+- **Prevention:** Record the pre-edit state before committing an explicit property edit, then notify the canvas listeners and checkpoint the new state.
+
 ## 2026-11-20 Agent prompt redaction changed asset IDs and failed image tools started visual corrections
 
 - **Evidence:** App reports #936 and #937. The prompt sanitizer treated timestamp IDs as payment numbers. The visual evaluator admitted tool-name mentions and failed tool results without pixels.
 - **Prevention:** Preserve the documented identifier formats at the serialization boundary. Verify redaction with a prompt containing both IDs and payment text. Require a successful image receipt and loadable image bytes before proposing a correction. Recheck the originating turn before dispatching it.
+
+## 2026-11-20 Merchandise Focus Canvas reset collapsed panels
+
+- **Evidence:** ISSUE-1459 Run98. Focus mode overwrote panel visibility and reopened both panels on exit.
+- **Prevention:** Keep panel expansion as a user preference. Derive temporary visibility from focus mode and retain the exit control's identity.
+
+## 2026-11-20 Project Vault reported search failure on an empty project
+
+- **Files:** `packages/renderer/src/modules/files/FileDashboard.tsx` and `packages/renderer/src/core/store/slices/fileSystemSlice.ts`.
+- **Cause:** The vault rendered one filtered-empty message for all zero-row results and its icon-only view controls lacked accessible names.
+- **Fix:** Show separate loading, read error, first-use, and filtered-empty states. Keep the read error scoped to fetching file nodes and expose each view control's name and selection.
+- **Prevention:** Check whether a file query loaded and whether filters are active before choosing empty-state copy. Keep failed mutations separate from read failures.
 
 ## 2026-11-19 Boardroom Paid Judge Per Token, Overlay Hid Cost Approval, UI Timer Ended Live Replies, Handoff Reject No-Op, Missing Await Detached Timeout/Stop (PAID_CALL_IN_PER_TOKEN_EFFECT, FULLSCREEN_OVERLAY_ABOVE_AWAITED_MODAL, UI_TIMEOUT_SHORTER_THAN_SERVICE, TRISTATE_DECISION_AS_BOOLEAN, RETURN_WITHOUT_AWAIT_IN_TRY_FINALLY, STRING_ABORT_REASON_RENDERED_AS_ERROR)
 
@@ -17,6 +54,12 @@
 - **FIX:** settled-history key + 750ms debounce + `getState()` read for the judge; `core/zLayers.ts` scale (boardroom < sheet < modal < toast < tooltip) applied to the Boardroom, CostWarningModal and toasts, tooltip override removed; removed the UI stream timer (service timeout + `recoverInterruptedMessages` own it); `rejected` flag + `waitForHandoffDecision()` that exits on reject; web Emergency Abort calls `stopAgent()` and desktop gets a `resetAbort` "Resume Autonomy" control; `return await` in `generateContent`; `isUserCancellation()` + `errorText()` in `flowFailure.ts`, and `if (signal?.aborted) break;` in the swarm chunk loop.
 - **PREVENTION:** Never put a paid/network call in an effect whose deps change per token — key it on a settled value and debounce. Every full-screen surface and every awaited modal must come from one z-index scale. A UI-side timeout must never be shorter than the service timeout it mirrors, and must never persist state. Model user decisions as approved/rejected/pending, never one boolean. Inside `try/finally` always `return await`. Treat any thrown value (including strings) via a cancellation check on the run's signal before formatting an error.
 
+## 2026-11-20 Project sidebar used pointer-only controls and could retain an archived selection
+
+- **Cause:** Project rows handled click on a div and SVG icons handled secondary actions. Archive fallback could choose the first project even when it was the project just archived.
+- **Fix:** Use separate, named buttons. Move focus into the archive confirmation and back to the archive button on cancel. Resolve the fallback against current, unarchived projects after the status write succeeds.
+- **Prevention:** Use native controls for independently actionable parts of a row and resolve any fallback after the state change, using only eligible destinations.
+
 ## 2026-11-18 Mobile Remote Contact Audio Redo/Submit Races, Camera Viewfinder Play/Control/Recorder Lifecycle & GenerationMonitor Unmount/Timeout Cancellation Races (QUICK_CONTACT_AUDIO_PLAYBACK_AND_SUBMIT_LIFECYCLE, CAMERA_VIEWFINDER_PLAY_CONTROL_AND_RECORDER_LIFECYCLE, GENERATION_MONITOR_UNMOUNT_TIMEOUT_AND_CANCEL_RACES)
 
 - **SEVERITY:** High (re-recording a voice contact played the revoked first blob URL and left rejected `Audio.play()` stuck in Pause; double-tapping voice save could upload/create duplicate encounters or fire callbacks after unmount; `CameraViewfinderModal` left preview `play()` rejections unhandled, mutated torch/zoom across camera switches, ignored iOS `'denied'` motion permission resolutions, and locked recording controls on `MediaRecorder.onerror`; `GenerationMonitor` leaked a 90s timer, live response listener, and uncancelled paid command when unmounted mid-`sendCommand`, dropped `cancelCommand` rejections in its 90s timeout, and allowed a slow prior cancellation to clobber a newer generation's UI.)
@@ -30,6 +73,12 @@
   2. Added `retryPreviewPlay` with caught `play()` + clearing the tap-to-start error on success, guarded `applyControl` and `capture` with `isMountedRef` + `cameraGenerationRef`, checked `result !== 'granted'` in `requestHorizon`, reset recording state in `recorder.onerror`, and detached recorder handlers in `stopCamera`.
   3. Added `sendingRef`, `requestSeqRef`, post-`sendCommand` unmount cancellation (`cancelCommand` + immediate return), `try/catch` around timeout `cancelCommand`, stale-cancel isolation in `handleCancel`, `isMountedRef` guards across async callbacks, `role="alert"` on errors, explicit button types/labels, and `useReducedMotion()`.
 - **PREVENTION:** Always destroy and recreate cached `Audio` elements whenever their underlying `blob:` URL is revoked or replaced; guard every post-`await` side effect (`sendCommand`, `applyConstraints`, `cancelCommand`, `uploadFile`) with mount lifetime AND monotonic request/generation IDs; wrap every async `setTimeout` callback in `try/catch`; and treat `DeviceOrientationEvent.requestPermission()` non-`'granted'` resolutions the same as rejections.
+
+## 2026-11-20 Merchandise fallback could override navigation to other modules
+
+- **Cause:** The module router matched every unknown path and redirected to Merchandise while the app shell still had the old module mounted.
+- **Fix:** Limit the fallback to the module's route prefix. Route regressions run while the original module is mounted and verify the destination URL survives.
+- **Prevention:** Scope module-local redirects to routes owned by that module, including when the browser path and the shell's selected module update on separate renders.
 
 ## 2026-11-18 Boardroom E2E Mocks Drifted From Real Contracts & Roster Tools Blocked in Read-Only Boardroom (BOARDROOM_ROSTER_TOOLS_BLOCKED_READ_ONLY, E2E_MOCK_CONTRACT_DRIFT, E2E_TIMEOUT_BELOW_CLIENT_PACING, DEV_BUILD_DROPS_CONSOLE)
 

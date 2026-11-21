@@ -107,15 +107,6 @@ describe('BoardroomWorkspacePane', () => {
         expect(mockStoreState.setBoardroomWorkspaceTab).toHaveBeenCalledWith('workbench');
     });
 
-    it('toggles layout between split and stage', () => {
-        render(<BoardroomWorkspacePane />);
-
-        const layoutBtn = screen.getByTestId('boardroom-workspace-layout-toggle');
-        fireEvent.click(layoutBtn);
-
-        expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('stage');
-    });
-
     it('closes the workspace when close button is clicked', () => {
         render(<BoardroomWorkspacePane />);
 

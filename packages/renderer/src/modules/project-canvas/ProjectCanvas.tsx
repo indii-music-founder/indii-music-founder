@@ -77,6 +77,9 @@ export default function ProjectCanvas() {
     } = useProjectCanvas();
 
     const setModule = useStore(state => state.setModule);
+    const projectName = useStore(state =>
+        state.projects.find(project => project.id === state.currentProjectId)?.name?.trim()
+    );
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Pan / Drag State
@@ -512,7 +515,7 @@ export default function ProjectCanvas() {
             onDrop={handleDrop}
             tabIndex={0}
             role="application"
-            aria-label="Project Canvas Spatial Workspace"
+            aria-label={projectName ? `Project Canvas for ${projectName}` : 'Project Canvas Spatial Workspace'}
         >
             {/* Background Dot Grid */}
             <div
@@ -664,22 +667,27 @@ export default function ProjectCanvas() {
             </div>
 
             {/* Dual-Mode Workspace Switcher [Spatial Canvas | File Explorer] */}
-            <div className="absolute top-6 left-6 z-30 flex items-center gap-1 bg-zinc-900/90 backdrop-blur-md p-1 rounded-xl border border-zinc-800 shadow-2xl select-none">
-                <button
-                    data-testid="project-view-canvas"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 text-zinc-900 shadow-sm transition-all"
-                >
-                    <LayoutGrid size={14} />
-                    <span>Spatial Canvas</span>
-                </button>
-                <button
-                    data-testid="project-view-files"
-                    onClick={() => setModule('files')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all cursor-pointer"
-                >
-                    <FolderTree size={14} />
-                    <span>File Explorer</span>
-                </button>
+            <div className="absolute top-6 left-6 z-30 flex flex-col items-start gap-2">
+                <div className="flex w-fit items-center gap-1 bg-zinc-900/90 backdrop-blur-md p-1 rounded-xl border border-zinc-800 shadow-2xl select-none">
+                    <button
+                        data-testid="project-view-canvas"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-100 text-zinc-900 shadow-sm transition-all"
+                    >
+                        <LayoutGrid size={14} />
+                        <span>Spatial Canvas</span>
+                    </button>
+                    <button
+                        data-testid="project-view-files"
+                        onClick={() => setModule('files')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all cursor-pointer"
+                    >
+                        <FolderTree size={14} />
+                        <span>File Explorer</span>
+                    </button>
+                </div>
+                <h1 className="max-w-56 truncate rounded-lg bg-zinc-900/90 px-3 py-1.5 text-sm font-semibold text-zinc-200" title={projectName || undefined}>
+                    {projectName || 'Project Canvas'}
+                </h1>
             </div>
 
             {/* Floating Toolbar (Top) */}

@@ -1,6 +1,10 @@
 # Agent delivery through Entire branches
 
-Coding agents publish locally validated work on task branches through Entire. The team handles review, remote CI, and merging to `main`.
+Coding agents publish locally validated work on task branches through Entire. The repository owner handles remote CI and merging to `main`.
+
+## Solo-owner review policy
+
+All coding agents publish routine changes without GitHub review requests or required human or automated code review. Review is optional when the owner asks for it. Keep local validation and existing CI workflows in place.
 
 ## Start from current main
 

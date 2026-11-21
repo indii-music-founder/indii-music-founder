@@ -528,7 +528,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     Snap to Grid ON (Cmd+;)
                 </div>
             )}
-            <canvas ref={canvasRef} className="shadow-2xl" />
+            <canvas ref={canvasRef} aria-label="Merchandise design preview" role="img" className="shadow-2xl" />
         </div>
     );
 };

@@ -651,7 +651,7 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 
 All coding agents (**Claude Code**, **Codex**, **Antigravity/Gemini**) must use **Entire** (`https://entire.com/gh/indii-music-founder/indii-music-founder`) instead of GitHub for Git operations, session/checkpoint capture, historical search, and code trails:
 
-- **Primary Remote (`origin`):** `entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder` (set via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`). Fetch and publish through `origin`. Follow the [shared delivery policy](.agent/workflows/branch-safety.md), which requires branch publication through Entire and leaves review, remote CI, and merging to the team. The same policy applies to Codex, Claude Code, and Gemini/Antigravity.
+- **Primary Remote (`origin`):** `entire://aws-us-east-2.entire.io/gh/indii-music-founder/indii-music-founder` (set via `entire repo remote add origin --override /gh/indii-music-founder/indii-music-founder`). Fetch and publish through `origin`. Follow the [shared delivery policy](.agent/workflows/branch-safety.md), for publication, CI, and merging. Request code review only when the repository owner asks for it. The same policy applies to Codex, Claude Code, and Gemini/Antigravity.
 - **No Direct GitHub Agent Workflows:** Do not use `gh pr`, `gh issue`, or direct `github.com` remotes for coding agent workflows. Use Entire CLI equivalents instead:
   - `entire status` / `entire doctor` — verify Entire & agent hook health
   - `entire search --json --compact "<query>"` — search past checkpoints and session transcripts

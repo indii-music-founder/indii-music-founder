@@ -112,10 +112,36 @@ export const CoreTools = {
         };
     }),
 
-    update_prompt: wrapTool('update_prompt', async (args: { text: string }) => {
+    update_prompt: wrapTool('update_prompt', async (args: { text: string; aspectRatio?: string }, context) => {
+        const text = typeof args.text === 'string' ? args.text.trim() : '';
+        if (!text || text.length > 20_000) return toolError('Enter a prompt between 1 and 20,000 characters.', 'INVALID_PROMPT');
+        if (context?.boardroomExecution?.ownerAgentId !== 'creative' || context.isReadOnly) {
+            return toolError('An assigned Creative mission is required to stage an image draft.', 'BOARDROOM_CREATIVE_REQUIRED');
+        }
+
+        const { AspectRatioSchema } = await importWithRetry(() => import('@/modules/creative/video/schemas'));
+        const ratio = AspectRatioSchema.optional().safeParse(args.aspectRatio);
+        if (!ratio.success) return toolError('Choose a supported Image Studio aspect ratio.', 'INVALID_ASPECT_RATIO');
+
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const store = useStore.getState();
+        if (context.signal?.aborted || store.conversationMode !== 'boardroom'
+            || (context.projectId && context.projectId !== store.currentProjectId)) {
+            return toolError('The Boardroom mission is no longer active in this workspace.', 'BOARDROOM_MISSION_INACTIVE');
+        }
+        if ((store.creativePrompt ?? '').trim() && store.creativePrompt.trim() !== text) {
+            return toolError('Image Studio already has a draft. Share the suggested prompt in discussion so the artist can decide whether to replace it.', 'STUDIO_DRAFT_EXISTS');
+        }
+
+        store.setCreativePrompt(text);
+        if (ratio.data) store.setStudioControls({ aspectRatio: ratio.data });
+        store.setGenerationMode('image');
+        store.setViewMode('canvas');
+        store.openBoardroomModulePreview('creative');
         return {
-            text: args.text,
-            message: `Prompt updated to: "${args.text}"`
+            text,
+            aspectRatio: useStore.getState().studioControls.aspectRatio,
+            message: 'Image draft opened in Studio Preview for the artist to review.',
         };
     }),
 

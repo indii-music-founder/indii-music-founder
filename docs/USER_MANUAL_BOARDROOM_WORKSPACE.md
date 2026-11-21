@@ -11,21 +11,7 @@
 
 The **Boardroom Multi-View Workspace** transforms the Executive Boardroom from a conversational interface into an interactive command hub. Rather than switching between browser windows, external music portals, and internal studio tools, founders and artists can run live research, audit DSP releases, inspect generated legal and media assets, and view agent telemetry directly within the Boardroom.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────┐
-│ [← Back to Studio]   BOARDROOM HQ   [Browser] [Studio] [Workbench] [Feed]        │
-├─────────────────────┬────────────────────────────────────┬───────────────────────┤
-│                     │                                    │                       │
-│   ORBITAL TABLE     │         BOARDROOM WORKSPACE        │     SWARM CHAT        │
-│                     │                                    │                       │
-│  23 Specialists     │  • Live Browser (DSPs / PROs)      │  Executive Conductor  │
-│  & Department Pills │  • Studio Module In-Place Preview  │  & Seated Specialists │
-│  (Active Agents)    │  • Asset / Legal Workbench         │                       │
-│                     │  • Live Agent Execution Feed       │                       │
-│                     │                                    │                       │
-│     (28% Width)     │            (40% Width)             │      (32% Width)      │
-└─────────────────────┴────────────────────────────────────┴───────────────────────┘
-```
+With a workspace open, the center shows the selected tab and the right edge shows the seated agents. The orbital table folds left. Open it or the discussion from the header without leaving your current tab.
 
 ---
 
@@ -49,14 +35,9 @@ You can open the workspace through two primary methods:
 
 ### 2.2 Layout Modes
 
-The Boardroom Workspace supports three layout states:
+With the workspace closed, Boardroom shows the orbital table and discussion on desktop, with discussion taking the full width on phones.
 
-- **Closed Mode:** Standard Boardroom view. The circular orbital table takes the left half (55%), and the executive chat takes the right half (45%).
-- **Split Mode (Default Active):** A 3-column split view:
-  - **Left (28%):** Orbital table and seated agent status.
-  - **Center (40%):** Active Boardroom Workspace view.
-  - **Right (32%):** Persistent executive discussion stream.
-- **Stage Mode (Full Canvas):** Maximize the workspace across the left and center panes (68% width) while keeping the executive chat stream docked on the right. Ideal for reading dense split sheets, editing canvas designs, or viewing complex analytics dashboards. Toggle this via the **Stage / Split** button in the workspace header.
+Opening a workspace tab gives its content the center. **Show table** and **Discussion** open panels over the workspace. The desktop activity rail shows seated agents, their work status, and approval requests. Select an agent to inspect its assignment, or use **Add agent** to change seating. On phones, use **Open workspace** to reach the four tabs.
 
 ---
 

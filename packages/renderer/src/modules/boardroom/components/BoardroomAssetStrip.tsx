@@ -4,6 +4,7 @@ import { Image as ImageIcon, FileText, Music, Video, X, ExternalLink, Sparkles, 
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 /**
  * BoardroomAssetStrip — a horizontal strip of the artist's most recent
@@ -50,6 +51,9 @@ export const BoardroomAssetStrip: React.FC = () => {
     const assets = generatedHistory
         .filter(item => item.url && item.url.startsWith('data:image') === false)
         .slice(0, MAX_ASSETS);
+
+    const closePreview = useCallback(() => setPreviewItem(null), []);
+    const previewRef = useModalAccessibility(Boolean(previewItem) && assets.length > 0, closePreview);
 
     const sendToStudio = useCallback((item: HistoryItem) => {
         if (item.type === 'image' && openImageInStudio) {
@@ -166,7 +170,8 @@ export const BoardroomAssetStrip: React.FC = () => {
             {previewItem && (
                 <div
                     className="fixed inset-0 z-[999999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
-                    onClick={() => setPreviewItem(null)}
+                    onClick={closePreview}
+                    ref={previewRef}
                     data-testid="boardroom-asset-preview"
                     role="dialog"
                     aria-modal="true"
@@ -185,7 +190,7 @@ export const BoardroomAssetStrip: React.FC = () => {
                                 {previewItem.prompt || ''}
                             </span>
                             <button
-                                onClick={() => setPreviewItem(null)}
+                                onClick={closePreview}
                                 className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
                                 aria-label="Close preview"
                                 data-testid="boardroom-asset-preview-close"
@@ -246,7 +251,7 @@ export const BoardroomAssetStrip: React.FC = () => {
                                 Export
                             </button>
                             <button
-                                onClick={() => setPreviewItem(null)}
+                                onClick={closePreview}
                                 className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition-all text-xs font-bold uppercase tracking-wider"
                             >
                                 Close

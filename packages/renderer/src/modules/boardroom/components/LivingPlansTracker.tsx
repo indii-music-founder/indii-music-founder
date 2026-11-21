@@ -9,6 +9,7 @@ import { agentService } from '@/services/agent/AgentService';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface LivingPlansTrackerProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ interface LivingPlansTrackerProps {
 }
 
 export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps) {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     const [plans, setPlans] = useState<LivingPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const currentProjectId = useStore(state => state.currentProjectId);
@@ -107,6 +109,10 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                     
                     {/* Slide-over Panel */}
                     <motion.div
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Living Plans"
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
@@ -119,7 +125,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                 <Layers className={getColorForModule('agent').text} size={18} />
                                 <h2 className="text-base font-bold tracking-tight text-gray-100">Living Plans</h2>
                             </div>
-                            <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
+                            <button type="button" aria-label="Close living plans" onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>

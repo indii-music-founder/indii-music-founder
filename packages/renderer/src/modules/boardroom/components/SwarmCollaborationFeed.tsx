@@ -4,6 +4,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Bot, Check, RefreshCw } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface SwarmCollaborationFeedProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface SwarmCollaborationFeedProps {
 }
 
 export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFeedProps) {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     const toast = useToast();
     const { a2aMessages, updateA2AMessage } = useStore(
         useShallow(state => ({
@@ -44,6 +46,10 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                     
                     {/* Slide-over Panel */}
                     <motion.div
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Swarm Collaboration Feed"
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
@@ -56,7 +62,7 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                                 <Bot className="text-indigo-400" size={18} />
                                 <h2 className="text-base font-bold tracking-tight text-gray-100">Swarm Collaboration Feed</h2>
                             </div>
-                            <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
+                            <button type="button" aria-label="Close collaboration feed" onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>

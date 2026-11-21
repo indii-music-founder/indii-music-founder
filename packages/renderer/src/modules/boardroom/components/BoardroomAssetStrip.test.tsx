@@ -87,6 +87,23 @@ describe('BoardroomAssetStrip (ISSUE-1361 in-page workspace)', () => {
         expect(screen.getByTestId('boardroom-asset-preview')).toBeDefined();
     });
 
+    it('focuses the preview, wraps keyboard focus and restores it on Escape', async () => {
+        render(<BoardroomAssetStrip />);
+        const trigger = screen.getByRole('button', { name: 'Preview Album cover concept' });
+        trigger.focus();
+        fireEvent.click(trigger);
+
+        const close = screen.getByRole('button', { name: 'Close preview' });
+        const lastButton = screen.getByRole('button', { name: /^Close$/ });
+        expect(close).toHaveFocus();
+        fireEvent.keyDown(close, { key: 'Tab', code: 'Tab', shiftKey: true });
+        expect(lastButton).toHaveFocus();
+        fireEvent.keyDown(lastButton, { key: 'Escape', code: 'Escape' });
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        await waitFor(() => expect(trigger).toHaveFocus());
+    });
+
     it('opens the enlarged preview, then sends to Studio only on explicit action with a toast', async () => {
         render(<BoardroomAssetStrip />);
         fireEvent.click(screen.getByRole('button', { name: /^Preview Album cover concept/i }));

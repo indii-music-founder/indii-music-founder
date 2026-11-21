@@ -41,20 +41,6 @@ vi.mock('@/config/typesafeJudgments', () => ({
     judgeBoardroomExecutiveIntent: mocks.judgeBoardroomExecutiveIntent,
 }));
 
-vi.mock('@/services/firebase', () => ({
-    auth: { currentUser: { uid: 'founder-1' } },
-}));
-
-vi.mock('@/services/business-harness', () => ({
-    boardroomMetaHarnessService: {
-        createDecision: () => ({
-            mode: 'meta_governed',
-            legalRisk: 'low',
-            costImpact: { total: 0 },
-        }),
-    },
-}));
-
 import { BoardroomJourney } from './BoardroomJourney';
 import { useStore } from '@/core/store';
 
@@ -132,7 +118,9 @@ describe('BoardroomJourney', () => {
         const govToggle = screen.getByTestId('boardroom-governance-toggle');
         fireEvent.click(govToggle);
         expect(screen.getByTestId('boardroom-governance-popover')).toBeInTheDocument();
-        expect(screen.getByText('Meta-Harness Telemetry')).toBeInTheDocument();
+        expect(screen.getByText('Risk and cost estimates are unavailable in this view.')).toBeInTheDocument();
+        expect(screen.queryByText('Active', { exact: true })).not.toBeInTheDocument();
+        expect(screen.queryByText('$0', { exact: true })).not.toBeInTheDocument();
 
         fireEvent.keyDown(govToggle, { key: 'Escape' });
         expect(screen.queryByTestId('boardroom-governance-popover')).not.toBeInTheDocument();
