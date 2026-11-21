@@ -23,14 +23,14 @@ import {
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
 
-export interface QuickBookmark {
+interface QuickBookmark {
     id: string;
     title: string;
     url: string;
     badge: string;
 }
 
-export const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
+const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
     { id: 'spotify', title: 'Spotify for Artists', url: 'https://artists.spotify.com', badge: 'DSP' },
     { id: 'apple', title: 'Apple Music', url: 'https://artists.apple.com', badge: 'DSP' },
     { id: 'ascap', title: 'ASCAP Portal', url: 'https://members.ascap.com', badge: 'PRO' },
@@ -38,6 +38,7 @@ export const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
     { id: 'mlc', title: 'The MLC', url: 'https://portal.themlc.com', badge: 'Mechanical' },
     { id: 'soundexchange', title: 'SoundExchange', url: 'https://sportal.soundexchange.com', badge: 'Neighboring' },
     { id: 'copyright', title: 'US Copyright', url: 'https://eco.copyright.gov/eService_enu/', badge: 'Legal' },
+    { id: 'google-fonts', title: 'Google Fonts', url: 'https://fonts.google.com/', badge: 'Fonts' },
     { id: 'instagram', title: 'Instagram', url: 'https://www.instagram.com', badge: 'Social' },
 ];
 
@@ -110,6 +111,7 @@ const FRAME_BLOCKED_DOMAINS = [
     'youtube.com',
     'youtu.be',
     'github.com',
+    'fonts.google.com',
     'x.com',
     'twitter.com',
     'tiktok.com',

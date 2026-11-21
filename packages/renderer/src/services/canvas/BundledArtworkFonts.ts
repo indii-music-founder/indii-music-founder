@@ -1,29 +1,46 @@
+import JSZip from 'jszip';
 import { EMBEDDED_FONT_FACE_ASSETS } from '@indii/video-compiler/fontAssets';
 import montserratLicense from './fontLicenses/montserrat-OFL.txt?url';
 import archivoLicense from './fontLicenses/archivoblack-OFL.txt?url';
 import monoLicense from './fontLicenses/spacemono-OFL.txt?url';
+import montserratLicenseText from './fontLicenses/montserrat-OFL.txt?raw';
+import archivoLicenseText from './fontLicenses/archivoblack-OFL.txt?raw';
+import monoLicenseText from './fontLicenses/spacemono-OFL.txt?raw';
 import type { TypographyLayer } from './CanvasDoc';
 
 /** Reuse the app's pinned font bytes; no font download or new dependency. */
 export const BUNDLED_ARTWORK_FONTS = [
-    { id: 'builtin:montserrat', family: 'Montserrat', style: 'Bold', weight: 700, licenseUrl: montserratLicense },
-    { id: 'builtin:archivo-black', family: 'Archivo Black', style: 'Black', weight: 400, licenseUrl: archivoLicense },
-    { id: 'builtin:space-mono', family: 'Space Mono', style: 'Regular', weight: 400, licenseUrl: monoLicense },
+    { id: 'builtin:montserrat', family: 'Montserrat', style: 'Bold', weight: 700, licenseUrl: montserratLicense, licenseText: montserratLicenseText },
+    { id: 'builtin:archivo-black', family: 'Archivo Black', style: 'Black', weight: 400, licenseUrl: archivoLicense, licenseText: archivoLicenseText },
+    { id: 'builtin:space-mono', family: 'Space Mono', style: 'Regular', weight: 400, licenseUrl: monoLicense, licenseText: monoLicenseText },
 ] as const;
 const loaded = new Map<string, Promise<string>>();
 export const isBundledArtworkFont = (id: string) => BUNDLED_ARTWORK_FONTS.some(font => font.id === id);
 const SUPPORTED_TEXT = /^[\x20-\x7e\u00a0-\u00ff\u0131\u0152\u0153\u02bb\u02bc\u02c6\u02da\u02dc\u2000-\u206f\u2074\u20ac\u2122\u2191\u2193\u2212\u2215]*$/u;
+
+function bundledArtworkFontBytes(font: typeof BUNDLED_ARTWORK_FONTS[number]) {
+    const entries = Object.entries(EMBEDDED_FONT_FACE_ASSETS[font.family] ?? {});
+    const [range, base64] = entries.find(([weight]) => weight === String(font.weight)) ?? entries[0] ?? [];
+    if (!base64 || !range) throw new Error(`The bundled ${font.family} font is unavailable`);
+    return { range, bytes: Uint8Array.from(atob(base64), char => char.charCodeAt(0)) };
+}
+
+export async function buildBundledArtworkFontArchive(font: typeof BUNDLED_ARTWORK_FONTS[number]) {
+    const { bytes } = bundledArtworkFontBytes(font);
+    const fileStem = `${font.family.replaceAll(' ', '-')}-${font.style}`;
+    const archive = new JSZip();
+    archive.file(`${fileStem}.woff2`, bytes);
+    archive.file('OFL.txt', font.licenseText);
+    return { filename: `${fileStem}.zip`, bytes: await archive.generateAsync({ type: 'arraybuffer' }) };
+}
 
 async function loadFont(id: string): Promise<string> {
     const font = BUNDLED_ARTWORK_FONTS.find(font => font.id === id);
     if (!font) throw new Error('Unknown bundled artwork font');
     const cached = loaded.get(id); if (cached) return cached;
     const pending = (async () => {
-        const faces = EMBEDDED_FONT_FACE_ASSETS[font.family];
-        const [range, base64] = Object.entries(faces ?? {}).find(([range]) => range === String(font.weight)) ?? Object.entries(faces ?? {})[0] ?? [];
-        if (!base64 || !range) throw new Error(`The bundled ${font.family} font is unavailable`);
+        const { range, bytes } = bundledArtworkFontBytes(font);
         const family = `IndiiArtwork${id.replace(/[^a-z]/gi, '')}`;
-        const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
         const face = new FontFace(family, bytes.buffer, { weight: range });
         await face.load(); document.fonts.add(face);
         return family;

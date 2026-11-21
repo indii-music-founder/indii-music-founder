@@ -767,7 +767,7 @@ export class AgentService {
             await this.handleBoardroomRequestFlow(
                 boardroomTask,
                 attachments,
-                inheritExecutionTokenBudget(context, { ...context, boardroomTask }),
+                inheritExecutionTokenBudget(context, { ...context, boardroomTask, sessionId: state.activeSessionId ?? undefined }),
                 responseId,
                 signal,
             );
