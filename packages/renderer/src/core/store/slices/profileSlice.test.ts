@@ -177,4 +177,37 @@ describe('ProfileSlice Persistence', () => {
 
         expect(useStore.getState().userProfile).toBe(initialProfile);
     });
+
+    it('keeps profile edits made while the initial load is still in flight', async () => {
+        let resolveProfile!: (profile: UserProfile) => void;
+        vi.mocked(getProfileFromStorage).mockReturnValue(new Promise(resolve => {
+            resolveProfile = resolve;
+        }));
+
+        const pendingLoad = useStore.getState().loadUserProfile('test-uid');
+        await Promise.resolve();
+        // The user picks a career path before the slow stored copy arrives.
+        useStore.getState().setUserProfile({ ...mockProfile, id: 'test-uid', uid: 'test-uid', careerProfile: 'dj' });
+        resolveProfile({ ...mockProfile, id: 'test-uid', uid: 'test-uid' });
+        await pendingLoad;
+
+        expect(useStore.getState().userProfile.careerProfile).toBe('dj');
+    });
+
+    it('still applies a stored profile that is newer than the local copy', async () => {
+        // No displayName, so the test-harness "already seeded" skip does not apply.
+        useStore.getState().setUserProfile({ ...mockProfile, id: 'test-uid', uid: 'test-uid', displayName: '', careerProfile: 'dj' });
+        const newerMs = Date.now() + 60_000;
+        vi.mocked(getProfileFromStorage).mockResolvedValue({
+            ...mockProfile,
+            id: 'test-uid',
+            uid: 'test-uid',
+            careerProfile: 'touring_band',
+            updatedAt: { seconds: Math.floor(newerMs / 1000), nanoseconds: 0 } as any,
+        });
+
+        await useStore.getState().loadUserProfile('test-uid');
+
+        expect(useStore.getState().userProfile.careerProfile).toBe('touring_band');
+    });
 });

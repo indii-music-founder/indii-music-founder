@@ -26,6 +26,8 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 export default function OnboardingPage() {
     const {
         userProfile,
+        isProfileReady,
+        retryProfileLoad,
         input,
         setInput,
         history,
@@ -91,6 +93,26 @@ export default function OnboardingPage() {
         setIsDragOver(false);
         handleFileDrop(e);
     }, [handleFileDrop]);
+
+    if (resolvedMode === 'onboarding' && !isProfileReady) {
+        return (
+            <ModuleErrorBoundary moduleName="Onboarding">
+                <div className="flex flex-col h-full w-full bg-bg-dark text-white items-center justify-center gap-4 p-6">
+                    <div role="status" aria-live="polite" className="flex items-center gap-3 text-gray-300">
+                        <Loader2 size={20} className="motion-safe:animate-spin" aria-hidden="true" />
+                        <span>Loading your profile…</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={retryProfileLoad}
+                        className="px-4 py-2 rounded-lg text-sm bg-white/10 border border-white/10 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </ModuleErrorBoundary>
+        );
+    }
 
     if (resolvedMode === 'onboarding' && !userProfile.careerProfile) {
         return (

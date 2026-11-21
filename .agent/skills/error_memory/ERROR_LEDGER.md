@@ -2801,3 +2801,11 @@ committing.
 - BUG: `vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => { throw ... })` never takes effect. jsdom's `Storage` is a legacy platform object with named properties, so defining `getItem` on the instance stores an item named "getItem" (`localStorage.length` becomes 1) while method lookups still hit `Storage.prototype.getItem`. Seen in `packages/renderer/src/services/share/milestones.test.ts` (deploy run 44450767739).
 - FIX: Spy on the prototype: `vi.spyOn(Storage.prototype, 'getItem')`, and assert `expect(spy).toHaveBeenCalled()` so a no-op spy fails loudly.
 - PREVENTION: Never spy on Storage instances in jsdom; grep `spyOn(window.localStorage|spyOn(localStorage|spyOn(window.sessionStorage` before pushing.
+
+## 2026-11-21 — Late profile load overwrote onboarding answers made on the placeholder profile (PLACEHOLDER_PROFILE_EDIT_LOST)
+
+**SEVERITY:** High (a slow network made onboarding answers vanish mid-chat; masked for weeks as a "flaky" Detroit Techno e2e, ISSUE-1691)
+- BUG: After the account-boundary reset the store holds a blank profile with no uid. Onboarding stayed interactive, so the career path and answers were written onto that placeholder. `loadUserProfile` then applied the stored copy unconditionally and the picker came back. Its live listener already ignored older cloud copies; the initial load did not.
+- FIX: `OnboardingPage` waits ("Loading your profile…" + Retry) until the profile has a uid; `loadUserProfile` keeps local edits whose `updatedAt` is newer than the stored copy (`profileUpdatedAtMs` shared with the listener).
+- DIAGNOSIS THAT WORKED: subscribe to the store in the page and record every `userProfile` change with `new Error().stack`; it named `resetStoreForAccountBoundary` and `loadUserProfile` in one run after many selector guesses failed.
+- PREVENTION: Any UI that edits account state must render only once that account's own data has loaded. Every loader that writes state after an `await` must not overwrite newer local edits. In e2e, seed store state only after the app's boundary reset and profile load have settled.
