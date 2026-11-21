@@ -1,10 +1,20 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
+import { readBoardroomBrowser } from '../boardroomBrowserResearch';
 import type { AnyToolFunction } from '../types';
 
 /** Public-page research only. This surface has no browser input or session controls. */
 export const WebResearchTools = {
-    web_extract: wrapTool('web_extract', async (args: { url: string }) => {
+    web_extract: wrapTool('web_extract', async (args: { url: string }, context) => {
         try {
+            const mission = context?.boardroomExecution;
+            if (mission && !context?.isReadOnly) {
+                const page = await readBoardroomBrowser(args.url, {
+                    requestId: mission.requestId,
+                    stepId: mission.stepId,
+                    agentId: mission.ownerAgentId,
+                }, context?.signal);
+                if (page) return toolSuccess({ ...page, finalUrl: page.url }, `Read the shared page ${page.url}.`);
+            }
             const bridge = window.electronAPI?.agent;
             if (!bridge) {
                 return toolError(

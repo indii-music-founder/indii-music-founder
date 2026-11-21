@@ -91,6 +91,16 @@ export default [
   {
     extends: './vitest.config.ts',
     test: {
+      name: 'rights-browser-worker',
+      environment: 'node',
+      include: ['packages/rights-browser-worker/src/**/*.{test,spec}.{ts,tsx}'],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+      setupFiles: [],
+    }
+  },
+  {
+    extends: './vitest.config.ts',
+    test: {
       name: 'admin-dashboard',
       environment: 'jsdom',
       include: [

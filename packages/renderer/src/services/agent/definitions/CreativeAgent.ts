@@ -12,6 +12,8 @@ import { VideoTools } from '../tools/VideoTools';
 import { EditorTools } from '../tools/EditorTools';
 import { BlenderTools } from '../tools/BlenderTools';
 import { PRINT_TOOL_DECLARATIONS } from './PrintToolDeclarations';
+import { ArtifactTools, CREATE_ARTIFACT_DECLARATION } from '../tools/ArtifactTools';
+import { BoardroomFontTools, BOARDROOM_FONT_DOWNLOAD } from '../tools/BoardroomFontTools';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -56,6 +58,8 @@ export const CreativeAgent: AgentConfig = {
             search_stored_assets: StorageTools.search_files,
             generate_image: DirectorTools.generate_image,
             update_prompt: CoreTools.update_prompt,
+            create_artifact: ArtifactTools.create_artifact,
+            boardroom_download_google_font: BoardroomFontTools.boardroom_download_google_font,
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
             generate_high_res_asset: DirectorTools.generate_high_res_asset,
@@ -98,6 +102,8 @@ export const CreativeAgent: AgentConfig = {
     },
     authorizedTools: [
         'generate_image',
+        'create_artifact',
+        'boardroom_download_google_font',
         'list_stored_assets',
         'search_stored_assets',
         'batch_edit_images',
@@ -147,6 +153,8 @@ export const CreativeAgent: AgentConfig = {
         functionDeclarations: [
             ...creativeRetrievalDeclarations,
             ...PRINT_TOOL_DECLARATIONS,
+            CREATE_ARTIFACT_DECLARATION,
+            BOARDROOM_FONT_DOWNLOAD,
             {
                 name: 'list_stored_assets',
                 description: 'List the user’s saved gallery images, brand assets, reference images, and recent uploads. Use before claiming that an existing asset is unavailable.',

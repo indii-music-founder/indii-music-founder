@@ -5,6 +5,8 @@ import { useShallow } from 'zustand/react/shallow';
 import {
     Globe,
     LayoutGrid,
+    Maximize2,
+    Minimize2,
     Layers,
     Radio,
     X,
@@ -33,10 +35,12 @@ function getSettledHistoryKey(history: AgentMessage[] | undefined): string | nul
 
 interface BoardroomWorkspacePaneProps {
     hasOverlayOpen?: boolean;
+    isOpen?: boolean;
 }
 
-export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWorkspacePaneProps) {
+export function BoardroomWorkspacePane({ hasOverlayOpen = false, isOpen = true }: BoardroomWorkspacePaneProps) {
     const {
+        boardroomWorkspaceLayout,
         setBoardroomWorkspaceLayout,
         boardroomWorkspaceTab,
         setBoardroomWorkspaceTab,
@@ -46,6 +50,7 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
         isCommandMenuOpen,
     } = useStore(
         useShallow(state => ({
+            boardroomWorkspaceLayout: state.boardroomWorkspaceLayout,
             setBoardroomWorkspaceLayout: state.setBoardroomWorkspaceLayout,
             boardroomWorkspaceTab: state.boardroomWorkspaceTab,
             setBoardroomWorkspaceTab: state.setBoardroomWorkspaceTab,
@@ -69,7 +74,7 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
     // The workspace judge is a paid backend call. Run it once per settled reply,
     // never per streamed token (ISSUE-1624): the key is null while any message streams.
     useEffect(() => {
-        if (!settledHistoryKey) return undefined;
+        if (!isOpen || !settledHistoryKey) return undefined;
         let isMounted = true;
         const timer = setTimeout(() => {
             const history = useStore.getState().agentHistory ?? [];
@@ -83,8 +88,10 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
             isMounted = false;
             clearTimeout(timer);
         };
-    }, [settledHistoryKey]);
+    }, [isOpen, settledHistoryKey]);
 
+    const isExpandedBrowser = boardroomWorkspaceLayout === 'stage';
+    const browserSizeLabel = isExpandedBrowser ? 'Restore split layout' : 'Expand browser';
     const tabs: { id: BoardroomWorkspaceTab; label: string; icon: React.ElementType }[] = [
         { id: 'browser', label: 'Live Browser', icon: Globe },
         { id: 'module', label: 'Studio Preview', icon: LayoutGrid },
@@ -136,8 +143,18 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false }: BoardroomWork
                     })}
                 </div>
 
-                {/* Close workspace */}
                 <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                    {boardroomWorkspaceTab === 'browser' && (
+                        <button
+                            type="button"
+                            onClick={() => setBoardroomWorkspaceLayout(isExpandedBrowser ? 'split' : 'stage')}
+                            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            title={browserSizeLabel}
+                            aria-label={browserSizeLabel}
+                        >
+                            {isExpandedBrowser ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => setBoardroomWorkspaceLayout('closed')}

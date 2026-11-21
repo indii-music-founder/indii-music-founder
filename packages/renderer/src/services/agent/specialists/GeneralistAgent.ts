@@ -19,6 +19,7 @@ import {
     isCapabilityQuestion,
 } from '../capabilityTruth';
 import { loadCapabilitySnapshot } from '../CapabilitySnapshotService';
+import { BOARDROOM_FONT_DOWNLOAD } from '../tools/BoardroomFontTools';
 
 /**
  * GeneralistAgent (indii Conductor) - The primary orchestrator and fallback agent.
@@ -46,6 +47,7 @@ export class GeneralistAgent extends BaseAgent {
     tools: ToolDefinition[] = [];
     protected authorizedTools: string[] = [
         'generate_image', 'generate_video', 'save_memory', 'recall_memories', 'consult_specialist', 'delegate_task',
+        'boardroom_download_google_font',
         'create_project', 'list_projects', 'search_knowledge', 'request_approval', 'verify_output',
         'batch_edit_images', 'generate_social_post', 'list_files', 'search_files',
         'list_organizations', 'switch_organization',
@@ -152,6 +154,7 @@ export class GeneralistAgent extends BaseAgent {
         // Core tools that indii Conductor needs - we'll define the most important ones
         // with proper schemas for native function calling
         const functionDeclarations: FunctionDeclaration[] = [
+            BOARDROOM_FONT_DOWNLOAD,
             {
                 name: 'open_remote_setup',
                 description: 'Open Settings > Mobile Remote when the user asks to connect, pair, link, configure, or troubleshoot a phone, tablet, controller, or remote. This local navigation tool never returns pairing codes or credentials.',

@@ -17,9 +17,10 @@ import remarkGfm from 'remark-gfm';
 import type { HistoryItem } from '@/core/types/history';
 import { cn } from '@/lib/utils';
 import type { BoardroomWorkbenchTarget } from '@/core/store/slices/boardroomSlice';
+import { webArtifactStorage } from '@/services/agent/WebArtifactStorage';
 
 type WorkbenchTab = 'assets' | 'artifacts' | 'canvas';
-type ArtifactRequest = { filename: string; attempt: number };
+type ArtifactRequest = { filename: string; owner?: string; target: BoardroomWorkbenchTarget; attempt: number };
 type ArtifactRead = { request: ArtifactRequest } & (
     { status: 'loaded'; content: string } | { status: 'failed' }
 );
@@ -36,6 +37,7 @@ function isSafeExternalAssetUrl(rawUrl: string): boolean {
 export function BoardroomWorkbenchView() {
     const toast = useToast();
     const openStudio = useStore(state => state.openBoardroomModulePreview);
+    const artifactOwner = useStore(state => state.user?.uid);
     const {
         generatedHistory,
         boardroomWorkbenchTarget,
@@ -63,7 +65,18 @@ export function BoardroomWorkbenchView() {
     const setSubTab = (tab: WorkbenchTab) => setTabOverride({ target: boardroomWorkbenchTarget, tab });
 
     const requestedPanel = boardroomWorkbenchTarget?.kind === 'canvas' ? boardroomWorkbenchTarget.panelId : null;
-    const [artifacts, setArtifacts] = useState<{ filename: string }[]>([]);
+    const [listAttempt, setListAttempt] = useState(0);
+    const listRequest = useMemo(() => ({
+        owner: artifactOwner,
+        target: boardroomWorkbenchTarget,
+        attempt: listAttempt,
+    }), [artifactOwner, boardroomWorkbenchTarget, listAttempt]);
+    const [artifactList, setArtifactList] = useState<{
+        request: typeof listRequest;
+        files?: { filename: string }[];
+    } | null>(null);
+    const currentList = artifactList?.request === listRequest ? artifactList : null;
+    const artifacts = currentList?.files ?? [];
     const [artifactOverride, setArtifactOverride] = useState<{
         target: BoardroomWorkbenchTarget;
         filename: string;
@@ -73,10 +86,10 @@ export function BoardroomWorkbenchView() {
         ? artifactOverride.filename
         : targetArtifact ?? artifacts[0]?.filename ?? null;
     const [attempt, setAttempt] = useState(0);
-    const [artifactRead, setArtifactRead] = useState<ArtifactRead | null>(null);
     const artifactRequest = useMemo(() => subTab === 'artifacts' && selectedArtifactFile
-        ? { filename: selectedArtifactFile, attempt }
-        : null, [attempt, selectedArtifactFile, subTab]);
+        ? { filename: selectedArtifactFile, owner: artifactOwner, target: boardroomWorkbenchTarget, attempt }
+        : null, [artifactOwner, attempt, boardroomWorkbenchTarget, selectedArtifactFile, subTab]);
+    const [artifactRead, setArtifactRead] = useState<ArtifactRead | null>(null);
     const currentRead = artifactRead?.request === artifactRequest ? artifactRead : null;
     const activeArtifactContent = currentRead?.status === 'loaded' ? currentRead.content : null;
 
@@ -101,10 +114,13 @@ export function BoardroomWorkbenchView() {
         let cancelled = false;
         const read = async () => {
             try {
-                const result = await window.electronAPI?.agent?.readArtifact?.(artifactRequest.filename);
+                const agent = window.electronAPI?.agent;
+                const content = agent?.readArtifact
+                    ? await agent.readArtifact(artifactRequest.filename).then(result => result.success ? result.data : undefined)
+                    : await webArtifactStorage.read(artifactRequest.owner, artifactRequest.filename);
                 if (cancelled) return;
-                if (result?.success && typeof result.data === 'string') {
-                    setArtifactRead({ request: artifactRequest, status: 'loaded', content: result.data });
+                if (typeof content === 'string') {
+                    setArtifactRead({ request: artifactRequest, status: 'loaded', content });
                 } else {
                     setArtifactRead({ request: artifactRequest, status: 'failed' });
                 }
@@ -116,24 +132,22 @@ export function BoardroomWorkbenchView() {
         return () => { cancelled = true; };
     }, [artifactRequest]);
 
-    // Load artifacts if electron API is available
     useEffect(() => {
-        let isMounted = true;
+        let cancelled = false;
         const load = async () => {
-            if (typeof window !== 'undefined' && window.electronAPI?.agent?.listArtifacts) {
-                try {
-                    const res = await window.electronAPI.agent.listArtifacts();
-                    if (isMounted && res.success && res.data) {
-                        setArtifacts(res.data);
-                    }
-                } catch {
-                    // ignore
-                }
+            try {
+                const agent = window.electronAPI?.agent;
+                const files = agent?.listArtifacts
+                    ? await agent.listArtifacts().then(result => result.success ? result.data : undefined)
+                    : await webArtifactStorage.list(listRequest.owner);
+                if (!cancelled) setArtifactList({ request: listRequest, files });
+            } catch {
+                if (!cancelled) setArtifactList({ request: listRequest });
             }
         };
         void load();
-        return () => { isMounted = false; };
-    }, []);
+        return () => { cancelled = true; };
+    }, [listRequest]);
 
     const handleExport = useCallback(async (item: HistoryItem) => {
         try {
@@ -376,7 +390,17 @@ export function BoardroomWorkbenchView() {
                 <div className="flex-1 flex flex-col @[640px]:flex-row min-h-0 min-w-0 overflow-hidden">
                     {/* Artifacts List */}
                     <div className="w-full @[640px]:w-56 border-b @[640px]:border-b-0 @[640px]:border-r border-white/10 p-2 overflow-y-auto custom-scrollbar flex @[640px]:flex-col gap-1.5 shrink-0 bg-black/40">
-                        {artifacts.length === 0 ? (
+                        {!currentList ? (
+                            <p role="status" className="p-2 text-xs text-white/60">Loading artifacts…</p>
+                        ) : !currentList.files ? (
+                            <div className="space-y-2 p-2 text-xs">
+                                <p role="alert" className="text-rose-300">Could not list artifacts.</p>
+                                <button type="button" className="rounded bg-white/10 px-2 py-1"
+                                    onClick={() => setListAttempt(value => value + 1)}>
+                                    Retry list
+                                </button>
+                            </div>
+                        ) : artifacts.length === 0 ? (
                             <p className="text-xs text-white/30 text-center p-6 italic">No artifacts saved.</p>
                         ) : (
                             artifacts.map(art => (

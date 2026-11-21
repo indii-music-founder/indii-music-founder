@@ -24,3 +24,9 @@ Computer Execution is a separate, supervised visible-desktop capability. Read-on
 ## Source of truth
 
 Runtime contracts: `packages/main/src/services/WebExtractionService.ts`, `packages/main/src/handlers/agent.ts`, `packages/main/src/preload.ts`, `packages/renderer/src/services/agent/tools/WebResearchTools.ts`, and `packages/renderer/src/services/agent/ToolRiskRegistry.ts`. The 2026-08 case study is a historical audit snapshot, not a current implementation guide.
+
+## Boardroom hosted browser development
+
+The [Boardroom Chrome worker](../packages/rights-browser-worker/src/boardroomSession.ts) opens public pages in a fresh Chromium context. Local development covers Spotify for Artists and Google Fonts. Artist takeover, navigation, disconnect, and stop invalidate earlier specialist commands. The worker rechecks authority immediately before dispatch, including after looking up a visible link. Reconnect returns control to the artist.
+
+Boardroom connects to the worker through a Firebase-authenticated WebSocket and binds browser control to one mission step. When an artist shares control for a font request, the worker downloads the selected Google Fonts archive, checks its name and ZIP signature, and sends the bytes to the same Boardroom session. The artist saves the file using the link in the browser pane. The app's hosted browser endpoint must be provisioned and enabled for this workflow.

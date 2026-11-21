@@ -1672,8 +1672,15 @@ export const generateContentStream = onRequest(
                             .map((part) => part.functionCall);
                         const thoughtSignature = parts.find((part) => Boolean(part.thoughtSignature))?.thoughtSignature as string | undefined;
 
-                        if (text || functionCalls.length > 0 || thoughtSignature) {
-                            const payload: { text?: string; functionCalls?: unknown[]; thoughtSignature?: string } = {};
+                        const grounding = chunk.candidates?.[0]?.groundingMetadata;
+                        if (text || functionCalls.length > 0 || thoughtSignature || grounding) {
+                            const payload: {
+                                text?: string;
+                                functionCalls?: unknown[];
+                                thoughtSignature?: string;
+                                grounding?: typeof grounding;
+                            } = {};
+                            if (grounding) payload.grounding = grounding;
                             if (text) payload.text = text;
                             if (functionCalls.length > 0) payload.functionCalls = functionCalls;
                             if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
