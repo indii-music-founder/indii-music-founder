@@ -3587,7 +3587,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1663: Asset manifest uses slice(-20) / [length-1] on a newest-first list, so agents see the oldest (AS:1499, BaseAge [O10]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch claude/determined-johnson-3xr573 (2026-11-21); awaiting exact-SHA CI and a live Boardroom check
+- **Repair note:** generatedHistory is newest-first and `gallery-N` resolves to `generatedHistory[N]`. The Boardroom manifest now lists the first 20 items with matching aliases (buildGalleryManifestEntries), and the Creative/Brand auto-attach takes item 0 (latestGeneratedItem). Test galleryAssets.test.ts. Unit checks only.
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O10 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
