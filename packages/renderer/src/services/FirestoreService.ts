@@ -28,6 +28,12 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 export class FirestoreService<T extends DocumentData = DocumentData> {
     private static e2eCache: Record<string, any> = {};
+    /** E2E mock mode: live subscribers per collection, so mock writes reach open views. */
+    private static e2eListeners = new Map<string, Set<() => void>>();
+
+    private notifyE2ESubscribers(): void {
+        FirestoreService.e2eListeners.get(this.collectionPath)?.forEach(listener => listener());
+    }
 
     constructor(protected collectionPath: string) { }
 
@@ -64,6 +70,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 updatedAt: Date.now()
             } as any;
             FirestoreService.e2eCache[this.getCacheKey(id)] = mockDoc;
+            this.notifyE2ESubscribers();
             return id;
         }
         const docRef = await addDoc(this.collection, this.pruneUndefined({
@@ -80,6 +87,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 ...data,
                 updatedAt: Date.now()
             };
+            this.notifyE2ESubscribers();
             return;
         }
         const docRef = doc(db, this.collectionPath, id);
@@ -107,6 +115,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
             const key = this.getCacheKey(id);
             assertRevision(FirestoreService.e2eCache[key]);
             FirestoreService.e2eCache[key] = payload;
+            this.notifyE2ESubscribers();
             return nextRevision;
         }
         const reference = doc(db, this.collectionPath, id);
@@ -127,6 +136,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 ...data,
                 updatedAt: Date.now()
             };
+            this.notifyE2ESubscribers();
             return;
         }
         const docRef = doc(db, this.collectionPath, id);
@@ -152,6 +162,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     async delete(id: string): Promise<void> {
         if (this.isE2EMode) {
             delete FirestoreService.e2eCache[this.getCacheKey(id)];
+            this.notifyE2ESubscribers();
             return;
         }
         const docRef = doc(db, this.collectionPath, id);
@@ -277,8 +288,12 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
                 }
                 return results;
             };
-            setTimeout(() => callback(getResults()), 0);
-            return () => {};
+            const emit = () => callback(getResults());
+            const listeners = FirestoreService.e2eListeners.get(this.collectionPath) ?? new Set<() => void>();
+            listeners.add(emit);
+            FirestoreService.e2eListeners.set(this.collectionPath, listeners);
+            setTimeout(emit, 0);
+            return () => { listeners.delete(emit); };
         }
         const q = query(this.collection, ...constraints);
         return onSnapshot(q, (snapshot) => {

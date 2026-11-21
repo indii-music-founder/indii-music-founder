@@ -257,7 +257,7 @@ Paths below: `AS` = `packages/renderer/src/services/agent/AgentService.ts`. Foun
 
 ---
 
-## Fix phases (one branch and PR per batch; never push to `main`)
+## Fix phases (delivery follows the current branch-safety policy)
 
 Every phase:
 1. Check `ERROR_LEDGER.md` for the pattern first.
@@ -265,7 +265,7 @@ Every phase:
 3. Make the fix.
 4. Run focused vitest, `npm run typecheck:renderer`, `npx eslint --max-warnings=0 <touched files>`, `node scripts/check-test-quality.js` and `git diff --check`.
 5. Run the full `/plat` build gate before the push: `npm run typecheck && npm run lint && npm test -- --run && npm run build`.
-6. Push to a fresh `claude/`, `codex/` or `antigravity/` branch cut from current `origin/main` (see `.agent/workflows/branch-safety.md`). Never push to `main`; the owner merges.
+6. Follow `.agent/workflows/branch-safety.md`: use mainline delivery unless the owner explicitly authorizes a branch workflow. Inspect CI for the exact delivered SHA.
 7. Update the V4 statuses. During a phase commit, use `🟡 PARTIAL — code repair landed; awaiting exact-SHA CI`. **Never use the word "fixed" in a PARTIAL status**, because the validator's regex treats it as resolved. Move an entry to `✅ FIXED` with a `- **Closure evidence:** commit <sha> … CI https://github.com/…/actions/runs/<id>` line only after CI is green. Do this in the next phase's commit or the final closeout commit. Entries whose acceptance is a real user path (generation completes, approvals round-trip) stay `🟡 PARTIAL — live signed-in acceptance pending`, per `.agent/REAL_USER_AUTHENTICITY.md`.
 8. Add any new regression patterns to `ERROR_LEDGER.md`.
 9. Update "Current State" in the shared plan.
