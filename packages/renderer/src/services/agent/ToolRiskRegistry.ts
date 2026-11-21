@@ -20,6 +20,7 @@ import { ADDITIONAL_TOOL_RISK_CATALOG } from './AdditionalToolRiskCatalog';
  */
 export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     ...ADDITIONAL_TOOL_RISK_CATALOG,
+    download_boardroom_font: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Request a download of an indii bundled font' },
     credential_vault: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Retrieve, store, or delete credentials in the secure vault' },
     multi_platform_autopost: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Queue posts for delivery to selected social platforms' },
     dispatch_community_webhook: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Send a message to an external community webhook' },

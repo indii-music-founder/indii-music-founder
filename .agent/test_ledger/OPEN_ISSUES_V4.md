@@ -3909,3 +3909,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Impact:** Tools cannot resolve an asset from the rewritten ID.
 - **Fix:** Preserve millisecond timestamps in the affected ID formats and retain normal redaction for payment text.
 - **Acceptance:** Generate a print-ready file and reuse the saved asset through the agent. Confirm the original gallery ID resolves and the brand health-history ID remains intact. Check that payment-card redaction remains effective with synthetic input in the isolated sanitizer test.
+
+### ISSUE-1690: Conductor cannot open or inspect the shared Boardroom workspace tabs
+
+- **Status:** 🟡 PARTIAL — shared tab selection, desktop HTTPS and Google Fonts navigation, approved bundled font downloads, gallery asset selection, and bounded Feed status are wired. Signed-in browser and desktop acceptance remain open.
+- **Severity:** HIGH
+- **Module:** Boardroom workspace and Conductor
+- **Evidence:** [GitHub #956](https://github.com/indii-music-founder/indii-music-founder/issues/956). The center workspace exposes Live Browser, Studio Preview, Asset Workbench, and Agent Live Feed to the artist. Existing assigned Creative missions can already open Studio Preview and stage an image prompt.
+- **Impact:** The Conductor cannot guide the artist to a shared tab or report the active workspace and recent mission activity.
+- **Fix:** Use the same tab state as the visible workspace. Limit tab changes to an active Conductor mission in the originating conversation and project. Return workspace and mission status without message contents or browser data. Navigate directly on desktop through the existing validated browser bridge. On web, show the external-open fallback for Google Fonts. The approval-gated font download contains the licensed bundled WOFF2 and its OFL text.
+- **Acceptance:** In signed-in Boardroom, ask the Conductor to open each shared tab and compare the active view with the returned receipt. Ask for workspace and Feed status, then switch sessions and verify the prior turn cannot affect the new session. Open Google Fonts on desktop and verify the web external-open fallback. Approve a bundled font download and inspect the archive for the file and license. Confirm that selecting an existing gallery item opens it in Workbench and that Feed status reflects visible activity.

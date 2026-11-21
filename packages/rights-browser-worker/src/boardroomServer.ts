@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -11,8 +12,27 @@ if (!projectId || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
 }
 const auth = getAuth(initializeApp({ projectId }));
 const origins = new Set((process.env.BOARDROOM_CLIENT_ORIGINS ?? 'https://app.indii.music,https://indii.music').split(','));
-const sessions = new Map<string, WebSocket>();
+interface SessionEntry {
+  id: string;
+  socket?: WebSocket;
+  browser?: BoardroomSession;
+  expiresAt: number;
+  detachTimer?: ReturnType<typeof setTimeout>;
+}
+const sessions = new Map<string, SessionEntry>();
 const maxSessions = 4;
+const reconnectWindow = 45_000;
+
+function releaseSession(owner: string, entry: SessionEntry) {
+  clearTimeout(entry.detachTimer);
+  void (async () => {
+    try {
+      await entry.browser?.close();
+    } finally {
+      if (sessions.get(owner) === entry) sessions.delete(owner);
+    }
+  })().catch(() => {});
+}
 function assignmentFrom(input: unknown): BoardroomAssignment {
   if (!input || typeof input !== 'object') throw new Error('Mission assignment required');
   const { requestId, stepId, agentId } = input as Record<string, unknown>;
@@ -37,23 +57,27 @@ server.on('upgrade', (request, socket, head) => {
 
 sockets.on('connection', socket => {
   let session: BoardroomSession | undefined;
+  let entry: SessionEntry | undefined;
   let owner: string | undefined;
   let busy = false;
   let activeDownload: AbortController | undefined;
   const authTimeout = setTimeout(() => socket.close(1008, 'Sign-in required'), 8000);
-  const lifetime = setTimeout(() => socket.close(1000, 'Session expired'), 15 * 60_000);
+  let lifetime: ReturnType<typeof setTimeout> | undefined;
   const send = (event: object) => {
     if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event));
   };
-  socket.once('close', () => {
+  socket.once('close', code => {
     activeDownload?.abort();
     clearTimeout(authTimeout);
     clearTimeout(lifetime);
-    const release = () => {
-      if (owner && sessions.get(owner) === socket) sessions.delete(owner);
-    };
-    if (session) void session.close().catch(() => {}).finally(release);
-    else release();
+    if (!owner || !entry || entry.socket !== socket) return;
+    if (code === 1000 || !entry.browser || entry.expiresAt <= Date.now()) {
+      releaseSession(owner, entry);
+      return;
+    }
+    entry.browser.control.disconnect();
+    entry.socket = undefined;
+    entry.detachTimer = setTimeout(releaseSession, Math.min(reconnectWindow, entry.expiresAt - Date.now()), owner, entry);
   });
 
   socket.once('message', raw => {
@@ -66,19 +90,27 @@ sockets.on('connection', socket => {
       if (identity.firebase.sign_in_provider === 'anonymous' || socket.readyState !== WebSocket.OPEN) {
         throw new Error('Signed-in account required');
       }
-      if (sessions.size >= maxSessions || sessions.has(identity.uid)) {
+      const previous = sessions.get(identity.uid);
+      const resumed = previous && previous.id === message.resumeId
+        && !previous.socket && previous.browser && previous.expiresAt > Date.now();
+      if (!resumed && (sessions.size >= maxSessions || previous)) {
         send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
         socket.close(1008);
         return;
       }
       owner = identity.uid;
-      sessions.set(owner, socket);
+      entry = resumed ? previous : { id: randomUUID(), expiresAt: Date.now() + 15 * 60_000 };
+      clearTimeout(entry.detachTimer);
+      entry.socket = socket;
+      sessions.set(owner, entry);
+      lifetime = setTimeout(() => socket.close(1000, 'Session expired'), entry.expiresAt - Date.now());
       clearTimeout(authTimeout);
-      session = await BoardroomSession.open(process.env.CHROME_BIN);
+      session = entry.browser ?? await BoardroomSession.open(process.env.CHROME_BIN);
       if (socket.readyState !== WebSocket.OPEN) {
         await session.close();
         return;
       }
+      entry.browser = session;
 
       const active = session;
       const sendFrame = async () => {
@@ -92,7 +124,9 @@ sockets.on('connection', socket => {
         socket.send(frame, { binary: true });
       };
 
-      await active.navigateAsArtist(message.url, active.control.state);
+      if (resumed) active.control.reconnect();
+      else await active.navigateAsArtist(message.url, active.control.state);
+      send({ type: 'session', resumeId: entry.id });
       await sendFrame();
 
       socket.on('message', rawInput => {
@@ -196,5 +230,6 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     server.close();
     for (const socket of sockets.clients) socket.terminate();
+    for (const [owner, entry] of sessions) releaseSession(owner, entry);
   });
 }
