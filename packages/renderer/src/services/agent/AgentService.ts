@@ -1618,7 +1618,8 @@ export class AgentService {
                     const result = await runSeatWithTimeout(({ signal: seatSignal, isLive }) => this.executor.execute(
                         agentId,
                         enhancedText,
-                        context as PipelineContext,
+                        // The executor writes trace and attachment metadata to this object.
+                        { ...context } as PipelineContext,
                         (event) => {
                             if (!isLive()) return;
                             if (event.type === 'token') {

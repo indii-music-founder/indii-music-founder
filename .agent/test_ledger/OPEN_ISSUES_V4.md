@@ -3600,13 +3600,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1664: Parallel seats share and mutate one context (AS:1437, AgentExecutor.ts:96-98) [O11]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-11-21)
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O11 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Parallel seats share and mutate one context (`AS:1437`, `AgentExecutor.ts:96-98`). (read-only audit 2026-11-19; not yet reproduced at runtime)
-- **Fix:** See plan phase table for the owning phase.
-- **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+- **Fix:** Give every discussion seat its own context before passing it to the executor. Keep the shared, frozen request available to every seat.
+- **Acceptance:** The Boardroom dispatch regression initially found one context across four seats. It now verifies distinct contexts across both concurrent seats and subsequent chunks, while all seats retain the same frozen request. Signed-in acceptance remains pending.
 
 ---
 
