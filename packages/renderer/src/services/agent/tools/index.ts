@@ -48,6 +48,7 @@ import { BugReportTools } from './BugReportTools';
 import { LivingPlanTools } from './LivingPlanTools';
 import { MediaTools } from './MediaTools';
 import { ArtifactTools } from './ArtifactTools';
+import { BoardroomFontTools } from './BoardroomFontTools';
 import { ReleaseHarnessTools } from './ReleaseHarnessTools';
 import { CreatorProtectionTools } from './CreatorProtectionTools';
 import { HarnessTools } from './HarnessTools';
@@ -129,6 +130,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...LivingPlanTools,
     ...MediaTools,
     ...ArtifactTools,
+    ...BoardroomFontTools,
     ...FoundationalTools,
     ...ReleaseHarnessTools,
     ...CreatorProtectionTools,

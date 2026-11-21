@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import {
     ArrowLeft,
     ArrowRight,
@@ -22,6 +22,7 @@ import {
     judgeBoardroomWebpageSemantics,
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
+import { resolveBoardroomBrowserEndpoint } from './boardroomBrowserEndpoint';
 
 interface QuickBookmark {
     id: string;
@@ -45,6 +46,15 @@ const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
 interface BoardroomBrowserViewProps {
     isVisible?: boolean;
 }
+
+const BoardroomHostedBrowser = lazy(() => import('./BoardroomHostedBrowser'));
+const BoardroomWebSearch = lazy(() => import('./BoardroomWebSearch'));
+const hostedEndpoint = resolveBoardroomBrowserEndpoint({
+    enabled: import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true',
+    configuredEndpoint: import.meta.env.VITE_BOARDROOM_BROWSER_URL,
+    isDev: import.meta.env.DEV,
+    hostname: typeof window === 'undefined' ? '' : window.location.hostname,
+});
 
 function normalizeExternalHttpUrl(rawInput: string): string | null {
     const trimmed = rawInput.trim();
@@ -148,6 +158,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
     const initialBrowserUrl = useRef(boardroomBrowserUrl || 'https://artists.spotify.com');
     const [inputUrl, setInputUrl] = useState(boardroomBrowserUrl || 'https://artists.spotify.com');
+    const [webHistory, setWebHistory] = useState(() => ({
+        entries: [initialBrowserUrl.current],
+        index: 0,
+    }));
+    const [hostedUrl, setHostedUrl] = useState<string>();
+    const [searchQuery, setSearchQuery] = useState<string>();
     const [iframeKey, setIframeKey] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isPinning, setIsPinning] = useState(false);
@@ -158,14 +174,14 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const [pageTitle, setPageTitle] = useState('');
     const [isPinned, setIsPinned] = useState(false);
     const [isReaderMode, setIsReaderMode] = useState(false);
-    const [allowFrameAnyway, setAllowFrameAnyway] = useState(false);
     const [extractedText, setExtractedText] = useState<string | null>(null);
     const [lastSemanticJudgment, setLastSemanticJudgment] = useState<BoardroomWebpageSemantics | null>(null);
 
     const isNativeElectron = typeof window !== 'undefined' && Boolean(window.electronAPI?.boardroomBrowser);
 
-    const invalidatePage = useCallback((url: string) => {
-        if (currentUrl.current === url) return;
+    const canReadPage = typeof window !== 'undefined' && Boolean(window.electronAPI?.agent?.extractWebPage);
+    const invalidatePage = useCallback((url: string, force = false) => {
+        if (!force && currentUrl.current === url) return;
         currentUrl.current = url;
         initialBrowserUrl.current = url;
         pageRevision.current += 1;
@@ -173,7 +189,6 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         setIsPinned(false);
         setExtractedText(null);
         setIsReaderMode(false);
-        setAllowFrameAnyway(false);
         setPageTitle('');
     }, []);
 
@@ -182,8 +197,15 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         if (boardroomBrowserUrl) {
             invalidatePage(boardroomBrowserUrl);
             setInputUrl(boardroomBrowserUrl);
+            if (!isNativeElectron) {
+                setWebHistory(history => {
+                    if (history.entries[history.index] === boardroomBrowserUrl) return history;
+                    const entries = [...history.entries.slice(0, history.index + 1).slice(-20), boardroomBrowserUrl];
+                    return { entries, index: entries.length - 1 };
+                });
+            }
         }
-    }, [boardroomBrowserUrl, invalidatePage]);
+    }, [boardroomBrowserUrl, invalidatePage, isNativeElectron]);
 
     // Electron Native Viewport Sync
     useEffect(() => {
@@ -276,6 +298,12 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     };
 
     const handleNavigate = (targetUrl: string) => {
+        const input = targetUrl.trim();
+        if (!isNativeElectron && input && !/^[a-z][a-z0-9+.-]*:/i.test(input)
+            && (!input.includes('.') || /\s/.test(input))) {
+            setSearchQuery(input);
+            return;
+        }
         const safeUrl = normalizeExternalHttpUrl(targetUrl);
         if (!safeUrl) {
             toast.error('Only valid HTTP/HTTPS URLs are supported in the Boardroom browser.');
@@ -284,7 +312,6 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
 
         invalidatePage(safeUrl);
         setPageLoadFailed(false);
-        setAllowFrameAnyway(false);
         setBoardroomBrowserUrl(safeUrl);
         setInputUrl(safeUrl);
         setIsPinned(false);
@@ -303,10 +330,20 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         }
     };
 
+    const moveWebHistory = (delta: number) => {
+        const index = webHistory.index + delta;
+        const url = webHistory.entries[index];
+        if (!url) return;
+        setWebHistory({ ...webHistory, index });
+        setBoardroomBrowserUrl(url);
+    };
+
     const handleBack = () => {
         const api = window.electronAPI?.boardroomBrowser;
         if (api) {
             void runNativePageCommand(() => api.goBack());
+        } else {
+            moveWebHistory(-1);
         }
     };
 
@@ -314,6 +351,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         const api = window.electronAPI?.boardroomBrowser;
         if (api) {
             void runNativePageCommand(() => api.goForward());
+        } else {
+            moveWebHistory(1);
         }
     };
 
@@ -322,14 +361,14 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         if (api) {
             void runNativePageCommand(() => api.reload());
         } else {
-            setIsReaderMode(false);
-            setIsLoading(true);
+            invalidatePage(committedUrl, true);
+            setIsLoading(!isBlockedSelfEmbed && !isFrameBlockedPortal);
             setIframeKey(prev => prev + 1);
         }
     };
 
     const handleOpenExternal = async () => {
-        const target = normalizeExternalHttpUrl(inputUrl || boardroomBrowserUrl || 'https://artists.spotify.com');
+        const target = normalizeExternalHttpUrl(boardroomBrowserUrl || 'https://artists.spotify.com');
         if (!target) {
             toast.error('Cannot open invalid or non-HTTP(S) URL externally.');
             return;
@@ -354,7 +393,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
             setIsPinning(true);
             let pageData = {
                 title: '',
-                url: boardroomBrowserUrl || inputUrl,
+                url: committedUrl,
                 text: '',
             };
 
@@ -421,7 +460,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         try {
             setIsExtractingReader(true);
             if (window.electronAPI?.agent?.extractWebPage) {
-                const res = await window.electronAPI.agent.extractWebPage(boardroomBrowserUrl || inputUrl);
+                const res = await window.electronAPI.agent.extractWebPage(committedUrl);
                 if (revision !== pageRevision.current) return;
                 if (res.success && res.data?.text?.trim()) {
                     setPageTitle(res.data.title || '');
@@ -441,6 +480,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
     const committedUrl =
         normalizeExternalHttpUrl(boardroomBrowserUrl || 'https://artists.spotify.com') ||
         'https://artists.spotify.com';
+    const canNavigateBack = isNativeElectron ? canGoBack : webHistory.index > 0;
+    const canNavigateForward = isNativeElectron ? canGoForward : webHistory.index < webHistory.entries.length - 1;
     const isSecureUrl = isHttpsUrl(committedUrl);
     const isBlockedSelfEmbed = !isNativeElectron && isSameOriginUrl(committedUrl);
     const matchedBookmark = BOARDROOM_BOOKMARKS.find(bookmark => matchesBookmark(committedUrl, bookmark.url));
@@ -452,7 +493,36 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
         }
     })();
     const portalTitle = matchedBookmark?.title || portalHost;
-    const isFrameBlockedPortal = !isNativeElectron && !allowFrameAnyway && isKnownFrameBlockedUrl(committedUrl);
+    const isFrameBlockedPortal = !isNativeElectron && isKnownFrameBlockedUrl(committedUrl);
+    const canOpenHosted = !isNativeElectron && hostedEndpoint
+        && ['artists.spotify.com', 'fonts.google.com'].includes(new URL(committedUrl).hostname);
+
+    if (searchQuery !== undefined) {
+        return (
+            <Suspense fallback={<p role="status" className="p-3">Opening search…</p>}>
+                <BoardroomWebSearch
+                    initialQuery={searchQuery}
+                    onClose={() => setSearchQuery(undefined)}
+                    openInBoardroom={hostedEndpoint ? resultUrl => {
+                        if (!['artists.spotify.com', 'fonts.google.com'].includes(new URL(resultUrl).hostname)) return undefined;
+                        return () => {
+                            setSearchQuery(undefined);
+                            setHostedUrl(resultUrl);
+                        };
+                    } : undefined}
+                />
+            </Suspense>
+        );
+    }
+
+    if (hostedUrl && hostedEndpoint) {
+        return (
+            <Suspense fallback={<p role="status" className="p-3">Loading live browser…</p>}>
+                <BoardroomHostedBrowser endpoint={hostedEndpoint} initialUrl={hostedUrl} onClose={() => setHostedUrl(undefined)} />
+            </Suspense>
+        );
+    }
+
 
     return (
         <div data-testid="boardroom-browser-view" className="@container h-full w-full flex flex-col bg-zinc-950 text-white min-h-0 min-w-0 overflow-hidden">
@@ -461,10 +531,10 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 <button
                     type="button"
                     onClick={handleBack}
-                    disabled={!canGoBack}
+                    disabled={!canNavigateBack}
                     className={cn(
                         "p-1.5 rounded-lg transition-colors",
-                        canGoBack ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
+                        canNavigateBack ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
                     )}
                     title="Back"
                     aria-label="Back"
@@ -474,10 +544,10 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 <button
                     type="button"
                     onClick={handleForward}
-                    disabled={!canGoForward}
+                    disabled={!canNavigateForward}
                     className={cn(
                         "p-1.5 rounded-lg transition-colors",
-                        canGoForward ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
+                        canNavigateForward ? "text-white/80 hover:text-white hover:bg-white/10" : "text-white/20 cursor-not-allowed"
                     )}
                     title="Forward"
                     aria-label="Forward"
@@ -551,7 +621,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                 </button>
 
                 {/* Web Fallback Reader Mode Toggle */}
-                {!isNativeElectron && (
+                {!isNativeElectron && canReadPage && (
                     <button
                         type="button"
                         onClick={handleExtractReader}
@@ -571,12 +641,28 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     </button>
                 )}
 
+                {canOpenHosted && !isFrameBlockedPortal && (
+                    <button type="button" onClick={() => setHostedUrl(committedUrl)}
+                        className="shrink-0 rounded-lg bg-indigo-600 px-2 py-1.5 text-xs font-semibold">
+                        Open live browser
+                    </button>
+                )}
+
+                {!isNativeElectron && (
+                    <button type="button"
+                        onClick={() => setSearchQuery(inputUrl.trim() === boardroomBrowserUrl ? '' : inputUrl.trim())}
+                        title="Search the web" aria-label="Search the web"
+                        className="shrink-0 rounded-lg p-2 text-white/70 hover:bg-white/10">
+                        <Search size={14} />
+                    </button>
+                )}
+
                 {/* External Browser Button */}
                 <button
                     type="button"
                     onClick={handleOpenExternal}
                     className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-                    title="Open in default OS browser"
+                    title={isNativeElectron ? 'Open in your browser' : 'Open in a new tab'}
                     aria-label="Open externally"
                     data-testid="boardroom-browser-external-btn"
                 >
@@ -667,8 +753,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         <div className="p-6 text-white/80 space-y-4 max-w-3xl mx-auto">
                             <div className="border-b border-white/10 pb-3 flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                    <h2 className="text-base font-bold text-white truncate">{pageTitle || boardroomBrowserUrl || inputUrl}</h2>
-                                    <p className="text-xs text-white/40 truncate mt-0.5">{inputUrl}</p>
+                                    <h2 className="text-base font-bold text-white truncate">{pageTitle || committedUrl}</h2>
+                                    <p className="text-xs text-white/40 truncate mt-0.5">{committedUrl}</p>
                                 </div>
                                 <button
                                     type="button"
@@ -732,30 +818,38 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                 </div>
                                 <p className="text-[11px] font-mono text-white/40 truncate">{committedUrl}</p>
                                 <p className="text-xs text-white/65 leading-relaxed pt-1">
-                                    {portalTitle} blocks inline web iframe embedding (<code className="text-white/80">X-Frame-Options</code>). Open it directly in a browser tab, extract via Reader Mode, or use the Desktop App for native view.
+                                    {portalTitle} blocks inline web iframe embedding (<code className="text-white/80">X-Frame-Options</code>). Open it directly in a browser tab or use the desktop app for native view.
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                                {canOpenHosted && (
+                                    <button type="button" onClick={() => setHostedUrl(committedUrl)}
+                                        className="rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-400">
+                                        Open live browser
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={handleOpenExternal}
                                     data-testid="boardroom-portal-open-tab-btn"
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                                 >
                                     <span>Open {portalTitle} in New Tab</span>
                                     <ExternalLink size={12} />
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={handleExtractReader}
-                                    disabled={isExtractingReader}
-                                    aria-busy={isExtractingReader}
-                                    data-testid="boardroom-portal-reader-btn"
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                                >
-                                    <BookOpen size={12} />
-                                    <span>Reader Mode</span>
-                                </button>
+                                {canReadPage && (
+                                    <button
+                                        type="button"
+                                        onClick={handleExtractReader}
+                                        disabled={isExtractingReader}
+                                        aria-busy={isExtractingReader}
+                                        data-testid="boardroom-portal-reader-btn"
+                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                                    >
+                                        <BookOpen size={12} />
+                                        <span>Reader Mode</span>
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={handlePinToContext}
@@ -767,19 +861,6 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                     <span>{isPinning ? 'Pinning…' : 'Pin to Swarm'}</span>
                                 </button>
                             </div>
-                            <div className="pt-1 border-t border-white/5">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setAllowFrameAnyway(true);
-                                        setIsLoading(true);
-                                    }}
-                                    data-testid="boardroom-portal-try-embed-btn"
-                                    className="text-[11px] text-white/45 hover:text-white/80 underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 rounded px-1"
-                                >
-                                    Try Embed Frame Anyway
-                                </button>
-                            </div>
                         </div>
                     </div>
                 ) : (
@@ -789,7 +870,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                             <div className="absolute top-0 inset-x-0 h-0.5 bg-indigo-500 animate-pulse z-10 pointer-events-none" />
                         )}
                         <iframe
-                            key={iframeKey}
+                            key={`${committedUrl}:${iframeKey}`}
                             src={committedUrl}
                             onLoad={() => setIsLoading(false)}
                             onError={() => setIsLoading(false)}
@@ -803,7 +884,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                         {/* Notice for X-Frame-Options blocked pages in standard web */}
                         <div className="p-2 bg-zinc-900 border-t border-white/10 flex items-center justify-between gap-3 text-[11px] text-white/60 shrink-0">
                             <span className="min-w-0">
-                                Some portals (Spotify, ASCAP) block embedding in web browsers. Use <strong>Reader Mode</strong> or the <strong>Desktop App</strong> for native view.
+                                Some sites block embedding. Open the page in a new tab if it does not appear here.
                             </span>
                             <button
                                 type="button"

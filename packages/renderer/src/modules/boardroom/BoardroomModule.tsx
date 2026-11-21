@@ -54,7 +54,7 @@ export function BoardroomModule() {
     );
     const isBoardroomMode = conversationMode === 'boardroom';
 
-    const { isAnyPhone } = useMobile();
+    const { isAnyPhone, isDesktop } = useMobile();
 
     const activeCount = normalizeBoardroomAgentIds(activeAgents ?? []).length;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
@@ -62,6 +62,8 @@ export function BoardroomModule() {
     const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
     const [isTableOpen, setIsTableOpen] = React.useState(false);
     const [isDiscussionOpen, setIsDiscussionOpen] = React.useState(false);
+    const [isTableDocked, setIsTableDocked] = React.useState(true);
+    const [isDiscussionDocked, setIsDiscussionDocked] = React.useState(true);
     const [isRailOpen, setIsRailOpen] = React.useState(false);
     const discussionTrigger = React.useRef<HTMLButtonElement>(null);
     const discussionClose = React.useRef<HTMLButtonElement>(null);
@@ -69,17 +71,34 @@ export function BoardroomModule() {
     const workspaceOpen = boardroomWorkspaceLayout !== 'closed';
     const [workspaceVisited, setWorkspaceVisited] = React.useState(workspaceOpen);
     if (workspaceOpen && !workspaceVisited) setWorkspaceVisited(true);
-    const showTable = !isAnyPhone && (!workspaceOpen || isTableOpen);
-    const showDiscussion = workspaceOpen && isDiscussionOpen;
+    const dockSidePanels = isDesktop && !isAnyPhone && boardroomWorkspaceLayout === 'split';
+    const enteredBoardroom = React.useRef(false);
+    React.useLayoutEffect(() => {
+        if (!isBoardroomMode) {
+            enteredBoardroom.current = false;
+            return;
+        }
+        if (enteredBoardroom.current) return;
+        enteredBoardroom.current = true;
+        if (isDesktop && !isAnyPhone && boardroomWorkspaceLayout === 'closed') {
+            setBoardroomWorkspaceTab('browser');
+            setBoardroomWorkspaceLayout('split');
+        }
+    }, [isBoardroomMode, isDesktop, isAnyPhone, boardroomWorkspaceLayout, setBoardroomWorkspaceLayout, setBoardroomWorkspaceTab]);
+
+    const showTableOverlay = workspaceOpen && !dockSidePanels && !isAnyPhone && isTableOpen;
+    const showDiscussionOverlay = workspaceOpen && !dockSidePanels && isDiscussionOpen;
+    const showTable = !isAnyPhone && (!workspaceOpen || (dockSidePanels ? isTableDocked : showTableOverlay));
+    const showDiscussion = !workspaceOpen || (dockSidePanels ? isDiscussionDocked : showDiscussionOverlay);
     const hasTrackedBoardroomView = React.useRef(false);
 
     React.useLayoutEffect(() => {
-        if (showDiscussion) discussionClose.current?.focus();
+        if (showDiscussionOverlay) discussionClose.current?.focus();
         else if (returnDiscussionFocus.current) {
             returnDiscussionFocus.current = false;
             discussionTrigger.current?.focus();
         }
-    }, [showDiscussion]);
+    }, [showDiscussionOverlay]);
 
     const closeDiscussion = () => {
         returnDiscussionFocus.current = true;
@@ -186,7 +205,9 @@ export function BoardroomModule() {
                                         type="button"
                                         aria-label={showTable ? 'Hide table' : 'Show table'}
                                         aria-expanded={showTable}
-                                        onClick={() => setIsTableOpen(value => !value)}
+                                        onClick={() => dockSidePanels
+                                            ? setIsTableDocked(value => !value)
+                                            : setIsTableOpen(value => !value)}
                                         className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
                                     >
                                         <PanelLeft size={16} />
@@ -198,7 +219,11 @@ export function BoardroomModule() {
                                     aria-label="Discussion"
                                     aria-expanded={showDiscussion}
                                     aria-controls="boardroom-discussion"
-                                    onClick={() => showDiscussion ? closeDiscussion() : setIsDiscussionOpen(true)}
+                                    onClick={() => {
+                                        if (dockSidePanels) setIsDiscussionDocked(value => !value);
+                                        else if (showDiscussionOverlay) closeDiscussion();
+                                        else setIsDiscussionOpen(true);
+                                    }}
                                     className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
                                 >
                                     <MessageSquare size={16} />
@@ -311,15 +336,18 @@ export function BoardroomModule() {
 
                 {/* Split-Panel Content */}
                 <div className="relative flex-1 flex min-h-0 min-w-0 w-full overflow-hidden">
-                    {/* Left: Orbital Visualization — rendered when not on mobile and not full-stage */}
+                    {/* Left: Boardroom table */}
                     {showTable && (
                         <motion.div
+                            key="boardroom-table"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.1, type: 'spring', damping: 25, stiffness: 200 }}
                             className={cn(
                                 "relative shrink-0 flex items-center justify-center p-4 lg:p-5 transition-all duration-300 min-w-0 overflow-hidden",
-                                workspaceOpen ? "absolute inset-y-0 left-0 z-30 w-full max-w-lg border-r border-white/10 bg-zinc-950" : "w-[55%]"
+                                showTableOverlay
+                                    ? "absolute inset-y-0 left-0 z-30 w-full max-w-lg border-r border-white/10 bg-zinc-950"
+                                    : dockSidePanels ? "w-1/4 max-w-sm border-r border-white/10" : "w-[55%]"
                             )}
                             data-testid="boardroom-orbital-panel"
                         >
@@ -335,8 +363,9 @@ export function BoardroomModule() {
                     )}
 
                     {/* Middle: Boardroom Multi-Use Workspace Pane (Browser, Studio Module, Workbench, Agent Feed) */}
-                    {boardroomWorkspaceLayout !== 'closed' && (
+                    {workspaceVisited && (
                         <motion.div
+                            key="boardroom-workspace"
                             initial={{ opacity: 0, scale: 0.98 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.2 }}
@@ -345,30 +374,31 @@ export function BoardroomModule() {
                             data-testid="boardroom-workspace-container"
                         >
                             <BoardroomWorkspacePane
-                                hasOverlayOpen={!workspaceOpen || isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen || showTable || showDiscussion || isRailOpen}
+                                isOpen={workspaceOpen}
+                                hasOverlayOpen={!workspaceOpen || isTrackerOpen || isSwarmFeedOpen || isMobileSeatingOpen || showTableOverlay || showDiscussionOverlay || isRailOpen}
                             />
                         </motion.div>
                     )}
 
                     <div
                         id="boardroom-discussion"
-                        hidden={workspaceOpen && !showDiscussion}
+                        hidden={!showDiscussion}
                         className={cn(
                             "flex-col min-h-0 min-w-0 bg-zinc-950 overflow-hidden border-l border-white/10 z-30",
-                            workspaceOpen && !showDiscussion ? "hidden" : "flex",
-                            workspaceOpen
+                            showDiscussion ? "flex" : "hidden",
+                            showDiscussionOverlay
                                 ? cn("absolute inset-y-0 w-full max-w-md shadow-2xl", isAnyPhone ? "right-0" : "right-14")
-                                : "relative flex-1"
+                                : dockSidePanels ? "relative w-[28%] max-w-md shrink-0" : "relative flex-1"
                         )}
                         onKeyDown={event => {
-                            if (showDiscussion && event.key === 'Escape' && !event.defaultPrevented) {
+                            if (showDiscussionOverlay && event.key === 'Escape' && !event.defaultPrevented) {
                                 event.stopPropagation();
                                 closeDiscussion();
                             }
                         }}
                         data-testid="boardroom-conversation-container"
                     >
-                        {showDiscussion && (
+                        {showDiscussionOverlay && (
                             <button
                                 ref={discussionClose}
                                 type="button"

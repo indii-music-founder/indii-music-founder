@@ -21,10 +21,12 @@ vi.mock('@/core/components/chat/ChatMessage', () => ({
 // TextEffect, which defaults to motion.p) also import from 'motion/react'.
 vi.mock('motion/react', () => ({
     motion: new Proxy({} as Record<string, React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>>>>, {
-        get: (_target, tag: string) =>
-            React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<Element>) =>
+        get: (target, tag: string) => {
+            target[tag] ??= React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<Element>) =>
                 React.createElement(tag, { ref, ...filterDomProps(props) }, children)
-            ),
+            );
+            return target[tag];
+        },
     }),
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
     useReducedMotion: () => false,
@@ -53,9 +55,9 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 // Mock useMobile to return desktop mode by default
-const mobileState = vi.hoisted(() => ({ isAnyPhone: false }));
+const mobileState = vi.hoisted(() => ({ isAnyPhone: false, isDesktop: true }));
 vi.mock('@/hooks/useMobile', () => ({
-    useMobile: () => ({ isAnyPhone: mobileState.isAnyPhone, isMobile: mobileState.isAnyPhone }),
+    useMobile: () => ({ ...mobileState, isMobile: mobileState.isAnyPhone }),
 }));
 
 // Mock agent registry for BoardroomConversationPanel's resolveAgentIdentity
@@ -195,17 +197,45 @@ describe('BoardroomModule', () => {
         expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('split');
     });
 
-    it('opens the workspace with table and discussion folded away', () => {
+    it('opens the browser between the table and discussion when entering Boardroom on desktop', () => {
+        const view = render(<BoardroomModule />);
+        expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('split');
+        view.rerender(<BoardroomModule />);
+        const workspace = screen.getByTestId('boardroom-workspace-container');
+        expect(workspace.previousElementSibling).toBe(screen.getByTestId('boardroom-orbital-panel'));
+        expect(workspace.nextElementSibling).toBe(screen.getByTestId('boardroom-conversation-container'));
+        expect(screen.getByRole('tab', { name: 'Live Browser', selected: true })).toBeVisible();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close Workspace' }));
+        view.rerender(<BoardroomModule />);
+        expect(workspace).not.toBeVisible();
+    });
+
+    it.each(['browser', 'module', 'workbench', 'agent-feed'])('keeps %s between the docked table and discussion', tab => {
         mockStoreState.boardroomWorkspaceLayout = 'split';
-        mockStoreState.boardroomWorkspaceTab = 'browser';
+        mockStoreState.boardroomWorkspaceTab = tab;
 
         render(<BoardroomModule />);
-        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
-        expect(screen.getByTestId('boardroom-conversation-container')).not.toBeVisible();
-        fireEvent.click(screen.getByRole('button', { name: 'Show table' }));
-        expect(screen.getByTestId('boardroom-orbital-panel')).toHaveClass('absolute');
+        const table = screen.getByTestId('boardroom-orbital-panel');
+        const workspace = screen.getByTestId('boardroom-workspace-container');
+        const discussion = screen.getByTestId('boardroom-conversation-container');
+        expect(table.nextElementSibling).toBe(workspace);
+        expect(workspace.nextElementSibling).toBe(discussion);
+        expect(table).not.toHaveClass('absolute');
+        expect(discussion).toBeVisible();
+        expect(discussion).not.toHaveClass('absolute');
         fireEvent.click(screen.getByRole('button', { name: 'Hide table' }));
         expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Discussion' }));
+        expect(discussion).not.toBeVisible();
+        expect(workspace).toBeVisible();
+    });
+
+    it('keeps the discussion overlay keyboard accessible in stage layout', () => {
+        mockStoreState.boardroomWorkspaceLayout = 'stage';
+        mockStoreState.boardroomWorkspaceTab = 'browser';
+        render(<BoardroomModule />);
+        expect(screen.getByTestId('boardroom-conversation-container')).not.toBeVisible();
         fireEvent.click(screen.getByRole('button', { name: 'Discussion' }));
         expect(screen.getByTestId('boardroom-conversation-container')).toBeVisible();
         expect(screen.getByRole('button', { name: 'Close discussion' })).toHaveFocus();
@@ -213,6 +243,35 @@ describe('BoardroomModule', () => {
         expect(screen.getByRole('button', { name: 'Discussion' })).toHaveFocus();
         expect(screen.getByTestId('boardroom-workspace-container')).toHaveClass('min-w-0', 'overflow-hidden');
         expect(screen.getByTestId('boardroom-workspace-pane')).toBeInTheDocument();
+    });
+
+    it('expands the browser on request and restores the three columns without remounting it', () => {
+        mockStoreState.boardroomWorkspaceLayout = 'split';
+        const view = render(<BoardroomModule />);
+        const browser = screen.getByTestId('boardroom-browser-view');
+        fireEvent.click(screen.getByRole('button', { name: 'Expand browser' }));
+        view.rerender(<BoardroomModule />);
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-browser-view')).toBe(browser);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Restore split layout' }));
+        view.rerender(<BoardroomModule />);
+        expect(screen.getByTestId('boardroom-orbital-panel')).toBeVisible();
+        expect(screen.getByTestId('boardroom-conversation-container')).toBeVisible();
+        expect(screen.getByTestId('boardroom-browser-view')).toBe(browser);
+    });
+
+    it('preserves the open browser when the center pane is closed and reopened', () => {
+        mockStoreState.boardroomWorkspaceLayout = 'split';
+        const view = render(<BoardroomModule />);
+        const browser = screen.getByTestId('boardroom-browser-view');
+        fireEvent.click(screen.getByRole('button', { name: 'Close Workspace' }));
+        view.rerender(<BoardroomModule />);
+        expect(browser).not.toBeVisible();
+        fireEvent.click(screen.getByTestId('boardroom-workspace-toggle-browser'));
+        view.rerender(<BoardroomModule />);
+        expect(screen.getByTestId('boardroom-browser-view')).toBe(browser);
+        expect(browser).toBeVisible();
     });
 
     it('hides orbital table when in stage layout to maximize workspace focus', () => {

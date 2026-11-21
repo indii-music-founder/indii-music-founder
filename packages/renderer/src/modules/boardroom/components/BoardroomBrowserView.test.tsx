@@ -105,10 +105,10 @@ describe('Boardroom page classification', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent('could not be loaded');
         expect(screen.getByRole('button', { name: 'Pin page to swarm' })).toBeDisabled();
     });
-    it('reports an unavailable reader instead of claiming extraction succeeded', () => {
+    it('offers external open when the web runtime has no reader', () => {
         render(<BoardroomBrowserView />);
-        fireEvent.click(screen.getByRole('button', { name: 'Reader mode' }));
-        expect(mocks.error).toHaveBeenCalledWith('Could not extract text for reader mode.');
+        expect(screen.queryByRole('button', { name: 'Reader mode' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open Spotify for Artists in New Tab' })).toBeVisible();
     });
     it('discards reader content that arrives after navigation', async () => {
         let complete!: (result: unknown) => void;
@@ -222,8 +222,64 @@ describe('Boardroom page classification', () => {
         expect(screen.queryByTestId('boardroom-web-iframe')).not.toBeInTheDocument();
         expect(screen.getByTestId('boardroom-portal-open-tab-btn')).toHaveTextContent(/Open Spotify for Artists in New Tab/i);
 
-        fireEvent.click(screen.getByTestId('boardroom-portal-try-embed-btn'));
-        expect(screen.getByTestId('boardroom-web-iframe')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+        expect(screen.getByTestId('boardroom-frame-blocked-card')).toBeVisible();
+        expect(screen.queryByTestId('boardroom-web-iframe')).not.toBeInTheDocument();
+    });
+
+    it('opens the committed page even when the artist has typed a new address', () => {
+        const open = vi.fn();
+        vi.stubGlobal('open', open);
+        render(<BoardroomBrowserView />);
+
+        fireEvent.change(screen.getByRole('textbox', { name: 'Browser URL or search query' }), {
+            target: { value: 'https://example.com/draft' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Open externally' }));
+
+        expect(open).toHaveBeenCalledWith(new URL(mocks.url).href, '_blank', 'noopener,noreferrer');
+    });
+
+    it('opens search in the workspace when the artist enters a query in the address bar', async () => {
+        render(<BoardroomBrowserView />);
+        const address = screen.getByRole('textbox', { name: 'Browser URL or search query' });
+        fireEvent.change(address, { target: { value: 'Spotify for Artists release tools' } });
+        fireEvent.keyDown(address, { key: 'Enter' });
+
+        const search = await screen.findByRole('textbox', { name: 'Search the web' });
+        expect(search).toHaveValue('Spotify for Artists release tools');
+        expect(mocks.navigate).not.toHaveBeenCalled();
+    });
+
+    it('revisits committed addresses and discards forward history after new navigation', () => {
+        const first = 'https://example.com/first';
+        const second = 'https://example.com/second';
+        mocks.url = first;
+        const view = render(<BoardroomBrowserView />);
+        const back = screen.getByRole('button', { name: 'Back' });
+        const forward = screen.getByRole('button', { name: 'Forward' });
+        expect(back).toBeDisabled();
+        expect(forward).toBeDisabled();
+
+        mocks.url = second;
+        view.rerender(<BoardroomBrowserView />);
+        fireEvent.click(back);
+        expect(mocks.navigate).toHaveBeenLastCalledWith(first);
+        mocks.url = first;
+        view.rerender(<BoardroomBrowserView />);
+        expect(back).toBeDisabled();
+        fireEvent.click(forward);
+        expect(mocks.navigate).toHaveBeenLastCalledWith(second);
+        mocks.url = second;
+        view.rerender(<BoardroomBrowserView />);
+
+        fireEvent.click(back);
+        mocks.url = first;
+        view.rerender(<BoardroomBrowserView />);
+        mocks.url = 'https://example.com/third';
+        view.rerender(<BoardroomBrowserView />);
+        expect(back).toBeEnabled();
+        expect(forward).toBeDisabled();
     });
 
     it('blocks same-origin recursive iframe embedding in web mode', () => {

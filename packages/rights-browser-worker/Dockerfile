@@ -11,7 +11,7 @@ COPY packages/rights-browser-worker/src packages/rights-browser-worker/src
 COPY packages/rights-browser-worker/tsconfig.json packages/rights-browser-worker/
 RUN npm run build -w packages/shared && npm run build -w packages/rights-browser-worker
 FROM node:24-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends chromium ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends chromium chromium-sandbox ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV CHROME_BIN=/usr/bin/chromium NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules

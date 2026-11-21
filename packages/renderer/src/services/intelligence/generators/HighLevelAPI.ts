@@ -269,7 +269,7 @@ export async function analyzeFileURI(
 export async function generateGroundedContent(
     ctx: IntelligenceContext,
     prompt: string,
-    options?: { dynamicThreshold?: number }
+    options?: { dynamicThreshold?: number; signal?: AbortSignal }
 ): Promise<GenerateContentResult> {
     await ctx.ensureInitialized();
     const tools: Tool[] = [{
@@ -281,7 +281,7 @@ export async function generateGroundedContent(
             }
         } : undefined
     }] as unknown as Tool[];
-    return ctx.rawGenerateContent(prompt, ctx.model!.model, {}, undefined, tools as unknown as Tool[]);
+    return ctx.rawGenerateContent(prompt, ctx.model!.model, {}, undefined, tools as unknown as Tool[], { signal: options?.signal });
 }
 
 /**
