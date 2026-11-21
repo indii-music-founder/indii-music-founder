@@ -8,8 +8,10 @@ The earlier plan holds the audit and the background. This document is the
 step-by-step instructions for every remaining item. Work it from top to
 bottom. Each **Work Package (WP)** is one branch and one pull request.
 
-When every WP is merged, hand the branch list and evidence back to Claude for
-the approval review described in [§6](#6-handback-for-approval).
+When the WPs are published, hand the branch list and evidence back. For this
+project the owner has asked Claude to do the approval review described in
+[§6](#6-handback-for-approval); that review is owner-requested, not a general
+repository gate.
 
 ---
 
@@ -53,7 +55,7 @@ These are not optional. Breaking one blocks approval in §6.
 2. `git fetch origin && git checkout -B <agent>/<wp-slug> origin/main` for each WP. `<agent>` is `claude`, `codex` or `antigravity`.
 3. Push only that branch: `git push -u origin HEAD:refs/heads/<agent>/<wp-slug>`.
 4. Never push to `main`, never force-push, never rewrite history. If the base moves, `git merge origin/main` into your branch.
-5. Open the PR as **ready for review**, not draft. The owner merges.
+5. Publishing the validated branch completes delivery, per `branch-safety.md`. Open a pull request only when the owner asks for one, and then open it ready (never draft). Do not request reviews unless the owner asks. The owner merges.
 6. Before starting a WP, check open PRs and branches for anyone already on the same files (§5 conflict map). If someone is, pick a different WP.
 7. Write your agent name and date in the WP's **Claimed by** line in this file in your first commit, so others see it.
 
@@ -88,7 +90,7 @@ These e2e specs fail on `main` today and will be red on every PR until WP0 lands
 - shard 2: `e2e/detroit-techno-onboarding.spec.ts:120`, `e2e/distribution-workflow.spec.ts:178`, `e2e/indii-macro-flywheel.spec.ts:61`
 - shard 3: `e2e/mcp-a2a-routing.spec.ts:22`, `e2e/mcp-boardroom-collaboration.spec.ts:22`
 
-If only these fail, comment once on the PR with the spec list and a link to a base run showing the same failure. Any **other** red check is yours to fix.
+If only these fail, note it once (on the PR if there is one, otherwise in the handback) with the spec list and a link to a base run showing the same failure. Any **other** red check is yours to fix.
 
 The **Entire Gates** check and **Codex review** can fail on billing/quota ("Promotional credit has run out", "usage limits"). That is not a code failure; note it once.
 
@@ -132,11 +134,13 @@ Line numbers in V4 entries are from 2026-11-19 and may have drifted; always loca
 **IDs:** 1626 (remaining: memoized full row), 1643 (remaining: AppShell mount test)
 **Files:** `modules/boardroom/components/BoardroomConversationPanel.tsx` (+ new `BoardroomMessageRow.tsx`), `core/AppShell.tsx`, tests beside each.
 **Steps:**
-1. Extract the per-message JSX inside the `.map` in `BoardroomConversationPanel` into `BoardroomMessageRow`, wrapped in `React.memo` with a comparator on `id`, `text`, `isStreaming`, `thoughts.length`, `attachments` identity and `agentId`.
+1. Extract the per-message JSX inside the `.map` in `BoardroomConversationPanel` into `BoardroomMessageRow`, wrapped in plain `React.memo` (default shallow compare). Do **not** write a custom comparator: the row also renders from `msg.metadata` (persona measurement, updated by `AgentService.applyCompletedResponse` after finalization) and from the panel-wide `agentsResponding` flag (the user row's waiting animation). Pass every render input as a prop: the message object itself (the store replaces it immutably when it changes), `agentsResponding`, and callbacks.
 2. Pass row callbacks via `useCallback` so props stay stable.
 3. In `BoardroomModule.tsx`, stop subscribing to the whole `agentHistory` where only its length or the last message is needed (grep `agentHistory` in `BoardroomModule.tsx`, `BoardroomJourney.tsx`, `BoardroomRightRail.tsx`).
 **Tests first:**
 - Render 30 messages, then update the text of the last one 10 times. Count renders of row 0 with a render-counter mock; it must stay at 1. (Codex added `BoardroomConversationPanel.performance.test.tsx`; extend it.)
+- A metadata-only update to a finished agent message (persona measurement status) re-renders that row's response actions.
+- When the last streaming message finishes, the user row's waiting animation goes away.
 - AppShell: with `conversationMode: 'direct'`, the Boardroom lazy import is not requested; with `'boardroom'` it is.
 **Done when:** both tests pass; no visible change.
 
@@ -216,7 +220,7 @@ Line numbers in V4 entries are from 2026-11-19 and may have drifted; always loca
 3. **L5** — handoff highlight: when a new `a2aMessages` entry arrives, highlight the receiving agent's avatar for ~2s (CSS `motion-safe:` only). Add a per-state icon next to each avatar (working, needs approval, idle) with matching `aria-label`. Reduced motion shows static icons only.
 4. **1636 / phones** — `MobileParticipantDrawer` shows the same status (working/approval/idle) and latest action per agent; the workspace opens as a full-screen sheet on phones instead of a squeezed column; Living Plans and approvals get a phone entry point (header team button).
 **Tests first:** split layout renders discussion as a dialog/drawer; Solo button calls `soloAgent`; a new a2a message adds a highlight class to the receiver; phone drawer lists status text.
-**Done when:** pass; screenshots at 1440×900 and 390×844 attached to the PR (Playwright, mock auth is fine for screenshots but say so).
+**Done when:** pass. Browser screenshots at 1440×900 and 390×844 come only from a genuinely signed-in session (`.agent/REAL_USER_AUTHENTICITY.md`). If no genuine credentials are available, request the official sign-in flow from the owner or record "browser evidence unavailable" in the handback. Never inject, mock or bypass authentication to get a screenshot.
 
 ### WP8 — Typed workspace actions (biggest; split into 8a–8c)
 **Claimed by:** —
@@ -258,7 +262,7 @@ Line numbers in V4 entries are from 2026-11-19 and may have drifted; always loca
 1. **1647** — table seats take color and icon from `resolveAgentVisualIdentity` (delete the separate map in `ParticipantSelector.tsx` `AVAILABLE_AGENTS` styling). Replace hard-coded blue-black hex (`bg-[#060608]`, `bg-[#0d0d12]`, `bg-[#12161f]`, `bg-slate-900`, `bg-zinc-950` …) with the design tokens in `index.css` (`bg-bg-dark` and the surface tokens). Read `.jules/palette.md` and `directives/font_consistency.md` first.
 2. **1648** — prefix every `animate-ping|pulse|bounce|spin` in `modules/boardroom` with `motion-safe:`; replace `transition-all` on Motion-animated or draggable elements with `transition-colors`.
 **Tests first:** extend `boardroomClassHygiene.test.ts`: fails on bare `animate-(ping|pulse|bounce|spin)` and on `bg-[#0` hex backgrounds in `modules/boardroom`.
-**Done when:** pass; before/after screenshots at 1440×900 and 390×844.
+**Done when:** pass; before/after screenshots at 1440×900 and 390×844 from a genuinely signed-in session, or "browser evidence unavailable" recorded (same rule as WP7).
 
 ### WP12 — Cleanup (last; touches many files)
 **Claimed by:** —
@@ -323,9 +327,9 @@ If two agents need the same file, the later one waits for the earlier PR to merg
 
 ## 6. Handback for approval
 
-When a WP's PR is open, add a row here (in the WP's branch) and then hand the whole list to Claude:
+When a WP's branch is published, add a row here (in the WP's branch) and hand the list back to the owner, who passes it to Claude for the owner-requested review:
 
-| WP | Branch | PR | Head SHA | Local gate output attached | V4 IDs updated | Screenshots (UI WPs) | Not verified |
+| WP | Branch | PR (if the owner asked for one) | Head SHA | Local gate output attached | V4 IDs updated | Screenshots (UI WPs) | Not verified |
 |---|---|---|---|---|---|---|---|
 | | | | | | | | |
 
@@ -335,7 +339,8 @@ Claude's approval review checks, per WP:
 3. The diff touches only that WP's files; no unrelated changes.
 4. No PARTIAL status contains "fixed/completed/closed"; no FIXED status lacks closure evidence.
 5. No hard-coded infra IDs; no `window.confirm/alert/prompt`; no new ESLint errors.
-6. Claims in the PR body match what was actually run.
-7. CI red only on the §1.5 list (until WP0), each noted once on the PR.
+6. Claims in the handback (and any PR body) match what was actually run.
+7. No browser evidence was produced with mocked, injected or bypassed authentication.
+8. Where CI ran, it is red only on the §1.5 list (until WP0).
 
 Claude will reply per WP: **Approved**, or **Changes needed** with the exact file and line.
