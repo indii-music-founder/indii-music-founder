@@ -1,3 +1,9 @@
+## 2026-11-20 Boardroom Dispatch Release and Stream Preflight (BOARDROOM_DISPATCH_RELEASE_ORDER)
+
+- **Root cause:** Stop and reload can leave planned seats unstarted. Normal completion rejects that state, and background release let the next turn request a plan before the server acknowledged the old lease.
+- **Fix:** Send an explicit abandonment request after Stop or same-tab recovery. Keep owner, active model reservation, and unfinished generation guards. Await release before draining the turn queue.
+- **Prevention:** Model turn completion and abandonment as separate outcomes. Test that a follow-up waits for lease release and that abandonment cannot release active work.
+
 ## 2026-11-21 Boardroom discussion seats shared executor trace state
 
 - **Cause:** The discussion fan-out passed one context to every seat, and the executor assigns trace, swarm and attachment metadata to its input.

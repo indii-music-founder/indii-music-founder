@@ -1,3 +1,10 @@
+# Boardroom dispatch lease recovery and stream preflight (2026-11-20)
+
+- Boardroom releases stopped or orphaned turns with unstarted seats once existing model and generation work is safe to release. The turn queue waits for acknowledgement.
+- Removed a duplicate hosted browser endpoint declaration inherited from main, retaining the existing configuration resolver.
+- Streaming prepares request headers alongside quota and rate checks. A Stop during preflight prevents reservation.
+- Four focused structural suites passed (112 tests) on the branch based on main at 90f4d5aba. The broader local suite hit one Keeper context-clear assertion and two milestone storage assertions. All three also reproduced on the unchanged main checkout with Node 25.9.0. Check branch CI before attributing them to this change. Signed-in acceptance and first-response and full-turn timing remain unverified.
+
 # Mobile Remote Contact Audio/Submit, Camera Viewfinder & GenerationMonitor Primitives (`/PP`) — Delivered on `main` (2026-11-18)
 
 Delivered on `main` (`ERROR_LEDGER` IDs: `QUICK_CONTACT_AUDIO_PLAYBACK_AND_SUBMIT_LIFECYCLE`, `CAMERA_VIEWFINDER_PLAY_CONTROL_AND_RECORDER_LIFECYCLE`, `GENERATION_MONITOR_UNMOUNT_TIMEOUT_AND_CANCEL_RACES`):

@@ -1130,6 +1130,17 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
       userId: 'user-1', leaseId: '66666666-6666-4666-8666-666666666666',
     })).rejects.toThrow('before every planned agent starts');
     const activeLease = state.activeLease as Record<string, unknown>;
+    const abandon = { userId: 'user-1', leaseId: '66666666-6666-4666-8666-666666666666', abandoned: true };
+    activeLease.reservationIds = ['op-in-progress'];
+    await expect(completeBoardroomDispatchLease(abandon)).rejects.toThrow('still has active model work');
+    activeLease.reservationIds = [];
+    activeLease.sideEffectReservationId = 'op-image';
+    await expect(completeBoardroomDispatchLease(abandon)).rejects.toThrow('generation work is not terminal');
+    delete activeLease.sideEffectReservationId;
+    await completeBoardroomDispatchLease(abandon);
+    expect(state.activeLease).toBeNull();
+
+    state.activeLease = activeLease;
     activeLease.remainingSlotsByAgent = { generalist: 1, marketing: 1 };
     activeLease.reservationIds = [];
     await completeBoardroomDispatchLease({ userId: 'user-1', leaseId: '66666666-6666-4666-8666-666666666666' });

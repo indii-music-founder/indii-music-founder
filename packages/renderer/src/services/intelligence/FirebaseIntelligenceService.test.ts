@@ -408,6 +408,34 @@ describe('FirebaseIntelligenceService', () => {
         }
     });
 
+    it('prepares stream headers while quota is pending and skips reservation after Stop', async () => {
+        const { TokenUsageService } = await import('./billing/TokenUsageService');
+        const quota = vi.mocked(TokenUsageService.checkQuota);
+        let finishQuota!: () => void;
+        quota.mockImplementationOnce(() => new Promise(resolve => {
+            finishQuota = () => resolve(true);
+        }));
+        const headers = vi.spyOn(service as unknown as {
+            prepareBackendRequestHeaders: () => Promise<Record<string, string>>;
+        }, 'prepareBackendRequestHeaders');
+        const controller = new AbortController();
+        const reserve = vi.spyOn(CostControlService, 'checkAndReserve');
+        const pending = service.rawGenerateContentStream(
+            'Stream me', undefined, undefined, undefined, undefined, { timeout: 0, signal: controller.signal },
+        );
+        const stopped = expect(pending).rejects.toThrow(/cancelled/i);
+        try {
+            await vi.waitFor(() => expect(quota).toHaveBeenCalled());
+            expect(headers).toHaveBeenCalledOnce();
+            expect(reserve).not.toHaveBeenCalled();
+        } finally {
+            controller.abort();
+            finishQuota?.();
+            await stopped;
+        }
+        expect(reserve).not.toHaveBeenCalled();
+    });
+
     it('surfaces a mid-body stream abort as a clean retryable NETWORK_ERROR, not undici internals (ISSUE-1359)', async () => {
         // A Response whose body stream dies mid-read with undici's raw error.
         const abortingBody = new ReadableStream<Uint8Array>({
