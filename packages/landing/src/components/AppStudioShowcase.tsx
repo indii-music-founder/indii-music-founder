@@ -158,7 +158,7 @@ export default function AppStudioShowcase() {
           {isFromPassport && (
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FFB800]/50 bg-[#FFB800]/15 px-4 py-1.5 font-mono text-xs text-[#FFB800]">
               <Sparkles size={13} />
-              <span>Arrived from Artist Passport • Platform Guide & Workspace Overview</span>
+              <span>Arrived from Artist Passport • Workspace Overview</span>
             </div>
           )}
 
