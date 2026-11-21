@@ -39,7 +39,7 @@ import {
     PERSONA_RESPONSE_METADATA_KEY,
     getPersonaResponseMetadata,
 } from '@/services/persona/PersonaResponseMetadata';
-import { isTrivialInput } from '@/services/agent/utils/trivialInput';
+import { isSocialPleasantry, isTrivialInput } from '@/services/agent/utils/trivialInput';
 import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from './utils/approvalConsent';
 import { isCapabilityQuestion } from './capabilityTruth';
 import { PRINT_TOOL_DECLARATIONS } from './definitions/PrintToolDeclarations';
@@ -1253,6 +1253,20 @@ export class AgentService {
             this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
             return;
         }
+        // A greeting, thanks or goodbye needs no paid Boardroom dispatch (ISSUE-1662).
+        if (!attachments?.length && isSocialPleasantry(task.rawUserUtterance)) {
+            const seatedNames = normalizeBoardroomAgentIds(sourceState.activeAgents ?? [])
+                .map(id => agentRegistry.get(id)?.name || id)
+                .join(', ');
+            const history = (sourceState.agentHistory ?? []) as AgentMessage[];
+            const previous = history.filter(message => message.id !== responseId).at(-1);
+            const reply = AgentService.buildInstantGreeting('generalist', seatedNames, 'boardroom', previous?.timestamp);
+            store.getState().updateAgentMessage(responseId, { agentId: 'generalist', text: reply, isStreaming: false });
+            this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
+            // A live voice conversation waits for this to speak and reopen listening.
+            this.notifyLiveConversationIfActive('generalist', reply, responseId);
+            return;
+        }
         if (!attachments?.length && !isCapabilityQuestion(task.rawUserUtterance) && AgentService.isTrivialInput(task.rawUserUtterance) &&
             !/^(?:yes|yep|yeah|sure|go ahead|continue|start)[.!?]*$/i.test(task.rawUserUtterance.trim())) {
             return this.handleBoardroomSwarmFlow(task, attachments, inheritExecutionTokenBudget(context, { ...context, isReadOnly: true }), responseId, signal);
@@ -1463,7 +1477,7 @@ export class AgentService {
         let dispatchPlan: Readonly<BoardroomDispatchPlanContext>;
         try {
             // A reload mid-turn leaves this tab's lease held for up to 15 minutes (ISSUE-1657).
-            await releaseOrphanedBoardroomLease(id => CostControlService.completeBoardroomDispatchLease(id));
+            await releaseOrphanedBoardroomLease(id => CostControlService.completeBoardroomDispatchLease(id, true));
             const serverPlan = await CostControlService.getBoardroomDispatchPlan(seatedAgents);
             dispatchPlan = Object.freeze({
                 ...serverPlan,
@@ -1773,12 +1787,14 @@ export class AgentService {
         } finally {
             if (dispatchPlan.leaseId) {
                 const leaseId = dispatchPlan.leaseId;
-                CostControlService.completeBoardroomDispatchLease(leaseId)
-                    .then(() => forgetBoardroomLease(leaseId))
-                    .catch(error => {
-                        endBoardroomLeaseRun(leaseId);
-                        logger.warn('[AgentService] Boardroom dispatch lease release failed; the next turn in this tab will retry:', error);
-                    });
+                try {
+                    // Keep the turn occupied until release is acknowledged so the queued turn can acquire a new lease.
+                    await CostControlService.completeBoardroomDispatchLease(leaseId, signal?.aborted === true);
+                    forgetBoardroomLease(leaseId);
+                } catch (error) {
+                    endBoardroomLeaseRun(leaseId);
+                    logger.warn('[AgentService] Boardroom dispatch lease release failed; the next turn in this tab will retry:', error);
+                }
             }
         }
     }

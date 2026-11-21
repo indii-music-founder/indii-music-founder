@@ -952,7 +952,7 @@ describe('AgentService request-bound approval guidance', () => {
             .map(([message]) => message.text)
             .find(text => text.includes('Indii is coordinating'));
         expect(visiblePlan).toContain('Indii is coordinating 2 participants now; 2 will remain available for a later turn.');
-        expect(completeBoardroomLease).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222');
+        expect(completeBoardroomLease).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222', false);
     });
 
     it('stops seating further chunks once the user presses Stop (ISSUE-1666)', async () => {
@@ -995,7 +995,7 @@ describe('AgentService request-bound approval guidance', () => {
 
         expect(capturedExecutions.map(execution => execution.agentId)).not.toContain('finance');
         expect(messages.some(message => message.agentId === 'finance')).toBe(false);
-        expect(completeBoardroomLease).toHaveBeenCalledWith('33333333-3333-4333-8333-333333333333');
+        expect(completeBoardroomLease).toHaveBeenCalledWith('33333333-3333-4333-8333-333333333333', true);
     });
 
     it('aborts a timed-out seat and ignores its late tokens (ISSUE-1665)', async () => {
@@ -1054,7 +1054,12 @@ describe('AgentService request-bound approval guidance', () => {
         const orphan = '66666666-6666-4666-8666-666666666666';
         sessionStorage.setItem('indii:boardroom:activeDispatchLease', orphan);
         const order: string[] = [];
-        completeBoardroomLease.mockImplementation(async (id: string) => { order.push(`complete:${id}`); });
+        let acknowledgeRelease!: () => void;
+        const acknowledgement = new Promise<void>(resolve => { acknowledgeRelease = resolve; });
+        completeBoardroomLease.mockImplementation(async (id: string) => {
+            order.push(`complete:${id}`);
+            if (id !== orphan) await acknowledgement;
+        });
         callBoardroomPlan.mockImplementationOnce(async () => {
             order.push('plan');
             return {
@@ -1077,15 +1082,51 @@ describe('AgentService request-bound approval guidance', () => {
         (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
             vi.fn(async () => ({ getState: () => state }));
 
-        await (service as unknown as {
+        let finished = false;
+        const turn = (service as unknown as {
             handleBoardroomSwarmFlow: (task: {rawUserUtterance: string}, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
-        }).handleBoardroomSwarmFlow({rawUserUtterance: 'Review this release.'}, undefined, {}, 'response-0');
-        await vi.waitFor(() => expect(completeBoardroomLease).toHaveBeenCalledWith('77777777-7777-4777-8777-777777777777'));
+        }).handleBoardroomSwarmFlow({rawUserUtterance: 'Review this release.'}, undefined, {}, 'response-0')
+            .then(() => { finished = true; });
+        await vi.waitFor(() => expect(completeBoardroomLease).toHaveBeenCalledWith('77777777-7777-4777-8777-777777777777', false));
 
+        expect(completeBoardroomLease).toHaveBeenCalledWith(orphan, true);
+        expect(finished).toBe(false);
+        acknowledgeRelease();
+        await turn;
         expect(order.slice(0, 2)).toEqual([`complete:${orphan}`, 'plan']);
         await vi.waitFor(() => expect(sessionStorage.getItem('indii:boardroom:activeDispatchLease')).toBeNull());
         completeBoardroomLease.mockReset();
         completeBoardroomLease.mockResolvedValue(undefined);
+    });
+
+    it('answers a Boardroom greeting instantly without a paid dispatch (ISSUE-1662)', async () => {
+        const messages: Array<Record<string, unknown>> = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom', activeAgents: ['generalist', 'marketing'], referencedAssets: [], agentHistory: messages,
+            uploadedImages: [], generatedHistory: [], activeSessionId: null,
+            addAgentMessage: vi.fn((message: Record<string, unknown>) => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        const notifyLive = vi.fn();
+        (service as unknown as { notifyLiveConversationIfActive: typeof notifyLive }).notifyLiveConversationIfActive = notifyLive;
+
+        await (service as unknown as {
+            handleBoardroomRequestFlow: (task: { rawUserUtterance: string }, attachments: undefined,
+                context: AgentContext, responseId: string) => Promise<void>;
+        }).handleBoardroomRequestFlow({ rawUserUtterance: 'hi team' }, undefined, {}, 'response-0');
+        // A live voice conversation must still hear the reply and resume listening.
+        expect(notifyLive).toHaveBeenCalledWith('generalist', expect.stringContaining('Marketing Director'), 'response-0');
+
+        expect(callBoardroomPlan).not.toHaveBeenCalled();
+        expect(capturedExecutions).toHaveLength(0);
+        expect(String(messages[0]?.text)).toContain('Marketing Director');
+        expect(messages[0]?.isStreaming).toBe(false);
     });
 
     it('submits no specialist call when the typed server plan exhausts the turn budget', async () => {

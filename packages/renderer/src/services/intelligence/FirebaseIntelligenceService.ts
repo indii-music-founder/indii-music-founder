@@ -1007,13 +1007,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     // 2. Quota & Rate Limit (Backend)
                     const userId = auth.currentUser?.uid;
                     if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
-                    {
-                        // Quota and rate limit checks are independent.
-                        const [_quotaResult, _rateLimitResult] = await Promise.all([
-                            TokenUsageService.checkQuota(userId),
-                            TokenUsageService.checkRateLimit(userId),
-                        ]);
-                    }
+                    // Header preparation and admission checks can run concurrently.
+                    [headers] = await Promise.all([
+                        this.prepareBackendRequestHeaders(),
+                        TokenUsageService.checkQuota(userId),
+                        TokenUsageService.checkRateLimit(userId),
+                    ]);
+                    internalSignal.throwIfAborted();
 
                     // 2. Sanitize & Prepare Prompt
                     const sanitizedPrompt = this.sanitizePrompt(prompt);
@@ -1037,7 +1037,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         toolConfig: options?.toolConfig,
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
-                    headers = await this.prepareBackendRequestHeaders();
                     costReservationId = await this.reserveAgentStream(userId, modelName, true,
                         estimateAgentStreamCost(contents, systemInstruction, tools, modelName, backendConfig.maxOutputTokens), options);
                     return this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);

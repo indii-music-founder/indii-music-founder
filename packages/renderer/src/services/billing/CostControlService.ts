@@ -325,13 +325,13 @@ export class CostControlService {
     };
   }
 
-  static async completeBoardroomDispatchLease(leaseId: string): Promise<void> {
+  static async completeBoardroomDispatchLease(leaseId: string, abandoned = false): Promise<void> {
     if (!functions) throw new Error('Boardroom dispatch admission is unavailable.');
     try {
-      const completion = httpsCallable<{ leaseId: string }, { completed: true }>(
+      const completion = httpsCallable<{ leaseId: string; abandoned: boolean }, { completed: true }>(
         functions,
         'completeBoardroomAgentStreamDispatch',
-      )({ leaseId });
+      )({ leaseId, abandoned });
       await completion;
     } catch (error) {
       throw new Error('Boardroom dispatch lease completion failed.', { cause: error });
