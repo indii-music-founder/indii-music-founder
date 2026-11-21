@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M7YBQHTKETRQVB5MSTBXG6JV",
+  "strategy": "manual-commit",
+  "branch": "codex/boardroom-workspace-956",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".agent/test_ledger/OPEN_ISSUES_V4.md",
+    "agents/conductor/prompt.md",
+    "packages/renderer/src/config/typesafeJudgments.ts",
+    "packages/renderer/src/modules/boardroom/components/BoardroomBrowserView.tsx",
+    "packages/renderer/src/services/agent/ToolRiskRegistry.ts",
+    "packages/renderer/src/services/agent/components/AgentOrchestrator.ts",
+    "packages/renderer/src/services/agent/specialists/GeneralistAgent.ts",
+    "packages/renderer/src/services/agent/tools/NavigationTools.ts",
+    "packages/renderer/src/services/agent/tools/__tests__/NavigationTools.test.ts",
+    "packages/renderer/src/services/canvas/BundledArtworkFonts.test.ts",
+    "packages/renderer/src/services/canvas/BundledArtworkFonts.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30863,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 12272896,
+    "output_tokens": 13978,
+    "api_call_count": 33
+  },
+  "redaction": {
+    "replacements": 157,
+    "layers": {
+      "betterleaks": 9,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 149,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
