@@ -6,7 +6,7 @@ This runbook finishes the Boardroom modernization that started in
 [`boardroom-modernization-plan-2026-11-19.md`](boardroom-modernization-plan-2026-11-19.md).
 The earlier plan holds the audit and the background. This document is the
 step-by-step instructions for every remaining item. Work it from top to
-bottom. Each **Work Package (WP)** is one branch and one pull request.
+bottom. Each **Work Package (WP)** is a bounded unit; delivery follows the current repository policy and owner authorization.
 
 When the WPs are published, hand the branch list and evidence back. For this
 project the owner has asked Claude to do the approval review described in
@@ -50,14 +50,12 @@ Open as PRs (merge before starting a WP that touches the same files):
 
 These are not optional. Breaking one blocks approval in §6.
 
-### 1.1 Branches, never `main`
-1. Read [`.agent/workflows/branch-safety.md`](../../.agent/workflows/branch-safety.md) first.
-2. `git fetch origin && git checkout -B <agent>/<wp-slug> origin/main` for each WP. `<agent>` is `claude`, `codex` or `antigravity`.
-3. Push only that branch: `git push -u origin HEAD:refs/heads/<agent>/<wp-slug>`.
-4. Never push to `main`, never force-push, never rewrite history. If the base moves, `git merge origin/main` into your branch.
-5. Publishing the validated branch completes delivery, per `branch-safety.md`. Open a pull request only when the owner asks for one, and then open it ready (never draft). Do not request reviews unless the owner asks. The owner merges.
-6. Before starting a WP, check open PRs and branches for anyone already on the same files (§5 conflict map). If someone is, pick a different WP.
-7. Write your agent name and date in the WP's **Claimed by** line in this file in your first commit, so others see it.
+### 1.1 Delivery and ownership
+1. Read `.agent/workflows/branch-safety.md` and follow its current delivery policy.
+2. Use mainline delivery unless the owner explicitly authorizes a task branch or integration batch. The owner has authorized the integration queue to combine compatible incoming branches and merge verified batches through Entire.
+3. Keep origin on Entire. Never force-push or rewrite main. Inspect CI for the exact delivered SHA.
+4. Check incoming branches and active work before claiming overlapping files; preserve other agents' changes.
+5. Record the agent name and date in the WP's **Claimed by** line when work starts.
 
 ### 1.2 Machine setup (first time per machine)
 ```bash
