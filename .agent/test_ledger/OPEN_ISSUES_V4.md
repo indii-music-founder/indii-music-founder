@@ -3924,7 +3924,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1691: Five e2e specs fail on main and turn every PR red
 
-- **Status:** 🟡 PARTIAL — WP0 in progress on branch claude/wp0-green-ci (2026-11-21): 2 of 5 specs repaired locally; Detroit Techno and the two MCP specs still open
+- **Status:** 🟡 PARTIAL — 2 of 5 specs repaired and merged (#973, 2026-11-21); Detroit Techno and the two MCP specs still open
 - **Severity:** 🟠 HIGH
 - **Module:** e2e / CI
 - **Evidence:** base run actions/runs/44874990405 (shard 2: detroit-techno-onboarding:120, distribution-workflow:178, indii-macro-flywheel:61; shard 3: mcp-a2a-routing:22, mcp-boardroom-collaboration:22).
@@ -3933,3 +3933,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - distribution-workflow: spec drift from ISSUE-969, which requires a real hashed master and a staged cover before a release can submit. The mocked suite has neither, so the test now verifies the gate (submit disabled, missing-asset message) instead of delivery. Full submission still needs a genuine account with an ingested master and remains unverified.
 - **Impact:** every PR is red on the same specs, hiding real regressions.
 - **Acceptance:** all five specs pass in CI, or carry a skip that names the missing service and is recorded here.
+- **Findings on the three open specs (2026-11-21, local reproduction, not yet root-caused):**
+  - mcp-a2a-routing: reproduces in about 25s. The spec already mocks `/mcpEndpoint/sse` and `/message` with `page.route`, so it does NOT need a real MCP server (the earlier note in this ledger was wrong). The Publicist's message stays on "(Working on the assigned step…)" and never shows `MOCK_DATA_FROM_MCP_SERVER`. Prime suspect: ISSUE-1660 (Boardroom action steps drop the agent's text and replace it with a receipt). Confirm by running the spec after WP4 step 1, or by reading the step message at the end of the run. A 60s wait was attempted but the dev server died mid-run, so that result is invalid.
+  - mcp-boardroom-collaboration: not yet run locally; likely the same cause.
+  - detroit-techno-onboarding: has its own 30-minute timeout (`authedTest.setTimeout(1800000)`); about 10 of its ~19 scripted AI turns complete in roughly 9 minutes locally because of client request pacing. The failing step is not yet identified. Next: run in a long background job (about 25 min) with `VITE_FIREBASE_PROJECT_ID=mock-project` and read the first failing assertion, then decide app bug vs spec drift.
+- **Local run tips:** the installed Chromium is build 1243, so use a throwaway config outside git that sets `executablePath: '/opt/pw-browsers/chromium'`, `video: 'off'` and `screenshot: 'off'` (no ffmpeg). Do not run two Playwright jobs at once; they share the dev server on port 4242 and one can kill it.
