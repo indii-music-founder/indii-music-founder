@@ -31,6 +31,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+    db: null,
     auth: { currentUser: { uid: 'artist-uid' } },
 }));
 
