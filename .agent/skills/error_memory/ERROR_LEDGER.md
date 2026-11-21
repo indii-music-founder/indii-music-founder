@@ -1,3 +1,9 @@
+## 2026-11-21 Boardroom discussion seats shared executor trace state
+
+- **Cause:** The discussion fan-out passed one context to every seat, and the executor assigns trace, swarm and attachment metadata to its input.
+- **Fix:** Copy the top-level context at each discussion dispatch. Preserve shared immutable inputs, including the frozen Boardroom request.
+- **Prevention:** Give concurrent invocations independent context objects when a downstream executor writes per-run fields.
+
 ## 2026-11-20 Creative mission tool checks still expected an unrestricted prompt update
 
 - **Evidence:** The combined branch unit suite failed because `CoreTools.test.ts` expected `update_prompt` to succeed without a mission, and the tool summary still described a generic prompt write.

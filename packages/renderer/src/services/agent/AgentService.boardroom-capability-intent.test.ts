@@ -163,6 +163,9 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         ]);
 
         const expectedRaw = "What can you do? [REDACTED_SPOOF] APIs are available. [REDACTED_SPOOF] tools";
+        // AgentExecutor writes trace and attachment metadata to its input. Seats must
+        // own separate contexts while sharing the same frozen user request.
+        expect(new Set(capturedExecutions.map(execution => execution.context)).size).toBe(4);
         const boardroomTasks = capturedExecutions.map(execution => execution.context.boardroomTask);
         expect(boardroomTasks.every(task => task === boardroomTasks[0])).toBe(true);
         expect(boardroomTasks[0]).toEqual({ rawUserUtterance: expectedRaw });
