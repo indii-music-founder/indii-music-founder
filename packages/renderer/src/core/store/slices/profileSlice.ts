@@ -9,6 +9,18 @@ import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 let globalProfileUnsubscribe: (() => void) | null = null;
 let profileBoundaryGeneration = 0;
 
+/** Milliseconds for a profile `updatedAt` (Firestore Timestamp, plain {seconds}, or ISO string). */
+function profileUpdatedAtMs(t: unknown): number {
+    if (!t) return 0;
+    if (typeof t === 'string') return new Date(t).getTime() || 0;
+    if (typeof t === 'object') {
+        const ts = t as { toMillis?: () => number; seconds?: number; nanoseconds?: number };
+        if (typeof ts.toMillis === 'function') return ts.toMillis();
+        if (typeof ts.seconds === 'number') return ts.seconds * 1000 + (ts.nanoseconds || 0) / 1_000_000;
+    }
+    return 0;
+}
+
 export function clearProfileSubscriptionForAccountBoundary(): void {
     profileBoundaryGeneration += 1;
     globalProfileUnsubscribe?.();
@@ -240,7 +252,15 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
 
             if (!isCurrentLoad()) return;
 
-            if (profile) {
+            const localProfile = get().userProfile;
+            const hasNewerLocalEdits = !!profile && localProfile?.uid === uid
+                && profileUpdatedAtMs(localProfile.updatedAt) > profileUpdatedAtMs(profile.updatedAt);
+            if (hasNewerLocalEdits) {
+                // The user edited the profile (e.g. picked a career path during
+                // onboarding) while this load was in flight. Those edits are
+                // already persisted by setUserProfile; never roll them back.
+                logger.info('[Profile] Keeping local profile edits newer than the stored copy');
+            } else if (profile) {
                 logger.info('[Profile] Loaded profile for:', uid);
                 // A profile is presentation state only. Founder and paid access
                 // are resolved by server-owned entitlements before any spend.
@@ -281,18 +301,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         const cloudProfile = docSnap.data() as UserProfile;
                         
                         const currentProfile = get().userProfile;
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const getMs = (t: any) => {
-                            if (!t) return 0;
-                            if (typeof t.toMillis === 'function') return t.toMillis();
-                            if (t.seconds) return t.seconds * 1000 + (t.nanoseconds || 0) / 1000000;
-                            // Also handle ISO strings if somehow it was converted
-                            if (typeof t === 'string') return new Date(t).getTime();
-                            return 0;
-                        };
-                        
-                        const currentMs = getMs(currentProfile?.updatedAt);
-                        const cloudMs = getMs(cloudProfile?.updatedAt);
+                        const currentMs = profileUpdatedAtMs(currentProfile?.updatedAt);
+                        const cloudMs = profileUpdatedAtMs(cloudProfile?.updatedAt);
 
                         if (currentMs > cloudMs) {
                             logger.info('[Profile] Ignoring stale cloud update (local is newer)');

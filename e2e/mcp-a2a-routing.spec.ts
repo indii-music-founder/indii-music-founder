@@ -1,8 +1,15 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 import { answerJudgeQuestions } from './fixtures/judgeOverrides';
+import { startMcpSseStub, type McpSseStub } from './fixtures/mcpSseServer';
 
 test.describe('A2A Routing to MCP Tools', () => {
+    // A real local SSE gateway: the MCP client reads tool results from the
+    // long-lived SSE stream, which a route mock cannot hold open (ISSUE-1691).
+    let mcpStub: McpSseStub;
+    test.beforeAll(async () => { mcpStub = await startMcpSseStub(); });
+    test.afterAll(async () => { await mcpStub?.stop(); });
+
     test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/', { waitUntil: 'domcontentloaded' });
         
@@ -20,50 +27,9 @@ test.describe('A2A Routing to MCP Tools', () => {
     });
 
     test('Publicist Agent successfully hits the MCP harness and triggers generate_playlist_pitch', async ({ authedPage: page }) => {
-        // Intercept the /mcpEndpoint/sse and /mcpEndpoint/message calls to simulate the Cloud Run MCP server
-        await page.route('**/mcpEndpoint/sse', async (route) => {
-            // Simulate SSE handshake
-            // The message endpoint must sit under the configured gateway (assertMcpTransportDestination),
-            // whose path includes the Firebase project id — derive it from the actual /sse request.
-            const ssePath = new URL(route.request().url()).pathname;
-            const sseResponse = `event: endpoint\ndata: ${ssePath.replace(/\/sse$/, '/message')}\n\n`;
-            await route.fulfill({
-                status: 200,
-                contentType: 'text/event-stream',
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Credentials': 'true',
-                },
-                body: sseResponse
-            });
-        });
-
-        await page.route('**/mcpEndpoint/message', async (route) => {
-            // Simulate the JSON-RPC response from the backend stub
-            const requestBody = JSON.parse(route.request().postData() || '{}');
-            const response = {
-                jsonrpc: "2.0",
-                id: requestBody.id,
-                result: {
-                    content: [
-                        {
-                            type: "text",
-                            text: "MOCK_DATA_FROM_MCP_SERVER: generate_playlist_pitch executed successfully"
-                        }
-                    ]
-                }
-            };
-
-            await route.fulfill({
-                status: 200,
-                contentType: 'application/json',
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Credentials': 'true',
-                },
-                body: JSON.stringify(response)
-            });
-        });
+        // The auth fixture's Cloud Functions catch-all also matches :5001; let the
+        // MCP gateway requests through to the local stub (loopback only).
+        await page.route('**/mcpEndpoint/**', route => route.continue());
 
         // Send a message specifically targeting the new MCP tool with arguments that match its schema
         // This request asks the Boardroom to act on a Publicist tool: the real judge
@@ -72,8 +38,15 @@ test.describe('A2A Routing to MCP Tools', () => {
         await page.fill('[data-testid="main-prompt-input"]', 'Generate a playlist pitch for releaseId "track-123" targeting the "RapCaviar" playlist with an aggressive angle.');
         await page.press('[data-testid="main-prompt-input"]', 'Enter');
 
-        // Stronger assertion checking the actual UI
+        // The gateway really received the call, with the user's arguments.
+        await expect.poll(() => mcpStub.calls, { timeout: 15000 }).toContainEqual({
+            name: 'generate_playlist_pitch',
+            args: expect.objectContaining({ releaseId: 'track-123' }),
+        });
+
+        // Raw tool payloads are system-only and never shown to the user; the
+        // Publicist's message reports the executed remote tool instead.
         const locator = page.locator('[data-agent-id="publicist"] .message-content').last(); // bypass-strict: select latest message in chat thread
-        await expect(locator).toContainText('MOCK_DATA_FROM_MCP_SERVER', { timeout: 15000 });
+        await expect(locator).toContainText('Executed remote tool: generate_playlist_pitch', { timeout: 15000 });
     });
 });
