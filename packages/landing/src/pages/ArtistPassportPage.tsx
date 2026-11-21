@@ -33,6 +33,7 @@ import {
   getActiveAssessmentId,
 } from '../lib/passportService';
 import { trackPassportEvent } from '../lib/passportAnalytics';
+import { EASE_OUT_EXPO } from '../lib/motionSystem';
 import PassportSharePanel from '../components/passport/PassportSharePanel';
 import PassportSingularityHero from '../components/passport/PassportSingularityHero';
 import { NOW_WHAT_CAMPAIGNS, readCampaignAttribution, campaignQuery } from '../lib/nowWhatCampaign';
@@ -243,6 +244,20 @@ export default function ArtistPassportPage() {
 
   const diagnosticReport: DiagnosticReport = evaluatePassport(answers);
 
+  // Steps slide in from the direction of travel; the previous step is read
+  // during render, so it still holds the step we are leaving.
+  const prevStepRef = useRef(currentStep);
+  const stepDirection = currentStep >= prevStepRef.current ? 1 : -1;
+  useEffect(() => {
+    prevStepRef.current = currentStep;
+  }, [currentStep]);
+  const stepEnter = {
+    initial: { opacity: 0, x: stepDirection * 28, filter: 'blur(6px)' },
+    animate: { opacity: 1, x: 0, filter: 'blur(0px)' },
+    transition: { duration: 0.5, ease: EASE_OUT_EXPO },
+  };
+  const progress = currentStep >= 6 ? 1 : Math.max(0, currentStep) / 5;
+
   return (
     <div className="min-h-screen bg-[#000000] text-white selection:bg-[#FFB800] selection:text-black antialiased relative overflow-hidden flex flex-col justify-between">
       {/* Bespoke Black Hole Singularity Backdrop (instant LCP + static FALLBACK) */}
@@ -303,6 +318,16 @@ export default function ArtistPassportPage() {
             </Link>
           </div>
         </div>
+        {currentStep > 0 && (
+          <div aria-hidden="true" className="absolute inset-x-0 -bottom-px h-px bg-white/10">
+            <motion.div
+              className="h-full origin-left bg-gradient-to-r from-[#FFB800] via-[#FFD56B] to-[#00F0FF]"
+              initial={false}
+              animate={{ scaleX: progress }}
+              transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
+            />
+          </div>
+        )}
       </header>
 
       {/* Main Diagnostic Body */}
@@ -327,9 +352,8 @@ export default function ArtistPassportPage() {
           {currentStep === 1 && (
             <motion.div
               key="step-1"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              data-passport-step
+              {...stepEnter}
               className="space-y-6"
             >
               <div>
@@ -376,9 +400,8 @@ export default function ArtistPassportPage() {
           {currentStep === 2 && (
             <motion.div
               key="step-2"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              data-passport-step
+              {...stepEnter}
               className="space-y-6"
             >
               <div>
@@ -443,9 +466,8 @@ export default function ArtistPassportPage() {
           {currentStep === 3 && (
             <motion.div
               key="step-3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              data-passport-step
+              {...stepEnter}
               className="space-y-6"
             >
               <div>
@@ -532,9 +554,8 @@ export default function ArtistPassportPage() {
           {currentStep === 4 && (
             <motion.div
               key="step-4"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              data-passport-step
+              {...stepEnter}
               className="space-y-6"
             >
               <div>
@@ -611,9 +632,8 @@ export default function ArtistPassportPage() {
           {currentStep === 5 && (
             <motion.div
               key="step-5"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              data-passport-step
+              {...stepEnter}
               className="space-y-6"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -667,16 +687,17 @@ export default function ArtistPassportPage() {
           {currentStep === 6 && (
             <motion.div
               key="step-6"
+              data-passport-report
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
               className="space-y-8"
             >
               {/* Header Badge */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1F222A] pb-6">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#00FF66] shadow-[0_0_8px_#00FF66]" />
+                    <span className="passport-ping h-2 w-2 rounded-full bg-[#00FF66] shadow-[0_0_8px_#00FF66]" />
                     <span className="text-xs font-mono uppercase tracking-widest text-[#00FF66]">
                       Audit Complete • Personalized Gap Analysis
                     </span>
