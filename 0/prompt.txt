@@ -1,0 +1,33 @@
+&#x20;that do you understand where I'm at all right so I just realized we had a terrible typo sometime ago and it caused misunderstanding I preferred when the eye frame was in this middle between the boardroom table
+
+---
+
+Additionally, I have to say I like your browser page. So let's make sure then that we don't destroy it, that we use it, but the browser studio workbench feed and whatever else we add stays in the middle iframe first. If the user wants to, they can click a button that will do a pop-out browser or whatever
+
+---
+
+Here's your test that I want you to do in the browser that we just built. Is you have to go into the boardroom and you have to tell the boardroom to go down into the browser and download a font. I don't care what font, a Google font, right? Any, any type
+
+---
+
+&#x20;so we prebuilt browser control into the code. You should go look for it. Browser control for your agents. It should be just like browser control that Antigravity has.
+
+---
+
+[go.md](.agent/workflows/go.md)
+
+---
+
+[go.md](.agent/workflows/go.md)
+
+---
+
+Okay, if it doesn't work, it's not finished, get to work.
+
+---
+
+test it
+
+---
+
+Local host is always blocked in your browser for some reason. Let's test the real app, which is what I prefer
