@@ -62,7 +62,8 @@ export function BoardroomModule() {
     const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
     const [isTableOpen, setIsTableOpen] = React.useState(false);
     const [isDiscussionOpen, setIsDiscussionOpen] = React.useState(false);
-    const [isTableDocked, setIsTableDocked] = React.useState(true);
+    // Opening a workspace tab folds the table away so the work gets the room.
+    const [isTableDocked, setIsTableDocked] = React.useState(false);
     const [isDiscussionDocked, setIsDiscussionDocked] = React.useState(true);
     const [isRailOpen, setIsRailOpen] = React.useState(false);
     const discussionTrigger = React.useRef<HTMLButtonElement>(null);
@@ -90,6 +91,9 @@ export function BoardroomModule() {
     const showDiscussionOverlay = workspaceOpen && !dockSidePanels && isDiscussionOpen;
     const showTable = !isAnyPhone && (!workspaceOpen || (dockSidePanels ? isTableDocked : showTableOverlay));
     const showDiscussion = !workspaceOpen || (dockSidePanels ? isDiscussionDocked : showDiscussionOverlay);
+    const toggleTable = () => (dockSidePanels
+        ? setIsTableDocked(value => !value)
+        : setIsTableOpen(value => !value));
     const hasTrackedBoardroomView = React.useRef(false);
 
     React.useLayoutEffect(() => {
@@ -200,14 +204,12 @@ export function BoardroomModule() {
                     <div className="flex items-center gap-1.5 shrink-0 justify-end">
                         {workspaceOpen && (
                             <>
-                                {!isAnyPhone && (
+                                {!isAnyPhone && showTable && (
                                     <button
                                         type="button"
-                                        aria-label={showTable ? 'Hide table' : 'Show table'}
-                                        aria-expanded={showTable}
-                                        onClick={() => dockSidePanels
-                                            ? setIsTableDocked(value => !value)
-                                            : setIsTableOpen(value => !value)}
+                                        aria-label="Hide table"
+                                        aria-expanded
+                                        onClick={toggleTable}
                                         className="rounded-lg p-2 text-white/70 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-indigo-400"
                                     >
                                         <PanelLeft size={16} />
@@ -337,6 +339,19 @@ export function BoardroomModule() {
                 {/* Split-Panel Content */}
                 <div className="relative flex-1 flex min-h-0 min-w-0 w-full overflow-hidden">
                     {/* Left: Boardroom table */}
+                    {workspaceOpen && !isAnyPhone && !showTable && (
+                        <button
+                            type="button"
+                            aria-label="Show table"
+                            aria-expanded={false}
+                            onClick={toggleTable}
+                            data-testid="boardroom-show-table-edge"
+                            className="shrink-0 w-6 flex flex-col items-center justify-center gap-2 border-r border-white/10 bg-white/[0.02] text-white/60 hover:bg-white/[0.06] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400"
+                        >
+                            <PanelLeft size={14} aria-hidden />
+                            <span className="text-[10px] font-semibold uppercase tracking-widest [writing-mode:vertical-rl] rotate-180">Table</span>
+                        </button>
+                    )}
                     {showTable && (
                         <motion.div
                             key="boardroom-table"
