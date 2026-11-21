@@ -202,7 +202,9 @@ describe('BoardroomModule', () => {
         expect(mockStoreState.setBoardroomWorkspaceLayout).toHaveBeenCalledWith('split');
         view.rerender(<BoardroomModule />);
         const workspace = screen.getByTestId('boardroom-workspace-container');
-        expect(workspace.previousElementSibling).toBe(screen.getByTestId('boardroom-orbital-panel'));
+        // The table folds away so the work gets the room; a left-edge tab brings it back.
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        expect(screen.getByTestId('boardroom-show-table-edge')).toHaveAccessibleName('Show table');
         expect(workspace.nextElementSibling).toBe(screen.getByTestId('boardroom-conversation-container'));
         expect(screen.getByRole('tab', { name: 'Live Browser', selected: true })).toBeVisible();
 
@@ -216,6 +218,8 @@ describe('BoardroomModule', () => {
         mockStoreState.boardroomWorkspaceTab = tab;
 
         render(<BoardroomModule />);
+        expect(screen.queryByTestId('boardroom-orbital-panel')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('boardroom-show-table-edge'));
         const table = screen.getByTestId('boardroom-orbital-panel');
         const workspace = screen.getByTestId('boardroom-workspace-container');
         const discussion = screen.getByTestId('boardroom-conversation-container');
@@ -248,6 +252,7 @@ describe('BoardroomModule', () => {
     it('expands the browser on request and restores the three columns without remounting it', () => {
         mockStoreState.boardroomWorkspaceLayout = 'split';
         const view = render(<BoardroomModule />);
+        fireEvent.click(screen.getByTestId('boardroom-show-table-edge'));
         const browser = screen.getByTestId('boardroom-browser-view');
         fireEvent.click(screen.getByRole('button', { name: 'Expand browser' }));
         view.rerender(<BoardroomModule />);

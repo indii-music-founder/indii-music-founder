@@ -1,5 +1,5 @@
-import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { createServer } from 'node:http';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -12,18 +12,24 @@ if (!projectId || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
 }
 const auth = getAuth(initializeApp({ projectId }));
 const origins = new Set((process.env.BOARDROOM_CLIENT_ORIGINS ?? 'https://app.indii.music,https://indii.music').split(','));
+
 interface SessionEntry {
   id: string;
   socket?: WebSocket;
   browser?: BoardroomSession;
   expiresAt: number;
   detachTimer?: ReturnType<typeof setTimeout>;
+  closing?: boolean;
 }
+
 const sessions = new Map<string, SessionEntry>();
 const maxSessions = 4;
+const sessionLifetime = 15 * 60_000;
 const reconnectWindow = 45_000;
 
 function releaseSession(owner: string, entry: SessionEntry) {
+  if (entry.closing) return;
+  entry.closing = true;
   clearTimeout(entry.detachTimer);
   void (async () => {
     try {
@@ -33,6 +39,7 @@ function releaseSession(owner: string, entry: SessionEntry) {
     }
   })().catch(() => {});
 }
+
 function assignmentFrom(input: unknown): BoardroomAssignment {
   if (!input || typeof input !== 'object') throw new Error('Mission assignment required');
   const { requestId, stepId, agentId } = input as Record<string, unknown>;
@@ -47,6 +54,7 @@ const sockets = new WebSocketServer({ noServer: true, maxPayload: 8192, perMessa
 const server = createServer((request, response) => {
   response.writeHead(request.url === '/healthz' ? 200 : 404).end();
 });
+
 server.on('upgrade', (request, socket, head) => {
   if (request.url !== '/boardroom' || !origins.has(request.headers.origin ?? '') || sockets.clients.size >= maxSessions * 2) {
     socket.destroy();
@@ -66,18 +74,27 @@ sockets.on('connection', socket => {
   const send = (event: object) => {
     if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event));
   };
+
   socket.once('close', code => {
     activeDownload?.abort();
     clearTimeout(authTimeout);
     clearTimeout(lifetime);
     if (!owner || !entry || entry.socket !== socket) return;
+
     if (code === 1000 || !entry.browser || entry.expiresAt <= Date.now()) {
       releaseSession(owner, entry);
       return;
     }
+
     entry.browser.control.disconnect();
     entry.socket = undefined;
     entry.detachTimer = setTimeout(releaseSession, Math.min(reconnectWindow, entry.expiresAt - Date.now()), owner, entry);
+    const ownerId = owner;
+    const detachedEntry = entry;
+    entry.detachTimer = setTimeout(
+      () => releaseSession(ownerId, detachedEntry),
+      Math.min(reconnectWindow, Math.max(0, entry.expiresAt - Date.now())),
+    );
   });
 
   socket.once('message', raw => {
@@ -90,21 +107,44 @@ sockets.on('connection', socket => {
       if (identity.firebase.sign_in_provider === 'anonymous' || socket.readyState !== WebSocket.OPEN) {
         throw new Error('Signed-in account required');
       }
+
       const previous = sessions.get(identity.uid);
       const resumed = previous && previous.id === message.resumeId
         && !previous.socket && previous.browser && previous.expiresAt > Date.now();
       if (!resumed && (sessions.size >= maxSessions || previous)) {
+      const resumed = Boolean(previous
+        && typeof message.resumeId === 'string'
+        && previous.id === message.resumeId
+        && !previous.socket
+        && !previous.closing
+        && previous.browser
+        && previous.expiresAt > Date.now());
+
+      if (previous && !resumed) {
+        if (!previous.socket && previous.expiresAt <= Date.now()) {
+          releaseSession(identity.uid, previous);
+        } else {
+          send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
+          socket.close(1008);
+          return;
+        }
+      }
+      if (!resumed && sessions.size >= maxSessions) {
         send({ type: 'error', message: 'A live browser is busy or already open. Close it and retry.' });
         socket.close(1008);
         return;
       }
+
       owner = identity.uid;
-      entry = resumed ? previous : { id: randomUUID(), expiresAt: Date.now() + 15 * 60_000 };
+      entry = resumed
+        ? previous!
+        : { id: randomUUID(), expiresAt: Date.now() + sessionLifetime };
       clearTimeout(entry.detachTimer);
       entry.socket = socket;
       sessions.set(owner, entry);
       lifetime = setTimeout(() => socket.close(1000, 'Session expired'), entry.expiresAt - Date.now());
       clearTimeout(authTimeout);
+
       session = entry.browser ?? await BoardroomSession.open(process.env.CHROME_BIN);
       if (socket.readyState !== WebSocket.OPEN) {
         await session.close();
@@ -138,7 +178,8 @@ sockets.on('connection', socket => {
           socket.close(1008, 'Invalid browser request');
           return;
         }
-        const reply = (message: object) => send({ ...message, requestId: input.requestId });
+        const reply = (response: object) => send({ ...response, requestId: input.requestId });
+
         // Revocation must fence an in-flight specialist read even while the page is busy.
         if (input.type === 'takeover') {
           activeDownload?.abort();
@@ -151,6 +192,7 @@ sockets.on('connection', socket => {
           reply({ type: 'error', message: 'Wait for the current browser action to finish.' });
           return;
         }
+
         busy = true;
         void (async () => {
           const { controlGeneration, navigationGeneration } = input;
@@ -222,6 +264,7 @@ sockets.on('connection', socket => {
       socket.close(1008);
     });
   });
+
   socket.on('error', () => socket.terminate());
 });
 

@@ -89,6 +89,8 @@ export type ShareCardTemplate =
     };
 
 export interface ShareCardModel {
+    /** Lead line for the campaign and Passport poster layout. */
+    campaignLead?: string;
     eyebrow: string;
     title: string;
     subtitle?: string;
@@ -226,6 +228,7 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
             };
         case 'passport':
             return {
+                campaignLead: clean(template.stageTitle, MAX_TITLE) || 'Artist Passport',
                 eyebrow: clean(`Artist Passport · ${template.stageBadge}`, 40),
                 title: clean(template.stageTitle, MAX_TITLE) || 'Artist Passport',
                 subtitle: artist,
@@ -254,6 +257,7 @@ export function buildShareCardModel(template: ShareCardTemplate, options: ShareC
             };
         case 'nowwhat':
             return {
+                campaignLead: clean(template.situation, MAX_TITLE) || 'Artist Passport',
                 eyebrow: 'Now what?',
                 title: clean(`${template.situation} Now what?`, MAX_TITLE) || 'Now what?',
                 subtitle: clean(template.answer, MAX_LINE) || undefined,

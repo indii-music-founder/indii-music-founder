@@ -6,6 +6,7 @@
  * cross-origin cover image that taints the canvas is dropped and the card is
  * re-drawn with the signature disc instead, so export never hard-fails.
  */
+import { INDII_BRAND } from '../brand';
 import {
     FREQUENCY_PALETTE,
     SHARE_CARD_DIMENSIONS,
@@ -361,6 +362,64 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
     });
 }
 
+/** Type-led campaign posters follow the landing page's amber question and black field. */
+function drawCampaignPoster(ctx: CanvasRenderingContext2D, model: ShareCardModel, lead: string, W: number, H: number) {
+    const landscape = W > H;
+    const margin = Math.round(W * 0.06);
+    const width = W - 2 * margin;
+    const amber = '#FFB800';
+    const paper = '#F5F3EE';
+    ctx.fillStyle = '#10100F';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = 'top';
+
+    function line(text: string, y: number, size: number, weight: number, color: string) {
+        ctx.font = `${weight} ${size}px ${FONT_STACK}`;
+        ctx.fillStyle = color;
+        ctx.fillText(text, margin, y);
+    }
+
+    function paragraph(text: string, y: number, size: number, weight: number, color: string, maxLines: number) {
+        ctx.font = `${weight} ${size}px ${FONT_STACK}`;
+        for (const row of wrapText(t => ctx.measureText(t).width, text, width, maxLines)) {
+            line(row, y, size, weight, color);
+            y += size * 1.13;
+        }
+        return y;
+    }
+
+    const labelSize = landscape ? 20 : 28;
+    const top = landscape ? 36 : Math.round(H * 0.07);
+    line(INDII_BRAND.name, top, landscape ? 36 : 48, 850, paper);
+    ctx.font = `600 ${labelSize}px monospace`;
+    ctx.fillStyle = amber;
+    ctx.textAlign = 'right';
+    ctx.fillText(model.eyebrow === 'Now what?' ? 'ARTIST PASSPORT' : model.eyebrow.toUpperCase(), W - margin, top + 10);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#595850';
+    ctx.fillRect(margin, top + (landscape ? 55 : 80), width, 2);
+
+    let y = landscape ? 125 : Math.round(H * 0.25);
+    y = paragraph(lead, y, landscape ? 53 : 76, 800, paper, 3);
+    const questionSize = landscape ? 100 : 140;
+    line('Now what?', y + 3, questionSize, 900, amber);
+    y += questionSize * 1.23;
+    if (model.subtitle) y = paragraph(model.subtitle, y, landscape ? 27 : 36, 500, paper, 2);
+    if (model.callout) paragraph(model.callout, y + 12, landscape ? 23 : 30, 700, amber, 2);
+
+    const footer = H - top - labelSize;
+    ctx.fillStyle = '#595850';
+    ctx.fillRect(margin, footer - 16, width, 2);
+    if (model.attribution) line(INDII_BRAND.tagline, footer, labelSize, 500, paper);
+    if (model.url) {
+        ctx.font = `500 ${labelSize}px ${FONT_STACK}`;
+        ctx.fillStyle = paper;
+        ctx.textAlign = 'right';
+        const url = wrapText(t => ctx.measureText(t).width, model.url, width * 0.48, 1);
+        ctx.fillText(url[0], W - margin, footer);
+    }
+}
+
 function paint(size: ShareCardSize, model: ShareCardModel, cover: HTMLImageElement | null): HTMLCanvasElement {
     const { width: W, height: H } = SHARE_CARD_DIMENSIONS[size];
     const canvas = document.createElement('canvas');
@@ -368,6 +427,10 @@ function paint(size: ShareCardSize, model: ShareCardModel, cover: HTMLImageEleme
     canvas.height = H;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is unavailable on this device');
+    if (model.campaignLead) {
+        drawCampaignPoster(ctx, model, model.campaignLead, W, H);
+        return canvas;
+    }
     const layout = layoutFor(size);
     drawBackground(ctx, W, H, model);
     drawArt(ctx, layout.art, model, cover);
