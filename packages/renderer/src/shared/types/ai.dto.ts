@@ -265,6 +265,12 @@ export interface LogprobsResult {
     }[];
 }
 
+export interface WebGroundingMetadata {
+    groundingChunks?: { web?: { uri?: string; title?: string } }[];
+    groundingSupports?: { segment?: { text?: string }; groundingChunkIndices?: number[] }[];
+    searchEntryPoint?: { renderedContent?: string };
+}
+
 export interface Candidate {
     content: {
         role: string;
@@ -273,6 +279,7 @@ export interface Candidate {
     finishReason?: 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER';
     safetyRatings?: SafetyRating[];
     citationMetadata?: CitationMetadata;
+    groundingMetadata?: WebGroundingMetadata;
     logprobsResult?: LogprobsResult;
     index?: number;
 }

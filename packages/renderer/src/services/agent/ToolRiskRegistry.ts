@@ -329,6 +329,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Foundational (Artifacts)
     create_artifact: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Create an artifact document to present structured information to the user' },
+    boardroom_download_google_font: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Download a public font after the artist shares the live Boardroom browser' },
     multi_replace_file_content: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Modify multiple non-contiguous blocks of text in a single file' },
 
     // Print Preparation & Upscaling

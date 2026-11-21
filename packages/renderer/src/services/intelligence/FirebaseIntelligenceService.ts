@@ -12,6 +12,7 @@ import {
     FunctionCallPart,
     GenerateContentResponse,
     WrappedResponse,
+    WebGroundingMetadata,
     StreamChunk,
     GenerateVideoRequest,
     GenerateSpeechResponse,
@@ -77,6 +78,7 @@ type BackendStreamPayload = {
     functionCalls?: FunctionCallPart['functionCall'][];
     thoughtSignature?: string;
     complete?: boolean;
+    grounding?: WebGroundingMetadata;
     candidates?: Array<{ content?: { parts?: ContentPart[] } }>;
     error?: {
         code?: string;
@@ -519,6 +521,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const decoder = new TextDecoder();
         let buffer = '';
         let finalText = '';
+        let groundingMetadata: WebGroundingMetadata | undefined;
         let receivedComplete = false;
         const chunks: StreamChunk[] = [];
         let resolveWrappedResponse!: (response: WrappedResponse) => void;
@@ -531,6 +534,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const buildWrappedResponse = (): WrappedResponse => {
             const responsePayload: GenerateContentResponse = {
                 candidates: [{
+                    ...(groundingMetadata ? { groundingMetadata } : {}),
                     content: {
                         role: 'model',
                         parts: finalText ? [{ text: finalText }] : []
@@ -568,6 +572,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (parsed.complete === true) { receivedComplete = true; continue; }
                             const specialistUnavailable = specialistUnavailableFromPayload(parsed);
                             if (specialistUnavailable) throw specialistUnavailable;
+                            if (parsed.grounding) {
+                                groundingMetadata = { ...groundingMetadata, ...parsed.grounding };
+                            }
                             const text = extractText(parsed);
                             finalText += text;
                             const chunk: StreamChunk = {
@@ -585,17 +592,20 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         if (parsed) {
                             if (parsed.complete === true) { receivedComplete = true; }
                             else {
-                            const specialistUnavailable = specialistUnavailableFromPayload(parsed);
-                            if (specialistUnavailable) throw specialistUnavailable;
-                            const text = extractText(parsed);
-                            finalText += text;
-                            const chunk: StreamChunk = {
-                                text: () => text,
-                                functionCalls: () => extractFunctionCalls(parsed),
-                                thoughtSignature: parsed.thoughtSignature
-                            };
-                            chunks.push(chunk);
-                            controller.enqueue(chunk);
+                                const specialistUnavailable = specialistUnavailableFromPayload(parsed);
+                                if (specialistUnavailable) throw specialistUnavailable;
+                                if (parsed.grounding) {
+                                    groundingMetadata = { ...groundingMetadata, ...parsed.grounding };
+                                }
+                                const text = extractText(parsed);
+                                finalText += text;
+                                const chunk: StreamChunk = {
+                                    text: () => text,
+                                    functionCalls: () => extractFunctionCalls(parsed),
+                                    thoughtSignature: parsed.thoughtSignature
+                                };
+                                chunks.push(chunk);
+                                controller.enqueue(chunk);
                             }
                         }
                     }
@@ -1148,7 +1158,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * ADVANCED: Grounding with Google Search.
      * @see generators/HighLevelAPI.ts
      */
-    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
+    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number; signal?: AbortSignal }): Promise<GenerateContentResult> {
         return hlGenerateGroundedContent(this, prompt, options);
     }
 

@@ -304,6 +304,24 @@ describe('FirebaseIntelligenceService', () => {
         });
     });
 
+    it('preserves provider citations that arrive separately from grounded answer text', async () => {
+        const grounding = {
+            groundingChunks: [{ web: { uri: 'https://artists.spotify.com/', title: 'Spotify for Artists' } }],
+            groundingSupports: [{ segment: { text: 'Spotify for Artists' }, groundingChunkIndices: [0] }],
+            searchEntryPoint: { renderedContent: '<a href="https://www.google.com/search?q=spotify">Spotify</a>' },
+        };
+        vi.mocked(fetch).mockResolvedValueOnce(new Response([
+            JSON.stringify({ text: 'Spotify for Artists' }),
+            JSON.stringify({ grounding }),
+            JSON.stringify({ complete: true }),
+        ].join('\n')));
+
+        const result = await service.generateGroundedContent('Spotify for Artists');
+
+        expect(result.text()).toBe('Spotify for Artists');
+        expect(result.response.candidates?.[0]?.groundingMetadata).toEqual(grounding);
+    });
+
     it('should fail closed for embedContent until a backend embedding route exists', async () => {
         await expect(service.embedContent({
             model: 'gemini-3-mock-v1',
