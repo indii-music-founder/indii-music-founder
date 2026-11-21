@@ -302,3 +302,27 @@ Existing code to reuse:
 - **Browser:** `e2e/boardroom-swarm.spec.ts` plus the boardroom e2e specs with `--trace off`. These are structural only (mock auth), and that is how they will be described.
 - **Visual:** Playwright screenshots at 1440×900 and 390×844 of the Boardroom in its empty and populated states, before and after.
 - **Not claimed:** live signed-in acceptance on `https://indii.music/`. That needs the founder's real account, so those V4 entries stay PARTIAL and say so.
+
+---
+
+## Shared workspace and live agent rail (handed from Codex, 2026-11-21)
+
+Founder's target: three areas. The **left table** folds to a slim edge tab, the **center workspace** (Browser, Studio, Workbench, Feed) opens and closes, and the **right conversation** opens and closes. A 56px **agent rail** shows who's working, what they're doing, and whether they need attention.
+
+Status against `main` as of `90f4d5ab` (gap check, read-only):
+
+| Item | Status | Where / next step |
+|---|---|---|
+| L1 Table folds when a workspace tab opens; Show table at left edge | **Done in `claude/boardroom-fold-layout`** | `BoardroomModule.tsx`: table starts folded; left-edge "Show table" tab docks it back |
+| L2 Flexible center + 56px rail | Partial | Rail exists (`BoardroomRightRail.tsx` `w-14`); discussion still docks at `w-[28%]` in split |
+| L3 Discussion as drawer, state preserved | Partial | Drawer only outside split; state kept via mounted panes |
+| L4 Rail order + agent panel controls | Partial | Order correct; panel has Seat only. Add Solo and Grant control (`BoardroomRightRail.tsx` ~:139) |
+| L5 Motion meaning (working ring, handoff highlight, approval badge, reduced motion, phone sheet) | Partial | No handoff highlight, no per-state icon; phone sheet shows no status |
+| W1 Live Browser (hosted) | Done | `BoardroomHostedBrowser.tsx`; keyboard is button-based, not raw keys |
+| W2 Studio typed actions | Partial | Only Image Studio draft is typed (`CoreTools.ts:131`) |
+| W3 Workbench targets + states | Partial | No split-sheet target; media list lacks loading/failure states |
+| W4 Live Feed + real Stop mission | Partial | Stop doesn't revoke browser control or clear queued work |
+| D1 One typed workspace action interface | Missing | Only `BoardroomBrowserAssignment` exists |
+| D2 Single controller per surface | Partial (browser only) | Shows "Specialist has control" not the name; Studio/Workbench have no controller model |
+
+Next small PRs, in order: (1) real **Stop mission** that aborts, clears queued steps/approvals and takes browser control back (`boardroomSlice.ts`, `BoardroomAgentFeedView.tsx:59`, `BoardroomHostedBrowser.tsx:344`), and show the specialist's name; (2) rail agent panel Solo/Grant control plus handoff highlight and per-state icons (`BoardroomRightRail.tsx`, `MobileParticipantDrawer.tsx`); (3) typed workspace action interface (D1). Final acceptance is the one-mission walkthrough in a genuine signed-in account, per `.agent/REAL_USER_AUTHENTICITY.md`.
