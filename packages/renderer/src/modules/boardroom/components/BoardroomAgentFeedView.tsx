@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
+import { stopBoardroomMission } from '@/services/agent/boardroomMission';
 
 export function BoardroomAgentFeedView() {
     const toast = useToast();
@@ -60,9 +61,8 @@ export function BoardroomAgentFeedView() {
         setIsAborting(true);
         // Always stop the in-flight agent run (ISSUE-1629). On the web this was a
         // toast-only no-op even though the store holds the run's AbortController.
-        const { agentAbortController, stopAgent } = useStore.getState();
-        const hadRun = Boolean(agentAbortController);
-        stopAgent();
+        // One Stop: abort the run, reject pending handoffs, take back browser control.
+        const { stoppedRun: hadRun } = stopBoardroomMission();
 
         const computer = typeof window !== 'undefined' ? window.electronAPI?.computer : undefined;
         if (computer?.abort) {

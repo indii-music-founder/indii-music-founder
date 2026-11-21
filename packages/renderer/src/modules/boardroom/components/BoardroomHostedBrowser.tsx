@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
+import { agentRegistry } from '@/services/agent/registry';
+import { stopBoardroomMission } from '@/services/agent/boardroomMission';
 import { secureUUIDv4 } from '@/utils/crypto-random';
 
 import {
@@ -56,7 +58,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
     }>();
     const workingStep = useStore(state => state.isAgentProcessing ? state.agentHistory.find(message =>
         message.isStreaming && message.agentId && message.metadata?.boardroomStepStatus === 'working') : undefined);
-    const stopAgent = useStore(state => state.stopAgent);
+    const controlRevocation = useStore(state => state.boardroomControlRevocation ?? 0);
     const mayOperate = ready && controller === 'artist';
     const [notice, setNotice] = useState('');
     const captureIntent = useRef<'reader' | 'pin'>('reader');
@@ -332,16 +334,27 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
         socket.send(JSON.stringify({ type: 'takeover' }));
     };
 
+    // Stop mission anywhere in the Boardroom takes the browser back (spec W4/D2).
+    const lastRevocation = useRef(controlRevocation);
+    useEffect(() => {
+        if (controlRevocation === lastRevocation.current) return;
+        lastRevocation.current = controlRevocation;
+        takeControl();
+    }, [controlRevocation]);
+
+    const controllerAgentId = activeAssignment.current?.agentId ?? workingStep?.agentId;
+    const controllerName = controllerAgentId ? (agentRegistry.get(controllerAgentId)?.name ?? controllerAgentId) : 'A specialist';
+
     return (
         <section className="flex h-full min-h-0 flex-col gap-2 overflow-auto p-3" aria-label="Hosted Boardroom browser">
             <div className="flex flex-wrap items-center gap-3 text-xs">
-                <span role="status">{closed ? 'Disconnected' : controller === 'artist' ? 'You have control' : 'Specialist has control'}</span>
+                <span role="status">{closed ? 'Disconnected' : controller === 'artist' ? 'You have control' : `${controllerName} has control`}</span>
                 {controller === 'artist'
                     ? <button type="button" disabled={!mayOperate || !workingStep} onClick={shareWithMission}>
                         Share with {workingStep?.agentId ?? 'running specialist'}
                     </button>
                     : <button type="button" onClick={takeControl}>Take control</button>}
-                {workingStep && <button type="button" onClick={() => { takeControl(); stopAgent(); }}>Stop mission</button>}
+                {workingStep && <button type="button" onClick={() => { stopBoardroomMission(); }}>Stop mission</button>}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
                 <button type="button" onClick={() => send('back')} disabled={!mayOperate}>Back</button>

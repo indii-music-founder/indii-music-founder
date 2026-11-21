@@ -83,6 +83,8 @@ export interface BoardroomSlice {
     boardroomBrowserHistory: string[];
     boardroomPreviewModuleId: ModuleId;
     boardroomWorkbenchTarget: BoardroomWorkbenchTarget;
+    /** Increments when Stop mission revokes agent control of shared surfaces. */
+    boardroomControlRevocation: number;
 
     toggleAgent: (agentId: string) => void;
     soloAgent: (agentId: string) => void;
@@ -127,6 +129,7 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     boardroomBrowserHistory: ['https://artists.spotify.com'],
     boardroomPreviewModuleId: 'creative',
     boardroomWorkbenchTarget: null,
+    boardroomControlRevocation: 0,
 
     toggleAgent: (agentId) => set((state) => {
         const currentAgents = normalizeBoardroomAgentIds(state.activeAgents);
