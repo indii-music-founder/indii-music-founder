@@ -175,7 +175,12 @@ test.describe('Distribution Delivery Pipeline', () => {
         await expect(page.getByTestId('distribution-dashboard')).toBeVisible({ timeout: 30_000 });
     });
 
-    test('Production-grade metadata workflow submits successfully', async ({ authedPage: page }) => {
+    // ISSUE-969: metadata alone can no longer submit a release. A real hashed
+    // master from the upload-once catalog and a real staged cover are required, and
+    // this mocked suite has neither. It therefore verifies the gate, not delivery:
+    // end-to-end submission needs a genuine account with an ingested master
+    // (see .agent/REAL_USER_AUTHENTICITY.md) and is tracked in OPEN_ISSUES_V4.md.
+    test('Release submit stays blocked until a real master and cover are chosen', async ({ authedPage: page }) => {
         await page.getByTestId('distro-tab-new').click();
         const content = page.getByTestId('distro-content-new');
         await expect(content).toBeVisible({ timeout: 10_000 });
@@ -192,17 +197,10 @@ test.describe('Distribution Delivery Pipeline', () => {
         await modal.getByTestId('release-artist-input').fill('E2E Artist');
         await modal.getByTestId('release-track-title-input').fill('E2E Track 1');
 
-        // Submit release
-        const submitBtn = modal.getByTestId('release-submit-button');
-        await expect(submitBtn).toBeVisible();
-        await submitBtn.click();
-
-        // Completion done button
-        const doneBtn = modal.getByTestId('release-done-button');
-        await expect(doneBtn).toBeVisible({ timeout: 30_000 });
-        await doneBtn.click();
-
-        await expect(modal).toHaveCount(0);
+        // Metadata alone must not unlock submission, and the missing assets are explained.
+        await expect(modal.getByTestId('release-submit-button')).toBeDisabled();
+        await expect(modal.getByTestId('release-artwork-select')).toContainText('No brand assets found');
+        await expect(modal.getByTestId('release-done-button')).toHaveCount(0);
     });
 
     test('DDEX validation surfaces error notifications for invalid metadata', async ({ authedPage: page }) => {
