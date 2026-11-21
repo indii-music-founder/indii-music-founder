@@ -18,11 +18,10 @@ import PassportResultPage from './pages/PassportResultPage';
 import SectionShareRedirect from './pages/SectionShareRedirect';
 import NowWhatShareRedirect from './pages/NowWhatShareRedirect';
 import NotFound from './pages/NotFound';
-import RainGlassOverlay from './components/effects/RainGlassOverlay';
 
 const FounderRoutes = () => (
   <Routes>
-    <Route path="/" element={<><Home /><RainGlassOverlay /></>} />
+    <Route path="/" element={<Home />} />
     <Route path="/accept-invitation" element={<AuthLayout><AcceptFoundingArtistInvitation /></AuthLayout>} />
     <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
@@ -43,7 +42,7 @@ const FounderRoutes = () => (
 
 const GeneralRoutes = () => (
   <Routes>
-    <Route path="/" element={<><Home founder={false} /><RainGlassOverlay /></>} />
+    <Route path="/" element={<Home founder={false} />} />
     <Route path="/accept-invitation" element={<AuthLayout><AcceptFoundingArtistInvitation /></AuthLayout>} />
     <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />

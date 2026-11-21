@@ -13,27 +13,6 @@ const operatingPrinciples = [
   },
   {
     number: '02',
-    label: 'Name the outcome',
-    hex: '#FFB800',
-    title: 'Ask for the result in plain language.',
-    text: 'You should not need to understand the product architecture before you can move your release, catalog, campaign, or tour forward.',
-  },
-  {
-    number: '03',
-    label: 'Review the plan',
-    hex: '#2196F3',
-    title: 'See what will happen before it happens.',
-    text: 'The work is divided into visible steps. Proposed high-impact actions and important project decisions remain available for review.',
-  },
-  {
-    number: '04',
-    label: 'Connected Intelligence©',
-    hex: '#00FF66',
-    title: 'Let the next move begin with context.',
-    text: 'Approved assets and decisions return to the project so every department can work from the same facts without making you repeat yourself. Connected Intelligence© ensures that what your brand manager defines, your art department executes.',
-  },
-  {
-    number: '05',
     label: 'Replace them, not you',
     hex: '#FF3366',
     title: '100% human-made music only.',
@@ -57,7 +36,7 @@ export default function PrinciplesSection() {
               How the work moves
             </div>
           </div>
-          <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.5rem]">
+          <h2 className="max-w-5xl text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             You stay the artist.
             <span className="block text-amber-400 [text-shadow:0_0_35px_rgba(255,184,0,0.4)]">You also stay in control.</span>
           </h2>

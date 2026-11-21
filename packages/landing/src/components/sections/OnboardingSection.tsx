@@ -28,7 +28,7 @@ export default function OnboardingSection() {
           <div className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-[#FFB800] [text-shadow:0_0_12px_rgba(255,184,0,0.5)]">
             Founder onboarding / Project White Glove©
           </div>
-          <h2 className="max-w-4xl text-5xl font-black leading-[0.93] tracking-[-0.055em] text-white md:text-7xl lg:text-[6.4rem]">
+          <h2 className="max-w-4xl text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-black leading-[1.02] tracking-[-0.045em] text-white">
             Start with your real catalog,
             <span className="block text-[#FFB800] [text-shadow:0_0_35px_rgba(255,184,0,0.5)]">not an empty dashboard.</span>
           </h2>

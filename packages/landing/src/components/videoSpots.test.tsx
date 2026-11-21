@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 import Hero from './sections/Hero';
 import AppStudioShowcase from './AppStudioShowcase';
 import OverlookedWorkSection from './sections/OverlookedWorkSection';
-import ExperienceShell from './ExperienceShell';
 
 describe('Landing Page Video Spots Integration', () => {
   let container: HTMLDivElement;
@@ -23,25 +22,13 @@ describe('Landing Page Video Spots Integration', () => {
     container.remove();
   });
 
-  it('renders ambient studio screenshot backdrop in ExperienceShell without hidden background video', async () => {
-    await act(async () => {
-      root.render(<ExperienceShell />);
-    });
-
-    const img = container.querySelector('img');
-    expect(img).toBeTruthy();
-    expect(img?.getAttribute('src')).toMatch(/^\/screenshots\/.+\.png$/);
-    expect(container.querySelector('video')).toBeNull();
-  });
-
-  it('renders video slicing demo in OverlookedWorkSection', async () => {
+  it('renders the video-cut placeholder (no autoplaying footage) in OverlookedWorkSection', async () => {
     await act(async () => {
       root.render(<OverlookedWorkSection />);
     });
 
-    const video = container.querySelector('video');
-    expect(video).toBeTruthy();
-    expect(video?.getAttribute('src')).toBe('/videos/video-slicing-demo.mp4');
+    expect(container.querySelector('[data-placeholder="video-cut"] svg[role="img"]')).toBeTruthy();
+    expect(container.querySelector('video')).toBeNull();
     expect(container.textContent).toContain('16:9 Master → 9:16 Social Cut');
   });
 
