@@ -1263,6 +1263,8 @@ export class AgentService {
             const reply = AgentService.buildInstantGreeting('generalist', seatedNames, 'boardroom', previous?.timestamp);
             store.getState().updateAgentMessage(responseId, { agentId: 'generalist', text: reply, isStreaming: false });
             this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
+            // A live voice conversation waits for this to speak and reopen listening.
+            this.notifyLiveConversationIfActive('generalist', reply, responseId);
             return;
         }
         if (!attachments?.length && !isCapabilityQuestion(task.rawUserUtterance) && AgentService.isTrivialInput(task.rawUserUtterance) &&

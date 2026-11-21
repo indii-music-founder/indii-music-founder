@@ -1113,11 +1113,15 @@ describe('AgentService request-bound approval guidance', () => {
         const service = new AgentService();
         (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
             vi.fn(async () => ({ getState: () => state }));
+        const notifyLive = vi.fn();
+        (service as unknown as { notifyLiveConversationIfActive: typeof notifyLive }).notifyLiveConversationIfActive = notifyLive;
 
         await (service as unknown as {
             handleBoardroomRequestFlow: (task: { rawUserUtterance: string }, attachments: undefined,
                 context: AgentContext, responseId: string) => Promise<void>;
         }).handleBoardroomRequestFlow({ rawUserUtterance: 'hi team' }, undefined, {}, 'response-0');
+        // A live voice conversation must still hear the reply and resume listening.
+        expect(notifyLive).toHaveBeenCalledWith('generalist', expect.stringContaining('Marketing Director'), 'response-0');
 
         expect(callBoardroomPlan).not.toHaveBeenCalled();
         expect(capturedExecutions).toHaveLength(0);
