@@ -6,6 +6,7 @@ This runbook finishes the Boardroom modernization that started in
 [`boardroom-modernization-plan-2026-11-19.md`](boardroom-modernization-plan-2026-11-19.md).
 The earlier plan holds the audit and the background. This document is the
 step-by-step instructions for every remaining item. Work it from top to
+bottom. Each **Work Package (WP)** is a bounded unit; delivery follows the current repository policy and owner authorization.
 bottom. Each **Work Package (WP)** is one branch and one pull request.
 
 When the WPs are published, hand the branch list and evidence back. For this
@@ -50,6 +51,12 @@ Open as PRs (merge before starting a WP that touches the same files):
 
 These are not optional. Breaking one blocks approval in §6.
 
+### 1.1 Delivery and ownership
+1. Read `.agent/workflows/branch-safety.md` and follow its current delivery policy.
+2. Use mainline delivery unless the owner explicitly authorizes a task branch or integration batch. The owner has authorized the integration queue to combine compatible incoming branches and merge verified batches through Entire.
+3. Keep origin on Entire. Never force-push or rewrite main. Inspect CI for the exact delivered SHA.
+4. Check incoming branches and active work before claiming overlapping files; preserve other agents' changes.
+5. Record the agent name and date in the WP's **Claimed by** line when work starts.
 ### 1.1 Branches, never `main`
 1. Read [`.agent/workflows/branch-safety.md`](../../.agent/workflows/branch-safety.md) first.
 2. `git fetch origin && git checkout -B <agent>/<wp-slug> origin/main` for each WP. `<agent>` is `claude`, `codex` or `antigravity`.
