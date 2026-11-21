@@ -169,6 +169,7 @@ These are gallery/upload references, not desktop files. Match the requested labe
         USER REQUEST: "${sanitizedQuery}"
 
         ROUTING RULES:
+        Boardroom workspace tab switching or inspection (Live Browser, Studio Preview, Asset Workbench, Agent Live Feed) -> "generalist".
         Bug reports, GitHub issue filing and feature-request intake -> "generalist".
         It owns report_bug/request_feature. DevOps handles infrastructure, not issue intake.
         1. You MUST return a JSON object with the following structure:

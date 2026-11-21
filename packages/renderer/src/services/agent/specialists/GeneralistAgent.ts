@@ -53,6 +53,7 @@ export class GeneralistAgent extends BaseAgent {
         'report_bug', 'request_feature',
         'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
         'seat_agent', 'seat_all_department_heads', 'unseat_agent',
+        'open_boardroom_workspace_tab', 'get_boardroom_workspace_status',
         'list_trash', 'move_to_trash', 'restore_from_trash',
         'canvas_inspect', 'canvas_push', 'canvas_clear', 'draw_shape', 'canvas_get_project_canvas',
         'blender_get_status', 'blender_list_templates', 'blender_render_music_video', 'blender_live_command'
@@ -152,6 +153,23 @@ export class GeneralistAgent extends BaseAgent {
         // Core tools that indii Conductor needs - we'll define the most important ones
         // with proper schemas for native function calling
         const functionDeclarations: FunctionDeclaration[] = [
+            {
+                name: 'open_boardroom_workspace_tab',
+                description: 'Open the requested shared Boardroom tab. Use only when the artist asks to open or switch the visible workspace. Opening Live Browser does not navigate to a website or download a file.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        tab: { type: 'STRING', enum: ['browser', 'module', 'workbench', 'agent-feed'] },
+                        studioModule: { type: 'STRING', description: 'Optional Studio module ID, such as creative. Use only with the module tab.' },
+                    },
+                    required: ['tab'],
+                },
+            },
+            {
+                name: 'get_boardroom_workspace_status',
+                description: 'Read the current Boardroom tab, Studio module, Workbench selection type, and recent mission status shown in Agent Live Feed. Does not return message contents, assets, or browser data.',
+                parameters: { type: 'OBJECT', properties: {}, required: [] },
+            },
             {
                 name: 'open_remote_setup',
                 description: 'Open Settings > Mobile Remote when the user asks to connect, pair, link, configure, or troubleshoot a phone, tablet, controller, or remote. This local navigation tool never returns pairing codes or credentials.',

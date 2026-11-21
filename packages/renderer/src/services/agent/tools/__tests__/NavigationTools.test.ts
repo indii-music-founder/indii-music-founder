@@ -2,6 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const state = vi.hoisted(() => ({
     currentModule: 'dashboard',
+    currentProjectId: 'project-1',
+    activeSessionId: 'session-1',
+    agentHistory: [{ id: 'mission', agentId: 'generalist', metadata: {
+        boardroomStepId: 'step', boardroomStepStatus: 'complete', boardroomStepTask: 'private content',
+    } }],
+    boardroomWorkspaceTab: 'browser',
+    boardroomWorkspaceLayout: 'closed',
+    boardroomPreviewModuleId: 'creative',
+    boardroomWorkbenchTarget: { kind: 'asset', itemId: 'private-asset' },
+    setBoardroomWorkspaceTab: vi.fn(),
     conversationMode: 'direct',
     openBoardroomModulePreview: vi.fn(),
     setModule: vi.fn(),
@@ -17,6 +27,12 @@ describe('NavigationTools navigation outcome', () => {
         vi.clearAllMocks();
         state.currentModule = 'dashboard';
         state.conversationMode = 'direct';
+        state.boardroomWorkspaceLayout = 'closed';
+        state.boardroomWorkspaceTab = 'browser';
+        state.setBoardroomWorkspaceTab.mockImplementation((tab: string) => {
+            state.boardroomWorkspaceTab = tab;
+            state.boardroomWorkspaceLayout = 'split';
+        });
         state.setModule.mockImplementation(async (module: string) => { state.currentModule = module; });
     });
 
@@ -64,5 +80,66 @@ describe('NavigationTools navigation outcome', () => {
         const result = await (NavigationTools.navigate_to as (a: unknown) => Promise<any>)({ module: 'registration', orgId: 'ascap' });
         expect(result.success).toBe(true);
         expect(state.setRegistrationFocus).toHaveBeenCalledWith({ orgId: 'ascap', trackId: null });
+    });
+});
+
+describe('Boardroom workspace tools (structural only)', () => {
+    const context = {
+        conversationMode: 'boardroom',
+        projectId: 'project-1',
+        sessionId: 'session-1',
+        boardroomExecution: { requestId: 'mission', stepId: 'step', ownerAgentId: 'generalist' },
+    } as const;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        state.conversationMode = 'boardroom';
+        state.boardroomWorkspaceLayout = 'closed';
+        state.boardroomWorkspaceTab = 'browser';
+        state.setBoardroomWorkspaceTab.mockImplementation((tab: string) => {
+            state.boardroomWorkspaceTab = tab;
+            state.boardroomWorkspaceLayout = 'split';
+        });
+    });
+
+    it.each(['browser', 'module', 'workbench', 'agent-feed'])('opens the shared %s tab', async tab => {
+        const result = await NavigationTools.open_boardroom_workspace_tab({ tab }, context);
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({ tab, layout: 'split' });
+    });
+
+    it('opens a requested Studio Preview module without leaving Boardroom', async () => {
+        state.openBoardroomModulePreview.mockImplementationOnce((module: string) => {
+            state.boardroomPreviewModuleId = module;
+            state.boardroomWorkspaceTab = 'module';
+            state.boardroomWorkspaceLayout = 'split';
+        });
+        const result = await NavigationTools.open_boardroom_workspace_tab({ tab: 'module', studioModule: 'creative' }, context);
+        expect(result.data).toEqual({ tab: 'module', layout: 'split', studioModule: 'creative' });
+        expect(state.openBoardroomModulePreview).toHaveBeenCalledWith('creative');
+        expect(state.setModule).not.toHaveBeenCalled();
+    });
+
+    it('declines a read-only turn, a switched session, and arbitrary tab values', async () => {
+        for (const request of [
+            NavigationTools.open_boardroom_workspace_tab({ tab: 'agent-feed' }, { ...context, isReadOnly: true }),
+            NavigationTools.open_boardroom_workspace_tab({ tab: 'agent-feed' }, { ...context, sessionId: 'other' }),
+            NavigationTools.open_boardroom_workspace_tab({ tab: 'https://example.com' }, context),
+        ]) {
+            expect((await request).success).toBe(false);
+        }
+        expect(state.setBoardroomWorkspaceTab).not.toHaveBeenCalled();
+    });
+
+    it('reports status without returning the mission text or asset ID', async () => {
+        const result = await NavigationTools.get_boardroom_workspace_status({}, { ...context, isReadOnly: true });
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual({
+            tab: 'browser',
+            layout: 'closed',
+            studioModule: 'creative',
+            workbenchSelectionKind: 'asset',
+            missionActivity: [{ agentId: 'generalist', status: 'complete' }],
+        });
     });
 });
