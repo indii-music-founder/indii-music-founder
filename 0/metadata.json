@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M7YB9QXXMHDF1RZF88PWA5VQ",
+  "session_id": "01a1f93d-c286-7d62-bdb6-cb7269be9389",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-21T06:04:35.369031Z",
+  "branch": "codex/boardroom-workspace-956",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".agent/test_ledger/OPEN_ISSUES_V4.md",
+    "agents/conductor/prompt.md",
+    "packages/renderer/src/config/typesafeJudgments.ts",
+    "packages/renderer/src/services/agent/AdditionalToolRiskCatalog.ts",
+    "packages/renderer/src/services/agent/AgentService.ts",
+    "packages/renderer/src/services/agent/components/AgentOrchestrator.ts",
+    "packages/renderer/src/services/agent/specialists/GeneralistAgent.ts",
+    "packages/renderer/src/services/agent/tools/NavigationTools.ts",
+    "packages/renderer/src/services/agent/tools/__tests__/NavigationTools.test.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 388504,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 31536768,
+    "output_tokens": 17518,
+    "api_call_count": 100
+  },
+  "redaction": {
+    "replacements": 157,
+    "layers": {
+      "betterleaks": 9,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 149,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 1
+  }
+}
