@@ -27,6 +27,15 @@ export function pulseForStepChange(prev: number, next: number): number {
   return next > prev ? 1 : 0.5;
 }
 
+/**
+ * Opacity of the backdrop photograph: present on the hero, a quiet presence
+ * behind the questions and the report. Shared by the DOM <img> and the WebGL
+ * image layer so the two always match.
+ */
+export function backdropOpacityForStep(step: number): number {
+  return step <= 0 ? 0.55 : 0.18;
+}
+
 /** Exponential decay rate of a pulse, per second. */
 export const PULSE_DECAY_PER_SECOND = 2.8;
 

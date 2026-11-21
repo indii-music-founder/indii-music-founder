@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { QualityTier } from '../../three/quality';
-import { decayPulse, horizonIntensityForStep, pulseForStepChange } from './horizonMotion';
+import { backdropOpacityForStep, decayPulse, horizonIntensityForStep, pulseForStepChange } from './horizonMotion';
+import { createHorizonImageLayer } from './horizonImageLayer';
 
 export interface PassportSingularityCanvasProps {
   /** Quality tier detected cleanly without blocking initial bundle */
@@ -316,6 +317,22 @@ export default function PassportSingularityCanvas({
     );
     camera.position.set(0, 0.25, 6.2);
 
+    // 0. The backdrop photograph, brought to life (draws first, under everything).
+    const imageLayer = createHorizonImageLayer({
+      width: container.clientWidth || window.innerWidth,
+      height: container.clientHeight || window.innerHeight,
+      initialBackdrop: backdropOpacityForStep(stateRef.current.step),
+      onReady: () => {
+        if (shouldRun()) {
+          ensureLoop();
+        } else {
+          imageLayer.showStatic();
+          renderer.render(scene, camera);
+        }
+      },
+    });
+    scene.add(imageLayer.mesh);
+
     // 1. Relativistic Accretion Disk Quad (clipped behind foreground particles)
     const initialFocal = stateRef.current.focalPoint;
     const initialStep = stateRef.current.step;
@@ -444,6 +461,7 @@ export default function PassportSingularityCanvas({
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       diskUniforms.uResolution.value.set(w, h);
+      imageLayer.setResolution(w, h);
       particleUniforms.uAspect.value = camera.aspect;
       particleUniforms.uDpr.value = dpr;
     };
@@ -480,6 +498,15 @@ export default function PassportSingularityCanvas({
       // A step change briefly compresses and brightens the horizon, then it settles.
       const warpTotal = Math.min(1, s.smoothWarp + s.pulse * 0.3);
       const intensityTotal = s.smoothIntensity * (1 + s.pulse * 0.65);
+
+      imageLayer.update({
+        dt,
+        speed: 1 + s.smoothPull * 1.5 + warpTotal * 5 + s.pulse * 2,
+        pull: s.smoothPull,
+        warp: warpTotal,
+        pointer: s.pointer,
+        backdrop: backdropOpacityForStep(s.step),
+      });
 
       diskUniforms.uTime.value = elapsed;
       diskUniforms.uPull.value = s.smoothPull;
@@ -594,6 +621,7 @@ export default function PassportSingularityCanvas({
       document.removeEventListener('visibilitychange', onVisibilityChange);
       container.removeEventListener('contentvisibilityautostatechange', onContentVisibilityChange);
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      imageLayer.dispose();
       diskGeometry.dispose();
       diskMaterial.dispose();
       particleGeo.dispose();

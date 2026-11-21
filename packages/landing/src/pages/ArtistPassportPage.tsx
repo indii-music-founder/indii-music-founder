@@ -38,6 +38,7 @@ import PassportSharePanel from '../components/passport/PassportSharePanel';
 import PassportSingularityHero from '../components/passport/PassportSingularityHero';
 import { NOW_WHAT_CAMPAIGNS, readCampaignAttribution, campaignQuery } from '../lib/nowWhatCampaign';
 import { detectQualityProfile } from '../three/quality';
+import { backdropOpacityForStep } from '../components/passport/horizonMotion';
 
 const PassportSingularityCanvas = lazy(
   () => import('../components/passport/PassportSingularityCanvas'),
@@ -263,9 +264,8 @@ export default function ArtistPassportPage() {
       {/* Bespoke Black Hole Singularity Backdrop (instant LCP + static FALLBACK) */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700 no-print ${
-          currentStep === 0 ? 'opacity-55' : 'opacity-18'
-        }`}
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700 no-print"
+        style={{ opacity: backdropOpacityForStep(currentStep) }}
       >
         <img
           src="/images/passport-singularity.jpg"
