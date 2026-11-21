@@ -45,6 +45,11 @@ window.renderStages = async () => {
       { kind: 'page', label: section.label, title: section.title, url: 'https://indii.music/s/' + section.id },
       { brandColors: ['#FFB800', '#2E2EFE'] },
     );
+    if (section.id === 'now-what') {
+      model.campaignLead = section.title;
+      model.eyebrow = 'Now what?';
+      model.callout = 'Take the free Artist Passport';
+    }
     const { blob } = await renderShareCard(model, 'og');
     const bitmap = await createImageBitmap(blob);
     const canvas = document.createElement('canvas');
