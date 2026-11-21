@@ -9,7 +9,7 @@ const mockStoreState: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({
     useStore: Object.assign(
         (selector: (state: Record<string, unknown>) => unknown) => selector(mockStoreState),
-        { getState: () => mockStoreState },
+        { getState: () => mockStoreState, setState: (patch: Record<string, unknown>) => Object.assign(mockStoreState, patch) },
     ),
 }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
