@@ -3575,7 +3575,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1662: Trivial "hi" runs the full paid swarm; Boardroom instant greeting is dead (AS:1232, AS:349-354, AS:838) [O9]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch 2026-11-21; awaiting CI and a live Boardroom check
+- **Repair note:** greetings, thanks and goodbyes (isSocialPleasantry) get the instant Boardroom greeting with seated names and no paid dispatch; contextual replies (ok, no, tell me more, go ahead) still go to the board. Tests AgentService.boardroom-capability-intent.test.ts and utils/socialPleasantry.test.ts.
 - **Severity:** MEDIUM
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O9 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`

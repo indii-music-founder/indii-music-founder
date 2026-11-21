@@ -39,7 +39,7 @@ import {
     PERSONA_RESPONSE_METADATA_KEY,
     getPersonaResponseMetadata,
 } from '@/services/persona/PersonaResponseMetadata';
-import { isTrivialInput } from '@/services/agent/utils/trivialInput';
+import { isSocialPleasantry, isTrivialInput } from '@/services/agent/utils/trivialInput';
 import { APPROVAL_PANEL_GUIDANCE, isApprovalConsentReply } from './utils/approvalConsent';
 import { isCapabilityQuestion } from './capabilityTruth';
 import { PRINT_TOOL_DECLARATIONS } from './definitions/PrintToolDeclarations';
@@ -1250,6 +1250,18 @@ export class AgentService {
         if (signal?.aborted) {
             store.getState().updateAgentMessage(responseId, { text: '*(Discussion paused by user.)*', isStreaming: false,
                 thoughts: [{ id: uuidv4(), text: 'Discussion stopped by user', timestamp: Date.now(), type: 'logic' }] });
+            this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
+            return;
+        }
+        // A greeting, thanks or goodbye needs no paid Boardroom dispatch (ISSUE-1662).
+        if (!attachments?.length && isSocialPleasantry(task.rawUserUtterance)) {
+            const seatedNames = normalizeBoardroomAgentIds(sourceState.activeAgents ?? [])
+                .map(id => agentRegistry.get(id)?.name || id)
+                .join(', ');
+            const history = (sourceState.agentHistory ?? []) as AgentMessage[];
+            const previous = history.filter(message => message.id !== responseId).at(-1);
+            const reply = AgentService.buildInstantGreeting('generalist', seatedNames, 'boardroom', previous?.timestamp);
+            store.getState().updateAgentMessage(responseId, { agentId: 'generalist', text: reply, isStreaming: false });
             this.flushSyncMessage(responseId, () => store.getState().agentHistory.find(message => message.id === responseId));
             return;
         }
