@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decayPulse, horizonIntensityForStep, pulseForStepChange } from './horizonMotion';
+import { backdropOpacityForStep, decayPulse, horizonIntensityForStep, pulseForStepChange } from './horizonMotion';
 
 describe('horizonIntensityForStep', () => {
   it('is full strength on the hero and calmer for the wizard', () => {
@@ -32,6 +32,14 @@ describe('pulseForStepChange', () => {
     expect(pulseForStepChange(1, 2)).toBe(1);
     expect(pulseForStepChange(3, 2)).toBe(0.5);
     expect(pulseForStepChange(5, 6)).toBeGreaterThan(pulseForStepChange(1, 2));
+  });
+});
+
+describe('backdropOpacityForStep', () => {
+  it('shows the photograph on the hero and quiets it behind the questions', () => {
+    expect(backdropOpacityForStep(0)).toBe(0.55);
+    expect(backdropOpacityForStep(3)).toBe(0.18);
+    expect(backdropOpacityForStep(6)).toBe(0.18);
   });
 });
 
