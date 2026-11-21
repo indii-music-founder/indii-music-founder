@@ -23,14 +23,6 @@ import {
     type BoardroomWebpageSemantics,
 } from '@/config/typesafeJudgments';
 
-const BoardroomHostedBrowser = lazy(() => import('./BoardroomHostedBrowser'));
-const BoardroomWebSearch = lazy(() => import('./BoardroomWebSearch'));
-const hostedEndpoint = import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true'
-    ? import.meta.env.DEV && ['localhost', '127.0.0.1'].includes(window.location.hostname)
-        ? 'ws://127.0.0.1:4245/boardroom'
-        : 'wss://boardroom-browser-148015878263.us-central1.run.app/boardroom'
-    : undefined;
-
 interface QuickBookmark {
     id: string;
     title: string;
@@ -46,12 +38,21 @@ const BOARDROOM_BOOKMARKS: readonly QuickBookmark[] = [
     { id: 'mlc', title: 'The MLC', url: 'https://portal.themlc.com', badge: 'Mechanical' },
     { id: 'soundexchange', title: 'SoundExchange', url: 'https://sportal.soundexchange.com', badge: 'Neighboring' },
     { id: 'copyright', title: 'US Copyright', url: 'https://eco.copyright.gov/eService_enu/', badge: 'Legal' },
+    { id: 'google-fonts', title: 'Google Fonts', url: 'https://fonts.google.com/', badge: 'Fonts' },
     { id: 'instagram', title: 'Instagram', url: 'https://www.instagram.com', badge: 'Social' },
 ];
 
 interface BoardroomBrowserViewProps {
     isVisible?: boolean;
 }
+
+const BoardroomHostedBrowser = lazy(() => import('./BoardroomHostedBrowser'));
+const BoardroomWebSearch = lazy(() => import('./BoardroomWebSearch'));
+const hostedEndpoint = import.meta.env.VITE_BOARDROOM_BROWSER_ENABLED === 'true'
+    ? import.meta.env.DEV && ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        ? 'ws://127.0.0.1:4245/boardroom'
+        : 'wss://boardroom-browser-148015878263.us-central1.run.app/boardroom'
+    : undefined;
 
 function normalizeExternalHttpUrl(rawInput: string): string | null {
     const trimmed = rawInput.trim();
@@ -118,6 +119,7 @@ const FRAME_BLOCKED_DOMAINS = [
     'youtube.com',
     'youtu.be',
     'github.com',
+    'fonts.google.com',
     'x.com',
     'twitter.com',
     'tiktok.com',
