@@ -38,7 +38,7 @@ export default function OverlookedWorkSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+        <div className="mt-12 grid items-start gap-4 sm:grid-cols-2">
           {details.map(({ title, description, icon: Icon }) => (
             <article key={title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
               <Icon size={24} className="text-amber-400" aria-hidden="true" />
