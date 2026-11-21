@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { QualityTier } from '../../three/quality';
+import { decayPulse, horizonIntensityForStep, pulseForStepChange } from './horizonMotion';
 
 export interface PassportSingularityCanvasProps {
   /** Quality tier detected cleanly without blocking initial bundle */
@@ -258,7 +259,9 @@ export default function PassportSingularityCanvas({
     docHidden: typeof document !== 'undefined' ? document.visibilityState === 'hidden' : false,
     smoothPull: 0,
     smoothWarp: 0,
-    smoothIntensity: step === 0 ? 1 : 0.28,
+    smoothIntensity: horizonIntensityForStep(step),
+    prevStep: step,
+    pulse: 0,
     smoothCenter: { x: focalPoint.x, y: focalPoint.y },
   });
 
@@ -266,6 +269,12 @@ export default function PassportSingularityCanvas({
     stateRef.current.paused = paused;
     stateRef.current.pullActive = pullActive;
     stateRef.current.warping = warping;
+    if (stateRef.current.prevStep !== step) {
+      if (!paused) {
+        stateRef.current.pulse = Math.max(stateRef.current.pulse, pulseForStepChange(stateRef.current.prevStep, step));
+      }
+      stateRef.current.prevStep = step;
+    }
     stateRef.current.step = step;
     stateRef.current.focalPoint = focalPoint;
   }, [paused, pullActive, warping, step, focalPoint]);
@@ -317,7 +326,7 @@ export default function PassportSingularityCanvas({
       uPointer: { value: new THREE.Vector2(0, 0) },
       uPull: { value: 0 },
       uWarp: { value: 0 },
-      uIntensity: { value: initialStep === 0 ? 1 : 0.28 },
+      uIntensity: { value: horizonIntensityForStep(initialStep) },
       uDetail: { value: detailOctaves },
     };
 
@@ -373,7 +382,7 @@ export default function PassportSingularityCanvas({
       uCenterNdc: { value: new THREE.Vector2((initialFocal.x - 0.5) * 2, (0.5 - initialFocal.y) * 2) },
       uPointer: { value: new THREE.Vector2(0, 0) },
       uAspect: { value: camera.aspect },
-      uIntensity: { value: initialStep === 0 ? 1 : 0.28 },
+      uIntensity: { value: horizonIntensityForStep(initialStep) },
       uDpr: { value: getDpr() },
     };
 
@@ -454,23 +463,28 @@ export default function PassportSingularityCanvas({
       lastNow = now;
       const s = stateRef.current;
 
-      elapsed += dt * (1 + s.smoothPull * 0.75 + s.smoothWarp * 1.9);
+      s.pulse = decayPulse(s.pulse, dt);
+      elapsed += dt * (1 + s.smoothPull * 0.75 + s.smoothWarp * 1.9 + s.pulse * 1.4);
 
       // Smooth interpolation (no abrupt jumps on hover/focus)
       const lerp = 1 - Math.exp(-dt * 5.5);
       s.smoothPull += ((s.pullActive ? 1 : 0) - s.smoothPull) * lerp;
       s.smoothWarp += ((s.warping ? 1 : 0) - s.smoothWarp) * (1 - Math.exp(-dt * 9.0));
-      const targetIntensity = s.step === 0 ? 1.0 : 0.28;
+      const targetIntensity = horizonIntensityForStep(s.step);
       s.smoothIntensity += (targetIntensity - s.smoothIntensity) * lerp;
       s.smoothCenter.x += (s.focalPoint.x - s.smoothCenter.x) * lerp;
       s.smoothCenter.y += (s.focalPoint.y - s.smoothCenter.y) * lerp;
       s.pointer.x += (s.targetPointer.x - s.pointer.x) * lerp;
       s.pointer.y += (s.targetPointer.y - s.pointer.y) * lerp;
 
+      // A step change briefly compresses and brightens the horizon, then it settles.
+      const warpTotal = Math.min(1, s.smoothWarp + s.pulse * 0.3);
+      const intensityTotal = s.smoothIntensity * (1 + s.pulse * 0.65);
+
       diskUniforms.uTime.value = elapsed;
       diskUniforms.uPull.value = s.smoothPull;
-      diskUniforms.uWarp.value = s.smoothWarp;
-      diskUniforms.uIntensity.value = s.smoothIntensity;
+      diskUniforms.uWarp.value = warpTotal;
+      diskUniforms.uIntensity.value = intensityTotal;
       diskUniforms.uPointer.value.set(s.pointer.x, s.pointer.y);
       diskUniforms.uCenter.value.set(s.smoothCenter.x, s.smoothCenter.y);
 
@@ -478,8 +492,8 @@ export default function PassportSingularityCanvas({
       const ndcY = (0.5 - s.smoothCenter.y) * 2.0;
       particleUniforms.uTime.value = elapsed;
       particleUniforms.uPull.value = s.smoothPull;
-      particleUniforms.uWarp.value = s.smoothWarp;
-      particleUniforms.uIntensity.value = s.smoothIntensity;
+      particleUniforms.uWarp.value = warpTotal;
+      particleUniforms.uIntensity.value = intensityTotal;
       particleUniforms.uPointer.value.set(s.pointer.x, s.pointer.y);
       particleUniforms.uCenterNdc.value.set(ndcX, ndcY);
 
@@ -487,14 +501,14 @@ export default function PassportSingularityCanvas({
         const worldAnchorX = ndcX * camera.aspect * 2.65;
         const worldAnchorY = ndcY * 2.65;
         ringGroup.position.set(worldAnchorX, worldAnchorY, 0);
-        const ringScale = (1 - s.smoothPull * 0.24 - s.smoothWarp * 0.42) * (s.step === 0 ? 1 : 0.8);
+        const ringScale = (1 - s.smoothPull * 0.24 - warpTotal * 0.42) * (s.step === 0 ? 1 : 0.8);
         ringGroup.scale.setScalar(ringScale);
         ringGroup.rotation.z = elapsed * 0.14;
         ringGroup.rotation.y = s.pointer.x * 0.18;
         ringGroup.rotation.x = -s.pointer.y * 0.12;
         ringDisposables.forEach((item, idx) => {
           item.mat.opacity =
-            ringSpecs[idx].opacity * s.smoothIntensity * (1 + s.smoothPull * 0.65);
+            ringSpecs[idx].opacity * intensityTotal * (1 + s.smoothPull * 0.65);
         });
       }
 
