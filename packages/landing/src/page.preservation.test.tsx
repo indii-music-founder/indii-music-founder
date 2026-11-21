@@ -183,6 +183,7 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('Log in');
     expect(text).toContain('See how indii.music works');
     expect(text).toContain('Working software / Founding Artist Beta');
+    expect(text).toContain('The Freedom Principle');
     expect(text).toContain('Keep your rights');
     expect(text).toContain('0% royalty cut');
     // The "$ıt" wordplay must survive intact.
