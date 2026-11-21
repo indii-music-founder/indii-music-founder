@@ -1,13 +1,5 @@
-import { test as customTest, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test as authedTest } from './fixtures/auth';
-
-interface TestWindow extends Window {
-    useStore: {
-        getState: () => Record<string, any>;
-        setState: (state: Record<string, any>) => void;
-    };
-    __TEST_MODE__: boolean;
-}
 
 interface Persona {
     id: string;
@@ -45,7 +37,7 @@ const personas: Persona[] = [
         displayName: 'Metroplex 303',
         bio: 'Searing acid basslines and raw drum machine work representing the concrete warehouses of the Detroit underground.',
         brandDescription: 'Acid basslines, concrete warehouses, hardware-driven beats.',
-        aestheticStyle: 'Vintage',
+        aestheticStyle: 'Analog Film', // must be in OPTION_WHITELISTS.aesthetic_style
         colors: ['#0d0d0d', '#2c5e3b', '#a31d1d', '#314e6b'], // Black, Oxide Green, Crimson, Steel Blue
         fonts: 'Bold & Geometric',
         distributor: 'Symphonic',
@@ -149,7 +141,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             } else if (onboardingTurn === 3) {
                 text = `Touring is where underground techno lives. The sweat, the shadows, the sound systems. To get you on those lineups, your visual brand needs to match that raw warehouse energy. What's the visual aesthetic style we are building around?`;
                 functionCalls.push({ name: "updateProfile", args: { goals: ["Grow fanbase", "Touring"] } });
-                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "aesthetic_style", options: ["Minimalist", "Maximalist", "Vintage", "Futuristic", "Cinematic", "Abstract"] } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "aesthetic_style", options: ["Minimalist", "Analog Film", "Monochrome", "Cinematic", "Retro Print", "Documentary"] } });
             } else if (onboardingTurn === 4) {
                 text = `${currentPersona.aestheticStyle} industrial. Spot on. No clutter, just raw impact — like a concrete warehouse at 4 AM. And to enforce this, I'm setting a strict guard: no neon, no cyberpunk cliches, no cartoon gloss. What color vibe represents ${currentPersona.displayName}?`;
                 functionCalls.push({ name: "updateProfile", args: { aesthetic_style: currentPersona.aestheticStyle, negative_prompt: "no neon, no cyberpunk, no bright cartoon colors, no glossy synthwave" } });
@@ -280,7 +272,7 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                     name: "askMultipleChoice",
                     args: {
                         question_type: "aesthetic_style",
-                        options: ["Minimalist", "Maximalist", "Vintage", "Futuristic", "Cinematic", "Abstract"]
+                        options: ["Minimalist", "Analog Film", "Monochrome", "Cinematic", "Retro Print", "Documentary"]
                     }
                 });
             } else if (onboardingTurn === 4) {
@@ -618,6 +610,13 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             console.log('[Techno E2E] Initializing onboarding state...');
             await page.goto(`${BASE_URL}/onboarding`, { waitUntil: 'domcontentloaded' });
             await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
+            // Seed only after the app's account-boundary reset and its own profile
+            // load have settled; seeding earlier is wiped by that reset (ISSUE-1691).
+            await page.waitForFunction(
+                () => (window as any).useStore.getState().userProfile?.uid === 'test-user-uid-e2e',
+                undefined,
+                { timeout: 60000 },
+            );
 
             await page.evaluate(async (persona) => {
                 const store = (window as any).useStore;
@@ -627,7 +626,9 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                 if (state.clearSubscription) {
                     try {
                         state.clearSubscription('global_profile');
-                    } catch (e) {}
+                    } catch (error) {
+                        console.warn('[Techno E2E] clearSubscription(global_profile) failed', error);
+                    }
                 }
 
                 store.setState({
@@ -638,6 +639,8 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                     userProfile: {
                         id: 'test-user-uid-e2e',
                         uid: 'test-user-uid-e2e',
+                        // Newer than any saved copy, so a late profile load keeps this seed.
+                        updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
                         email: persona.email,
                         displayName: persona.displayName,
                         bio: '',
@@ -768,6 +771,13 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.waitForTimeout(1500);
 
             // Phase 3: Distribution setup and connection
+            // A finished cover opens the full-screen canvas editor over the sidebar;
+            // close it the way a user would before navigating (ISSUE-1691).
+            const canvasEditor = page.locator('[data-testid="creative-canvas-container"]');
+            if (await canvasEditor.isVisible().catch(() => false)) {
+                await canvasEditor.getByRole('button', { name: 'Close editor' }).click();
+                await expect(canvasEditor).toBeHidden({ timeout: 10000 });
+            }
             console.log('[Techno E2E] Phase 3: Navigating to Distribution Module...');
             await page.locator('[data-testid="nav-item-distribution"]').click();
             const leavePageButton = page.getByRole('button', { name: 'Leave Page' });
@@ -824,15 +834,17 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="release-track-title-input"]').fill(currentPersona.releaseTrack);
             await page.waitForTimeout(1000);
 
-            const submitReleaseBtn = page.locator('[data-testid="release-submit-button"]');
+            // ISSUE-969: a release cannot submit without a real hashed master and a
+            // staged cover. This mocked suite has no ingested master, so it verifies
+            // the gate rather than delivery (same contract as distribution-workflow).
+            // Real submission needs a genuine account (.agent/REAL_USER_AUTHENTICITY.md).
+            const submitReleaseBtn = metaModal.getByTestId('release-submit-button');
             await expect(submitReleaseBtn).toBeVisible();
-            await submitReleaseBtn.click({ force: true });
-
-            const doneBtn = page.locator('[data-testid="release-done-button"]');
-            await expect(doneBtn).toBeVisible({ timeout: 30000 });
-            await doneBtn.click();
+            await expect(submitReleaseBtn).toBeDisabled();
+            await expect(metaModal.getByTestId('release-done-button')).toHaveCount(0);
+            await metaModal.getByRole('button', { name: 'Close release submission' }).click();
             await expect(metaModal).not.toBeVisible();
-            console.log(`[Techno E2E] EP Metadata submitted successfully for ${currentPersona.displayName}!`);
+            console.log(`[Techno E2E] Release submit correctly blocked without a master for ${currentPersona.displayName}.`);
             await page.waitForTimeout(1500);
 
             // Phase 5: QC Analysis Checks
@@ -840,6 +852,8 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await page.locator('[data-testid="distro-tab-brain"]').click();
             await page.waitForTimeout(1500);
 
+            // Release metadata QC lives on the Metadata sub-tab (Acoustic is the default).
+            await page.getByTestId('qc-subtab-metadata').click();
             // Fill input fields in QC Panel to prevent validation error toasts
             console.log(`[Techno E2E] Pre-filling QC metadata for release "${currentPersona.releaseTitle}"...`);
             await page.locator('[data-testid="qc-input-title"]').fill(currentPersona.releaseTitle);
@@ -861,11 +875,14 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             await expect(page.getByRole('heading', { name: /Finance/i }).first()).toBeVisible({ timeout: 20000 }); // bypass-strict: heading text rendered across responsive layout breakpoints
             await page.waitForTimeout(1500);
 
+            // Finance tabs are grouped (ISSUE-1440): pick the group, then its sub-tab.
+            await page.getByTestId('finance-group-spending').click();
             const expensesTab = page.locator('[data-testid="finance-tab-expenses"]');
             await expensesTab.click();
             await expect(expensesTab).toHaveAttribute('data-state', 'active');
             await page.waitForTimeout(1000);
 
+            await page.getByTestId('finance-group-royalties').click();
             const royaltiesTab = page.locator('[data-testid="finance-tab-royalties"]');
             await royaltiesTab.click();
             await expect(royaltiesTab).toHaveAttribute('data-state', 'active');

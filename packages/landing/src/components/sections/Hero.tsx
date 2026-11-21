@@ -161,12 +161,15 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
             </a>
           </div>
 
-          <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
+          <p className="mt-6 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
             <span className="h-2 w-2 rounded-full bg-[#00C853]" aria-hidden="true" />
             <span>Working software / Founding Artist Beta</span>
-            <span aria-hidden="true" className="text-white/25">·</span>
+          </p>
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/55">
+            <span className="font-bold text-[#FFB800]">The Freedom Principle©</span>
+            <span aria-hidden="true" className="mx-2 text-white/25">·</span>
             <span>Keep your rights</span>
-            <span aria-hidden="true" className="text-white/25">·</span>
+            <span aria-hidden="true" className="mx-2 text-white/25">·</span>
             <span>0% royalty cut</span>
           </p>
         </motion.div>

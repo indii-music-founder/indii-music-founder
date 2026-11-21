@@ -22,6 +22,7 @@ import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../on
 import { hydrateProfileWithAssessment } from '@/services/onboarding/passportHydrationService';
 import { secureRandomPick } from '@/utils/crypto-random';
 import { logger } from '@/utils/logger';
+import { auth } from '@/services/firebase';
 
 /**
  * ISSUE-955: Brand Interview audio attachments are sent to Gemini as
@@ -87,14 +88,25 @@ export interface UseOnboardingOptions {
 }
 
 export function useOnboarding(options: UseOnboardingOptions = {}) {
-    const { userProfile, setUserProfile, setModule, addActiveAgent } = useStore(
+    const { userProfile, setUserProfile, setModule, addActiveAgent, loadUserProfile } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
             setUserProfile: state.setUserProfile,
             setModule: state.setModule,
-            addActiveAgent: state.addActiveAgent
+            addActiveAgent: state.addActiveAgent,
+            loadUserProfile: state.loadUserProfile
         }))
     );
+    // Until the signed-in user's own profile has loaded, the store holds a blank
+    // placeholder (no uid). Answers written onto it are replaced when the real
+    // profile arrives, so onboarding must wait for it (ISSUE-1691).
+    const isProfileReady = Boolean(userProfile.uid);
+    const retryProfileLoad = () => {
+        const uid = auth.currentUser?.uid;
+        if (uid && loadUserProfile) {
+            loadUserProfile(uid).catch(error => logger.error('[Onboarding] Profile reload failed:', error));
+        }
+    };
      
     const { showToast } = useToast();
     const [input, setInput] = useState('');
@@ -549,6 +561,8 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
 
     return {
         userProfile,
+        isProfileReady,
+        retryProfileLoad,
         input,
         setInput,
         history,

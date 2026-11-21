@@ -6,23 +6,33 @@ import * as OnboardingService from '@/services/onboarding/onboardingService';
 // Mock Store
 const mockSetUserProfile = vi.fn();
 const mockSetModule = vi.fn();
+const mockLoadUserProfile = vi.fn().mockResolvedValue(undefined);
+const loadedProfile = {
+    uid: 'artist-uid',
+    brandKit: {
+        releaseDetails: {},
+        colors: [], // Added for accessibility test rendering
+    },
+    goals: [],
+    analyzedTrackIds: [],
+    careerProfile: 'dj'
+};
+let mockUserProfile: Record<string, unknown> = loadedProfile;
 
 vi.mock('@/core/store', () => ({
     useStore: () => ({
-        userProfile: {
-            brandKit: {
-                releaseDetails: {},
-                colors: [], // Added for accessibility test rendering
-            },
-            goals: [],
-            analyzedTrackIds: [],
-            careerProfile: 'dj'
-        },
+        userProfile: mockUserProfile,
         setUserProfile: mockSetUserProfile,
         setModule: mockSetModule,
+        loadUserProfile: mockLoadUserProfile,
         addActiveAgent: vi.fn(),
         removeActiveAgent: vi.fn(),
     }),
+}));
+
+vi.mock('@/services/firebase', () => ({
+    db: null,
+    auth: { currentUser: { uid: 'artist-uid' } },
 }));
 
 // Mock useToast
@@ -69,7 +79,30 @@ describe('OnboardingPage', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUserProfile = loadedProfile;
         window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    });
+
+    describe('Profile readiness', () => {
+        // ISSUE-1691: onboarding answers given on the blank placeholder profile
+        // were replaced when the user's real profile finished loading.
+        it('waits for the signed-in profile instead of onboarding a placeholder', () => {
+            mockUserProfile = { ...loadedProfile, uid: '', careerProfile: undefined };
+            render(<OnboardingPage />);
+
+            expect(screen.getByRole('status')).toHaveTextContent(/loading your profile/i);
+            expect(screen.queryByText('Choose Your Career Path')).not.toBeInTheDocument();
+            expect(screen.queryByLabelText('Type your message')).not.toBeInTheDocument();
+        });
+
+        it('retries loading the signed-in profile', () => {
+            mockUserProfile = { ...loadedProfile, uid: '' };
+            render(<OnboardingPage />);
+
+            fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+            expect(mockLoadUserProfile).toHaveBeenCalledWith('artist-uid');
+        });
     });
 
     describe('GenUI Verification', () => {

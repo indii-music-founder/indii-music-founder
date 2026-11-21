@@ -128,7 +128,7 @@ export default function PassportSingularityHero({
       </div>
 
       {/* Top Eyebrow + WCAG 2.2.2 Motion Control */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+      <div className="passport-rise flex flex-wrap items-center justify-center gap-2.5 sm:gap-3" style={{ '--d': '0.05s' } as React.CSSProperties}>
         <div className="inline-flex items-center gap-2 rounded-full border border-[#FFB800]/35 bg-black/70 px-3.5 py-1.5 text-[11px] font-mono tracking-wide text-[#FFD56B] shadow-[0_0_24px_rgba(255,184,0,0.14)] backdrop-blur-md sm:text-xs">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-[#FFB800]" aria-hidden="true" />
           <span>People make the music, indii makes the business.</span>
@@ -154,7 +154,7 @@ export default function PassportSingularityHero({
       </div>
 
       {/* Headline & Lead anchored cleanly above the accretion horizon (no hard box edges) */}
-      <div className="relative mx-auto mt-5 max-w-4xl px-6 py-4 bg-[radial-gradient(ellipse_at_50%_48%,rgba(0,0,0,0.68)_0%,rgba(0,0,0,0.28)_45%,transparent_70%)]">
+      <div className="passport-blur-in relative mx-auto mt-5 max-w-4xl px-6 py-4 bg-[radial-gradient(ellipse_at_50%_48%,rgba(0,0,0,0.68)_0%,rgba(0,0,0,0.28)_45%,transparent_70%)]">
         <h1 className="text-4xl font-black leading-[1.03] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] sm:text-5xl md:text-6xl">
           {entry?.situation ?? 'How ready is your music'}{' '}
           <span className="inline-block bg-gradient-to-r from-[#FFF6D6] via-[#FFD700] to-[#FFB800] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(255,184,0,0.35)]">
@@ -170,7 +170,7 @@ export default function PassportSingularityHero({
       </div>
 
       {/* Primary Event Horizon CTA Centered Directly at Gravitational Axis (x = 50%) */}
-      <div className="relative mt-6 flex flex-col items-center justify-center gap-3.5">
+      <div className="passport-rise relative mt-6 flex flex-col items-center justify-center gap-3.5" style={{ '--d': '0.3s' } as React.CSSProperties}>
         <div
           ref={assignButtonBox}
           onPointerEnter={() => setPull(true)}
@@ -219,7 +219,7 @@ export default function PassportSingularityHero({
       </div>
 
       {/* Three Precision Obsidian Telemetry Pillars */}
-      <div className="mt-8 grid grid-cols-1 gap-3.5 border-t border-white/15 pt-6 text-left sm:grid-cols-3">
+      <div className="passport-pillars mt-8 grid grid-cols-1 gap-3.5 border-t border-white/15 pt-6 text-left sm:grid-cols-3">
         <div className="relative overflow-hidden rounded-xl border border-white/15 bg-black/75 p-4 backdrop-blur-md">
           <div className="specular-line-gold pointer-events-none absolute inset-x-0 top-0 h-px opacity-75" />
           <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-[#FFB800]">
