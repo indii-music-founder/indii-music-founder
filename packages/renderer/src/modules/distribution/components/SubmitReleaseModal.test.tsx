@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
-const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile, mockGeneratedHistory } = vi.hoisted(() => ({
+const { mockListCanonicalTracks, mockSubmitRelease, mockCanRunDeliveryPipeline, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile, mockGeneratedHistory } = vi.hoisted(() => ({
     mockListCanonicalTracks: vi.fn(),
     mockSubmitRelease: vi.fn(),
+    mockCanRunDeliveryPipeline: vi.fn(),
     mockPersistCoverArt: vi.fn(),
     mockSetDoc: vi.fn(),
     mockAuditArtwork: vi.fn(),
@@ -30,7 +31,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector: any) => selector({ userProfile: mockUserProfile, generatedHistory: mockGeneratedHistory }),
+    useStore: (selector: any) => selector({ userProfile: mockUserProfile, generatedHistory: mockGeneratedHistory, currentOrganizationId: 'org-default' }),
 }));
 
 vi.mock('@/services/metadata/TrackLibraryService', () => ({
@@ -38,7 +39,7 @@ vi.mock('@/services/metadata/TrackLibraryService', () => ({
 }));
 
 vi.mock('@/services/distribution/DistributionService', () => ({
-    distributionService: { submitRelease: mockSubmitRelease },
+    distributionService: { submitRelease: mockSubmitRelease, canRunDeliveryPipeline: mockCanRunDeliveryPipeline },
 }));
 
 vi.mock('@/services/distribution/CanonicalCoverArtService', () => ({
@@ -95,6 +96,7 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         vi.clearAllMocks();
         mockListCanonicalTracks.mockResolvedValue([CANONICAL_TRACK]);
         mockSubmitRelease.mockResolvedValue({ status: 'success' });
+        mockCanRunDeliveryPipeline.mockReturnValue(true);
         mockSetDoc.mockResolvedValue(undefined);
         mockAuditArtwork.mockResolvedValue({ data: { status: 'compliant' } });
         mockGeneratedHistory.length = 0;
@@ -179,6 +181,98 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
             }),
         );
         expect(mockAuditArtwork).toHaveBeenCalledWith({ releaseId: releaseData.releaseId });
+    });
+
+    it('writes the release in the catalogue shape Distribution lists and the Publicist can pitch (ISSUE-1692)', async () => {
+        render(<SubmitReleaseModal open onClose={vi.fn()} />);
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+
+        fillBasicMetadata();
+        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
+        fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
+        fireEvent.click(screen.getByTestId('release-submit-button'));
+
+        await waitFor(() => expect(mockSubmitRelease).toHaveBeenCalled());
+        const [ref, record] = mockSetDoc.mock.calls[0]!;
+        const [releaseData] = mockSubmitRelease.mock.calls[0]!;
+        expect(ref).toEqual({ path: `proprietaryIngestionReleases/${releaseData.releaseId}` });
+        expect(record).toMatchObject({
+            userId: 'user-1',
+            orgId: 'org-default',
+            title: 'Album',
+            status: 'cover_art_audit_pending',
+            metadata: {
+                releaseTitle: 'Album',
+                trackTitle: 'Track',
+                artistName: 'Artist',
+                labelName: 'Indii Records',
+                genre: 'Electronic',
+                masterFingerprint: 'SONIC-master-1',
+                durationSeconds: 210,
+            },
+            assets: {
+                audioStoragePath: 'masters/user-1/master.wav',
+                audioContentHash: 'a'.repeat(64),
+                audioFormat: 'wav',
+                audioSampleRate: 48000,
+                audioBitDepth: 24,
+                coverArtStoragePath: `covers/user-1/${'b'.repeat(64)}/original.png`,
+            },
+            distributors: [],
+        });
+        // Download URLs carry tokens and can change; only canonical references are stored.
+        expect(JSON.stringify(record)).not.toContain('firebasestorage.googleapis.com');
+        expect(JSON.stringify(record)).not.toContain('token=');
+    });
+
+    describe('on the web, where the delivery pipeline does not exist (ISSUE-1692)', () => {
+        beforeEach(() => {
+            mockCanRunDeliveryPipeline.mockReturnValue(false);
+        });
+
+        const saveOnWeb = async () => {
+            render(<SubmitReleaseModal open onClose={vi.fn()} />);
+            await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+            fillBasicMetadata();
+            fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
+            fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
+            fireEvent.click(screen.getByTestId('release-submit-button'));
+        };
+
+        it('says it saves rather than delivers before the user submits', async () => {
+            render(<SubmitReleaseModal open onClose={vi.fn()} />);
+            await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+
+            expect(screen.getByTestId('release-submit-button')).toHaveTextContent('Save Release');
+            expect(screen.getByText('On the web, this saves the release. Delivery runs in the desktop app.')).toBeInTheDocument();
+        });
+
+        it('saves the release after the artwork audit passes, marks it for desktop delivery, and never starts the pipeline', async () => {
+            await saveOnWeb();
+
+            await waitFor(() => expect(screen.getByTestId('release-saved-for-desktop')).toBeInTheDocument());
+            expect(mockSubmitRelease).not.toHaveBeenCalled();
+            expect(mockAuditArtwork).toHaveBeenCalledTimes(1);
+            expect(mockSetDoc).toHaveBeenCalledTimes(2);
+            const [createRef, created] = mockSetDoc.mock.calls[0]!;
+            const [statusRef, statusUpdate, options] = mockSetDoc.mock.calls[1]!;
+            expect(created).toMatchObject({ status: 'cover_art_audit_pending', metadata: { releaseTitle: 'Album' } });
+            expect(statusRef).toEqual(createRef);
+            expect(statusUpdate).toEqual({ status: 'ready_for_desktop_delivery', updatedAt: 'server-timestamp' });
+            expect(options).toEqual({ merge: true });
+            expect(screen.getByText(/No ISRC or UPC was assigned and nothing was sent/)).toBeInTheDocument();
+            expect(screen.queryByText('Release delivered to distributor')).toBeNull();
+            expect(mockCelebrate).not.toHaveBeenCalled();
+        });
+
+        it('does not mark a release ready when its artwork fails the audit', async () => {
+            mockAuditArtwork.mockResolvedValueOnce({ data: { status: 'non_compliant' } });
+            await saveOnWeb();
+
+            await waitFor(() => expect(screen.getByTestId('cover-art-repair')).toBeInTheDocument());
+            expect(mockSetDoc.mock.calls.map(call => call[1].status)).toEqual(['cover_art_audit_pending', 'cover_art_audit_failed']);
+            expect(screen.queryByTestId('release-saved-for-desktop')).toBeNull();
+        });
     });
 
     it('submits the immutable canonical master reference instead of analysis-cache metadata alone', async () => {

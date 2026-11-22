@@ -17,6 +17,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegStaticPath from 'ffmpeg-static';
 
 import { parseStorageUri } from './storageUri.js';
+import { resolveOwnedRelease, type OwnershipFirestore } from '../mcp/helpers.js';
 
 if (ffmpegStaticPath) {
     ffmpeg.setFfmpegPath(ffmpegStaticPath);
@@ -59,12 +60,30 @@ export function resolveCoverArtStoragePath(data: Record<string, unknown>): strin
 /** Resolves a release/track doc's artist-uploaded audio into a Storage object path. Never throws — returns undefined if absent or unparseable. */
 export function resolveAudioStoragePath(data: Record<string, unknown>): string | undefined {
     const audioUrl = data.audioUrl;
-    if (typeof audioUrl !== 'string' || !audioUrl.trim()) return undefined;
-    try {
-        return parseStorageUri(audioUrl).path;
-    } catch {
-        return undefined;
+    if (typeof audioUrl === 'string' && audioUrl.trim()) {
+        try {
+            return parseStorageUri(audioUrl).path;
+        } catch {
+            // Not a Storage URI; fall through to the canonical master path.
+        }
     }
+    // Distribution/Publishing release records (ISSUE-1692) keep the artist's
+    // canonical master path under `assets.audioStoragePath`.
+    const assets = (data.assets && typeof data.assets === 'object' ? data.assets : {}) as Record<string, unknown>;
+    const storagePath = assets.audioStoragePath;
+    if (typeof storagePath === 'string' && storagePath.trim()) return storagePath.trim();
+    return undefined;
+}
+
+/**
+ * The render job downloads with admin credentials, so a client-written release
+ * record must not be able to point it at another user's files. Only objects
+ * under the caller's own prefixes are accepted.
+ */
+export function isOwnerScopedStoragePath(objectPath: string, uid: string): boolean {
+    if (!uid || objectPath.includes('..') || objectPath.startsWith('/')) return false;
+    return ['users', 'masters', 'covers', 'artwork', 'cover-art', 'releases']
+        .some(prefix => objectPath.startsWith(`${prefix}/${uid}/`));
 }
 
 export function resolveCanvasDurationSeconds(animationSpec: CanvasRenderPayload['animationSpec']): number {
@@ -133,19 +152,18 @@ export const canvasRenderFn = (inngestClient: Inngest) => inngestClient.createFu
         });
 
         const assetPaths = await step.run('resolve-assets', async () => {
-            const owned = await db.collection('users').doc(uid).collection('releases').doc(releaseId).get();
-            const source = owned.exists ? owned : await db.collection('releases').doc(releaseId).get();
-            if (!source.exists) {
-                throw new Error(`Release ${releaseId} not found.`);
-            }
-            const data = source.data() || {};
+            // Same owned-release lookup the queue tool verified (ISSUE-1692).
+            const { data } = await resolveOwnedRelease(db as unknown as OwnershipFirestore, uid, releaseId);
             const coverArtStoragePath = resolveCoverArtStoragePath(data);
             const audioStoragePath = resolveAudioStoragePath(data);
             if (!coverArtStoragePath) {
                 throw new Error('Release has no cover art storage path — cannot compose canvas.');
             }
             if (!audioStoragePath) {
-                throw new Error("Release has no artist-uploaded audio (audioUrl) — cannot compose canvas without the artist's own audio.");
+                throw new Error("Release has no artist-uploaded audio (audioUrl or assets.audioStoragePath) — cannot compose canvas without the artist's own audio.");
+            }
+            if (!isOwnerScopedStoragePath(coverArtStoragePath, uid) || !isOwnerScopedStoragePath(audioStoragePath, uid)) {
+                throw new Error('Release cover art or audio is not stored under the requesting artist — refusing to read it.');
             }
             return { coverArtStoragePath, audioStoragePath };
         });

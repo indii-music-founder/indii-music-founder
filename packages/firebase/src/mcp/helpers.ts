@@ -32,27 +32,57 @@ export interface OwnershipFirestore {
     collection(name: string): OwnershipCollectionRef;
 }
 
+/** Where an owned release record was found. */
+export type OwnedReleaseStore = 'users/releases' | 'releases' | 'proprietaryIngestionReleases';
+
+export interface OwnedRelease {
+    id: string;
+    store: OwnedReleaseStore;
+    data: Record<string, unknown>;
+}
+
+const RELEASE_NOT_OWNED = 'Forbidden: release not found or not owned by caller';
+
+function recordedOwner(data: Record<string, unknown>): unknown {
+    return data.userId ?? data.ownerUid;
+}
+
 /**
- * Resource-level authorization: verifies that `releaseId` belongs to the
- * authenticated caller `uid`. Mirrors AssetResolutionAuditService.findRelease:
- * checks `users/{uid}/releases/{releaseId}` first, then top-level
- * `releases/{releaseId}` requiring its `userId ?? ownerUid` to equal `uid`.
- * Throws a single Forbidden message for both not-found and not-owned so
- * existence of other users' releases is never leaked.
+ * Resource-level release lookup for the authenticated caller `uid`.
+ *
+ * A release can live in one of three stores, checked in this order:
+ * 1. `users/{uid}/releases/{releaseId}` — owned by path.
+ * 2. `releases/{releaseId}` — owned when `userId ?? ownerUid` equals `uid`.
+ * 3. `proprietaryIngestionReleases/{releaseId}` — the store the Distribution
+ *    and Publishing UIs write and list (ISSUE-1692); owned the same way.
+ *
+ * Organization-shared releases owned by another member are refused: the MCP
+ * gateway has no org-membership check, so it fails closed. Not-found and
+ * not-owned throw the same Forbidden message so other users' releases are
+ * never revealed.
  */
-export async function verifyReleaseOwnership(firestore: OwnershipFirestore, uid: string, releaseId: string): Promise<void> {
+export async function resolveOwnedRelease(firestore: OwnershipFirestore, uid: string, releaseId: string): Promise<OwnedRelease> {
     if (typeof releaseId !== 'string' || !releaseId.trim() || releaseId.length > 200 || releaseId.includes('/')) {
         throw new TypeError('releaseId must be a non-empty string no longer than 200 characters without "/".');
     }
     const id = releaseId.trim();
     const owned = await firestore.collection('users').doc(uid).collection('releases').doc(id).get();
-    if (owned.exists) return;
-    const topLevel = await firestore.collection('releases').doc(id).get();
-    if (topLevel.exists) {
-        const data = topLevel.data() ?? {};
-        if ((data.userId ?? data.ownerUid) === uid) return;
+    if (owned.exists) return { id, store: 'users/releases', data: owned.data() ?? {} };
+    for (const store of ['releases', 'proprietaryIngestionReleases'] as const) {
+        const snapshot = await firestore.collection(store).doc(id).get();
+        if (!snapshot.exists) continue;
+        const data = snapshot.data() ?? {};
+        if (recordedOwner(data) === uid) return { id, store, data };
     }
-    throw new Error('Forbidden: release not found or not owned by caller');
+    throw new Error(RELEASE_NOT_OWNED);
+}
+
+/**
+ * Resource-level authorization: verifies that `releaseId` belongs to the
+ * authenticated caller `uid` in any release store (see `resolveOwnedRelease`).
+ */
+export async function verifyReleaseOwnership(firestore: OwnershipFirestore, uid: string, releaseId: string): Promise<void> {
+    await resolveOwnedRelease(firestore, uid, releaseId);
 }
 
 export function requireString(args: Record<string, unknown>, key: string, maxLength = 256): string {

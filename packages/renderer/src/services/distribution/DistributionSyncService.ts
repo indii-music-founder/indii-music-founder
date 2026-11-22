@@ -12,7 +12,7 @@ export class DistributionSyncService {
     private static mapRelease(docId: string, data: DDEXReleaseRecord): DashboardRelease {
         const deployments: Record<string, { status: ReleaseStatus; error?: string }> = {};
 
-        if (data.distributors) {
+        if (Array.isArray(data.distributors)) {
             data.distributors.forEach(dist => {
                 deployments[dist.distributorId] = {
                     status: dist.status as ReleaseStatus,
@@ -21,26 +21,34 @@ export class DistributionSyncService {
             });
         }
 
+        // ISSUE-1692: older Submit Release and agent-staged records carry only
+        // top-level fields and no `metadata` map. One such record must not
+        // break the whole catalogue listener, so read metadata defensively.
+        const metadata: Partial<DDEXReleaseRecord['metadata']> = data.metadata ?? {};
+        const legacy = data as Partial<Record<'title' | 'artist', unknown>>;
+        const legacyTitle = typeof legacy.title === 'string' ? legacy.title : undefined;
+        const legacyArtist = typeof legacy.artist === 'string' ? legacy.artist : undefined;
+
         // Extract semantic properties for audio DNA badging
-        const rawMoods = data.metadata.mood || [];
+        const rawMoods = Array.isArray(metadata.mood) ? metadata.mood : [];
         const primaryMood = rawMoods.length > 0 ? rawMoods[0] : undefined;
         let vocalPresence: string | undefined;
-        if (data.metadata.isInstrumental === true) vocalPresence = 'Instrumental';
-        else if (data.metadata.isInstrumental === false) vocalPresence = 'Vocal';
+        if (metadata.isInstrumental === true) vocalPresence = 'Instrumental';
+        else if (metadata.isInstrumental === false) vocalPresence = 'Vocal';
 
         return {
             id: docId,
-            title: data.metadata.releaseTitle || data.metadata.trackTitle,
-            artist: data.metadata.artistName,
+            title: metadata.releaseTitle || metadata.trackTitle || legacyTitle || 'Untitled release',
+            artist: metadata.artistName || legacyArtist || '',
             coverArtUrl: data.assets?.coverArtUrl,
-            releaseDate: data.metadata.releaseDate,
+            releaseDate: metadata.releaseDate,
             deployments,
             // Semantic metadata fields
-            genre: data.metadata.genre,
-            subGenre: data.metadata.subGenre,
+            genre: metadata.genre,
+            subGenre: metadata.subGenre,
             primaryMood,
             vocalPresence,
-            marketingComment: data.metadata.marketingComment
+            marketingComment: metadata.marketingComment
         };
     }
 

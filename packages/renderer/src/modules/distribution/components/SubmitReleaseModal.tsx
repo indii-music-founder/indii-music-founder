@@ -17,6 +17,7 @@ import { PREREQUISITE_STORAGE_KEY, parsePrerequisiteReports } from '@/modules/re
 import { CelebrationMoment } from '@/components/share/CelebrationMoment';
 import { ShareSheet } from '@/components/share/ShareSheet';
 import { claimMilestone } from '@/services/share/milestones';
+import { buildReleaseCatalogRecord } from '../releaseCatalogRecord';
 
 interface PipelineStep {
     id: string;
@@ -41,10 +42,14 @@ interface Props {
 export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted }) => {
     const dialogRef = useModalAccessibility(open, onClose);
     const { success: toastSuccess, error: toastError } = useToast();
-    const { userProfile, generatedHistory } = useStore(useShallow(state => ({
+    const { userProfile, generatedHistory, currentOrganizationId } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
         generatedHistory: state.generatedHistory,
+        currentOrganizationId: state.currentOrganizationId,
     })));
+    // ISSUE-1692: on the web there is no delivery pipeline; Submit saves the
+    // release to the catalogue and delivery happens in the desktop app.
+    const deliversHere = distributionService.canRunDeliveryPipeline();
 
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
@@ -119,7 +124,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         // eslint-disable-next-line react-hooks/exhaustive-deps -- toastError is a stable useCallback from ToastContext
     }, [open]);
     const [done, setDone] = useState(false);
-    const [deliveryState, setDeliveryState] = useState<'idle' | 'delivered' | 'ready_for_manual' | 'skipped'>('idle');
+    const [deliveryState, setDeliveryState] = useState<'idle' | 'delivered' | 'ready_for_manual' | 'skipped' | 'saved_for_desktop'>('idle');
     const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
     const [overallProgress, setOverallProgress] = useState(0);
 
@@ -219,15 +224,26 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             // The desktop pipeline has its own local package builder, but it
             // must first establish the same durable release/audit evidence as
             // the browser publishing wizard. Only canonical references—not
-            // credentials or mutable download URLs—are persisted here.
+            // credentials or mutable download URLs—are persisted here, in the
+            // wizard's metadata/assets shape so Distribution lists the release
+            // and the Publicist's tools can use it (ISSUE-1692).
             const releaseRef = doc(db, 'proprietaryIngestionReleases', releaseData.releaseId);
             await setDoc(releaseRef, {
-                userId: ownerId,
-                title: releaseData.title,
+                ...buildReleaseCatalogRecord({
+                    ownerId,
+                    orgId: currentOrganizationId,
+                    title: releaseData.title,
+                    artist: releaseData.artist,
+                    trackTitle: trackTitle.trim(),
+                    label: releaseData.label,
+                    genre: releaseData.genre,
+                    releaseDate: releaseDate || undefined,
+                    isrc: isrc.trim() || undefined,
+                    masterAsset,
+                    durationSeconds: selectedTrack.durationSeconds,
+                    coverAsset,
+                }),
                 status: 'cover_art_audit_pending',
-                coverArtStoragePath: coverAsset.storage_path,
-                coverArtContentHash: coverAsset.content_hash,
-                coverArtGenerationProvenance: coverAsset.generation_provenance,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
@@ -239,6 +255,19 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                     updatedAt: serverTimestamp(),
                 }, { merge: true });
                 throw new Error(`Cover art needs repair: server conformance status is ${audited.data.status}. Replace or re-export the artwork before delivery.`);
+            }
+            if (!deliversHere) {
+                // Web: the release is saved with verified artwork; no
+                // identifiers are assigned and nothing is sent from here.
+                await setDoc(releaseRef, {
+                    status: 'ready_for_desktop_delivery',
+                    updatedAt: serverTimestamp(),
+                }, { merge: true });
+                setDone(true);
+                setOverallProgress(100);
+                setDeliveryState('saved_for_desktop');
+                toastSuccess('Release saved — deliver it from the indii desktop app');
+                return;
             }
             const result = await distributionService.submitRelease(releaseData, (evt) => {
                 if (evt.progress !== undefined) {
@@ -302,7 +331,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                     <div>
                         <h2 id="submit-release-title" className="text-lg font-black text-white uppercase tracking-tighter italic">Submit Release</h2>
                         <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">
-                            QC → ISRC → DDEX → DSP Delivery
+                            {deliversHere ? 'QC → ISRC → DDEX → DSP Delivery' : 'Save to catalogue · deliver from the desktop app'}
                         </p>
                     </div>
                     <button
@@ -480,8 +509,19 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                         </div>
                     )}
 
+                    {/* Web save result (ISSUE-1692) */}
+                    {done && deliveryState === 'saved_for_desktop' && (
+                        <div data-testid="release-saved-for-desktop" className="flex items-start gap-2 p-3 bg-dept-publishing/10 border border-dept-publishing/20 rounded-lg">
+                            <CheckCircle2 className="w-4 h-4 text-dept-publishing flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-xs font-bold text-dept-publishing uppercase tracking-widest">Release saved to your catalogue</p>
+                                <p className="mt-1 text-[11px] text-gray-300">Cover art passed the delivery check. No ISRC or UPC was assigned and nothing was sent to stores. Store delivery runs only in the indii desktop app.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Pipeline Progress */}
-                    {(submitting || done) && (
+                    {(submitting || done) && deliversHere && (
                         <div className="space-y-3">
                             {steps.map((step, i) => (
                                 <div key={step.id} className="flex items-start gap-3">
@@ -550,7 +590,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                 <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
                     {!submitting && !done && (
                         <p className="text-[10px] text-gray-600 font-medium">
-                            SFTP config is set in the Transfer tab
+                            {deliversHere
+                                ? 'SFTP config is set in the Transfer tab'
+                                : 'On the web, this saves the release. Delivery runs in the desktop app.'}
                         </p>
                     )}
                     {(submitting || done) && (
@@ -603,7 +645,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     ) : (
                                         <Send className="w-3.5 h-3.5" />
                                     )}
-                                    {submitting ? 'Submitting…' : 'Submit Release'}
+                                    {submitting
+                                        ? (deliversHere ? 'Submitting…' : 'Saving…')
+                                        : (deliversHere ? 'Submit Release' : 'Save Release')}
                                 </button>
                             </>
                         )}

@@ -7,8 +7,8 @@ import {
     operationResult,
     optionalIdempotencyKey,
     requireString,
+    resolveOwnedRelease,
     toolResponse,
-    verifyReleaseOwnership,
     OwnershipFirestore,
 } from '../helpers.js';
 import { IndiiMcpTool } from '../types.js';
@@ -25,11 +25,54 @@ interface ReleaseGrounding {
     trackTitles: string[];
 }
 
-function extractGrounding(release: Record<string, unknown>): ReleaseGrounding {
+/**
+ * Distribution/Publishing records (`proprietaryIngestionReleases`) keep their
+ * release details in a nested `metadata` map (ExtendedGoldenMetadata), with
+ * different key names. Map them onto the groundable fields; top-level values
+ * win when both exist.
+ */
+const METADATA_FIELD_SOURCES: ReadonlyArray<readonly [typeof GROUNDABLE_STRING_FIELDS[number], readonly string[]]> = [
+    ['title', ['releaseTitle', 'trackTitle']],
+    ['artistName', ['artistName']],
+    ['genre', ['genre']],
+    ['subGenre', ['subGenre']],
+    ['mood', ['mood']],
+    ['label', ['labelName']],
+    ['releaseDate', ['releaseDate']],
+    ['language', ['language']],
+];
+
+function groundableString(value: unknown): string | undefined {
+    if (typeof value === 'string' && value.trim()) return value.trim().slice(0, 500);
+    if (Array.isArray(value)) {
+        const joined = value.filter((item): item is string => typeof item === 'string' && !!item.trim()).map(item => item.trim()).join(', ');
+        return joined ? joined.slice(0, 500) : undefined;
+    }
+    return undefined;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+}
+
+export function extractGrounding(release: Record<string, unknown>): ReleaseGrounding {
     const fields: Record<string, string> = {};
     for (const key of GROUNDABLE_STRING_FIELDS) {
-        const value = release[key];
-        if (typeof value === 'string' && value.trim()) fields[key] = value.trim().slice(0, 500);
+        const value = groundableString(release[key]);
+        if (value) fields[key] = value;
+    }
+    const metadata = asRecord(release.metadata);
+    if (metadata) {
+        for (const [field, sources] of METADATA_FIELD_SOURCES) {
+            if (fields[field]) continue;
+            for (const source of sources) {
+                const value = groundableString(metadata[source]);
+                if (value) {
+                    fields[field] = value;
+                    break;
+                }
+            }
+        }
     }
     const analysis: Record<string, unknown> = {};
     for (const key of GROUNDABLE_ANALYSIS_KEYS) {
@@ -43,16 +86,9 @@ function extractGrounding(release: Record<string, unknown>): ReleaseGrounding {
             .filter((title): title is string => typeof title === 'string' && !!title.trim())
             .slice(0, 50)
         : [];
+    const metadataTrackTitle = groundableString(metadata?.trackTitle);
+    if (trackTitles.length === 0 && metadataTrackTitle) trackTitles.push(metadataTrackTitle);
     return { fields, analysis, trackTitles };
-}
-
-async function fetchOwnedRelease(firestore: OwnershipFirestore, uid: string, releaseId: string): Promise<Record<string, unknown>> {
-    const owned = await firestore.collection('users').doc(uid).collection('releases').doc(releaseId).get();
-    if (owned.exists) return owned.data() ?? {};
-    const topLevel = await firestore.collection('releases').doc(releaseId).get();
-    if (topLevel.exists) return topLevel.data() ?? {};
-    // verifyReleaseOwnership already passed, so this should not happen; fail closed anyway.
-    throw new Error('Release document disappeared between ownership check and read.');
 }
 
 function buildPrompt(grounding: ReleaseGrounding, targetPlaylist: string, curatorName?: string): string {
@@ -97,8 +133,7 @@ export const generatePlaylistPitch: IndiiMcpTool = {
             const idempotencyKey = optionalIdempotencyKey(args);
 
             const firestore = admin.firestore() as unknown as OwnershipFirestore;
-            await verifyReleaseOwnership(firestore, actorUid, releaseId);
-            const release = await fetchOwnedRelease(firestore, actorUid, releaseId.trim());
+            const { data: release } = await resolveOwnedRelease(firestore, actorUid, releaseId);
             const grounding = extractGrounding(release);
 
             if (Object.keys(grounding.fields).length === 0) {
