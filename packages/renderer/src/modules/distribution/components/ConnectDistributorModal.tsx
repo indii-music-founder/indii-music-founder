@@ -116,17 +116,17 @@ const ConnectDistributorModal = createCallable<ConnectDistributorModalProps, boo
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="relative w-full max-w-lg bg-[#0D0D0D] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col"
+                        className="relative w-full max-w-lg bg-[#0D0D0D] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
                     >
                         {/* Header Section */}
-                        <div className="p-8 pb-4">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-coral-500 to-magenta-600 flex items-center justify-center text-white shadow-lg shadow-coral-500/20">
-                                        <ShieldCheck size={28} />
+                        <div className="p-6 pb-4">
+                            <div className="flex items-center justify-between mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-linear-to-br from-coral-500 to-magenta-600 flex items-center justify-center text-white shadow-lg shadow-coral-500/20">
+                                        <ShieldCheck size={20} />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">
+                                        <h2 className="text-lg font-black text-white tracking-tighter uppercase italic">
                                             Authorize {adapter.name}
                                         </h2>
                                         <div className="flex items-center gap-2 mt-0.5">
@@ -168,7 +168,7 @@ const ConnectDistributorModal = createCallable<ConnectDistributorModalProps, boo
                         </div>
 
                         {/* Scrollable Form Body */}
-                        <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
                             <form id="connect-form" onSubmit={handleSubmit} className="space-y-6">
                                 <AnimatePresence mode="wait">
                                     {activeTab === 'identity' ? (
@@ -322,7 +322,7 @@ const ConnectDistributorModal = createCallable<ConnectDistributorModalProps, boo
                         </div>
 
                         {/* Footer Action */}
-                        <div className="p-8 pt-4 border-t border-white/5 bg-white/[0.02]">
+                        <div className="p-6 pt-4 border-t border-white/5 bg-white/[0.02]">
                             <button
                                 data-testid="distro-finalize-connection"
                                 form="connect-form"

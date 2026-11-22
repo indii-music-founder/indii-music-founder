@@ -92,13 +92,13 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                     className="relative w-full max-w-4xl bg-[#0f0f0f] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                 >
                     {/* Header */}
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
+                    <div className="px-6 py-4 border-b border-white/10 flex justify-between items-center bg-black/40">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400">
                                 <Sparkles size={20} />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Release Kit Generator</h2>
+                                <h2 className="text-lg font-black text-white uppercase tracking-tighter italic">Release Kit Generator</h2>
                                 <p className="text-xs text-gray-400">Intelligence-driven press releases, social posts, and email blasts</p>
                             </div>
                         </div>
@@ -200,7 +200,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                     </div>
                                 </div>
                                 <div className="text-center space-y-2">
-                                    <h3 className="text-xl font-bold text-white">Crafting Your Campaign</h3>
+                                    <h3 className="text-lg font-bold text-white">Crafting Your Campaign</h3>
                                     <p className="text-gray-400">Writing press release, drafting tweets, and composing emails...</p>
                                 </div>
                             </div>
@@ -234,7 +234,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                                             <div className="flex justify-between items-start gap-4">
                                                 <div>
-                                                    <h3 className="text-2xl font-bold text-white mb-2">{assets.pressRelease.headline}</h3>
+                                                    <h3 className="text-xl font-bold text-white mb-2">{assets.pressRelease.headline}</h3>
                                                     <div className="flex gap-2 mb-4">
                                                         <span className="text-xs bg-white/10 text-gray-300 px-2 py-1 rounded">FOR IMMEDIATE RELEASE</span>
                                                     </div>

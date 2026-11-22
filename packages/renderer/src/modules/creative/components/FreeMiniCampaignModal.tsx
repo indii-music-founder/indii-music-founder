@@ -222,7 +222,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
             aria-labelledby="mini-campaign-title"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
         >
-            <div className="relative w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl md:p-8">
+            <div className="relative w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-6 shadow-2xl">
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-white/10 pb-5">
                     <div>
@@ -230,7 +230,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             <Sparkles size={12} />
                             Verified Free Experience
                         </div>
-                        <h2 id="mini-campaign-title" className="mt-2 text-2xl font-bold text-white">
+                        <h2 id="mini-campaign-title" className="mt-2 text-lg font-black text-white uppercase tracking-tighter italic">
                             Guided Free Mini-Campaign
                         </h2>
                         <p className="mt-1 text-sm text-neutral-400">
@@ -293,7 +293,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             <div className="grid gap-4 sm:grid-cols-2">
                                 {/* Audio Upload */}
                                 <div className="rounded-xl border border-dashed border-white/15 bg-neutral-900/50 p-5 text-center transition-colors hover:border-amber-400/50">
-                                    <Music className="mx-auto text-amber-400" size={32} />
+                                    <Music className="mx-auto text-amber-400" size={24} />
                                     <div className="mt-3 text-sm font-semibold text-white">Finished Audio Track</div>
                                     <p className="mt-1 text-xs text-neutral-400">
                                         MP3, WAV, AAC, or FLAC up to 35MB (max 7 min)
@@ -317,7 +317,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
 
                                 {/* Visual Upload */}
                                 <div className="rounded-xl border border-dashed border-white/15 bg-neutral-900/50 p-5 text-center transition-colors hover:border-amber-400/50">
-                                    <ImageIcon className="mx-auto text-cyan-400" size={32} />
+                                    <ImageIcon className="mx-auto text-cyan-400" size={24} />
                                     <div className="mt-3 text-sm font-semibold text-white">Artwork Image</div>
                                     <p className="mt-1 text-xs text-neutral-400">
                                         PNG, JPEG, or WebP up to 15MB
@@ -432,7 +432,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             {!decisionResult ? (
                                 <>
                                     <div className="text-center">
-                                        <CheckCircle2 size={40} className="mx-auto text-emerald-400" />
+                                        <CheckCircle2 size={32} className="mx-auto text-emerald-400" />
                                         <h3 className="mt-3 text-lg font-bold text-white">
                                             Pack Exported Successfully
                                         </h3>

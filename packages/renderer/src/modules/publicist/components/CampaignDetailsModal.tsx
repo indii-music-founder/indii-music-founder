@@ -76,10 +76,10 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-slate-950 border border-white/10 rounded-3xl shadow-2xl z-[70] overflow-hidden"
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-slate-950 border border-white/10 rounded-2xl shadow-2xl z-[70] overflow-hidden"
                     >
                         {/* Header Image */}
-                        <div className="h-40 relative bg-slate-900 overflow-hidden">
+                        <div className="h-32 relative bg-slate-900 overflow-hidden">
                             {campaign.coverUrl ? (
                                 <img
                                     src={campaign.coverUrl}
@@ -88,7 +88,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                                    <Disc className="text-slate-700" size={48} />
+                                    <Disc className="text-slate-700" size={36} />
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-linear-to-t from-slate-950 to-transparent" />
@@ -98,13 +98,13 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                             >
                                 <X size={20} />
                             </button>
-                            <div className="absolute bottom-6 left-6">
-                                <h2 className="text-3xl font-black text-white tracking-tight">{campaign.title}</h2>
-                                <p className="text-slate-300 font-medium">{campaign.artist} • {campaign.type}</p>
+                            <div className="absolute bottom-4 left-5">
+                                <h2 className="text-xl font-black text-white tracking-tighter uppercase italic">{campaign.title}</h2>
+                                <p className="text-sm text-slate-300 font-medium">{campaign.artist} • {campaign.type}</p>
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-8">
+                        <div className="p-6 space-y-6">
                             {/* Status Selector */}
                             <div className="space-y-3">
                                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Campaign Status</label>
@@ -136,14 +136,14 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                                         <BarChart2 size={16} />
                                         <span className="text-xs font-bold uppercase">Open Rate</span>
                                     </div>
-                                    <p className="text-2xl font-bold text-white">{campaign.openRate}%</p>
+                                    <p className="text-xl font-bold text-white">{campaign.openRate}%</p>
                                 </div>
                                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <Calendar size={16} />
                                         <span className="text-xs font-bold uppercase">Release Date</span>
                                     </div>
-                                    <p className="text-2xl font-bold text-white">{campaign.releaseDate}</p>
+                                    <p className="text-xl font-bold text-white">{campaign.releaseDate}</p>
                                 </div>
                             </div>
 
