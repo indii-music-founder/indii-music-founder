@@ -11,6 +11,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { masterAudioService } from '@/services/audio/MasterAudioService';
+import { resolveReleaseWorkspace } from '@/services/distribution/releaseWorkspace';
 import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { agentService } from '@/services/agent/AgentService';
@@ -198,11 +199,14 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     }))
   );
 
-  // Get current organization
-  const activeOrg = useMemo(() =>
-    organizations.find(org => org.id === currentOrganizationId),
-    [organizations, currentOrganizationId]
-  );
+  // ISSUE-1696: a solo artist has no organization document (the store keeps
+  // the 'org-default' placeholder and an empty list), so requiring a loaded
+  // organization blocked every upload and submission in the personal workspace.
+  const workspace = useMemo(() => resolveReleaseWorkspace({
+    currentOrganizationId,
+    organizations,
+    userId: userProfile?.id,
+  }), [currentOrganizationId, organizations, userProfile?.id]);
 
   const activeProjectId = currentProjectId || DEFAULT_PROJECT_ID;
 
@@ -253,8 +257,12 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
   // Upload asset
   const uploadAsset = useCallback(async (type: 'audio' | 'cover', file: File) => {
-    if (!activeOrg?.id || !userProfile?.id) {
-      throw new Error('Missing organization or user context');
+    // Master and cover objects are owner-scoped (masters/{uid}, covers/{uid});
+    // they need the signed-in artist, not an organization.
+    if (!userProfile?.id) {
+      const message = 'Sign in again before uploading release files.';
+      setSubmitError(message);
+      throw new Error(message);
     }
 
     // ISSUE-963: reject lossy audio formats before uploading any bytes —
@@ -342,17 +350,23 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       return coverAsset.download_url;
     } catch (error: unknown) {
       logger.error(`Error uploading ${type} asset:`, error);
+      // Show every failure of THIS attempt (validation, storage, network,
+      // rules) in the wizard; it previously only reached the console.
+      const detail = error instanceof Error ? error.message : 'Unknown error';
+      setSubmitError(`${type === 'audio' ? 'Audio' : 'Cover art'} upload failed: ${detail}`);
       throw error;
     }
-  }, [activeOrg, userProfile, metadata.masterFingerprint, updateAssets, updateMetadata]);
+  }, [userProfile, metadata.masterFingerprint, updateAssets, updateMetadata]);
 
   // Bring an already-created image (Project Assets / Gallery / marketing) into
   // release cover art WITHOUT a download+re-upload round-trip. The bytes are
   // content-addressed through the same immutable canonical cover path so the
   // server conformance audit sees an identical object to a file upload.
   const uploadCoverByUrl = useCallback(async (sourceUrl: string) => {
-    if (!activeOrg?.id || !userProfile?.id) {
-      throw new Error('Missing organization or user context');
+    if (!userProfile?.id) {
+      const message = 'Sign in again before choosing cover art.';
+      setSubmitError(message);
+      throw new Error(message);
     }
 
     // Firestore download tokens or gs:// refs both resolve to a fetchable URL.
@@ -384,7 +398,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     setSubmitError(null);
     updateAssets({ coverArt: coverInfo });
     return coverAsset.download_url;
-  }, [activeOrg, userProfile, updateAssets]);
+  }, [userProfile, updateAssets]);
 
   // Validation errors
   const getValidationErrors = useCallback((step: WizardStep): string[] => {
@@ -463,8 +477,12 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
   // Submit release
   const submitRelease = useCallback(async (): Promise<string> => {
-    if (!activeOrg?.id || !userProfile?.id) {
-      throw new Error('Missing organization or user context');
+    if (!workspace || !userProfile?.id) {
+      const message = userProfile?.id
+        ? 'Your selected organization is not loaded. Switch workspace or reload, then submit again.'
+        : 'Sign in again before submitting this release.';
+      setSubmitError(message);
+      throw new Error(message);
     }
 
     // Navigation normally prevents this, but callers can invoke submission
@@ -498,7 +516,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
         // Create release record
         const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
-          orgId: activeOrg.id,
+          orgId: workspace.orgId,
           projectId: activeProjectId,
           userId: userProfile.id,
           metadata: metadata as ExtendedGoldenMetadata,
@@ -600,7 +618,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId, getValidationErrors]);
+  }, [workspace, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId, getValidationErrors]);
 
   // Reset wizard
   const resetWizard = useCallback(() => {

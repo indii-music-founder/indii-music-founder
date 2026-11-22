@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDDEXRelease } from './useDDEXRelease';
 
-const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockPersistFromUrl, mockAuditArtwork, docIds } = vi.hoisted(() => ({
+const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockPersistFromUrl, mockAuditArtwork, docIds, mockStoreState } = vi.hoisted(() => ({
     mockAddDoc: vi.fn(),
     mockUpdateDoc: vi.fn(),
     mockRunAgent: vi.fn(),
@@ -12,6 +12,11 @@ const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMast
     mockPersistFromUrl: vi.fn(),
     mockAuditArtwork: vi.fn(),
     docIds: { counter: 0 },
+    mockStoreState: {
+        currentOrganizationId: 'org-1',
+        organizations: [{ id: 'org-1', name: 'Test Org' }] as Array<{ id: string; name: string }>,
+        userProfile: { id: 'user-1', brandKit: { socials: {} } },
+    },
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -52,12 +57,19 @@ vi.mock('@/services/agent/AgentService', () => ({
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector: any) => selector({
-        currentOrganizationId: 'org-1',
-        organizations: [{ id: 'org-1', name: 'Test Org' }],
-        userProfile: { id: 'user-1', brandKit: { socials: {} } },
-    }),
+    useStore: (selector: any) => selector(mockStoreState),
 }));
+
+function useOrganizationWorkspace() {
+    mockStoreState.currentOrganizationId = 'org-1';
+    mockStoreState.organizations = [{ id: 'org-1', name: 'Test Org' }];
+}
+
+/** A solo artist: no organization documents, the store keeps its placeholder id. */
+function usePersonalWorkspace() {
+    mockStoreState.currentOrganizationId = 'org-default';
+    mockStoreState.organizations = [];
+}
 
 // ISSUE-963: submitRelease() now requires a real WAV/FLAC master to be
 // staged before it will proceed — seed one so these ISSUE-964 packaging
@@ -87,6 +99,7 @@ const VALID_COVER_ART = {
 describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        useOrganizationWorkspace();
         docIds.counter = 0;
         mockAddDoc.mockImplementation(async () => ({ id: `release-${++docIds.counter}` }));
         mockUpdateDoc.mockResolvedValue(undefined);
@@ -239,6 +252,7 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
 describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        useOrganizationWorkspace();
         mockUploadFile.mockResolvedValue('https://storage.example.com/uploaded-file');
         mockPersistMaster.mockResolvedValue({
             contentHash: 'content-hash',
@@ -381,6 +395,7 @@ describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
 describe('useDDEXRelease.uploadCoverByUrl (created-asset cover art, no file round-trip)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        useOrganizationWorkspace();
         docIds.counter = 0;
         mockPersistFromUrl.mockImplementation(async () => ({
             content_hash: 'a'.repeat(64),
@@ -419,5 +434,91 @@ describe('useDDEXRelease.uploadCoverByUrl (created-asset cover art, no file roun
             sizeBytes: 2_000_000,
             contentHash: 'a'.repeat(64),
         });
+    });
+});
+
+describe('useDDEXRelease in the personal workspace (ISSUE-1696)', () => {
+    const validWav = () => {
+        const bytes = new Uint8Array(44);
+        const view = new DataView(bytes.buffer);
+        bytes.set(new TextEncoder().encode('RIFF'), 0);
+        view.setUint32(4, 36, true);
+        bytes.set(new TextEncoder().encode('WAVEfmt '), 8);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 2, true);
+        view.setUint32(24, 48_000, true);
+        view.setUint32(28, 288_000, true);
+        view.setUint16(32, 6, true);
+        view.setUint16(34, 24, true);
+        bytes.set(new TextEncoder().encode('data'), 36);
+        const master = new File([bytes], 'master.wav', { type: 'audio/wav' });
+        Object.defineProperty(master, 'arrayBuffer', { value: async () => bytes.buffer });
+        return master;
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        usePersonalWorkspace();
+        docIds.counter = 0;
+        mockAddDoc.mockImplementation(async () => ({ id: `release-${++docIds.counter}` }));
+        mockUpdateDoc.mockResolvedValue(undefined);
+        mockAuditArtwork.mockResolvedValue({ data: { status: 'compliant' } });
+        mockRunAgent.mockResolvedValue({ text: 'Packaged successfully' });
+        mockPersistMaster.mockResolvedValue({
+            contentHash: 'content-hash',
+            downloadUrl: 'https://storage.example.com/canonical-master.wav',
+            masterFingerprint: 'SHA256-measured-hash',
+            mimeType: 'audio/wav',
+            originalFileName: 'master.wav',
+            sizeBytes: 44,
+            storagePath: 'masters/user-1/content-hash/original.wav',
+            uploadedAt: '2026-11-22T00:00:00.000Z',
+        });
+    });
+
+    it('uploads the master for a solo artist with no organization', async () => {
+        const { result } = renderHook(() => useDDEXRelease());
+
+        await act(async () => { await result.current.uploadAsset('audio', validWav()); });
+
+        expect(mockPersistMaster).toHaveBeenCalledWith(expect.any(File), expect.objectContaining({ userId: 'user-1' }));
+        expect(result.current.assets.audioFile).toEqual(expect.objectContaining({ storagePath: 'masters/user-1/content-hash/original.wav' }));
+        expect(result.current.submitError).toBeNull();
+    });
+
+    it('saves a personal release with orgId "personal", which the rules accept and Distribution lists by owner', async () => {
+        const { result } = renderHook(() => useDDEXRelease());
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
+
+        await act(async () => { await result.current.submitRelease(); });
+
+        expect(mockAddDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ orgId: 'personal', userId: 'user-1' }));
+        expect(mockAddDoc.mock.calls[0]![1]).not.toMatchObject({ orgId: 'org-default' });
+    });
+
+    it('refuses to submit into an organization that is not loaded, and says so', async () => {
+        mockStoreState.currentOrganizationId = 'org-not-loaded';
+        mockStoreState.organizations = [{ id: 'org-1', name: 'Test Org' }];
+        const { result } = renderHook(() => useDDEXRelease());
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
+
+        await act(async () => {
+            await expect(result.current.submitRelease()).rejects.toThrow(/organization is not loaded/);
+        });
+
+        expect(mockAddDoc).not.toHaveBeenCalled();
+        expect(result.current.submitError).toMatch(/organization is not loaded/);
+    });
+
+    it('shows a storage failure in the wizard instead of only logging it', async () => {
+        mockPersistMaster.mockRejectedValueOnce(new Error('storage/unauthorized'));
+        const { result } = renderHook(() => useDDEXRelease());
+
+        await act(async () => {
+            await expect(result.current.uploadAsset('audio', validWav())).rejects.toThrow('storage/unauthorized');
+        });
+
+        expect(result.current.submitError).toBe('Audio upload failed: storage/unauthorized');
     });
 });

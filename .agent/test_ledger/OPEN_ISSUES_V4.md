@@ -3991,7 +3991,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1695: Publishing catalogue fails with "Missing or insufficient permissions" in the personal workspace
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — repair on branch `claude/publishing-personal-workspace` (with ISSUE-1696); awaiting deploy and a genuine production check
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / `useReleases`
 - **Evidence:** production build `8253704d3`, 2026-11-22 ~01:30 UTC, owner account on /publishing: console `Error fetching releases: FirebaseError: Missing or insufficient permissions.` (twice). `useReleases(currentOrganizationId)` always queries `proprietaryIngestionReleases` with `where('orgId', '==', orgId)` (`packages/renderer/src/modules/publishing/hooks/useReleases.ts:38-42`). The read rule allows a document only when `userId == auth.uid`, `orgId == auth.uid`, or the caller is a member of `orgId` (`firestore.rules:2398`), so for the personal workspace id `org-default` Firestore cannot prove the query safe and rejects it. `DistributionSyncService.subscribeToReleases` already special-cases `org-default` to query by `userId` for exactly this reason (`DistributionSyncService.ts:66-77`). Which org id the account had was not read from the page, so the `org-default` path is the likely, not confirmed, trigger.
@@ -3999,3 +3999,33 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Impact:** the Publishing catalogue shows "No Releases Found" because the query failed, not because there are none; the error is swallowed into an empty state.
 - **Fix:** share one release-query helper between Distribution and Publishing that uses `userId` for the personal workspace and `orgId` for real organizations; surface a load error instead of an empty catalogue.
 - **Acceptance:** on production with a genuine personal-workspace account that has a release, Publishing → Catalog lists it with no permission error; an org member sees org releases.
+- **Reproduced again (2026-11-22 13:40 UTC, Chrome, owner account, /publishing):** `Error fetching releases: FirebaseError: Missing or insufficient permissions.` twice; the same session's Create Release uploads then failed with ISSUE-1696, which confirms the account has no loaded organization (personal workspace).
+- **Fix progress (2026-11-22):** new `services/distribution/releaseWorkspace.ts` resolves the workspace once (`org-default`, `personal`, the uid or no selection → personal; a loaded organization → organization; an unloaded organization → none) and supplies the one rules-provable filter (`userId` for personal, `orgId` for organizations). `useReleases` takes that workspace (via `useReleaseWorkspace`) instead of a raw org id, and normalizes each record so older records without `metadata`/`assets`/`distributors` (now returned by the owner query) cannot crash the list, detail or harness views, which read `release.metadata.*` unguarded. The catalogue shows "Couldn't load your releases" with the error instead of "No Releases Found" when the query fails. Tests: `releaseWorkspace.test.ts`, `useReleases.test.ts` (filter per workspace, normalization). Structural only (mocks).
+
+### ISSUE-1696: Publishing's Create Release refuses every upload and submission for a solo artist, and the failure is silent
+
+- **Status:** 🟡 PARTIAL — repair on branch `claude/publishing-personal-workspace`; awaiting deploy and a genuine production check
+- **Severity:** 🔴 CRITICAL (no release can be created on the web from a personal workspace)
+- **Module:** Publishing / `useDDEXRelease` / `ReleaseWizard`
+- **Evidence:** production build `8253704d3`, 2026-11-22 13:44-13:45 UTC, owner account in Chrome (signed in by the owner), Publishing → New Release filled through the UI to the Assets step. The owner chose the WAV with "Choose File" and the cover with "Choose Image"; nothing visible happened (no toast, no attached file, no error), and both `input[type=file]` stayed empty. Console: `Audio upload failed: Error: Missing organization or user context` (13:44:43) and `Cover art upload failed: Error: Missing organization or user context` (13:45:21). Source: `useDDEXRelease` derived `activeOrg = organizations.find(org => org.id === currentOrganizationId)` and `uploadAsset`, `uploadCoverByUrl` and `submitRelease` all threw unless it existed. A solo artist has no organization documents, so `profileSlice` keeps `currentOrganizationId: 'org-default'` with `organizations: []` (`profileSlice.ts:106-107`, `:221-240`) and `activeOrg` is always undefined. The uploads never needed an organization: masters and covers are stored under `masters/{uid}` and `covers/{uid}`. `ReleaseWizard`'s file handlers only `logger.error` the rejection (`ReleaseWizard.tsx:669`, `:747`).
+- **Impact:** together with ISSUE-1694 there was no web path to a release for an artist without an organization; this blocked ISSUE-1692's and ISSUE-1691's live acceptance.
+- **Fix (branch `claude/publishing-personal-workspace`):** uploads require only the signed-in artist; `submitRelease` uses `resolveReleaseWorkspace` and stores `orgId: 'personal'` for a solo artist (allowed by `clientIdentityFieldsMatchCaller`; Distribution lists it by `userId`), and refuses an unloaded organization with "Your selected organization is not loaded…". Every upload failure now sets the wizard's error (`Audio upload failed: …` / `Cover art upload failed: …`), rendered with `role="alert"`. Tests in `useDDEXRelease.test.ts` (personal upload, personal submit writes `orgId: 'personal'`, unloaded-org refusal, visible storage failure); Publishing suites 58/58, `npm run typecheck` exit 0, ESLint clean on changed files (one existing `setModule` warning in `PublishingDashboard.tsx`).
+- **Acceptance:** on https://indii.music with a genuine personal-workspace account, choose a real WAV and a 3000×3000 cover in Create Release; both attach; Save creates a release that Publishing → Catalog and Distribution both list; a forced failure shows a visible message. This run is also the ISSUE-1692 / ISSUE-1691 acceptance.
+
+### ISSUE-1697: Agent chat panel covers the Create Release dialog; opening /publishing directly leaves the Boardroom on screen
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Studio layout (right agent panel, Boardroom overlay)
+- **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, viewport 1900×943. (1) With the Publishing Director chat panel open, the Create Release dialog's right column (Artist Name, Release Type, Release Date) sat underneath the panel: a click on Artist Name landed in the panel and the typed text never reached the dialog (the field stayed empty until the panel was closed). Nothing was sent. (2) Navigating to https://app.indii.music/publishing while the Boardroom was open changed the URL but kept the Boardroom on screen until "Back to Studio" was clicked.
+- **Impact:** an artist can fill a release form "correctly" and still submit missing fields; deep links into a department do not open it.
+- **Fix:** render modal dialogs above the agent panel (or dock the panel while a modal is open); close or route past the Boardroom overlay when the URL names a module.
+- **Acceptance:** with the chat panel open, every Create Release field is visible and receives input; a direct /publishing link opens Publishing.
+
+### ISSUE-1698: Publishing analytics and payouts fail with permission errors for the owner account
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / `useAnalytics` (`users/{uid}/analytics`, `users/{uid}/payouts`)
+- **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, /publishing console: `[usePayouts] Error: FirebaseError: Missing or insufficient permissions.` and `[useAnalytics] Error: FirebaseError: Missing or insufficient permissions.` They read `users/{userProfile.id}/analytics` and `users/{userProfile.id}/payouts` (`useAnalytics.ts:47`, `:144`). ISSUE-1580 (PARTIAL) records rules added for user analytics and payouts. Root cause not established: candidates are `userProfile.id` differing from `auth.uid`, the deployed rules lacking those matches, or the date-range query shape. Not investigated further in this run.
+- **Acceptance:** with a genuine account, Publishing → Insights and Royalties load without permission errors (empty states allowed when there is no data).
