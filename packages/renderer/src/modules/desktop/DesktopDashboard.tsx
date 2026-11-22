@@ -26,7 +26,7 @@ export default function DesktopDashboard() {
             <div className="flex-1 flex flex-col z-10 min-w-0">
                 <div className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-surface/30 backdrop-blur-md">
                     <div>
-                        <h1 className={`text-3xl font-black tracking-tight flex items-center gap-3 ${moduleColor.text}`}>
+                        <h1 className={`text-xl font-black tracking-tight flex items-center gap-3 ${moduleColor.text}`}>
                             <Monitor size={28} className={moduleColor.text} />
                             DESKTOP INTEGRATION
                         </h1>

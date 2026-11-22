@@ -577,7 +577,7 @@ export default function AgentChat({
                 <div className="w-16 h-16 rounded-3xl bg-[#D936D9]/15 flex items-center justify-center mb-6 border border-[#D936D9]/30 shadow-[0_0_20px_rgba(217,54,217,0.15)]">
                     <LogIn className="w-8 h-8 text-[#D936D9]" />
                 </div>
-                <h3 className="text-xl font-bold font-display text-white mb-2">Secure Connection Required</h3>
+                <h3 className="text-base font-bold font-display text-white mb-2">Secure Connection Required</h3>
                 <p className="text-sm text-[#a1a1a6] font-sans leading-relaxed max-w-[280px]">
                     Please log in to your indii account to access your studio agents remotely.
                 </p>

@@ -29,7 +29,7 @@ export const ProMerch: React.FC = () => {
 
                     <div className="space-y-2 mb-8">
                         <span className="text-[10px] tracking-[0.8em] text-primary font-black uppercase mb-4 block">Archive Series // 2025</span>
-                        <h2 className="text-7xl md:text-9xl font-black tracking-tighter text-foreground italic leading-none">
+                        <h2 className="text-xl font-black tracking-tighter text-foreground italic leading-none">
                             MERCH <span className="text-outline text-transparent bg-clip-text bg-linear-to-b from-foreground to-foreground/20">PRO</span>
                         </h2>
                     </div>
@@ -64,7 +64,7 @@ export const ProMerch: React.FC = () => {
             <div className="px-4">
                 <div className="flex items-end justify-between mb-16 border-b border-border/30 pb-8">
                     <div className="space-y-1">
-                        <h3 className="text-4xl font-black text-foreground tracking-tighter">THE CATALOGUE</h3>
+                        <h3 className="text-base font-black text-foreground tracking-tighter">THE CATALOGUE</h3>
                         <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">Selected Works // Vol 01</p>
                     </div>
                     <div className="flex gap-12 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.2em] hidden md:flex">
@@ -103,7 +103,7 @@ export const ProMerch: React.FC = () => {
                             <div className="space-y-6">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h3 className="text-2xl text-foreground font-black tracking-tighter mb-2 italic">{product.title}</h3>
+                                        <h3 className="text-base text-foreground font-black tracking-tighter mb-2 italic">{product.title}</h3>
                                         <div className="flex gap-6 overflow-hidden">
                                             {product.features?.map(f => (
                                                 <div key={f} className="flex items-center gap-2">

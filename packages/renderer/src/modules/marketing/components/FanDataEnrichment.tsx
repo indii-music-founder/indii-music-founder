@@ -114,7 +114,7 @@ export default function FanDataEnrichment() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                        <h2 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-dept-marketing/20 flex items-center justify-center">
                                 <Database className="text-dept-marketing" size={20} />
                             </div>

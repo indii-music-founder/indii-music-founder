@@ -175,7 +175,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl font-semibold text-white tracking-wide text-center leading-none"
+                className="text-2xl font-semibold text-white tracking-wide text-center leading-none"
             >
                 indii
             </motion.h2>

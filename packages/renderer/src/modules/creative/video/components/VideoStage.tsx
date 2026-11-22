@@ -299,7 +299,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 <Sparkles size={24} className="text-green-400 animate-pulse" />
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-green-400 to-pink-600 animate-pulse capitalize">
+                        <h3 className="text-base font-bold bg-clip-text text-transparent bg-linear-to-r from-green-400 to-pink-600 animate-pulse capitalize">
                             {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                         </h3>
                         <p className="text-gray-400 text-sm mt-2 font-medium">
@@ -548,7 +548,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
                             <Video size={80} className="relative z-10 text-white/10" strokeWidth={1} />
                         </motion.div>
-                        <h3 className="text-xl font-light text-white/40 tracking-[0.2em] uppercase mb-2">Director's Chair</h3>
+                        <h3 className="text-base font-light text-white/40 tracking-[0.2em] uppercase mb-2">Director's Chair</h3>
                         <p className="text-sm font-medium text-white/20 max-w-xs text-center leading-relaxed">
                             Compose your vision above to begin.<br />
                             <span className="text-xs opacity-50">Keyboard Shortcut: <code className="bg-white/10 px-1 rounded text-white/40">⌘E</code> to toggle Editor</span>

@@ -121,7 +121,7 @@ export const CelebrationMoment = createCallable<CelebrationMomentProps, Celebrat
                 </div>
                 <div className="relative z-10">
                     <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#00F0FF]">{eyebrow}</p>
-                    <h2 id={titleId} className="mt-2 text-3xl font-black tracking-tight text-white">{headline}</h2>
+                    <h2 id={titleId} className="mt-2 text-xl font-black tracking-tight text-white">{headline}</h2>
                     {detail && <p id={descriptionId} className="mt-2 text-sm text-gray-400">{detail}</p>}
                 </div>
                 <div className="relative z-10 flex w-full flex-col gap-2 sm:flex-row sm:justify-center">

@@ -191,7 +191,7 @@ function FounderReadinessWorkspace({ userId }: { userId: string }) {
             <Building2 size={16} />
             Organization & Rights Prerequisites (ISSUE-1121)
           </div>
-          <h2 className="text-2xl font-black text-white">Founder Music-Identity Checklist</h2>
+          <h2 className="text-xl font-black text-white">Founder Music-Identity Checklist</h2>
           <p className="text-sm text-neutral-400 mt-1 max-w-2xl">
             Commercial DDEX distribution and statutory royalty collection require verified agency registrations.
             Track-level metadata and app-generated drafts do not substitute for official organization credentials.

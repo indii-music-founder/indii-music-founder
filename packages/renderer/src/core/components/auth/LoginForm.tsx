@@ -246,7 +246,7 @@ export default function LoginForm() {
                     <motion.h1
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
-                        className="mb-2 text-4xl font-black tracking-tighter sm:text-5xl"
+                        className="mb-2 text-2xl font-black tracking-tighter"
                     >
                         indii<span className="text-dept-creative">.music</span>
                     </motion.h1>

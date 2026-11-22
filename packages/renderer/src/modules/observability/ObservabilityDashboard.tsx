@@ -133,7 +133,7 @@ export const ObservabilityDashboard: React.FC = () => {
     <AdminLockScreen>
       <div className="p-6 space-y-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Performance Monitoring</h1>
+          <h1 className="text-xl font-bold text-white mb-2">Performance Monitoring</h1>
           <p className="text-slate-400">Real User Monitoring (RUM) Dashboard</p>
         </div>
 

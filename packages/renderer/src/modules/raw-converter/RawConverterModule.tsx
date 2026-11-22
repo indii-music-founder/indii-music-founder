@@ -230,7 +230,7 @@ export const RawConverterModule: React.FC = () => {
                             <Camera className="w-6 h-6" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                                 indii RAW Converter
                                 <span className="text-xs font-mono uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
                                     Clean-Room v1.0

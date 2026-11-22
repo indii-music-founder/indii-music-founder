@@ -524,7 +524,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                             <Compass size={22} className="text-[#FFD700]" />
                         </div>
                         <div>
-                            <h2 id={titleId} className="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                            <h2 id={titleId} className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                                 Rights & Royalty Copilot
                                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">
                                     Guided Walkthrough

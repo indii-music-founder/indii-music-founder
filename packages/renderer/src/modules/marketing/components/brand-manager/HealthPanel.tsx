@@ -269,7 +269,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                             <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
                                 <Activity size={24} className="text-dept-brand" />
                             </div>
-                            <h3 className="text-xl font-black text-white mb-3 tracking-tight">DNA Scanner Standby</h3>
+                            <h3 className="text-base font-black text-white mb-3 tracking-tight">DNA Scanner Standby</h3>
                             <p className="max-w-xs mx-auto text-[11px] leading-relaxed font-bold uppercase tracking-wider opacity-40">
                                 Analyzing cross-market sentiment against established visual guidelines.
                             </p>

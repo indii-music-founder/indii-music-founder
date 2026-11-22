@@ -59,7 +59,7 @@ export const InstrumentApprovalModal: React.FC<InstrumentApprovalModalProps> = (
                 <AlertTriangle className="text-yellow-500" size={24} />
               </div>
               <div>
-                <h3 id="instrument-approval-title" className="text-xl font-bold text-white mb-1">
+                <h3 id="instrument-approval-title" className="text-base font-bold text-white mb-1">
                   Approval Required
                 </h3>
                 <p className="text-gray-400 text-sm">

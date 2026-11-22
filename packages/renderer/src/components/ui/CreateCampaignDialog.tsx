@@ -76,7 +76,7 @@ export const CreateCampaignDialog = createCallable<Record<string, never>, boolea
                 </button>
 
                 <div>
-                    <h2 id="create-campaign-title" className="text-2xl font-bold flex items-center gap-2">
+                    <h2 id="create-campaign-title" className="text-xl font-bold flex items-center gap-2">
                         <Tag className="w-5 h-5 text-accent-primary" />
                         <span>Create Campaign</span>
                     </h2>

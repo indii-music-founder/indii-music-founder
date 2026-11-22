@@ -100,7 +100,7 @@ Please confirm receipt of this information.
     return (
         <div className="flex flex-col h-full overflow-hidden p-6">
             <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white mb-2">Tour Book</h2>
+                <h2 className="text-xl font-bold text-white mb-2">Tour Book</h2>
                 <p className="text-sm text-gray-400">{itinerary?.stops?.length || 0} stops • {itinerary?.tourName || 'Unnamed Tour'}</p>
             </div>
 

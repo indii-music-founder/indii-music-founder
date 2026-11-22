@@ -33,7 +33,7 @@ export function GatedModuleFallback({ moduleName }: { moduleName: string }) {
                 </motion.div>
 
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-gray-100">
+                    <h2 className="text-xl font-bold text-gray-100">
                         {displayName}
                     </h2>
                     <p className="text-gray-400 text-sm leading-relaxed">

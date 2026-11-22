@@ -876,7 +876,7 @@ export default function MobileRemote() {
                 </div>
               </div>
               
-              <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
+              <h2 className="text-xl font-bold text-white mb-4 tracking-tight">
                 {handoffError ? 'Pairing Failed' : 'Studio Disconnected'}
               </h2>
               <p className="text-base text-[#a1a1a6] mb-10 leading-relaxed px-6 font-medium">

@@ -61,11 +61,11 @@ export default function ShowroomStage({
                                 <div className="w-full h-full relative preserve-3d animate-spin-slow">
                                     {/* Front */}
                                     <div className="absolute inset-0 bg-yellow-400/20 border border-yellow-400/50 rounded-xl backdrop-blur-md flex items-center justify-center transform translate-z-32">
-                                        <div className="text-yellow-400 font-bold text-4xl">FRONT</div>
+                                        <div className="text-yellow-400 font-bold text-2xl">FRONT</div>
                                     </div>
                                     {/* Back */}
                                     <div className="absolute inset-0 bg-yellow-400/20 border border-yellow-400/50 rounded-xl backdrop-blur-md flex items-center justify-center transform -translate-z-32 rotate-y-180">
-                                        <div className="text-yellow-400 font-bold text-4xl">BACK</div>
+                                        <div className="text-yellow-400 font-bold text-2xl">BACK</div>
                                     </div>
                                     {/* Sides (Visuals only) */}
                                     <div className="absolute inset-y-0 left-1/2 w-64 h-full bg-yellow-400/10 border-x border-yellow-400/30 transform -translate-x-1/2 rotate-y-90" />

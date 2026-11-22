@@ -143,7 +143,7 @@ export default function FoundersPortal() {
                     <Key size={14} /> Founder Exclusive Access
                 </div>
 
-                <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
+                <h1 className="text-xl font-black tracking-tighter text-white mb-6">
                     Download <span className="text-amber-400">indii</span>.
                 </h1>
 
@@ -218,7 +218,7 @@ export default function FoundersPortal() {
                                         <div className="w-12 h-12 bg-white/5 text-white rounded-xl flex items-center justify-center mb-6">
                                             <Apple size={24} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-2">macOS</h3>
+                                        <h3 className="text-base font-bold text-white mb-2">macOS</h3>
                                         <p className="text-gray-400 text-sm mb-8 flex-1">Apple Silicon (M1/M2/M3) and Intel Macs.</p>
                                         
                                         <button
@@ -243,7 +243,7 @@ export default function FoundersPortal() {
                                         <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-6">
                                             <Monitor size={24} />
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-2">Windows</h3>
+                                        <h3 className="text-base font-bold text-white mb-2">Windows</h3>
                                         <p className="text-gray-400 text-sm mb-8 flex-1">Windows 10 / 11 (64-bit).</p>
                                         
                                         <button

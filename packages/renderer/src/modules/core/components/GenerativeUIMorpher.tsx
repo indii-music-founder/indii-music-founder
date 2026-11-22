@@ -32,7 +32,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                         className="w-full max-w-2xl bg-linear-to-br from-green-900/40 to-black border border-green-500/20 p-8 rounded-3xl"
                     >
-                        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Creative Studio</h2>
+                        <h2 className="text-xl font-black text-white mb-2 tracking-tight">Creative Studio</h2>
                         <p className="text-green-200/60 mb-8">Your canvas is ready. Let's make some magic.</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="h-32 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center justify-center text-green-400 font-mono text-sm">Drop Audio Here</div>
@@ -48,7 +48,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                         className="w-full max-w-2xl bg-linear-to-br from-blue-900/40 to-black border border-blue-500/20 p-8 rounded-3xl"
                     >
-                        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
+                        <h2 className="text-xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
                         <p className="text-blue-200/60 mb-8">Connect telemetry and financial sources to activate this view.</p>
                         <div className="grid grid-cols-3 gap-4">
                             <div className="col-span-2 h-40 bg-blue-500/10 rounded-2xl border border-blue-500/20 flex items-center justify-center text-blue-400 font-mono text-sm">Revenue Source Required</div>

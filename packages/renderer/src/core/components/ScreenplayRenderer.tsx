@@ -64,7 +64,7 @@ export default function ScreenplayRenderer({ data }: ScreenplayRendererProps) {
             <div className="p-8 md:p-12 min-h-[400px] text-sm md:text-base space-y-4 leading-relaxed font-courier">
                 {/* Title Page Simulation if first element is title */}
                 <div className="text-center mb-12 pb-8 border-b border-gray-200">
-                    <h1 className="text-2xl font-bold underline decoration-2 underline-offset-4 uppercase mb-2">{screenplay.title}</h1>
+                    <h1 className="text-xl font-bold underline decoration-2 underline-offset-4 uppercase mb-2">{screenplay.title}</h1>
                     {screenplay.author && <p className="text-gray-500">written by {screenplay.author}</p>}
                 </div>
 

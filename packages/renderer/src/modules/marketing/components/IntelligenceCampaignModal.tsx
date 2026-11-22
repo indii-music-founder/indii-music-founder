@@ -354,7 +354,7 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
                         <div className="space-y-6">
                             {/* Plan Header */}
                             <div className="bg-bg-dark border border-gray-800 rounded-xl p-6">
-                                <h3 className="text-xl font-bold text-white mb-2">{generatedPlan.title}</h3>
+                                <h3 className="text-base font-bold text-white mb-2">{generatedPlan.title}</h3>
                                 <p className="text-gray-400 text-sm">{generatedPlan.description}</p>
                                 <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
                                     <span>{generatedPlan.posts.length} posts</span>

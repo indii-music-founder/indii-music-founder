@@ -75,7 +75,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
                     >
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
                             <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <h3 className="text-base font-bold text-white flex items-center gap-2">
                                     <Megaphone size={20} className="text-sonic-purple" />
                                     New Campaign
                                 </h3>

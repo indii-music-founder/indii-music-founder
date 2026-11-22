@@ -273,7 +273,7 @@ export function PreSaveLandingPage({
                     </div>
                 )}
 
-                <h1 className="mt-7 text-center text-3xl font-bold">{campaign.title}</h1>
+                <h1 className="mt-7 text-center text-xl font-bold">{campaign.title}</h1>
                 {formattedReleaseDate && (
                     <p className="mt-2 flex items-center gap-2 text-sm text-gray-400">
                         <Calendar size={14} />

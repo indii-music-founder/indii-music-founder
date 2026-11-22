@@ -33,11 +33,11 @@ export default function CallSheetRenderer({ data }: CallSheetRendererProps) {
             {/* Header */}
             <div className="border-b-2 border-black p-4 flex justify-between items-start bg-gray-50">
                 <div>
-                    <h1 className="text-2xl font-bold uppercase tracking-tight">{sheet.production || "PRODUCTION NAME"}</h1>
+                    <h1 className="text-xl font-bold uppercase tracking-tight">{sheet.production || "PRODUCTION NAME"}</h1>
                     <h2 className="text-lg uppercase text-gray-600 font-bold">Daily Call Sheet</h2>
                 </div>
                 <div className="text-right">
-                    <div className="text-3xl font-bold">{sheet.date.split('-')[2] || 'DD'}</div>
+                    <div className="text-2xl font-bold">{sheet.date.split('-')[2] || 'DD'}</div>
                     <div className="uppercase font-bold text-gray-500">{new Date(sheet.date).toLocaleString('default', { month: 'short' })}</div>
                 </div>
             </div>

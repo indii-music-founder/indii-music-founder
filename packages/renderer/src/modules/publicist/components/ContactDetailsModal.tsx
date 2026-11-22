@@ -94,7 +94,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                                     )}
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-bold text-white mb-1">{contact.name}</h2>
+                                    <h2 className="text-xl font-bold text-white mb-1">{contact.name}</h2>
                                     <p className="text-sonic-purple font-medium">{contact.outlet}</p>
                                     <p className="text-slate-500 text-sm mt-1">{contact.role}</p>
                                 </div>

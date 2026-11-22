@@ -91,7 +91,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 return (
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background text-white p-6">
                         <div className="max-w-md text-center">
-                            <h2 className="text-2xl font-bold mb-4">New Version Available</h2>
+                            <h2 className="text-xl font-bold mb-4">New Version Available</h2>
                             <p className="text-gray-400 mb-8">
                                 A new version of the application has been deployed. Please refresh your browser to get the latest updates.
                             </p>

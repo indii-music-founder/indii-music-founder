@@ -338,7 +338,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-yellow-500 to-transparent opacity-50" />
 
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <h3 className="text-base font-bold text-white flex items-center gap-2">
                                     <MapPin className="text-yellow-500" size={20} />
                                     Edit Route Stop
                                 </h3>

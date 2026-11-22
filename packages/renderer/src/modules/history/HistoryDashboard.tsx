@@ -93,7 +93,7 @@ export default function HistoryDashboard() {
             {/* Left Sidebar (Filters) */}
             <div className="w-64 border-r border-white/5 bg-surface/30 backdrop-blur-xl flex flex-col z-10">
                 <div className="p-6">
-                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-green-400 to-pink-600 flex items-center gap-2">
+                    <h1 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-green-400 to-pink-600 flex items-center gap-2">
                         <Activity size={24} className="text-green-500" />
                         HISTORY
                     </h1>

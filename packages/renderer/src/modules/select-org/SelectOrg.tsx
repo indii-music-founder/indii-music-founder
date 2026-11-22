@@ -57,7 +57,7 @@ export default function SelectOrg() {
                         <Activity className="text-white" size={24} />
                     </div>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                        <h1 className="text-4xl font-black tracking-tighter mb-4 leading-tight">
+                        <h1 className="text-xl font-black tracking-tighter mb-4 leading-tight">
                             {isSwitching ? 'SWITCH\nSTUDIOS' : 'SELECT\nYOUR STUDIO'}
                         </h1>
                         <p className="text-gray-400 text-sm leading-relaxed">
@@ -108,7 +108,7 @@ export default function SelectOrg() {
                                 className="space-y-4"
                             >
                                 <div className="flex items-center justify-between mb-8">
-                                    <h2 className="text-2xl font-bold tracking-tight">Active Studios</h2>
+                                    <h2 className="text-xl font-bold tracking-tight">Active Studios</h2>
                                     <p className="text-xs text-gray-500 font-mono">{organizations.length} AVAILABLE</p>
                                 </div>
 
@@ -184,7 +184,7 @@ export default function SelectOrg() {
                                     <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 mb-6">
                                         <Building2 size={24} />
                                     </div>
-                                    <h2 className="text-2xl font-bold text-white mb-2">Create New Studio</h2>
+                                    <h2 className="text-xl font-bold text-white mb-2">Create New Studio</h2>
                                     <p className="text-gray-400 text-sm">Provision a new isolated workspace for your projects, agents, and team.</p>
                                 </div>
 

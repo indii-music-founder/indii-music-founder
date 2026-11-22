@@ -65,7 +65,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, trend, icon: Icon
                 </div>
             </div>
             <h4 className="text-gray-400 font-medium text-sm mb-1">{title}</h4>
-            <div className="text-3xl font-bold text-white tracking-tight">{value}</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
         </div>
     </motion.div>
 );

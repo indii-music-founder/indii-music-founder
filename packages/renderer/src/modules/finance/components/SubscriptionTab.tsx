@@ -21,7 +21,7 @@ export const SubscriptionTab = () => {
         return (
             <div className="flex flex-col items-center justify-center py-20 px-6 bg-red-500/5 rounded-3xl border border-red-500/20">
                 <AlertCircle size={40} className="text-red-500 mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Sync Error</h3>
+                <h3 className="text-base font-bold text-white mb-2">Sync Error</h3>
                 <p className="text-gray-400 text-center mb-6 max-w-sm">{error}</p>
                 <button
                     onClick={() => refresh()}

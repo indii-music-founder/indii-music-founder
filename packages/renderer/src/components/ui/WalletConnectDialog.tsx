@@ -43,7 +43,7 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
         <Modal isOpen={true} onClose={() => call.end(null)} titleId="wallet-connect-title" maxWidth="max-w-md">
             <div className="p-6 space-y-6">
                 <div>
-                    <h3 id="wallet-connect-title" className="text-xl font-bold text-white mb-2">Connect Wallet</h3>
+                    <h3 id="wallet-connect-title" className="text-base font-bold text-white mb-2">Connect Wallet</h3>
                     <p className="text-sm text-neutral-400">Choose a provider to connect your Web3 wallet.</p>
                 </div>
 

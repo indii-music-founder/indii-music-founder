@@ -13,7 +13,7 @@ export const GodModeCanvas: React.FC = () => {
                     <Globe2 size={24} />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black text-white tracking-tighter">GOD MODE</h1>
+                    <h1 className="text-xl font-black text-white tracking-tighter">GOD MODE</h1>
                     <p className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-1">Ecosystem Overview</p>
                 </div>
             </div>

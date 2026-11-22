@@ -272,7 +272,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                                 <FileText size={32} />
                             </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Drop files here</h2>
+                        <h2 className="text-xl font-bold text-white mb-2">Drop files here</h2>
                         <p className="text-gray-400">
                             Upload images & video to the Creative Studio, tracks to Audio Distribution, and legal/text documents to your Knowledge Base.
                         </p>

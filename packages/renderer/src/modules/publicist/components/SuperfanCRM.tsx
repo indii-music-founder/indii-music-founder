@@ -62,7 +62,7 @@ export function SuperfanCRM() {
             <div className="px-8 py-6 border-b border-white/5">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Superfan CRM</h2>
+                        <h2 className="text-xl font-bold text-white">Superfan CRM</h2>
                         <p className="text-sm text-slate-500 mt-0.5">Track and engage your most loyal fans</p>
                     </div>
                     <button disabled className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-500 rounded-lg text-xs font-bold cursor-not-allowed">

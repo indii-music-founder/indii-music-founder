@@ -155,7 +155,7 @@ export function LoadingFallback() {
     if (isTimedOut) {
         return (
             <div role="alert" className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[50] flex flex-col items-center justify-center p-6 text-center motion-safe:animate-in motion-safe:fade-in">
-                <div className="text-4xl mb-4">⏳</div>
+                <div className="text-2xl mb-4">⏳</div>
                 <h3 className="text-lg font-bold text-white mb-2">Loading is taking longer than expected</h3>
                 <p className="text-gray-400 text-sm max-w-sm mb-6">
                     A background service or module is taking a long time to load. You can continue waiting or try reloading.

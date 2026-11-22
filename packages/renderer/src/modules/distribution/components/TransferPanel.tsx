@@ -178,7 +178,7 @@ export const TransferPanel: React.FC = () => {
                                 <Server className="w-5 h-5 text-dept-distribution" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white uppercase tracking-tighter italic">Bridge Control</h3>
+                                <h3 className="text-base font-bold text-white uppercase tracking-tighter italic">Bridge Control</h3>
                                 <p className="text-xs text-gray-500 font-medium">DSP Gateway Transmission.</p>
                             </div>
                         </div>

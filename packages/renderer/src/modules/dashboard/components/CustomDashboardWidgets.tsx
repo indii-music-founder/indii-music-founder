@@ -298,7 +298,7 @@ function StreamsTodayWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {isLoading ? displayValue : <CountUp value={parseInt(displayValue.replace(/,/g, '')) || 0} />}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total DSP performance</p>
@@ -379,7 +379,7 @@ function NextReleaseWidget() {
                     </div>
                 ) : release === null ? (
                     <div className="space-y-4">
-                        <p className="text-4xl font-black text-white/10 tracking-tighter italic uppercase">Zero State</p>
+                        <p className="text-2xl font-black text-white/10 tracking-tighter italic uppercase">Zero State</p>
                         <button
                             onClick={() => setModule('distribution')}
                             className="w-full py-2.5 rounded-xl border border-dashed border-white/10 text-[10px] font-black text-white/40 uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">
@@ -395,7 +395,7 @@ function NextReleaseWidget() {
                             color="#3b82f6" 
                         />
                         <div className="space-y-1">
-                            <p className="text-4xl font-black text-white tracking-tighter">
+                            <p className="text-2xl font-black text-white tracking-tighter">
                                 {countdown?.text}
                             </p>
                             <div className="flex items-center gap-2">
@@ -617,7 +617,7 @@ function AudienceGrowthWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {isLoading ? newListeners : <CountUp value={parseInt(newListeners.replace(/,/g, '')) || 0} />}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Weekly unique reach</p>
@@ -680,7 +680,7 @@ function ActiveCampaignsWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.activeCount ?? 0}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Concurrent Campaigns</p>
@@ -739,7 +739,7 @@ function PendingTasksWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.totalCount ?? 0}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Awaiting Execution</p>
@@ -794,7 +794,7 @@ function SocialEngagementWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.engagementRate.formatted || '--'}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Cross-platform resonance</p>
@@ -850,7 +850,7 @@ function BrandIdentityWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.complianceScore.formatted || '--'}
                     </p>
                     <div className="flex items-center gap-2">
@@ -907,7 +907,7 @@ function MerchSalesWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.weeklyRevenue.formatted || '$0'}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Gross Merchandise Volume</p>
@@ -964,7 +964,7 @@ function TourStatusWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
+                    <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.upcomingShows ?? 0}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Scheduled Appearances</p>
@@ -1113,7 +1113,7 @@ function ConsolidatedRevenueWidget({ initialMode = 'aggregate' }: { initialMode?
                 <div className="space-y-1">
                     {mode === 'aggregate' ? (
                         <>
-                            <p className={`text-5xl font-black text-white tracking-tighter ${isLoadingAgg ? 'animate-pulse opacity-50' : ''}`}>
+                            <p className={`text-2xl font-black text-white tracking-tighter ${isLoadingAgg ? 'animate-pulse opacity-50' : ''}`}>
                                 ${stats?.totalRevenue.toLocaleString('en-US') || '0'}
                             </p>
                             <div className="flex items-center gap-2">
@@ -1127,7 +1127,7 @@ function ConsolidatedRevenueWidget({ initialMode = 'aggregate' }: { initialMode?
                         </>
                     ) : (
                         <>
-                            <p className={`text-5xl font-black text-white tracking-tighter ${isLoadingMtd ? 'animate-pulse opacity-50' : ''}`}>
+                            <p className={`text-2xl font-black text-white tracking-tighter ${isLoadingMtd ? 'animate-pulse opacity-50' : ''}`}>
                                 {isLoadingMtd ? mtdDisplay : <CountUp value={parseFloat(mtdDisplay.replace(/[^0-9.]/g, '')) || 0} formatter={formatCurrency} />}
                             </p>
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{monthName} MTD Earnings</p>
@@ -1591,7 +1591,7 @@ export function CostEstimatorWidget() {
                 </div>
                 
                 <div className="space-y-1">
-                    <p data-testid="cost-estimator-value" className="text-5xl font-black text-white tracking-tighter">
+                    <p data-testid="cost-estimator-value" className="text-2xl font-black text-white tracking-tighter">
                         {formatEstimatedRunCost(activeCost)}
                     </p>
                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Estimated Run Cost</p>

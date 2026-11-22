@@ -125,7 +125,7 @@ function ProfileHeaderContent({ userId }: UserProfileHeaderProps) {
                             {photoURL ? (
                                 <img src={photoURL} alt={displayName || 'User'} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-linear-to-br from-indigo-500 to-green-500 flex items-center justify-center text-3xl font-bold text-white">
+                                <div className="w-full h-full bg-linear-to-br from-indigo-500 to-green-500 flex items-center justify-center text-2xl font-bold text-white">
                                     {displayName?.[0] || 'U'}
                                 </div>
                             )}
@@ -137,7 +137,7 @@ function ProfileHeaderContent({ userId }: UserProfileHeaderProps) {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0 mb-2">
-                        <h1 className="text-3xl font-bold text-white truncate">{displayName}</h1>
+                        <h1 className="text-xl font-bold text-white truncate">{displayName}</h1>
                         <p className="text-gray-400 mt-1 max-w-2xl text-sm leading-relaxed">
                             {bio || "No bio yet."}
                         </p>

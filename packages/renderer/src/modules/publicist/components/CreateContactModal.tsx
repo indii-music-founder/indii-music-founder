@@ -87,7 +87,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                     >
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
                             <div>
-                                <h3 id="cc-modal-title" className="text-xl font-bold text-white flex items-center gap-2">
+                                <h3 id="cc-modal-title" className="text-base font-bold text-white flex items-center gap-2">
                                     <User size={20} className="text-sonic-purple" />
                                     Add New Contact
                                 </h3>

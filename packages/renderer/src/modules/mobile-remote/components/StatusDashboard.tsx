@@ -87,7 +87,7 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
     return (
         <div className="space-y-6 pb-8 font-sans">
             <div className="px-2 pt-2">
-                <h2 className="text-2xl font-bold text-stone-100 tracking-tight mb-1 font-display">Welcome Back</h2>
+                <h2 className="text-xl font-bold text-stone-100 tracking-tight mb-1 font-display">Welcome Back</h2>
                 <p className="text-sm text-stone-400 font-medium">Ready to dispatch tasks to the studio.</p>
             </div>
 

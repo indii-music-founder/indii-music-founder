@@ -41,7 +41,7 @@ export const StandardMerch: React.FC = () => {
                     <div className="w-fit mb-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
                         Season 25 // Summer
                     </div>
-                    <h2 className="text-5xl md:text-7xl font-black text-foreground mb-4 drop-shadow-sm tracking-tighter leading-none">
+                    <h2 className="text-xl font-black text-foreground mb-4 drop-shadow-sm tracking-tighter leading-none">
                         THE <span className="text-primary italic">MERCH</span> COLLECTION
                     </h2>
                     <p className="text-foreground/80 text-xl max-w-lg font-medium drop-shadow-sm leading-relaxed">
@@ -64,7 +64,7 @@ export const StandardMerch: React.FC = () => {
             {/* Product Grid */}
             <div ref={catalogRef}>
                 <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-3xl font-black text-foreground flex items-center gap-3 tracking-tighter">
+                    <h3 className="text-base font-black text-foreground flex items-center gap-3 tracking-tighter">
                         <div className="p-2 bg-primary rounded-lg">
                             <Tag className="text-primary-foreground" size={20} />
                         </div>

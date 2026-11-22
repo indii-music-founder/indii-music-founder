@@ -13,7 +13,7 @@ export default function WorkflowLoadModal({ onClose, onLoadWorkflow, savedWorkfl
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] flex flex-col">
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <FolderOpen className="text-blue-500" /> Saved Workflows
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-white">
