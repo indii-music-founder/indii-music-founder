@@ -36,7 +36,7 @@ export const EmptyActionState = React.forwardRef<HTMLDivElement, EmptyActionStat
             <div className="relative z-10 flex flex-col items-center max-w-lg mx-auto">
                 <div className="relative mb-6">
                     <div className="absolute inset-0 bg-white/10 blur-xl rounded-full" />
-                    <div className="relative p-6 bg-white/5 rounded-[2rem] border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                    <div className="relative p-6 bg-white/5 rounded-2xl border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-500">
                         <Icon size={28} className="text-white opacity-80" strokeWidth={1.5} />
                     </div>
                 </div>

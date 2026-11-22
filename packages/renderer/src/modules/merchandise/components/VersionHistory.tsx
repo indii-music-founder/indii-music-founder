@@ -295,7 +295,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         <div className="p-4 border-t border-white/10 flex gap-3">
                             <button
                                 onClick={() => handleRestore((previewVersion || selectedVersion)!)}
-                                className="flex-1 py-3 bg-blue-500 hover:bg-blue-400 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                                className="flex-1 py-3 bg-white hover:bg-gray-200 text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors"
                             >
                                 <RotateCcw size={16} />
                                 Restore This Version

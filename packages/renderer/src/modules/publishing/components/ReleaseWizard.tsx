@@ -382,7 +382,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <div>
               <h4 className="text-xs font-black uppercase tracking-widest text-dept-publishing mb-1">Desktop App Required</h4>
               <p className="text-xs text-gray-300 leading-relaxed">
-                DDEX Distribution to streaming platforms requires the indii Desktop App for secure delivery authority. 
+                Delivery to streaming platforms runs from the indii desktop app. 
                 Please open this project in the Desktop App to select distributors and deliver your release.
               </p>
             </div>
@@ -560,7 +560,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white text-xs font-bold">Fully AI-Generated</span>
-            <p className="text-xs text-gray-400">The entire track was created using Autonomous tools</p>
+            <p className="text-xs text-gray-400">The whole track was generated with AI tools</p>
           </div>
         </label>
 

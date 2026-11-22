@@ -160,7 +160,7 @@ export function CreatorProtectionCenter() {
           <button
             onClick={handleCompile}
             disabled={!userId || saving}
-            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
             {saving ? 'Saving Protection Profile…' : 'Compile Protection Readiness'}

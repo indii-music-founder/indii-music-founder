@@ -232,7 +232,7 @@ export default function FanDataEnrichment() {
                                 {isProcessing ? (
                                     <>
                                         <Loader2 size={16} className="animate-spin" />
-                                        Enriching Intelligence...
+                                        Enriching fan data…
                                     </>
                                 ) : isCompleted ? (
                                     <>
@@ -309,7 +309,7 @@ export default function FanDataEnrichment() {
                                         </div>
                                     </div>
                                     <div className="text-center space-y-2">
-                                        <p className="text-base font-bold text-white">Aggregating Persona Hooks</p>
+                                        <p className="text-base font-bold text-white">Grouping fan profiles</p>
                                         <p className="text-xs text-gray-500 font-mono italic">
                                             Processing: {currentEmail || 'Initializing...'}
                                         </p>

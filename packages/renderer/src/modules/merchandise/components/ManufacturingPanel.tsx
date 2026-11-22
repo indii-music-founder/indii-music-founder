@@ -375,7 +375,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                         Connect your Printful account to enable automatic order fulfillment.
                                     </p>
                                     <p className="text-[10px] text-neutral-500">
-                                        Ensure your Printful API key is securely configured in your backend environment.
+                                        Auto-fulfilment needs a connected Printful account.
                                     </p>
                                 </div>
                             )}

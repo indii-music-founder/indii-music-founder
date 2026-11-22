@@ -112,7 +112,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                         <Box className="text-dept-royalties" size={24} />
                         {isDashboardView ? 'Product Ledger' : 'Inventory Management'}
                     </h3>
-                    <p className="text-gray-500 text-xs font-medium uppercase tracking-[0.2em] mt-1 ml-9">Marketplace Liquidity Status</p>
+                    <p className="text-gray-500 text-xs font-medium uppercase tracking-[0.2em] mt-1 ml-9">Stock Status</p>
                 </div>
                 <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -133,7 +133,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-[2rem] space-y-5 backdrop-blur-xl relative overflow-hidden">
+                        <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl space-y-5 backdrop-blur-xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-dept-creative/10 blur-[50px] pointer-events-none" />
 
                             <div className="flex items-center gap-2">

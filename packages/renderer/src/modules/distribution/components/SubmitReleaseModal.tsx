@@ -29,7 +29,7 @@ interface PipelineStep {
 const INITIAL_STEPS: PipelineStep[] = [
     { id: 'qc', label: 'QC Validation', status: 'idle' },
     { id: 'isrc', label: 'ISRC Assignment', status: 'idle' },
-    { id: 'ddex', label: 'DDEX XML Build', status: 'idle' },
+    { id: 'ddex', label: 'Delivery Package', status: 'idle' },
     { id: 'sftp', label: 'DSP Delivery', status: 'idle' },
 ];
 

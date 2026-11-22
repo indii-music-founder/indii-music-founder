@@ -405,7 +405,7 @@ export function MicroLicensingPortal() {
                         <button
                             onClick={handleGenerate}
                             disabled={!canGenerate}
-                            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-2.5 bg-white hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed text-black text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
                             <FileText size={14} />
                             Generate Draft

@@ -33,7 +33,7 @@ describe('InventoryTracker (ISSUE-939)', () => {
         expect(providerControl).toBeDisabled();
         expect(providerControl).toHaveAttribute(
             'title',
-            'Provider inventory sync is not configured. Inventory updates when Firestore data changes.',
+            'Provider inventory sync is not configured. Inventory updates when your store data changes.',
         );
         expect(screen.queryByRole('button', { name: /^sync$/i })).toBeNull();
         expect(screen.getByText('No Inventory Data')).toBeInTheDocument();

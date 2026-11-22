@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
     Webhook, Send, CheckCircle, Loader2, AlertCircle,
-    ToggleLeft, ToggleRight, MessageSquare
+    ToggleLeft, ToggleRight, MessageSquare, Gamepad2, Smartphone, type LucideIcon
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 interface PlatformConfig {
     name: 'Discord' | 'Telegram';
-    icon: string;
+    icon: LucideIcon;
     webhookUrl: string;
     chatId?: string; // Telegram only — sendMessage requires a target chat_id
     enabled: boolean;
@@ -96,8 +96,8 @@ function loadPersistedConfig(): PersistedConfig | null {
 }
 
 const DEFAULT_PLATFORMS: PlatformConfig[] = [
-    { name: 'Discord', icon: '🎮', webhookUrl: '', enabled: true, testing: false, tested: false },
-    { name: 'Telegram', icon: '📱', webhookUrl: '', chatId: '', enabled: false, testing: false, tested: false },
+    { name: 'Discord', icon: Gamepad2, webhookUrl: '', enabled: true, testing: false, tested: false },
+    { name: 'Telegram', icon: Smartphone, webhookUrl: '', chatId: '', enabled: false, testing: false, tested: false },
 ];
 
 const DEFAULT_AUTO_TOGGLES: AutoToggle[] = [
@@ -234,7 +234,7 @@ export default function CommunityWebhookPanel() {
                     >
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-xl">{p.icon}</span>
+                                <p.icon size={14} aria-hidden="true" className="text-gray-400" />
                                 <span className="text-sm font-semibold text-white">{p.name}</span>
                             </div>
                             <button

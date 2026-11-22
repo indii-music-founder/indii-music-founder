@@ -15,7 +15,7 @@ export const BankPanel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'TAX' | 'WATERFALL'>('TAX');
 
-    // Tax Engine State
+    // Tax State
     const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
 
     // Waterfall Engine State
@@ -112,7 +112,7 @@ export const BankPanel: React.FC = () => {
                         data-testid="distro-subtab-tax"
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'TAX' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        Tax Engine
+                        Tax
                     </button>
                     <button
                         onClick={() => setActiveTab('WATERFALL')}

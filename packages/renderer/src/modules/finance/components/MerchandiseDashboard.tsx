@@ -31,7 +31,7 @@ export const MerchandiseDashboard: React.FC = () => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group relative overflow-hidden p-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl"
+                className="group relative overflow-hidden p-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl"
             >
                 {/* Dynamic animated glow */}
                 <motion.div
@@ -52,7 +52,7 @@ export const MerchandiseDashboard: React.FC = () => {
                             <h2 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
                                 Merchandise <span className="text-dept-royalties">Sales</span>
                             </h2>
-                            <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mt-1">Global Commerce Operations</p>
+                            <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mt-1">Store performance</p>
                         </div>
                     </div>
 
@@ -109,11 +109,11 @@ export const MerchandiseDashboard: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/5 border border-white/5 rounded-[2rem] p-6"
+                className="bg-white/5 border border-white/5 rounded-2xl p-6"
             >
                 <div className="flex items-center gap-2 mb-6 ml-1">
                     <TrendingUp size={16} className="text-gray-400" />
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em]">Sales Performance Matrix</h3>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em]">Sales by Product</h3>
                 </div>
                 <MerchandiseAnalytics />
             </motion.div>
@@ -123,7 +123,7 @@ export const MerchandiseDashboard: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="flex-1 min-h-0 bg-black/20 border border-white/5 rounded-[2rem] overflow-hidden shadow-xl"
+                className="flex-1 min-h-0 bg-black/20 border border-white/5 rounded-2xl overflow-hidden shadow-xl"
             >
                 <div className="p-6 border-b border-white/5 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white">Full Inventory Ledger</h3>

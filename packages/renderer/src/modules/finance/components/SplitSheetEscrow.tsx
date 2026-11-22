@@ -474,7 +474,7 @@ export function SplitSheetEscrow() {
                             onClick={handleReleaseFunds}
                             disabled={!allSigned || releasing}
                             className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${allSigned && !releasing
-                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                ? 'bg-white hover:bg-gray-200 text-black'
                                 : 'bg-white/[0.02] border border-white/5 text-gray-600 cursor-not-allowed'
                                 }`}
                         >

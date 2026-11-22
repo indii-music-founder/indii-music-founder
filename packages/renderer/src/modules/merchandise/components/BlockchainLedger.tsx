@@ -94,7 +94,7 @@ export function BlockchainLedger() {
                         <Shield size={18} className="text-[#FFE135]" />
                         Blockchain Ledger
                     </h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">Immutable chain of custody for your rights</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Permanent record of your rights</p>
                 </div>
                 <button
                     onClick={handleIpfsSync}

@@ -48,7 +48,7 @@ describe('AutonomousGenerationDialog', () => {
                 onImageGenerated={onImageGenerated}
             />
         );
-        expect(screen.getByText('Autonomous Image Generation')).toBeInTheDocument();
+        expect(screen.getByText('Generate Images')).toBeInTheDocument();
         expect(screen.getByText('Generate')).toBeInTheDocument();
         expect(screen.getByLabelText('Describe what you want to create')).toBeInTheDocument();
         // Generate button should be disabled initially (empty prompt)

@@ -41,7 +41,7 @@ describe('MerchandiseDashboard', () => {
         render(<MerchandiseDashboard />);
 
         // These texts are inside MerchandiseAnalytics
-        expect(screen.getByText('Revenue Velocity')).toBeInTheDocument();
+        expect(screen.getByText('Revenue Trend')).toBeInTheDocument();
         expect(screen.getByText('Active Cycle')).toBeInTheDocument();
 
         // Check for specific data points labels

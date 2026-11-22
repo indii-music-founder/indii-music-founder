@@ -208,9 +208,9 @@ export const FormatFoundryModule: React.FC = () => {
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-bold tracking-tight text-white">Format Intelligence & Capability Foundry</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">Statement Formats</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              Clean-Room Engine
+              Private
             </span>
           </div>
           <p className="text-sm text-slate-400 mt-1">
@@ -253,7 +253,7 @@ export const FormatFoundryModule: React.FC = () => {
             <FileText className="w-4 h-4 text-indigo-400" />
             <span>Raw Statement or Format Evidence</span>
           </label>
-          <span className="text-xs text-slate-500">Paste tabular statement, DDEX XML, or drop file</span>
+          <span className="text-xs text-slate-500">Paste a statement or drop a file</span>
         </div>
         <textarea
           id="raw-statement-input"
@@ -438,7 +438,7 @@ export const FormatFoundryModule: React.FC = () => {
               <button
                 onClick={handleConfirmBooking}
                 disabled={!bookingAllowed || isBooking}
-                className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition flex items-center space-x-1.5"
+                className="px-4 py-1.5 rounded-lg bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium transition flex items-center space-x-1.5"
               >
                 <span>{isBooking ? 'Booking...' : 'Approve & Book Statement'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -453,13 +453,13 @@ export const FormatFoundryModule: React.FC = () => {
         </div>
       )}
 
-      {/* Artist Business Graph Normalization View */}
+      {/* Mapped to Your Catalog View */}
       {graph && (
         <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <h2 className="text-sm font-semibold text-slate-200 flex items-center space-x-2">
               <Database className="w-4 h-4 text-indigo-400" />
-              <span>Artist Business Graph Normalization</span>
+              <span>Mapped to Your Catalog</span>
             </h2>
             <span className="text-xs text-slate-400">
               {graph.lineageLinksCount} Traceable Lineage Links
@@ -509,7 +509,7 @@ export const FormatFoundryModule: React.FC = () => {
                 <div>
                   <span className="text-xs text-slate-500 block">Economics</span>
                   <h3 className="text-sm font-bold text-white">Contributor Splits</h3>
-                  <span className="text-xs text-slate-400">Allocated according to canonical contracts</span>
+                  <span className="text-xs text-slate-400">Split according to your contracts</span>
                 </div>
                 <div className="text-right">
                   <span className="text-xs text-slate-500 block">Total Allocated</span>

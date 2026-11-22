@@ -54,7 +54,7 @@ describe('IntelligenceCampaignModal', () => {
     it('renders the initial form state correctly', () => {
         render(<IntelligenceCampaignModal {...defaultProps} />);
 
-        expect(screen.getByText('Intelligence Campaign Generator')).toBeInTheDocument();
+        expect(screen.getByText('Campaign Builder')).toBeInTheDocument();
         expect(screen.getByText(/Campaign Topic \*/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Generate Campaign/i })).toBeInTheDocument();
     });

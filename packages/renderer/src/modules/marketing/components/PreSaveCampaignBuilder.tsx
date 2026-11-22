@@ -43,9 +43,9 @@ interface DSPLink {
 }
 
 const DSP_LINKS: DSPLink[] = [
-    { key: 'spotify', name: 'Spotify', icon: '🎧', url: '', placeholder: 'https://open.spotify.com/album/...' },
+    { key: 'spotify', name: 'Spotify', icon: '', url: '', placeholder: 'https://open.spotify.com/album/...' },
     { key: 'appleMusic', name: 'Apple Music', icon: '', url: '', placeholder: 'https://music.apple.com/album/...' },
-    { key: 'amazonMusic', name: 'Amazon Music', icon: '🎵', url: '', placeholder: 'https://music.amazon.com/albums/...' },
+    { key: 'amazonMusic', name: 'Amazon Music', icon: '', url: '', placeholder: 'https://music.amazon.com/albums/...' },
 ];
 
 function isHttpsUrl(value: string): boolean {
@@ -548,7 +548,6 @@ export default function PreSaveCampaignBuilder() {
                         <div className="space-y-2">
                             {dspLinks.map((dsp, index) => (
                                 <div key={dsp.key} className="flex items-center gap-2">
-                                    <span className="w-6 flex-shrink-0 text-base">{dsp.icon}</span>
                                     <label htmlFor={`presave-${dsp.key}`} className="w-20 flex-shrink-0 text-xs text-gray-400">
                                         {dsp.name}
                                     </label>
@@ -620,7 +619,7 @@ export default function PreSaveCampaignBuilder() {
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {configuredLinks.length > 0 ? configuredLinks.map(dsp => (
                                         <div key={dsp.key} className="rounded-lg bg-white/10 px-3 py-1.5 text-[10px] font-medium text-gray-300">
-                                            {dsp.icon} Pre-save on {dsp.name}
+                                            Pre-save on {dsp.name}
                                         </div>
                                     )) : <span className="text-[10px] text-gray-600">Add a DSP link to enable fan actions.</span>}
                                 </div>

@@ -194,7 +194,7 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
                 {onNewContract && (
                     <button
                         onClick={onNewContract}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded-xl transition-colors"
                     >
                         <FilePlus size={14} />
                         Draft a Contract
@@ -203,7 +203,7 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
                 <div className="mt-8 rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 max-w-sm">
                     <div className="flex items-start gap-2 text-xs text-amber-300/70">
                         <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-                        <span>Tip: Use the chat below to say "Draft a DJ performance agreement for…" and the autonomous systems will generate and save a contract here automatically.</span>
+                        <span>Tip: Use the chat below to say "Draft a DJ performance agreement for…" and your legal specialist will generate and save a contract here automatically.</span>
                     </div>
                 </div>
             </div>
@@ -222,7 +222,7 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
                 {onNewContract && (
                     <button
                         onClick={onNewContract}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-200 text-black text-[10px] font-bold rounded-lg transition-colors"
                     >
                         <FilePlus size={11} />
                         New
@@ -338,14 +338,14 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
                                 <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
                                     <button
                                         onClick={() => openSendDialog(contract)}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-200 text-black text-[10px] font-bold rounded-lg transition-colors"
                                     >
                                         <Send size={11} />
                                         Send via Email
                                     </button>
                                     <button
                                         onClick={() => handleDownloadPDF(contract)}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-200 text-black text-[10px] font-bold rounded-lg transition-colors"
                                     >
                                         <Download size={11} />
                                         Download PDF
@@ -439,7 +439,7 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
                             <button
                                 onClick={handleSendEmail}
                                 disabled={!emailDialog.recipientEmail.trim() || sendingId === emailDialog.contract.id}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-200 disabled:bg-gray-700 disabled:text-gray-500 text-black text-xs font-bold rounded-xl transition-colors"
                                 data-testid="send-contract-submit"
                             >
                                 {sendingId === emailDialog.contract.id ? (

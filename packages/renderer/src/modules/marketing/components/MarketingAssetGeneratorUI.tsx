@@ -283,7 +283,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <RefreshCw size={14} /> {error}
                                     </div>
                                 )}
-                                <p className="text-sm text-gray-400 mb-6">Describe what you want the Autonomous video to look like.</p>
+                                <p className="text-sm text-gray-400 mb-6">Describe what you want the video to look like.</p>
 
                                 <div className="space-y-6 flex-1">
                                     <div>
@@ -366,7 +366,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <Video className="text-dept-marketing animate-pulse" size={24} />
                                     </div>
                                 </div>
-                                <h2 className="text-base font-black text-white mb-3">Synthesizing Visuals</h2>
+                                <h2 className="text-base font-black text-white mb-3">Creating visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
                                     {generatorMode === 'avatar'
                                         ? 'Rendering the avatar lip-sync from your audio and portrait. This normally takes a few minutes via background job...'

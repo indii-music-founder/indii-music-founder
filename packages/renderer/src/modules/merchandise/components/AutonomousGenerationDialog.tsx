@@ -113,7 +113,7 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
                             <Sparkles className="text-[#FFE135]" size={20} />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-white">Autonomous Image Generation</h3>
+                            <h3 className="text-lg font-bold text-white">Generate Images</h3>
                             <p className="text-xs text-neutral-400">Create custom graphics autonomously</p>
                         </div>
                     </div>

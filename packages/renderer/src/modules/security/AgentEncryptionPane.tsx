@@ -33,7 +33,7 @@ export function AgentEncryptionPane() {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
                 <Shield size={20} className="mb-3 opacity-20" />
-                <span className="font-bold uppercase tracking-widest text-[10px]">No Active Swarm Sessions</span>
+                <span className="font-bold uppercase tracking-widest text-[10px]">No Active Team Sessions</span>
             </div>
         );
     }

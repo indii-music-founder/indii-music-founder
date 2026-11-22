@@ -211,7 +211,7 @@ function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUp
                             <button
                                 onClick={handleSubmit}
                                 disabled={files.length === 0 || status === 'uploading'}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 aria-label="Submit track with clearance documents"
                             >
                                 {status === 'uploading' ? (

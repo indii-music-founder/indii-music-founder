@@ -106,7 +106,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
         )}>
           <Bot size={13} className="text-green-400" />
         </div>
-        <span className="text-xs font-semibold text-gray-300">indii Co-Pilot</span>
+        <span className="text-xs font-semibold text-gray-300">indii</span>
         {isActive && (
           <span className="text-[10px] text-green-400 ml-auto flex items-center gap-1">
             <Sparkles size={10} />
@@ -152,7 +152,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-3 py-2 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Send
           </button>

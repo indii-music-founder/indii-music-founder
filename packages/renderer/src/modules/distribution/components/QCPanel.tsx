@@ -470,7 +470,7 @@ export const QCPanel: React.FC = () => {
                         Pre-Flight Audio & Acoustic QC
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
-                        Comprehensive lossless audio inspection, LUFS mastering compliance, DDEX metadata validation, and YouTube Content ID rights attestation.
+                        Checks your audio quality, loudness, release metadata, and YouTube Content ID rights before delivery.
                     </p>
                 </div>
 
@@ -789,7 +789,7 @@ export const QCPanel: React.FC = () => {
                         <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-green-900/20 border border-indigo-500/20 rounded-2xl p-6">
                             <h4 className="text-xs font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-4">
                                 <BrainCircuit size={14} className="text-indigo-400" />
-                                Creative Intelligence Prompts
+                                Creative Prompts
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div>

@@ -278,7 +278,6 @@ function MerchWorkspaceCenter({
 
                         <div className={`mb-6 grid gap-4 ${isFocused ? 'grid-cols-1' : 'grid-cols-2'}`}>
                             <MerchCard className={`${isFocused ? 'p-4' : 'p-6'} relative overflow-hidden`}>
-                                <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">📈</span></div>
                                 <div className="relative z-10">
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="trend-score-title">Trend Score</h3>
                                     <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-2xl' : 'text-2xl'} font-black text-[#FFE135]`}>{stats.trendScore}</span><span className="mb-1 text-sm text-neutral-400">/ 100</span></div>
@@ -287,7 +286,6 @@ function MerchWorkspaceCenter({
                                 </div>
                             </MerchCard>
                             <MerchCard className={`${isFocused ? 'p-4' : 'p-6'} relative overflow-hidden`}>
-                                <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">⚡️</span></div>
                                 <div className="relative z-10">
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="production-performance-title">Production Velocity</h3>
                                     <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-2xl' : 'text-2xl'} font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>{stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}</span><span className="mb-1 text-sm text-neutral-400">vs last week</span></div>

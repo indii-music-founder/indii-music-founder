@@ -197,7 +197,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                 </div>
                 <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        Digital Aura
+                        Visual Mood
                     </h3>
                     <div className="flex flex-wrap gap-2">
                         {(brandKit.digitalAura || ['High Fidelity', 'Glassmorphism', 'Luxury']).map(tag => (

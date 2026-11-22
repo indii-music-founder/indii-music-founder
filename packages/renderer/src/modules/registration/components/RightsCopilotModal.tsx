@@ -411,7 +411,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
                       </span>
                     ) : (
                       <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded shrink-0">
-                        Copilot Autofill
+                        Autofill
                       </span>
                     )}
                   </div>

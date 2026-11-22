@@ -11,7 +11,7 @@ import { useStore } from '@/core/store';
 import type { AgentActionLog } from '@/core/store';
 
 /* ==================================================================== */
-/*  Swarm Command Center                                                 */
+/*  Marketing Automation                                                 */
 /*                                                                       */
 /*  ┌───────────────────────────────────┬──────────────────┐             */
 /*  │  Campaign performance (ROAS)      │  Live agent logs │             */
@@ -95,10 +95,10 @@ const AgentSwarmDashboard: React.FC = () => {
                 <div>
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <Activity size={18} className="text-dept-marketing" />
-                        Swarm Command Center
+                        Marketing Automation
                     </h2>
                     <p className="text-xs text-gray-500 mt-1">
-                        Autonomous marketing agents, their spend, and every action they took on your behalf.
+                        What your marketing team is running, what it spent, and every action it took for you.
                     </p>
                 </div>
 

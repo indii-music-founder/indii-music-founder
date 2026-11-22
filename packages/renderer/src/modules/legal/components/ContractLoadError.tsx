@@ -9,7 +9,7 @@ export function ContractLoadError({ onRetry }: { onRetry: () => void }) {
                 Your contracts could not be retrieved. This does not mean you have no contracts.
                 Try again to load the list.
             </p>
-            <button onClick={onRetry} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors">
+            <button onClick={onRetry} className="px-4 py-2.5 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded-xl transition-colors">
                 Retry
             </button>
         </div>

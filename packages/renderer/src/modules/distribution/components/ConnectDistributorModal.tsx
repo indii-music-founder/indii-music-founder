@@ -131,7 +131,7 @@ const ConnectDistributorModal = createCallable<ConnectDistributorModalProps, boo
                                         </h2>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-500/80">Secure Connection (FIPS-140)</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-500/80">Secure connection</span>
                                         </div>
                                     </div>
                                 </div>

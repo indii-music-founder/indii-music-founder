@@ -39,7 +39,7 @@ export function InventoryTracker() {
                 </div>
                 <button
                     disabled
-                    title="Provider inventory sync is not configured. Inventory updates when Firestore data changes."
+                    title="Provider inventory sync is not configured. Inventory updates when your store data changes."
                     className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-neutral-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-50"
                 >
                     <RefreshCw size={12} />

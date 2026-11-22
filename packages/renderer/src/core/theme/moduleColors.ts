@@ -473,7 +473,7 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         ring: 'focus-within:ring-red-500/50',
         hoverText: 'hover:text-red-400',
         hoverBg: 'hover:bg-red-500/5',
-        cssVar: '--color-dept-default',
+        cssVar: '--color-red-500', // match the red text (pill, tint and glow were default green)
     },
     'devops': {
         text: 'text-green-500',

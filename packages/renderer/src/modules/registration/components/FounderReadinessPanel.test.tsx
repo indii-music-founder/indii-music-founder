@@ -48,10 +48,10 @@ describe('FounderReadinessPanel (ISSUE-1121)', () => {
     }
   });
 
-  it('opens RightsRegistrationWalkthroughModal when Setup Rights Copilot or Guide button is clicked', () => {
+  it('opens RightsRegistrationWalkthroughModal when Set up the Rights Assistant or Guide button is clicked', () => {
     render(<FounderReadinessPanel userId="test-user-4" />);
 
-    const copilotBtn = screen.getByRole('button', { name: /Setup Rights Copilot/i });
+    const copilotBtn = screen.getByRole('button', { name: /Set up the Rights Assistant/i });
     fireEvent.click(copilotBtn);
 
     const dialog = screen.getByRole('dialog');

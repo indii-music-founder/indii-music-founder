@@ -205,7 +205,7 @@ export default function LicensingDashboard() {
                                                 <div className="flex flex-col items-end gap-3">
                                                     <button
                                                         onClick={() => handleDraftAction(request)}
-                                                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-emerald-400/20 shadow-lg shadow-emerald-600/10 transition-all scale-95 group-hover:scale-100"
+                                                        className="inline-flex items-center gap-2 bg-white hover:bg-gray-200 text-black text-[11px] font-bold px-4 py-2 rounded-xl border border-emerald-400/20 shadow-lg shadow-emerald-600/10 transition-all scale-95 group-hover:scale-100"
                                                     >
                                                         <FileText size={14} />
                                                         DRAFT AGREEMENT

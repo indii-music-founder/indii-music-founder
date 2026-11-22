@@ -267,7 +267,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
             let message = err instanceof Error ? err.message : 'Asset upscale failed.';
             if (err instanceof UpscaleUnavailableError) {
                 if (err.reason === 'gpu-not-ready') {
-                    message = 'Local engine cannot run on this machine (no usable GPU/Vulkan).';
+                    message = 'Local preview isn’t supported on this computer’s graphics hardware.';
                     toast.error(message);
                 } else if (err.reason === 'no-electron') {
                     message = 'Local upscaling runs in the indii desktop app.';

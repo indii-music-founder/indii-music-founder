@@ -166,7 +166,7 @@ export function ReleaseHarnessWorkspace({
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <SummaryPanel
               icon={<Music2 size={18} />}
-              title="Song DNA"
+              title="Song Profile"
               value={`${Math.round(result.releaseDna.energy * 100)}% energy`}
               lines={[
                 result.releaseDna.genreSignals.slice(0, 3).join(', ') || 'Genre needs metadata/audio analysis',
@@ -186,7 +186,7 @@ export function ReleaseHarnessWorkspace({
             />
             <SummaryPanel
               icon={<CheckCircle2 size={18} />}
-              title="DDEX Readiness"
+              title="Delivery Readiness"
               value={result.distributionReadiness.ddexPackageReady ? 'Package-ready' : 'Needs work'}
               lines={[
                 result.distributionReadiness.authorityLevel.replace('_', ' '),

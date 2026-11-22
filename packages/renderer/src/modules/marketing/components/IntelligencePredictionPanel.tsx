@@ -61,14 +61,14 @@ export default function IntelligencePredictionPanel({ campaign }: IntelligencePr
                             <TrendingUp className="text-dept-marketing" size={18} />
                         </div>
                         <div>
-                            <h3 className="text-sm font-semibold text-white">Intelligence Prediction</h3>
+                            <h3 className="text-sm font-semibold text-white">Campaign Forecast</h3>
                             <p className="text-xs text-gray-500">Estimate impact before launch</p>
                         </div>
                     </div>
                 </div>
 
                 <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                    Get Intelligence-powered insights on how your campaign might perform.
+                    See how your campaign is likely to perform.
                 </p>
 
                 <button

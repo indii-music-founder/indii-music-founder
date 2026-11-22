@@ -208,7 +208,7 @@ function FounderReadinessWorkspace({ userId }: { userId: string }) {
             className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 hover:from-[#FFD700]/30 hover:to-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/40 text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)]"
           >
             <Compass size={14} className="text-[#FFD700]" />
-            <span>Setup Rights Copilot</span>
+            <span>Set up the Rights Assistant</span>
           </button>
           <button
             onClick={handleSave}

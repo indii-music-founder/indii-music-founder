@@ -309,7 +309,7 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                                             <div>
                                                 <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                                                     <AlertTriangle size={12} />
-                                                    Overlapping Scope Assertions
+                                                    Overlapping Claims
                                                 </h4>
                                                 <div className="space-y-1.5">
                                                     {conflicts.map((c, i) => (

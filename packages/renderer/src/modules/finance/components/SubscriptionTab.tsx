@@ -135,7 +135,7 @@ export const SubscriptionTab = () => {
                                     <span className="text-white font-mono">{(usage.aiChatTokensUsed / 1000).toFixed(1)}k / {(usage.aiChatTokensPerMonth / 1000).toFixed(1)}k</span>
                                 </div>
                                 <Progress value={(usage.aiChatTokensUsed / usage.aiChatTokensPerMonth) * 100} className="h-2 bg-white/5" indicatorClassName="bg-dept-marketing" />
-                                <p className="text-[10px] text-gray-500">Workspace intelligence token quota</p>
+                                <p className="text-[10px] text-gray-500">Monthly usage allowance</p>
                             </div>
 
                             {/* Storage */}

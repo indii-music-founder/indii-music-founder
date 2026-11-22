@@ -110,8 +110,8 @@ export function CatalogRail({
         </p>
       </div>
       {intelligenceReport && (
-        <section aria-label="Catalog intelligence" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
-          <h2 className="text-[11px] font-semibold text-gray-400">Legacy catalog intelligence</h2>
+        <section aria-label="Catalog check" className="px-3 py-3 border-t border-white/[0.05] space-y-1">
+          <h2 className="text-[11px] font-semibold text-gray-400">Legacy catalog check</h2>
           <p className="text-[11px] text-gray-500">
             {intelligenceReport.metrics.findingCount > 0
               ? `${intelligenceReport.metrics.findingCount} potential identifier conflict${intelligenceReport.metrics.findingCount === 1 ? ' needs' : 's need'} review.`
