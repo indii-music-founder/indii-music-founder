@@ -4126,7 +4126,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1707: Create Release wizard: submit spinner never ends; silent cover rejection; asset drop and tools field problems
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — four of six items fixed on branch `claude/release-wizard-submit`; not yet seen on production
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / `ReleaseWizard`, `useDDEXRelease`
 - **Evidence:** live run 2026-11-22 (ISSUE-1691), build `e0cae2eba`.
@@ -4136,6 +4136,10 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - Double-clicking a Project Assets tile while the wizard is open opens Creative Canvas and navigates away, and the wizard loses everything entered.
   - The "Autonomous tools used" field strips spaces ("Flow Music (flowmusic.app)" saved as "FlowMusic(flowmusic.app)").
   - The AI-disclosure copy still says "ERN 4.3 Autonomous Content Disclosure", "New DDEX standards", "Intelligence-generated" and "Autonomous tools".
+- **Server evidence for the spinner (2026-11-22):** the record `proprietaryIngestionReleases/Ui98LcYSSwCYeMU0IkvD` read back from Firestore had `status: metadata_complete`, `updatedAt` 19:10:52Z against `createdAt` 19:06:08Z, no `packagingError`, no `coverArtAuditError`, so the server finished while the client stayed on "Submitting". Which awaited step stalled is not proven (the audit call, the packaging run, or the final status write's acknowledgement are all awaited with no client deadline; `runAgent` itself is bounded at 5 min, which the stall exceeded).
+- **Fix (branch):** every awaited step after the draft is created now has a deadline (cover check 90 s, packaging 330 s, final write 30 s) via `withStepDeadline`; the progress view names the step in plain words ("Checking your cover art…", "Packaging your release…", "Finishing up…"); a stalled check or run no longer stamps the record failed and tells the artist the draft is saved; a slow acknowledgement of the final status write no longer blocks completion (Firestore keeps the write queued). The Assets step now shows the cover's reason ("Cover art: …") with "Use Replace Image" once an unusable cover is attached. The tools field keeps what is typed (spaces survived only until the next keystroke before) and the list is derived from it. Disclosure copy is plain ("AI Content Disclosure", "Streaming platforms ask you to say how AI was used…", "AI Tools Used"); the legally relevant "Fully/Partially AI-Generated" wording stays.
+- **Still open from the list:** a non-drag way to choose a Project Assets image for the cover, and a guard so opening an asset from Project Assets does not discard the open wizard.
+- **Verification:** publishing suites 58/58 (new tests: `submitDeadline`, `parseAiTools`); typecheck exit 0; ESLint 0 errors. The stall's root cause is not verified; the next live run will show the named step.
 - **Acceptance:** submit closes on completion with the release ID; an undersized cover shows the reason; a non-drag way to pick a Project Assets image exists; opening an asset does not discard the wizard; the tools field keeps spaces; disclosure copy is plain.
 
 ### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
