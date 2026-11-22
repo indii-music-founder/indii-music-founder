@@ -1,0 +1,64 @@
+<pasted_content id="a223">
+Paste this into the new local session in the desktop app:
+
+```
+Run a genuine live check of the Publicist's remote MCP tool on production, then record the result. This closes ISSUE-1691 in indii-music-founder.
+
+Context
+- Repo: indii-music-founder (you are in it). Read .agent/REAL_USER_AUTHENTICITY.md first and follow it exactly.
+- Already on main (#984): e2e/mcp-publicist-live.spec.ts (@live) describes this flow. The old mock MCP specs are tagged @external-legacy. ISSUE-1691 in .agent/test_ledger/OPEN_ISSUES_V4.md stays 🟡 PARTIAL until this live run passes.
+- Use the desktop app's built-in browser. It already holds my indii.music sign-in.
+
+Rules
+- No mocks, no route interception, no store writes, no injected auth, no seeded data. Use the visible UI only.
+- Never type or ask for my password. If I'm signed out, show me the browser pane and ask me to sign in myself.
+- Never sign out, change settings or touch anything beyond this one Boardroom request. The run makes one paid AI call; I approve that.
+- Report exactly what you see. A failure is a finding to log, not something to retry until it passes.
+
+Steps
+1. Open https://indii.music in the built-in browser and confirm I'm signed in.
+2. Read data-build-sha on [data-testid="app-container"] and note it.
+3. Open Distribution and read the release catalogue. Pick my newest real release and note its id. If I have none, stop and tell me.
+4. Click "Enter Boardroom" in the sidebar. Seat the Publicist (boardroom-seat-publicist) if it's inactive.
+5. In the prompt (main-prompt-input) send:
+   Publicist: generate a playlist pitch for releaseId "<that id>" targeting a playlist that fits it.
+6. Wait up to about 4 minutes for the Publicist's latest message, then:
+   - Pass needs the text "Executed remote tool: generate_playlist_pitch" and none of: "Step failed", "BACKEND_UNAVAILABLE", "Forbidden".
+   - Read the network log: POST requests to …/mcpEndpoint/message should be https to the production gateway and return 202.
+   - Read the console for [McpClientService] errors.
+   - Take a screenshot of the final message.
+7. Record the result:
+   - Create a branch from the latest origin/main. Never push to main.
+   - Add a dated "Live MCP run" bullet to ISSUE-1691 with the build SHA, time, release id, gateway statuses and the Publicist's message text.
+   - On pass: set Status to ✅ FIXED and add a "- **Closure evidence:**" line.
+   - On fail: keep 🟡 PARTIAL and write the exact failure and its root cause. Never put the words fixed/completed/closed inside a PARTIAL status.
+   - Run: node scripts/validate-issue-ledger.mjs origin/main
+   - Commit, push the branch, and open a ready (not draft) PR.
+8. Tell me in plain words: pass or fail, what you saw, and the PR link.
+
+```
+</pasted_content id="a223">
+
+---
+
+Signed in
+
+---
+
+I'll add a release
+
+---
+
+You have a browser, you do it.
+
+---
+
+You have music and images in the folders. Use anything you have. That's the way this is supposed to work anyway.
+
+---
+
+Yes, log and PR
+
+---
+
+Yes, fix 1692
