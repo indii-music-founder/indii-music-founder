@@ -131,13 +131,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         <option value="draft">Draft</option>
                     </select>
 
-                    <button
-                        onClick={onNewRelease}
-                        className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98]"
-                    >
-                        <Plus size={18} strokeWidth={3} />
-                        New Release
-                    </button>
                 </div>
             </div>
 
@@ -172,35 +165,35 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
             </AnimatePresence>
 
             {/* List/Grid Container */}
-            <div className="min-h-[400px]">
+            <div>
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                         {[1, 2, 3, 4].map(i => (
                             <div key={i} className="h-[180px] bg-gray-900/40 rounded-2xl animate-pulse border border-gray-800/50" />
                         ))}
                     </div>
                 ) : error && releases.length === 0 ? (
-                    <div role="alert" data-testid="release-list-load-error" className="flex flex-col items-center justify-center py-20 bg-red-500/5 rounded-3xl border border-dashed border-red-500/30">
+                    <div role="alert" data-testid="release-list-load-error" className="flex flex-col items-center justify-center py-10 bg-red-500/5 rounded-xl border border-red-500/20">
                         <h3 className="text-base font-bold text-white mb-2">Couldn&apos;t load your releases</h3>
                         <p className="text-gray-400 text-sm max-w-sm text-center">
                             {error.message}
                         </p>
                     </div>
                 ) : releases.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-gray-900/20 rounded-3xl border border-dashed border-gray-800">
-                        <div className="w-20 h-20 bg-gray-900 rounded-3xl flex items-center justify-center mb-6">
-                            <Plus size={32} className="text-gray-700" />
-                        </div>
-                        <h3 className="text-base font-bold text-white mb-2">No Releases Found</h3>
-                        <p className="text-gray-500 text-sm max-w-xs text-center mb-8">
-                            {searchQuery ? `No results for "${searchQuery}". Try a different term or filter.` : "You haven't uploaded any music yet. Start by creating your first release."}
+                    <div data-testid="release-list-empty" className="flex flex-col items-center justify-center py-10 rounded-xl border border-white/5 bg-white/[0.02]">
+                        <h3 className="text-sm font-bold text-white mb-1">{searchQuery ? 'No matching releases' : 'No releases yet'}</h3>
+                        <p className="text-gray-500 text-xs max-w-xs text-center mb-4">
+                            {searchQuery ? `No results for "${searchQuery}". Try a different term or filter.` : 'Upload your master and cover art to start your catalog.'}
                         </p>
-                        <button
-                            onClick={onNewRelease}
-                            className="bg-gray-800 text-white px-8 py-3 rounded-2xl font-bold hover:bg-gray-700 transition-all border border-gray-700"
-                        >
-                            Create Release
-                        </button>
+                        {!searchQuery && (
+                            <button
+                                onClick={onNewRelease}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-gray-200 transition-all active:scale-[0.98]"
+                            >
+                                <Plus size={14} strokeWidth={3} />
+                                Create your first release
+                            </button>
+                        )}
                     </div>
                 ) : viewMode === 'grid' ? (
                     <VirtuosoGrid
@@ -212,7 +205,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                 <div
                                     {...props}
                                     ref={ref}
-                                    className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20"
+                                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pb-20"
                                 />
                             )),
                             Item: React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>((props, ref) => (
