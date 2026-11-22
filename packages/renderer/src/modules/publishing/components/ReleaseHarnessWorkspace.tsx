@@ -202,7 +202,7 @@ export function ReleaseHarnessWorkspace({
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <div className="text-sm text-gray-400">Recommended strategy</div>
-                <h3 className="mt-1 text-xl font-semibold text-white">{result.recommendedStrategy.name}</h3>
+                <h3 className="mt-1 text-base font-semibold text-white">{result.recommendedStrategy.name}</h3>
                 <div className="mt-2 text-sm text-gray-300">
                   Score {result.recommendedStrategy.score} / Primary channel {result.recommendedStrategy.primaryChannel}
                 </div>

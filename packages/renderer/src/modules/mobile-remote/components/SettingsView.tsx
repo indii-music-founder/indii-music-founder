@@ -179,7 +179,7 @@ export default function SettingsView({ desktopState, isPaired, onNavigateTab }: 
     return (
         <div className="space-y-6 pb-8 pt-4">
             <div className="px-2">
-                <h2 className="text-2xl font-bold font-display text-white tracking-tight mb-1">Settings</h2>
+                <h2 className="text-xl font-bold font-display text-white tracking-tight mb-1">Settings</h2>
                 <p className="text-sm text-[#a1a1a6] font-medium font-sans">Control how <span className="indii-name">indii</span> sleeps and wakes.</p>
             </div>
 

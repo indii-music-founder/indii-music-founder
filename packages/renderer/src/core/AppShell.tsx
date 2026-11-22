@@ -277,7 +277,7 @@ function useModuleDeepLink() {
 function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
     return (
         <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
-            <div className="text-5xl">🔒</div>
+            <div className="text-2xl">🔒</div>
             <div className="text-xl font-semibold text-gray-200">Account required</div>
             <p className="text-sm text-gray-500 max-w-xs">
                 This feature requires a free account. Sign up in seconds to unlock distribution, finance, licensing, and more.
@@ -295,7 +295,7 @@ function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
 function UpgradeGate({ onUpgrade }: { onUpgrade: () => void }) {
     return (
         <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
-            <div className="text-5xl">⭐</div>
+            <div className="text-2xl">⭐</div>
             <div className="text-xl font-semibold text-gray-200">Premium feature</div>
             <p className="text-sm text-gray-500 max-w-xs">
                 This feature requires a subscription. Upgrade to Pro or Studio to unlock distribution, finance, licensing, and more.
@@ -345,7 +345,7 @@ function ModuleRenderer({
     if (!ModuleComponent) {
         return (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
-                <div className="text-6xl">404</div>
+                <div className="text-2xl">404</div>
                 <div className="text-xl font-semibold text-gray-300">Module not found</div>
                 <div className="text-sm text-gray-500">The page <code className="text-dept-creative">/{moduleId}</code> doesn't exist.</div>
             </div>
@@ -362,7 +362,7 @@ function ModuleRenderer({
         if (organizationAccess.status === 'error') {
             return (
                 <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center text-gray-400">
-                    <div className="text-5xl">⚠️</div>
+                    <div className="text-2xl">⚠️</div>
                     <div className="text-xl font-semibold text-gray-200">Permissions unavailable</div>
                     <p className="text-sm text-gray-500 max-w-md">
                         Organization access could not be verified, so this module is blocked until verification succeeds.
@@ -380,7 +380,7 @@ function ModuleRenderer({
         if (!organizationAccess.canAccessModule(moduleId)) {
             return (
                 <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center text-gray-400">
-                    <div className="text-5xl">🔒</div>
+                    <div className="text-2xl">🔒</div>
                     <div className="text-xl font-semibold text-gray-200">Organization access denied</div>
                     <p className="text-sm text-gray-500 max-w-md">
                         Your organization role does not grant access to {MODULE_DISPLAY_NAMES[moduleId] || moduleId}.
@@ -406,7 +406,7 @@ function ModuleRenderer({
     if (subPath && /^\d+$/.test(subPath)) {
         return (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
-                <div className="text-6xl">404</div>
+                <div className="text-2xl">404</div>
                 <div className="text-xl font-semibold text-gray-300">Not found</div>
                 <div className="text-sm text-gray-500">
                     <code className="text-dept-creative">/{moduleId}/{subPath}</code> doesn't exist.

@@ -78,7 +78,7 @@ export default function FoundersRecognition() {
                     <Award size={14} /> Founder Recognition
                 </div>
 
-                <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-4">
+                <h1 className="text-xl font-black tracking-tighter text-white mb-4">
                     Meet the <span className="text-amber-400">Founders</span>.
                 </h1>
 

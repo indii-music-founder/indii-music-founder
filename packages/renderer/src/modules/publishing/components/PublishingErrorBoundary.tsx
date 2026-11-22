@@ -82,7 +82,7 @@ export class PublishingErrorBoundary extends Component<Props, State> {
                             <AlertCircle className="w-8 h-8 text-red-500" />
                         </div>
 
-                        <h3 className="text-xl font-bold text-white mb-2">
+                        <h3 className="text-base font-bold text-white mb-2">
                             {componentName ? `${componentName} Error` : 'Something went wrong'}
                         </h3>
 

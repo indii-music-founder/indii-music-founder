@@ -176,7 +176,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                     <div className="bg-[#121212] border border-gray-800 rounded-2xl p-8 shadow-xl">
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                             <div>
-                                <h1 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
+                                <h1 className="text-xl font-black text-white tracking-tighter mb-2 italic">
                                     {metadata.trackTitle}
                                 </h1>
                                 <div className="flex items-center gap-4 text-gray-400 font-bold text-sm tracking-tight">

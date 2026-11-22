@@ -181,7 +181,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                     </div>
                 ) : error && releases.length === 0 ? (
                     <div role="alert" data-testid="release-list-load-error" className="flex flex-col items-center justify-center py-20 bg-red-500/5 rounded-3xl border border-dashed border-red-500/30">
-                        <h3 className="text-xl font-bold text-white mb-2">Couldn&apos;t load your releases</h3>
+                        <h3 className="text-base font-bold text-white mb-2">Couldn&apos;t load your releases</h3>
                         <p className="text-gray-400 text-sm max-w-sm text-center">
                             {error.message}
                         </p>
@@ -191,7 +191,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         <div className="w-20 h-20 bg-gray-900 rounded-3xl flex items-center justify-center mb-6">
                             <Plus size={32} className="text-gray-700" />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">No Releases Found</h3>
+                        <h3 className="text-base font-bold text-white mb-2">No Releases Found</h3>
                         <p className="text-gray-500 text-sm max-w-xs text-center mb-8">
                             {searchQuery ? `No results for "${searchQuery}". Try a different term or filter.` : "You haven't uploaded any music yet. Start by creating your first release."}
                         </p>

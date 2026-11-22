@@ -47,7 +47,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
     return (
         <div className="flex flex-col h-full w-full max-w-5xl mx-auto p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-white">White-Glove Ingestion</h1>
+                <h1 className="text-xl font-bold tracking-tight text-white">White-Glove Ingestion</h1>
                 <p className="text-gray-400">
                     Drop extensive catalogs, multi-track stems, and 4K music videos here. Our automated tools will categorize, extract metadata, and prepare them for your vault.
                 </p>
@@ -65,7 +65,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
                         <UploadCloud size={48} strokeWidth={1.5} />
                     </div>
                     <div className="space-y-1">
-                        <h3 className="text-xl font-semibold text-white">Drag & drop large files here</h3>
+                        <h3 className="text-base font-semibold text-white">Drag & drop large files here</h3>
                         <p className="text-sm text-gray-400 max-w-sm mx-auto">
                             Supports ZIP archives up to 10GB, FLAC stems, 4K ProRes videos, and bulk metadata sheets.
                         </p>

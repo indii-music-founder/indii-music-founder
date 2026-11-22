@@ -262,7 +262,7 @@ function MerchWorkspaceCenter({
                     <div className={contentPadding}>
                         <div className={`mb-6 flex gap-4 ${isFocused ? 'flex-col items-start' : 'items-center justify-between'}`}>
                             <div>
-                                <h2 className={`${isFocused ? 'text-2xl' : 'text-3xl'} mb-1 font-bold text-white`}>Morning, {displayName?.split(' ')[0] || 'Chief'}</h2>
+                                <h2 className={`${isFocused ? 'text-xl' : 'text-xl'} mb-1 font-bold text-white`}>Morning, {displayName?.split(' ')[0] || 'Chief'}</h2>
                                 <p className="text-neutral-400">{products.length > 0 ? 'Review your merchandise catalog and sales.' : 'Start building your merchandise catalog.'}</p>
                             </div>
                             <MerchButton onClick={onDesignClick} glow size="lg" className="rounded-full" data-testid="new-design-btn">
@@ -281,7 +281,7 @@ function MerchWorkspaceCenter({
                                 <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">📈</span></div>
                                 <div className="relative z-10">
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="trend-score-title">Trend Score</h3>
-                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black text-[#FFE135]`}>{stats.trendScore}</span><span className="mb-1 text-sm text-neutral-400">/ 100</span></div>
+                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-2xl' : 'text-2xl'} font-black text-[#FFE135]`}>{stats.trendScore}</span><span className="mb-1 text-sm text-neutral-400">/ 100</span></div>
                                     <div className="mb-2 h-2 w-full rounded-full bg-white/10"><div className="h-2 rounded-full bg-[#FFE135] transition-all duration-500" style={{ width: `${stats.trendScore}%` }} /></div>
                                     <p className="text-xs text-neutral-500">{stats.trendScore > 80 ? 'Design engagement is high.' : stats.trendScore > 0 ? 'Design engagement is measured.' : 'No trend data available yet.'}</p>
                                 </div>
@@ -290,7 +290,7 @@ function MerchWorkspaceCenter({
                                 <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">⚡️</span></div>
                                 <div className="relative z-10">
                                     <h3 className="mb-2 text-lg font-bold text-white" data-testid="production-performance-title">Production Velocity</h3>
-                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>{stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}</span><span className="mb-1 text-sm text-neutral-400">vs last week</span></div>
+                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-2xl' : 'text-2xl'} font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>{stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}</span><span className="mb-1 text-sm text-neutral-400">vs last week</span></div>
                                     <div className="mb-2 flex h-2 gap-1"><div className="flex-1 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${stats.productionVelocity >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all duration-500`} style={{ width: `${Math.min(Math.abs(stats.productionVelocity), 100)}%` }} /></div></div>
                                     <p className="text-xs text-neutral-500">{stats.productionVelocity > 0 ? 'Production pace increased this week.' : stats.productionVelocity < 0 ? 'Production pace decreased this week.' : 'No production pace change reported.'}</p>
                                 </div>
@@ -298,7 +298,7 @@ function MerchWorkspaceCenter({
                         </div>
 
                         <div className="mb-8">
-                            <h3 className="mb-4 text-xl font-bold text-white">Top Performing Products</h3>
+                            <h3 className="mb-4 text-base font-bold text-white">Top Performing Products</h3>
                             <div className={`grid gap-4 ${productGrid}`}>
                                 {topSellingProducts.length > 0 ? topSellingProducts.map(product => <TopSellingProductItem key={product.id} product={product} />) : (
                                     <div className="col-span-full rounded-lg border border-dashed border-white/10 p-8 text-center"><p className="mb-4 text-neutral-500">No product sales data available yet.</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Create Design</MerchButton></div>
@@ -357,7 +357,7 @@ function StatsCard({ title, value, change, icon, compact = false }: { title: str
             </div>
             <div className="space-y-1">
                 <p className="text-sm text-neutral-500 uppercase tracking-widest">{title}</p>
-                <h3 className={`${compact ? 'text-2xl' : 'text-3xl'} font-black text-white`}>{value}</h3>
+                <h3 className={`${compact ? 'text-base' : 'text-base'} font-black text-white`}>{value}</h3>
             </div>
         </MerchCard>
     );

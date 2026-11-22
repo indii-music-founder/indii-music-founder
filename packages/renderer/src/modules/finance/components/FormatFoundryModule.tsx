@@ -208,7 +208,7 @@ export const FormatFoundryModule: React.FC = () => {
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Format Intelligence & Capability Foundry</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">Format Intelligence & Capability Foundry</h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               Clean-Room Engine
             </span>

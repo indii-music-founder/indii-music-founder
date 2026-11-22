@@ -96,7 +96,7 @@ export const ModuleAmbientBackground = () => {
                     indii.music OFFICE
                 </span>
                 <span
-                    className="text-4xl font-display tracking-tighter mt-1"
+                    className="text-2xl font-display tracking-tighter mt-1"
                     style={{ color: theme.accent, textShadow: `0 0 20px ${theme.accent}44` }}
                 >
                     {theme.officeName}

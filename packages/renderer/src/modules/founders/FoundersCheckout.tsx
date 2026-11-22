@@ -129,7 +129,7 @@ export default function FoundersCheckout() {
                         exit={{ opacity: 0, y: -15 }}
                         className="z-10 max-w-3xl w-full text-center mt-12 mb-12 flex flex-col items-center"
                     >
-                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4">Secure Founder Access</h1>
+                        <h1 className="text-3xl font-black tracking-tighter text-white mb-4">Secure Founder Access</h1>
                         <p className="text-gray-400 mb-12 max-w-xl">Choose how you'd like to participate in indii's launch:</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-8">
@@ -166,7 +166,7 @@ export default function FoundersCheckout() {
                         <button onClick={() => setCheckoutState('path-select')} className="mb-4 text-sm text-gray-400 hover:text-white flex items-center gap-1">
                             <ArrowLeft size={14} /> Change Path
                         </button>
-                        <h2 className="text-2xl font-bold text-white mb-2">
+                        <h2 className="text-xl font-bold text-white mb-2">
                             {selectedPath === 'software-purchase' ? 'Founder Software Access Agreement' : 'Founding Support Agreement'}
                         </h2>
                         <p className="text-xs text-gray-500 mb-6">{selectedPath === 'software-purchase' ? 'Software Purchase Agreement' : 'Founding Support Agreement'}</p>
@@ -242,7 +242,7 @@ export default function FoundersCheckout() {
                             Founder Access — ${2500}
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
+                        <h1 className="text-3xl font-black tracking-tighter text-white mb-6">
                             Complete Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-300">Access</span>.
                         </h1>
 
@@ -268,11 +268,11 @@ export default function FoundersCheckout() {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-6 border-b border-white/5">
                                 <div className="text-left">
                                     <span className="text-xs font-mono uppercase tracking-wider text-amber-400">Lifetime Seat Membership</span>
-                                    <h3 className="text-2xl font-bold text-white mt-1">indii Founder Pass</h3>
+                                    <h3 className="text-base font-bold text-white mt-1">indii Founder Pass</h3>
                                     <p className="text-gray-400 text-sm mt-1">Single payment. Infinite utility.</p>
                                 </div>
                                 <div className="text-left md:text-right">
-                                    <div className="text-3xl md:text-4xl font-extrabold text-white font-mono">$2,500.00</div>
+                                    <div className="text-2xl font-extrabold text-white font-mono">$2,500.00</div>
                                     <div className="text-xs text-gray-500 uppercase tracking-widest font-mono mt-1">USD One-Time</div>
                                 </div>
                             </div>
@@ -355,7 +355,7 @@ export default function FoundersCheckout() {
                         className="z-10 flex flex-col items-center justify-center p-8 max-w-md text-center"
                     >
                         <Loader2 size={48} className="animate-spin text-amber-500 mb-6" />
-                        <h3 className="text-xl font-bold text-white mb-2">Connecting to Stripe</h3>
+                        <h3 className="text-base font-bold text-white mb-2">Connecting to Stripe</h3>
                         <p className="text-gray-400 text-sm">
                             Opening secure encryption tunnel to Stripe servers...
                         </p>

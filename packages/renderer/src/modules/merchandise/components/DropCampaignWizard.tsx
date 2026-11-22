@@ -171,7 +171,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                         <div className="w-16 h-16 rounded-full bg-[#FFE135]/20 border border-[#FFE135]/30 flex items-center justify-center">
                                             <CheckCircle2 size={28} className="text-[#FFE135]" />
                                         </div>
-                                        <h3 className="text-xl font-black text-white">Drop Draft Saved</h3>
+                                        <h3 className="text-base font-black text-white">Drop Draft Saved</h3>
                                         <p className="text-sm text-neutral-400 text-center max-w-xs">
                                             <span className="text-white font-bold">{config.dropName || 'Your drop'}</span> is saved as a draft. It is not live, and fan notifications require a notification provider.
                                         </p>

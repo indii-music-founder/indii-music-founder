@@ -77,7 +77,7 @@ export const SessionTimeoutOverlay: React.FC = () => {
                                 <Lock size={32} />
                             </motion.div>
 
-                            <h2 className="text-2xl font-bold text-white tracking-tight mb-2">Workspace Paused</h2>
+                            <h2 className="text-xl font-bold text-white tracking-tight mb-2">Workspace Paused</h2>
                             <p className="text-gray-400 text-sm mb-8 leading-relaxed">
                                 Your workspace was paused due to inactivity. This overlay does not replace account re-authentication.
                             </p>

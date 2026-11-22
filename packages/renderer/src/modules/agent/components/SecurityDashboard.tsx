@@ -32,7 +32,7 @@ export const SecurityDashboard: React.FC = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Security & Governance</h2>
+                    <h2 className="text-xl font-bold tracking-tight">Security & Governance</h2>
                     <p className="text-muted-foreground">
                         Monitor Model Armor shields and review Agent Optimizer suggestions.
                     </p>

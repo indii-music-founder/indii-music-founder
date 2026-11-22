@@ -23,7 +23,7 @@ export default function WorkflowGeneratorModal({ onClose, onGenerate }: Workflow
     return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <Sparkles className="text-green-500" /> Autonomous Workflow Architect
                 </h2>
                 <p className="text-gray-400 mb-4 text-sm">

@@ -166,7 +166,7 @@ export default function PublicistDashboard() {
                     {/* Top HUD Bar */}
                     <header className="h-14 md:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-2 md:gap-4 min-w-0">
-                            <h2 className="text-base md:text-2xl font-bold text-white tracking-tight truncate">
+                            <h2 className="text-base font-bold text-white tracking-tight truncate">
                                 {activeTab === 'campaigns' ? 'Campaigns' : activeTab === 'superfans' ? 'Superfan CRM' : 'Media Network'}
                             </h2>
                             <div className="hidden md:block h-6 w-px bg-white/10 mx-2" />
@@ -296,15 +296,15 @@ export default function PublicistDashboard() {
                                     {/* Stats Summary for Contacts */}
                                     <div className="grid grid-cols-3 gap-6 mb-8">
                                         <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                                            <div className="text-3xl font-black text-white mb-1">{contacts.length}</div>
+                                            <div className="text-2xl font-black text-white mb-1">{contacts.length}</div>
                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Contacts</div>
                                         </div>
                                         <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                                            <div className="text-3xl font-black text-green-400 mb-1">{contacts.filter(c => c.tier === 'Top').length}</div>
+                                            <div className="text-2xl font-black text-green-400 mb-1">{contacts.filter(c => c.tier === 'Top').length}</div>
                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Top Tier</div>
                                         </div>
                                         <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                                            <div className="text-3xl font-black text-blue-400 mb-1">{contacts.filter(c => c.influenceScore > 80).length}</div>
+                                            <div className="text-2xl font-black text-blue-400 mb-1">{contacts.filter(c => c.influenceScore > 80).length}</div>
                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Influencers</div>
                                         </div>
                                     </div>

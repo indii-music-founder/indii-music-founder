@@ -4029,3 +4029,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Module:** Publishing / `useAnalytics` (`users/{uid}/analytics`, `users/{uid}/payouts`)
 - **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, /publishing console: `[usePayouts] Error: FirebaseError: Missing or insufficient permissions.` and `[useAnalytics] Error: FirebaseError: Missing or insufficient permissions.` They read `users/{userProfile.id}/analytics` and `users/{userProfile.id}/payouts` (`useAnalytics.ts:47`, `:144`). ISSUE-1580 (PARTIAL) records rules added for user analytics and payouts. Root cause not established: candidates are `userProfile.id` differing from `auth.uid`, the deployed rules lacking those matches, or the date-range query shape. Not investigated further in this run.
 - **Acceptance:** with a genuine account, Publishing → Insights and Royalties load without permission errors (empty states allowed when there is no data).
+
+### ISSUE-1701: Full pages use oversized display type (up to text-7xl) across the Studio
+
+- **Status:** 🟡 PARTIAL — resized on branch `claude/page-text-scale`; not yet seen on production
+- **Severity:** 🟡 MEDIUM
+- **Module:** Studio-wide (Dashboard widgets, Merch, Founders, AppShell, Publicist, Settings, Distribution, Publishing, and others)
+- **Evidence:** owner preference 2026-11-22 ("I don't like big text", including full pages), after ISSUE-1699/1700. Class sweep of `packages/renderer/src/{modules,components,core}` found 79 uses of `text-3xl`+ (up to `md:text-7xl`), e.g. seven Dashboard stat widgets at `text-5xl`, Standard Merch hero at `text-5xl md:text-7xl`, Founders headlines at `md:text-6xl`, AppShell 404/lock screens at `text-5xl`/`text-6xl`.
+- **Fix (branch):** compact scale applied by rule across 92 files (145 lines): `h1`/`h2` → `text-xl`; `h3` → `text-base`; any other `text-3xl`+ (stat numbers, glyphs) → `text-2xl`; responsive enlargers (`md:text-…`) removed on those lines. Exceptions: Founders checkout `h1` kept at `text-3xl` (sales page); faint decorative glyphs (`opacity-5/10/20`) untouched; the eight dialogs owned by #993/#994 skipped. Class-only, no behavior change.
+- **Verification:** ESLint clean on all 92 files, `npm run typecheck` exit 0, 345 suites in the touched directories 1860/1860. No test asserts on these classes. Structural only; no visual check on a deployed build.
+- **Acceptance:** on production, Dashboard, Merch, Founders, Publicist, Settings and the AppShell error screens show no heading above `text-xl` (Founders `text-3xl`) and no stat above `text-2xl`, with nothing clipped or misaligned (screenshot per page at 1440×900 and 375 wide).

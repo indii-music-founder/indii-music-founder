@@ -41,7 +41,7 @@ export const EmptyActionState = React.forwardRef<HTMLDivElement, EmptyActionStat
                     </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                <h3 className="text-base font-bold text-white mb-3 tracking-tight">
                     {title}
                 </h3>
 

@@ -60,7 +60,7 @@ export function ModuleDashboard({
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 flex-shrink-0">
                     <div>
-                        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3 tracking-tight font-main">
+                        <h1 className="text-xl font-bold mb-2 flex items-center gap-3 tracking-tight font-main">
                             {icon && (
                                 <span className={`${colors.text} drop-shadow-[0_0_8px_var(--dept-color)]`}>
                                     {icon}

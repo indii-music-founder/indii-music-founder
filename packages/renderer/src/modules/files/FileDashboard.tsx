@@ -323,7 +323,7 @@ export default function FileDashboard() {
             {/* Left Sidebar (Internal Navigation) */}
             <div className="w-64 border-r border-white/5 bg-surface/30 backdrop-blur-xl flex flex-col z-10">
                 <div className="p-6">
-                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-green-500">
+                    <h1 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-green-500">
                         ASSETS
                     </h1>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">Project Vault</p>
@@ -525,7 +525,7 @@ export default function FileDashboard() {
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
                                     {hasActiveFilters ? <Search size={32} className="opacity-20" /> : <Folder size={32} className="opacity-20" />}
                                 </div>
-                                <h3 className="mb-2 text-xl font-semibold text-gray-300">
+                                <h3 className="mb-2 text-base font-semibold text-gray-300">
                                     {hasActiveFilters ? 'No matching files' : 'No project files yet'}
                                 </h3>
                                 {hasActiveFilters ? (
@@ -605,7 +605,7 @@ export default function FileDashboard() {
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
                                     <Trash2 size={32} className="opacity-20" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-300 mb-2">Trash Vault is empty</h3>
+                                <h3 className="text-base font-semibold text-gray-300 mb-2">Trash Vault is empty</h3>
                                 <p className="text-sm">Items moved to trash will remain here safely until you choose to restore or delete them.</p>
                             </div>
                         ) : (

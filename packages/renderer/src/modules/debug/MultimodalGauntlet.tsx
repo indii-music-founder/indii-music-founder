@@ -121,7 +121,7 @@ export default function MultimodalGauntlet() {
     return (
         <div className="p-8 max-w-4xl mx-auto space-y-8 bg-background min-h-screen">
             <header className="space-y-2">
-                <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-green-400 to-pink-600">
+                <h1 className="text-xl font-black tracking-tighter text-transparent bg-clip-text bg-linear-to-r from-green-400 to-pink-600">
                     MULTIMODAL GAUNTLET
                 </h1>
                 <p className="text-muted-foreground font-mono text-sm">

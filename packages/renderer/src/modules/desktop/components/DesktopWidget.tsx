@@ -10,7 +10,7 @@ export const DesktopWidget: React.FC = () => {
             <div className="flex justify-between items-start z-10">
                 <div>
                     <h3 className="text-xs text-white/50 font-medium uppercase tracking-wider mb-1">Daily Streams</h3>
-                    <p className="text-3xl font-bold text-white tracking-tight">--</p>
+                    <p className="text-2xl font-bold text-white tracking-tight">--</p>
                 </div>
                 <div className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full font-medium flex items-center gap-1">
                     <Activity size={12} /> --

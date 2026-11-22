@@ -35,7 +35,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                             <div className="p-1.5 rounded-lg bg-dept-royalties/10 text-dept-royalties">
                                 <TrendingUp size={16} />
                             </div>
-                            <h3 className="text-xl font-bold text-white tracking-tight">Revenue Velocity</h3>
+                            <h3 className="text-base font-bold text-white tracking-tight">Revenue Velocity</h3>
                         </div>
                         <p className="text-gray-500 text-xs font-medium uppercase tracking-widest ml-1">Volume over 4 week period</p>
                     </div>
@@ -81,7 +81,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                             <div className="p-1.5 rounded-lg bg-dept-creative/10 text-dept-creative">
                                 <BarChart3 size={16} />
                             </div>
-                            <h3 className="text-xl font-bold text-white tracking-tight">Active Cycle</h3>
+                            <h3 className="text-base font-bold text-white tracking-tight">Active Cycle</h3>
                         </div>
                         <p className="text-gray-500 text-xs font-medium uppercase tracking-widest ml-1">Daily Conversion Performance</p>
                     </div>

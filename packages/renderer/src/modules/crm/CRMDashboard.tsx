@@ -75,7 +75,7 @@ export default function CRMDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 data-testid="crm-heading" className="text-3xl font-bold bg-gradient-to-r from-text-primary via-text-primary to-text-secondary bg-clip-text">Superfan CRM</h1>
+                    <h1 data-testid="crm-heading" className="text-xl font-bold bg-gradient-to-r from-text-primary via-text-primary to-text-secondary bg-clip-text">Superfan CRM</h1>
                     <p className="text-text-secondary mt-1 text-sm md:text-base">Manage your SoundLocker campaign ecosystem, sales, and fan drops.</p>
                 </div>
                 <button

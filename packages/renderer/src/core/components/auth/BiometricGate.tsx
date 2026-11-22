@@ -107,7 +107,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold tracking-tight">Locked</h2>
+                            <h2 className="text-xl font-bold tracking-tight">Locked</h2>
                             <p className="text-muted-foreground">
                                 Verify your identity to access indii.music
                             </p>

@@ -45,7 +45,7 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                     </button>
                     <div className="flex-1">
                         <div className="flex items-center gap-3">
-                            <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">{campaign.title}</h1>
+                            <h1 className="text-lg font-bold text-white tracking-tight">{campaign.title}</h1>
                             <span
                                 data-testid="campaign-status-badge"
                                 className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-[#FFB800]/10 border-[#FFB800]/30 text-[#FFD700]' :

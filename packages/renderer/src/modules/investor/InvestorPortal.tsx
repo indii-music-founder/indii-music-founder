@@ -16,7 +16,7 @@ export default function InvestorPortal() {
             <div className="flex h-full w-full items-center justify-center bg-black p-8 text-white">
                 <section className="w-full max-w-2xl rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center">
                     <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-amber-300" />
-                    <h1 className="text-2xl font-bold">Investor portal unavailable</h1>
+                    <h1 className="text-xl font-bold">Investor portal unavailable</h1>
                     <p className="mt-3 text-sm leading-relaxed text-neutral-300">
                         This account is signed in{user?.email ? ` as ${user.email}` : ''}, but indii has no
                         verified investor entitlement, cap-table source, valuation feed, or advisory channel

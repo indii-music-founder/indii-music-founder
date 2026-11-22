@@ -128,7 +128,7 @@ export const EarningsDashboard: React.FC = () => {
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
                 <ArrowUpRight size={24} className="rotate-45" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Fetch Error</h3>
+            <h3 className="text-base font-bold text-white mb-2">Fetch Error</h3>
             <p className="text-gray-500 max-w-sm text-center px-6">{error}</p>
         </div>
     );
@@ -138,7 +138,7 @@ export const EarningsDashboard: React.FC = () => {
             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
                 <DollarSign size={24} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">No Reports Found</h3>
+            <h3 className="text-base font-bold text-white mb-2">No Reports Found</h3>
             <p className="text-gray-500 max-w-sm text-center px-6">
                 Your royalty reports haven&apos;t arrived yet. Once your distributor processes your streams, they&apos;ll appear here automatically.
             </p>

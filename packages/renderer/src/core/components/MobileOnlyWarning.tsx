@@ -27,7 +27,7 @@ export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
                 <Monitor className="w-12 h-12 text-neon-purple opacity-50" />
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-white mb-3">
                 {featureName}
             </h2>
 

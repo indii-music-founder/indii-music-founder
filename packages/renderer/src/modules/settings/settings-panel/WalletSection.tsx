@@ -223,7 +223,7 @@ export const WalletSection: React.FC = () => {
                             <span>Available Balance</span>
                         </div>
                         <div className="flex items-baseline gap-3">
-                            <span className="text-4xl md:text-5xl font-black text-white tracking-tight" data-testid="wallet-balance-amount">
+                            <span className="text-2xl font-black text-white tracking-tight" data-testid="wallet-balance-amount">
                                 {loading ? '...' : balance.toLocaleString()}
                             </span>
                             <span className="text-lg font-medium text-amber-300/80">Credits</span>
@@ -320,7 +320,7 @@ export const WalletSection: React.FC = () => {
                                 <div>
                                     <h4 className="text-base font-bold text-white mb-1">{pack.name}</h4>
                                     <div className="flex items-baseline gap-2 mb-4">
-                                        <span className="text-3xl font-extrabold text-white">${priceUsd}</span>
+                                        <span className="text-2xl font-extrabold text-white">${priceUsd}</span>
                                         <span className="text-xs text-slate-400">USD</span>
                                     </div>
 

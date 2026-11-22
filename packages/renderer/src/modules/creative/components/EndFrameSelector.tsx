@@ -22,7 +22,7 @@ export const EndFrameSelector: React.FC<EndFrameSelectorProps> = ({
     return (
         <div className="absolute inset-0 bg-black/80 z-10 flex flex-col p-8">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-white">Select End Frame</h3>
+                <h3 className="text-base font-bold text-white">Select End Frame</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-white">
                     <X size={24} />
                 </button>

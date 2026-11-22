@@ -125,7 +125,7 @@ export function CustomDashboard() {
                         </div>
                     </div>
                     <div className="min-w-0">
-                        <h2 className="text-xl font-black uppercase tracking-tight text-white @lg:text-2xl">{t('dashboard.custom.title')}</h2>
+                        <h2 className="text-xl font-black uppercase tracking-tight text-white @">{t('dashboard.custom.title')}</h2>
                         <div className="mt-0.5 flex items-center gap-2">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
                             <p className="truncate text-[9px] font-black uppercase tracking-[0.14em] text-emerald-400 @lg:text-[10px] @lg:tracking-[0.2em]">{t('dashboard.custom.activeWidgets', { count: widgets.length })}</p>
@@ -283,7 +283,7 @@ export function CustomDashboard() {
                         <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
                             <LayoutDashboard size={40} className="text-gray-700" />
                         </div>
-                        <h3 className="text-xl font-black text-white uppercase tracking-tight">{t('dashboard.custom.emptyTitle')}</h3>
+                        <h3 className="text-base font-black text-white uppercase tracking-tight">{t('dashboard.custom.emptyTitle')}</h3>
                         <p className="text-sm text-gray-500 mt-2 max-w-xs">{t('dashboard.custom.emptySubtitle')}</p>
                         <button
                             onClick={() => setShowPicker(true)}

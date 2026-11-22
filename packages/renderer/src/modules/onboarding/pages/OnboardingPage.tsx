@@ -127,7 +127,7 @@ export default function OnboardingPage() {
                         <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-6 shadow-xl">
                             <span className="text-black font-black text-2xl">i</span>
                         </div>
-                        <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">Choose Your Career Path</h1>
+                        <h1 className="text-xl font-extrabold tracking-tight">Choose Your Career Path</h1>
                         <p className="text-gray-400 text-base lg:text-lg max-w-xl mx-auto">Select a path to automatically seat the most relevant specialist agents in your boardroom and customize your workspace.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
                             {[

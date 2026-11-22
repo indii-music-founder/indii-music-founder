@@ -157,7 +157,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
 
                             <CardContent className="flex-1 flex flex-col justify-center gap-4">
                                 <div className="bg-bg-dark p-4 rounded-lg border border-gray-800">
-                                    <div className="text-3xl font-mono text-white font-bold">{totalMiles.toLocaleString()} <span className="text-xs text-gray-600">mi</span></div>
+                                    <div className="text-2xl font-mono text-white font-bold">{totalMiles.toLocaleString()} <span className="text-xs text-gray-600">mi</span></div>
                                     <div className="text-sm text-gray-500 font-mono mt-2">No tax or reimbursement status assigned</div>
                                 </div>
                             </CardContent>

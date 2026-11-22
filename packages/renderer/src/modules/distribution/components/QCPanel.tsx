@@ -465,7 +465,7 @@ export const QCPanel: React.FC = () => {
             {/* Header with Sub-Tab Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <Activity className="text-dept-distribution" size={24} />
                         Pre-Flight Audio & Acoustic QC
                     </h2>
@@ -690,7 +690,7 @@ export const QCPanel: React.FC = () => {
                                 <span className="text-xs font-bold uppercase tracking-wider">Integrated Loudness (Estimated LUFS)</span>
                             </div>
                             <div className="flex items-end gap-3 mb-4">
-                                <span className="text-4xl font-mono text-white tracking-tighter">
+                                <span className="text-2xl font-mono text-white tracking-tighter">
                                     {technicalFeatures.audit.integratedLoudness.toFixed(1)}
                                 </span>
                                 <span className="text-lg text-white/50 pb-0.5">LUFS</span>
@@ -733,7 +733,7 @@ export const QCPanel: React.FC = () => {
                                 <span className="text-xs font-bold uppercase tracking-wider">True Peak (Approximation)</span>
                             </div>
                             <div className="flex items-end gap-3 mb-4">
-                                <span className="text-4xl font-mono text-white tracking-tighter">
+                                <span className="text-2xl font-mono text-white tracking-tighter">
                                     {technicalFeatures.audit.peakLevel.toFixed(2)}
                                 </span>
                                 <span className="text-lg text-white/50 pb-0.5">dBTP</span>

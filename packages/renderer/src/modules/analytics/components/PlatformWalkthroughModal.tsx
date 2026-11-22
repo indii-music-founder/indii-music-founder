@@ -483,7 +483,7 @@ export const PlatformWalkthroughModal: React.FC<PlatformWalkthroughModalProps> =
                             <Compass size={22} className="text-[#FFD700]" />
                         </div>
                         <div>
-                            <h2 id={titleId} className="text-lg md:text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                            <h2 id={titleId} className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                                 Platform Connection Copilot
                                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">
                                     Guided Walkthrough
@@ -541,7 +541,7 @@ export const PlatformWalkthroughModal: React.FC<PlatformWalkthroughModalProps> =
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2.5">
-                                    <h3 className="text-xl font-bold text-white tracking-tight">
+                                    <h3 className="text-base font-bold text-white tracking-tight">
                                         {currentGuide.name}
                                     </h3>
                                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${currentGuide.badgeBg} ${currentGuide.accentColor} border ${currentGuide.borderColor}`}>

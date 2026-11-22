@@ -48,7 +48,7 @@ export const TraceViewer = React.memo(() => {
     return (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full w-full p-4 space-y-4">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
+                <h2 className="text-xl font-bold tracking-tight">Agent Observability</h2>
                 <div className="w-full max-w-[400px]">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger

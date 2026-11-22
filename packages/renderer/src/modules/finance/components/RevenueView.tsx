@@ -146,7 +146,7 @@ export const RevenueView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-white" data-testid="revenue-overview-title">Revenue Overview</h2>
+          <h2 className="text-xl font-bold text-white" data-testid="revenue-overview-title">Revenue Overview</h2>
           <p className="text-gray-400 text-sm mt-1">Real-time aggregation from streaming, merch, and social sales.</p>
         </div>
         <div className="flex items-center gap-3">

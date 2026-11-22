@@ -284,7 +284,7 @@ export default function AutonomousLab() {
                         <Sparkles className="w-3.5 h-3.5 text-blue-400" />
                         <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Generative Engine</span>
                     </div>
-                    <h1 className="text-4xl font-light tracking-tight text-white">
+                    <h1 className="text-xl font-light tracking-tight text-white">
                         Sequence Architect
                     </h1>
                     <p className="text-sm text-gray-400 max-w-xl font-light leading-relaxed">

@@ -283,7 +283,7 @@ const AgentDashboard: React.FC = () => {
                                     {/* Hero Section */}
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <h1 className="text-4xl font-bold text-white tracking-tight">{t('agent.scout.title')}</h1>
+                                            <h1 className="text-xl font-bold text-white tracking-tight">{t('agent.scout.title')}</h1>
                                             <p className="text-lg text-slate-400 max-w-2xl">
                                                 {t('agent.scout.description')}
                                             </p>
@@ -404,7 +404,7 @@ const AgentDashboard: React.FC = () => {
                         {activeTab === 'loops' && (
                             <div data-testid="agent-content-loops" className="absolute inset-0 overflow-y-auto custom-scrollbar p-8 bg-[--background]">
                                 <div className="max-w-4xl mx-auto space-y-6">
-                                    <h1 className="text-2xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
+                                    <h1 className="text-xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
                                     <AgentLoopMonitor />
                                 </div>
                             </div>

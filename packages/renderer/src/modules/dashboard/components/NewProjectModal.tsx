@@ -65,7 +65,7 @@ const NewProjectModal = createCallable<NewProjectModalProps, string | null>(({
         aria-labelledby="modal-title"
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 id="modal-title" className="text-2xl font-bold text-white">
+          <h2 id="modal-title" className="text-xl font-bold text-white">
             Create New Project
           </h2>
           <Button

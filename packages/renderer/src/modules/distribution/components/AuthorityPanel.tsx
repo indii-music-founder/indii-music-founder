@@ -120,7 +120,7 @@ export const AuthorityPanel: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold text-white">Authority Layer</h2>
+                <h2 className="text-xl font-bold text-white">Authority Layer</h2>
                 <p className="text-gray-400">
                     Industrial identity management. Generate ISRCs, UPCs, and release delivery metadata for configured distribution routes.
                 </p>
