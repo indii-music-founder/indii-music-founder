@@ -1,0 +1,15 @@
+# Selected text:
+
+## Selection 1
+The second run confirmed the mock user and profile are stable. The apparent budget error came from Playwright reusing an already-running local dev server without the test-harness environment; CI starts that server with VITE_E2E=true, which enables the test-only cost bypass. I’m correcting the local verification setup to match CI rather than changing product billing behavior.
+
+## My request:
+Can you do something to make sure that Playwright doesn't do this type of thing again? I think it does it often actually
+
+---
+
+do it
+
+---
+
+@end.md
