@@ -4126,7 +4126,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1707: Create Release wizard: submit spinner never ends; silent cover rejection; asset drop and tools field problems
 
-- **Status:** 🟡 PARTIAL — four of six items fixed on branch `claude/release-wizard-submit`; not yet seen on production
+- **Status:** 🟡 PARTIAL — four of six items addressed on branch `claude/release-wizard-submit`; not yet seen on production
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / `ReleaseWizard`, `useDDEXRelease`
 - **Evidence:** live run 2026-11-22 (ISSUE-1691), build `e0cae2eba`.
