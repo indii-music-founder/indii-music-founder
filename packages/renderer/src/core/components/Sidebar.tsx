@@ -46,7 +46,8 @@ const NavItem = React.memo(function NavItem({
                     <button
                         onClick={() => onNavigate(item.id)}
                         className={cn(
-                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
+                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
+                            isSidebarOpen ? "px-3" : "justify-center px-0",
                             isActive
                                 ? `${colors.text} font-bold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
                                 : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
@@ -61,7 +62,7 @@ const NavItem = React.memo(function NavItem({
                         aria-label={!isSidebarOpen ? item.label : undefined}
                     >
                         {/* Active Indicator Pillar */}
-                        {isActive && (
+                        {isActive && isSidebarOpen && (
                             <motion.div
                                 layoutId="active-pill"
                                 className="absolute left-0 top-0 w-2.5 h-full opacity-100 rounded-r-md"
@@ -228,7 +229,9 @@ export default function Sidebar() {
             className={cn(
                 "hidden md:flex h-full flex-col flex-shrink-0 relative z-20",
                 "backdrop-blur-2xl border-r border-white/5",
-                "transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
+                "transition-colors duration-500 overflow-y-auto overflow-x-hidden shadow-2xl",
+                // Collapsed rail: no visible scrollbar eating the 80px column (it scrolls by wheel/touch).
+                isSidebarOpen ? "custom-scrollbar" : "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             )}
             style={{
                 backgroundColor: 'var(--color-surface-elevated, rgba(13, 17, 23, 0.6))'

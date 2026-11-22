@@ -4,12 +4,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
     Music,
     Plus,
-    AlertCircle,
     Clock,
     Globe,
     DollarSign,
     Book,
-    Radio,
     FileText
 } from 'lucide-react';
 import { useStore } from '@/core/store';
@@ -24,9 +22,9 @@ import { DepartmentJourneyBar } from '@/components/layout/DepartmentJourneyBar';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
 // ISSUE-1441: use the canonical panels (publishing carried drifted forks).
-import { DistributorConnectionsPanel } from '@/modules/distribution/components/DistributorConnectionsPanel';
 import { EarningsDashboard } from '@/modules/finance/components/EarningsDashboard';
 import { ReleaseListView } from './components/ReleaseListView';
+import { DistributorStrip } from './components/DistributorStrip';
 import { ReleaseDetailPage } from './components/ReleaseDetailPage';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import { PayoutHistory } from './components/PayoutHistory';
@@ -38,19 +36,14 @@ import { LayoutGrid, BarChart2, CreditCard, Upload, ScrollText } from 'lucide-re
 import { MechanicalRoyaltyPanel } from './components/MechanicalRoyaltyPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
-import type { ClientReleaseRecord } from './hooks/useReleases';
 import { logger } from '@/utils/logger';
 
 /* ================================================================== */
-/*  Publishing Dashboard — Three-Panel Layout                          */
+/*  Publishing Dashboard — single full-width column (ISSUE-1703)       */
 /*                                                                     */
-/*  ┌──────────┬───────────────────────────┬──────────────┐            */
-/*  │  LEFT    │    CENTER                 │   RIGHT      │            */
-/*  │  Stats   │    Tabs (Catalog/         │   Distributor │            */
-/*  │  Active  │    Analytics/Finance)     │   Connections │            */
-/*  │  Release │    + Release Detail       │   Earnings    │            */
-/*  │  Actions │                           │   Revenue     │            */
-/*  └──────────┴───────────────────────────┴──────────────┘            */
+/*  Header: journeys · Import DSR · New Release                        */
+/*  Stats strip → Distributors row → Tabs (Catalog / Insights /        */
+/*  Royalties / Mechanical) or the Release Detail page.                */
 /* ================================================================== */
 
 export default function PublishingDashboard() {
@@ -124,25 +117,7 @@ export default function PublishingDashboard() {
                 bgBlobClass="bg-blue-500/8"
                 iconBgClass="bg-linear-to-br from-blue-500 to-blue-400"
                 iconShadowClass="shadow-blue-500/20"
-                leftPanel={<><aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                    <ReleaseStatsPanel stats={stats} earnings={finance.earningsSummary?.totalNetRevenue} />
-                    <ActiveReleasePanel releases={releases} onSelect={setSelectedReleaseId} />
-                    <PendingActionsPanel
-                        pendingCount={stats.pending}
-                        draftCount={stats.draft}
-                        onNewRelease={() => setIsWizardOpen(true)}
-                        onImportDSR={() => setIsDSRModalOpen(true)}
-                    />
-                </aside></>}
-                rightPanel={<><aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                    <PerformancePanel releases={releases} />
-                    <PublishingErrorBoundary componentName="Distributor Connections">
-                        <DistributorConnectionsPanel />
-                    </PublishingErrorBoundary>
-                    <PublishingErrorBoundary componentName="Earnings Dashboard">
-                        <EarningsDashboard />
-                    </PublishingErrorBoundary>
-                </aside></>}
+                leftPanel={null}
                 actions={
                     <div className="flex items-center gap-2">
                         <DepartmentJourneyBar
@@ -157,6 +132,14 @@ export default function PublishingDashboard() {
                             accentColorClass="text-blue-300 border-blue-400/25 bg-blue-400/10 hover:bg-blue-400/20"
                         />
                         <button
+                            type="button"
+                            onClick={() => setIsDSRModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-md border border-white/10 text-gray-300 hover:text-white hover:bg-white/5 transition-all font-bold text-[11px]"
+                        >
+                            <Upload size={12} />
+                            Import DSR
+                        </button>
+                        <button
                             onClick={() => setIsWizardOpen(true)}
                             className="group flex items-center gap-1.5 px-3 py-1 bg-white text-black rounded-md hover:bg-gray-200 transition-all font-bold text-[11px] active:scale-[0.98]"
                         >
@@ -166,6 +149,15 @@ export default function PublishingDashboard() {
                     </div>
                 }
             >
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                {!selectedReleaseId && (
+                    <div className="px-4 md:px-6 pt-4 space-y-3">
+                        <ReleaseStatsStrip stats={stats} earnings={finance.earningsSummary?.totalNetRevenue} />
+                        <PublishingErrorBoundary componentName="Distributor Connections">
+                            <DistributorStrip />
+                        </PublishingErrorBoundary>
+                    </div>
+                )}
                 <AnimatePresence mode="wait">
                             {selectedReleaseId && selectedRelease ? (
                                 <motion.div
@@ -283,6 +275,9 @@ export default function PublishingDashboard() {
                                                         Import DSR
                                                     </button>
                                                 </div>
+                                                <PublishingErrorBoundary componentName="Earnings Dashboard">
+                                                    <EarningsDashboard />
+                                                </PublishingErrorBoundary>
                                                 <PayoutHistory payouts={payouts} loading={payoutsLoading} />
                                             </TabsContent>
                                             <TabsContent value="mechanical" className="mt-0 outline-none">
@@ -297,6 +292,7 @@ export default function PublishingDashboard() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+                </div>
             </ThreePanelDashboard>
 
 <AnimatePresence>
@@ -346,141 +342,34 @@ export default function PublishingDashboard() {
 }
 
 /* ================================================================== */
-/*  Left Panel Widgets                                                  */
+/*  Stats strip (ISSUE-1703)                                            */
 /* ================================================================== */
 
-function ReleaseStatsPanel({ stats, earnings }: { stats: { total: number; live: number; draft: number; pending: number }; earnings?: number }) {
+function ReleaseStatsStrip({ stats, earnings }: { stats: { total: number; live: number; draft: number; pending: number }; earnings?: number }) {
+    const liveRate = stats.total > 0 ? Math.round((stats.live / stats.total) * 100) : 0;
     const items = [
-        { label: 'Total Releases', value: stats.total.toString(), icon: Music, color: 'text-blue-400' },
-        { label: 'Live on DSPs', value: stats.live.toString(), icon: Globe, color: 'text-green-400' },
-        { label: 'Pending Review', value: stats.pending.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Total Earnings', value: earnings ? `$${earnings.toFixed(2)}` : '$0.00', icon: DollarSign, color: 'text-green-400' },
+        { label: 'Releases', value: stats.total.toString(), icon: Music, color: 'text-blue-400' },
+        { label: 'Live on DSPs', value: stats.live.toString(), detail: stats.total > 0 ? `${liveRate}% of catalog` : undefined, icon: Globe, color: 'text-dept-publishing' },
+        { label: 'Pending review', value: stats.pending.toString(), icon: Clock, color: 'text-yellow-400' },
+        { label: 'Drafts', value: stats.draft.toString(), icon: FileText, color: 'text-gray-400' },
+        // No earnings record yet shows a dash, not a reported $0.00.
+        { label: 'Net earnings (30d)', value: typeof earnings === 'number' ? `$${earnings.toFixed(2)}` : '—', icon: DollarSign, color: 'text-green-400' },
     ];
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Release Stats</h3>
-            <div className="space-y-2">
-                {items.map((s) => (
-                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                            <s.icon size={14} className={s.color} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{s.value}</p>
-                            <p className="text-[10px] text-gray-500">{s.label}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-type _ReleaseRow = { id: string; status: string; metadata?: { trackTitle?: string; artistName?: string;[key: string]: unknown } };
-function ActiveReleasePanel({ releases, onSelect }: { releases: ClientReleaseRecord[]; onSelect: (id: string) => void }) {
-    const liveReleases = releases.filter(r => r.status === 'live').slice(0, 4);
-
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Active Releases</h3>
-            {liveReleases.length === 0 ? (
-                <p className="text-xs text-gray-600 px-1">No live releases yet.</p>
-            ) : (
-                <div className="space-y-1">
-                    {liveReleases.map((r) => (
-                        <button
-                            key={r.id}
-                            onClick={() => onSelect(r.id)}
-                            className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
-                        >
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-xs text-white truncate">{r.metadata?.trackTitle || 'Untitled'}</p>
-                                <p className="text-[10px] text-gray-600">{r.metadata?.artistName || 'Unknown'}</p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
-function PendingActionsPanel({ pendingCount, draftCount, onNewRelease, onImportDSR }: {
-    pendingCount: number; draftCount: number; onNewRelease: () => void; onImportDSR: () => void;
-}) {
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
-            <div className="space-y-2">
-                {pendingCount > 0 && (
-                    <div className="p-2.5 rounded-lg bg-yellow-500/5 border border-yellow-500/10 text-xs text-yellow-300 flex items-start gap-2">
-                        <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
-                        <span>{pendingCount} release{pendingCount > 1 ? 's' : ''} pending review</span>
-                    </div>
-                )}
-                {draftCount > 0 && (
-                    <div className="p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/10 text-xs text-blue-300 flex items-start gap-2">
-                        <FileText size={12} className="flex-shrink-0 mt-0.5" />
-                        <span>{draftCount} draft{draftCount > 1 ? 's' : ''} in progress</span>
-                    </div>
-                )}
-                <button
-                    onClick={onNewRelease}
-                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium"
-                >
-                    <Plus size={12} /> New Release
-                </button>
-                <button
-                    onClick={onImportDSR}
-                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium"
-                >
-                    <Upload size={12} /> Import DSR
-                </button>
-            </div>
-        </div>
-    );
-}
-
-/* ================================================================== */
-/*  Right Panel Widgets                                                 */
-/* ================================================================== */
-
-function PerformancePanel({ releases }: { releases: ClientReleaseRecord[] }) {
-    const liveCount = releases.filter(r => r.status === 'live').length;
-    const totalCount = releases.length;
-    const pct = totalCount > 0 ? Math.round((liveCount / totalCount) * 100) : 0;
-
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Performance (30d)</h3>
-            <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-gray-500 font-bold">Catalog Live Rate</span>
-                        <span className="text-[10px] text-green-400 font-bold">{pct}%</span>
-                    </div>
-                    <p className="text-lg font-black text-white">{liveCount} / {totalCount}</p>
-                    <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
-                        <motion.div
-                            className="h-full bg-linear-to-r from-blue-500 to-blue-400 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 1, delay: 0.3 }}
-                        />
+        <dl data-testid="publishing-stats-strip" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {items.map(item => (
+                <div key={item.label} className="flex items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+                    <item.icon size={14} className={`shrink-0 ${item.color}`} aria-hidden="true" />
+                    <div className="min-w-0">
+                        <dt className="text-[10px] font-bold uppercase tracking-widest text-gray-500 truncate">{item.label}</dt>
+                        <dd className="text-sm font-black text-white leading-tight">
+                            {item.value}
+                            {item.detail && <span className="ml-1.5 text-[10px] font-bold text-gray-500">{item.detail}</span>}
+                        </dd>
                     </div>
                 </div>
-                <div className="p-3 rounded-lg bg-white/[0.02]">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-gray-500 font-bold">Distribution Health</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Radio size={12} className="text-green-400" />
-                        <span className="text-xs text-green-400 font-bold">All Systems Nominal</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+            ))}
+        </dl>
     );
 }

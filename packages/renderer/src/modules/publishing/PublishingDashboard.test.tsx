@@ -182,8 +182,10 @@ describe('PublishingDashboard', () => {
 
         render(<PublishingDashboard />);
 
-        expect(screen.getByText('No Releases Found')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Create Release/i })).toBeInTheDocument();
+        expect(screen.getByText('No releases yet')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create your first release/i })).toBeInTheDocument();
+        // ISSUE-1703: one New Release action in the header, not one per panel.
+        expect(screen.getAllByRole('button', { name: /^New Release$/i })).toHaveLength(1);
     });
 
     it('renders release cards and handles bulk selection', async () => {
@@ -398,7 +400,7 @@ describe('PublishingDashboard', () => {
         });
     });
 
-    it('renders the canonical distribution connections panel in the rail (ISSUE-1441)', () => {
+    it('renders the stats strip and distributor row in the single column (ISSUE-1703)', () => {
         mockUseReleases.mockReturnValue({
             releases: [],
             loading: false,
@@ -410,9 +412,10 @@ describe('PublishingDashboard', () => {
 
         render(<PublishingDashboard />);
 
-        // ISSUE-1441: publishing's drifted DistributorConnectionsPanel fork (with its
-        // 'Manage Connections' jump button) was deleted; the canonical distribution
-        // panel manages connections in place and is what actually mounts here.
-        expect(screen.getByTestId('distro-connections-list')).toBeInTheDocument();
+        // ISSUE-1703: no side rails; stats and distributor connections sit above the tabs.
+        expect(screen.getByTestId('publishing-stats-strip')).toBeInTheDocument();
+        expect(screen.getByTestId('publishing-distributor-strip')).toBeInTheDocument();
+        expect(screen.queryByTestId('adaptive-left-rail')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('adaptive-right-rail')).not.toBeInTheDocument();
     });
 });
