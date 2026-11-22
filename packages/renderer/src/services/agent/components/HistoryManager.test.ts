@@ -133,6 +133,8 @@ describe('HistoryManager compaction', () => {
         const fallback = await manager.getCompiledView();
         expect(fallback).toContain('Recent Exchange');
         expect(fallback).not.toContain('Conversation Summary (History)');
+        expect(fallback).toContain('Older conversation context (15 turns) is unavailable');
+        expect(fallback).toContain('Do not infer earlier instructions, approvals, facts, or completion');
         await expect(manager.getCompiledView()).resolves.toContain('Compressed prior turns');
         expect(SummaryService.summarize).toHaveBeenCalledTimes(2);
     });

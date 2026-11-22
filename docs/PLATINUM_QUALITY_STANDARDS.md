@@ -186,3 +186,5 @@ Whenever an agent (including yourself) or a human declares a task "done" or a re
 1. **Scrutinize:** Do not just run tests; verify what the tests actually cover.
 2. **Poke Holes:** Look for masked failures, mocked APIs that don't match reality, or incomplete edge cases.
 3. **Reject:** Actively look for a reason to reject the "done" state. We stop at bulletproof, not done.
+
+**Optional conversation enrichment must have its own budget.** Saved-memory and older-history reads must settle before the required-context deadline, propagate Stop, and disclose missing context to the artist and model. Never cache a partial/late summary as complete or allow timed-out serial work to schedule more model calls. Required artist directives remain mandatory.
