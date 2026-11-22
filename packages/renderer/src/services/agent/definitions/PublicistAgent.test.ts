@@ -123,3 +123,17 @@ describe('PublicistAgent', () => {
         });
     });
 });
+
+describe('generate_playlist_pitch declaration (ISSUE-1706)', () => {
+    it('uses the remote tool argument names so the server does not reject the call', () => {
+        const declaration = (PublicistAgent.tools ?? [])
+            .flatMap(tool => tool.functionDeclarations ?? [])
+            .find(d => d.name === 'generate_playlist_pitch');
+
+        expect(declaration).toBeDefined();
+        const parameters = declaration!.parameters as { properties: Record<string, unknown>; required: string[] };
+        // Mirrors generatePlaylistPitch.inputSchema in packages/firebase/src/mcp/tools.
+        expect(parameters.required).toEqual(['releaseId', 'targetPlaylist']);
+        expect(Object.keys(parameters.properties).sort()).toEqual(['curatorName', 'releaseId', 'targetPlaylist']);
+    });
+});

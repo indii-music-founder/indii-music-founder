@@ -612,14 +612,19 @@ Format as a standard, ready-to-publish press release with a catchy headline, dat
     .withTool({
         functionDeclarations: [{
             name: "generate_playlist_pitch",
-            description: "Generate a playlist pitch using the remote MCP backend.",
+            // ISSUE-1706: argument names must match the remote tool's inputSchema
+            // (packages/firebase/src/mcp/tools/generatePlaylistPitch.ts). The
+            // old trackId/pitchAngle names were rejected server-side before
+            // any work ran, so every pitch failed with INVALID_ARGUMENT.
+            description: "Draft a playlist pitch email grounded in one of the artist's own releases. Returns a draft only; nothing is sent.",
             parameters: {
                 type: "OBJECT",
                 properties: {
-                    trackId: { type: "STRING" },
-                    pitchAngle: { type: "STRING" }
+                    releaseId: { type: "STRING", description: "ID of a release the artist owns (from Publishing or Distribution)." },
+                    targetPlaylist: { type: "STRING", description: "Name of the playlist being pitched, e.g. a genre or mood playlist that fits the release." },
+                    curatorName: { type: "STRING", description: "Optional curator name for the greeting." }
                 },
-                required: ["trackId"]
+                required: ["releaseId", "targetPlaylist"]
             }
         }]
     }, McpTools.generate_playlist_pitch)
