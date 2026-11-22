@@ -2,6 +2,7 @@ import type { AgentMessage } from '@/core/store';
 import { SummaryService } from '../utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
 import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { readOptionalContext } from './OptionalContext';
 import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
@@ -85,10 +86,12 @@ export class HistoryManager {
         return (await this.getCompiledHistory()).view;
     }
 
-    async getCompiledHistory(): Promise<{ view: string; historicalSummary: string }> {
+    async getCompiledHistory(signal?: AbortSignal): Promise<{ view: string; historicalSummary: string; historyWarning?: string }> {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
+        signal?.throwIfAborted();
         const userId = state.userProfile?.uid;
+        const notices: string[] = [];
 
         const history = this.cleanHistory(state.agentHistory || []);
 
@@ -96,14 +99,20 @@ export class HistoryManager {
         // currently ignores its query, so do not present these as semantic matches.
         let memoryRecall = '';
         if (userId && state.isKnowledgeBaseEnabled && history.length > 0) {
-            const recent = await alwaysOnMemoryEngine.retrieve({ limit: 3 });
+            const recall = await readOptionalContext('recent saved memories',
+                () => alwaysOnMemoryEngine.retrieve({ limit: 3 }), 1_000, signal);
+            const recent = recall.value || [];
+            if (recall.unavailable) {
+                Logger.warn('HistoryManager', 'Recent saved memories unavailable:', recall.unavailable);
+                notices.push('Recent saved memories are unavailable for this turn.');
+            }
             if (recent.length > 0) {
                 memoryRecall = `\n## Recent Saved Memories\n${recent.map(r => `- ${r.summary || r.content}`).join('\n')}\n`;
             }
         }
 
         if (history.length <= this.MAX_RECENT_TURNS) {
-            return { view: (this.formatHistory(history) + memoryRecall).trim(), historicalSummary: '' };
+            return { view: [this.formatHistory(history), memoryRecall, ...notices].filter(Boolean).join('\n').trim(), historicalSummary: notices.join('\n'), historyWarning: notices.length ? 'Saved memories are unavailable for this reply.' : undefined };
         }
 
         Logger.info('HistoryManager', `Compressing history context (${history.length} turns)`);
@@ -115,22 +124,35 @@ export class HistoryManager {
         // 3. Fold every older turn into a bounded rolling summary. The active
         // store retains the full session; getRecentHistory() is only a display
         // window and must not decide what the summarizer can see.
-        const summary = await this.summarizeOlder(state.activeSessionId || null, olderTurns)
-            .catch(() => '');
+        const result = await readOptionalContext('older conversation summary',
+            enrichmentSignal => this.summarizeOlder(state.activeSessionId || null, olderTurns, enrichmentSignal),
+            5_000, signal);
+        const summary = result.value || '';
+        if (result.unavailable) {
+            Logger.warn('HistoryManager', 'Older conversation summary unavailable:', result.unavailable);
+            notices.push(`Older conversation context (${olderTurns.length} turns) is unavailable for this turn. Only the recent ${this.MAX_RECENT_TURNS} turns below are available. Do not infer earlier instructions, approvals, facts, or completion; ask the artist to restate any earlier detail needed for the current request.`);
+        }
+        const historicalSummary = [summary, ...notices].filter(Boolean).join('\n');
 
         // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
 
         return { view: `
 ${summary ? '## Conversation Summary (History)\n' + summary : ''}
+${notices.join('\n')}
 ${memoryRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
-`.trim(), historicalSummary: summary };
+`.trim(), historicalSummary, historyWarning: notices.length
+            ? (result.unavailable
+                ? 'Earlier conversation context is unavailable for this reply. Restate any earlier details needed for this request.'
+                : 'Saved memories are unavailable for this reply.')
+            : undefined };
     }
 
-    private summarizeOlder(sessionId: string | null, olderTurns: AgentMessage[]): Promise<string> {
+    private summarizeOlder(sessionId: string | null, olderTurns: AgentMessage[], signal?: AbortSignal): Promise<string> {
         const work = this.summaryQueue.then(async () => {
+            signal?.throwIfAborted();
             const cache = this.summaryCache;
             const reusable = cache?.sessionId === sessionId
                 && cache.source.length <= olderTurns.length
@@ -143,11 +165,13 @@ ${formattedRecent}
             const newHistory = this.formatHistory(olderTurns.slice(summarizedCount));
 
             for (let offset = 0; offset < newHistory.length;) {
+                signal?.throwIfAborted();
                 const prefix = summary ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n` : '';
                 const available = this.SUMMARY_INPUT_CHARS - prefix.length;
                 if (available <= 0) throw new Error('Conversation summary exceeds the summarizer input budget.');
                 const chunk = newHistory.slice(offset, offset + available);
-                summary = await SummaryService.summarize(prefix + chunk);
+                summary = await SummaryService.summarize(prefix + chunk, signal);
+                signal?.throwIfAborted();
                 offset += chunk.length;
             }
 

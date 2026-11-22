@@ -19,6 +19,7 @@ export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
     /** Summary of turns older than the recent window, for direct provider chat. */
     historicalSummary: string;
+    historyWarning?: string;
     relevantMemories: string[];
     userAlignmentRules?: string[];
     memoryContext: string;
@@ -46,7 +47,7 @@ export class ContextPipeline {
         const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext());
 
         // 2. Fetch History (The "Session")
-        const { view: chatHistoryString, historicalSummary } = await preparation.wait('conversation history', () => this.historyManager.getCompiledHistory());
+        const { view: chatHistoryString, historicalSummary, historyWarning } = await preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal));
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
         const { useStore } = await preparation.wait('context store', () => importWithRetry(() => import('@/core/store')));
@@ -204,6 +205,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             ...stateContext,
             chatHistoryString,
             historicalSummary,
+            historyWarning,
             relevantMemories,
             userAlignmentRules: [...(userAlignmentRules || []), ...ambitionDialNotes],
             memoryContext,
