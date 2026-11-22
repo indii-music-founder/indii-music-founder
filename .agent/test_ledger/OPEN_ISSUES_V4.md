@@ -4126,7 +4126,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1707: Create Release wizard: submit spinner never ends; silent cover rejection; asset drop and tools field problems
 
-- **Status:** 🟡 PARTIAL — four of six items addressed on branch `claude/release-wizard-submit`; not yet seen on production
+- **Status:** 🟡 PARTIAL — four of six items merged in #1000 (`b602cb07d`) and checked on production 2026-11-22 (three of them; the submit deadlines need a full submit)
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / `ReleaseWizard`, `useDDEXRelease`
 - **Evidence:** live run 2026-11-22 (ISSUE-1691), build `e0cae2eba`.
@@ -4141,6 +4141,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Still open from the list:** a non-drag way to choose a Project Assets image for the cover, and a guard so opening an asset from Project Assets does not discard the open wizard.
 - **Verification:** publishing suites 58/58 (new tests: `submitDeadline`, `parseAiTools`); typecheck exit 0; ESLint 0 errors. The stall's root cause is not verified; the next live run will show the named step.
 - **Acceptance:** submit closes on completion with the release ID; an undersized cover shows the reason; a non-drag way to pick a Project Assets image exists; opening an asset does not discard the wizard; the tools field keeps spaces; disclosure copy is plain.
+
+- **Production check (2026-11-22, build `b602cb07d`, owner session, no submit so no paid call):** (1) disclosure step shows "AI Content Disclosure" and "Streaming platforms ask you to say how AI was used in making a release." with none of "Autonomous", "DDEX" or "Intelligence-generated"; (2) the tools field kept "Flow Music (flowmusic.app)" with its space after typing it one character at a time; (3) attaching the 1276×1276 cover left Next disabled and showed "Cover art: Image too small. Minimum: 3000x3000px. Current: 1276x1276px" with "Use Replace Image to pick a different file." **Not yet checked:** the submit deadlines and the named progress line, which need a full submit (one paid packaging call).
 
 ### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
 
