@@ -1,3 +1,4 @@
+import { ContextPreparation } from './ContextPreparation';
 import { ContextResolver } from './ContextResolver';
 import { AgentContext, Directive } from '../types';
 import { Timestamp } from 'firebase/firestore';
@@ -39,15 +40,16 @@ export class ContextPipeline {
         this.historyManager = new HistoryManager();
     }
 
-    async buildContext(): Promise<PipelineContext> {
+    async buildContext(signal?: AbortSignal): Promise<PipelineContext> {
+        const preparation = new ContextPreparation(signal);
         // 1. Fetch State (The "Working Context")
-        const stateContext = await this.resolver.resolveContext();
+        const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext());
 
         // 2. Fetch History (The "Session")
-        const { view: chatHistoryString, historicalSummary } = await this.historyManager.getCompiledHistory();
+        const { view: chatHistoryString, historicalSummary } = await preparation.wait('conversation history', () => this.historyManager.getCompiledHistory());
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
-        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { useStore } = await preparation.wait('context store', () => importWithRetry(() => import('@/core/store')));
         const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
         const userId = userProfile?.uid || auth.currentUser?.uid;
 
@@ -64,12 +66,12 @@ export class ContextPipeline {
                 const agentId = stateContext.activeModule || 'generalist';
 
                 // Assemble context from all 4 layers in parallel
-                const bigBrainContext = await bigBrainEngine.assembleContext(
+                const bigBrainContext = await preparation.wait('memory recall', () => bigBrainEngine.assembleContext(
                     userId,
                     agentId,
                     recentContext,
                     stateContext.projectId
-                );
+                ));
 
                 // Format into XML block for prompt injection
                 autoRecallBlock = bigBrainEngine.formatForPrompt(bigBrainContext);
@@ -92,20 +94,21 @@ export class ContextPipeline {
                     `rules:${bigBrainContext.meta.alignmentRuleCount})`
                 );
             } catch (err: unknown) {
+                preparation.throwIfStopped();
                 logger.warn('[ContextPipeline] BigBrain assembly failed (non-blocking):', err);
                 // Fallback: still try to get basic memories
-                relevantMemories = await this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString);
+                relevantMemories = await preparation.wait('fallback memories', () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString));
             }
         } else if (isKnowledgeBaseEnabled) {
             // No user but knowledge base enabled — basic memory retrieval
-            relevantMemories = await this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString);
+            relevantMemories = await preparation.wait('fallback memories', () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString));
         }
 
         // 4. Fetch Active Living Plans (V2 Continuity)
         let activePlanBlock = '';
         if (stateContext.projectId) {
             try {
-                const activePlans = await livingPlanService.getPlansForProject(stateContext.projectId, 'executing');
+                const activePlans = await preparation.wait('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'));
                 if (activePlans.length > 0) {
                     // Use the most recent executing plan
                     const plan = activePlans[0];
@@ -132,6 +135,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
                     }
                 }
             } catch (err) {
+                preparation.throwIfStopped();
                 logger.warn('[ContextPipeline] Failed to fetch active plans:', err);
             }
         }
@@ -175,7 +179,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         let activeProductSkillBlock = '';
         try {
             const recentContext = this.extractRecentContext(chatHistoryString);
-            let skill = recentContext ? await ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext) : undefined;
+            let skill = recentContext ? await preparation.wait('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext)) : undefined;
 
             if (!skill && stateContext.activeModule) {
                 skill = ProductSkillRegistry.getSkillForModule(stateContext.activeModule);
@@ -185,12 +189,15 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
                 activeProductSkillBlock = ProductSkillRegistry.formatSkillForPrompt(skill);
             }
         } catch (err) {
+            preparation.throwIfStopped();
             logger.warn('[ContextPipeline] Failed to resolve active product skill:', err);
         }
 
         // 8.5 Resolve Tier 0 Artist Master Directive (Living User Skill)
-        const directiveObj = await artistDirectiveService.getDirective(userId);
+        const directiveObj = await preparation.wait('artist master directive', () => artistDirectiveService.getDirective(userId));
         const artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(directiveObj);
+
+        preparation.throwIfStopped();
 
         // 9. Assemble Pipeline Context
         return {

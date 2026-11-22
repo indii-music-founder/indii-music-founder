@@ -1,3 +1,10 @@
+## 2026-11-22 Context preparation outlived Stop (CONTEXT_PREPARATION_DEADLINE)
+
+- **Cause:** AgentService awaited context construction before creating a response row or starting the execution timeout; context reads received no execution signal. Live acceptance showed a pending turn with no visible response and no immediate Stop recovery.
+- **Fix:** A shared 30-second preparation deadline labels the stalled stage. Every stage is fenced by Stop; cancellation/deadline errors propagate through optional fallbacks. A response row exists before preparation and settles on cancellation/error. Required Artist Master Directive failures never admit execution.
+- **Evidence:** Pure cancellation/deadline tests and existing dispatch/lease suites passed (37 tests). Scoped ESLint passed. Full renderer typecheck is limited by missing shared build outputs and React Three dependencies in the worktree. This change has no production acceptance evidence yet. Underlying non-cancellable reads may finish, but their late context cannot enter execution.
+- **Prevention:** Cover pre-execution reads with a deadline and cancellation boundary; do not limit timeout coverage to model execution.
+
 ## 2026-11-20 Boardroom Dispatch Release and Stream Preflight (BOARDROOM_DISPATCH_RELEASE_ORDER)
 
 - **Root cause:** Stop and reload can leave planned seats unstarted. Normal completion rejects that state, and background release let the next turn request a plan before the server acknowledged the old lease.
