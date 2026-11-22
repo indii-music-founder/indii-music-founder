@@ -4030,6 +4030,16 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, /publishing console: `[usePayouts] Error: FirebaseError: Missing or insufficient permissions.` and `[useAnalytics] Error: FirebaseError: Missing or insufficient permissions.` They read `users/{userProfile.id}/analytics` and `users/{userProfile.id}/payouts` (`useAnalytics.ts:47`, `:144`). ISSUE-1580 (PARTIAL) records rules added for user analytics and payouts. Root cause not established: candidates are `userProfile.id` differing from `auth.uid`, the deployed rules lacking those matches, or the date-range query shape. Not investigated further in this run.
 - **Acceptance:** with a genuine account, Publishing → Insights and Royalties load without permission errors (empty states allowed when there is no data).
 
+### ISSUE-1699: Create Release wizard is oversized and off-style next to the other Studio dialogs
+
+- **Status:** 🟡 PARTIAL — restyle on branch `claude/release-wizard-modal-polish`; not yet seen on production
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / `ReleaseWizard`
+- **Evidence:** owner report 2026-11-22 plus a Chrome screenshot of the Assets step (viewport 1900×943): the dialog held `text-lg` headings, `py-3` inputs, `p-8` drop zones, a 48px upload icon and a 128px cover thumbnail inside a `max-w-3xl` box, so content overflowed into an inner scroll; the six-step bar was clipped at "Revie…". It used generic `blue-500`/`gray-800` and sentence-case labels, unlike Submit Release (`#0e0e0e` panel, `white/10` borders, 10px uppercase tracking labels, `dept-*` accents, white primary button).
+- **Fix (branch):** same visual language as Submit Release: `#0e0e0e` panel with `white/10` borders at `max-w-2xl`; compact inputs (`px-3 py-2 text-sm`) and 10px uppercase labels; `dept-publishing` (#8BC34A) for active and complete states instead of blue/green; drop zones `p-5` with a 24px icon and a 80px thumbnail; compact step bar that fits the dialog width (`<ol>`, `aria-current="step"`); white primary buttons and a `dept-publishing` Submit. No behavior change.
+- **Verification:** Publishing suites 54/54, `npm run typecheck` exit 0, ESLint clean. Structural only; no visual check on a deployed build.
+- **Acceptance:** on production, the Create Release dialog shows every step label unclipped, each step fits without an inner scroll at 1440×900, and it reads as the same family as Submit Release (side-by-side screenshot).
+
 ### ISSUE-1701: Full pages use oversized display type (up to text-7xl) across the Studio
 
 - **Status:** 🟡 PARTIAL — resized on branch `claude/page-text-scale`; not yet seen on production
