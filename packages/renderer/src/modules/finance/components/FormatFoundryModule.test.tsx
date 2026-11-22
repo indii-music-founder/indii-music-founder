@@ -44,8 +44,8 @@ describe('FormatFoundryModule', () => {
   it('renders initial state with clean-room badges and input', () => {
     render(<FormatFoundryModule />);
 
-    expect(screen.getByText('Format Intelligence & Capability Foundry')).toBeInTheDocument();
-    expect(screen.getByText('Clean-Room Engine')).toBeInTheDocument();
+    expect(screen.getByText('Statement Formats')).toBeInTheDocument();
+    expect(screen.getByText('Private')).toBeInTheDocument();
     expect(screen.getByText(/Local-First Private Analysis/)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/Paste raw sales statement/)).toBeInTheDocument();
   });
@@ -65,7 +65,7 @@ describe('FormatFoundryModule', () => {
     expect(await screen.findByText('ALL LAYERS PASSED')).toBeInTheDocument();
 
     // Business Graph
-    expect(await screen.findByText('Artist Business Graph Normalization')).toBeInTheDocument();
+    expect(await screen.findByText('Mapped to Your Catalog')).toBeInTheDocument();
     expect(screen.getAllByText('Velvet Voltage').length).toBeGreaterThan(0);
     expect(await screen.findByText('Kira Novakowski')).toBeInTheDocument();
   });

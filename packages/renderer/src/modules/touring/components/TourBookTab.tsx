@@ -127,7 +127,7 @@ Please confirm receipt of this information.
                     {!itinerary || !itinerary.stops || itinerary.stops.length === 0 ? (
                         <div className="flex items-center justify-center h-full text-gray-500">
                             <div className="text-center">
-                                <FileText size={48} className="mx-auto mb-4 opacity-20" />
+                                <FileText size={28} className="mx-auto mb-4 opacity-20" />
                                 <p>No tour itinerary. Create one in the Plan tab.</p>
                             </div>
                         </div>
@@ -199,7 +199,7 @@ function DaySheetsList({
                                 <div className="flex-1">
                                     <div className="flex items-center gap-3">
                                         <Calendar size={16} className="text-blue-400" />
-                                        <CardTitle className="text-lg text-white">
+                                        <CardTitle className="text-base text-white">
                                             {formatTouringDate(stop.date, { weekday: 'short', month: 'short', day: 'numeric' })}
                                         </CardTitle>
                                     </div>
@@ -232,7 +232,7 @@ function DaySheetsList({
                                             {stop.guarantee !== undefined && (
                                                 <div>
                                                     <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Guarantee</p>
-                                                    <p className="text-lg font-bold text-amber-400">${stop.guarantee}</p>
+                                                    <p className="text-base font-bold text-amber-400">${stop.guarantee}</p>
                                                 </div>
                                             )}
                                             {stop.contacts && stop.contacts.length > 0 && (
@@ -270,7 +270,7 @@ function DaySheetsList({
                                             <Button
                                                 onClick={() => onSendAdvanceEmail(stop)}
                                                 disabled={sendingEmailFor === stop.id}
-                                                className="flex-1 bg-blue-600 hover:bg-blue-500 text-xs flex items-center justify-center gap-2"
+                                                className="flex-1 bg-white hover:bg-gray-200 text-black text-xs flex items-center justify-center gap-2"
                                             >
                                                 <Mail size={14} />
                                                 {sendingEmailFor === stop.id ? 'Sending...' : 'Send Advance Email'}

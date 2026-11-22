@@ -162,7 +162,7 @@ export default function BrandCompliancePanel({
                 onClick={handleScan}
                 disabled={isScanning || !activeTarget}
                 data-testid="scan-compliance-btn"
-                className="w-full py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-600 font-medium text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full py-2 px-3 rounded-lg bg-white hover:bg-gray-200 disabled:bg-gray-800 disabled:text-gray-600 font-medium text-black transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
                 {isScanning ? (
                     <>

@@ -58,7 +58,7 @@ export const EXECUTIVE_STARTER_CARDS: StarterCardItem[] = [
     {
         id: 'ddex-catalog',
         missionId: 'ddex_catalog',
-        title: 'Catalog Audit & DDEX Delivery',
+        title: 'Catalog Audit & Delivery',
         description: 'Audit catalog gaps, generate BWARM reports, and stage DSP releases.',
         prompt: 'Inspect my catalog for missing metadata gaps and prepare staged DDEX release payloads.',
         agentIds: ['distribution', 'music'],

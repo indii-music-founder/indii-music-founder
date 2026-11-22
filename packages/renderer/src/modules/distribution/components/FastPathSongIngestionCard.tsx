@@ -57,7 +57,7 @@ export function FastPathSongIngestionCard({ artistName = 'indii artist', onCompl
                     onDragOver={event => { event.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
-                    className={`mt-5 rounded-xl border-2 border-dashed p-8 text-center ${isDragging ? 'border-emerald-500' : 'border-zinc-700'}`}
+                    className={`mt-5 rounded-xl border-2 border-dashed p-6 text-center ${isDragging ? 'border-emerald-500' : 'border-zinc-700'}`}
                 >
                     <UploadCloud className="mx-auto mb-3 text-emerald-400" aria-hidden="true" />
                     <label htmlFor="song-file-preview" className="block text-sm font-medium text-white">Choose an audio file or drag it here</label>

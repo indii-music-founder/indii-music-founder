@@ -12,7 +12,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
     if (!trace) {
         return (
             <div className="h-full flex items-center justify-center text-muted-foreground italic">
-                Select an agent in the graph to inspect thoughts
+                Select a specialist in the graph to see its reasoning
             </div>
         );
     }

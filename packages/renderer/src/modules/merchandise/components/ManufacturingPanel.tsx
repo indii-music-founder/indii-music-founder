@@ -375,7 +375,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                         Connect your Printful account to enable automatic order fulfillment.
                                     </p>
                                     <p className="text-[10px] text-neutral-500">
-                                        Ensure your Printful API key is securely configured in your backend environment.
+                                        Auto-fulfilment needs a connected Printful account.
                                     </p>
                                 </div>
                             )}
@@ -546,7 +546,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                     <div className={`h-px w-full mb-4 ${theme.colors.border}`} />
                     <div className="flex justify-between items-center">
                         <span className={`${theme.colors.text} font-medium text-sm`}>Est. Project Profit</span>
-                        <span className="text-green-500 font-bold font-mono text-lg flex items-center">
+                        <span className="text-green-500 font-bold font-mono text-base flex items-center">
                             <DollarSign className="w-4 h-4" />
                             {totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>

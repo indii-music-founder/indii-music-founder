@@ -117,7 +117,7 @@ export default function MarketingAssetGeneratorUI() {
     ];
 
     return (
-        <div className="h-full flex flex-col p-6 lg:p-10 relative overflow-y-auto custom-scrollbar">
+        <div className="h-full flex flex-col p-6 lg:p-6 relative overflow-y-auto custom-scrollbar">
             <input
                 ref={audioInputRef}
                 type="file"
@@ -135,7 +135,7 @@ export default function MarketingAssetGeneratorUI() {
             {/* Background elements */}
             <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-dept-marketing/10 blur-[120px] rounded-full pointer-events-none" />
 
-            <div className="max-w-4xl w-full mx-auto z-10 flex flex-col gap-8">
+            <div className="max-w-4xl w-full mx-auto z-10 flex flex-col gap-5">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing to-green-500 p-px shadow-lg shadow-dept-marketing/20">
@@ -191,7 +191,7 @@ export default function MarketingAssetGeneratorUI() {
                 </div>
 
                 {/* Main Card */}
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 lg:p-10 backdrop-blur-3xl shadow-2xl relative overflow-hidden min-h-[450px] flex flex-col">
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-6 lg:p-6 backdrop-blur-3xl shadow-2xl relative overflow-hidden min-h-[450px] flex flex-col">
                     <AnimatePresence mode="wait">
 
                         {/* STEP 1: AUDIO SELECTION */}
@@ -217,11 +217,11 @@ export default function MarketingAssetGeneratorUI() {
                                     appears for avatar mode, where the audio genuinely drives lip-sync. */}
                                 {generatorMode === 'avatar' ? (
                                     <div
-                                        className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-8"
+                                        className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-6"
                                         onClick={() => audioInputRef.current?.click()}
                                     >
-                                        <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
-                                            {audioFile ? <FileAudio size={32} /> : <Upload size={32} />}
+                                        <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
+                                            {audioFile ? <FileAudio size={20} /> : <Upload size={20} />}
                                         </div>
                                         <h3 className="text-white font-semibold mb-1">
                                             {audioFile ? audioFile.name : 'Click or drag to upload audio'}
@@ -231,8 +231,8 @@ export default function MarketingAssetGeneratorUI() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 border-2 border-dashed border-white/10 bg-white/[0.02] rounded-xl flex flex-col items-center justify-center p-8">
-                                        <Video size={32} className="text-gray-500 mb-4" />
+                                    <div className="flex-1 border-2 border-dashed border-white/10 bg-white/[0.02] rounded-xl flex flex-col items-center justify-center p-6">
+                                        <Video size={20} className="text-gray-500 mb-4" />
                                         <p className="text-gray-500 text-sm text-center max-w-xs">
                                             Cinematic Reel mode generates video from your text prompt only — no audio is uploaded or synchronized.
                                         </p>
@@ -283,7 +283,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <RefreshCw size={14} /> {error}
                                     </div>
                                 )}
-                                <p className="text-sm text-gray-400 mb-6">Describe what you want the Autonomous video to look like.</p>
+                                <p className="text-sm text-gray-400 mb-6">Describe what you want the video to look like.</p>
 
                                 <div className="space-y-6 flex-1">
                                     <div>
@@ -357,16 +357,16 @@ export default function MarketingAssetGeneratorUI() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 1.05 }}
-                                className="flex-1 flex flex-col items-center justify-center py-12"
+                                className="flex-1 flex flex-col items-center justify-center py-8"
                             >
                                 <div className="relative w-32 h-32 mb-8">
                                     <div className="absolute inset-0 border-4 border-dept-marketing/20 rounded-full" />
                                     <div className="absolute inset-0 border-4 border-dept-marketing border-t-transparent rounded-full animate-spin" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <Video className="text-dept-marketing animate-pulse" size={40} />
+                                        <Video className="text-dept-marketing animate-pulse" size={24} />
                                     </div>
                                 </div>
-                                <h2 className="text-base font-black text-white mb-3">Synthesizing Visuals</h2>
+                                <h2 className="text-base font-black text-white mb-3">Creating visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
                                     {generatorMode === 'avatar'
                                         ? 'Rendering the avatar lip-sync from your audio and portrait. This normally takes a few minutes via background job...'
@@ -414,13 +414,13 @@ export default function MarketingAssetGeneratorUI() {
                                             className="w-full h-full object-contain"
                                         />
                                     ) : resultJobId ? (
-                                        <div className="p-8 text-center">
-                                            <CheckCircle2 className="mx-auto mb-4 text-green-400" size={36} />
+                                        <div className="p-6 text-center">
+                                            <CheckCircle2 className="mx-auto mb-4 text-green-400" size={20} />
                                             <p className="text-sm font-bold text-white">Avatar render is queued.</p>
                                             <p className="text-xs text-gray-500 mt-2 font-mono break-all">{resultJobId}</p>
                                         </div>
                                     ) : (
-                                        <div className="p-8 text-center text-sm text-gray-400">
+                                        <div className="p-6 text-center text-sm text-gray-400">
                                             No generated video URL was returned.
                                         </div>
                                     )}

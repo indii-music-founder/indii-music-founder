@@ -77,7 +77,7 @@ export default function DesignHistoryDrawer({ onClose, embedded = false }: { onC
             <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-3 pb-6">
                 {scopedVersions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-gray-500 text-xs">
-                        <Layers size={32} className="mb-2 opacity-10" />
+                        <Layers size={20} className="mb-2 opacity-10" />
                         No saved versions
                     </div>
                 ) : (

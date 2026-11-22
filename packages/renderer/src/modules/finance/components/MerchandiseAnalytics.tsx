@@ -21,11 +21,11 @@ const conversionCycleData: ConversionCycle[] = [];
 
 export const MerchandiseAnalytics: React.FC = () => {
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-8">
             {/* Sales Volume Trend */}
             <motion.div
                 whileHover={{ y: -5 }}
-                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
+                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 relative overflow-hidden group shadow-2xl"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-dept-royalties/5 blur-[80px] pointer-events-none rounded-full" />
 
@@ -35,7 +35,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                             <div className="p-1.5 rounded-lg bg-dept-royalties/10 text-dept-royalties">
                                 <TrendingUp size={16} />
                             </div>
-                            <h3 className="text-base font-bold text-white tracking-tight">Revenue Velocity</h3>
+                            <h3 className="text-base font-bold text-white tracking-tight">Revenue Trend</h3>
                         </div>
                         <p className="text-gray-500 text-xs font-medium uppercase tracking-widest ml-1">Volume over 4 week period</p>
                     </div>
@@ -71,7 +71,7 @@ export const MerchandiseAnalytics: React.FC = () => {
             {/* Peak Cycle Performance */}
             <motion.div
                 whileHover={{ y: -5 }}
-                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
+                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 relative overflow-hidden group shadow-2xl"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-dept-creative/5 blur-[80px] pointer-events-none rounded-full" />
 

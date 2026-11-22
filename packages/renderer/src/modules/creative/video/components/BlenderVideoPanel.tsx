@@ -432,7 +432,7 @@ export const BlenderVideoPanel: React.FC<BlenderVideoPanelProps> = ({
                 <button
                     onClick={handleStartRender}
                     disabled={isRendering || isSaving || hasPendingSave || !pendingSaveKey || !audioPath || !status?.installed || !window.electronAPI?.blender}
-                    className="flex items-center space-x-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-neutral-800 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition shadow-lg shadow-cyan-600/20"
+                    className="flex items-center space-x-2 bg-white hover:bg-gray-200 disabled:bg-neutral-800 text-black font-medium px-5 py-2.5 rounded-lg text-sm transition shadow-lg shadow-cyan-600/20"
                 >
                     {isRendering ? (
                         <>

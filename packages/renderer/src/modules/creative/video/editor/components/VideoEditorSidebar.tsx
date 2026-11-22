@@ -112,7 +112,7 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => updateProject({ width: 1920, height: 1080, fps: 24 })}
-                                    className="text-xs bg-green-600 hover:bg-green-500 text-white py-1 px-2 rounded transition-colors"
+                                    className="text-xs bg-white hover:bg-gray-200 text-black py-1 px-2 rounded transition-colors"
                                 >
                                     1080p Landscape (24fps)
                                 </button>
@@ -188,7 +188,7 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                         ))}
                         <button
                             onClick={() => addTrack('video')}
-                            className="w-full bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-white hover:bg-gray-200 text-black py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
                         >
                             <Plus size={16} /> Add Track
                         </button>

@@ -473,7 +473,7 @@ describe('StudioControlsPanel', () => {
         expect(omniStageBtn).toBeInTheDocument();
         fireEvent.click(omniStageBtn!);
 
-        expect(screen.getByText('Gemini Omni Flash · 4 task modes')).toBeInTheDocument();
+        expect(screen.getByText('4 task modes')).toBeInTheDocument();
         expect(screen.queryByText('Hybrid Veo')).not.toBeInTheDocument();
         expect(screen.getByText('Character X-Ray')).toBeInTheDocument();
         expect(screen.getByText('Automatic SynthID')).toBeInTheDocument();

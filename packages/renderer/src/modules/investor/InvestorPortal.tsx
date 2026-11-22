@@ -13,8 +13,8 @@ export default function InvestorPortal() {
 
     return (
         <ModuleErrorBoundary moduleName="Investor">
-            <div className="flex h-full w-full items-center justify-center bg-black p-8 text-white">
-                <section className="w-full max-w-2xl rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center">
+            <div className="flex h-full w-full items-center justify-center bg-black p-6 text-white">
+                <section className="w-full max-w-2xl rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 text-center">
                     <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-amber-300" />
                     <h1 className="text-xl font-bold">Investor portal unavailable</h1>
                     <p className="mt-3 text-sm leading-relaxed text-neutral-300">

@@ -157,7 +157,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                         imageUrl: firstImage?.imageUrl || `data:${firstImage?.mimeType || 'image/png'};base64,${firstImage?.bytesBase64Encoded || firstImage?.base64}`,
                         aiMetadata: (rawResult as Record<string, unknown>).aiMetadata as Record<string, unknown> | undefined,
                         aiGenerationInfo: (rawResult as Record<string, unknown>).aiGenerationInfo as Record<string, unknown> | undefined,
-                        title: 'Autonomous Generated Artwork'
+                        title: 'Generated Artwork'
                     };
                 } else {
                     asset = rawResult as WorkflowResultAsset;
@@ -260,7 +260,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-rose-300 text-[11px] font-semibold">
                             <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>DDEX Pre-Flight</span>
+                            <span>Delivery Pre-Flight</span>
                         </div>
                         <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${pkg.readyForDelivery ? 'bg-green-500/20 text-green-300 border border-green-500/40' : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'}`}>
                             {pkg.readyForDelivery ? 'READY FOR DSP' : 'INCOMPLETE'}

@@ -52,7 +52,7 @@ describe('CreativeGallery', () => {
 
         // Check for empty state text
         expect(screen.getByText('GALLERY IS EMPTY')).toBeInTheDocument();
-        expect(screen.getByText('Upload media or generate new Autonomous assets to see them appear in your gallery.')).toBeInTheDocument();
+        expect(screen.getByText('Upload media or generate new assets to see them appear in your gallery.')).toBeInTheDocument();
     });
 
     it('renders NO ASSETS FOUND empty state when search yields no matches', () => {

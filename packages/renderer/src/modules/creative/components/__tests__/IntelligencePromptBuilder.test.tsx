@@ -46,7 +46,7 @@ describe('IntelligencePromptBuilder', () => {
         expect(screen.getByTestId('category-Finish-trigger')).toBeInTheDocument();
     });
 
-    it('renders the Improve with Intelligence pill with full alignment and handles click', async () => {
+    it('renders the Improve pill with full alignment and handles click', async () => {
         const handleSetPrompt = vi.fn();
         vi.mocked(IntelligencePromptService.improve).mockResolvedValueOnce({
             improved: 'A breathtaking neon cyber city with volumetric god rays and cinematic color grade',
@@ -55,7 +55,7 @@ describe('IntelligencePromptBuilder', () => {
 
         render(<IntelligencePromptBuilder onAddTag={vi.fn()} currentPrompt="A neon cyber city" onSetPrompt={handleSetPrompt} />);
 
-        const improveBtn = screen.getByRole('button', { name: /improve with intelligence/i });
+        const improveBtn = screen.getByRole('button', { name: /^improve( prompt)?$/i });
         expect(improveBtn).toBeInTheDocument();
         expect(improveBtn).not.toBeDisabled();
 
@@ -70,9 +70,9 @@ describe('IntelligencePromptBuilder', () => {
         });
     });
 
-    it('disables Improve with Intelligence button when current prompt is empty', () => {
+    it('disables Improve button when current prompt is empty', () => {
         render(<IntelligencePromptBuilder onAddTag={vi.fn()} currentPrompt="" onSetPrompt={vi.fn()} />);
-        const improveBtn = screen.getByRole('button', { name: /improve with intelligence/i });
+        const improveBtn = screen.getByRole('button', { name: /^improve( prompt)?$/i });
         expect(improveBtn).toBeDisabled();
     });
 

@@ -129,10 +129,10 @@ const ProfileSection: React.FC = () => {
                         <img
                             src={user.photoURL}
                             alt="Avatar"
-                            className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-700 transition-opacity group-hover:opacity-70"
+                            className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-700 transition-opacity group-hover:opacity-70"
                         />
                     ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700 transition-opacity group-hover:opacity-70">
+                        <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700 transition-opacity group-hover:opacity-70">
                             <span className="text-2xl font-bold text-white">{getInitials()}</span>
                         </div>
                     )}

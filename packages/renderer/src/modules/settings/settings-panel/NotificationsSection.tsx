@@ -90,7 +90,7 @@ const NotificationsSection: React.FC = () => {
                 <SettingRow
                     icon={AlertTriangle}
                     label="Budget Alerts"
-                    description="Warn when intelligence usage nears budget limits"
+                    description="Warn when usage nears your budget"
                 >
                     <Toggle
                         enabled={budgetAlerts}

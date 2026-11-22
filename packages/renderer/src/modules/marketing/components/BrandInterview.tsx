@@ -57,7 +57,7 @@ const BrandInterview: React.FC = () => {
     }, [userProfile]);
 
     const handleInterviewComplete = useCallback(() => {
-        toast.success("Brand profile complete! All systems go. 🚀");
+        toast.success("Brand profile saved.");
     }, [toast]);
 
     const {
@@ -108,7 +108,7 @@ const BrandInterview: React.FC = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 space-y-6 custom-scrollbar">
                     <AnimatePresence mode="popLayout">
                         {history.map((msg, idx) => {
                             const hasText = msg.parts.some(p => p.text);
@@ -264,7 +264,7 @@ const BrandInterview: React.FC = () => {
                         accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                     />
                     <p className="mt-2 text-[9px] text-gray-600 font-bold uppercase tracking-[0.15em] text-center">
-                        Secure Interview • Intelligence-driven Analysis
+                        Private interview
                     </p>
                 </div>
             </div>

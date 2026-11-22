@@ -100,7 +100,7 @@ describe('BrandManager', () => {
         render(<BrandManager />);
         expect(screen.getByText('Brand HQ')).toBeInTheDocument();
         expect(screen.getAllByText('Identity Core').length).toBeGreaterThan(0);
-        expect(screen.getByText('Visual DNA')).toBeInTheDocument();
+        expect(screen.getByText('Visual Identity')).toBeInTheDocument();
         expect(screen.getByText('Release Manifest')).toBeInTheDocument();
         expect(screen.getByText('Brand Health')).toBeInTheDocument();
     });
@@ -115,7 +115,7 @@ describe('BrandManager', () => {
         render(<BrandManager />);
 
         // Switch to Visuals
-        const visualBtn = screen.getByRole('button', { name: /Visual DNA/i });
+        const visualBtn = screen.getByRole('button', { name: /Visual Identity/i });
         fireEvent.click(visualBtn);
         await waitFor(() => {
             expect(screen.getByText('Color Palette')).toBeInTheDocument();

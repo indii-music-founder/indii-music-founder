@@ -94,7 +94,7 @@ export function BlockchainLedger() {
                         <Shield size={18} className="text-[#FFE135]" />
                         Blockchain Ledger
                     </h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">Immutable chain of custody for your rights</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Permanent record of your rights</p>
                 </div>
                 <button
                     onClick={handleIpfsSync}
@@ -188,7 +188,7 @@ export function BlockchainLedger() {
                     </AnimatePresence>
 
                     {entries.length === 0 && !loading && (
-                        <div className="py-12 text-center">
+                        <div className="py-8 text-center">
                             <Shield size={24} className="mx-auto text-neutral-700 mb-3" />
                             <p className="text-sm text-neutral-500">No ledger entries found for this ISRC.</p>
                         </div>

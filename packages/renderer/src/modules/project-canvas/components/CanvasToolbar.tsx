@@ -188,7 +188,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                     <div className="w-px h-5 bg-zinc-800 mx-1" />
                     <button
                         onClick={onPromoteSelection}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all animate-pulse"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-gray-200 text-black shadow-md shadow-indigo-600/30 transition-all animate-pulse"
                         title="Promote selected blocks to a reusable Creative Recipe"
                         aria-label="Promote selection to recipe"
                     >

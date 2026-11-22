@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check } from 'lucide-react';
+import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check, Instagram, Twitter, type LucideIcon } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
 import {
@@ -32,9 +32,9 @@ const TONES: { id: CampaignTone; label: string }[] = [
     { id: 'inspirational', label: 'Inspirational' }
 ];
 
-const PLATFORMS: { id: Platform; label: string; icon: string }[] = [
-    { id: 'Instagram', label: 'Instagram', icon: '📸' },
-    { id: 'Twitter', label: 'X / Twitter', icon: '🐦' }
+const PLATFORMS: { id: Platform; label: string; icon: LucideIcon }[] = [
+    { id: 'Instagram', label: 'Instagram', icon: Instagram },
+    { id: 'Twitter', label: 'X / Twitter', icon: Twitter }
 ];
 
 export default function IntelligenceCampaignModal({ onClose, onSave }: IntelligenceCampaignModalProps) {
@@ -141,8 +141,8 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
                             <Sparkles className="text-white" size={20} aria-hidden="true" />
                         </div>
                         <div>
-                            <h2 id="modal-title" className="text-lg font-bold text-white">Intelligence Campaign Generator</h2>
-                            <p className="text-sm text-gray-500">Create a complete campaign with Intelligence</p>
+                            <h2 id="modal-title" className="text-lg font-bold text-white">Campaign Builder</h2>
+                            <p className="text-sm text-gray-500">Build a full campaign from one brief</p>
                         </div>
                     </div>
                     <button
@@ -235,7 +235,7 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
                                                     : 'bg-bg-dark border border-gray-800 text-gray-400 hover:border-gray-600'
                                                     }`}
                                             >
-                                                <span aria-hidden="true">{platform.icon}</span>
+                                                <platform.icon size={14} aria-hidden="true" />
                                                 <span className="hidden sm:inline">{platform.label}</span>
                                             </button>
                                         ))}

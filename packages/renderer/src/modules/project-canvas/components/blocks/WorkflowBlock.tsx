@@ -332,7 +332,7 @@ export const WorkflowBlock: React.FC<WorkflowBlockProps> = ({
                     <button
                         onClick={handleRunWorkflow}
                         disabled={isRunning || nodeCount === 0}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-white hover:bg-gray-200 disabled:opacity-50 text-black font-medium text-xs transition-all shadow-md shadow-indigo-600/20 active:scale-[0.98]"
                     >
                         {isRunning ? (
                             <>

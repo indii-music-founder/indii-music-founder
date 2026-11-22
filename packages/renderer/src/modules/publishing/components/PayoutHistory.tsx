@@ -78,18 +78,18 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {loading ? (
-                    <div className="p-12 flex flex-col items-center justify-center opacity-40">
+                    <div className="p-8 flex flex-col items-center justify-center opacity-40">
                         <motion.div
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         >
-                            <Clock size={32} />
+                            <Clock size={20} />
                         </motion.div>
                         <p className="text-xs font-bold uppercase tracking-widest mt-4">Loading history...</p>
                     </div>
                 ) : payouts.length === 0 ? (
                     <div className="p-20 text-center flex flex-col items-center justify-center opacity-30">
-                        <CreditCard size={48} className="text-gray-700 mb-4" />
+                        <CreditCard size={28} className="text-gray-700 mb-4" />
                         <p className="text-sm font-bold uppercase tracking-widest text-gray-600">No payment history available</p>
                     </div>
                 ) : (
@@ -109,7 +109,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-lg font-black text-white tracking-tighter">
+                                            <span className="text-base font-black text-white tracking-tighter">
                                                 {payout.currencyCode === 'USD' ? '$' : payout.currencyCode}
                                                 {payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </span>

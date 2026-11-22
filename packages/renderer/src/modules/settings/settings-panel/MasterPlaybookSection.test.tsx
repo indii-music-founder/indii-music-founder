@@ -126,7 +126,7 @@ describe('MasterPlaybookSection', () => {
         fireEvent.click(brandTab);
 
         expect(await screen.findByTestId('live-brand-swatch-bar')).toBeInTheDocument();
-        expect(screen.getByText('Active Visual DNA Palette')).toBeInTheDocument();
+        expect(screen.getByText('Active Visual Palette')).toBeInTheDocument();
         expect(screen.getByText('Neon Cyan')).toBeInTheDocument();
         expect(screen.getByText('Electric Purple')).toBeInTheDocument();
     });

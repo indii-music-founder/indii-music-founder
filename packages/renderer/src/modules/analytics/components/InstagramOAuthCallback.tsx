@@ -80,7 +80,7 @@ export function InstagramOAuthCallback() {
     }
 
     return (
-        <main className="min-h-screen bg-black px-6 py-16 text-white">
+        <main className="min-h-screen bg-black px-6 py-10 text-white">
             <section className="mx-auto max-w-lg rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl">
                 <h1 className="text-xl font-semibold">Connect Instagram</h1>
                 {state.phase === 'connecting' && <p className="mt-3 text-sm text-slate-300">Securely finishing your Instagram connection…</p>}

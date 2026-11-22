@@ -59,7 +59,7 @@ export function SuperfanCRM() {
     return (
         <div className="h-full flex flex-col">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-white/5">
+            <div className="px-6 py-4 border-b border-white/5">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-xl font-bold text-white">Superfan CRM</h2>
@@ -104,7 +104,7 @@ export function SuperfanCRM() {
             </div>
 
             {/* Search */}
-            <div className="px-8 py-4 border-b border-white/5">
+            <div className="px-6 py-4 border-b border-white/5">
                 <div className="relative max-w-sm">
                     <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
                     <input
@@ -118,7 +118,7 @@ export function SuperfanCRM() {
             </div>
 
             {/* Fan Table */}
-            <div className="flex-1 overflow-y-auto px-8 py-4 no-scrollbar">
+            <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
                 <div className="space-y-2">
                     <AnimatePresence mode="popLayout">
                         {filtered.map((fan, i) => {
@@ -179,13 +179,13 @@ export function SuperfanCRM() {
                     </AnimatePresence>
 
                     {filtered.length === 0 && !loading && (
-                        <div className="py-20 text-center">
+                        <div className="py-10 text-center">
                             <Users size={28} className="mx-auto text-slate-700 mb-3" />
                             <p className="text-sm text-slate-500">No fans match your filters.</p>
                         </div>
                     )}
                     {loading && (
-                        <div className="py-20 text-center">
+                        <div className="py-10 text-center">
                             <Loader2 size={28} className="mx-auto text-slate-700 mb-3 animate-spin" />
                             <p className="text-sm text-slate-500">Loading your superfans...</p>
                         </div>

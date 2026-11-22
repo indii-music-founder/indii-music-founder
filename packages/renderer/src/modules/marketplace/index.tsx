@@ -92,7 +92,7 @@ const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     <button
                         onClick={handleCheckout}
                         disabled={checkingOut}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                        className="w-full py-2 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black text-sm font-medium rounded-lg transition-colors"
                     >
                         {checkingOut ? 'Redirecting...' : 'Checkout'}
                     </button>

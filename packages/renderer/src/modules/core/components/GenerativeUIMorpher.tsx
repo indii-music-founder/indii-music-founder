@@ -6,7 +6,7 @@ export const GenerativeUIMorpher: React.FC = () => {
     const [role, setRole] = useState<'artist' | 'manager'>('artist');
 
     return (
-        <div className="p-8 bg-black min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden rounded-2xl border border-white/10">
+        <div className="p-6 bg-black min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden rounded-2xl border border-white/10">
             <div className="absolute top-4 right-4 flex gap-2 bg-white/5 p-1 rounded-xl backdrop-blur-md z-20">
                 <button
                     onClick={() => setRole('artist')}
@@ -30,10 +30,10 @@ export const GenerativeUIMorpher: React.FC = () => {
                         animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full max-w-2xl bg-linear-to-br from-green-900/40 to-black border border-green-500/20 p-8 rounded-3xl"
+                        className="w-full max-w-2xl bg-linear-to-br from-green-900/40 to-black border border-green-500/20 p-6 rounded-2xl"
                     >
                         <h2 className="text-xl font-black text-white mb-2 tracking-tight">Creative Studio</h2>
-                        <p className="text-green-200/60 mb-8">Your canvas is ready. Let's make some magic.</p>
+                        <p className="text-green-200/60 mb-8">Your canvas is ready.</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="h-32 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center justify-center text-green-400 font-mono text-sm">Drop Audio Here</div>
                             <div className="h-32 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center justify-center text-green-400 font-mono text-sm">Generate Artwork</div>
@@ -46,7 +46,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
                         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full max-w-2xl bg-linear-to-br from-blue-900/40 to-black border border-blue-500/20 p-8 rounded-3xl"
+                        className="w-full max-w-2xl bg-linear-to-br from-blue-900/40 to-black border border-blue-500/20 p-6 rounded-2xl"
                     >
                         <h2 className="text-xl font-black text-white mb-2 tracking-tight">Executive Dashboard</h2>
                         <p className="text-blue-200/60 mb-8">Connect telemetry and financial sources to activate this view.</p>

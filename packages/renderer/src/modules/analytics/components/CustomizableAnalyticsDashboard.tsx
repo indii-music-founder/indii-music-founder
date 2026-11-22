@@ -186,7 +186,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
             {loading ? (
                 <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
-                    <Zap size={32} className={`${moduleColor.text} animate-bounce`} />
+                    <Zap size={20} className={`${moduleColor.text} animate-bounce`} />
                     <p className="text-xs font-mono">Loading owner-scoped records...</p>
                 </div>
             ) : (
@@ -219,25 +219,25 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Gross Revenue</span>
-                                <span className="text-lg font-bold text-white font-mono mt-1 block">
+                                <span className="text-base font-bold text-white font-mono mt-1 block">
                                     ${totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Ledger Expenses</span>
-                                <span className="text-lg font-bold text-red-400 font-mono mt-1 block">
+                                <span className="text-base font-bold text-red-400 font-mono mt-1 block">
                                     -${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Pending Payouts</span>
-                                <span className="text-lg font-bold text-yellow-400 font-mono mt-1 block">
+                                <span className="text-base font-bold text-yellow-400 font-mono mt-1 block">
                                     ${pendingPayouts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Net Income</span>
-                                <span className={`text-lg font-bold font-mono mt-1 block ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                <span className={`text-base font-bold font-mono mt-1 block ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                     ${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
@@ -372,7 +372,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
                         <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
                             {actualExpensesList.length === 0 ? (
-                                <div className="text-xs text-slate-500 text-center py-6 font-mono border border-dashed border-white/10 rounded-xl">No expenses recorded yet.</div>
+                                <div className="text-xs text-slate-500 text-center py-4 font-mono border border-dashed border-white/10 rounded-xl">No expenses recorded yet.</div>
                             ) : actualExpensesList.slice(0, 5).map((exp, index) => (
                                 <div
                                     key={exp.id || index}

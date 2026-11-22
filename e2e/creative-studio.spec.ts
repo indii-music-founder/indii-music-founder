@@ -169,8 +169,8 @@ test.describe('Creative Studio', () => {
         const drawer = page.getByTestId('brand-assets-drawer');
         await expect(drawer).toBeVisible({ timeout: 5000 });
 
-        // Switch to Generate Intelligence tab
-        const genTab = drawer.getByRole('button', { name: 'Generate Intelligence' });
+        // Switch to Generate tab
+        const genTab = drawer.getByRole('button', { name: 'Generate' });
         await expect(genTab).toBeVisible();
         await genTab.click();
 

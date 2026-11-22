@@ -97,7 +97,7 @@ describe('AuthorityPanel', () => {
         // Select release
         fireEvent.change(screen.getByTestId('authority-release-selector'), { target: { value: 'rel-1' } });
 
-        // Generate DDEX
+        // Build package
         fireEvent.click(screen.getByTestId('authority-generate-ddex'));
 
         await waitFor(() => {

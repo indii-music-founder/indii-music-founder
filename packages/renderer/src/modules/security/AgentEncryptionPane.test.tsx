@@ -17,7 +17,7 @@ describe('AgentEncryptionPane', () => {
         });
 
         render(<AgentEncryptionPane />);
-        expect(screen.getByText(/No Active Swarm Sessions/)).toBeDefined();
+        expect(screen.getByText(/No Active Team Sessions/)).toBeDefined();
     });
 
     it('badges a peer as signed only when it has a verified signing key, not merely a local one', () => {

@@ -61,7 +61,7 @@ describe('BoardroomRightRail', () => {
         expect(screen.getByTestId('boardroom-right-rail')).toBeInTheDocument();
         expect(screen.getByTitle('Standards & Resources')).toBeInTheDocument();
         expect(screen.getByTitle('Room Presets & Console')).toBeInTheDocument();
-        expect(screen.getByTitle('Swarm Activity Feed')).toBeInTheDocument();
+        expect(screen.getByTitle('Team Activity')).toBeInTheDocument();
         expect(screen.getByTitle('Living Plans')).toBeInTheDocument();
     });
 
@@ -92,11 +92,11 @@ describe('BoardroomRightRail', () => {
         fireEvent.click(presetsTab);
 
         expect(screen.getByText('Room Presets & Console')).toBeInTheDocument();
-        expect(screen.getByText('Convene Primary Swarm')).toBeInTheDocument();
+        expect(screen.getByText('Seat the Core Team')).toBeInTheDocument();
         expect(screen.getByText('Solo indii Conductor')).toBeInTheDocument();
 
-        // Click Convene Primary Swarm
-        const seatAllButton = screen.getByText('Convene Primary Swarm');
+        // Click Seat the Core Team
+        const seatAllButton = screen.getByText('Seat the Core Team');
         fireEvent.click(seatAllButton);
         expect(useStore.setState).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -135,10 +135,10 @@ describe('BoardroomRightRail', () => {
         expect(onOpenLivingPlans).toHaveBeenCalledTimes(1);
 
         // Switch to Swarm Feed tab
-        const feedTab = screen.getByTitle('Swarm Activity Feed');
+        const feedTab = screen.getByTitle('Team Activity');
         fireEvent.click(feedTab);
 
-        const openFeedBtn = screen.getByText('Open Full Swarm Collaboration Feed');
+        const openFeedBtn = screen.getByText('Open Full Team Activity');
         fireEvent.click(openFeedBtn);
         expect(onOpenSwarmFeed).toHaveBeenCalledTimes(1);
     });

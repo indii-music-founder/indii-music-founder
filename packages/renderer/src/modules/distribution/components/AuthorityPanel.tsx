@@ -111,7 +111,7 @@ export const AuthorityPanel: React.FC = () => {
             setDdexXml(result);
             success('DDEX ERN 4.3 Message Generated');
         } catch (error: unknown) {
-            toastError(error instanceof Error ? error.message : 'DDEX generation failed');
+            toastError(error instanceof Error ? error.message : 'Couldn’t build the delivery package');
         } finally {
             setLoading(null);
         }
@@ -136,7 +136,7 @@ export const AuthorityPanel: React.FC = () => {
                     onChange={(e) => setSelectedReleaseId(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-dept-royalties/50"
                 >
-                    <option value="">-- Select Release for DDEX Generation --</option>
+                    <option value="">-- Select a release --</option>
                     {releases.map((release) => (
                         <option key={release.id} value={release.id} data-testid={`authority-release-option-${release.id}`}>
                             {release.title} ({release.artist})
@@ -166,7 +166,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {isrc && (
                         <div className="p-3 bg-dept-creative/10 border border-dept-creative/20 rounded-lg text-center">
-                            <span data-testid="authority-isrc-display" className="font-mono text-dept-creative text-lg">{isrc}</span>
+                            <span data-testid="authority-isrc-display" className="font-mono text-dept-creative text-base">{isrc}</span>
                         </div>
                     )}
                 </div>
@@ -191,7 +191,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {upc && (
                         <div className="p-3 bg-dept-distribution/10 border border-dept-distribution/20 rounded-lg text-center">
-                            <span data-testid="authority-upc-display" className="font-mono text-dept-distribution text-lg">{upc}</span>
+                            <span data-testid="authority-upc-display" className="font-mono text-dept-distribution text-base">{upc}</span>
                         </div>
                     )}
                 </div>
@@ -200,9 +200,9 @@ export const AuthorityPanel: React.FC = () => {
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-dept-royalties">
                         <FileCode className="w-5 h-5" />
-                        <span className="font-bold uppercase tracking-wider text-sm">DDEX Packager</span>
+                        <span className="font-bold uppercase tracking-wider text-sm">Delivery Package Builder</span>
                     </div>
-                    <p className="text-xs text-gray-500">Generate ERN 4.3 XML for direct ingestion by Apple, Spotify, and Amazon.</p>
+                    <p className="text-xs text-gray-500">Build the delivery file Apple, Spotify, and Amazon ingest.</p>
 
                     <button
                         data-testid="authority-generate-ddex"
@@ -211,7 +211,7 @@ export const AuthorityPanel: React.FC = () => {
                         className="w-full bg-dept-royalties hover:bg-dept-royalties/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                         {loading === 'ddex' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Generate DDEX
+                        Build package
                     </button>
                 </div>
             </div>
@@ -220,7 +220,7 @@ export const AuthorityPanel: React.FC = () => {
             {ddexXml && (
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 backdrop-blur-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-dept-royalties uppercase tracking-widest">DDEX ERN 4.3 Output</span>
+                        <span className="text-xs font-bold text-dept-royalties uppercase tracking-widest">Package output (XML)</span>
                         <button
                             data-testid="authority-copy-ddex"
                             onClick={() => navigator.clipboard.writeText(ddexXml)}

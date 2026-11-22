@@ -40,7 +40,7 @@ describe('PlatformWalkthroughModal', () => {
         );
 
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText('Platform Connection Copilot')).toBeInTheDocument();
+        expect(screen.getByText('Connection Guide')).toBeInTheDocument();
         expect(screen.getByText('Instagram Reels & Graph API')).toBeInTheDocument();
         expect(screen.getByText('Verify Professional Account Type')).toBeInTheDocument();
         expect(screen.getByText('Connect Instagram Now')).toBeInTheDocument();

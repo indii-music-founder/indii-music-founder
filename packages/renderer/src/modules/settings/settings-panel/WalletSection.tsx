@@ -44,7 +44,7 @@ const FEATURE_UNLOCKS = [
         icon: Palette,
         title: 'Cover Art & 4K Upscale',
         cost: '50 Credits',
-        description: 'Ultra-resolution visual asset generation and Real-ESRGAN super-resolution.',
+        description: 'Ultra-high-resolution images and upscaling.',
     },
     {
         icon: Music,
@@ -56,13 +56,13 @@ const FEATURE_UNLOCKS = [
         icon: Zap,
         title: 'Global DSP Distribution',
         cost: '250 Credits',
-        description: 'Complete DDEX metadata delivery package to Spotify, Apple Music, and TIDAL.',
+        description: 'Complete metadata delivery package to Spotify, Apple Music, and TIDAL.',
     },
     {
         icon: FileText,
         title: 'Legal Splits & Claims Review',
         cost: '75 Credits',
-        description: 'Autonomous rights analysis, collaborator split contracts, and conflict checks.',
+        description: 'Rights checks, collaborator split contracts, and conflict checks.',
     },
 ];
 
@@ -207,14 +207,14 @@ export const WalletSection: React.FC = () => {
     });
 
     return (
-        <div className="space-y-8 max-w-4xl" data-testid="wallet-section">
+        <div className="space-y-5 max-w-4xl" data-testid="wallet-section">
             <SectionHeader
                 title="Credit Wallet & Micro-Transactions"
                 description="Power on-demand creative generation, studio audio mastering, and distribution delivery."
             />
 
             {/* Balance Platinum Card */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-indigo-950/40 border border-amber-500/20 p-6 md:p-8 backdrop-blur-xl shadow-2xl">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-indigo-950/40 border border-amber-500/20 p-6 md:p-6 backdrop-blur-xl shadow-2xl">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
                     <div>
@@ -226,7 +226,7 @@ export const WalletSection: React.FC = () => {
                             <span className="text-2xl font-black text-white tracking-tight" data-testid="wallet-balance-amount">
                                 {loading ? '...' : balance.toLocaleString()}
                             </span>
-                            <span className="text-lg font-medium text-amber-300/80">Credits</span>
+                            <span className="text-base font-medium text-amber-300/80">Credits</span>
                         </div>
                         <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
                             <ShieldCheck size={14} className="text-emerald-400" />
@@ -346,7 +346,7 @@ export const WalletSection: React.FC = () => {
                                     data-testid={`buy-pack-${pack.id}`}
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                                         isGrowth
-                                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                                            ? 'bg-white hover:bg-gray-200 text-black shadow-md'
                                             : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                                     } disabled:opacity-50`}
                                 >
@@ -380,7 +380,7 @@ export const WalletSection: React.FC = () => {
                                 )}
                             </h3>
                             <p className="text-xs text-slate-400 mt-1">
-                                Automatically replenish your credit balance before high-demand creative rendering or distribution delivery is interrupted.
+                                Top up credits automatically so renders and deliveries never stop halfway.
                             </p>
                         </div>
                     </div>
@@ -465,7 +465,7 @@ export const WalletSection: React.FC = () => {
                                 onClick={() => void handleSaveAutoReloadSettings()}
                                 disabled={savingSettings}
                                 data-testid="save-auto-reload-settings"
-                                className="py-2 px-4 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-md"
+                                className="py-2 px-4 rounded-xl text-xs font-semibold bg-white hover:bg-gray-200 text-black transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-md"
                             >
                                 {savingSettings ? (
                                     <>
@@ -509,10 +509,10 @@ export const WalletSection: React.FC = () => {
 
                 <div className="rounded-2xl border border-slate-800/80 bg-slate-900/40 overflow-hidden">
                     {loading ? (
-                        <div className="p-8 text-center text-sm text-slate-400">Loading transaction history...</div>
+                        <div className="p-6 text-center text-sm text-slate-400">Loading transaction history...</div>
                     ) : filteredTransactions.length === 0 ? (
-                        <div className="p-8 text-center" data-testid="empty-transactions-notice">
-                            <Coins size={32} className="mx-auto text-slate-600 mb-2" />
+                        <div className="p-6 text-center" data-testid="empty-transactions-notice">
+                            <Coins size={20} className="mx-auto text-slate-600 mb-2" />
                             <p className="text-sm font-medium text-slate-300">No transactions recorded yet</p>
                             <p className="text-xs text-slate-500 mt-1">
                                 Top up credits above to begin creating with your studio tools.

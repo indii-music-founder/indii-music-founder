@@ -162,11 +162,11 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
     };
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 max-w-6xl mx-auto w-full">
+        <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 max-w-6xl mx-auto w-full">
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500/40 to-dept-creative/40 flex items-center justify-center shadow-2xl shadow-emerald-500/10 border border-white/10 mb-6 overflow-hidden"
+                className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-500/40 to-dept-creative/40 flex items-center justify-center shadow-2xl shadow-emerald-500/10 border border-white/10 mb-6 overflow-hidden"
             >
                 <IndiiFavicon size={44} />
             </motion.div>
@@ -184,9 +184,9 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-10 text-center"
+                className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-6 text-center"
             >
-                Your Creative Intelligence Engine • What Would You Like To Do?
+                What would you like to do?
             </motion.p>
 
             {/* Quick-Action Approval Gate Operational Banner (Promoted Visibility) */}
@@ -310,7 +310,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
             {/* Saved workflows keep their real Firestore-backed listing. The builder
                 entry moved into the suggestion grid, so this section only exists
                 when there is genuinely something saved to show. */}
-            {savedWorkflows.length > 0 && <div className="w-full px-4 mt-16">
+            {savedWorkflows.length > 0 && <div className="w-full px-4 mt-8">
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-emerald-200/50 font-medium uppercase tracking-[0.15em] text-[10px]">
                         Your Workflows
@@ -357,7 +357,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
                 <motion.button
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-12 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/50 text-xs font-medium hover:bg-white/10 hover:text-white transition-all border border-white/5"
+                    className="mt-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-white/50 text-xs font-medium hover:bg-white/10 hover:text-white transition-all border border-white/5"
                     onClick={() => setEntryAssistantDismissed(false)}
                 >
                     <MessageSquare size={14} />

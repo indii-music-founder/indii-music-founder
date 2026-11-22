@@ -366,7 +366,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
                                 <button
                                     type="button"
                                     onClick={handleApplyUrl}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                                    className="px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg text-sm font-semibold transition-colors"
                                 >
                                     Attach
                                 </button>
@@ -425,7 +425,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate,
                     <button
                         onClick={handleSave}
                         disabled={isOverLimit || isSaving}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2 bg-white hover:bg-gray-200 text-black text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Schedule Post
                     </button>

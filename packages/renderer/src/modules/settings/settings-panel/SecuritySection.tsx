@@ -348,7 +348,7 @@ const SecuritySection: React.FC = () => {
                     <Database size={16} className="text-slate-500" />
                     <div>
                         <p className="text-xs font-medium text-slate-300">Auto Memory Extraction</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Auto Memory is always active. Agents continuously learn from your interactions.</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">Memory is always on. Your team remembers what you tell it.</p>
                     </div>
                     <Check size={14} className="ml-auto text-emerald-500/50" />
                 </div>

@@ -32,7 +32,7 @@ export const ExpenseItem = React.memo(({ expense }: ExpenseItemProps) => {
                 </div>
             </div>
             <div className="flex flex-col items-end">
-                <div className="text-white font-mono font-bold text-lg">
+                <div className="text-white font-mono font-bold text-base">
                     {paymentStatus === 'paid' ? '-' : ''}${expense.amount.toFixed(2)}
                 </div>
                 <div className={`text-[10px] flex items-center gap-1 ${paymentStatus === 'paid' ? 'text-emerald-400' : paymentStatus === 'expected' ? 'text-amber-300' : 'text-gray-400'}`}>

@@ -24,7 +24,7 @@ export default function DesktopDashboard() {
             <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] ${moduleColor.bg} rounded-full blur-[150px] pointer-events-none`} />
 
             <div className="flex-1 flex flex-col z-10 min-w-0">
-                <div className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-surface/30 backdrop-blur-md">
+                <div className="h-24 border-b border-white/5 flex items-center justify-between px-6 bg-surface/30 backdrop-blur-md">
                     <div>
                         <h1 className={`text-xl font-black tracking-tight flex items-center gap-3 ${moduleColor.text}`}>
                             <Monitor size={28} className={moduleColor.text} />
@@ -41,10 +41,10 @@ export default function DesktopDashboard() {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5">
                         <div className="lg:col-span-1 space-y-6">
-                            <div className="bg-surface/30 border border-white/5 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
+                            <div className="bg-surface/30 border border-white/5 rounded-2xl p-6 backdrop-blur-xl shadow-2xl">
                                 <h3 className={`text-sm font-bold mb-6 flex items-center gap-2 ${moduleColor.text}`}>
                                     <Cpu size={16} className={moduleColor.text} /> VERIFIED STATUS
                                 </h3>
@@ -72,7 +72,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Power}
                                 title="Run on System Startup"
-                                description="No startup preference is connected to the Electron main process in this build."
+                                description="Startup settings aren't available in this version."
                                 status="unavailable"
                             />
 
@@ -88,7 +88,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Database}
                                 title="Offline Vault Synchronization"
-                                description="Project-file mirroring is not implemented. Firestore's built-in local cache does not provide a separate file vault."
+                                description="Offline copies of project files aren't available yet."
                                 status="unavailable"
                             />
 

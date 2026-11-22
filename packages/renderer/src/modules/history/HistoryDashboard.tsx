@@ -125,7 +125,7 @@ export default function HistoryDashboard() {
             {/* Main Content (Timeline) */}
             <div className="flex-1 flex flex-col z-10 min-w-0">
                 {/* Search Bar */}
-                <div className="h-20 border-b border-white/5 flex items-center px-8 bg-surface/20 backdrop-blur-md">
+                <div className="h-20 border-b border-white/5 flex items-center px-6 bg-surface/20 backdrop-blur-md">
                     <div className="relative w-full max-w-2xl">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                         <input
@@ -139,16 +139,16 @@ export default function HistoryDashboard() {
                 </div>
 
                 {/* Feed */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     <div className="max-w-4xl mx-auto">
                         <div className="relative">
                             {/* Timeline Line */}
                             <div className="absolute left-[27px] top-4 bottom-0 w-px bg-white/10" />
 
                             {timelineItems.length === 0 ? (
-                                <div className="text-center py-20 text-gray-500">
-                                    <Clock size={48} className="mx-auto mb-4 opacity-20" />
-                                    <p className="text-lg font-medium text-gray-400">No activity found</p>
+                                <div className="text-center py-10 text-gray-500">
+                                    <Clock size={28} className="mx-auto mb-4 opacity-20" />
+                                    <p className="text-base font-medium text-gray-400">No activity found</p>
                                     <p className="text-sm">Try adjusting your filters or search query.</p>
                                 </div>
                             ) : (

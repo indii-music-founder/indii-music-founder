@@ -357,7 +357,7 @@ export default function LikenessFusionPanel({
                 onClick={handleFuse}
                 disabled={isFusing || isDeletingSelfie || !activeTarget || (headshots.length === 0 && !selectedHeadshotId)}
                 data-testid="fuse-likeness-btn"
-                className="w-full py-2 px-3 rounded-lg bg-green-600 hover:bg-green-500 disabled:bg-gray-800 disabled:text-gray-600 font-medium text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full py-2 px-3 rounded-lg bg-white hover:bg-gray-200 disabled:bg-gray-800 disabled:text-gray-600 font-medium text-black transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
                 {isFusing ? (
                     <>

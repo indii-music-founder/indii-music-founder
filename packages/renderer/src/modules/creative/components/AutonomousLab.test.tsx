@@ -76,7 +76,7 @@ describe('AutonomousLab (Sequence Architect)', () => {
         expect(screen.getByText('Drop asset here')).toBeInTheDocument();
         
         // Buttons should be in correct disabled states initially
-        const synthesizeBtn = screen.getByRole('button', { name: /Synthesize Sequence/i });
+        const synthesizeBtn = screen.getByRole('button', { name: /Generate Sequence/i });
         expect(synthesizeBtn).toBeDisabled();
     });
 
@@ -94,7 +94,7 @@ describe('AutonomousLab (Sequence Architect)', () => {
         });
         
         // The synthesize button should become enabled now that we have a seed image
-        const synthesizeBtn = screen.getByRole('button', { name: /Synthesize Sequence/i });
+        const synthesizeBtn = screen.getByRole('button', { name: /Generate Sequence/i });
         expect(synthesizeBtn).not.toBeDisabled();
     });
 
@@ -103,7 +103,7 @@ describe('AutonomousLab (Sequence Architect)', () => {
         const dropzone = screen.getByText('Drop asset here').parentElement?.parentElement;
         fireEvent.drop(dropzone!, { dataTransfer: { getData: () => 'image-1', files: [] } });
 
-        fireEvent.click(screen.getByRole('button', { name: /Synthesize Sequence/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Generate Sequence/i }));
         await screen.findByText('Engine Trajectory');
 
         fireEvent.click(screen.getByText('Engine Trajectory'));
@@ -115,7 +115,7 @@ describe('AutonomousLab (Sequence Architect)', () => {
         expect(mockStoreRef.current.setVideoInputs).not.toHaveBeenCalled();
 
         vi.mocked(ImageGeneration.remixImage).mockResolvedValueOnce({ url: 'https://assets.example.test/revised-target.png' } as never);
-        fireEvent.click(screen.getByRole('button', { name: /Apply & re-synthesize/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Apply & regenerate/i }));
         await screen.findByText('Applied to target frame');
 
         fireEvent.click(screen.getAllByRole('button', { name: /Enter Director Mode/i })[0]!);

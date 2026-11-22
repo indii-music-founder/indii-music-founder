@@ -62,7 +62,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-6 animate-in fade-in duration-200">
             <div className="w-full max-w-4xl h-[90vh] max-h-[850px] bg-neutral-900/95 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-[#FFE135]/15 text-[#FFE135] rounded-xl border border-[#FFE135]/20">
                             <LayoutTemplate size={22} />
@@ -132,9 +132,9 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                 {/* Template Grid */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar min-h-0 bg-black/10">
                     {filteredTemplates.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center py-16">
-                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/10">
-                                <LayoutTemplate size={32} className="text-neutral-500" />
+                        <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                            <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                                <LayoutTemplate size={20} className="text-neutral-500" />
                             </div>
                             <p className="text-sm font-semibold text-neutral-300 mb-1">No matching templates found</p>
                             <p className="text-xs text-neutral-500 max-w-xs">Try selecting a different category or clearing your search filters.</p>

@@ -125,7 +125,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     data-testid="social-post-input"
                                     placeholder={t('social.hints.studio_update')}
-                                    className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[100px] focus:outline-none text-lg"
+                                    className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[100px] focus:outline-none text-base"
                                 />
                                 
                                 <AnimatePresence>
@@ -296,13 +296,13 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             {/* Feed List */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <div className="flex justify-center p-8">
+                    <div className="flex justify-center p-6">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dept-creative"></div>
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 animate-in fade-in duration-500">
+                    <div className="flex flex-col items-center justify-center p-8 text-center text-gray-500 animate-in fade-in duration-500">
                         <div className="bg-gray-800/50 p-4 rounded-full mb-4">
-                            <Ghost size={32} className="text-gray-400" aria-hidden="true" />
+                            <Ghost size={20} className="text-gray-400" aria-hidden="true" />
                         </div>
                         <h3 className="text-lg font-medium text-white mb-1">It's quiet in here</h3>
                         <p className="text-sm max-w-[250px]">

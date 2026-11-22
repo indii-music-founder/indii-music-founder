@@ -270,7 +270,7 @@ export function DMCANoticeGenerator() {
                     <button
                         onClick={handleGenerate}
                         disabled={!isFormValid}
-                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-white hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed text-black text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         <Shield size={14} />
                         Generate DMCA Notice
@@ -308,7 +308,7 @@ export function DMCANoticeGenerator() {
                             </pre>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-12">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-8">
                             <div className="w-12 h-12 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
                                 <FileText size={20} className="text-gray-600" />
                             </div>

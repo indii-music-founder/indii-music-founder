@@ -376,7 +376,7 @@ function IntelligenceSuggestionsPanel({ campaigns }: { campaigns: CampaignAsset[
                     <Sparkles size={18} className="text-[#FFB800]/60 mb-2" />
                     <p className="text-xs font-semibold text-gray-300">Ready to Launch</p>
                     <p className="text-[11px] text-gray-400 mt-1 max-w-[200px] leading-relaxed">
-                        Create your first release campaign using Intelligence to synchronize multi-platform social drops.
+                        Create your first release campaign to schedule posts across platforms.
                     </p>
                 </div>
             )}

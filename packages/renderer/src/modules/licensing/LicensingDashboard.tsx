@@ -163,7 +163,7 @@ export default function LicensingDashboard() {
                         </TabsList>
                     </div>
 
-                    <TabsContent value="overview" className="flex-1 flex flex-col gap-8 px-4 md:px-6 m-0 border-none p-0 data-[state=inactive]:hidden">
+                    <TabsContent value="overview" className="flex-1 flex flex-col gap-5 px-4 md:px-6 m-0 border-none p-0 data-[state=inactive]:hidden">
                         {/* Pending Clearances */}
                         <section className="space-y-4">
                             <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -205,7 +205,7 @@ export default function LicensingDashboard() {
                                                 <div className="flex flex-col items-end gap-3">
                                                     <button
                                                         onClick={() => handleDraftAction(request)}
-                                                        className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-emerald-400/20 shadow-lg shadow-emerald-600/10 transition-all scale-95 group-hover:scale-100"
+                                                        className="inline-flex items-center gap-2 bg-white hover:bg-gray-200 text-black text-[11px] font-bold px-4 py-2 rounded-xl border border-emerald-400/20 shadow-lg shadow-emerald-600/10 transition-all scale-95 group-hover:scale-100"
                                                     >
                                                         <FileText size={14} />
                                                         DRAFT AGREEMENT
@@ -249,7 +249,7 @@ export default function LicensingDashboard() {
                                             className="relative bg-white/[0.02] p-5 rounded-xl border border-white/5 overflow-hidden group hover:border-emerald-500/30 transition-all"
                                         >
                                             <div className="absolute top-0 right-0 p-3 text-emerald-500/10">
-                                                <ShieldCheck size={64} />
+                                                <ShieldCheck size={32} />
                                             </div>
                                             <div className="relative z-10 flex justify-between items-start">
                                                 <div className="space-y-1">

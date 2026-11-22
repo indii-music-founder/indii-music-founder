@@ -257,7 +257,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                     <button
                         type="submit"
                         disabled={isLoading || (isStemPack && stemSlotsFilled < 4)}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 disabled:text-blue-400 text-white rounded-lg font-bold shadow-lg shadow-blue-900/20 transition-all mt-4"
+                        className="w-full py-3 bg-white hover:bg-gray-200 disabled:bg-blue-900 disabled:text-blue-400 text-black rounded-lg font-bold transition-all mt-4"
                     >
                         {isLoading
                             ? isStemPack ? 'Uploading stems…' : 'Creating…'

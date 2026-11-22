@@ -220,7 +220,7 @@ describe('SchedulerClientService', () => {
     // ── onNeuralSync() ────────────────────────────────────────────────────────
 
     describe('onNeuralSync()', () => {
-        it('registers a Neural Sync listener and returns an unsubscribe fn', () => {
+        it('registers a Sync listener and returns an unsubscribe fn', () => {
             const unsubscribe = vi.fn();
             mockSchedulerAPI.onNeuralSync.mockReturnValue(unsubscribe);
 
@@ -231,7 +231,7 @@ describe('SchedulerClientService', () => {
             expect(unsub).toBe(unsubscribe);
         });
 
-        it('passes Neural Sync payload to the callback', () => {
+        it('passes Sync payload to the callback', () => {
             let capturedCallback: ((e: unknown) => void) | undefined;
             mockSchedulerAPI.onNeuralSync.mockImplementation((cb: (e: unknown) => void) => {
                 capturedCallback = cb;

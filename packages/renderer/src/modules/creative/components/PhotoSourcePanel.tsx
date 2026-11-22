@@ -155,7 +155,7 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
                             exit={{ opacity: 0 }}
                             className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-600"
                         >
-                            <Camera size={48} strokeWidth={1} />
+                            <Camera size={28} strokeWidth={1} />
                             <p className="text-xs uppercase font-bold">Select source below</p>
                         </motion.div>
                     )}

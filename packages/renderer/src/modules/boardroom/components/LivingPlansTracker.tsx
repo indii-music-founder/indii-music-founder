@@ -133,12 +133,12 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         {/* Body */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {loading ? (
-                                <div className="flex justify-center p-12">
+                                <div className="flex justify-center p-8">
                                     <div className={`w-6 h-6 border-2 ${getColorForModule('agent').border.replace('/20', '').replace('/30', '')} border-t-transparent rounded-full animate-spin`} />
                                 </div>
                             ) : plans.length === 0 ? (
-                                <div className="text-center p-12 text-white/40">
-                                    <Layers className="mx-auto mb-4 opacity-20" size={32} />
+                                <div className="text-center p-8 text-white/40">
+                                    <Layers className="mx-auto mb-4 opacity-20" size={20} />
                                     <p className="text-xs font-medium text-gray-300">No living plans found.</p>
                                     <p className="text-xs mt-2 opacity-80">Ask indii Conductor to propose a strategy or plan for your project.</p>
                                     <p className="text-[10px] mt-2">Ask indii Conductor to propose a strategy or plan for your project.</p>

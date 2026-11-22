@@ -3,7 +3,7 @@ import { Skeleton } from '@/core/components/ui/Skeleton';
 
 export const PublishingSkeleton = () => {
     return (
-        <div className="space-y-8">
+        <div className="space-y-5">
             {/* Header Skeleton */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-2">
@@ -44,13 +44,13 @@ export const PublishingSkeleton = () => {
                 {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center justify-between p-5 bg-gray-900/30 border border-gray-800/50 rounded-2xl h-24">
                         <div className="flex items-center gap-4">
-                            <Skeleton className="w-16 h-16 bg-gray-800/50 rounded-lg" />
+                            <Skeleton className="w-10 h-10 bg-gray-800/50 rounded-lg" />
                             <div className="space-y-2">
                                 <Skeleton className="h-5 w-48 bg-gray-800/50" />
                                 <Skeleton className="h-4 w-32 bg-gray-800/30" />
                             </div>
                         </div>
-                        <div className="flex items-center gap-8">
+                        <div className="flex items-center gap-5">
                             <div className="hidden md:block space-y-2">
                                 <Skeleton className="h-4 w-20 bg-gray-800/50" />
                                 <Skeleton className="h-3 w-16 bg-gray-800/30" />

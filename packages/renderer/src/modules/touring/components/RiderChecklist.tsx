@@ -81,7 +81,7 @@ export const RiderChecklist: React.FC = () => {
                             <Button
                                 type="submit"
                                 disabled={!newItemLabel.trim()}
-                                className="p-3 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
+                                className="p-3 bg-white hover:bg-gray-200 text-black rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
                                 aria-label="Add Item"
                             >
                                 <Plus size={18} />
@@ -91,13 +91,13 @@ export const RiderChecklist: React.FC = () => {
 
                     <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
                         {loading ? (
-                            <div className="flex items-center justify-center py-12 flex-col gap-3">
-                                <Loader2 className="animate-spin text-green-500" size={32} />
+                            <div className="flex items-center justify-center py-8 flex-col gap-3">
+                                <Loader2 className="animate-spin text-green-500" size={20} />
                                 <span className="text-xs text-gray-600 uppercase tracking-widest animate-pulse">Syncing Inventory...</span>
                             </div>
                         ) : items.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-4 opacity-50">
-                                <Coffee size={48} strokeWidth={1} />
+                                <Coffee size={28} strokeWidth={1} />
                                 <div className="text-xs font-mono uppercase tracking-widest">No items requested</div>
                             </div>
                         ) : (

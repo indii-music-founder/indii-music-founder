@@ -38,7 +38,7 @@ export default function PromptHistoryDrawer({ onClose, embedded = false }: { onC
         <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-3 pb-24">
                 {uniquePrompts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-gray-500 text-xs">
-                        <Clock size={32} className="mb-2 opacity-10" />
+                        <Clock size={20} className="mb-2 opacity-10" />
                         No prompts in history
                     </div>
                 ) : (

@@ -47,7 +47,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
     return (
         <div className="flex flex-col h-full w-full max-w-5xl mx-auto p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-white">White-Glove Ingestion</h1>
+                <h1 className="text-xl font-bold tracking-tight text-white">Guided Import</h1>
                 <p className="text-gray-400">
                     Drop extensive catalogs, multi-track stems, and 4K music videos here. Our automated tools will categorize, extract metadata, and prepare them for your vault.
                 </p>

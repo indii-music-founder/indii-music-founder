@@ -168,10 +168,10 @@ export const TransferPanel: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* Configuration Section */}
-                <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
+                <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 bg-dept-distribution/10 border border-dept-distribution/20 rounded-xl">
@@ -387,7 +387,7 @@ export const TransferPanel: React.FC = () => {
                 {/* Status Section */}
                 <div className="flex flex-col gap-6">
                     {/* Status Card */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
                         <h4 className={labelClasses}>Transmission Status</h4>
                         {report ? (
                             <div className="flex items-start gap-4 p-4 bg-black/20 border border-white/5 rounded-xl italic">

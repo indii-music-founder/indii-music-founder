@@ -168,7 +168,7 @@ const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: S
                 <div className="flex flex-col items-center gap-2 pt-1 flex-shrink-0 w-14">
                     <div className="h-14 w-14 rounded-full bg-gray-900 border border-gray-700 flex flex-col items-center justify-center z-10">
                         <span className="text-xs text-gray-500 uppercase font-bold">Day</span>
-                        <span className="text-lg font-bold text-white">{post.day}</span>
+                        <span className="text-base font-bold text-white">{post.day}</span>
                     </div>
                 </div>
 
@@ -242,7 +242,7 @@ const GridView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: Sched
                     </div>
                 ) : (
                     <div className="aspect-square w-full bg-gray-800/50 rounded-xl mb-3 flex items-center justify-center text-gray-600 border border-gray-800 border-dashed">
-                        <ImageIconComponent size={32} />
+                        <ImageIconComponent size={20} />
                     </div>
                 )}
 

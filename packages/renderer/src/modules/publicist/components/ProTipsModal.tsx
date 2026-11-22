@@ -42,7 +42,7 @@ export const ProTipsModal: React.FC<ProTipsModalProps> = ({ isOpen, onClose }) =
                         initial={{ opacity: 0, scale: 0.9, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-linear-to-br from-slate-900 to-slate-950 border border-sonic-purple/20 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] z-[70] overflow-hidden"
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-linear-to-br from-slate-900 to-slate-950 border border-sonic-purple/20 rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.15)] z-[70] overflow-hidden"
                     >
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
                             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -72,7 +72,7 @@ export const ProTipsModal: React.FC<ProTipsModalProps> = ({ isOpen, onClose }) =
                         </div>
 
                         <div className="p-4 bg-sonic-purple/10 border-t border-sonic-purple/20 text-center">
-                            <p className="text-xs text-sonic-purple font-medium">Powered by indii Agent Intelligence</p>
+                            <p className="text-xs text-sonic-purple font-medium">From your indii team</p>
                         </div>
                     </motion.div>
                 </>

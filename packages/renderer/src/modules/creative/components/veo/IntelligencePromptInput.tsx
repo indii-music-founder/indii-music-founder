@@ -283,7 +283,7 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
                         <button
                             onClick={handleImprove}
                             disabled={isImproving || !prompt.trim() || disabled}
-                            title="Improve with Intelligence"
+                            title="Improve"
                             className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {isImproving ? (

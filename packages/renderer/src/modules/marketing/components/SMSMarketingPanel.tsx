@@ -48,9 +48,9 @@ export default function SMSMarketingPanel() {
             <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                     <MessageSquare size={18} className="text-dept-marketing" />
-                    SMS Marketing Engine
+                    SMS Marketing
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">Send targeted SMS blasts to fans via Twilio.</p>
+                <p className="text-xs text-gray-500 mt-1">Send targeted texts to your fans.</p>
             </div>
 
             {/* Honest availability state */}

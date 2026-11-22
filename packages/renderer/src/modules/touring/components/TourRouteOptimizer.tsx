@@ -287,7 +287,7 @@ export function TourRouteOptimizer() {
 
                 {/* Route cards */}
                 {route.length === 0 ? (
-                    <div className="py-20 flex flex-col items-center gap-3 text-center">
+                    <div className="py-10 flex flex-col items-center gap-3 text-center">
                         <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center">
                             <MapPin size={20} className="text-neutral-500" />
                         </div>

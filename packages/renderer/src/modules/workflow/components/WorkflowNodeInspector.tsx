@@ -165,7 +165,7 @@ export default function WorkflowNodeInspector() {
                         <button
                             onClick={handleExpandSubgraph}
                             disabled={isExpanding}
-                            className="w-full py-1.5 px-3 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                            className="w-full py-1.5 px-3 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                         >
                             {isExpanding ? <Loader2 size={12} className="animate-spin" /> : <Maximize2 size={12} />}
                             {isExpanding ? 'Expanding...' : 'Expand to Canvas'}
@@ -204,7 +204,7 @@ export default function WorkflowNodeInspector() {
                             <button
                                 onClick={handleAiRefine}
                                 disabled={isGenerating || !aiInstruction.trim()}
-                                className="p-1.5 bg-green-600 hover:bg-green-500 text-white rounded disabled:opacity-50"
+                                className="p-1.5 bg-white hover:bg-gray-200 text-black rounded disabled:opacity-50"
                             >
                                 {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                             </button>
@@ -237,7 +237,7 @@ export default function WorkflowNodeInspector() {
                                 <button
                                     onClick={handleAudition}
                                     disabled={isAuditioning}
-                                    className="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                                    className="w-full py-1.5 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                                 >
                                     {isAuditioning ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                                     {isAuditioning ? 'Generating...' : 'Generate 3 Directions'}
@@ -281,7 +281,7 @@ export default function WorkflowNodeInspector() {
                 <div className="p-4 border-t border-gray-800 bg-gray-800/50 flex justify-end">
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-lg flex items-center gap-2"
+                        className="px-4 py-2 bg-white hover:bg-gray-200 text-black text-sm font-bold rounded-lg flex items-center gap-2"
                     >
                         <Save size={16} /> Save Changes
                     </button>

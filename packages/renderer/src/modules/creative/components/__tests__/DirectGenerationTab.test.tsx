@@ -691,7 +691,7 @@ describe('DirectGenerationTab structural regressions', () => {
         // Both Basics and Advanced Config controls are visible immediately without switching pages
         expect(screen.getByText('Choose Aspect Ratio')).toBeInTheDocument();
         expect(screen.getByText('Image Output Size')).toBeInTheDocument();
-        expect(screen.getByText('API Engine Grade')).toBeInTheDocument();
+        expect(screen.getByText('Quality Tier')).toBeInTheDocument();
         expect(screen.getByText('Thinking Level')).toBeInTheDocument();
 
         // Jev unified configuration preset bar is rendered and applies preset on 1-click

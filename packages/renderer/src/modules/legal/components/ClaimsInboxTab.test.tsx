@@ -77,7 +77,7 @@ describe('ClaimsInboxTab', () => {
         fireEvent.click(claimAlpha.querySelector('div')!);
 
         expect(screen.getByText('Review Reasons')).toBeInTheDocument();
-        expect(screen.getByText('Overlapping Scope Assertions')).toBeInTheDocument();
+        expect(screen.getByText('Overlapping Claims')).toBeInTheDocument();
         expect(screen.getByText(/Submitted provenance and evidence \(unverified\)/)).toBeInTheDocument();
         expect(screen.getByText('Reference: https://vault/split.pdf')).toBeInTheDocument();
     });

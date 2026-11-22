@@ -91,7 +91,7 @@ export default function ShowroomStage({
                     whileHover={canGenerate ? { scale: 1.05, y: -2 } : {}}
                     whileTap={canGenerate ? { scale: 0.95 } : {}}
                     className={`
-                        group relative px-8 py-4 rounded-xl font-bold flex items-center gap-3 transition-all duration-300
+                        group relative px-6 py-4 rounded-xl font-bold flex items-center gap-3 transition-all duration-300
                         ${canGenerate
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:bg-blue-500'
                             : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'}
@@ -110,7 +110,7 @@ export default function ShowroomStage({
                     whileHover={canAnimate ? { scale: 1.05, y: -2 } : {}}
                     whileTap={canAnimate ? { scale: 0.95 } : {}}
                     className={`
-                        group relative px-8 py-4 rounded-xl font-bold flex items-center gap-3 transition-all duration-300 overflow-hidden
+                        group relative px-6 py-4 rounded-xl font-bold flex items-center gap-3 transition-all duration-300 overflow-hidden
                         ${canAnimate
                             ? 'bg-green-600 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:bg-green-500'
                             : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'}

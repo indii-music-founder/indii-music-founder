@@ -10,7 +10,7 @@ interface MetricsGridProps {
 
 export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, pendingRequestsCount, projectedValue }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <MetricCard
                 title="Active Licenses"
                 value={activeLicensesCount.toString()}

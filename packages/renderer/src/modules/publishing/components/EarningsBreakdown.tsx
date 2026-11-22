@@ -95,8 +95,8 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                                 </div>
                             ))
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-12 opacity-50">
-                                <DollarSign size={32} className="text-gray-700 mb-2" />
+                            <div className="flex flex-col items-center justify-center py-8 opacity-50">
+                                <DollarSign size={20} className="text-gray-700 mb-2" />
                                 <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">No provider breakdown available</p>
                             </div>
                         )}

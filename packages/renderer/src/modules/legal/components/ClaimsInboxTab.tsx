@@ -176,8 +176,8 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
             </div>
 
             {loadState !== 'ready' ? (
-                <div className="rounded-xl border border-dashed border-white/10 p-10 text-center" role="status">
-                    <FileQuestion className="text-amber-400 mx-auto mb-3" size={32} />
+                <div className="rounded-xl border border-dashed border-white/10 p-6 text-center" role="status">
+                    <FileQuestion className="text-amber-400 mx-auto mb-3" size={20} />
                     <p className="text-sm font-medium text-gray-200">
                         {loadState === 'loading' ? 'Loading recorded claims…' : 'Claims data is unavailable'}
                     </p>
@@ -193,8 +193,8 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                     )}
                 </div>
             ) : displayedItems.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 p-12 text-center flex flex-col items-center justify-center">
-                    <Shield className="text-gray-500 mb-3" size={36} />
+                <div className="rounded-xl border border-dashed border-white/10 p-8 text-center flex flex-col items-center justify-center">
+                    <Shield className="text-gray-500 mb-3" size={20} />
                     <p className="text-sm font-medium text-gray-300">No claims are recorded in this indii inbox</p>
                     <p className="text-xs text-gray-500 mt-1 max-w-md">
                         External rights sources and catalog completeness have not been verified. This empty inbox is not a clearance or ownership finding.
@@ -309,7 +309,7 @@ export function ClaimsInboxTab({ initialClaims }: ClaimsInboxTabProps) {
                                             <div>
                                                 <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                                                     <AlertTriangle size={12} />
-                                                    Overlapping Scope Assertions
+                                                    Overlapping Claims
                                                 </h4>
                                                 <div className="space-y-1.5">
                                                     {conflicts.map((c, i) => (

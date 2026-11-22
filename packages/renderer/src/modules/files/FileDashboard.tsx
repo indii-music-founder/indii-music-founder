@@ -364,7 +364,7 @@ export default function FileDashboard() {
                     />
                     <NavItem
                         icon={Music}
-                        label="Audio DNA"
+                        label="Audio Profile"
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'audio' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');
@@ -414,7 +414,7 @@ export default function FileDashboard() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col z-10 min-w-0">
                 {/* Top Toolbar */}
-                <div className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-surface/20 backdrop-blur-md">
+                <div className="h-20 border-b border-white/5 flex items-center justify-between px-6 bg-surface/20 backdrop-blur-md">
                     <div className="relative w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <input
@@ -504,11 +504,11 @@ export default function FileDashboard() {
                 </div>
 
                 {/* Content View */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     {activeTab === 'active' ? (
                         !currentProjectId ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                                <Folder size={48} className="mb-4 opacity-20" />
+                                <Folder size={28} className="mb-4 opacity-20" />
                                 <p>Select a project to view files</p>
                             </div>
                         ) : isFileSystemLoading ? (
@@ -523,7 +523,7 @@ export default function FileDashboard() {
                         ) : displayActiveNodes.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                    {hasActiveFilters ? <Search size={32} className="opacity-20" /> : <Folder size={32} className="opacity-20" />}
+                                    {hasActiveFilters ? <Search size={20} className="opacity-20" /> : <Folder size={20} className="opacity-20" />}
                                 </div>
                                 <h3 className="mb-2 text-base font-semibold text-gray-300">
                                     {hasActiveFilters ? 'No matching files' : 'No project files yet'}
@@ -568,7 +568,7 @@ export default function FileDashboard() {
                                             <div
                                                 className={cn(
                                                     'relative bg-black/40 flex items-center justify-center border-white/5',
-                                                    viewMode === 'grid' ? 'aspect-video border-b' : 'w-16 h-16 rounded-lg flex-shrink-0'
+                                                    viewMode === 'grid' ? 'aspect-video border-b' : 'w-10 h-10 rounded-lg flex-shrink-0'
                                                 )}
                                             >
                                                 {node.fileType === 'image' && node.data?.url ? (
@@ -597,13 +597,13 @@ export default function FileDashboard() {
                         /* TRASH VIEW */
                         isLoadingTrash ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500" role="status">
-                                <Trash2 size={32} className="mb-4 animate-pulse opacity-30" />
+                                <Trash2 size={20} className="mb-4 animate-pulse opacity-30" />
                                 <p>Loading Trash items...</p>
                             </div>
                         ) : displayTrashItems.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                    <Trash2 size={32} className="opacity-20" />
+                                    <Trash2 size={20} className="opacity-20" />
                                 </div>
                                 <h3 className="text-base font-semibold text-gray-300 mb-2">Trash Vault is empty</h3>
                                 <p className="text-sm">Items moved to trash will remain here safely until you choose to restore or delete them.</p>

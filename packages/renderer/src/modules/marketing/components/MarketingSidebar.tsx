@@ -56,7 +56,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
             title: 'Channels',
             items: [
                 { id: 'email', label: 'Email Marketing', icon: Mail },
-                { id: 'sms', label: 'SMS Engine', icon: MessageSquare },
+                { id: 'sms', label: 'SMS', icon: MessageSquare },
                 { id: 'community', label: 'Community Webhook', icon: Hash },
             ],
         },
@@ -70,7 +70,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
         {
             title: 'Intelligence',
             items: [
-                { id: 'swarm', label: 'Swarm Command', icon: Activity },
+                { id: 'swarm', label: 'Automation', icon: Activity },
                 { id: 'fan-data', label: 'Fan Enrichment', icon: Users },
             ],
         },
@@ -101,7 +101,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
             </div>
 
             {/* Navigation */}
-            <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5 custom-scrollbar">
                 {navSections.map((section) => (
                     <div key={section.title}>
                         <h3>

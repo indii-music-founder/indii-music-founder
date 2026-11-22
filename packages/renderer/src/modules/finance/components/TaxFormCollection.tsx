@@ -149,7 +149,7 @@ export function TaxFormCollection() {
             {/* Table */}
             <div className="rounded-xl border border-white/5 overflow-hidden">
                 {collaborators.length === 0 ? (
-                    <div className="p-8 text-center flex flex-col items-center">
+                    <div className="p-6 text-center flex flex-col items-center">
                         <FileText size={24} className="text-gray-600 mb-3" />
                         <h3 className="text-sm font-bold text-white mb-1">No Collaborators Added</h3>
                         <p className="text-xs text-gray-500 max-w-[250px] mb-4">

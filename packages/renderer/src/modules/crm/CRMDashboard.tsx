@@ -147,7 +147,7 @@ export default function CRMDashboard() {
                         <span className="text-sm font-medium">Synchronizing CRM collections...</span>
                     </div>
                 ) : campaigns.length === 0 ? (
-                    <div className="h-80 flex flex-col items-center justify-center p-12 border border-dashed border-border rounded-2xl text-text-secondary bg-background/20 gap-4 text-center">
+                    <div className="h-80 flex flex-col items-center justify-center p-8 border border-dashed border-border rounded-2xl text-text-secondary bg-background/20 gap-4 text-center">
                         <div className="p-4 bg-background/60 border border-border rounded-full text-text-secondary/50">
                             <TrendingUp className="w-8 h-8" />
                         </div>

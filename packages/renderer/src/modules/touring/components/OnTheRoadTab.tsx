@@ -111,9 +111,9 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </div>
 
                     <CardHeader>
-                        <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+                        <CardTitle className="text-base font-bold text-white flex items-center gap-2 mb-1">
                             <Navigation className="text-blue-500" size={20} />
-                            Command Center
+                            Control Center
                         </CardTitle>
                         <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Mission Control</p>
                     </CardHeader>
@@ -148,7 +148,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     {totalMiles > 0 && (
                         <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
                             <CardHeader>
-                                <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+                                <CardTitle className="text-base font-bold text-white flex items-center gap-2 mb-1">
                                     <TrendingUp className="text-amber-500" size={20} />
                                     Recorded Leg Miles
                                 </CardTitle>
@@ -205,7 +205,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 {/* Logistics Radar */}
                 <Card className="bg-[#161b22] border-gray-800 shadow-xl flex flex-col gap-4">
                     <CardHeader className="pb-0">
-                        <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                        <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                             <Fuel className="text-green-500" size={18} />
                             Logistics Radar
                         </CardTitle>
@@ -286,7 +286,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                 </div>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-2">
-                                    <Fuel size={32} className="opacity-20" />
+                                    <Fuel size={20} className="opacity-20" />
                                     <span className="text-xs italic">Scan for nearby amenities</span>
                                 </div>
                             )}

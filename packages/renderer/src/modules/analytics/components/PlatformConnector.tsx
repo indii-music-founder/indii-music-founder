@@ -351,7 +351,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 border border-[#FFB800]/40 text-[#FFD700] hover:border-[#FFD700] text-xs font-bold transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)] shrink-0 w-fit"
                 >
                     <Compass size={14} className="text-[#FFD700]" />
-                    <span>Setup Walkthrough Copilot</span>
+                    <span>Setup Guide</span>
                 </button>
             </div>
 
@@ -475,7 +475,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
 
             {/* Privacy note */}
             <p className="text-[11px] text-slate-500 text-center pt-2">
-                Platform credentials are cryptographically stored in your private Firestore vault.
+                Platform credentials are encrypted and stored privately.
                 Publishing permissions are only used for campaigns you explicitly approve.
             </p>
 

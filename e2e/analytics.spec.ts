@@ -2,7 +2,7 @@ import { test, expect } from './fixtures/auth';
 
 /**
  * Analytics Module E2E Tests
- * Covers: module load, Growth Intelligence Dashboard, metrics grid,
+ * Covers: module load, Growth Insights Dashboard, metrics grid,
  * platform breakdown, stream chart render
  *
  * Run: npx playwright test e2e/analytics.spec.ts
@@ -54,7 +54,7 @@ test.describe('Analytics Module', () => {
         await nav.click();
         await page.waitForTimeout(3_000);
 
-        // The Growth Intelligence Dashboard or CustomizableAnalyticsDashboard should render
+        // The Growth Insights Dashboard or CustomizableAnalyticsDashboard should render
         // Key UI signals: chart containers, metrics cards, or the platform breakdown
         const analyticsContent = page.locator(
             '[class*="chart"], [class*="metric"], [class*="analytics"], [class*="growth"], svg'

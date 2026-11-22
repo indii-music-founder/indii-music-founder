@@ -107,10 +107,10 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="grid grid-cols-1 lg:grid-cols-5 gap-8 h-full min-h-[600px]"
+            className="grid grid-cols-1 lg:grid-cols-5 gap-5 h-full min-h-[600px]"
         >
             <div className="lg:col-span-2 flex flex-col gap-6 h-full">
-                <div className="glass-panel p-1 rounded-3xl flex-1 flex flex-col overflow-hidden bg-white/5 border border-white/5 backdrop-blur-xl">
+                <div className="glass-panel p-1 rounded-2xl flex-1 flex flex-col overflow-hidden bg-white/5 border border-white/5 backdrop-blur-xl">
                     <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                             <TrendingUp size={12} className="text-dept-brand" />
@@ -124,7 +124,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                             <option value="messaging" className="bg-[#111]">Messaging</option>
                             <option value="social" className="bg-[#111]">Social Post</option>
                             <option value="bio" className="bg-[#111]">Bio Check</option>
-                            <option value="visuals" className="bg-[#111]">Visual DNA</option>
+                            <option value="visuals" className="bg-[#111]">Visual Identity</option>
                         </select>
                     </div>
                     <textarea
@@ -155,7 +155,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                 </div>
 
                 {/* Analysis History */}
-                <div className="glass-panel p-6 rounded-3xl bg-[#111] border border-white/5 h-64 overflow-hidden flex flex-col">
+                <div className="glass-panel p-6 rounded-2xl bg-[#111] border border-white/5 h-64 overflow-hidden flex flex-col">
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <History size={12} /> Recent Scans
                     </h3>
@@ -183,7 +183,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="glass-panel p-8 rounded-3xl h-full overflow-y-auto space-y-8 bg-white/5 border border-white/5 backdrop-blur-xl custom-scrollbar"
+                        className="glass-panel p-6 rounded-2xl h-full overflow-y-auto space-y-5 bg-white/5 border border-white/5 backdrop-blur-xl custom-scrollbar"
                     >
                         <div className="flex items-center justify-between border-b border-white/5 pb-8">
                             <div>
@@ -246,7 +246,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                         </div>
                     </motion.div>
                 ) : (
-                    <div className="glass-panel rounded-3xl h-full flex flex-col items-center justify-between text-slate-600 border border-white/5 p-0 overflow-hidden bg-white/[0.01] backdrop-blur-xl">
+                    <div className="glass-panel rounded-2xl h-full flex flex-col items-center justify-between text-slate-600 border border-white/5 p-0 overflow-hidden bg-white/[0.01] backdrop-blur-xl">
                         {/* Global Resonance Map */}
                         <div className="w-full flex-1 relative min-h-[300px]">
                             <TourMap
@@ -265,13 +265,13 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                             </div>
                         </div>
 
-                        <div className="p-12 text-center relative z-10">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
+                        <div className="p-8 text-center relative z-10">
+                            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
                                 <Activity size={24} className="text-dept-brand" />
                             </div>
-                            <h3 className="text-base font-black text-white mb-3 tracking-tight">DNA Scanner Standby</h3>
+                            <h3 className="text-base font-black text-white mb-3 tracking-tight">Brand check ready</h3>
                             <p className="max-w-xs mx-auto text-[11px] leading-relaxed font-bold uppercase tracking-wider opacity-40">
-                                Analyzing cross-market sentiment against established visual guidelines.
+                                Checks how your visuals land against your brand guidelines.
                             </p>
                         </div>
                     </div>

@@ -612,8 +612,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                             ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300"
                             : "bg-indigo-600/20 hover:bg-indigo-600/35 border-indigo-500/30 text-indigo-200"
                     )}
-                    title="Pin this page into Boardroom swarm context"
-                    aria-label="Pin page to swarm"
+                    title="Share this page with your team"
+                    aria-label="Pin page for your team"
                     data-testid="boardroom-browser-pin-btn"
                 >
                     {isPinned ? <Check size={12} /> : <Pin size={12} />}
@@ -766,7 +766,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                             </div>
                             <div className="prose prose-invert prose-sm leading-relaxed whitespace-pre-wrap font-sans text-xs">
                                 {extractedText || (
-                                    <div className="text-center py-12 text-white/40">
+                                    <div className="text-center py-8 text-white/40">
                                         <Globe size={24} className="mx-auto mb-2 opacity-30" />
                                         <p>Extracting readable text from webpage...</p>
                                     </div>

@@ -42,7 +42,7 @@ const CampaignList: React.FC<CampaignListProps> = ({
     const isSearchActive = Boolean(searchQuery && searchQuery.trim().length > 0);
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-8">
+        <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-5">
             {/* Section Header */}
             <div className="flex justify-between items-end">
                 <div>
@@ -68,13 +68,13 @@ const CampaignList: React.FC<CampaignListProps> = ({
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onAIGenerate}
-                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-[#FFB800]/30 bg-[#14100C]/70 hover:bg-[#14100C] hover:border-[#FFB800]/60 transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-[0_0_24px_rgba(255,184,0,0.15)]"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border border-dashed border-[#FFB800]/30 bg-[#14100C]/70 hover:bg-[#14100C] hover:border-[#FFB800]/60 transition-all duration-300 backdrop-blur-xl shadow-lg hover:shadow-[0_0_24px_rgba(255,184,0,0.15)]"
                         >
                             <div className="h-16 w-16 rounded-full bg-[#FFB800]/10 flex items-center justify-center group-hover:bg-[#FFB800]/20 group-hover:scale-110 transition-all duration-300">
                                 <Sparkles size={30} className="text-[#FFD700] group-hover:text-white" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm font-bold text-white group-hover:text-[#FFD700] transition-colors tracking-tight">Generate with Intelligence</h3>
+                                <h3 className="text-sm font-bold text-white group-hover:text-[#FFD700] transition-colors tracking-tight">Build a campaign</h3>
                                 <p className="text-xs text-gray-400 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
                             </div>
 
@@ -91,7 +91,7 @@ const CampaignList: React.FC<CampaignListProps> = ({
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onCreateNew}
-                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-white/10 bg-[#14100C]/40 hover:bg-[#14100C]/80 hover:border-[#FFB800]/30 transition-all duration-300 backdrop-blur-md"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border border-dashed border-white/10 bg-[#14100C]/40 hover:bg-[#14100C]/80 hover:border-[#FFB800]/30 transition-all duration-300 backdrop-blur-md"
                         >
                             <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#FFB800]/15 group-hover:scale-110 transition-all duration-300">
                                 <Plus size={30} className="text-gray-400 group-hover:text-[#FFD700]" />
@@ -120,7 +120,7 @@ const CampaignList: React.FC<CampaignListProps> = ({
                         action={isSearchActive && onClearSearch
                             ? { label: 'Clear Search', onClick: onClearSearch }
                             : { label: 'Create Campaign', onClick: onCreateNew }}
-                        secondaryAction={onAIGenerate && !isSearchActive ? { label: 'Generate with Intelligence', onClick: onAIGenerate, variant: 'secondary' } : undefined}
+                        secondaryAction={onAIGenerate && !isSearchActive ? { label: 'Build a campaign', onClick: onAIGenerate, variant: 'secondary' } : undefined}
                         compact
                     />
                 ) : campaigns.map(campaign => (

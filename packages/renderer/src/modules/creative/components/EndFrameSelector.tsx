@@ -20,7 +20,7 @@ export const EndFrameSelector: React.FC<EndFrameSelectorProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="absolute inset-0 bg-black/80 z-10 flex flex-col p-8">
+        <div className="absolute inset-0 bg-black/80 z-10 flex flex-col p-6">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-base font-bold text-white">Select End Frame</h3>
                 <button onClick={onClose} className="text-gray-400 hover:text-white">
@@ -41,7 +41,7 @@ export const EndFrameSelector: React.FC<EndFrameSelectorProps> = ({
                     </button>
                 ))}
                 {generatedHistory.filter(i => i.type === 'image' && i.id !== currentItemId).length === 0 && (
-                    <div className="col-span-4 text-center text-gray-500 py-12">
+                    <div className="col-span-4 text-center text-gray-500 py-8">
                         No other images found in history.
                     </div>
                 )}

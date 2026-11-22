@@ -128,7 +128,7 @@ export const RevenueProjections = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-dept-royalties/70 font-medium">Hypothetical 20% Manager Fee</p>
-                                    <p className="text-lg font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
+                                    <p className="text-base font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
                                 </div>
                             </div>
                             <div className="text-[10px] bg-dept-royalties/20 text-dept-royalties px-2 py-1 rounded font-bold">

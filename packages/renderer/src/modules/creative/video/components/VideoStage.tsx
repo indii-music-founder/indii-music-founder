@@ -494,11 +494,11 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             />
                         ) : frameImageFailed ? (
                             <div className="flex flex-col items-center gap-2 text-white/30">
-                                <Video size={48} strokeWidth={1} />
+                                <Video size={28} strokeWidth={1} />
                                 <p className="text-xs font-medium">Preview unavailable — frame is still set and ready to use</p>
                             </div>
                         ) : (
-                            <Loader2 size={32} className="text-white/30 animate-spin" />
+                            <Loader2 size={20} className="text-white/30 animate-spin" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 

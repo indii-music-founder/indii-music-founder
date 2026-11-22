@@ -370,7 +370,7 @@ export default function VideoWorkflow() {
             toast.info(`${payload.asset.name} cannot be used by Veo yet.`);
         } catch (error) {
             logger.error('[veo-drop] Failed to prepare dropped asset', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to prepare the dropped asset for Veo.');
+            toast.error(error instanceof Error ? error.message : 'Failed to prepare the dropped asset for video.');
         }
     }, [addCharacterReference, currentProjectId, setVideoInputs, toast, videoInputs.firstFrame, videoInputs.lastFrame]);
 
@@ -456,7 +456,7 @@ export default function VideoWorkflow() {
             } catch (error) {
                 if (cancelled) return;
                 logger.error('[veo-handoff] Failed to prepare handoff', error);
-                toast.error(error instanceof Error ? error.message : 'Failed to prepare the asset for Veo.');
+                toast.error(error instanceof Error ? error.message : 'Failed to prepare the asset for video.');
             }
         };
 
@@ -873,7 +873,7 @@ export default function VideoWorkflow() {
                     setJobStatus('processing');
                     useStore.getState().addJob({
                         id: firstResult!.id,
-                        title: `Generative Video: Rendering scene...`,
+                        title: `Rendering scene…`,
                         progress: 0,
                         status: 'running',
                         type: 'video_render'
@@ -986,7 +986,7 @@ export default function VideoWorkflow() {
                 <div
                     className={`flex-1 min-h-0 overflow-hidden relative ${
                         workspaceMode === 'wide'
-                            ? 'px-8 pb-56'
+                            ? 'px-6 pb-56'
                             : workspaceMode === 'standard'
                                 ? 'px-5 pb-52'
                                 : 'px-3 pb-44'
@@ -1018,7 +1018,7 @@ export default function VideoWorkflow() {
                                             });
                                             toast.info('Sent to Omni for remixing!');
                                         }}
-                                        className="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-purple-400/30"
+                                        className="bg-white hover:bg-gray-200 text-black p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-purple-400/30"
                                         title="Send to Omni for remixing"
                                     >
                                         <Send size={16} />
@@ -1032,7 +1032,7 @@ export default function VideoWorkflow() {
                                                 timestamp: Date.now()
                                             });
                                         }}
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-1.5 border border-emerald-400/30 text-xs font-semibold"
+                                        className="bg-white hover:bg-gray-200 text-black px-3 py-2 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-1.5 border border-emerald-400/30 text-xs font-semibold"
                                         title="Open this video in the timeline editor"
                                         aria-label="Open Veo video in timeline editor"
                                         data-testid="open-in-timeline-btn"
@@ -1303,7 +1303,7 @@ export default function VideoWorkflow() {
                     aria-label="Editor Mode"
                     className="absolute inset-0 z-50 bg-background"
                 >
-                    <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
+                    <ErrorBoundary fallback={<div className="p-6 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">
                                 {/* Editor Header Removed - using Global Navbar */}
@@ -1334,7 +1334,7 @@ export default function VideoWorkflow() {
                         </div>
                     </div>
                     <div className="flex-1 min-h-0">
-                        <ErrorBoundary fallback={<div className="p-10 text-red-500">Storyboard Sync Error</div>}>
+                        <ErrorBoundary fallback={<div className="p-6 text-red-500">Storyboard Sync Error</div>}>
                             <StoryboardTimeline />
                         </ErrorBoundary>
                     </div>
@@ -1364,7 +1364,7 @@ export default function VideoWorkflow() {
                         </div>
                     </div>
                     <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
-                        <ErrorBoundary fallback={<div className="p-10 text-red-500">3D Blender Studio Error</div>}>
+                        <ErrorBoundary fallback={<div className="p-6 text-red-500">3D Blender Studio Error</div>}>
                             <BlenderVideoPanel
                                 currentAudioPath={useVideoEditorStore.getState().inputAudio || ''}
                                 currentCoverArtPath=""

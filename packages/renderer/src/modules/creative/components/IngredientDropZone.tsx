@@ -155,9 +155,9 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
     const isFull = ingredients.length >= maxIngredients;
 
     const getModeIcon = () => {
-        if (mode === 'base_video') return <Film size={32} className="opacity-70" />;
-        if (mode === 'transition') return <ArrowRightLeft size={32} className="opacity-70" />;
-        return <ImagePlus size={32} className="opacity-70" />;
+        if (mode === 'base_video') return <Film size={20} className="opacity-70" />;
+        if (mode === 'transition') return <ArrowRightLeft size={20} className="opacity-70" />;
+        return <ImagePlus size={20} className="opacity-70" />;
     };
 
     const getModeHelperText = () => {

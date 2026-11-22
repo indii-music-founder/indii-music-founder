@@ -150,7 +150,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     const hasLiveProject = project.clips.length > 0;
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-[#050505] p-12 relative overflow-hidden">
+        <div className="flex-1 flex flex-col items-center justify-center bg-[#050505] p-8 relative overflow-hidden">
             <div className="absolute inset-0 bg-blue-500/5 blur-[120px] pointer-events-none" />
 
             <div className="relative shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden border border-white/10 bg-black group w-full max-w-4xl flex items-center justify-center" style={{ aspectRatio }}>

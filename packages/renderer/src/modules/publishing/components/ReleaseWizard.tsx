@@ -382,7 +382,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <div>
               <h4 className="text-xs font-black uppercase tracking-widest text-dept-publishing mb-1">Desktop App Required</h4>
               <p className="text-xs text-gray-300 leading-relaxed">
-                DDEX Distribution to streaming platforms requires the indii Desktop App for secure delivery authority. 
+                Delivery to streaming platforms runs from the indii desktop app. 
                 Please open this project in the Desktop App to select distributors and deliver your release.
               </p>
             </div>
@@ -560,7 +560,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white text-xs font-bold">Fully AI-Generated</span>
-            <p className="text-xs text-gray-400">The entire track was created using Autonomous tools</p>
+            <p className="text-xs text-gray-400">The whole track was generated with AI tools</p>
           </div>
         </label>
 
@@ -710,7 +710,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       >
         {assets.coverArt ? (
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 mx-auto rounded-lg mb-3 overflow-hidden border border-white/10">
+            <div className="w-12 h-12 mx-auto rounded-lg mb-3 overflow-hidden border border-white/10">
               <img src={assets.coverArt.url} alt="Cover Art" className="w-full h-full object-cover" />
             </div>
             <h3 className="text-sm font-bold text-white mb-1">Cover Art Uploaded</h3>
@@ -724,7 +724,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           </div>
         ) : (
           <>
-            <div className="w-16 h-16 mx-auto bg-white/5 rounded-lg mb-3 flex items-center justify-center">
+            <div className="w-10 h-10 mx-auto bg-white/5 rounded-lg mb-3 flex items-center justify-center">
               <Music size={24} className="text-gray-500" />
             </div>
             <h3 className="text-sm font-bold text-white mb-1">Upload Cover Art</h3>
@@ -936,7 +936,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render submitting state
   const renderSubmittingState = () => (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-8">
       <Loader2 size={28} className="text-dept-publishing animate-spin mb-3" />
       <h3 className="text-sm font-black uppercase tracking-widest text-white mb-1">Submitting Release</h3>
       <p className="text-xs text-gray-400">Please wait while we process your release...</p>
@@ -945,7 +945,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render complete state
   const renderCompleteState = () => (
-    <div className="flex flex-col items-center justify-center py-12">
+    <div className="flex flex-col items-center justify-center py-8">
       <div className="w-10 h-10 bg-dept-publishing/15 rounded-full flex items-center justify-center mb-3">
         <CheckCircle size={20} className="text-dept-publishing" />
       </div>

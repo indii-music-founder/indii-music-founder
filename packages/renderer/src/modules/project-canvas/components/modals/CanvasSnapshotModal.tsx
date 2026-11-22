@@ -147,7 +147,7 @@ export const CanvasSnapshotModal: React.FC<CanvasSnapshotModalProps> = ({
                     <button
                         onClick={handleCreateSnapshot}
                         disabled={!snapshotName.trim()}
-                        className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-black font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
+                        className="px-4 py-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
                     >
                         <Save size={13} />
                         <span>Save Snapshot</span>
@@ -157,8 +157,8 @@ export const CanvasSnapshotModal: React.FC<CanvasSnapshotModalProps> = ({
                 {/* Snapshots List */}
                 <div className="p-6 overflow-y-auto space-y-3 min-h-0 flex-1">
                     {snapshots.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center text-center text-zinc-500">
-                            <History size={32} className="mb-2 opacity-50" />
+                        <div className="py-8 flex flex-col items-center justify-center text-center text-zinc-500">
+                            <History size={20} className="mb-2 opacity-50" />
                             <p className="text-xs">No saved layout snapshots yet.</p>
                             <p className="text-[11px] text-zinc-600 mt-0.5">
                                 Save milestone layouts before large reorganizations.

@@ -109,9 +109,9 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="col-span-full py-20 text-center"
+                            className="col-span-full py-10 text-center"
                         >
-                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                                 <Filter className="text-gray-500 w-8 h-8" />
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">No tracks found</h3>
@@ -133,7 +133,7 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
 
                                 <div className="relative z-10 flex gap-4 w-full">
                                     {/* Album Art Placeholder icon */}
-                                    <div className="w-16 h-16 flex-shrink-0 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center relative overflow-hidden group-hover:border-emerald-500/30 transition-colors">
+                                    <div className="w-10 h-10 flex-shrink-0 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center relative overflow-hidden group-hover:border-emerald-500/30 transition-colors">
                                         <Music className="w-6 h-6 text-gray-500 group-hover:text-emerald-400 transition-colors" />
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Play className="w-6 h-6 text-white fill-white" />

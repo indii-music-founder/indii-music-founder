@@ -25,7 +25,7 @@ describe('SecurityDashboard', () => {
     it('renders real E2E swarm diagnostics instead of a placeholder (ISSUE-1304)', async () => {
         render(<SecurityDashboard />);
         expect(screen.queryByText(/E2E Diagnostics Pending/)).toBeNull();
-        expect(screen.getByText(/No Active Swarm Sessions/)).toBeDefined();
+        expect(screen.getByText(/No Active Team Sessions/)).toBeDefined();
         await waitFor(() => expect(screen.getByText(/Electron API not available/)).toBeDefined());
     });
 

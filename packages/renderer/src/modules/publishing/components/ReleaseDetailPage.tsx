@@ -66,7 +66,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex flex-col gap-8 ${className}`}
+            className={`flex flex-col gap-5 ${className}`}
         >
             {/* Header / Navigation */}
             <div className="flex items-center justify-between">
@@ -86,7 +86,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Left Column: Artwork & Deployment Status */}
                 <div className="space-y-6">
                     <div className="relative group aspect-square rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
@@ -98,7 +98,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                             />
                         ) : (
                             <div className="w-full h-full bg-gray-900 flex items-center justify-center text-gray-700">
-                                <Music size={64} />
+                                <Music size={32} />
                             </div>
                         )}
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-60" />
@@ -173,8 +173,8 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
 
                 {/* Right Column: Metadata Detail */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-[#121212] border border-gray-800 rounded-2xl p-8 shadow-xl">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                    <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 shadow-xl">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-6">
                             <div>
                                 <h1 className="text-xl font-black text-white tracking-tighter mb-2 italic">
                                     {metadata.trackTitle}
@@ -228,7 +228,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                         </div>
 
                         {/* Tracks Section (Simplified for Beta) */}
-                        <div className="mt-12">
+                        <div className="mt-6">
                             <h4 className="text-xs font-black text-gray-600 uppercase tracking-widest border-b border-gray-800 pb-4 flex items-center justify-between">
                                 Tracklist
                                 <span className="px-2 py-0.5 bg-gray-900 rounded-md text-[10px] font-bold text-gray-400">1 Track</span>

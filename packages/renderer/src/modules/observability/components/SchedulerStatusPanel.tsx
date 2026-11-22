@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
  *  real-time inside the Observability Dashboard.
  *
  *  - Lists all registered tasks with next-run countdown
- *  - Shows live Neural Sync pulse (every 30s)
+ *  - Shows live Sync pulse (every 30s)
  *  - Displays recent tick history (last 10 fires)
  *  - Connects via SchedulerClientService (graceful no-op in web)
  * ======================================================== */
@@ -69,7 +69,7 @@ function NeuralSyncPulse({ lastPulse }: { lastPulse: string | null }) {
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-semibold text-emerald-300 uppercase tracking-widest">
-                    Neural Sync
+                    Sync
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
                     {lastPulse ? `Last pulse: ${formatTime(lastPulse)}` : 'Waiting for first pulse…'}
@@ -178,7 +178,7 @@ export function SchedulerStatusPanel() {
         };
     }, [loadStatus]);
 
-    // Subscribe to Neural Sync pulses
+    // Subscribe to Sync pulses
     useEffect(() => {
         return SchedulerClientService.onNeuralSync(({ firedAt }) => {
             setLastNeuralSync(firedAt);
@@ -252,7 +252,7 @@ export function SchedulerStatusPanel() {
             </CardHeader>
 
             <CardContent className="space-y-4 pt-0">
-                {/* Neural Sync Pulse */}
+                {/* Sync Pulse */}
                 <NeuralSyncPulse lastPulse={lastNeuralSync} />
 
                 {/* Summary row */}
@@ -263,7 +263,7 @@ export function SchedulerStatusPanel() {
                         { label: 'Fired', value: (status?.totalFireCount ?? 0).toString(), color: 'text-green-400' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className="text-center p-2 rounded-md bg-white/3">
-                            <p className={`text-lg font-bold ${color}`}>{value}</p>
+                            <p className={`text-base font-bold ${color}`}>{value}</p>
                             <p className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</p>
                         </div>
                     ))}

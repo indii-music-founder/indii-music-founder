@@ -25,7 +25,7 @@ export function SettingCard({ icon: Icon, title, description, status }: SettingC
         <div
             data-availability={status}
             className={cn(
-                'w-full text-left p-6 rounded-3xl border flex items-start gap-6',
+                'w-full text-left p-6 rounded-2xl border flex items-start gap-6',
                 available
                     ? `bg-surface/40 ${moduleColor.border} shadow-lg`
                     : 'bg-surface/20 border-white/5'

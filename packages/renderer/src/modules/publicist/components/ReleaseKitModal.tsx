@@ -99,7 +99,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                             </div>
                             <div>
                                 <h2 className="text-lg font-black text-white uppercase tracking-tighter italic">Release Kit Generator</h2>
-                                <p className="text-xs text-gray-400">Intelligence-driven press releases, social posts, and email blasts</p>
+                                <p className="text-xs text-gray-400">Press releases, social posts, and email blasts from one brief</p>
                             </div>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
@@ -192,9 +192,9 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                         )}
 
                         {step === 'generating' && (
-                            <div className="flex flex-col items-center justify-center h-full py-20 space-y-6">
+                            <div className="flex flex-col items-center justify-center h-full py-10 space-y-6">
                                 <div className="relative">
-                                    <div className="w-20 h-20 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin" />
+                                    <div className="w-12 h-12 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin" />
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <Sparkles size={24} className="text-green-400 animate-pulse" />
                                     </div>
@@ -247,7 +247,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 </button>
                                             </div>
                                             <div className="prose prose-invert max-w-none">
-                                                <p className="whitespace-pre-wrap text-gray-300 leading-relaxed font-serif text-lg">{assets.pressRelease.content}</p>
+                                                <p className="whitespace-pre-wrap text-gray-300 leading-relaxed font-serif text-base">{assets.pressRelease.content}</p>
                                             </div>
                                             <div className={`pt-6 border-t ${assets.pressRelease.contactInfo === UNRESOLVED_MEDIA_CONTACT ? 'border-red-500/30' : 'border-white/10'}`}>
                                                 <p className="text-sm text-gray-500 font-bold uppercase">Media Contact</p>
@@ -298,7 +298,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                     {copied === 'email' ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
                                                 </button>
                                             </div>
-                                            <div className="bg-white rounded-lg p-8 text-black shadow-xl">
+                                            <div className="bg-white rounded-lg p-6 text-black shadow-xl">
                                                 <div className="prose max-w-none">
                                                     <p className="whitespace-pre-wrap leading-relaxed">{assets.emailBlast.body}</p>
                                                 </div>

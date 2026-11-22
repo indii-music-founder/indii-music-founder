@@ -72,7 +72,7 @@ export default function AutonomousLab() {
 
     const steps = [
         { id: 1, name: 'Establish Scene', description: 'Drop your establishing shot' },
-        { id: 2, name: 'Cinematic Analysis', description: 'Engine predicts logical progression' },
+        { id: 2, name: 'Cinematic Analysis', description: 'Predicts what comes next' },
         { id: 3, name: 'Synthesize', description: 'Rendering the conclusion frame' },
         { id: 4, name: 'Sequence Ready', description: 'Frames primed for generation' }
     ];
@@ -140,7 +140,7 @@ export default function AutonomousLab() {
 
         } catch (err: unknown) {
             logger.error("Synthesis Failure:", err);
-            const msg = err instanceof Error ? err.message : 'Synthesis failed.';
+            const msg = err instanceof Error ? err.message : 'Generation failed.';
             setError(msg);
             setStatus('error');
             toast.error(`Error: ${msg}`);
@@ -167,7 +167,7 @@ export default function AutonomousLab() {
                 styleImage: { mimeType: 'image/png', data: source },
                 prompt: predictedPrompt.trim()
             });
-            if (!result?.url) throw new Error('Updated target synthesis failed.');
+            if (!result?.url) throw new Error('Regeneration failed.');
             const targetAsset: HistoryItem = { id: crypto.randomUUID(), url: result.url, prompt: `Conclusion: ${predictedPrompt.trim().substring(0, 50)}...`, type: 'image', timestamp: Date.now(), projectId: currentProjectId };
             addToHistory(targetAsset);
             setTargetImage(targetAsset);
@@ -175,7 +175,7 @@ export default function AutonomousLab() {
             setStatus('complete');
             toast.success('Updated trajectory applied to a new target frame.');
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Updated target synthesis failed.';
+            const message = err instanceof Error ? err.message : 'Regeneration failed.';
             setError(message);
             setStatus('complete');
             toast.error(message);
@@ -277,12 +277,12 @@ export default function AutonomousLab() {
     const currentTotalSec = sequenceItems.reduce((acc, item) => acc + (item.type === 'seconds' ? item.value : (item.value * 60) / bpm), 0);
 
     return (
-        <div className="p-8 md:p-12 space-y-12 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar bg-background">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-white/[0.04]">
+        <div className="p-6 md:p-8 space-y-6 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar bg-background">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 pb-8 border-b border-white/[0.04]">
                 <div className="space-y-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08]">
                         <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Generative Engine</span>
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Sequence Builder</span>
                     </div>
                     <h1 className="text-xl font-light tracking-tight text-white">
                         Sequence Architect
@@ -297,7 +297,7 @@ export default function AutonomousLab() {
                         <Button
                             onClick={transferToProduction}
                             disabled={!getValidatedSequenceDurations(sequenceItems, bpm)}
-                            className="bg-white text-black hover:bg-gray-200 px-8 py-6 h-auto rounded-xl transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+                            className="bg-white text-black hover:bg-gray-200 px-6 py-4 h-auto rounded-xl transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
                         >
                             <Film className="w-5 h-5 mr-3" />
                             <span className="font-semibold tracking-wide">Enter Director Mode</span>
@@ -306,21 +306,21 @@ export default function AutonomousLab() {
                         <Button
                             onClick={runArchitectProcess}
                             disabled={status === 'running' || !seedImage}
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-6 h-auto rounded-xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.2)] disabled:opacity-50"
+                            className="bg-white hover:bg-gray-200 text-black px-6 py-4 h-auto rounded-xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.2)] disabled:opacity-50"
                         >
                             <div className="flex items-center gap-3">
                                 {status === 'running' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-                                <span className="font-semibold tracking-wide">Synthesize Sequence</span>
+                                <span className="font-semibold tracking-wide">Generate Sequence</span>
                             </div>
                         </Button>
                     )}
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
                 {/* Left: Metadata & Status */}
                 <div className="xl:col-span-4 space-y-6">
-                    <Card className="p-8 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl">
+                    <Card className="p-6 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl">
                         <h2 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-3">
                             <Target className="w-4 h-4 text-gray-400" /> Pipeline Status
                         </h2>
@@ -343,7 +343,7 @@ export default function AutonomousLab() {
                     </Card>
 
                     {predictedPrompt && (
-                        <Card className="p-8 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300">
+                        <Card className="p-6 bg-black/40 border-white/[0.06] backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300">
                             <button 
                                 onClick={() => setIsTrajectoryOpen(!isTrajectoryOpen)}
                                 className="w-full flex items-center justify-between focus:outline-none group"
@@ -370,7 +370,7 @@ export default function AutonomousLab() {
                                     />
                                     <div className="mt-3 flex items-center justify-between gap-3">
                                         <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold px-2 py-1 bg-white/[0.03] rounded-md border border-white/[0.05]">{predictedPrompt.trim() === appliedTrajectory ? 'Applied to target frame' : 'Draft only — target frame unchanged'}</span>
-                                        <Button onClick={() => void applyTrajectory()} disabled={status === 'running' || !predictedPrompt.trim() || predictedPrompt.trim() === appliedTrajectory} className="text-xs">Apply &amp; re-synthesize</Button>
+                                        <Button onClick={() => void applyTrajectory()} disabled={status === 'running' || !predictedPrompt.trim() || predictedPrompt.trim() === appliedTrajectory} className="text-xs">Apply &amp; regenerate</Button>
                                     </div>
                                 </motion.div>
                             )}
@@ -379,8 +379,8 @@ export default function AutonomousLab() {
                 </div>
 
                 {/* Right: Synthesis Workspace */}
-                <Card className="xl:col-span-8 p-10 bg-black/20 border-white/[0.04] backdrop-blur-md rounded-2xl min-h-[600px] flex flex-col relative overflow-hidden">
-                    <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-12">
+                <Card className="xl:col-span-8 p-6 bg-black/20 border-white/[0.04] backdrop-blur-md rounded-2xl min-h-[600px] flex flex-col relative overflow-hidden">
+                    <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-6">
                         {/* Frame A: Drop Zone */}
                         <div className="w-full md:w-2/5 flex flex-col space-y-6">
                             <div className="text-center">
@@ -406,7 +406,7 @@ export default function AutonomousLab() {
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="flex flex-col items-center gap-4 text-gray-500 p-8 text-center pointer-events-none">
+                                    <div className="flex flex-col items-center gap-4 text-gray-500 p-6 text-center pointer-events-none">
                                         <UploadCloud className={`w-10 h-10 ${isDragOver ? 'text-blue-400 animate-bounce' : 'text-gray-600'}`} />
                                         <div>
                                             <p className="text-sm font-medium text-gray-300">Drop asset here</p>
@@ -418,7 +418,7 @@ export default function AutonomousLab() {
                         </div>
 
                         {/* Timeline / Bridge */}
-                        <div className="flex flex-col items-center gap-8 w-full md:w-1/5">
+                        <div className="flex flex-col items-center gap-5 w-full md:w-1/5">
                             <ArrowRight className={`w-6 h-6 ${status === 'running' ? 'text-blue-400 animate-pulse' : 'text-gray-700'}`} />
                             
                             <div className="flex flex-col items-center gap-4 w-full">
@@ -563,7 +563,7 @@ export default function AutonomousLab() {
                                         <Button 
                                             onClick={handleAddCustom}
                                             disabled={currentTotalSec + (customType === 'seconds' ? customValue : (customValue * 60) / bpm) > 60}
-                                            className="bg-blue-600 hover:bg-blue-500 text-white shadow-lg h-[38px] px-6 rounded-lg transition-all"
+                                            className="bg-white hover:bg-gray-200 text-black shadow-lg h-[38px] px-6 rounded-lg transition-all"
                                         >
                                             <Plus className="w-4 h-4 mr-2" /> Add
                                         </Button>
@@ -619,7 +619,7 @@ export default function AutonomousLab() {
                         <motion.div
                             initial={{ y: 30, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            className="mt-12 space-y-6"
+                            className="mt-6 space-y-6"
                         >
                             {/* Filmstrip: Visual Frame Succession */}
                             {sequenceItems.length > 1 && seedImage && targetImage && (
@@ -704,7 +704,7 @@ export default function AutonomousLab() {
                                         </p>
                                     </div>
                                 </div>
-                                <Button onClick={transferToProduction} className="bg-white text-black hover:bg-gray-200 font-semibold tracking-wide px-8 py-5 rounded-xl whitespace-nowrap shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                                <Button onClick={transferToProduction} className="bg-white text-black hover:bg-gray-200 font-semibold tracking-wide px-6 py-3 rounded-xl whitespace-nowrap shadow-[0_0_40px_rgba(255,255,255,0.1)]">
                                     <Film className="w-4 h-4 mr-2" />
                                     Enter Director Mode
                                 </Button>

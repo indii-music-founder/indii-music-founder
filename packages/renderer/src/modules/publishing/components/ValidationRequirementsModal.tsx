@@ -47,8 +47,8 @@ export const ValidationRequirementsModal: React.FC<ValidationRequirementsModalPr
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-gray-900/20">
                         <div>
-                            <h2 className="text-xl font-bold text-white tracking-tight">Requirement Matrix</h2>
-                            <p className="text-sm text-gray-500 mt-1">Cross-platform validation standards for distribution.</p>
+                            <h2 className="text-xl font-bold text-white tracking-tight">Store Requirements</h2>
+                            <p className="text-sm text-gray-500 mt-1">What each store needs before it accepts a release.</p>
                         </div>
                         <button onClick={onClose} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
                             <X size={20} />
@@ -131,7 +131,7 @@ export const ValidationRequirementsModal: React.FC<ValidationRequirementsModalPr
                         </div>
                         <button
                             onClick={onClose}
-                            className="px-8 py-2.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
+                            className="px-6 py-2.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
                         >
                             Got it
                         </button>

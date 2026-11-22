@@ -25,7 +25,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({ children }) =>
   if (!isGodMode) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="rounded-2xl border border-red-500/30 bg-slate-900/80 p-8 text-center max-w-md">
+        <div className="rounded-2xl border border-red-500/30 bg-slate-900/80 p-6 text-center max-w-md">
           <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
             <Lock size={28} className="text-red-400" />
           </div>

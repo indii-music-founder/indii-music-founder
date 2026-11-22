@@ -112,8 +112,8 @@ export default function LayersPanel({
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                 {layers.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                        <Layers size={32} className="text-gray-700 mb-2" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                        <Layers size={20} className="text-gray-700 mb-2" />
                         <p className="text-xs text-gray-500">No layers yet</p>
                         <p className="text-[10px] text-gray-600 mt-1">Add a layer, text, or shapes to the canvas</p>
                     </div>

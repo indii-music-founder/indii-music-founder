@@ -29,7 +29,7 @@ interface PipelineStep {
 const INITIAL_STEPS: PipelineStep[] = [
     { id: 'qc', label: 'QC Validation', status: 'idle' },
     { id: 'isrc', label: 'ISRC Assignment', status: 'idle' },
-    { id: 'ddex', label: 'DDEX XML Build', status: 'idle' },
+    { id: 'ddex', label: 'Delivery Package', status: 'idle' },
     { id: 'sftp', label: 'DSP Delivery', status: 'idle' },
 ];
 
@@ -344,7 +344,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                     </button>
                 </div>
 
-                <div className="px-6 py-5 space-y-5">
+                <div className="px-6 py-3 space-y-5">
                     {/* Form */}
                     {!submitting && !done && (
                         <div className="space-y-4">

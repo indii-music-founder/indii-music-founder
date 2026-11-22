@@ -12,7 +12,7 @@ interface ChatMessagesProps {
 
 export function ChatMessages({ history, isProcessing, chatEndRef }: ChatMessagesProps) {
     return (
-        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-10 px-4 md:px-10 scrollbar-hide flex flex-col items-center">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-10 px-4 md:px-6 scrollbar-hide flex flex-col items-center">
             <div className="w-full max-w-4xl flex flex-col pb-32">
                 <AnimatePresence mode="popLayout" initial={false}>
                     {history.map((message, index) => {

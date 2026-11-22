@@ -146,7 +146,7 @@ export function PricingEngine({ products = [] }: PricingEngineProps) {
 
             {/* Summary */}
             {enriched.length === 0 && (
-                <div className="py-16 text-center">
+                <div className="py-10 text-center">
                     <DollarSign size={24} className="mx-auto text-neutral-700 mb-3" />
                     <p className="text-sm text-neutral-500">Add products to see pricing recommendations.</p>
                 </div>

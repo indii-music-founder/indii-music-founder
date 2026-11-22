@@ -618,7 +618,7 @@ export default function ScreenwriterDashboard() {
                             </div>
 
                             {/* Screenplay preview */}
-                            <div className="p-8 rounded-xl border border-white/5 bg-white/2 max-w-3xl mx-auto shadow-inner text-gray-100 select-text">
+                            <div className="p-6 rounded-xl border border-white/5 bg-white/2 max-w-3xl mx-auto shadow-inner text-gray-100 select-text">
                                 <div className="text-center border-b border-white/5 pb-4 mb-6">
                                     <h2 className="text-xl font-bold uppercase tracking-widest font-mono">NEON STREETREFLECTIONS</h2>
                                     <p className="text-[10px] text-gray-500 font-mono mt-1">A Screenplay storyboard draft for music video release</p>
@@ -665,7 +665,7 @@ export default function ScreenwriterDashboard() {
                                     
                                     {/* Mock Visual representation */}
                                     <div className="relative z-10 flex-1 flex flex-col justify-center items-center text-center p-4">
-                                        <Film size={40} className="text-green-400/50 mb-3 animate-pulse" />
+                                        <Film size={24} className="text-green-400/50 mb-3 animate-pulse" />
                                         <span className="text-[10px] font-black uppercase text-green-400 tracking-widest font-mono">SCENE {activeScene.sceneNumber} SHOT MATRIX</span>
                                         <p className="text-xs text-gray-400 mt-2 max-w-xs">{activeScene.cameraAngle}</p>
                                     </div>
@@ -762,7 +762,7 @@ export default function ScreenwriterDashboard() {
                             className="space-y-6"
                         >
                             <div className="p-5 rounded-xl border border-white/5 bg-white/1">
-                                <h3 className="text-sm font-black uppercase text-white mb-2">Google Veo Video Prompt compiler</h3>
+                                <h3 className="text-sm font-black uppercase text-white mb-2">Video prompt builder</h3>
                                 <p className="text-xs text-gray-400 mb-6">Modify text-to-video instructions synced specifically to Scene {activeScene.sceneNumber}. Output directly exports to generative pipelines.</p>
                                 
                                 <div className="space-y-4">

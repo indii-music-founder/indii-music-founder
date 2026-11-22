@@ -98,7 +98,7 @@ function ProfileHeaderContent({ userId }: UserProfileHeaderProps) {
     }
 
     if (!profile) {
-        return <div className="p-8 text-center text-gray-500">
+        return <div className="p-6 text-center text-gray-500">
             <p role="status">{error || 'Profile unavailable'}</p>
             {targetId && <button className="mt-2 underline" onClick={() => setReload(value => value + 1)}>Retry profile</button>}
         </div>;

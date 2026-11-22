@@ -534,7 +534,7 @@ export default function DirectGenerationTab() {
                                 </span>
                             </div>
 
-                            {/* Row 1: Output Size / Resolution + API Engine Grade (Compact Fixed Pills) */}
+                            {/* Row 1: Output Size / Resolution + Quality Tier (Compact Fixed Pills) */}
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 {mode === 'video' ? (
                                     <div className="flex flex-col gap-1">
@@ -586,7 +586,7 @@ export default function DirectGenerationTab() {
 
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[9.5px] uppercase font-bold text-gray-400 tracking-wider">
-                                        API Engine Grade
+                                        Quality Tier
                                     </label>
                                     <div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-black/40 border border-white/8 w-fit">
                                         {['fast', 'pro'].map((tier) => {
@@ -814,7 +814,7 @@ export default function DirectGenerationTab() {
                         {/* Expandable synthesized prompt */}
                         {hasWhiskModifiers && (
                             <div className="mx-2 mb-2 px-2.5 py-1.5 bg-white/2 border border-white/5 rounded-lg text-left">
-                                <p className="text-[9px] uppercase font-bold text-gray-500 mb-0.5">Synthesized Output Prompt</p>
+                                <p className="text-[9px] uppercase font-bold text-gray-500 mb-0.5">Final Prompt</p>
                                 <p className="text-[10px] text-gray-400 italic line-clamp-2">{synthesizedPrompt}</p>
                             </div>
                         )}

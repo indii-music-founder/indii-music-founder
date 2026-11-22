@@ -108,7 +108,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="space-y-8"
+            className="space-y-5"
         >
             {/* Color Palette */}
             <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
@@ -184,7 +184,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                         </div>
                     </div>
                     <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-brand/30">
-                        <div className="absolute top-0 right-0 p-12 bg-green-500/5 blur-[40px] rounded-full group-hover:bg-green-500/10 transition-colors" />
+                        <div className="absolute top-0 right-0 p-8 bg-green-500/5 blur-[40px] rounded-full group-hover:bg-green-500/10 transition-colors" />
                         <p className="text-base font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
                         <div className="flex items-center gap-2 mt-2">
                             <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 font-mono">{brandKit.fonts || 'Inter'}</span>
@@ -197,7 +197,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                 </div>
                 <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        Digital Aura
+                        Visual Mood
                     </h3>
                     <div className="flex flex-wrap gap-2">
                         {(brandKit.digitalAura || ['High Fidelity', 'Glassmorphism', 'Luxury']).map(tag => (
@@ -230,9 +230,9 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
             </div>
 
             {/* Asset Library Section */}
-            <div className="p-8 rounded-2xl border border-gray-800 bg-[#111] relative overflow-hidden">
+            <div className="p-6 rounded-2xl border border-gray-800 bg-[#111] relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-32 bg-dept-brand/5 blur-[80px] rounded-full pointer-events-none" />
-                <div className="relative z-10 space-y-8">
+                <div className="relative z-10 space-y-5">
                     <UnifiedAssetLibrary
                         userId={userProfile?.id || ''}
                         brandAssets={brandKit.brandAssets || []}

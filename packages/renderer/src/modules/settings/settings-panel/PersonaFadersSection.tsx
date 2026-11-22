@@ -24,8 +24,11 @@ import {
     Check,
     LucideIcon,
     Bot,
-    Zap,
     Users,
+    Briefcase,
+    Guitar,
+    GraduationCap,
+    Ruler,
 } from 'lucide-react';
 import {
     PERSONA_FADER_DEFAULT,
@@ -63,7 +66,7 @@ const PERSONA_LIST: PersonaMetadata[] = [
         id: 'manager',
         title: 'Manager (Conductor)',
         role: 'Strategic Direction & Oversight',
-        description: 'Guides career milestones, coordinates team resources, and manages overall project velocity.',
+        description: 'Plans career milestones, coordinates the team, and keeps projects moving.',
         icon: Sparkles,
         accentColor: 'text-amber-400',
     },
@@ -94,8 +97,8 @@ const PERSONA_LIST: PersonaMetadata[] = [
     {
         id: 'distributor',
         title: 'Distributor',
-        role: 'DSP Ingestion & DDEX Delivery',
-        description: 'Ensures DDEX XML standard compliance, validates UPC/ISRC codes, and schedules DSP delivery.',
+        role: 'DSP Ingestion & Delivery',
+        description: 'Checks delivery metadata against store standards, validates UPC/ISRC codes, and schedules DSP delivery.',
         icon: Truck,
         accentColor: 'text-emerald-400',
     },
@@ -164,7 +167,7 @@ const AXIS_CONFIGS: FaderAxisConfig[] = [
     },
     {
         axis: 'reasoningTransparency',
-        label: 'Reasoning Transparency',
+        label: 'Show the Reasoning',
         lowLabel: 'Bottom-Line Only',
         highLabel: 'Full Step-by-Step Chain',
         description: 'Whether the persona explains the underlying calculations and logic or states only the final recommendation.',
@@ -174,7 +177,7 @@ const AXIS_CONFIGS: FaderAxisConfig[] = [
 interface PostureArchetypeMetadata {
     id: PersonaPosturePreset;
     label: string;
-    icon: string;
+    icon: LucideIcon;
     description: string;
 }
 
@@ -182,31 +185,31 @@ const POSTURE_ARCHETYPES: PostureArchetypeMetadata[] = [
     {
         id: 'MAJOR_LABEL_SHARK',
         label: 'Major Label Shark',
-        icon: '🦈',
-        description: 'Aggressive commercial dealmaker focusing on maximum leverage and scale.',
+        icon: Briefcase,
+        description: 'Pushes for the biggest deal and the most leverage.',
     },
     {
         id: 'SCRAPPY_INDIE_DIY',
         label: 'Scrappy Indie DIY',
-        icon: '🎸',
+        icon: Guitar,
         description: 'Ownership-first ally emphasizing fan community, rights retention, and independence.',
     },
     {
         id: 'NURTURING_MENTOR',
         label: 'Nurturing Mentor',
-        icon: '🧑‍🏫',
+        icon: GraduationCap,
         description: 'Encouraging educational guide explaining industry mechanics patiently step-by-step.',
     },
     {
         id: 'ACADEMIC_PURIST',
         label: 'Academic Purist',
-        icon: '📐',
-        description: 'Deep technical rigor in acoustics, copyright statutory law, and precision.',
+        icon: Ruler,
+        description: 'Exacting about sound, copyright law, and detail.',
     },
     {
         id: 'STREET_HUSTLER',
         label: 'Street Hustler',
-        icon: '⚡',
+        icon: Megaphone,
         description: 'Fast, terse, viral street marketing with unfiltered blunt truth.',
     },
 ];
@@ -384,25 +387,22 @@ export const PersonaFadersSection: React.FC = () => {
     return (
         <div className="space-y-6" data-testid="persona-faders-section">
             <SectionHeader
-                title="Specialist Posture & Personality Sliders"
-                description="Customize how each specialist agent thinks, communicates, and delivers advice. Calibrated along 5 professional posture axes."
+                title="Specialist Personalities"
+                description="Set how each specialist on your team thinks, talks, and gives advice, using five sliders."
             />
 
-            {/* Posture Archetypes Quick-Apply Strip (Judgment 53) */}
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            {/* Management-style presets: one click sets all five sliders. */}
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <Zap size={14} className="text-amber-400" />
-                        <span className="text-xs font-bold text-white uppercase tracking-wider">
-                            Management Posture Archetypes (Judgment 53)
-                        </span>
-                    </div>
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        Start from a management style
+                    </span>
                     <button
                         onClick={() => setShowJevCalibrator(!showJevCalibrator)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 hover:text-white border border-white/10 transition-colors"
                     >
                         <Sparkles size={12} />
-                        {showJevCalibrator ? 'Close Calibrator' : 'Auto-Tune Posture'}
+                        {showJevCalibrator ? 'Close' : 'Describe your style'}
                     </button>
                 </div>
 
@@ -411,10 +411,10 @@ export const PersonaFadersSection: React.FC = () => {
                         <button
                             key={arch.id}
                             onClick={() => handleApplyArchetype(arch.id)}
-                            className="flex flex-col items-center justify-center p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-500 transition-all text-center group"
+                            className="flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-500 transition-all text-center group"
                             title={arch.description}
                         >
-                            <span className="text-lg mb-1">{arch.icon}</span>
+                            <arch.icon size={14} aria-hidden="true" className="text-gray-400 group-hover:text-white transition-colors" />
                             <span className="text-[11px] font-bold text-slate-200 group-hover:text-white">
                                 {arch.label}
                             </span>
@@ -424,14 +424,10 @@ export const PersonaFadersSection: React.FC = () => {
 
                 {/* Inline Posture Calibrator */}
                 {showJevCalibrator && (
-                    <div className="mt-3 p-3.5 rounded-lg bg-slate-950/80 border border-emerald-500/30 space-y-3 animate-in fade-in">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                                <Sparkles size={13} />
-                                Built-in Posture Auto-Calibrator
-                            </span>
-                            <span className="text-[10px] text-slate-400">Sub-100ms decision engine</span>
-                        </div>
+                    <div className="mt-2 p-3 rounded-lg bg-slate-950/80 border border-white/10 space-y-3 animate-in fade-in">
+                        <span className="block text-xs font-bold text-white">
+                            Describe how you want your team to work, and we will set the sliders for you.
+                        </span>
 
                         <textarea
                             value={jevPhilosophy}
@@ -477,14 +473,14 @@ export const PersonaFadersSection: React.FC = () => {
                             <button
                                 onClick={handleRunJevCalibration}
                                 disabled={isJevCalibrating || !jevPhilosophy.trim()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black transition-colors disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-gray-200 text-black transition-colors disabled:opacity-50"
                             >
                                 {isJevCalibrating ? (
                                     <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                 ) : (
                                     <Sparkles size={13} />
                                 )}
-                                {isJevCalibrating ? 'Calibrating...' : 'Run Auto-Tune'}
+                                {isJevCalibrating ? 'Setting sliders…' : 'Set sliders'}
                             </button>
                         </div>
                     </div>
@@ -535,16 +531,16 @@ export const PersonaFadersSection: React.FC = () => {
                         onClick={handleApplyToAllPersonas}
                         disabled={isLoading || isSaving}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-indigo-300 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/80 rounded-lg transition-colors border border-indigo-700/60 disabled:opacity-50"
-                        title="Synchronize these 5 posture sliders to all 8 personas in the boardroom (calibrating all 40 faders at once)"
+                        title="Copy these five slider settings to every specialist"
                     >
                         <Users size={13} />
-                        Sync to All 8 Personas (All 40 Sliders)
+                        Apply to all specialists
                     </button>
                     <button
                         onClick={handleReset}
                         disabled={isLoading || isSaving}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700 disabled:opacity-50"
-                        title="Reset this persona back to population default positions (50/50/50/50/50)"
+                        title="Move every slider for this specialist back to the middle"
                     >
                         <RotateCcw size={13} />
                         Reset Defaults
@@ -635,7 +631,7 @@ export const PersonaFadersSection: React.FC = () => {
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-white">Autonomous Agent Personality Evolution</span>
+                            <span className="text-xs font-bold text-white">Personalities that adapt to you</span>
                             <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/40">
                                 Adaptive
                             </span>
@@ -666,7 +662,7 @@ export const PersonaFadersSection: React.FC = () => {
                 >
                     <div className="flex items-center gap-2">
                         <Sliders size={13} className="text-emerald-400" />
-                        <span className="font-semibold">Live Compiled Persona Posture (Under the Hood)</span>
+                        <span className="font-semibold">What this specialist is told</span>
                     </div>
                     <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
                         {showPromptPreview ? 'Hide Details' : 'Inspect Prompt Block'}

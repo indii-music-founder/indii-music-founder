@@ -1544,7 +1544,7 @@ export default function InfiniteCanvas() {
                                 }
                             }}
                             disabled={!promptText.trim()}
-                            className="px-3 py-1 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            className="px-3 py-1 text-xs bg-white hover:bg-gray-200 text-black rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >
                             Generate <Send className="w-3 h-3" />
                         </button>
@@ -1595,7 +1595,7 @@ export default function InfiniteCanvas() {
                         />
                         <button 
                             onClick={() => handleCrop(cropOverlay.sx, cropOverlay.sy, cropOverlay.w, cropOverlay.h, true)}
-                            className="w-full px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded transition-colors flex items-center justify-center gap-2"
+                            className="w-full px-3 py-2 text-sm text-black bg-white hover:bg-gray-200 rounded transition-colors flex items-center justify-center gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
                             Adaptive Fill (Autonomous)
@@ -1615,7 +1615,7 @@ export default function InfiniteCanvas() {
             {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
                     <div className="flex flex-col items-center gap-4">
-                        <Loader2 size={48} className="animate-spin text-green-500" />
+                        <Loader2 size={28} className="animate-spin text-green-500" />
                         <p className="text-white font-bold animate-pulse">Dreaming...</p>
                     </div>
                 </div>

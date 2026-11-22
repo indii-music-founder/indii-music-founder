@@ -181,7 +181,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
             {!generatedIdentity ? (
                 <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
-                    <Wand2 size={32} className="mx-auto mb-4 opacity-20" />
+                    <Wand2 size={20} className="mx-auto mb-4 opacity-20" />
                     <p>Click generate to get Autonomous handle and bio ideas.</p>
                 </div>
             ) : (
@@ -293,7 +293,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 href={platform.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-xl shadow-blue-900/20"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-200 text-black font-bold rounded-xl transition-all transform hover:scale-105"
             >
                 Go to {platform.name} Sign Up <ExternalLink size={20} />
             </a>
@@ -377,7 +377,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                     ) : (
                         <button
                             onClick={onClose}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-lg transition-colors"
+                            className="px-6 py-2 bg-white hover:bg-gray-200 text-black text-sm font-bold rounded-lg transition-colors"
                         >
                             Done
                         </button>

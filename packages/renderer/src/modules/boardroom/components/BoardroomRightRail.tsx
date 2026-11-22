@@ -70,7 +70,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
     const tabs = [
         { id: 'resources' as const, icon: ShieldCheck, label: 'Standards & Resources' },
         { id: 'presets' as const, icon: Sliders, label: 'Room Presets & Console' },
-        { id: 'feed' as const, icon: Bot, label: 'Swarm Activity Feed' },
+        { id: 'feed' as const, icon: Bot, label: 'Team Activity' },
         { id: 'plans' as const, icon: Layers, label: 'Living Plans' },
     ];
 
@@ -225,7 +225,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                             {activeTab === 'presets' && (
                                 <div className="space-y-3">
                                     <p className="text-[11px] text-white/40">
-                                        Control room seating, execute one-click executive swarms, or isolate departments for 1-on-1 strategy.
+                                        Seat your team, run a one-click session, or focus on one department.
                                     </p>
 
                                     <button
@@ -236,7 +236,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                                         <div>
                                             <div className="font-bold flex items-center gap-1.5">
                                                 <UserPlus size={13} className="text-indigo-400" />
-                                                Convene Primary Swarm
+                                                Seat the Core Team
                                             </div>
                                             <p className="text-[10px] text-white/40 mt-0.5">Seats Orchestrator + all 9 core Department Heads</p>
                                         </div>
@@ -303,7 +303,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                                         }}
                                         className="w-full py-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-semibold border border-indigo-500/30 transition-all text-xs"
                                     >
-                                        Open Full Swarm Collaboration Feed
+                                        Open Full Team Activity
                                     </button>
                                 </div>
                             )}
@@ -312,7 +312,7 @@ export function BoardroomRightRail({ onOpenLivingPlans, onOpenSwarmFeed, onOpenC
                             {activeTab === 'plans' && (
                                 <div className="space-y-3">
                                     <p className="text-[11px] text-white/40">
-                                        Active living roadmaps, deliverable trackers, and multi-stage goals created by the swarm.
+                                        Active living roadmaps, deliverable trackers, and multi-stage goals your team created.
                                     </p>
                                     <button
                                         type="button"

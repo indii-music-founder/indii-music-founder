@@ -240,7 +240,7 @@ export default function RegistrationCenter() {
 
   if (loadError) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-8 text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-6 text-center">
         <span className="text-red-400">{loadError}</span>
         <button
           onClick={() => window.location.reload()}
@@ -254,7 +254,7 @@ export default function RegistrationCenter() {
 
   if (tracks.length === 0 && activeTab === 'tracks') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-8 text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-6 text-center">
         <p>No tracks found in your catalog yet.</p>
         <button onClick={() => setActiveTab('visibility')} className="text-green-400 underline">Manage catalog visibility</button>
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -270,12 +270,12 @@ export default function RegistrationCenter() {
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 hover:from-[#FFD700]/30 hover:to-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/40 text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(255,184,0,0.15)]"
           >
             <Compass size={14} className="text-[#FFD700]" />
-            <span>Open Rights & Royalties Copilot</span>
+            <span>Open Rights Assistant</span>
           </button>
         </div>
         <p className="text-xs text-gray-600">You can establish your organization legal prerequisites above, or add tracks via Distribution.</p>
-        <section aria-label="Canonical catalog intelligence" className="max-w-md border-t border-white/[0.08] pt-3 text-left">
-          <h2 className="text-xs font-semibold text-gray-400 mb-1">Canonical catalog intelligence</h2>
+        <section aria-label="Your catalog, checked" className="max-w-md border-t border-white/[0.08] pt-3 text-left">
+          <h2 className="text-xs font-semibold text-gray-400 mb-1">Your catalog, checked</h2>
           <CanonicalCatalogIntelligenceSummary
             status={canonicalIntelligenceStatus}
             report={canonicalIntelligenceReport}
@@ -327,7 +327,7 @@ export default function RegistrationCenter() {
             className="w-full mt-2 py-2 px-2 text-xs font-semibold rounded-lg bg-[#FFB800]/10 hover:bg-[#FFB800]/20 text-[#FFD700] border border-[#FFB800]/30 transition-all flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Compass size={13} className="text-[#FFD700]" />
-            <span>Rights & Royalty Copilot</span>
+            <span>Rights & Royalties Assistant</span>
           </button>
         </div>
         {activeTab === 'tracks' ? (

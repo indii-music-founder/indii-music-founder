@@ -47,10 +47,10 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
             className="bg-[#111] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl relative"
         >
             {/* Header Section */}
-            <div className="p-8 border-b border-gray-800 bg-[#0a0a0a] relative overflow-hidden">
+            <div className="p-6 border-b border-gray-800 bg-[#0a0a0a] relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-32 bg-dept-brand/5 blur-[80px] rounded-full pointer-events-none" />
 
-                <div className="flex flex-col md:flex-row gap-8 relative z-10">
+                <div className="flex flex-col md:flex-row gap-5 relative z-10">
                     {/* Cover Art Placeholder */}
                     <div className="shrink-0 group">
                         <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 relative overflow-hidden">
@@ -58,7 +58,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                                 <img src={release.coverArtUrl} alt="Cover" className="w-full h-full object-cover" />
                             ) : (
                                 <>
-                                    <ImageIcon size={32} className="mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                    <ImageIcon size={20} className="mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
                                     <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">No Artwork Yet<br />(needs 3000x3000px)</span>
                                 </>
                             )}
@@ -128,7 +128,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                 </div>
             </div>
 
-            <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
                 {/* Left Column: Vibes */}
                 <div className="lg:col-span-7 space-y-6">
                     <div className="space-y-3">
@@ -173,7 +173,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             onChange={(newTracks) => { void handleSaveRelease(handleUpdateRelease('tracks', newTracks)); }}
                         />
                     ) : (
-                        <div className="p-8 border border-dashed border-gray-800 rounded-xl text-center">
+                        <div className="p-6 border border-dashed border-gray-800 rounded-xl text-center">
                             <Disc size={24} className="mx-auto text-gray-700 mb-2" />
                             <p className="text-xs text-gray-500">Tracklist available for<br />EP & Album types.</p>
                         </div>

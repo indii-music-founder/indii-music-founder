@@ -28,7 +28,7 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('./SwarmGraph', () => ({
   serverTimestamp: vi.fn(),
-    SwarmGraph: () => <div data-testid="swarm-graph-mock">Swarm Graph</div>
+    SwarmGraph: () => <div data-testid="swarm-graph-mock">Team Graph</div>
 }));
 
 vi.mock('./XRayPanel', () => ({
@@ -44,7 +44,7 @@ describe('TraceViewer Interaction (🖱️ Click)', () => {
         expect(screen.getByTestId('list-content')).toBeInTheDocument();
         expect(screen.queryByTestId('graph-content')).not.toBeInTheDocument();
 
-        // 2. Action: Click 'Swarm Graph' trigger
+        // 2. Action: Click 'Team Graph' trigger
         const graphTrigger = screen.getByTestId('graph-trigger');
         fireEvent.click(graphTrigger);
 
@@ -86,7 +86,7 @@ describe('TraceViewer Interaction (🖱️ Click)', () => {
     });
     it('links each selected tab to its rendered panel', () => {
         render(<TraceViewer />);
-        for (const name of ['List View', 'Swarm Graph']) {
+        for (const name of ['List View', 'Team Graph']) {
             const tab = screen.getByRole('tab', { name });
             fireEvent.click(tab);
             const panel = screen.getByRole('tabpanel');

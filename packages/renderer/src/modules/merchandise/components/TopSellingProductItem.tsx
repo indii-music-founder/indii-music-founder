@@ -1,4 +1,5 @@
 import React from 'react';
+import { Shirt } from 'lucide-react';
 import { MerchCard } from './MerchCard';
 import { MerchProduct } from '../types';
 import { formatCurrency } from '@/lib/utils';
@@ -17,7 +18,7 @@ function TopSellingProductItemComponent({ product }: TopSellingProductItemProps)
                 ) : (
                     <>
                         <div className="absolute inset-0 bg-yellow-400/10 group-hover:bg-yellow-400/20 transition-all" />
-                        <span className="text-2xl">👕</span>
+                        <Shirt size={20} aria-hidden="true" className="relative text-yellow-400/80" />
                     </>
                 )}
             </div>

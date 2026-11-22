@@ -244,7 +244,7 @@ export const PromoteToWorkflowModal: React.FC<PromoteToWorkflowModalProps> = ({
                     <button
                         onClick={handleConfirm}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/20"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-gray-200 disabled:opacity-50 text-black font-bold text-xs transition-all shadow-lg shadow-indigo-600/20"
                     >
                         {isSaving ? (
                             <>

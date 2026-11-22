@@ -63,7 +63,7 @@ function NoPlatformsState({ onConnected }: { onConnected: () => void }) {
             <div className="max-w-2xl mx-auto">
                 <div className="text-center mb-8 pt-4">
                     <div className="inline-flex p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl mb-4">
-                        <Plug size={32} className="text-emerald-400" />
+                        <Plug size={20} className="text-emerald-400" />
                     </div>
                     <h2 className="text-xl font-bold text-white mb-2">Connect Your Platforms</h2>
                     <p className="text-sm text-slate-400 max-w-md mx-auto">
@@ -192,7 +192,7 @@ export default function GrowthIntelligenceDashboard() {
         return (
             <div className="h-full flex items-center justify-center bg-[#0d1117]">
                 <div className="text-center text-slate-500">
-                    <Brain size={36} className="mx-auto mb-3 opacity-30 animate-pulse" />
+                    <Brain size={20} className="mx-auto mb-3 opacity-30 animate-pulse" />
                     <p className="text-sm">Checking platform connections…</p>
                 </div>
             </div>
@@ -210,7 +210,7 @@ export default function GrowthIntelligenceDashboard() {
                             <Brain size={18} className="text-emerald-400" />
                         </div>
                         <div>
-                            <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
+                            <h1 className="text-base font-bold text-white">Growth Insights</h1>
                             <p className="text-xs text-slate-400">Engagement heuristics · Pattern detection · Provider-data limitations</p>
                         </div>
                     </div>
@@ -231,7 +231,7 @@ export default function GrowthIntelligenceDashboard() {
                         <Brain size={18} className="text-emerald-400" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
+                        <h1 className="text-base font-bold text-white">Growth Insights</h1>
                         <p className="text-xs text-slate-400">
                             Engagement heuristics · Pattern detection · Provider-data limitations
                         </p>
@@ -323,7 +323,7 @@ export default function GrowthIntelligenceDashboard() {
                     {!selectedReport ? (
                         <div className="h-full flex items-center justify-center text-slate-500">
                             <div className="text-center">
-                                <Brain size={40} className="mx-auto mb-3 opacity-30" />
+                                <Brain size={24} className="mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">
                                     {analyticsLoading
                                         ? 'Fetching platform data…'
@@ -411,7 +411,7 @@ export default function GrowthIntelligenceDashboard() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-center">
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-lg font-bold text-white">
+                                                    <p className="text-base font-bold text-white">
                                                         {selectedReport.forecast.available ? `${selectedReport.forecast.growthMultiplier}x` : '—'}
                                                     </p>
                                                     <p className="text-xs text-slate-400">
@@ -419,7 +419,7 @@ export default function GrowthIntelligenceDashboard() {
                                                     </p>
                                                 </div>
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-lg font-bold text-white">
+                                                    <p className="text-base font-bold text-white">
                                                         {selectedReport.track.platforms.every(platform => platform.metricsUnavailable === true)
                                                             ? '—'
                                                             : selectedReport.track.creatorCount.toLocaleString('en-US')}
@@ -523,7 +523,7 @@ export default function GrowthIntelligenceDashboard() {
 
                             {activeTab === 'regions' && (
                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-5">
-                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Geographic Diffusion</p>
+                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Where Fans Are</p>
                                     {selectedReport.track.regions.length === 0 ? (
                                         <div className="text-center py-8 text-slate-500 text-sm">
                                             <Globe size={28} className="mx-auto mb-2 opacity-30" />

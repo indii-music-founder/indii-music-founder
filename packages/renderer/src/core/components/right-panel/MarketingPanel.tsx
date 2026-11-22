@@ -43,7 +43,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
             toast.success('indii Growth Protocol package prepared for review.');
 
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to deploy protocol');
+            toast.error(error instanceof Error ? error.message : 'Couldn’t start the workflow');
         } finally {
             setIsDeploying(false);
         }

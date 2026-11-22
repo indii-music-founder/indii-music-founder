@@ -89,7 +89,7 @@ export const ViralScorePanel: React.FC<ViralScorePanelProps> = ({ viralScore, me
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         <Zap size={14} className={style.text} />
-                        <span className={`text-lg font-bold ${style.text}`}>{viralScore.label}</span>
+                        <span className={`text-base font-bold ${style.text}`}>{viralScore.label}</span>
                     </div>
                     <p className="text-xs text-slate-400">
                         {TREND_LABELS[viralScore.trend] ?? '→ Stable'}
@@ -105,7 +105,7 @@ export const ViralScorePanel: React.FC<ViralScorePanelProps> = ({ viralScore, me
             {/* Score breakdown */}
             <div className="space-y-2.5">
                 <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Engagement Heuristic Breakdown</p>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">What Drives the Score</p>
                     <p className="text-[10px] text-slate-600 mt-1">Low confidence · {viralScore.sampleDays} observed days · not a provider forecast</p>
                 </div>
                 <BreakdownRow label="Save Rate"       pts={viralScore.breakdown.saveRate}        maxPts={45} color={style.bar} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MerchProduct } from '../types';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Palette } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,7 @@ export const RecentDesignItem = React.memo(({ product, onClick }: RecentDesignIt
                 {product.image ? (
                     <img src={product.image} alt="" aria-hidden="true" className="w-full h-full object-cover" />
                 ) : (
-                    <span className="text-lg" aria-hidden="true">🎨</span>
+                    <Palette size={16} aria-hidden="true" className="text-gray-500" />
                 )}
             </div>
             <div className="flex-1">

@@ -90,7 +90,7 @@ describe('AgentModePicker', () => {
         it('shows the Boardroom info card (no extra selector) in Boardroom mode', () => {
             render(<AgentModePicker mode="boardroom" />);
             expect(screen.getByText(/boardroom active/i)).toBeInTheDocument();
-            expect(screen.getByText(/full swarm mode/i)).toBeInTheDocument();
+            expect(screen.getByText(/full team/i)).toBeInTheDocument();
             // Direct mode's "Select Agent" header should NOT be present
             expect(screen.queryByText(/select agent/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/select department/i)).not.toBeInTheDocument();

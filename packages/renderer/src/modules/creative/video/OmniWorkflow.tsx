@@ -905,7 +905,7 @@ export default function OmniWorkflow() {
                         <div className="p-1 bg-green-500/10 rounded-lg">
                             <Video size={14} className="text-green-400" />
                         </div>
-                        Gemini Omni Stage
+                        Omni Stage
                     </h2>
                     {studioControls.omniReferenceVideo && (
                         <button
@@ -995,7 +995,7 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={handleSendOutputToVeo}
                                     disabled={routingOutputTo !== null}
-                                    className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
+                                    className="bg-white hover:bg-gray-200 text-black p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
                                     title="Continue from this video's last frame in Video Studio"
                                     aria-label="Continue Omni video in Video Studio"
                                 >
@@ -1004,7 +1004,7 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={handleSendOutputToEditor}
                                     disabled={routingOutputTo !== null}
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-emerald-400/30"
+                                    className="bg-white hover:bg-gray-200 text-black p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-emerald-400/30"
                                     title="Open this Omni video in the timeline editor"
                                     aria-label="Open Omni video in timeline editor"
                                 >
@@ -1013,7 +1013,7 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={() => { void handleSendOutputFrameToImage(); }}
                                     disabled={routingOutputTo !== null}
-                                    className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-fuchsia-400/30"
+                                    className="bg-white hover:bg-gray-200 text-black p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-fuchsia-400/30"
                                     title="Extract the final frame into Image Studio"
                                     aria-label="Send Omni final frame to Image Studio"
                                 >
@@ -1021,8 +1021,8 @@ export default function OmniWorkflow() {
                                 </button>
                                 <button
                                     onClick={handleDownload}
-                                    className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-green-400/30"
-                                    title="Download Synthesized Master"
+                                    className="bg-white hover:bg-gray-200 text-black p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-green-400/30"
+                                    title="Download Video"
                                 >
                                     <Download size={16} />
                                 </button>
@@ -1125,7 +1125,7 @@ export default function OmniWorkflow() {
                     ) : (
                         <div 
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex flex-col items-center justify-center p-12 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-green-500/40"
+                            className="flex flex-col items-center justify-center p-8 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-green-500/40"
                         >
                             <div className="p-4 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 mb-4 group-hover:scale-115 transition-all shadow-inner shadow-green-500/5">
                                 <Upload size={28} />
@@ -1157,7 +1157,7 @@ export default function OmniWorkflow() {
                             <span className="text-[9px] text-gray-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Planned</span>
                             <button
                                 onClick={() => setIsAddingFrame(true)}
-                                className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-500 text-[9px] font-bold uppercase font-mono tracking-wider rounded transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-white hover:bg-gray-200 text-black text-[9px] font-bold uppercase font-mono tracking-wider rounded transition-colors"
                             >
                                 <Plus size={10} /> Add Frame
                             </button>
@@ -1505,7 +1505,7 @@ export default function OmniWorkflow() {
                                 </div>
                                 <button 
                                     onClick={() => { void handleAddFrame(); }}
-                                    className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-xs font-bold uppercase tracking-widest font-mono transition-colors text-white"
+                                    className="w-full py-3 bg-white hover:bg-gray-200 rounded-xl text-xs font-bold uppercase tracking-widest font-mono transition-colors text-black"
                                 >
                                     Add Frame to Sequence
                                 </button>

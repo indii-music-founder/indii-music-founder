@@ -237,7 +237,7 @@ export default function InfluencerBountyBoard() {
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Saved Bounties</h3>
                 <div className="space-y-2">
                     {isLoadingBounties ? (
-                        <div className="py-12 text-center">
+                        <div className="py-8 text-center">
                             <Clock size={28} className="mx-auto text-gray-700 mb-3 animate-spin" />
                             <p className="text-sm text-gray-500">Loading saved referral links...</p>
                         </div>
@@ -287,7 +287,7 @@ export default function InfluencerBountyBoard() {
                 </div>
 
                 {!isLoadingBounties && bounties.length === 0 && (
-                    <div className="py-12 text-center">
+                    <div className="py-8 text-center">
                         <Trophy size={28} className="mx-auto text-gray-700 mb-3" />
                         <p className="text-sm text-gray-500">No saved referral links yet.</p>
                         <p className="text-xs text-gray-600 mt-1">Use the form above to create your first link-only bounty.</p>

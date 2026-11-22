@@ -83,7 +83,7 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
                             className="w-full bg-linear-to-r from-violet-600 to-violet-500 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/20 flex items-center justify-center gap-2 border border-violet-400/20"
                         >
                             {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                            {isUploading ? 'Indexing Document…' : 'Ingest Document'}
+                            {isUploading ? 'Uploading…' : 'Upload document'}
                         </motion.div>
                         <input
                             ref={fileInputRef}
@@ -107,7 +107,7 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Search size={14} /> Retrieval Index</span>
-                            <span className="text-xs text-gray-300 font-mono">Gemini File Search</span>
+                            <span className="text-xs text-gray-300 font-mono">Document search</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Search size={14} /> Last Sync</span>

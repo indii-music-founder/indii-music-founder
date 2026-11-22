@@ -146,7 +146,7 @@ export const CanvasCommentModal: React.FC<CanvasCommentModalProps> = ({
                     <button
                         type="submit"
                         disabled={!newText.trim()}
-                        className="p-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl transition-all shadow-md shadow-blue-600/20"
+                        className="p-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black rounded-xl transition-all shadow-md shadow-blue-600/20"
                         title="Post Comment"
                     >
                         <Send size={13} />

@@ -323,7 +323,7 @@ export function SetlistAnalytics() {
                                 <stat.icon size={16} className="text-white" />
                             </div>
                             <div>
-                                <p className="text-lg font-black tracking-tight">{stat.value}</p>
+                                <p className="text-base font-black tracking-tight">{stat.value}</p>
                                 <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mt-0.5">{stat.label}</p>
                             </div>
                         </div>
@@ -475,18 +475,18 @@ export function SetlistAnalytics() {
                     </div>
 
                     {loading ? (
-                        <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
+                        <div className="flex-1 flex flex-col items-center justify-center py-8 gap-3">
                             <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
                             <p className="text-xs text-gray-600 uppercase tracking-widest animate-pulse font-mono">Syncing setlists...</p>
                         </div>
                     ) : loadError ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center" role="alert">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-2 py-10 text-center" role="alert">
                             <AlertCircle size={22} className="text-red-400" />
                             <p className="text-sm font-bold text-red-300">{loadError}</p>
                             <p className="text-xs text-gray-600">Your unsaved form data remains available.</p>
                         </div>
                     ) : performances.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-10 text-center">
                             <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center shadow-inner">
                                 <Music size={22} className="text-gray-600" />
                             </div>

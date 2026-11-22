@@ -94,7 +94,7 @@ export default function AssetSpotlight() {
                     <Sparkles size={14} className="text-green-400" />
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Your Creations</h3>
                 </div>
-                <div className="flex items-center justify-center py-6 text-center">
+                <div className="flex items-center justify-center py-4 text-center">
                     <div>
                         <div className="w-10 h-10 rounded-xl bg-gray-800/50 flex items-center justify-center mx-auto mb-2">
                             <Image size={18} className="text-gray-600" />

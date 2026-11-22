@@ -267,7 +267,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
             let message = err instanceof Error ? err.message : 'Asset upscale failed.';
             if (err instanceof UpscaleUnavailableError) {
                 if (err.reason === 'gpu-not-ready') {
-                    message = 'Local engine cannot run on this machine (no usable GPU/Vulkan).';
+                    message = 'Local preview isn’t supported on this computer’s graphics hardware.';
                     toast.error(message);
                 } else if (err.reason === 'no-electron') {
                     message = 'Local upscaling runs in the indii desktop app.';
@@ -678,7 +678,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             </>
                         ) : (
                             <>
-                                <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:scale-110 transition-transform">
+                                <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 group-hover:scale-110 transition-transform">
                                     <Upload size={24} />
                                 </div>
                                 <div className="text-center">
@@ -857,7 +857,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             <img src={mockupResult} alt="Mockup" className="max-w-full max-h-full object-contain" />
                         ) : (
                             <div className="text-center text-neutral-600">
-                                <MonitorPlay size={48} className="mx-auto mb-4 opacity-50" />
+                                <MonitorPlay size={28} className="mx-auto mb-4 opacity-50" />
                                 <p>Ready to Render</p>
                             </div>
                         )}
@@ -865,7 +865,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         {/* Loading Overlay */}
                         {(isGeneratingMockup || isGeneratingVideo) && (
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                                <Loader2 size={48} className="text-yellow-400 animate-spin mb-4" />
+                                <Loader2 size={28} className="text-yellow-400 animate-spin mb-4" />
                                 <p className="text-white font-bold animate-pulse">
                                     {isGeneratingMockup ? "Compositing Scene..." : "Rendering Video..."}
                                 </p>

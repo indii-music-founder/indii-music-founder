@@ -70,7 +70,7 @@ export default function FounderBadge() {
             {/* Header bar */}
             <div className="flex items-center justify-between px-5 py-3 bg-amber-500/10 border-b border-amber-500/20">
                 <div className="flex items-center gap-2">
-                    <span className="text-amber-400 text-lg">◈</span>
+                    <span className="text-amber-400 text-base">◈</span>
                     <span className="text-amber-300 font-bold text-sm tracking-wide">Founding Member</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/30">

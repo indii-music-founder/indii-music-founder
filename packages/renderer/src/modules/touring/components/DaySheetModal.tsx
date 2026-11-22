@@ -97,7 +97,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                 className="relative w-full max-w-4xl bg-bg-dark border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-gray-800 bg-linear-to-r from-blue-500/10 to-transparent flex items-center justify-between">
+                <div className="px-6 py-3 border-b border-gray-800 bg-linear-to-r from-blue-500/10 to-transparent flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center ring-1 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
                             <Calendar className="text-blue-400" size={20} />
@@ -119,7 +119,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-5 custom-scrollbar">
                     {/* Schedule Section */}
                     <section className="space-y-6">
                         <div className="flex items-center justify-between">
@@ -329,10 +329,10 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
+                        className="px-6 py-2.5 bg-white hover:bg-gray-200 text-black rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
                     >
                         <Save size={16} className="group-hover:scale-125 transition-transform" />
-                        Sync Intelligence
+                        Sync
                     </button>
                 </div>
             </motion.div>

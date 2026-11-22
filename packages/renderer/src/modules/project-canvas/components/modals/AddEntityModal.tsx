@@ -386,7 +386,7 @@ export const AddEntityModal: React.FC<AddEntityModalProps> = ({
                             </div>
                             <button
                                 onClick={handleCreateAndPinNote}
-                                className="w-full mt-2 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                                className="w-full mt-2 py-2 rounded-xl bg-white hover:bg-gray-200 text-zinc-950 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
                             >
                                 <Check size={14} /> Create Note & Place on Canvas
                             </button>

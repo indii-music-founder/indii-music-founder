@@ -343,7 +343,7 @@ export default function ShowroomUI() {
                                                 toast.success("Sent to Veo!");
                                             }}
                                             className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-cyan-600/40 hover:bg-cyan-600/20 transition-all flex items-center justify-center z-20"
-                                            title="Send to Veo for video generation"
+                                            title="Send to video generation"
                                         >
                                             <Send size={14} className="text-cyan-400" />
                                         </button>
@@ -355,12 +355,12 @@ export default function ShowroomUI() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-white/5 to-white/10"
+                                    className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-white/5 to-white/10"
                                 >
                                     <div className="relative">
                                         <img src={showroomState.productAsset.url} className="w-24 h-24 object-contain mb-4 opacity-30 grayscale" alt="Asset preview" />
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <ImageIcon size={32} className="text-white/20" />
+                                            <ImageIcon size={20} className="text-white/20" />
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground text-center max-w-[200px] leading-relaxed">
@@ -375,7 +375,7 @@ export default function ShowroomUI() {
                                     exit={{ opacity: 0 }}
                                     className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/30"
                                 >
-                                    <ImageIcon size={48} className="mb-4" />
+                                    <ImageIcon size={28} className="mb-4" />
                                     <p className="text-[10px] font-bold uppercase tracking-widest">Preview Monitor</p>
                                 </motion.div>
                             )}
@@ -385,7 +385,7 @@ export default function ShowroomUI() {
                         {(showroomState.isGeneratingMockup || showroomState.isGeneratingVideo) && (
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center space-y-6">
                                 <div className="relative">
-                                    <Loader2 className="animate-spin text-dept-creative" size={48} />
+                                    <Loader2 className="animate-spin text-dept-creative" size={28} />
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <Zap size={16} fill="currentColor" className="text-dept-creative animate-pulse" />
                                     </div>

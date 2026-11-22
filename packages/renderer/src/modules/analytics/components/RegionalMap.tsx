@@ -26,7 +26,7 @@ export const RegionalMap: React.FC<RegionalMapProps> = ({ regions, totalStreams 
                         transition={{ duration: 0.3, delay: i * 0.05 }}
                         className="flex items-center gap-3"
                     >
-                        <span className="text-lg w-7 shrink-0">{region.flag}</span>
+                        <span className="text-base w-7 shrink-0">{region.flag}</span>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs text-slate-300 font-medium truncate">{region.country}</span>

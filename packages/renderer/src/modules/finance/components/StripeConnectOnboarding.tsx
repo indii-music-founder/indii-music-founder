@@ -90,7 +90,7 @@ export function StripeConnectOnboarding() {
             {/* Collaborator List */}
             <div className="space-y-2">
                 {collaborators.length === 0 ? (
-                    <div className="p-8 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col items-center">
+                    <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col items-center">
                         <Users size={24} className="text-gray-600 mb-3" />
                         <h3 className="text-sm font-bold text-white mb-1">No Collaborators Yet</h3>
                         <p className="text-xs text-gray-500 mb-4 max-w-[250px]">
@@ -167,7 +167,7 @@ export function StripeConnectOnboarding() {
                     const cfg = STATUS_CONFIG[status];
                     return (
                         <div key={status} className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 text-center">
-                            <p className="text-lg font-black text-white">{count}</p>
+                            <p className="text-base font-black text-white">{count}</p>
                             <p className={`text-[10px] font-bold ${cfg.color.split(' ')[0]}`}>{cfg.label}</p>
                         </div>
                     );

@@ -44,7 +44,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
 
     if (loading && connections.length === 0) {
         return (
-            <div className="p-12 flex flex-col items-center justify-center min-h-[400px]" data-testid="distro-scanning-connections">
+            <div className="p-8 flex flex-col items-center justify-center min-h-[400px]" data-testid="distro-scanning-connections">
                 <div className="w-12 h-12 rounded-full border-t-2 border-dept-distribution animate-spin mb-4" />
                 <p className="text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px]">Scanning Connections</p>
             </div>
@@ -97,8 +97,8 @@ export const DistributorConnectionsPanel: React.FC = () => {
             )}
 
             {/* Recommendations Section */}
-            <div className="mt-16 p-10 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md relative overflow-hidden group">
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="mt-8 p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md relative overflow-hidden group">
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-5">
                     <div>
                         <h3 className="text-base font-black text-white mb-3 uppercase italic">Scale Up Your Reach</h3>
                         <p className="text-gray-500 mb-0 font-medium max-w-xl">

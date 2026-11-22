@@ -316,13 +316,13 @@ export function BoardroomWorkbenchView() {
                                     ) : activeAsset.type === 'video' && activeAsset.url ? (
                                         <video src={activeAsset.url} controls className="max-h-[46vh] max-w-full rounded-xl" />
                                     ) : activeAsset.type === 'music' && activeAsset.url ? (
-                                        <div className="p-8 text-center space-y-4">
-                                            <Music size={48} className="text-green-400 mx-auto" />
+                                        <div className="p-6 text-center space-y-4">
+                                            <Music size={28} className="text-green-400 mx-auto" />
                                             <audio src={activeAsset.url} controls className="w-full" />
                                         </div>
                                     ) : (
-                                        <div className="p-12 text-center text-white/40">
-                                            <FileText size={32} className="mx-auto mb-2 opacity-50" />
+                                        <div className="p-8 text-center text-white/40">
+                                            <FileText size={20} className="mx-auto mb-2 opacity-50" />
                                             <p className="text-xs">{activeAsset.prompt || 'Text deliverable'}</p>
                                         </div>
                                     )}
@@ -346,7 +346,7 @@ export function BoardroomWorkbenchView() {
                                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all"
                                     >
                                         <Pin size={13} />
-                                        <span>Pin to Swarm</span>
+                                        <span>Pin for Team</span>
                                     </button>
                                     <button
                                         type="button"
@@ -368,7 +368,7 @@ export function BoardroomWorkbenchView() {
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-white/40">
-                                <ImageIcon size={32} className="opacity-30 mb-2" />
+                                <ImageIcon size={20} className="opacity-30 mb-2" />
                                 <p className="text-xs">{targetAssetKey ? 'The requested asset is unavailable.' : 'Select or generate an asset to inspect.'}</p>
                                 {!generatedHistory.length && (
                                     <button
@@ -473,7 +473,7 @@ export function BoardroomWorkbenchView() {
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-white/40 h-full">
-                                <FileText size={32} className="opacity-30 mb-2" />
+                                <FileText size={20} className="opacity-30 mb-2" />
                                 <p className="text-xs">Select an artifact to read.</p>
                             </div>
                         )}

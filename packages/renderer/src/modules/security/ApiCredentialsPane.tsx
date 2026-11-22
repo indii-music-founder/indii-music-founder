@@ -42,7 +42,7 @@ export function ApiCredentialsPane() {
     if (error) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                <Key size={32} className="mb-3 opacity-20" />
+                <Key size={20} className="mb-3 opacity-20" />
                 <span className="font-bold uppercase tracking-widest text-[10px] text-red-400">{error}</span>
             </div>
         );

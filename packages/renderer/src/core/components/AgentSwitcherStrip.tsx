@@ -54,7 +54,7 @@ export const AgentSwitcherStrip = () => {
             <button 
                 onClick={() => setShowSelector(!showSelector)}
                 className="w-6 h-6 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                title="Summon Specialist"
+                title="Add a specialist"
             >
                 <Plus size={12} />
             </button>

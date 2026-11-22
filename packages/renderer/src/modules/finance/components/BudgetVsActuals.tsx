@@ -99,7 +99,7 @@ export function BudgetVsActuals() {
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-bold transition-colors"
                 >
                     <Plus size={14} />
                     Add Category
@@ -173,7 +173,7 @@ export function BudgetVsActuals() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
+                                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-bold"
                                 >
                                     Create Category
                                 </button>
@@ -238,7 +238,7 @@ export function BudgetVsActuals() {
             {/* Category Table */}
             <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
                 {categories.length === 0 ? (
-                    <div className="p-8 text-center flex flex-col items-center">
+                    <div className="p-6 text-center flex flex-col items-center">
                         <p className="text-xs text-gray-500 mb-3">Your budget categories will appear here once created.</p>
                         <button
                             onClick={() => setShowAddModal(true)}

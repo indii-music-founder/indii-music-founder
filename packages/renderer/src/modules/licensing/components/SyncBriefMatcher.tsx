@@ -211,7 +211,7 @@ function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUp
                             <button
                                 onClick={handleSubmit}
                                 disabled={files.length === 0 || status === 'uploading'}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 aria-label="Submit track with clearance documents"
                             >
                                 {status === 'uploading' ? (
@@ -224,8 +224,8 @@ function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUp
                     </>
                 ) : (
                     /* Success state */
-                    <div className="flex flex-col items-center py-6 gap-3 text-center">
-                        <CheckCircle2 size={32} className="text-green-400" aria-hidden="true" />
+                    <div className="flex flex-col items-center py-4 gap-3 text-center">
+                        <CheckCircle2 size={20} className="text-green-400" aria-hidden="true" />
                         <div>
                             <p className="text-sm font-semibold text-white">Clearance uploaded</p>
                             <p className="text-[10px] text-neutral-500 mt-1">
@@ -450,7 +450,7 @@ export function SyncBriefMatcher() {
                 ].map(s => (
                     <div key={s.label} className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                         <div className={`${s.color} mb-1`}>{s.icon}</div>
-                        <div className="text-lg font-black text-white">{s.value}</div>
+                        <div className="text-base font-black text-white">{s.value}</div>
                         <div className="text-[9px] text-neutral-600 uppercase tracking-widest">{s.label}</div>
                     </div>
                 ))}
@@ -459,7 +459,7 @@ export function SyncBriefMatcher() {
             {/* Brief cards */}
             <div className="space-y-3">
                 {loading ? (
-                    <div className="flex items-center gap-2 text-[10px] text-neutral-500 py-6 justify-center">
+                    <div className="flex items-center gap-2 text-[10px] text-neutral-500 py-4 justify-center">
                         <RefreshCw size={11} className="animate-spin" />
                         Loading briefs…
                     </div>

@@ -15,7 +15,7 @@ export const BankPanel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'TAX' | 'WATERFALL'>('TAX');
 
-    // Tax Engine State
+    // Tax State
     const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
 
     // Waterfall Engine State
@@ -96,7 +96,7 @@ export const BankPanel: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
+        <div className="space-y-5 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex flex-col gap-2">
                     <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
@@ -112,7 +112,7 @@ export const BankPanel: React.FC = () => {
                         data-testid="distro-subtab-tax"
                         className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'TAX' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
                     >
-                        Tax Engine
+                        Tax
                     </button>
                     <button
                         onClick={() => setActiveTab('WATERFALL')}
@@ -124,10 +124,10 @@ export const BankPanel: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* Global Controls & Simulator Input */}
                 <div className="space-y-6">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
                         <div className="flex items-center gap-2 text-dept-licensing mb-6">
                             <DollarSign className="w-5 h-5" />
                             <span className="font-black uppercase tracking-[0.2em] text-[10px]">Revenue Simulator</span>
@@ -151,7 +151,7 @@ export const BankPanel: React.FC = () => {
                     </div>
 
                     {activeTab === 'TAX' ? (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 animate-in slide-in-from-left-4 duration-500 backdrop-blur-sm">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 animate-in slide-in-from-left-4 duration-500 backdrop-blur-sm">
                             <div className="flex items-center gap-2 text-dept-distribution mb-2">
                                 <Landmark className="w-4 h-4" />
                                 <span className="font-black uppercase tracking-[0.2em] text-[10px]">Tax Verification</span>
@@ -179,7 +179,7 @@ export const BankPanel: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 space-y-6 animate-in slide-in-from-left-4 duration-500 backdrop-blur-sm">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 animate-in slide-in-from-left-4 duration-500 backdrop-blur-sm">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2 text-dept-creative">
                                     <Users className="w-4 h-4" />
@@ -244,19 +244,19 @@ export const BankPanel: React.FC = () => {
                 </div>
 
                 {/* Reporting Panel */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-8 relative overflow-hidden flex flex-col min-h-[500px] backdrop-blur-sm">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 relative overflow-hidden flex flex-col min-h-[500px] backdrop-blur-sm">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-dept-licensing/5 blur-[80px] rounded-full -mr-16 -mt-16" />
 
                     {activeTab === 'TAX' ? (
                         !taxReport ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-4">
-                                <div className="p-6 bg-black/40 border border-white/10 rounded-3xl">
+                                <div className="p-6 bg-black/40 border border-white/10 rounded-2xl">
                                     <Shield className="w-12 h-12 opacity-10" />
                                 </div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 italic">Awaiting Compliance Hash</p>
                             </div>
                         ) : (
-                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-6">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-3 h-3 rounded-full animate-pulse ${taxReport.payout_status === 'ACTIVE' ? 'bg-dept-licensing shadow-[0_0_12px_rgba(34,197,94,0.3)]' : 'bg-dept-marketing'}`} />
@@ -282,15 +282,15 @@ export const BankPanel: React.FC = () => {
                                 <div className="bg-black border border-gray-800 rounded-2xl p-6 space-y-4">
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gross Inventory</span>
-                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString('en-US')}</span>
+                                        <span className="text-base font-black text-gray-300 italic">${parseFloat(amount).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-dept-marketing uppercase tracking-widest">Compliance Levy</span>
-                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * (taxReport.withholding_rate / 100)).toLocaleString('en-US')}</span>
+                                        <span className="text-base font-black text-dept-marketing italic">-${(parseFloat(amount) * (taxReport.withholding_rate / 100)).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
-                                        <span data-testid="bank-tax-net-disbursable" className="text-lg font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
+                                        <span data-testid="bank-tax-net-disbursable" className="text-base font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
                                             ${(parseFloat(amount) * (1 - taxReport.withholding_rate / 100)).toLocaleString('en-US')}
                                         </span>
                                     </div>
@@ -300,7 +300,7 @@ export const BankPanel: React.FC = () => {
                     ) : (
                         !waterfallReport ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-4">
-                                <div className="p-6 bg-black border border-gray-800 rounded-3xl">
+                                <div className="p-6 bg-black border border-gray-800 rounded-2xl">
                                     <PieChart className="w-12 h-12 opacity-10" />
                                 </div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 italic">Awaiting Split Signal</p>
@@ -337,7 +337,7 @@ export const BankPanel: React.FC = () => {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
-                                        <span className="text-lg font-black text-white italic">${waterfallReport.total_distributed.toLocaleString('en-US')}</span>
+                                        <span className="text-base font-black text-white italic">${waterfallReport.total_distributed.toLocaleString('en-US')}</span>
                                     </div>
                                 </div>
                             </div>

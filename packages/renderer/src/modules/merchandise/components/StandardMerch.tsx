@@ -25,10 +25,10 @@ export const StandardMerch: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
 
             {/* Hero Section */}
-            <div className="relative rounded-3xl overflow-hidden h-72 border border-primary/20 group shadow-2xl transition-all duration-500 hover:shadow-primary/10">
+            <div className="relative rounded-2xl overflow-hidden h-72 border border-primary/20 group shadow-2xl transition-all duration-500 hover:shadow-primary/10">
                 <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 z-10" />
                 {/* ⚡ Bolt Optimization: Prioritize LCP image loading */}
                 <img
@@ -37,7 +37,7 @@ export const StandardMerch: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
                     fetchPriority="high"
                 />
-                <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 bg-background/30 backdrop-blur-xs">
+                <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 bg-background/30 backdrop-blur-xs">
                     <div className="w-fit mb-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
                         Season 25 // Summer
                     </div>
@@ -52,7 +52,7 @@ export const StandardMerch: React.FC = () => {
                         <button
                             type="button"
                             onClick={scrollToCatalog}
-                            className="bg-primary text-primary-foreground font-black px-8 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer"
+                            className="bg-primary text-primary-foreground font-black px-6 py-4 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 uppercase text-sm tracking-wider focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none cursor-pointer"
                         >
                             <Star size={20} fill="currentColor" />
                             Explore Catalog
@@ -91,13 +91,13 @@ export const StandardMerch: React.FC = () => {
                         })}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {loading && products.length === 0 ? (
-                        <div className="col-span-full py-12 flex justify-center" role="status">
+                        <div className="col-span-full py-8 flex justify-center" role="status">
                             <DeptLoader message="Loading drops..." moduleId="merch" />
                         </div>
                     ) : error ? (
-                        <div className="col-span-full py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-300" role="alert">
+                        <div className="col-span-full py-8 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-300" role="alert">
                             <div className="p-4 bg-red-500/10 rounded-full ring-1 ring-red-500/20">
                                 <AlertTriangle className="text-red-500 w-8 h-8" />
                             </div>
@@ -107,7 +107,7 @@ export const StandardMerch: React.FC = () => {
                             </div>
                         </div>
                     ) : filteredProducts.length === 0 ? (
-                        <div className="col-span-full py-12 text-center text-muted-foreground text-sm">
+                        <div className="col-span-full py-8 text-center text-muted-foreground text-sm">
                             No products found in category "{selectedCategory}".
                         </div>
                     ) : (
@@ -121,14 +121,14 @@ export const StandardMerch: React.FC = () => {
             </div>
 
             {/* Collections Banner */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-                <div className="bg-linear-to-br from-yellow-400/20 to-orange-400/20 rounded-3xl p-8 border border-yellow-500/20 h-48 flex items-end">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-8">
+                <div className="bg-linear-to-br from-yellow-400/20 to-orange-400/20 rounded-2xl p-6 border border-yellow-500/20 h-48 flex items-end">
                     <div>
                         <h4 className="text-2xl font-black text-foreground tracking-tighter uppercase">Flash Drops</h4>
                         <p className="text-muted-foreground text-sm font-bold">New drops every Sunday 10AM EST.</p>
                     </div>
                 </div>
-                <div className="bg-linear-to-br from-indigo-400/20 to-green-400/20 rounded-3xl p-8 border border-indigo-500/20 h-48 flex items-end">
+                <div className="bg-linear-to-br from-indigo-400/20 to-green-400/20 rounded-2xl p-6 border border-indigo-500/20 h-48 flex items-end">
                     <div>
                         <h4 className="text-2xl font-black text-foreground tracking-tighter uppercase">Artist Collabs</h4>
                         <p className="text-muted-foreground text-sm font-bold">Limited run exclusively for fans.</p>

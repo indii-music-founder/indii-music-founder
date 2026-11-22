@@ -49,7 +49,7 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                         ref={dialogRef}
                         role="dialog"
                         aria-modal="true"
-                        aria-label="Swarm Collaboration Feed"
+                        aria-label="Team Activity"
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
@@ -60,7 +60,7 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-2">
                                 <Bot className="text-indigo-400" size={18} />
-                                <h2 className="text-base font-bold tracking-tight text-gray-100">Swarm Collaboration Feed</h2>
+                                <h2 className="text-base font-bold tracking-tight text-gray-100">Team Activity</h2>
                             </div>
                             <button type="button" aria-label="Close collaboration feed" onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
                                 <X size={20} />
@@ -70,10 +70,10 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                         {/* Body */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {a2aMessages.length === 0 ? (
-                                <div className="text-center p-12 text-white/40">
-                                    <Bot className="mx-auto mb-4 opacity-20" size={32} />
+                                <div className="text-center p-8 text-white/40">
+                                    <Bot className="mx-auto mb-4 opacity-20" size={20} />
                                     <p className="text-xs font-medium text-gray-300">No agent-to-agent activity yet.</p>
-                                    <p className="text-[10px] mt-2 opacity-80">Behind-the-scenes swarm negotiations will appear here in real-time.</p>
+                                    <p className="text-[10px] mt-2 opacity-80">Your team's back-and-forth shows up here as it happens.</p>
                                 </div>
                             ) : (
                                 [...a2aMessages].reverse().map(msg => (

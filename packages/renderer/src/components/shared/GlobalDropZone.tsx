@@ -260,16 +260,16 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
             {children}
             {isDragging && (
                 <div className="absolute inset-0 z-[99999] bg-black/60 backdrop-blur-sm border-4 border-dashed border-green-500 rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-200 m-4">
-                    <div className="bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-md border border-gray-800">
+                    <div className="bg-[#1a1a1a] p-6 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-md border border-gray-800">
                         <div className="flex gap-4 mb-6">
                             <div className="p-4 bg-blue-500/20 rounded-full text-blue-400">
-                                <FileImage size={32} />
+                                <FileImage size={20} />
                             </div>
                             <div className="p-4 bg-orange-500/20 rounded-full text-orange-400">
-                                <FileAudio size={32} />
+                                <FileAudio size={20} />
                             </div>
                             <div className="p-4 bg-green-500/20 rounded-full text-green-400">
-                                <FileText size={32} />
+                                <FileText size={20} />
                             </div>
                         </div>
                         <h2 className="text-xl font-bold text-white mb-2">Drop files here</h2>

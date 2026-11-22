@@ -93,7 +93,7 @@ export function TaxFormUploadPage() {
         <div className="min-h-screen w-screen bg-black text-white flex items-center justify-center px-6">
             <div className="w-full max-w-md">
                 <div className="flex items-center gap-2 mb-8 justify-center">
-                    <span className="text-lg font-bold">indii.music</span>
+                    <span className="text-base font-bold">indii.music</span>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">

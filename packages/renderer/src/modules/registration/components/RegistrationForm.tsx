@@ -229,7 +229,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           type="button"
           onClick={proceedToFiling}
           disabled={submitting}
-          className="w-full py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-white hover:bg-gray-200 text-black transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {submitting && <Loader2 size={16} className="animate-spin" />}
           I've reviewed — proceed to filing
@@ -259,7 +259,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           type="button"
           onClick={confirmFinalSubmit}
           disabled={submitting}
-          className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-white hover:bg-gray-200 text-black transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {submitting && <Loader2 size={16} className="animate-spin" />}
           Confirm & submit to {adapter.name}
@@ -341,7 +341,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200',
           submitting
             ? 'bg-white/5 text-gray-500 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20'
+            : 'bg-white hover:bg-gray-200 text-black'
         )}
       >
         {submitting ? (
@@ -508,7 +508,7 @@ function SubmissionResultView({
   if (result.success) {
     return (
       <div className="text-center space-y-4 py-4">
-        <CheckCircle2 size={40} className="text-green-400 mx-auto" />
+        <CheckCircle2 size={24} className="text-green-400 mx-auto" />
         <div>
           <p className="text-white font-semibold">Submitted to {adapter.name}</p>
           {result.confirmationNumber && (

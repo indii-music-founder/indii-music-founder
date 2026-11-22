@@ -7,6 +7,10 @@ import {
   Copy,
   Check,
   ChevronLeft,
+  Scissors,
+  AlignLeft,
+  Drama,
+  type LucideIcon,
 } from "lucide-react";
 import { useToast } from "@/core/context/ToastContext";
 import { CampaignIntelligence } from "@/services/marketing/CampaignIntelligenceService";
@@ -22,26 +26,26 @@ const ENHANCEMENT_TYPES: {
   id: EnhancementType;
   label: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
 }[] = [
   {
     id: "improve",
     label: "Improve",
     description: "Make it more engaging",
-    icon: "✨",
+    icon: Wand2,
   },
   {
     id: "shorter",
     label: "Shorter",
     description: "More concise version",
-    icon: "📝",
+    icon: Scissors,
   },
-  { id: "longer", label: "Longer", description: "Add more detail", icon: "📖" },
+  { id: "longer", label: "Longer", description: "Add more detail", icon: AlignLeft },
   {
     id: "different_tone",
     label: "Different Tone",
     description: "Fresh perspective",
-    icon: "🎭",
+    icon: Drama,
   },
 ];
 
@@ -126,7 +130,7 @@ export default function IntelligenceEnhancePostModal({
                 Enhance Post Copy
               </h2>
               <p className="text-sm text-gray-500">
-                Use Intelligence to improve your post
+                Improve your post
               </p>
             </div>
           </div>
@@ -176,9 +180,7 @@ export default function IntelligenceEnhancePostModal({
                         : "bg-bg-dark border border-gray-800 hover:border-gray-600"
                     }`}
                   >
-                    <div className="text-lg mb-1" aria-hidden="true">
-                      {type.icon}
-                    </div>
+                    <type.icon size={14} aria-hidden="true" className="mb-1 text-gray-400" />
                     <div
                       className={`text-sm font-medium ${enhancementType === type.id ? "text-blue-200" : "text-gray-300"}`}
                     >

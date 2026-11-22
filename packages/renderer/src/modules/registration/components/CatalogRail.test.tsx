@@ -31,7 +31,7 @@ describe('CatalogRail catalog intelligence', () => {
       onSelectTrack={vi.fn()}
     />);
 
-    expect(screen.getByRole('region', { name: 'Catalog intelligence' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Catalog check' })).toBeInTheDocument();
     expect(screen.getByText('1 potential identifier conflict needs review.')).toBeInTheDocument();
     expect(screen.getByText(/Legacy details are unconfirmed/)).toBeInTheDocument();
     expect(screen.queryByText(/ownership confirmed|registration complete/i)).not.toBeInTheDocument();

@@ -303,7 +303,7 @@ export default function CommandPad({
       id: 'agent_activity',
       icon: Bot,
       label: 'Agent Workspaces',
-      description: 'Swarm active jobs feed',
+      description: 'Team jobs feed',
       moduleId: 'dashboard' as ModuleId,
       agentPrompt: 'Report the current status of the active agent swarm. What legal clearances, brand reviews, or marketing copy drafts are currently pending?',
       color: 'border-violet-500/25 bg-violet-500/[0.03] text-violet-400 hover:bg-violet-500/[0.08]',

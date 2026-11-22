@@ -61,7 +61,7 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
                         disabled={!!connecting}
                         className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-orange-400/30 hover:bg-orange-400/5 transition-all group disabled:opacity-50"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center text-lg flex-shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center text-base flex-shrink-0">
                             🦊
                         </div>
                         <div className="flex-1 text-left">
@@ -83,7 +83,7 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
                         disabled={true}
                         className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl opacity-50 cursor-not-allowed"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center text-lg flex-shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center text-base flex-shrink-0">
                             🔗
                         </div>
                         <div className="flex-1 text-left">

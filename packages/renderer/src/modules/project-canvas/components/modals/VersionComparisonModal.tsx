@@ -75,7 +75,7 @@ export const VersionComparisonModal: React.FC<VersionComparisonModalProps> = ({
 
         return (
             <div className="w-full h-56 bg-zinc-950 rounded-xl border border-zinc-800 flex flex-col items-center justify-center text-zinc-500 gap-2">
-                <FileText size={32} />
+                <FileText size={20} />
                 <span className="text-xs uppercase tracking-wider font-mono">{mediaType} Version</span>
             </div>
         );
