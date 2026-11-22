@@ -93,9 +93,7 @@ Also scan for hard-coded infra IDs (CLAUDE.md §11):
 `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src` — the only allowed hit is `services/agent/fine-tuned-endpoints.generated.ts`.
 
 ### 1.5 Known red CI that is not yours
-These e2e specs fail on `main` today and will be red on every PR until WP0 lands:
-- shard 2: `e2e/detroit-techno-onboarding.spec.ts:120`, `e2e/distribution-workflow.spec.ts:178`, `e2e/indii-macro-flywheel.spec.ts:61`
-- shard 3: `e2e/mcp-a2a-routing.spec.ts:22`, `e2e/mcp-boardroom-collaboration.spec.ts:22`
+As of 2026-11-21 (#973, #983, #984) none of the five WP0 specs should be red on `main`: three were repaired, and the two MCP specs are tagged `@external-legacy` (excluded from `npm run test:e2e`) with genuine coverage in the owner-run `@live` spec `e2e/mcp-publicist-live.spec.ts`. If any of them fails again, treat it as yours to investigate.
 
 If only these fail, note it once (on the PR if there is one, otherwise in the handback) with the spec list and a link to a base run showing the same failure. Any **other** red check is yours to fix.
 
@@ -125,7 +123,7 @@ File paths are relative to `packages/renderer/src/` unless they start with `pack
 Line numbers in V4 entries are from 2026-11-19 and may have drifted; always locate code with `grep -n` on the named function or string.
 
 ### WP0 — Make CI green again (do this first)
-**Claimed by:** —
+**Claimed by:** Claude (steps 1–4 landed 2026-11-21: #973, #983, #984). **Open:** step 5 (ISSUE-1686) and the owner-run `@live` MCP pass that closes ISSUE-1691.
 **IDs:** new ticket ISSUE-1691 "Five e2e specs fail on main" + 1686
 **Files:** `e2e/detroit-techno-onboarding.spec.ts`, `e2e/distribution-workflow.spec.ts`, `e2e/indii-macro-flywheel.spec.ts`, `e2e/mcp-a2a-routing.spec.ts`, `e2e/mcp-boardroom-collaboration.spec.ts`, `e2e/fixtures/*`, `e2e/boardroom-debug.spec.ts`, `e2e/boardroom_test.spec.ts`
 **Steps:**
