@@ -1,7 +1,11 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useReleases } from './useReleases';
-import { onSnapshot } from 'firebase/firestore';
+import { normalizeReleaseRecord, useReleases } from './useReleases';
+import { onSnapshot, where } from 'firebase/firestore';
+import type { ReleaseWorkspace } from '@/services/distribution/releaseWorkspace';
+
+const ORG_WORKSPACE: ReleaseWorkspace = { kind: 'organization', orgId: 'test-org-id', userId: 'test-user' };
+const PERSONAL_WORKSPACE: ReleaseWorkspace = { kind: 'personal', orgId: 'personal', userId: 'test-user' };
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
@@ -36,7 +40,7 @@ describe('useReleases', () => {
         const mockUnsubscribe = vi.fn();
         vi.mocked(onSnapshot).mockReturnValue(mockUnsubscribe);
 
-        const { unmount } = renderHook(() => useReleases('test-org-id'));
+        const { unmount } = renderHook(() => useReleases(ORG_WORKSPACE));
 
         expect(onSnapshot).toHaveBeenCalled();
 
@@ -56,7 +60,7 @@ describe('useReleases', () => {
             return vi.fn();
         }) as any);
 
-        const { result } = renderHook(() => useReleases('test-org-id'));
+        const { result } = renderHook(() => useReleases(ORG_WORKSPACE));
 
         expect(result.current.loading).toBe(true);
 
@@ -99,7 +103,7 @@ describe('useReleases', () => {
             return vi.fn();
         }) as any);
 
-        const { result } = renderHook(() => useReleases('test-org-id'));
+        const { result } = renderHook(() => useReleases(ORG_WORKSPACE));
 
         const mockError = new Error('Firestore Error');
         if (errorCallback!) {
@@ -116,8 +120,40 @@ describe('useReleases', () => {
         expect(result.current.releases).toHaveLength(0);
     });
 
-    it('does not subscribe if orgId is missing', () => {
-        renderHook(() => useReleases(''));
+    it('does not subscribe without a proven workspace', () => {
+        renderHook(() => useReleases(null));
         expect(onSnapshot).not.toHaveBeenCalled();
+    });
+
+    it('reads a personal workspace by userId and an organization by orgId (ISSUE-1695)', () => {
+        vi.mocked(onSnapshot).mockReturnValue(vi.fn());
+
+        renderHook(() => useReleases(PERSONAL_WORKSPACE));
+        expect(where).toHaveBeenLastCalledWith('userId', '==', 'test-user');
+
+        renderHook(() => useReleases(ORG_WORKSPACE));
+        expect(where).toHaveBeenLastCalledWith('orgId', '==', 'test-org-id');
+        expect(where).not.toHaveBeenCalledWith('orgId', '==', 'personal');
+    });
+});
+
+describe('normalizeReleaseRecord', () => {
+    it('gives older records without metadata/assets the shapes Publishing reads', () => {
+        expect(normalizeReleaseRecord('r1', { userId: 'u', title: 'Legacy Title', artist: 'Legacy Artist', status: 'STAGED' })).toEqual({
+            id: 'r1',
+            userId: 'u',
+            title: 'Legacy Title',
+            artist: 'Legacy Artist',
+            status: 'STAGED',
+            metadata: { trackTitle: 'Legacy Title', artistName: 'Legacy Artist' },
+            assets: {},
+            distributors: [],
+        });
+        expect(normalizeReleaseRecord('r2', { metadata: 'bad', distributors: 'bad' })).toMatchObject({ metadata: {}, assets: {}, distributors: [] });
+    });
+
+    it('keeps well-formed records unchanged', () => {
+        const data = { metadata: { trackTitle: 'Song' }, assets: { coverArtUrl: 'x' }, distributors: [{ distributorId: 'd', status: 'pending' }] };
+        expect(normalizeReleaseRecord('r3', data)).toEqual({ id: 'r3', ...data });
     });
 });

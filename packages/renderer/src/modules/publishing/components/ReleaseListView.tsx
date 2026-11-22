@@ -27,6 +27,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
     const {
         releases,
         loading,
+        error,
         searchQuery,
         setSearchQuery,
         statusFilter,
@@ -177,6 +178,13 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         {[1, 2, 3, 4].map(i => (
                             <div key={i} className="h-[180px] bg-gray-900/40 rounded-2xl animate-pulse border border-gray-800/50" />
                         ))}
+                    </div>
+                ) : error && releases.length === 0 ? (
+                    <div role="alert" data-testid="release-list-load-error" className="flex flex-col items-center justify-center py-20 bg-red-500/5 rounded-3xl border border-dashed border-red-500/30">
+                        <h3 className="text-xl font-bold text-white mb-2">Couldn&apos;t load your releases</h3>
+                        <p className="text-gray-400 text-sm max-w-sm text-center">
+                            {error.message}
+                        </p>
                     </div>
                 ) : releases.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-gray-900/20 rounded-3xl border border-dashed border-gray-800">

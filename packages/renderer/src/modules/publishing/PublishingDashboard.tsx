@@ -15,6 +15,7 @@ import {
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useReleases } from './hooks/useReleases';
+import { useReleaseWorkspace } from './hooks/useReleaseWorkspace';
 import { useAnalytics, usePayouts } from './hooks/useAnalytics';
 import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -72,7 +73,8 @@ export default function PublishingDashboard() {
     const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
 
     // Data Hooks
-    const { releases, loading: releasesLoading } = useReleases(currentOrganizationId);
+    const releaseWorkspace = useReleaseWorkspace();
+    const { releases, loading: releasesLoading } = useReleases(releaseWorkspace);
 
     // Analytics State
     const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'streams'>('streams');

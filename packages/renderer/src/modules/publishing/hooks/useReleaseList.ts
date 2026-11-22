@@ -1,13 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useReleases } from './useReleases';
-import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
+import { useReleaseWorkspace } from './useReleaseWorkspace';
 
 export function useReleaseList() {
-    const { currentOrganizationId } = useStore(useShallow(state => ({
-        currentOrganizationId: state.currentOrganizationId
-    })));
-    const { releases, loading, hasPendingSync, deleteRelease, archiveRelease } = useReleases(currentOrganizationId);
+    const workspace = useReleaseWorkspace();
+    const { releases, loading, error, hasPendingSync, deleteRelease, archiveRelease } = useReleases(workspace);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -28,6 +25,7 @@ export function useReleaseList() {
         releases: filteredReleases,
         allReleases: releases,
         loading,
+        error,
         searchQuery,
         setSearchQuery,
         statusFilter,

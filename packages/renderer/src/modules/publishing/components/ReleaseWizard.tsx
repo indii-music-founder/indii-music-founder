@@ -1023,7 +1023,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
           {/* Submit Error */}
           {submitError && (
-            <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+            <div role="alert" data-testid="release-wizard-error" className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
               <p className="text-sm text-red-400">{submitError}</p>
             </div>
           )}
