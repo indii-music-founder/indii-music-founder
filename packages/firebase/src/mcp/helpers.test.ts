@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { failedOperationResult, operationResult, optionalIdempotencyKey, requireString, toolResponse, verifyReleaseOwnership, type OwnershipFirestore } from './helpers.js';
+import { failedOperationResult, operationResult, optionalIdempotencyKey, requireString, resolveOwnedRelease, toolResponse, verifyReleaseOwnership, type OwnershipFirestore } from './helpers.js';
 
 function fakeFirestore(docs: Record<string, Record<string, unknown>>): OwnershipFirestore {
     const ref = (path: string) => ({
@@ -53,5 +53,48 @@ describe('verifyReleaseOwnership', () => {
         await expect(verifyReleaseOwnership(db, 'u1', 'a/b')).rejects.toThrow(TypeError);
         await expect(verifyReleaseOwnership(db, 'u1', '  ')).rejects.toThrow(TypeError);
         await expect(verifyReleaseOwnership(db, 'u1', 'x'.repeat(201))).rejects.toThrow(TypeError);
+    });
+});
+
+describe('resolveOwnedRelease (ISSUE-1692)', () => {
+    const FORBIDDEN = 'Forbidden: release not found or not owned by caller';
+
+    it('accepts a Distribution/Publishing release in proprietaryIngestionReleases owned by the caller', async () => {
+        const db = fakeFirestore({ 'proprietaryIngestionReleases/release-1': { userId: 'u1', metadata: { trackTitle: 'Song' } } });
+        await expect(resolveOwnedRelease(db, 'u1', 'release-1')).resolves.toEqual({
+            id: 'release-1',
+            store: 'proprietaryIngestionReleases',
+            data: { userId: 'u1', metadata: { trackTitle: 'Song' } },
+        });
+        await expect(verifyReleaseOwnership(db, 'u1', 'release-1')).resolves.toBeUndefined();
+    });
+
+    it('refuses another user\'s proprietaryIngestionReleases record with the not-found message', async () => {
+        const db = fakeFirestore({ 'proprietaryIngestionReleases/release-1': { userId: 'other' } });
+        await expect(resolveOwnedRelease(db, 'u1', 'release-1')).rejects.toThrow(FORBIDDEN);
+    });
+
+    it('refuses an org-shared record that names no owner, because the gateway cannot check org membership', async () => {
+        const db = fakeFirestore({ 'proprietaryIngestionReleases/release-1': { orgId: 'org-1' } });
+        await expect(resolveOwnedRelease(db, 'u1', 'release-1')).rejects.toThrow(FORBIDDEN);
+    });
+
+    it('prefers the caller subcollection, then top-level releases, and reports where it found the record', async () => {
+        const db = fakeFirestore({
+            'users/u1/releases/r1': { title: 'Subcollection' },
+            'releases/r1': { userId: 'u1', title: 'Top level' },
+            'releases/r2': { ownerUid: 'u1', title: 'Top level' },
+            'proprietaryIngestionReleases/r2': { userId: 'u1', title: 'Proprietary' },
+        });
+        await expect(resolveOwnedRelease(db, 'u1', 'r1')).resolves.toMatchObject({ store: 'users/releases', data: { title: 'Subcollection' } });
+        await expect(resolveOwnedRelease(db, 'u1', ' r2 ')).resolves.toMatchObject({ id: 'r2', store: 'releases', data: { title: 'Top level' } });
+    });
+
+    it('falls through a top-level record owned by someone else to the caller\'s own proprietary record', async () => {
+        const db = fakeFirestore({
+            'releases/r1': { userId: 'other' },
+            'proprietaryIngestionReleases/r1': { userId: 'u1', title: 'Mine' },
+        });
+        await expect(resolveOwnedRelease(db, 'u1', 'r1')).resolves.toMatchObject({ store: 'proprietaryIngestionReleases', data: { title: 'Mine' } });
     });
 });

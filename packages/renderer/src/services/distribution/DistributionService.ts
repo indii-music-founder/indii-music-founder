@@ -582,11 +582,20 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      * @param releaseData  Full release metadata including optional sftpConfig
      * @param onProgress   Optional callback for step-by-step progress events
      */
+    /**
+     * The delivery pipeline (QC → identifiers → DDEX → SFTP) runs only in the
+     * desktop app. On the web, Submit Release saves the release record and
+     * leaves delivery to the desktop app (ISSUE-1692).
+     */
+    canRunDeliveryPipeline(): boolean {
+        return typeof window !== 'undefined' && !!window.electronAPI;
+    }
+
     async submitRelease(
         releaseData: IngestionMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
     ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[]; sftp_skipped?: boolean }> {
-        if (!window.electronAPI) {
+        if (!this.canRunDeliveryPipeline()) {
             throw new Error('Electron environment required for release submission');
         }
 

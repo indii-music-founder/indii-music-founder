@@ -12,6 +12,11 @@
  *   E2E_TEST_EMAIL=... E2E_TEST_PASSWORD=... E2E_LIVE_RELEASE_ID=<a release you own> \
  *   npm run test:e2e:live -- e2e/mcp-publicist-live.spec.ts
  *
+ * E2E_LIVE_RELEASE_ID is the id of a release saved through Distribution's
+ * Submit Release (a `proprietaryIngestionReleases` record owned by the account;
+ * on the web it is saved as `ready_for_desktop_delivery`). The MCP ownership
+ * check accepts that store since ISSUE-1692.
+ *
  * The legacy mock-backed specs (mcp-a2a-routing, mcp-boardroom-collaboration)
  * are tagged @external-legacy; this spec is the genuine coverage for that path.
  */

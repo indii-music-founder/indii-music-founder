@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveCoverArtStoragePath, resolveAudioStoragePath, resolveCanvasDurationSeconds } from '../canvas_render.js';
+import { isOwnerScopedStoragePath, resolveCoverArtStoragePath, resolveAudioStoragePath, resolveCanvasDurationSeconds } from '../canvas_render.js';
 
 describe('canvas_render pure helpers', () => {
     describe('resolveCoverArtStoragePath', () => {
@@ -47,6 +47,31 @@ describe('canvas_render pure helpers', () => {
 
         it('returns undefined when audioUrl is not a parseable storage reference', () => {
             expect(resolveAudioStoragePath({ audioUrl: 'not-a-url' })).toBeUndefined();
+        });
+
+        it('falls back to the canonical master path on Distribution/Publishing records (ISSUE-1692)', () => {
+            expect(resolveAudioStoragePath({ assets: { audioUrl: 'https://example.test/x', audioStoragePath: 'masters/u1/abc/original.wav' } }))
+                .toBe('masters/u1/abc/original.wav');
+            expect(resolveAudioStoragePath({ audioUrl: 'not-a-url', assets: { audioStoragePath: ' masters/u1/abc/original.wav ' } }))
+                .toBe('masters/u1/abc/original.wav');
+            expect(resolveAudioStoragePath({ assets: { audioStoragePath: '' } })).toBeUndefined();
+        });
+    });
+
+    describe('isOwnerScopedStoragePath', () => {
+        it('accepts objects under the caller\'s own prefixes', () => {
+            expect(isOwnerScopedStoragePath('masters/u1/abc/original.wav', 'u1')).toBe(true);
+            expect(isOwnerScopedStoragePath('covers/u1/abc/original.png', 'u1')).toBe(true);
+            expect(isOwnerScopedStoragePath('users/u1/audio/master.wav', 'u1')).toBe(true);
+        });
+
+        it('refuses another user\'s objects, look-alike uids, traversal and unscoped paths', () => {
+            expect(isOwnerScopedStoragePath('masters/u2/abc/original.wav', 'u1')).toBe(false);
+            expect(isOwnerScopedStoragePath('masters/u10/abc/original.wav', 'u1')).toBe(false);
+            expect(isOwnerScopedStoragePath('masters/u1/../u2/original.wav', 'u1')).toBe(false);
+            expect(isOwnerScopedStoragePath('/masters/u1/original.wav', 'u1')).toBe(false);
+            expect(isOwnerScopedStoragePath('public/song.wav', 'u1')).toBe(false);
+            expect(isOwnerScopedStoragePath('masters/u1/original.wav', '')).toBe(false);
         });
     });
 

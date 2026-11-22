@@ -101,6 +101,27 @@ describe('DistributionSyncService', () => {
         expect(result[0]!.title).toBe('Single Title');
     });
 
+    it('lists records that have no metadata map instead of failing the whole catalogue (ISSUE-1692)', async () => {
+        vi.mocked(getDocs).mockResolvedValueOnce({
+            docs: [
+                // Submit Release before ISSUE-1692: top-level title only.
+                { id: 'release-legacy', data: () => ({ userId: 'test-user', title: 'Legacy Title', status: 'cover_art_audit_pending' }) },
+                // DistributionTools.prepare_release: top-level title and artist.
+                { id: 'release-staged', data: () => ({ userId: 'test-user', title: 'Staged', artist: 'Staged Artist', status: 'STAGED' }) },
+                { id: 'release-bare', data: () => ({ userId: 'test-user', distributors: 'not-a-list' }) },
+            ],
+        } as unknown as Awaited<ReturnType<typeof getDocs>>);
+
+        const result = await DistributionSyncService.fetchReleases('org-1');
+
+        expect(result.map(release => [release.id, release.title, release.artist])).toEqual([
+            ['release-legacy', 'Legacy Title', ''],
+            ['release-staged', 'Staged', 'Staged Artist'],
+            ['release-bare', 'Untitled release', ''],
+        ]);
+        expect(result[2]!.deployments).toEqual({});
+    });
+
     it('should fetch a single release by ID', async () => {
         const mockReleaseData = {
             metadata: { releaseTitle: 'Test Release' },

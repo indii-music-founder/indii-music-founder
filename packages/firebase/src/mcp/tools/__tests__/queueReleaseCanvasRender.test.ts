@@ -15,8 +15,10 @@ import { textContent } from './mcpContent';
 const addMock = vi.fn();
 const releaseGetMock = vi.fn();
 const topLevelGetMock = vi.fn();
+const proprietaryGetMock = vi.fn();
 
-// Structural firestore mock covering users/{uid}/releases/{id}, releases/{id}, mcpRenderJobs.
+// Structural firestore mock covering users/{uid}/releases/{id}, releases/{id},
+// proprietaryIngestionReleases/{id} (ISSUE-1692), mcpRenderJobs.
 const firestoreFn = vi.fn(() => ({
     collection: (name: string) => {
         if (name === 'users') {
@@ -28,6 +30,9 @@ const firestoreFn = vi.fn(() => ({
         }
         if (name === 'releases') {
             return { doc: () => ({ get: topLevelGetMock }) };
+        }
+        if (name === 'proprietaryIngestionReleases') {
+            return { doc: () => ({ get: proprietaryGetMock }) };
         }
         if (name === 'mcpRenderJobs') {
             return { add: addMock };
@@ -50,6 +55,7 @@ describe('queueReleaseCanvasRender MCP tool', () => {
         addMock.mockReset().mockResolvedValue({ id: 'job-123' });
         releaseGetMock.mockReset();
         topLevelGetMock.mockReset();
+        proprietaryGetMock.mockReset().mockResolvedValue({ exists: false, data: () => undefined });
         sendMock.mockReset().mockResolvedValue(undefined);
     });
 
@@ -103,6 +109,32 @@ describe('queueReleaseCanvasRender MCP tool', () => {
         expect(sentEvent.data.uid).toBe('user-1');
         expect(sentEvent.data.releaseId).toBe('rel-1');
         expect(sentEvent.data.canvasType).toBe('Spotify');
+    });
+
+    it('queues a render for a Distribution release the caller owns in proprietaryIngestionReleases (ISSUE-1692)', async () => {
+        releaseGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
+        topLevelGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
+        proprietaryGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ userId: 'user-1' }) });
+
+        const result = await queueReleaseCanvasRender.handler({ releaseId: 'release-abc', canvasType: 'Spotify' }, context('user-1'));
+
+        const payload = JSON.parse(textContent(result));
+        expect(payload.status).toBe('succeeded');
+        expect(addMock).toHaveBeenCalledTimes(1);
+        expect(sendMock.mock.calls[0][0].data).toMatchObject({ uid: 'user-1', releaseId: 'release-abc' });
+    });
+
+    it('rejects another user\'s proprietaryIngestionReleases record without writing anything', async () => {
+        releaseGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
+        topLevelGetMock.mockResolvedValueOnce({ exists: false, data: () => undefined });
+        proprietaryGetMock.mockResolvedValueOnce({ exists: true, data: () => ({ userId: 'other-user' }) });
+
+        const result = await queueReleaseCanvasRender.handler({ releaseId: 'release-abc', canvasType: 'Spotify' }, context('user-1'));
+
+        const payload = JSON.parse(textContent(result));
+        expect(payload.error.code).toBe('FORBIDDEN');
+        expect(addMock).not.toHaveBeenCalled();
+        expect(sendMock).not.toHaveBeenCalled();
     });
 
     it('rejects a cross-tenant release without writing anything', async () => {
