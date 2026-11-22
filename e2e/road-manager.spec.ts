@@ -220,7 +220,7 @@ test.describe('Road Manager Module', () => {
     test('verifies on the road tab: switches tabs and scans nearby gas stations', async ({ authedPage: page }) => {
         // Switch tab to On the Road
         await page.getByRole('button').filter({ hasText: 'On the Road' }).click();
-        await expect(page.getByRole('heading', { name: 'Command Center' })).toBeVisible({ timeout: 10_000 });
+        await expect(page.getByRole('heading', { name: 'Control Center' })).toBeVisible({ timeout: 10_000 });
 
         // Enter current location
         const locationInput = page.getByPlaceholder('Current City, State or coordinates (e.g. Austin, TX)');
