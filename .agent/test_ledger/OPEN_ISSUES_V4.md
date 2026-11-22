@@ -4030,7 +4030,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, /publishing console: `[usePayouts] Error: FirebaseError: Missing or insufficient permissions.` and `[useAnalytics] Error: FirebaseError: Missing or insufficient permissions.` They read `users/{userProfile.id}/analytics` and `users/{userProfile.id}/payouts` (`useAnalytics.ts:47`, `:144`). ISSUE-1580 (PARTIAL) records rules added for user analytics and payouts. Root cause not established: candidates are `userProfile.id` differing from `auth.uid`, the deployed rules lacking those matches, or the date-range query shape. Not investigated further in this run.
 - **Acceptance:** with a genuine account, Publishing → Insights and Royalties load without permission errors (empty states allowed when there is no data).
 
-### ISSUE-1700: Six Studio dialogs use oversized headings, padding and icons for their box
+### ISSUE-1700: Seven Studio dialogs use oversized headings, padding and icons for their box
 
 - **Status:** 🟡 PARTIAL — resized on branch `claude/modal-sizing-sweep`; not yet seen on production
 - **Severity:** 🟡 MEDIUM
