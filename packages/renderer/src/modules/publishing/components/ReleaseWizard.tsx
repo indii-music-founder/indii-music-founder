@@ -34,11 +34,11 @@ import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragServ
 
 // Step configuration
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
-  { id: 'metadata', label: 'Metadata', icon: <Music size={18} /> },
-  { id: 'distribution', label: 'Distribution', icon: <Globe size={18} /> },
-  { id: 'ai_disclosure', label: 'AI Disclosure', icon: <Sparkles size={18} /> },
-  { id: 'assets', label: 'Assets', icon: <Upload size={18} /> },
-  { id: 'harness', label: 'Harness', icon: <Sparkles size={18} /> },
+  { id: 'metadata', label: 'Metadata', icon: <Music size={14} /> },
+  { id: 'distribution', label: 'Distribution', icon: <Globe size={14} /> },
+  { id: 'ai_disclosure', label: 'AI Disclosure', icon: <Sparkles size={14} /> },
+  { id: 'assets', label: 'Assets', icon: <Upload size={14} /> },
+  { id: 'harness', label: 'Harness', icon: <Sparkles size={14} /> },
   { id: 'review', label: 'Review', icon: <CheckCircle size={18} /> }
 ];
 
@@ -131,47 +131,48 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render step indicator
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 mb-8">
+    <ol aria-label="Release steps" className="flex items-center gap-1.5 mb-5">
       {STEPS.map((step, index) => {
         const isActive = step.id === currentStep;
         const isPast = STEPS.findIndex(s => s.id === currentStep) > index;
         const isValid = isStepValid(step.id);
 
         return (
-          <div key={step.id} className="flex items-center gap-2">
+          <li key={step.id} className="flex items-center gap-1.5 min-w-0">
             <button
               onClick={() => isPast && setCurrentStep(step.id)}
               disabled={!isPast}
+              aria-current={isActive ? 'step' : undefined}
               className={`
-                flex items-center gap-2 px-3 py-2 rounded-lg transition-all
-                ${isActive ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : ''}
-                ${isPast ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 cursor-pointer' : ''}
-                ${!isActive && !isPast ? 'bg-gray-800/50 text-gray-500' : ''}
+                flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-colors
+                ${isActive ? 'bg-dept-publishing/15 text-dept-publishing border-dept-publishing/30' : ''}
+                ${isPast ? 'bg-white/5 text-dept-publishing border-white/10 hover:bg-white/10 cursor-pointer' : ''}
+                ${!isActive && !isPast ? 'bg-transparent text-gray-600 border-white/5' : ''}
               `}
             >
               {isPast && isValid ? (
-                <CheckCircle size={18} className="text-green-400" />
+                <CheckCircle size={14} className="text-dept-publishing shrink-0" />
               ) : (
-                step.icon
+                <span className="shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">{step.icon}</span>
               )}
-              <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
+              <span className="hidden sm:inline truncate">{step.label}</span>
             </button>
             {index < STEPS.length - 1 && (
-              <ChevronRight size={16} className="text-gray-600" />
+              <span aria-hidden="true" className="w-2 h-px bg-white/10 shrink-0" />
             )}
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 
   // Render metadata step
   const renderMetadataStep = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Track Title */}
         <div>
-          <label htmlFor="trackTitle" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="trackTitle" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Track Title <span className="text-red-400">*</span>
           </label>
           <input
@@ -180,13 +181,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             value={metadata.trackTitle || ''}
             onChange={e => updateMetadata({ trackTitle: e.target.value })}
             placeholder={t('publishing.hints.track_title')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
           />
         </div>
 
         {/* Artist Name */}
         <div>
-          <label htmlFor="artistName" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="artistName" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Artist Name <span className="text-red-400">*</span>
           </label>
           <input
@@ -195,20 +196,20 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             value={metadata.artistName || ''}
             onChange={e => updateMetadata({ artistName: e.target.value })}
             placeholder={t('publishing.hints.artist_name')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
           />
         </div>
 
         {/* Genre */}
         <div>
-          <label htmlFor="genre" className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="genre" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Genre <span className="text-red-400">*</span>
           </label>
           <select
             id="genre"
             value={metadata.genre || ''}
             onChange={e => updateMetadata({ genre: e.target.value })}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-publishing/50 transition-colors"
           >
             <option value="">Select genre</option>
             {GENRES.map(genre => (
@@ -219,13 +220,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Release Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Release Type
           </label>
           <select
             value={metadata.releaseType || 'Single'}
             onChange={e => updateMetadata({ releaseType: e.target.value as 'Single' | 'EP' | 'Album' | 'Compilation' })}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-publishing/50 transition-colors"
           >
             <option value="Single">Single</option>
             <option value="EP">EP</option>
@@ -236,7 +237,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Label Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Label Name <span className="text-red-400">*</span>
           </label>
           <input
@@ -244,7 +245,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             value={metadata.labelName || ''}
             onChange={e => updateMetadata({ labelName: e.target.value })}
             placeholder={t('publishing.hints.label_name')}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
           />
         </div>
 
@@ -254,7 +255,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Release Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Release Date <span className="text-red-400">*</span>
           </label>
           <input
@@ -262,7 +263,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             value={metadata.releaseDate || ''}
             onChange={e => updateMetadata({ releaseDate: e.target.value })}
             min={new Date().toISOString().split('T')[0]}
-            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-publishing/50 transition-colors"
           />
         </div>
 
@@ -273,7 +274,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               type="checkbox"
               checked={metadata.explicit || false}
               onChange={e => updateMetadata({ explicit: e.target.checked })}
-              className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+              className="w-4 h-4 rounded bg-white/5 border-white/20 text-dept-publishing focus:ring-dept-publishing/50"
             />
             <span className="text-gray-300">This release contains explicit content</span>
           </label>
@@ -283,13 +284,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         <div className="md:col-span-2">
           <SectionCard
             title="Advanced metadata (optional)"
-            icon={<Sparkles size={12} className="text-blue-400" />}
+            icon={<Sparkles size={12} className="text-dept-publishing" />}
             isOpen={advancedMetadataOpen}
             onToggle={() => setAdvancedMetadataOpen(open => !open)}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   DPID (DDEX Party ID)
                 </label>
                 <input
@@ -297,12 +298,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   value={metadata.dpid || ''}
                   onChange={e => updateMetadata({ dpid: e.target.value.toUpperCase() })}
                   placeholder={t('publishing.hints.pro_work_id')}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-dept-publishing font-mono placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   ISRC code
                 </label>
                 <input
@@ -310,12 +311,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   value={metadata.isrc || ''}
                   onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
                   placeholder={t('publishing.hints.isrc_optional')}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-dept-publishing font-mono placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   BPM
                 </label>
                 <input
@@ -323,12 +324,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   value={metadata.bpm || ''}
                   onChange={e => updateMetadata({ bpm: parseFloat(e.target.value) || undefined })}
                   placeholder={t('publishing.hints.bpm_example')}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   Key
                 </label>
                 <input
@@ -336,12 +337,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   value={metadata.key || ''}
                   onChange={e => updateMetadata({ key: e.target.value })}
                   placeholder={t('publishing.hints.key_example')}
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   Energy
                 </label>
                 <input
@@ -352,7 +353,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                   step="0.01"
                   min="0"
                   max="1"
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 />
               </div>
             </div>
@@ -374,13 +375,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         : 'Select territories';
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         {!isDesktop && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex gap-3">
-            <AlertCircle size={20} className="text-blue-400 shrink-0" />
+          <div className="bg-dept-publishing/5 border border-dept-publishing/20 rounded-xl p-3 flex gap-3">
+            <AlertCircle size={16} className="text-dept-publishing shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-400 mb-1">Desktop App Required</h4>
-              <p className="text-sm text-blue-300/80">
+              <h4 className="text-xs font-black uppercase tracking-widest text-dept-publishing mb-1">Desktop App Required</h4>
+              <p className="text-xs text-gray-300 leading-relaxed">
                 DDEX Distribution to streaming platforms requires the indii Desktop App for secure delivery authority. 
                 Please open this project in the Desktop App to select distributors and deliver your release.
               </p>
@@ -390,7 +391,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Distributors — ISSUE-1440: compact selectable list instead of large cards. */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
-          <h3 className="text-lg font-medium text-white mb-4">Select Distributors</h3>
+          <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3">Select Distributors</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {DISTRIBUTORS.map(dist => (
               <button
@@ -398,16 +399,16 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 onClick={() => toggleDistributor(dist.id)}
                 disabled={!isDesktop}
                 className={`
-                  px-3 py-2.5 rounded-lg border transition-all text-sm text-left flex items-center justify-between
+                  px-3 py-2.5 rounded-lg border transition-all text-xs text-left flex items-center justify-between
                   ${selectedDistributors.includes(dist.id)
-                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
-                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                    ? 'bg-dept-publishing/10 border-dept-publishing/40 text-dept-publishing'
+                    : 'bg-white/[0.03] border-white/10 text-gray-400 hover:border-white/20'
                   }
                 `}
               >
-                <span className="font-medium">{dist.name}</span>
+                <span className="font-bold">{dist.name}</span>
                 {selectedDistributors.includes(dist.id) && (
-                  <CheckCircle size={16} className="text-blue-400 shrink-0" />
+                  <CheckCircle size={14} className="text-dept-publishing shrink-0" />
                 )}
               </button>
             ))}
@@ -417,7 +418,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         {/* Territories — ISSUE-1440: toggle grid → multi-select dropdown with
             Worldwide default semantics preserved. */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
-          <h3 className="text-lg font-medium text-white mb-4">Distribution Territories</h3>
+          <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3">Distribution Territories</h3>
           <DropdownMenu>
             <DropdownMenuTriggerButton data-testid="territories-select" disabled={!isDesktop}>
               <span>{territoryLabel}</span>
@@ -455,7 +456,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Distribution Channels */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
-          <h3 className="text-lg font-medium text-white mb-4">Distribution Channels</h3>
+          <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3">Distribution Channels</h3>
           <div className="flex flex-wrap gap-3">
             {['streaming', 'download', 'physical'].map(channel => {
               const isSelected = metadata.distributionChannels?.includes(channel as 'streaming' | 'download' | 'physical');
@@ -472,10 +473,10 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                     });
                   }}
                   className={`
-                    px-4 py-2 rounded-lg border text-sm capitalize transition-all
+                    px-3 py-1.5 rounded-lg border text-xs capitalize transition-colors
                     ${isSelected
-                      ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                      : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                      ? 'bg-dept-publishing/10 border-dept-publishing/40 text-dept-publishing'
+                      : 'bg-white/[0.03] border-white/10 text-gray-400 hover:border-white/20'
                     }
                   `}
                 >
@@ -488,32 +489,32 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* YouTube Content ID */}
         <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
-          <h3 className="text-lg font-medium text-white mb-4">YouTube Content ID</h3>
+          <h3 className="text-xs font-black text-white uppercase tracking-widest mb-3">YouTube Content ID</h3>
           <div className="space-y-4">
-            <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+            <label className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors">
               <input
                 type="checkbox"
                 disabled={!isDesktop}
                 checked={metadata.youtubeContentIdOptIn || false}
                 onChange={e => updateMetadata({ youtubeContentIdOptIn: e.target.checked })}
-                className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+                className="w-4 h-4 rounded bg-white/5 border-white/20 text-dept-publishing focus:ring-dept-publishing/50"
               />
               <div>
-                <span className="text-white font-medium">Opt-in to YouTube Content ID</span>
-                <p className="text-sm text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
+                <span className="text-white text-xs font-bold">Opt-in to YouTube Content ID</span>
+                <p className="text-xs text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
               </div>
             </label>
 
             {metadata.youtubeContentIdOptIn && (
               <div className="pl-12">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                   Content ID Policy
                 </label>
                 <select
                   disabled={!isDesktop}
                   value={metadata.youtubeContentIdPolicy || 'monetize'}
                   onChange={e => updateMetadata({ youtubeContentIdPolicy: e.target.value as 'monetize' | 'track' | 'block' })}
-                  className="w-full max-w-xs px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  className="w-full max-w-xs bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-publishing/50 transition-colors"
                 >
                   <option value="monetize">Monetize (Show Ads)</option>
                   <option value="track">Track Only (No Ads)</option>
@@ -529,13 +530,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render Autonomous disclosure step
   const renderAIDisclosureStep = () => (
-    <div className="space-y-6">
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
+    <div className="space-y-4">
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-4">
         <div className="flex gap-3">
-          <Sparkles className="text-yellow-400 flex-shrink-0 mt-0.5" size={20} />
+          <Sparkles className="text-amber-400 flex-shrink-0 mt-0.5" size={16} />
           <div>
-            <h4 className="font-medium text-yellow-400 mb-1">ERN 4.3 Autonomous Content Disclosure</h4>
-            <p className="text-sm text-yellow-300/70">
+            <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-1">ERN 4.3 Autonomous Content Disclosure</h4>
+            <p className="text-xs text-amber-300/80">
               New DDEX standards require disclosure of Intelligence-generated content.
               This helps platforms and listeners understand how the music was created.
             </p>
@@ -544,7 +545,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       </div>
 
       <div className="space-y-4">
-        <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+        <label className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors">
           <input
             type="checkbox"
             checked={metadata.aiGeneratedContent?.isFullyAIGenerated || false}
@@ -555,15 +556,15 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 isPartiallyAIGenerated: e.target.checked ? false : metadata.aiGeneratedContent?.isPartiallyAIGenerated
               } as ExtendedGoldenMetadata['aiGeneratedContent']
             })}
-            className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+            className="w-4 h-4 rounded bg-white/5 border-white/20 text-dept-publishing focus:ring-dept-publishing/50"
           />
           <div>
-            <span className="text-white font-medium">Fully AI-Generated</span>
-            <p className="text-sm text-gray-400">The entire track was created using Autonomous tools</p>
+            <span className="text-white text-xs font-bold">Fully AI-Generated</span>
+            <p className="text-xs text-gray-400">The entire track was created using Autonomous tools</p>
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+        <label className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/10 cursor-pointer hover:border-white/20 transition-colors">
           <input
             type="checkbox"
             checked={metadata.aiGeneratedContent?.isPartiallyAIGenerated || false}
@@ -574,11 +575,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 isFullyAIGenerated: e.target.checked ? false : metadata.aiGeneratedContent?.isFullyAIGenerated
               } as ExtendedGoldenMetadata['aiGeneratedContent']
             })}
-            className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+            className="w-4 h-4 rounded bg-white/5 border-white/20 text-dept-publishing focus:ring-dept-publishing/50"
           />
           <div>
-            <span className="text-white font-medium">Partially AI-Generated</span>
-            <p className="text-sm text-gray-400">Some elements were created using Autonomous tools</p>
+            <span className="text-white text-xs font-bold">Partially AI-Generated</span>
+            <p className="text-xs text-gray-400">Some elements were created using Autonomous tools</p>
           </div>
         </label>
       </div>
@@ -586,7 +587,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       {(metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.aiGeneratedContent?.isPartiallyAIGenerated) && (
         <div className="space-y-4 mt-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
               Autonomous Tools Used
             </label>
             <input
@@ -599,13 +600,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
               placeholder={t('publishing.hints.ai_tools_example')}
-              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
             />
             <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
               Human Contribution Description
             </label>
             <textarea
@@ -618,7 +619,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               })}
               placeholder={t('publishing.hints.human_input_desc')}
               rows={3}
-              className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors resize-none"
             />
           </div>
         </div>
@@ -628,31 +629,31 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render assets step
   const renderAssetsStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Audio Upload */}
       <div className={`
-        bg-gray-800/30 border-2 border-dashed rounded-xl p-8 text-center transition-all
-        ${assets.audioFile ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}
+        bg-white/[0.03] border border-dashed rounded-xl p-5 text-center transition-colors
+        ${assets.audioFile ? 'border-dept-publishing/40 bg-dept-publishing/5' : 'border-white/15 hover:border-white/30'}
       `}>
         {assets.audioFile ? (
           <div className="flex flex-col items-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle size={32} className="text-green-400" />
+            <div className="w-10 h-10 bg-dept-publishing/15 rounded-full flex items-center justify-center mb-3">
+              <CheckCircle size={20} className="text-dept-publishing" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-1">Audio Uploaded</h3>
-            <p className="text-sm text-gray-400 mb-4">{assets.audioFile.format.toUpperCase()} • {(assets.audioFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
+            <h3 className="text-sm font-bold text-white mb-1">Audio Uploaded</h3>
+            <p className="text-xs text-gray-400 mb-3">{assets.audioFile.format.toUpperCase()} • {(assets.audioFile.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
             <button
               onClick={() => updateAssets({ audioFile: undefined })}
-              className="text-sm text-red-400 hover:text-red-300"
+              className="text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300"
             >
               Replace File
             </button>
           </div>
         ) : (
           <>
-            <Upload size={48} className="mx-auto text-gray-500 mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Upload Audio File</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <Upload size={24} className="mx-auto text-gray-500 mb-2" />
+            <h3 className="text-sm font-bold text-white mb-1">Upload Audio File</h3>
+            <p className="text-xs text-gray-400 mb-3">
               WAV or FLAC, 44.1kHz or higher, 16-bit or 24-bit
             </p>
             <div className="relative inline-block">
@@ -672,14 +673,14 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors pointer-events-none">
+              <button className="px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 transition-colors pointer-events-none">
                 Choose File
               </button>
             </div>
             {uploadProgress.audio > 0 && uploadProgress.audio < 100 && (
-              <div className="mt-4 w-full max-w-xs mx-auto bg-gray-700 rounded-full h-2">
+              <div className="mt-3 w-full max-w-xs mx-auto bg-white/10 rounded-full h-1">
                 <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  className="bg-dept-publishing h-1 rounded-full transition-all"
                   style={{ width: `${uploadProgress.audio}%` }}
                 />
               </div>
@@ -691,8 +692,8 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       {/* Cover Art Upload */}
       <div
         className={`
-        bg-gray-800/30 border-2 border-dashed rounded-xl p-8 text-center transition-all
-        ${assets.coverArt ? 'border-green-500/50 bg-green-500/5' : 'border-gray-700 hover:border-gray-600'}
+        bg-white/[0.03] border border-dashed rounded-xl p-5 text-center transition-colors
+        ${assets.coverArt ? 'border-dept-publishing/40 bg-dept-publishing/5' : 'border-white/15 hover:border-white/30'}
       `}
         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
         onDrop={async (e) => {
@@ -709,25 +710,25 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       >
         {assets.coverArt ? (
           <div className="flex flex-col items-center">
-            <div className="w-32 h-32 mx-auto rounded-lg mb-4 overflow-hidden border border-gray-700">
+            <div className="w-20 h-20 mx-auto rounded-lg mb-3 overflow-hidden border border-white/10">
               <img src={assets.coverArt.url} alt="Cover Art" className="w-full h-full object-cover" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-1">Cover Art Uploaded</h3>
-            <p className="text-sm text-gray-400 mb-4">{assets.coverArt.width}x{assets.coverArt.height} • {(assets.coverArt.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
+            <h3 className="text-sm font-bold text-white mb-1">Cover Art Uploaded</h3>
+            <p className="text-xs text-gray-400 mb-3">{assets.coverArt.width}x{assets.coverArt.height} • {(assets.coverArt.sizeBytes / (1024 * 1024)).toFixed(2)} MB</p>
             <button
               onClick={() => updateAssets({ coverArt: undefined })}
-              className="text-sm text-red-400 hover:text-red-300"
+              className="text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300"
             >
               Replace Image
             </button>
           </div>
         ) : (
           <>
-            <div className="w-32 h-32 mx-auto bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-              <Music size={48} className="text-gray-500" />
+            <div className="w-16 h-16 mx-auto bg-white/5 rounded-lg mb-3 flex items-center justify-center">
+              <Music size={24} className="text-gray-500" />
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">Upload Cover Art</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <h3 className="text-sm font-bold text-white mb-1">Upload Cover Art</h3>
+            <p className="text-xs text-gray-400 mb-3">
               3000x3000 pixels, JPG or PNG, RGB color mode
             </p>
             <p className="text-[11px] text-gray-500 mb-2">
@@ -750,14 +751,14 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors pointer-events-none">
+              <button className="px-4 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 transition-colors pointer-events-none">
                 Choose Image
               </button>
             </div>
             {uploadProgress.cover > 0 && uploadProgress.cover < 100 && (
-              <div className="mt-4 w-full max-w-xs mx-auto bg-gray-700 rounded-full h-2">
+              <div className="mt-3 w-full max-w-xs mx-auto bg-white/10 rounded-full h-1">
                 <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
+                  className="bg-dept-publishing h-1 rounded-full transition-all"
                   style={{ width: `${uploadProgress.cover}%` }}
                 />
               </div>
@@ -778,15 +779,15 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render review step
   const renderReviewStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Validation Errors */}
       {validationErrors.length > 0 && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
           <div className="flex gap-3">
-            <AlertCircle className="text-red-400 flex-shrink-0" size={20} />
+            <AlertCircle className="text-red-400 flex-shrink-0" size={16} />
             <div>
-              <h4 className="font-medium text-red-400 mb-2">Please fix the following issues:</h4>
-              <ul className="text-sm text-red-300/70 list-disc list-inside space-y-1">
+              <h4 className="text-xs font-black uppercase tracking-widest text-red-400 mb-2">Please fix the following issues:</h4>
+              <ul className="text-xs text-red-300/70 list-disc list-inside space-y-1">
                 {validationErrors.map((error, i) => (
                   <li key={i}>{error}</li>
                 ))}
@@ -799,11 +800,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Metadata Summary */}
-        <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
-          <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-            <Music size={18} /> Track Details
+        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+          <h4 className="text-xs font-black uppercase tracking-widest text-white mb-3 flex items-center gap-2">
+            <Music size={14} /> Track Details
           </h4>
-          <dl className="space-y-2 text-sm">
+          <dl className="space-y-2 text-xs">
             <div className="flex justify-between">
               <dt className="text-gray-400">Title</dt>
               <dd className="text-white">{metadata.trackTitle || '-'}</dd>
@@ -846,13 +847,13 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         </div>
 
         {/* Assets Summary */}
-        <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
-          <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-            <Upload size={18} /> Assets
+        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+          <h4 className="text-xs font-black uppercase tracking-widest text-white mb-3 flex items-center gap-2">
+            <Upload size={14} /> Assets
           </h4>
-          <dl className="space-y-3 text-sm">
+          <dl className="space-y-3 text-xs">
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded shrink-0 flex items-center justify-center ${assets.audioFile ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+              <div className={`w-8 h-8 rounded shrink-0 flex items-center justify-center ${assets.audioFile ? 'bg-dept-publishing/15 text-dept-publishing' : 'bg-red-500/20 text-red-400'}`}>
                 <Music size={16} />
               </div>
               <div className="flex-1 min-w-0">
@@ -861,7 +862,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded shrink-0 overflow-hidden ${assets.coverArt ? 'bg-green-500/20' : 'bg-red-500/20 text-red-400'}`}>
+              <div className={`w-8 h-8 rounded shrink-0 overflow-hidden ${assets.coverArt ? 'bg-dept-publishing/15' : 'bg-red-500/20 text-red-400'}`}>
                 {assets.coverArt ? (
                   <img src={assets.coverArt.url} alt="Cover Preview" className="w-full h-full object-cover" />
                 ) : (
@@ -879,11 +880,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         </div>
 
         {/* Distribution Summary */}
-        <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
-          <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-            <Globe size={18} /> Distribution
+        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+          <h4 className="text-xs font-black uppercase tracking-widest text-white mb-3 flex items-center gap-2">
+            <Globe size={14} /> Distribution
           </h4>
-          <dl className="space-y-2 text-sm">
+          <dl className="space-y-2 text-xs">
             <div>
               <dt className="text-gray-400 mb-1">Distributors</dt>
               <dd className="text-white">
@@ -914,11 +915,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
       {/* Autonomous Disclosure Summary */}
       {(metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.aiGeneratedContent?.isPartiallyAIGenerated) && (
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
-          <h4 className="font-medium text-yellow-400 mb-2 flex items-center gap-2">
-            <Sparkles size={18} /> Autonomous Content Disclosure
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+          <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2 flex items-center gap-2">
+            <Sparkles size={14} /> Autonomous Content Disclosure
           </h4>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs text-gray-300">
             {metadata.aiGeneratedContent.isFullyAIGenerated
               ? 'This release is fully AI-generated'
               : 'This release contains Intelligence-generated elements'
@@ -935,27 +936,27 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
   // Render submitting state
   const renderSubmittingState = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <Loader2 size={48} className="text-blue-400 animate-spin mb-4" />
-      <h3 className="text-xl font-medium text-white mb-2">Submitting Release</h3>
-      <p className="text-gray-400">Please wait while we process your release...</p>
+    <div className="flex flex-col items-center justify-center py-12">
+      <Loader2 size={28} className="text-dept-publishing animate-spin mb-3" />
+      <h3 className="text-sm font-black uppercase tracking-widest text-white mb-1">Submitting Release</h3>
+      <p className="text-xs text-gray-400">Please wait while we process your release...</p>
     </div>
   );
 
   // Render complete state
   const renderCompleteState = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-        <CheckCircle size={32} className="text-green-400" />
+    <div className="flex flex-col items-center justify-center py-12">
+      <div className="w-10 h-10 bg-dept-publishing/15 rounded-full flex items-center justify-center mb-3">
+        <CheckCircle size={20} className="text-dept-publishing" />
       </div>
-      <h3 className="text-xl font-medium text-white mb-2">Release Created!</h3>
-      <p className="text-gray-400 mb-6">
+      <h3 className="text-sm font-black uppercase tracking-widest text-white mb-1">Release Created</h3>
+      <p className="text-xs text-gray-400 mb-4">
         Your release has been submitted for processing.
       </p>
-      <p className="text-sm text-gray-500 mb-4">Release ID: {releaseId}</p>
+      <p className="text-[11px] font-mono text-gray-500 mb-4">Release ID: {releaseId}</p>
       <button
         onClick={onClose}
-        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        className="px-5 py-2 bg-white text-black font-black text-xs uppercase tracking-widest rounded-lg hover:bg-gray-200 transition-colors"
       >
         Done
       </button>
@@ -994,56 +995,56 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       role="dialog"
       aria-modal="true"
       aria-labelledby="release-wizard-title"
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
     >
-      <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 id="release-wizard-title" className="text-xl font-semibold text-white">Create Release</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+          <h2 id="release-wizard-title" className="text-lg font-black text-white uppercase tracking-tighter italic">Create Release</h2>
           <button
             onClick={onClose}
             aria-label="Close dialog"
             title="Close"
-            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+            className="p-1.5 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Step Indicator */}
         {showNavigation && (
-          <div className="px-6 pt-6">
+          <div className="px-6 pt-4">
             {renderStepIndicator()}
           </div>
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-5">
           {renderStepContent()}
 
           {/* Submit Error */}
           {submitError && (
             <div role="alert" data-testid="release-wizard-error" className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-              <p className="text-sm text-red-400">{submitError}</p>
+              <p className="text-xs text-red-400">{submitError}</p>
             </div>
           )}
         </div>
 
         {/* Footer Navigation */}
         {showNavigation && (
-          <div className="flex items-center justify-between p-6 border-t border-gray-800">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-white/10">
             <button
               onClick={goToPreviousStep}
               disabled={!canGoPrevious}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
+                flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors
                 ${canGoPrevious
-                  ? 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  : 'text-gray-600 cursor-not-allowed'
+                  ? 'text-gray-400 hover:text-white hover:bg-white/5'
+                  : 'text-gray-700 cursor-not-allowed'
                 }
               `}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={14} />
               Back
             </button>
 
@@ -1052,21 +1053,21 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 onClick={handleSubmit}
                 disabled={validationErrors.length > 0 || isSubmitting}
                 className={`
-                  flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors
+                  flex items-center gap-2 px-5 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-colors
                   ${validationErrors.length === 0
-                    ? 'bg-green-500 text-white hover:bg-green-600'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    ? 'bg-dept-publishing text-black hover:bg-dept-publishing/80'
+                    : 'bg-white/10 text-gray-500 cursor-not-allowed'
                   }
                 `}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                     Submitting...
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={18} />
+                    <CheckCircle size={14} />
                     Submit Release
                   </>
                 )}
@@ -1076,15 +1077,15 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 onClick={goToNextStep}
                 disabled={!canGoNext}
                 className={`
-                  flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors
+                  flex items-center gap-2 px-5 py-2 rounded-lg font-black text-xs uppercase tracking-widest transition-colors
                   ${canGoNext
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    ? 'bg-white text-black hover:bg-gray-200'
+                    : 'bg-white/10 text-gray-500 cursor-not-allowed'
                   }
                 `}
               >
                 Next
-                <ChevronRight size={18} />
+                <ChevronRight size={14} />
               </button>
             )}
           </div>
