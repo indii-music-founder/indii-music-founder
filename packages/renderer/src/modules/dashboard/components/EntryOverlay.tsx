@@ -64,9 +64,9 @@ export function EntryOverlay({ onSubmit, onDismiss }: EntryOverlayProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
             data-testid="entry-overlay"
-            className="w-full mt-12 mb-8 max-w-3xl mx-auto relative group/overlay"
+            className="w-full mt-6 mb-8 max-w-3xl mx-auto relative group/overlay"
         >
-            <div className="relative p-6 rounded-3xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden group">
+            <div className="relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl shadow-2xl overflow-hidden group">
                 {/* Decorative Background Elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-dept-creative/5 blur-3xl rounded-full translate-y-1/2 -translate-x-1/2" />

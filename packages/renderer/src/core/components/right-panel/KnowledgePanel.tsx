@@ -83,7 +83,7 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
                             className="w-full bg-linear-to-r from-violet-600 to-violet-500 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/20 flex items-center justify-center gap-2 border border-violet-400/20"
                         >
                             {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                            {isUploading ? 'Indexing Document…' : 'Ingest Document'}
+                            {isUploading ? 'Uploading…' : 'Upload document'}
                         </motion.div>
                         <input
                             ref={fileInputRef}

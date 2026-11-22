@@ -495,7 +495,7 @@ function FeedPanel({
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {memories.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
-                        <Database size={32} className="opacity-30" />
+                        <Database size={20} className="opacity-30" />
                         <p className="text-sm">No memories yet</p>
                         <p className="text-xs">Ingest text or files to start building your memory graph.</p>
                     </div>
@@ -627,7 +627,7 @@ function QueryPanel({
 
             {!queryAnswer && !isQuerying && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-600">
-                    <Search size={40} className="opacity-20" />
+                    <Search size={24} className="opacity-20" />
                     <p className="text-sm">Ask anything about your stored memories</p>
                     <p className="text-xs text-gray-700">The Autonomous will search, synthesize, and cite relevant memories.</p>
                 </div>
@@ -845,7 +845,7 @@ function InsightsPanel({
             </h3>
 
             {insights.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-600">
+                <div className="flex flex-col items-center justify-center py-8 gap-3 text-gray-600">
                     <Sparkles size={24} className="opacity-20" />
                     <p className="text-xs text-center">
                         No insights yet. Consolidation finds patterns<br />across your stored memories.
@@ -890,8 +890,8 @@ function DirectivesPanel({ directives }: { directives: Directive[] }) {
             </div>
 
             {directives.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
-                    <Target size={40} className="opacity-20" />
+                <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-600">
+                    <Target size={24} className="opacity-20" />
                     <p className="text-sm">No active directives</p>
                     <p className="text-xs">Directives are complex tasks managed by the Agent Swarm.</p>
                 </div>
@@ -955,8 +955,8 @@ function ApprovalsPanel({
             </div>
 
             {approvals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
-                    <Shield size={40} className="opacity-20" />
+                <div className="flex flex-col items-center justify-center py-10 gap-3 text-gray-600">
+                    <Shield size={24} className="opacity-20" />
                     <p className="text-sm">No pending approvals</p>
                     <p className="text-xs">Agents will request approval for sensitive or destructive actions.</p>
                 </div>

@@ -254,8 +254,8 @@ export function SplitSheetEscrow() {
             </div>
 
             {released ? (
-                <div className="flex flex-col items-center justify-center gap-4 py-16 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <div className="flex flex-col items-center justify-center gap-4 py-10 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
                         <Unlock size={28} className="text-emerald-400" />
                     </div>
                     <div className="text-center">

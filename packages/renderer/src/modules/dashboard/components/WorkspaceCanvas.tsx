@@ -150,7 +150,7 @@ function CanvasCard({
                             <img src={item.thumbnailUrl} alt={item.title} className="w-full rounded-xl object-cover max-h-56" />
                         ) : (
                             <div className="h-40 flex items-center justify-center">
-                                <Video size={32} className="text-white/20" />
+                                <Video size={20} className="text-white/20" />
                             </div>
                         )}
                     </div>
@@ -212,7 +212,7 @@ function Lightbox({ item, onClose }: { item: CanvasItem; onClose: () => void }) 
                     <img src={item.imageUrl} alt={item.title} className="w-full h-full object-contain" />
                 )}
                 {item.type === 'document' && item.content && (
-                    <div className="bg-[#0f0f13] p-8 max-h-[80vh] overflow-y-auto">
+                    <div className="bg-[#0f0f13] p-6 max-h-[80vh] overflow-y-auto">
                         <h2 className="text-lg font-semibold text-white mb-4">{item.title}</h2>
                         <div className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
                             {item.content}
@@ -227,10 +227,10 @@ function Lightbox({ item, onClose }: { item: CanvasItem; onClose: () => void }) 
 /* ── Empty Canvas State ───────────────────────────────────────────── */
 function EmptyCanvas() {
     return (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
             <div className="relative mb-6">
                 <div className="w-24 h-24 rounded-full border border-indigo-500/15 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full border border-indigo-500/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full border border-indigo-500/20 flex items-center justify-center">
                         <div className="w-9 h-9 rounded-full bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center">
                             <Sparkles size={16} className="text-indigo-400/70" />
                         </div>

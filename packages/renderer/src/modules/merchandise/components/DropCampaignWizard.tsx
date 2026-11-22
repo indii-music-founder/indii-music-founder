@@ -168,7 +168,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                         animate={{ opacity: 1, scale: 1 }}
                                         className="flex flex-col items-center justify-center h-64 gap-4"
                                     >
-                                        <div className="w-16 h-16 rounded-full bg-[#FFE135]/20 border border-[#FFE135]/30 flex items-center justify-center">
+                                        <div className="w-10 h-10 rounded-full bg-[#FFE135]/20 border border-[#FFE135]/30 flex items-center justify-center">
                                             <CheckCircle2 size={28} className="text-[#FFE135]" />
                                         </div>
                                         <h3 className="text-base font-black text-white">Drop Draft Saved</h3>
@@ -190,7 +190,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                                     <span className="text-xs text-neutral-500">{p.price}</span>
                                                 </label>
                                             )) : (
-                                                <div className="py-12 text-center text-neutral-600 text-sm">
+                                                <div className="py-8 text-center text-neutral-600 text-sm">
                                                     No products are available for this drop. Product creation is not available in this workspace yet.
                                                 </div>
                                             )}

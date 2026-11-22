@@ -97,7 +97,7 @@ export default function Dashboard() {
                             <div className="absolute inset-0 bg-linear-to-r from-amber-900/10 via-amber-800/5 to-green-900/10 pointer-events-none" />
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,_var(--tw-gradient-stops))] from-amber-500/10 to-transparent pointer-events-none" />
 
-                            <div className={`relative z-10 flex items-center justify-between ${isAnyPhone ? 'px-4 py-3' : 'px-8 py-4'}`}>
+                            <div className={`relative z-10 flex items-center justify-between ${isAnyPhone ? 'px-4 py-3' : 'px-6 py-4'}`}>
                                 <div className="flex items-center gap-5 flex-1 min-w-0">
                                     <div className="relative group">
                                         <div className="absolute inset-0 bg-amber-500/40 blur-md rounded-xl group-hover:bg-amber-500/60 transition-all" />
@@ -149,7 +149,7 @@ export default function Dashboard() {
                 </AnimatePresence>
 
                 {/* Platform Info — Web vs Desktop */}
-                <div className="relative z-10 px-8 py-4 bg-black/20 border-b border-white/5">
+                <div className="relative z-10 px-6 py-4 bg-black/20 border-b border-white/5">
                     <PlatformCard />
                 </div>
 
@@ -160,7 +160,7 @@ export default function Dashboard() {
                     overlook once you overlook forever. They are one room now, so
                     there is no longer a second tab to miss. */}
                 <div className="relative z-10 flex-1 overflow-hidden">
-                    <div className={`@container h-full w-full ${isAnyPhone ? 'px-4' : 'px-8'}`}>
+                    <div className={`@container h-full w-full ${isAnyPhone ? 'px-4' : 'px-6'}`}>
                         <div className="mx-auto h-full max-w-7xl">
                             <AgentWorkspace studioSlot={<CustomDashboard />} />
                         </div>

@@ -157,7 +157,7 @@ export const ReflectionPanel: React.FC<ReflectionPanelProps> = ({
                     <span className="text-sm font-medium text-gray-700">Overall Score</span>
                     <span
                       className={clsx(
-                        'text-lg font-bold',
+                        'text-base font-bold',
                         iteration.reflection.metrics.overall >= 0.75
                           ? 'text-green-600'
                           : 'text-yellow-600'

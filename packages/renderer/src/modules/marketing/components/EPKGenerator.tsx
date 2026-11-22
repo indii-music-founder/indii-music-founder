@@ -180,7 +180,7 @@ export default function EPKGenerator() {
                     <ImageIcon size={10} /> Press Photo
                 </label>
                 <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
                         {pressPhotoDataUrl ? <img src={pressPhotoDataUrl} alt="Selected press" className="w-full h-full object-cover rounded-xl" /> : <ImageIcon size={20} className="text-gray-600" />}
                     </div>
                     <label className="flex-1 flex flex-col items-center py-3 rounded-xl border border-dashed border-white/10 hover:border-dept-marketing/30 text-xs text-gray-500 cursor-pointer hover:text-gray-400 transition-all bg-white/[0.02]">
@@ -297,7 +297,7 @@ export default function EPKGenerator() {
                                 </div>
                             </div>
                             <div className="p-5 flex gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
                                     {pressPhotoDataUrl
                                         ? <img src={pressPhotoDataUrl} alt="Press preview" className="h-full w-full rounded-xl object-cover" />
                                         : <ImageIcon size={18} className="text-gray-600" />}

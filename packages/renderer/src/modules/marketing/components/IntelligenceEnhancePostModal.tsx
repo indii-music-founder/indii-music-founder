@@ -176,7 +176,7 @@ export default function IntelligenceEnhancePostModal({
                         : "bg-bg-dark border border-gray-800 hover:border-gray-600"
                     }`}
                   >
-                    <div className="text-lg mb-1" aria-hidden="true">
+                    <div className="text-base mb-1" aria-hidden="true">
                       {type.icon}
                     </div>
                     <div

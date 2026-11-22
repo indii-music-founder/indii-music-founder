@@ -257,7 +257,7 @@ export const RawConverterModule: React.FC = () => {
                 onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all ${
+                className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all ${
                     isDragging
                         ? 'border-purple-500 bg-purple-500/10 scale-[1.005]'
                         : 'border-gray-700/60 bg-gray-900/40 hover:border-gray-600'

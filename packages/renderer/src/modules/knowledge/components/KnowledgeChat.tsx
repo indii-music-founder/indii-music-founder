@@ -43,7 +43,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
         {
             id: 'welcome',
             role: 'model' as const,
-            text: "Hello! I'm your Neural Knowledge Assistant. Ask me anything about your documents.",
+            text: "Ask me anything about your documents.",
             timestamp: Date.now()
         }
     ], [knowledgeSession]);
@@ -171,7 +171,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h2 className="font-bold text-white tracking-tight">Neural Chat</h2>
+                            <h2 className="font-bold text-white tracking-tight">Document Chat</h2>
                             <span className="text-[10px] font-black bg-[#FFE135] text-black px-1.5 py-0.5 rounded uppercase tracking-wider">Beta</span>
                         </div>
                         {activeDoc && (
@@ -220,7 +220,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                             {!streamingContent ? (
                                 <div className="flex items-center gap-2">
                                     <Loader2 size={14} className="animate-spin text-[#FFE135]" />
-                                    <span className="text-xs text-gray-500 font-medium animate-pulse">Initializing Neural Link...</span>
+                                    <span className="text-xs text-gray-500 font-medium animate-pulse">Reading your documents…</span>
                                 </div>
                             ) : (
                                 <div className="whitespace-pre-wrap">{streamingContent}</div>
@@ -259,7 +259,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                                 void handleSend();
                             }
                         }}
-                        placeholder={activeDoc ? `Neural Analysis of "${activeDoc.title}"...` : "Query Intelligence Base..."}
+                        placeholder={activeDoc ? `Ask about "${activeDoc.title}"…` : "Ask about your documents…"}
                         className="w-full bg-[#161b22] border border-gray-700 group-focus-within:border-[#FFE135]/40 text-white rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-4 focus:ring-[#FFE135]/5 transition-all placeholder-gray-600 shadow-inner"
                     />
                     <button

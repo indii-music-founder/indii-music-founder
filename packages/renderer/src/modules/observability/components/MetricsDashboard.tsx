@@ -83,7 +83,7 @@ export const MetricsDashboard: React.FC = () => {
         : [];
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
+        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-3 space-y-6">
             {/* Header + time range */}
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">System Metrics</h2>
@@ -104,7 +104,7 @@ export const MetricsDashboard: React.FC = () => {
             </div>
 
             {loading && (
-                <div className="flex items-center justify-center py-12 text-slate-500">
+                <div className="flex items-center justify-center py-8 text-slate-500">
                     <Loader2 size={20} className="animate-spin mr-2" />
                     Loading metrics…
                 </div>

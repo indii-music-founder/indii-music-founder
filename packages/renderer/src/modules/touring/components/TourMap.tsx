@@ -276,10 +276,10 @@ export const TourMap: React.FC<TourMapProps> = ({
 
     if (loadError) {
         return (
-            <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-8 text-center relative overflow-hidden">
+            <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-6 text-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
                 <div className="absolute inset-0 bg-linear-to-b from-transparent to-[#161b22]" />
-                <MapPinOff size={48} className="text-gray-700 relative z-10" />
+                <MapPinOff size={28} className="text-gray-700 relative z-10" />
                 <div className="relative z-10">
                     <h3 className="text-lg font-bold text-gray-300">Map unavailable</h3>
                     <p className="text-xs font-mono mt-2 max-w-xs mx-auto text-gray-500">
@@ -294,7 +294,7 @@ export const TourMap: React.FC<TourMapProps> = ({
         <div className="w-full h-full rounded-xl border border-gray-800 bg-[#101318] relative overflow-hidden">
             <div ref={containerRef} className="absolute inset-0" data-testid="tour-map-canvas" />
             {!isReady && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#161b22] text-gray-500 text-center p-8">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#161b22] text-gray-500 text-center p-6">
                     <Loader2 size={24} className="animate-spin text-yellow-500" />
                     <div>
                         <h3 className="text-lg font-bold text-gray-300">Loading route map</h3>

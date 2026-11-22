@@ -263,7 +263,7 @@ export function SchedulerStatusPanel() {
                         { label: 'Fired', value: (status?.totalFireCount ?? 0).toString(), color: 'text-green-400' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className="text-center p-2 rounded-md bg-white/3">
-                            <p className={`text-lg font-bold ${color}`}>{value}</p>
+                            <p className={`text-base font-bold ${color}`}>{value}</p>
                             <p className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</p>
                         </div>
                     ))}

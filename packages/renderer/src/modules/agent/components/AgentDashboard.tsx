@@ -94,8 +94,8 @@ const CampaignsTab: React.FC = () => {
                     ))}
                 </div>
             ) : campaigns.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-600 space-y-3">
-                    <Megaphone size={32} className="opacity-30" />
+                <div className="flex flex-col items-center justify-center py-10 text-slate-600 space-y-3">
+                    <Megaphone size={20} className="opacity-30" />
                     <p className="text-sm">{t('agent.campaigns.noCampaigns')}</p>
                     <button
                         onClick={() => void setModule('marketing')}
@@ -277,14 +277,14 @@ const AgentDashboard: React.FC = () => {
                     <div className="flex-1 flex flex-col overflow-hidden relative">
 
                         {activeTab === 'scout' && (
-                            <div data-testid="agent-content-scout" className="absolute inset-0 overflow-y-auto custom-scrollbar p-8">
-                                <div className="max-w-7xl mx-auto space-y-10">
+                            <div data-testid="agent-content-scout" className="absolute inset-0 overflow-y-auto custom-scrollbar p-6">
+                                <div className="max-w-7xl mx-auto space-y-6">
 
                                     {/* Hero Section */}
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <h1 className="text-xl font-bold text-white tracking-tight">{t('agent.scout.title')}</h1>
-                                            <p className="text-lg text-slate-400 max-w-2xl">
+                                            <p className="text-base text-slate-400 max-w-2xl">
                                                 {t('agent.scout.description')}
                                             </p>
                                         </div>
@@ -327,11 +327,11 @@ const AgentDashboard: React.FC = () => {
                                                     />
                                                 ))}
                                                 {venues.length === 0 && (
-                                                    <div className="col-span-full py-24 flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
-                                                        <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 shadow-inner shadow-black/50">
-                                                            <MapPin size={32} className="opacity-40" />
+                                                    <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
+                                                        <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center mb-4 shadow-inner shadow-black/50">
+                                                            <MapPin size={20} className="opacity-40" />
                                                         </div>
-                                                        <p className="text-lg font-medium text-slate-400">{t('agent.scout.noVenues')}</p>
+                                                        <p className="text-base font-medium text-slate-400">{t('agent.scout.noVenues')}</p>
                                                         <p className="text-sm">{t('agent.scout.configureParams')}</p>
                                                     </div>
                                                 )}
@@ -402,7 +402,7 @@ const AgentDashboard: React.FC = () => {
                         )}
                         
                         {activeTab === 'loops' && (
-                            <div data-testid="agent-content-loops" className="absolute inset-0 overflow-y-auto custom-scrollbar p-8 bg-[--background]">
+                            <div data-testid="agent-content-loops" className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 bg-[--background]">
                                 <div className="max-w-4xl mx-auto space-y-6">
                                     <h1 className="text-xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
                                     <AgentLoopMonitor />
@@ -413,7 +413,7 @@ const AgentDashboard: React.FC = () => {
                         {activeTab !== 'scout' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && activeTab !== 'loops' && (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
-                                    <Filter size={32} className="opacity-50" />
+                                    <Filter size={20} className="opacity-50" />
                                 </div>
                             </div>
                         )}

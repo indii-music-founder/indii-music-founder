@@ -205,7 +205,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 
                 {layers.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                        <Layers size={32} className="text-neutral-700 mb-2" />
+                        <Layers size={20} className="text-neutral-700 mb-2" />
                         <p className="text-xs text-neutral-500">No layers yet</p>
                         <p className="text-[10px] text-neutral-600 mt-1">Add text, images, or shapes</p>
                     </div>

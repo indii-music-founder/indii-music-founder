@@ -92,11 +92,11 @@ export default function PublicistDashboard() {
                         <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/5 space-y-3">
                             <div>
                                 <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Global Reach</div>
-                                <div className="text-lg font-bold text-white">{stats.globalReach}</div>
+                                <div className="text-base font-bold text-white">{stats.globalReach}</div>
                             </div>
                             <div>
                                 <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Open Rate</div>
-                                <div className="text-lg font-bold text-emerald-400">{stats.avgOpenRate}</div>
+                                <div className="text-base font-bold text-emerald-400">{stats.avgOpenRate}</div>
                             </div>
                         </div>
                     </div>
@@ -164,7 +164,7 @@ export default function PublicistDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 relative flex flex-col min-w-0 z-10 h-full">
                     {/* Top HUD Bar */}
-                    <header className="h-14 md:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
+                    <header className="h-14 md:h-20 shrink-0 px-4 md:px-6 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-2 md:gap-4 min-w-0">
                             <h2 className="text-base font-bold text-white tracking-tight truncate">
                                 {activeTab === 'campaigns' ? 'Campaigns' : activeTab === 'superfans' ? 'Superfan CRM' : 'Media Network'}
@@ -236,7 +236,7 @@ export default function PublicistDashboard() {
                     </header>
 
                     {/* Scrollable Content Stage */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth no-scrollbar">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 scroll-smooth no-scrollbar">
                         <AnimatePresence mode="wait">
                             {activeTab === 'campaigns' ? (
                                 <motion.div
@@ -261,8 +261,8 @@ export default function PublicistDashboard() {
                                     {/* Empty State */}
                                     {campaigns.length === 0 && (
                                         <div className="col-span-full py-32 flex flex-col items-center justify-center text-center opacity-50">
-                                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                                <Megaphone size={32} className="text-slate-500" />
+                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                                <Megaphone size={20} className="text-slate-500" />
                                             </div>
                                             <h3 className="text-lg font-bold text-white mb-2">No Campaigns Yet</h3>
                                             <p className="text-sm text-slate-400 max-w-xs mx-auto">Start your first campaign to begin reaching out to media contacts.</p>
@@ -310,14 +310,14 @@ export default function PublicistDashboard() {
                                     </div>
 
                                     {/* Contact List */}
-                                    <div className="glass-panel rounded-3xl p-6 border border-white/5">
+                                    <div className="glass-panel rounded-2xl p-6 border border-white/5">
                                         <ContactList
                                             contacts={contacts}
                                             onSelectContact={(c) => setSelectedContact(c)}
                                             onPitchContact={(c) => setPitchContact(c)}
                                         />
                                         {contacts.length === 0 && (
-                                            <div className="py-20 text-center text-slate-500 text-sm">
+                                            <div className="py-10 text-center text-slate-500 text-sm">
                                                 No contacts found.
                                             </div>
                                         )}

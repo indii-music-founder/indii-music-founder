@@ -52,7 +52,7 @@ export function PlatformOAuthCallback({ provider }: PlatformOAuthCallbackProps) 
     }, [code, inputError, label, navigate, oauthState, provider]);
 
     return (
-        <main className="min-h-screen bg-black px-6 py-16 text-white">
+        <main className="min-h-screen bg-black px-6 py-10 text-white">
             <section className="mx-auto max-w-lg rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl">
                 <h1 className="text-xl font-semibold">Connect {label}</h1>
                 {error ? (

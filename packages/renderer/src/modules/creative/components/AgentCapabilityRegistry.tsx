@@ -66,12 +66,12 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
       <ScrollArea role="region" aria-label="Agent capabilities" tabIndex={0} className="flex-1 p-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Activity className="text-indigo-500 animate-pulse" size={32} />
+            <Activity className="text-indigo-500 animate-pulse" size={20} />
             <p className="text-xs text-gray-500 font-mono">SCANNING ROSTER...</p>
           </div>
         ) : !registry ? (
-          <div className="p-8 text-center border border-dashed border-white/10 rounded-xl bg-white/2">
-            <ShieldCheck size={32} className="mx-auto text-indigo-400/50 mb-3" />
+          <div className="p-6 text-center border border-dashed border-white/10 rounded-xl bg-white/2">
+            <ShieldCheck size={20} className="mx-auto text-indigo-400/50 mb-3" />
             {isDesktop ? (
               <>
                 <p className="text-sm text-gray-400">Roster temporarily unavailable.</p>

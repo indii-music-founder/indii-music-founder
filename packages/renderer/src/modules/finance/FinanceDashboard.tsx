@@ -573,7 +573,7 @@ function RevenueByPlatformPanel({ earningsSummary, loading }: RevenueByPlatformP
                                     <span className="text-xs text-gray-300 truncate">{p.platformName}</span>
                                     <span className="text-[10px] text-green-400 font-bold">{percentage}%</span>
                                 </div>
-                                <p className="text-lg font-black text-white">{formatCurrency(p.revenue)}</p>
+                                <p className="text-base font-black text-white">{formatCurrency(p.revenue)}</p>
                                 <p className="text-[10px] text-gray-600 mt-0.5">
                                     {p.streams.toLocaleString('en-US')} streams · {p.downloads.toLocaleString('en-US')} downloads
                                 </p>

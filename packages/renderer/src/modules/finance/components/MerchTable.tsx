@@ -133,7 +133,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="mb-8 p-8 bg-white/5 border border-white/10 rounded-[2rem] space-y-8 backdrop-blur-xl relative overflow-hidden">
+                        <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-[2rem] space-y-5 backdrop-blur-xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-dept-creative/10 blur-[50px] pointer-events-none" />
 
                             <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                     whileHover={selectedAsset ? { scale: 1.02 } : {}}
                                     whileTap={selectedAsset ? { scale: 0.98 } : {}}
                                     onClick={handleMint}
-                                    className={`px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-linear-to-r from-dept-licensing to-dept-royalties hover:from-dept-licensing/80 hover:to-dept-royalties/80 shadow-dept-royalties/20'
+                                    className={`px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-linear-to-r from-dept-licensing to-dept-royalties hover:from-dept-licensing/80 hover:to-dept-royalties/80 shadow-dept-royalties/20'
                                         }`}
                                 >
                                     Confirm & Dispatch to Store
@@ -243,7 +243,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             <div className="space-y-4">
                 {products.length === 0 ? (
                     <ActionableEmptyState
-                        icon={<Tag size={48} />}
+                        icon={<Tag size={28} />}
                         title="VIRTUAL LEDGER IS EMPTY"
                         description="No active products or digital assets detected in your current catalog."
                         colorClasses={{
@@ -269,7 +269,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                         >
                                             <div className="absolute top-0 right-0 w-24 h-full bg-linear-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
 
-                                            <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
+                                            <div className="w-10 h-10 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
                                                 {product.images[0] ? (
                                                     <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                                 ) : (

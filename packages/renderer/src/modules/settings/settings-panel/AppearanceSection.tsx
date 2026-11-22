@@ -55,14 +55,14 @@ const AppearanceSection: React.FC = () => {
                     />
                 </SettingRow>
 
-                <SettingRow icon={Sparkles} label="Expand Cognitive Logic" description="Open agent reasoning automatically when a new response arrives.">
+                <SettingRow icon={Sparkles} label="Expand Cognitive Logic" description="Show how your team reached each answer as soon as it arrives.">
                     <Toggle
                         enabled={showCognitiveLogicByDefault}
                         onChange={(v) => updatePreferences({ showCognitiveLogicByDefault: v })}
                     />
                 </SettingRow>
 
-                <SettingRow icon={Sparkles} label="Agent Ideas" description="How many unsolicited ideas your agents offer. They never act on an idea unless you ask.">
+                <SettingRow icon={Sparkles} label="Agent Ideas" description="How many ideas your team suggests on its own. Nothing happens unless you say so.">
                     <SelectDropdown
                         value={agentAmbition}
                         options={[

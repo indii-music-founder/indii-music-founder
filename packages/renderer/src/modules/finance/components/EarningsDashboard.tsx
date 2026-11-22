@@ -29,7 +29,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-lg font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
+                <div className="text-base font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
                 <p className="text-xs text-dept-royalties flex items-center gap-1 mt-1">
                     <TrendingUp size={12} />
                     {data.totalNetRevenue > 0 ? 'Revenue from all sources' : 'No revenue data yet'}
@@ -46,7 +46,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-lg font-bold text-white mt-2">{(data.totalStreams / 1000000).toFixed(2)}M</div>
+                <div className="text-base font-bold text-white mt-2">{(data.totalStreams / 1000000).toFixed(2)}M</div>
                 <p className="text-xs text-gray-500 mt-1">Across all platforms</p>
             </div>
         </div>
@@ -70,12 +70,12 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
 
                     return topTerritory ? (
                         <>
-                            <div className="text-lg font-bold text-white mt-2">{topTerritory.territoryCode || 'N/A'}</div>
+                            <div className="text-base font-bold text-white mt-2">{topTerritory.territoryCode || 'N/A'}</div>
                             <p className="text-xs text-gray-500 mt-1">{percentage}% of total revenue</p>
                         </>
                     ) : (
                         <>
-                            <div className="text-lg font-bold text-white mt-2">--</div>
+                            <div className="text-base font-bold text-white mt-2">--</div>
                             <p className="text-xs text-gray-500 mt-1">No data available</p>
                         </>
                     );
@@ -92,7 +92,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString('en-US')}</div>
+                <div className="text-base font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString('en-US')}</div>
                 <p className="text-xs text-gray-500 mt-1">Across all stores</p>
             </div>
         </div>
@@ -124,8 +124,8 @@ export const EarningsDashboard: React.FC = () => {
     );
 
     if (error) return (
-        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-red-500/20 m-8">
-            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
+        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-2xl border border-red-500/20 m-8">
+            <div className="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4">
                 <ArrowUpRight size={24} className="rotate-45" />
             </div>
             <h3 className="text-base font-bold text-white mb-2">Fetch Error</h3>
@@ -134,8 +134,8 @@ export const EarningsDashboard: React.FC = () => {
     );
 
     if (!earningsSummary) return (
-        <div data-testid="earnings-empty-state" className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-white/5 m-8 border-dashed">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
+        <div data-testid="earnings-empty-state" className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-2xl border border-white/5 m-8 border-dashed">
+            <div className="w-10 h-10 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
                 <DollarSign size={24} />
             </div>
             <h3 className="text-base font-bold text-white mb-2">No Reports Found</h3>

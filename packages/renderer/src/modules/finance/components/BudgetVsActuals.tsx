@@ -238,7 +238,7 @@ export function BudgetVsActuals() {
             {/* Category Table */}
             <div className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden">
                 {categories.length === 0 ? (
-                    <div className="p-8 text-center flex flex-col items-center">
+                    <div className="p-6 text-center flex flex-col items-center">
                         <p className="text-xs text-gray-500 mb-3">Your budget categories will appear here once created.</p>
                         <button
                             onClick={() => setShowAddModal(true)}

@@ -141,7 +141,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
         return (
             <div className={`relative flex flex-col items-center justify-center bg-[#0a0a0a] rounded-xl overflow-hidden border border-white/10 ${className}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-pink-500/10 animate-pulse" />
-                <Loader2 size={48} className="text-white/50 animate-spin mb-4" />
+                <Loader2 size={28} className="text-white/50 animate-spin mb-4" />
                 <p className="text-sm font-medium text-white/70">Generating Video...</p>
                 <p className="text-xs text-white/40 mt-2 max-w-[80%] text-center">
                     This can take 2-4 minutes. You can safely leave this page—your result will be saved to history.
@@ -153,11 +153,11 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
     if (status === 'failed' || !videoUrl || resolveError) {
         return (
             <div className={`flex flex-col items-center justify-center bg-[#1a0f0f] rounded-xl overflow-hidden border border-red-500/20 p-6 ${className}`}>
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
                     {error?.includes('safety') ? (
-                        <ShieldAlert size={32} className="text-red-400" />
+                        <ShieldAlert size={20} className="text-red-400" />
                     ) : (
-                        <AlertTriangle size={32} className="text-red-400" />
+                        <AlertTriangle size={20} className="text-red-400" />
                     )}
                 </div>
                 <p className="text-sm font-bold text-red-200 mb-2 text-center">Generation Failed</p>
@@ -169,7 +169,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
     if (isResolving) {
         return (
             <div className={`relative flex flex-col items-center justify-center bg-[#0a0a0a] rounded-xl overflow-hidden border border-white/10 ${className}`}>
-                <Loader2 size={40} className="text-white/50 animate-spin mb-3" />
+                <Loader2 size={24} className="text-white/50 animate-spin mb-3" />
                 <p className="text-sm font-medium text-white/70">Resolving playback asset...</p>
             </div>
         );
@@ -199,8 +199,8 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
 
             {/* Central Play/Pause Indicator (Fades out) */}
             <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300 ${!isPlaying ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="w-20 h-20 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
-                    <Play size={32} className="text-white translate-x-1" />
+                <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10">
+                    <Play size={20} className="text-white translate-x-1" />
                 </div>
             </div>
 

@@ -766,7 +766,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                             </div>
                             <div className="prose prose-invert prose-sm leading-relaxed whitespace-pre-wrap font-sans text-xs">
                                 {extractedText || (
-                                    <div className="text-center py-12 text-white/40">
+                                    <div className="text-center py-8 text-white/40">
                                         <Globe size={24} className="mx-auto mb-2 opacity-30" />
                                         <p>Extracting readable text from webpage...</p>
                                     </div>

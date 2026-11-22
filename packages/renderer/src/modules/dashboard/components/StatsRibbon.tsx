@@ -29,7 +29,7 @@ function StatCard({ icon, label, value, suffix = '', precision = 0, color, delay
             </div>
             <div className="min-w-0">
                 <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider truncate">{label}</div>
-                <div className="text-lg font-bold text-white leading-tight">
+                <div className="text-base font-bold text-white leading-tight">
                     <AnimatedNumber value={value} precision={precision} />{suffix}
                 </div>
             </div>

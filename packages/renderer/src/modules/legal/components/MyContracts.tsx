@@ -169,7 +169,7 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
     if (loading) {
         return (
             <div className="h-64 flex flex-col items-center justify-center">
-                <Loader2 size={32} className="text-blue-500 animate-spin mb-4" />
+                <Loader2 size={20} className="text-blue-500 animate-spin mb-4" />
                 <p className="text-sm text-gray-400 animate-pulse">Loading contracts…</p>
             </div>
         );
@@ -182,8 +182,8 @@ export function MyContracts({ onNewContract, refreshTrigger }: MyContractsProps)
     // ── Empty state ────────────────────────────────────────────────
     if (contracts.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
+            <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
                     <FileText size={28} className="text-blue-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">No Contracts Yet</h3>

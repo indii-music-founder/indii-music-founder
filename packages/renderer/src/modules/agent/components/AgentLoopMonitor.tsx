@@ -13,7 +13,7 @@ export const AgentLoopMonitor: React.FC = () => {
 
     if (loops.length === 0) {
         return (
-            <div className="p-8 text-center text-zinc-500 border border-dashed border-indii-surface-3 rounded-lg bg-indii-surface-1/50 backdrop-blur-sm">
+            <div className="p-6 text-center text-zinc-500 border border-dashed border-indii-surface-3 rounded-lg bg-indii-surface-1/50 backdrop-blur-sm">
                 No active autonomous loops.
             </div>
         );

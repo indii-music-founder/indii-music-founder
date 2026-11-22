@@ -63,7 +63,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 {/* Left: Input Controls */}
                 <Card className="flex flex-col h-full bg-[#161b22] border-gray-800 shadow-2xl">
                     <CardHeader className="pb-4">
-                        <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+                        <CardTitle className="text-base font-bold text-white flex items-center gap-2">
                             <Calendar className="text-yellow-500" size={18} />
                             Tour Parameters
                         </CardTitle>
@@ -160,7 +160,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             <Button
                                 onClick={handleSaveRouteDraft}
                                 disabled={isSavingRouteDraft || locations.length === 0 || !startDate || !endDate}
-                                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase tracking-widest text-xs py-6 shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]"
+                                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase tracking-widest text-xs py-4 shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]"
                                 isLoading={isSavingRouteDraft}
                             >
                                 {!isSavingRouteDraft && <Save size={16} className="mr-2" />}

@@ -986,7 +986,7 @@ export default function VideoWorkflow() {
                 <div
                     className={`flex-1 min-h-0 overflow-hidden relative ${
                         workspaceMode === 'wide'
-                            ? 'px-8 pb-56'
+                            ? 'px-6 pb-56'
                             : workspaceMode === 'standard'
                                 ? 'px-5 pb-52'
                                 : 'px-3 pb-44'
@@ -1303,7 +1303,7 @@ export default function VideoWorkflow() {
                     aria-label="Editor Mode"
                     className="absolute inset-0 z-50 bg-background"
                 >
-                    <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
+                    <ErrorBoundary fallback={<div className="p-6 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">
                                 {/* Editor Header Removed - using Global Navbar */}
@@ -1334,7 +1334,7 @@ export default function VideoWorkflow() {
                         </div>
                     </div>
                     <div className="flex-1 min-h-0">
-                        <ErrorBoundary fallback={<div className="p-10 text-red-500">Storyboard Sync Error</div>}>
+                        <ErrorBoundary fallback={<div className="p-6 text-red-500">Storyboard Sync Error</div>}>
                             <StoryboardTimeline />
                         </ErrorBoundary>
                     </div>
@@ -1364,7 +1364,7 @@ export default function VideoWorkflow() {
                         </div>
                     </div>
                     <div className="flex-1 p-6 max-w-5xl mx-auto w-full">
-                        <ErrorBoundary fallback={<div className="p-10 text-red-500">3D Blender Studio Error</div>}>
+                        <ErrorBoundary fallback={<div className="p-6 text-red-500">3D Blender Studio Error</div>}>
                             <BlenderVideoPanel
                                 currentAudioPath={useVideoEditorStore.getState().inputAudio || ''}
                                 currentCoverArtPath=""

@@ -40,7 +40,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     const expenseList = useMemo(() => {
         if (isLoading) {
             return (
-                <div className="flex flex-col items-center justify-center py-20">
+                <div className="flex flex-col items-center justify-center py-10">
                     <Loader2 className="animate-spin text-gray-600 mb-2" />
                     <p className="text-gray-500 text-sm">Loading expenses...</p>
                 </div>

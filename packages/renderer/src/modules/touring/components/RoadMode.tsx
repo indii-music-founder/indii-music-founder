@@ -152,7 +152,7 @@ function NearbyResultsView({ results, action, onClose, onNavigate }: NearbyResul
 
             {results.places.length === 0 ? (
                 <div className="text-center py-10 text-slate-500">
-                    <MapPin size={32} className="mx-auto mb-3 opacity-40" />
+                    <MapPin size={20} className="mx-auto mb-3 opacity-40" />
                     <p className="text-sm">No {action.label.toLowerCase()} found nearby.</p>
                     <p className="text-xs mt-1">Try widening your search area.</p>
                 </div>
@@ -514,7 +514,7 @@ export const RoadMode: React.FC<{ onSubmitPrompt?: (prompt: string) => Promise<v
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex-1 overflow-y-auto px-4 py-5"
+                        className="flex-1 overflow-y-auto px-4 py-3"
                     >
                         <JevRemoteHintBar
                             className="mb-4"

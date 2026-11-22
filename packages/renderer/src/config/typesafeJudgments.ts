@@ -10459,7 +10459,7 @@ export const DEPARTMENT_JOURNEYS: Record<DepartmentWorkspaceId, readonly Departm
     ],
     marketing: [
         { id: 'campaign_hub', label: 'Release Campaign Hub', description: 'Coordinate multi-week rollout schedules and assets.', actionLabel: 'Open Campaigns', targetTab: 'departments' },
-        { id: 'brand_identity', label: 'Brand Kit & Visual DNA', description: 'Audit artist sonic/visual identity and press positioning.', actionLabel: 'Open Brand Kit', targetTab: 'brand' },
+        { id: 'brand_identity', label: 'Brand Kit & Visual Identity', description: 'Audit artist sonic/visual identity and press positioning.', actionLabel: 'Open Brand Kit', targetTab: 'brand' },
         { id: 'publicist_pr', label: 'Publicist & EPK Outreach', description: 'Generate press releases, one-sheets, and media pitches.', actionLabel: 'Open Publicist', targetTab: 'publicist' },
         { id: 'social_rollout', label: 'Social Grid & Teasers', description: 'Schedule vertical reels, stories, and drop announcements.', actionLabel: 'Open Social Hub', targetTab: 'social' },
         { id: 'fan_crm', label: 'Superfan CRM & Segments', description: 'Segment VIP listeners, presaves, and direct lists.', actionLabel: 'Open Fan CRM', targetTab: 'crm' },

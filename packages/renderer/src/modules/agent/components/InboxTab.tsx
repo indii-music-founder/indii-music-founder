@@ -74,7 +74,7 @@ const ConnectCard: React.FC<{
                     hover:${getColorForModule('agent').border} hover:bg-slate-900 transition-all group w-full text-left
                     disabled:opacity-50 disabled:cursor-not-allowed`}
     >
-        <div className={`w-10 h-10 rounded-lg ${gradient} flex items-center justify-center text-lg shrink-0`}>
+        <div className={`w-10 h-10 rounded-lg ${gradient} flex items-center justify-center text-base shrink-0`}>
             {icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -714,7 +714,7 @@ const InboxTab: React.FC = () => {
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="w-full max-w-sm space-y-4">
                             <div className="text-center mb-6">
-                                <div className={`w-16 h-16 mx-auto rounded-2xl ${getColorForModule('agent').bg}
+                                <div className={`w-10 h-10 mx-auto rounded-2xl ${getColorForModule('agent').bg}
                                                 border ${getColorForModule('agent').border} flex items-center justify-center mb-4`}>
                                     <Inbox size={28} className={getColorForModule('agent').text} />
                                 </div>

@@ -146,7 +146,7 @@ function MerchLeftRail({
         <div className="flex h-full min-h-0 flex-col bg-black/50 backdrop-blur-xl">
             <div className="flex items-center gap-3 p-5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFE135] shadow-[0_0_15px_rgba(255,225,53,0.3)]">
-                    <span className="text-lg font-black text-black">M</span>
+                    <span className="text-base font-black text-black">M</span>
                 </div>
                 <div>
                     <h1 className="text-lg font-bold leading-none tracking-tight">Merch<span className="text-[#FFE135]">Pro</span></h1>
@@ -215,7 +215,7 @@ function MerchWorkspaceCenter({
     const { mode } = useAdaptiveWorkspace();
     const isFocused = mode === 'focused';
     const isWide = mode === 'wide';
-    const contentPadding = isFocused ? 'p-4 pt-16' : mode === 'standard' ? 'p-6' : 'p-8';
+    const contentPadding = isFocused ? 'p-4 pt-16' : mode === 'standard' ? 'p-6' : 'p-6';
     const statGrid = isWide ? 'grid-cols-3' : mode === 'standard' ? 'grid-cols-2' : 'grid-cols-1';
     const productGrid = isWide ? 'grid-cols-3' : mode === 'standard' ? 'grid-cols-2' : 'grid-cols-1';
 
@@ -301,7 +301,7 @@ function MerchWorkspaceCenter({
                             <h3 className="mb-4 text-base font-bold text-white">Top Performing Products</h3>
                             <div className={`grid gap-4 ${productGrid}`}>
                                 {topSellingProducts.length > 0 ? topSellingProducts.map(product => <TopSellingProductItem key={product.id} product={product} />) : (
-                                    <div className="col-span-full rounded-lg border border-dashed border-white/10 p-8 text-center"><p className="mb-4 text-neutral-500">No product sales data available yet.</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Create Design</MerchButton></div>
+                                    <div className="col-span-full rounded-lg border border-dashed border-white/10 p-6 text-center"><p className="mb-4 text-neutral-500">No product sales data available yet.</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Create Design</MerchButton></div>
                                 )}
                             </div>
                         </div>

@@ -13,7 +13,7 @@ import { Scale, FileText, Shield } from 'lucide-react';
 
 export function TermsOfService() {
     return (
-        <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
+        <div className="max-w-3xl mx-auto px-6 py-8 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <Scale className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">Terms of Service</h1>
@@ -22,7 +22,7 @@ export function TermsOfService() {
                 Last updated: March 2026 · Effective date: April 15, 2026
             </p>
 
-            <div className="space-y-8 text-sm leading-relaxed">
+            <div className="space-y-5 text-sm leading-relaxed">
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
                     <p>
@@ -93,7 +93,7 @@ export function TermsOfService() {
                 </section>
             </div>
 
-            <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
                 © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>
@@ -106,7 +106,7 @@ export function TermsOfService() {
 
 export function PrivacyPolicy() {
     return (
-        <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
+        <div className="max-w-3xl mx-auto px-6 py-8 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <Shield className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">Privacy Policy</h1>
@@ -115,7 +115,7 @@ export function PrivacyPolicy() {
                 Last updated: March 2026 · Effective date: April 15, 2026
             </p>
 
-            <div className="space-y-8 text-sm leading-relaxed">
+            <div className="space-y-5 text-sm leading-relaxed">
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">1. Information We Collect</h2>
                     <h3 className="text-base font-medium text-gray-200 mb-2">Personal Information</h3>
@@ -200,7 +200,7 @@ export function PrivacyPolicy() {
                 </section>
             </div>
 
-            <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
                 © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>
@@ -213,7 +213,7 @@ export function PrivacyPolicy() {
 
 export function DMCAPolicy() {
     return (
-        <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
+        <div className="max-w-3xl mx-auto px-6 py-8 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
                 <FileText className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">DMCA Policy</h1>
@@ -222,7 +222,7 @@ export function DMCAPolicy() {
                 Last updated: March 2026
             </p>
 
-            <div className="space-y-8 text-sm leading-relaxed">
+            <div className="space-y-5 text-sm leading-relaxed">
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">Designated DMCA Agent</h2>
                     <p>
@@ -266,7 +266,7 @@ export function DMCAPolicy() {
                 </section>
             </div>
 
-            <div className="mt-12 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
+            <div className="mt-6 pt-6 border-t border-gray-700/50 text-xs text-gray-500">
                 © 2026 New Detroit Music LLC. All rights reserved.
             </div>
         </div>

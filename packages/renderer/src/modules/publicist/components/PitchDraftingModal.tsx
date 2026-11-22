@@ -129,7 +129,7 @@ Do not include a subject line — just the email body.
                                     </div>
                                 )}
                                 {!draft && !isGenerating && (
-                                    <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+                                    <div className="flex flex-col items-center justify-center h-full py-8 text-center">
                                         <Sparkles size={24} className="text-slate-700 mb-3" />
                                         <p className="text-sm text-slate-500 mb-1">Click "Generate Pitch" to draft a personalized email.</p>
                                         <p className="text-xs text-slate-600">Tailored to {contact?.name}'s outlet and relationship strength.</p>

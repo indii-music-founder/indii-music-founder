@@ -37,7 +37,7 @@ export function CampaignCard({ campaign, onClick }: CampaignCardProps) {
 
             <div className="flex gap-4 mb-4">
                 {/* Visual */}
-                <div className="relative w-16 h-16 rounded-xl overflow-hidden shadow-2xl bg-black">
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-2xl bg-black">
                     {campaign.coverUrl ? (
                         <img src={campaign.coverUrl} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     ) : (

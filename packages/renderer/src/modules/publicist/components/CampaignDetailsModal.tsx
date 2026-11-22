@@ -88,7 +88,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-900">
-                                    <Disc className="text-slate-700" size={36} />
+                                    <Disc className="text-slate-700" size={20} />
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-linear-to-t from-slate-950 to-transparent" />

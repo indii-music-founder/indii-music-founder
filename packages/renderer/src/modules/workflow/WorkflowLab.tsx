@@ -471,29 +471,29 @@ export default function WorkflowLab() {
             <div className="absolute inset-0 flex bg-[#0f0f0f]">
                 {/* ── LEFT PANEL — Controls & Actions ────── */}
                 <div id="tour-workflow-controls" className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
-                    <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                    <div className="px-3 py-2.5 border-b border-gray-800 flex items-center justify-between">
                         <div>
-                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                                <GitBranch className="text-green-500" /> Flow-Be Engine
+                            <h2 className="text-sm font-black text-white uppercase tracking-tighter italic flex items-center gap-1.5">
+                                <GitBranch size={14} className="text-green-500" /> Flow-Be Engine
                             </h2>
-                            <p className="text-[10px] text-gray-400 italic ml-6">flow be makin me happy</p>
+                            <p className="text-[10px] text-gray-500 italic ml-5">flow be makin me happy</p>
                         </div>
                         <button onClick={startTour} className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-white transition-colors" title="Take a Tour">
-                            <HelpCircle size={16} />
+                            <HelpCircle size={14} />
                         </button>
                     </div>
 
-                    <div className="p-4 space-y-2">
-                        <div className="mb-2">
+                    <div className="p-3 space-y-1.5">
+                        <div className="mb-1">
                             <input
                                 type="text"
                                 value={workflowName}
                                 onChange={(e) => setWorkflowName(e.target.value)}
-                                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-green-500 outline-none text-sm"
+                                className="w-full bg-white/5 text-white px-2.5 py-1.5 rounded-lg border border-white/10 focus:border-green-500/60 outline-none text-xs"
                                 placeholder="Workflow Name"
                             />
                             <div className="flex justify-end mt-1">
-                                <span className={`text-xs font-medium flex items-center gap-1 ${saveStatus === 'saved' ? 'text-green-500' :
+                                <span className={`text-[10px] font-medium flex items-center gap-1 ${saveStatus === 'saved' ? 'text-green-500' :
                                     saveStatus === 'saving' ? 'text-yellow-500' :
                                         'text-gray-500'
                                     }`}>
@@ -506,27 +506,27 @@ export default function WorkflowLab() {
                         <button
                             onClick={handleRunWorkflow}
                             disabled={isRunning}
-                            className={`w-full py-2 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all ${isRunning
+                            className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${isRunning
                                 ? 'bg-yellow-500/20 text-yellow-500 cursor-wait'
-                                : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-900/20'
+                                : 'bg-white text-black hover:bg-gray-200 active:scale-[0.98]'
                                 }`}
                         >
-                            {isRunning ? <Loader2 className="animate-spin" /> : <Play size={16} />}
+                            {isRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                             {isRunning ? 'Running...' : 'Run Workflow'}
                         </button>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-1.5">
                             <button
                                 onClick={handleSaveWorkflow}
                                 disabled={isSaving}
-                                className="py-2 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all text-xs"
+                                className="py-1.5 px-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 hover:text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors text-xs"
                             >
                                 {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                                 Save
                             </button>
                             <button
                                 onClick={handleOpenLoadModal}
-                                className="py-2 px-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all text-xs"
+                                className="py-1.5 px-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 hover:text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors text-xs"
                             >
                                 <FolderOpen size={14} />
                                 Load
@@ -536,19 +536,19 @@ export default function WorkflowLab() {
                         <button
                             id="tour-workflow-generator"
                             onClick={() => setShowGenerator(true)}
-                            className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-900/20"
+                            className="w-full py-1.5 px-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/25 text-green-300 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                         >
-                            <Sparkles size={16} />
+                            <Sparkles size={14} />
                             Generate Workflow
                         </button>
 
                         {/* Co-Pilot: Edit existing workflow */}
-                        <div className="rounded-lg border border-purple-500/20 bg-purple-900/5 overflow-hidden">
+                        <div className="rounded-lg border border-white/10 bg-white/[0.04] overflow-hidden">
                             <button
                                 onClick={() => setShowAiEdit(v => !v)}
-                                className="w-full py-2 px-4 text-purple-300 hover:text-white hover:bg-purple-900/20 font-bold flex items-center justify-center gap-2 transition-all text-sm"
+                                className="w-full py-1.5 px-3 text-gray-200 hover:text-white hover:bg-white/[0.06] font-bold flex items-center justify-center gap-1.5 transition-colors text-xs"
                             >
-                                <MessageSquareDiff size={15} />
+                                <MessageSquareDiff size={14} />
                                 Smart Edit Workflow
                             </button>
                             {showAiEdit && (
@@ -578,9 +578,9 @@ export default function WorkflowLab() {
                             onClick={handleEncapsulateSelected}
                             disabled={isEncapsulating || nodes.filter(n => n.selected).length < 2}
                             title="Select 2+ nodes then click to group them into a Micro-Workflow"
-                            className="w-full py-2 px-4 bg-pink-900/20 hover:bg-pink-900/40 border border-pink-500/20 text-pink-300 hover:text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-40"
+                            className="w-full py-1.5 px-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 hover:text-white rounded-lg font-bold flex items-center justify-center gap-1.5 transition-colors text-xs disabled:opacity-40"
                         >
-                            {isEncapsulating ? <Loader2 size={15} className="animate-spin" /> : <Layers size={15} />}
+                            {isEncapsulating ? <Loader2 size={14} className="animate-spin" /> : <Layers size={14} />}
                             {isEncapsulating ? 'Grouping...' : `Encapsulate${nodes.filter(n => n.selected).length >= 2 ? ` (${nodes.filter(n => n.selected).length})` : ''}`}
                         </button>
 
@@ -608,23 +608,23 @@ export default function WorkflowLab() {
                                     toastError('Failed to export ADK manifest.');
                                 }
                             }}
-                            className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-900/20"
+                            className="w-full py-1.5 px-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                         >
-                            <Cpu size={16} />
+                            <Cpu size={14} />
                             Export ADK
                         </button>
 
                         <button
                             onClick={() => setShowTemplates(true)}
-                            className="w-full py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all border border-gray-700"
+                            className="w-full py-1.5 px-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                         >
-                            <LayoutTemplate size={16} />
+                            <LayoutTemplate size={14} />
                             Templates
                         </button>
                     </div>
 
                     {/* Saved Workflows Quick List */}
-                    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+                    <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
                         <SystemProtocolsWidget
                             protocols={Object.values(WORKFLOW_REGISTRY)}
                             onLoad={handleLoadProtocol}

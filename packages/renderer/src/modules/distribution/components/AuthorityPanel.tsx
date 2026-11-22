@@ -166,7 +166,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {isrc && (
                         <div className="p-3 bg-dept-creative/10 border border-dept-creative/20 rounded-lg text-center">
-                            <span data-testid="authority-isrc-display" className="font-mono text-dept-creative text-lg">{isrc}</span>
+                            <span data-testid="authority-isrc-display" className="font-mono text-dept-creative text-base">{isrc}</span>
                         </div>
                     )}
                 </div>
@@ -191,7 +191,7 @@ export const AuthorityPanel: React.FC = () => {
 
                     {upc && (
                         <div className="p-3 bg-dept-distribution/10 border border-dept-distribution/20 rounded-lg text-center">
-                            <span data-testid="authority-upc-display" className="font-mono text-dept-distribution text-lg">{upc}</span>
+                            <span data-testid="authority-upc-display" className="font-mono text-dept-distribution text-base">{upc}</span>
                         </div>
                     )}
                 </div>

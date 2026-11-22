@@ -10,7 +10,7 @@ export const SubscriptionTab = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="flex flex-col items-center justify-center py-10 space-y-4">
                 <div className="w-12 h-12 rounded-full border-t-2 border-dept-royalties animate-spin" />
                 <p className="text-gray-400 font-medium">Loading subscription profile...</p>
             </div>
@@ -19,8 +19,8 @@ export const SubscriptionTab = () => {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 px-6 bg-red-500/5 rounded-3xl border border-red-500/20">
-                <AlertCircle size={40} className="text-red-500 mb-4" />
+            <div className="flex flex-col items-center justify-center py-10 px-6 bg-red-500/5 rounded-2xl border border-red-500/20">
+                <AlertCircle size={24} className="text-red-500 mb-4" />
                 <h3 className="text-base font-bold text-white mb-2">Sync Error</h3>
                 <p className="text-gray-400 text-center mb-6 max-w-sm">{error}</p>
                 <button
@@ -37,7 +37,7 @@ export const SubscriptionTab = () => {
     const currentTierConfig = getTierConfig(currentTier);
 
     return (
-        <div data-testid="subscription-tab-content" className="space-y-8 pb-20">
+        <div data-testid="subscription-tab-content" className="space-y-5 pb-20">
             {/* Active Subscription Summary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <motion.div
@@ -107,7 +107,7 @@ export const SubscriptionTab = () => {
                             Loading usage metrics...
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {/* Images */}
                             <div className="space-y-2">
                                 <div className="flex justify-between text-xs mb-1">
@@ -153,7 +153,7 @@ export const SubscriptionTab = () => {
             </div>
 
             {/* Plan Comparison Integration */}
-            <h3 className="text-base font-black text-white mt-12 mb-6 ml-1 tracking-tight">Available Systems</h3>
+            <h3 className="text-base font-black text-white mt-6 mb-6 ml-1 tracking-tight">Available Systems</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {getTierOrder().map((tierId, index) => {
                     const config = getTierConfig(tierId);
@@ -167,7 +167,7 @@ export const SubscriptionTab = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             className={`
-                group relative bg-black/40 backdrop-blur-2xl border rounded-3xl p-8 flex flex-col transition-all duration-500
+                group relative bg-black/40 backdrop-blur-2xl border rounded-2xl p-6 flex flex-col transition-all duration-500
                 ${isCurrent ? 'border-dept-royalties shadow-[0_0_40px_rgba(255,215,0,0.1)] scale-[1.02]' : 'border-white/10 hover:border-white/20'}
               `}
                         >
@@ -190,7 +190,7 @@ export const SubscriptionTab = () => {
                                 <p className="text-sm text-gray-400 mt-4 leading-relaxed line-clamp-2">{config.description}</p>
                             </div>
 
-                            <div className="space-y-4 mb-10 flex-1">
+                            <div className="space-y-4 mb-6 flex-1">
                                 <div className="flex items-center gap-3 group/item">
                                     <CheckCircle2 size={16} className="text-dept-royalties flex-shrink-0" />
                                     <span className="text-sm text-gray-300 font-medium group-hover/item:text-white transition-colors">{config.imageGenerations.monthly} Monthly Images</span>

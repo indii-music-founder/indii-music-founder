@@ -240,7 +240,7 @@ export default function RegistrationCenter() {
 
   if (loadError) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-8 text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500 text-sm px-6 text-center">
         <span className="text-red-400">{loadError}</span>
         <button
           onClick={() => window.location.reload()}
@@ -254,7 +254,7 @@ export default function RegistrationCenter() {
 
   if (tracks.length === 0 && activeTab === 'tracks') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-8 text-center">
+      <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 text-sm px-6 text-center">
         <p>No tracks found in your catalog yet.</p>
         <button onClick={() => setActiveTab('visibility')} className="text-green-400 underline">Manage catalog visibility</button>
         <div className="flex flex-wrap items-center justify-center gap-3">

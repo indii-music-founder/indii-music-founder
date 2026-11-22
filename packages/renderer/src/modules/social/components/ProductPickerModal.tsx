@@ -59,7 +59,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-[#161b22] border border-gray-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+        className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-800 flex items-center justify-between">
@@ -117,9 +117,9 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="bg-gray-800/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="text-gray-600" size={32} />
+            <div className="text-center py-8">
+              <div className="bg-gray-800/30 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="text-gray-600" size={20} />
               </div>
               <h3 className="text-white font-medium">No products found</h3>
               <p className="text-gray-500 text-sm mt-1">Try a different search or filter.</p>
@@ -136,7 +136,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
                       : 'bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-800/50'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-xl bg-gray-800 flex-shrink-0 overflow-hidden relative">
+                  <div className="w-10 h-10 rounded-xl bg-gray-800 flex-shrink-0 overflow-hidden relative">
                     {product.images?.[0] ? (
                       <img src={product.images[0]} className="w-full h-full object-cover" alt="" />
                     ) : (

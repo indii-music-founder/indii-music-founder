@@ -130,7 +130,7 @@ export default function IntelligencePredictionPanel({ campaign }: IntelligencePr
                 <div className="p-4 space-y-4">
                     {/* Overall Score */}
                     <div className="flex items-center gap-4 p-4 bg-black/40 rounded-lg border border-white/5">
-                        <div className="relative w-16 h-16 flex-shrink-0">
+                        <div className="relative w-10 h-10 flex-shrink-0">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                                 <circle
                                     cx="50"

@@ -118,7 +118,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                 </div>
 
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                    {isInitializing && <Loader2 className="animate-spin text-green-400" size={32} />}
+                    {isInitializing && <Loader2 className="animate-spin text-green-400" size={20} />}
 
                     {error && (
                         <div className="text-red-400 text-center px-4">

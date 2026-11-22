@@ -81,11 +81,11 @@ const SETTING_CATEGORIES: SettingsCategoryConfig[] = [
     },
     {
         id: 'intelligence',
-        label: 'AI & Directives',
+        label: 'Team & Directives',
         sections: [
-            { id: 'playbook', label: 'Master Directive', icon: BookOpen, description: 'Living Artist Playbook and Supreme Directives' },
+            { id: 'playbook', label: 'Master Directive', icon: BookOpen, description: 'Your rules and preferences for the whole team' },
             { id: 'personas', label: 'Agent Personas', icon: Sliders, description: 'Personality sliders and posture for each agent' },
-            { id: 'automation', label: 'Automation', icon: Bot, description: 'Artist Operating Profile — autonomy permissions and boundaries' },
+            { id: 'automation', label: 'Automation', icon: Bot, description: 'What your team may do on its own' },
         ],
     },
     {
@@ -210,7 +210,7 @@ const SettingsPanel: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 pt-16 md:pt-8">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-6 pt-16 md:pt-8">
                 <div className="max-w-2xl">
                     <AnimatePresence mode="wait">
                         <motion.div

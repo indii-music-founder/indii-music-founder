@@ -34,7 +34,7 @@ export function RegistrationSheet({
   if (!track) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3">
-        <Music2 size={32} className="opacity-20" />
+        <Music2 size={20} className="opacity-20" />
         <p className="text-sm">Select a track from your catalog</p>
       </div>
     );

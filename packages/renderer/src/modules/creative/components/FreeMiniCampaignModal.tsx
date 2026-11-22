@@ -248,7 +248,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                 </div>
 
                 {/* Body Content */}
-                <div className="py-6">
+                <div className="py-4">
                     {error && (
                         <div
                             role="alert"
@@ -432,7 +432,7 @@ export const FreeMiniCampaignModal: React.FC<FreeMiniCampaignModalProps> = ({
                             {!decisionResult ? (
                                 <>
                                     <div className="text-center">
-                                        <CheckCircle2 size={32} className="mx-auto text-emerald-400" />
+                                        <CheckCircle2 size={20} className="mx-auto text-emerald-400" />
                                         <h3 className="mt-3 text-lg font-bold text-white">
                                             Pack Exported Successfully
                                         </h3>

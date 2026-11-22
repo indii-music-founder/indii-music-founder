@@ -300,7 +300,7 @@ export default function UnifiedAssetLibrary({
                 {isDragging && (
                     <div className="absolute inset-0 bg-dept-marketing/10 rounded-xl flex items-center justify-center z-10 border-2 border-dashed border-dept-marketing">
                         <div className="text-center">
-                            <Upload size={32} className="mx-auto mb-2 text-dept-marketing" />
+                            <Upload size={20} className="mx-auto mb-2 text-dept-marketing" />
                             <p className="text-sm font-bold text-dept-marketing">Drop assets from Project Assets / Gallery — or files to upload</p>
                         </div>
                     </div>
@@ -345,8 +345,8 @@ export default function UnifiedAssetLibrary({
                 </div>
 
                 {filteredAssets?.length === 0 && (
-                    <div className="py-12 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center text-center opacity-40 mt-4">
-                        <ImageIcon size={32} className="mb-2" />
+                    <div className="py-8 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center text-center opacity-40 mt-4">
+                        <ImageIcon size={20} className="mb-2" />
                         <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
                             {categoryFilter === 'all' ? 'No assets yet' : `No ${categoryFilter} assets`}
                         </p>

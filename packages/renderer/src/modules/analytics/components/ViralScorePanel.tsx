@@ -89,7 +89,7 @@ export const ViralScorePanel: React.FC<ViralScorePanelProps> = ({ viralScore, me
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                         <Zap size={14} className={style.text} />
-                        <span className={`text-lg font-bold ${style.text}`}>{viralScore.label}</span>
+                        <span className={`text-base font-bold ${style.text}`}>{viralScore.label}</span>
                     </div>
                     <p className="text-xs text-slate-400">
                         {TREND_LABELS[viralScore.trend] ?? '→ Stable'}

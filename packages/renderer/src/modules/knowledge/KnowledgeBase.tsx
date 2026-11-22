@@ -109,7 +109,7 @@ export default function KnowledgeBase() {
     const handleReupload = async (doc: KnowledgeDoc) => {
         const ok = await ConfirmDialog.call({
             title: "Re-upload Required",
-            message: `The document "${doc.title}" uses our legacy storage system. To chat with it, we need to migrate it to the new vector knowledge base.\n\nPlease delete this file, and then upload it again using the "Ingest Document" button.`,
+            message: `The document "${doc.title}" uses our legacy storage system. To chat with it, we need to migrate it to the new vector knowledge base.\n\nPlease delete this file, and then upload it again using the "Upload document" button.`,
             confirmText: "Delete & Re-upload",
             variant: "default"
         });
@@ -173,7 +173,7 @@ export default function KnowledgeBase() {
         <ModuleErrorBoundary moduleName="Knowledge Base">
             <div className="h-full flex flex-col bg-bg-dark text-white overflow-hidden relative">
                 {/* Tab strip — one destination for the surfaces that remember for you */}
-                <div className="flex items-center gap-2 px-8 pt-6 flex-shrink-0" role="tablist" aria-label="Knowledge sections">
+                <div className="flex items-center gap-2 px-6 pt-4 flex-shrink-0" role="tablist" aria-label="Knowledge sections">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
@@ -181,7 +181,7 @@ export default function KnowledgeBase() {
                             aria-selected={activeTab === tab.id}
                             data-testid={`knowledge-tab-${tab.id}`}
                             onClick={() => selectTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab.id
                                 ? 'bg-[#FFE135]/10 border border-[#FFE135]/40 text-[#FFE135]'
                                 : 'bg-white/[0.02] border border-white/5 text-gray-400 hover:text-white hover:border-white/15'
                                 }`}
@@ -209,42 +209,42 @@ export default function KnowledgeBase() {
                         </Suspense>
                     </div>
                 ) : (
-                <div className="flex-1 overflow-y-auto p-8"
+                <div className="flex-1 overflow-y-auto px-6 py-5"
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                 >
                     {/* Header Section */}
-                    <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center justify-between gap-4 mb-5">
                         <div className="animate-in fade-in slide-in-from-left duration-700">
-                            <div className="flex items-center gap-3 mb-3">
-                                <h1 className="text-xl font-black flex items-center gap-3">
-                                    <Book className="text-[#FFE135]" size={36} />
+                            <div className="flex items-center gap-2 mb-1">
+                                <h1 className="text-lg font-black flex items-center gap-2">
+                                    <Book className="text-[#FFE135]" size={18} />
                                     <span className="bg-clip-text text-transparent bg-linear-to-r from-white to-gray-500">
                                         Knowledge Base
                                     </span>
                                 </h1>
                                 <span className="text-[10px] font-black bg-[#FFE135] text-black px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-[0_0_15px_rgba(255,225,53,0.3)]">Beta</span>
                             </div>
-                            <p className="text-gray-500 text-lg font-medium tracking-tight">Central Neural Repository & Document Intelligence</p>
+                            <p className="text-gray-500 text-xs font-medium">Your team reads these documents when answering you.</p>
                         </div>
-                        <div className="flex gap-4 animate-in fade-in slide-in-from-right duration-700">
+                        <div className="flex shrink-0 gap-2 animate-in fade-in slide-in-from-right duration-700">
                             <button
                                 onClick={toggleGlobalChat}
-                                className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all duration-500 transform active:scale-95 ${isChatOpen
-                                    ? 'bg-[#FFE135] text-black shadow-[0_0_30px_rgba(255,225,53,0.4)] scale-105'
+                                className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all duration-300 active:scale-[0.98] ${isChatOpen
+                                    ? 'bg-[#FFE135] text-black'
                                     : 'bg-[#161b22] text-gray-300 border border-gray-800 hover:border-[#FFE135]/40 hover:text-white'
                                     }`}
                             >
-                                <Sparkles size={20} className={isChatOpen ? 'animate-spin-slow' : ''} />
-                                {isChatOpen ? 'Neural Connection Active' : 'Initialize Neural Chat'}
+                                <Sparkles size={14} className={isChatOpen ? 'animate-spin-slow' : ''} />
+                                {isChatOpen ? 'Close chat' : 'Ask your documents'}
                             </button>
                             <label
                                 aria-disabled={isUploading}
-                                className={`relative overflow-hidden px-6 py-3 bg-[#FFE135]/10 border border-[#FFE135]/30 hover:bg-[#FFE135]/20 text-[#FFE135] font-bold rounded-2xl transition-all transform active:scale-95 flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                                className={`relative overflow-hidden px-3 py-2 bg-[#FFE135]/10 border border-[#FFE135]/30 hover:bg-[#FFE135]/20 text-[#FFE135] text-xs font-bold rounded-lg transition-all active:scale-[0.98] flex items-center gap-1.5 ${isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                             >
-                                {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
-                                {isUploading ? 'Ingesting...' : 'Ingest Document'}
+                                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
+                                {isUploading ? 'Uploading…' : 'Upload document'}
                                 <input
                                     type="file"
                                     id="knowledge-document-upload"
@@ -264,21 +264,21 @@ export default function KnowledgeBase() {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative mb-12 max-w-3xl animate-in fade-in slide-in-from-bottom duration-1000">
-                        <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                            <Search className="text-gray-600 group-focus-within:text-[#FFE135] transition-colors" size={22} />
+                    <div className="relative mb-5 max-w-xl animate-in fade-in slide-in-from-bottom duration-1000">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="text-gray-600 group-focus-within:text-[#FFE135] transition-colors" size={14} />
                         </div>
                         <input
                             type="text"
-                            placeholder="Scan neural index for vectors..."
+                            placeholder="Search documents…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#161b22]/40 backdrop-blur-md border border-gray-800/80 focus:border-[#FFE135]/50 text-white rounded-2xl pl-14 pr-6 py-5 focus:ring-4 focus:ring-[#FFE135]/5 transition-all placeholder-gray-700 text-xl font-medium shadow-2xl"
+                            className="w-full bg-[#161b22]/40 backdrop-blur-md border border-gray-800/80 focus:border-[#FFE135]/50 text-white rounded-lg pl-9 pr-3 py-2 focus:ring-2 focus:ring-[#FFE135]/5 transition-all placeholder-gray-600 text-sm"
                         />
                         {isDragging && (
-                            <div className="absolute inset-0 bg-[#FFE135]/10 border-2 border-[#FFE135] border-dashed rounded-2xl flex items-center justify-center backdrop-blur-md z-10 animate-pulse">
-                                <p className="text-[#FFE135] font-black text-2xl flex items-center gap-3 uppercase tracking-tighter">
-                                    <Upload size={32} /> Release to Ingest
+                            <div className="absolute inset-0 bg-[#FFE135]/10 border-2 border-[#FFE135] border-dashed rounded-lg flex items-center justify-center backdrop-blur-md z-10 animate-pulse">
+                                <p className="text-[#FFE135] font-black text-xs flex items-center gap-2 uppercase tracking-widest">
+                                    <Upload size={14} /> Drop to upload
                                 </p>
                             </div>
                         )}
@@ -287,8 +287,8 @@ export default function KnowledgeBase() {
                     {/* Content Grid */}
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-4">
-                            <Loader2 className="animate-spin text-[#FFE135]" size={48} />
-                            <p className="animate-pulse">Accessing Neural Archives...</p>
+                            <Loader2 className="animate-spin text-[#FFE135]" size={24} />
+                            <p className="animate-pulse">Loading documents…</p>
                         </div>
                     ) : filteredDocs.length === 0 ? (
                         <EmptyState
@@ -298,7 +298,7 @@ export default function KnowledgeBase() {
                             className="h-64"
                         />
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 pb-10">
                             {filteredDocs.map(doc => (
                                 <DocumentCard
                                     key={doc.id}
@@ -326,14 +326,14 @@ export default function KnowledgeBase() {
                 {/* Document Viewer Modal — knowledge-documents only */}
                 {activeTab === 'knowledge' && viewingDoc && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-300">
-                        <div className="bg-[#161b22] border border-gray-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden transform scale-100 animate-in zoom-in-95 duration-300">
+                        <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden transform scale-100 animate-in zoom-in-95 duration-300">
                             {/* Header */}
                             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-black/40">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-[#FFE135]/10 rounded-xl border border-[#FFE135]/20">
                                         <Book className="text-[#FFE135]" size={20} />
                                     </div>
-                                    <h2 className="text-white font-bold text-xl">{viewingDoc.title}</h2>
+                                    <h2 className="text-white font-bold text-base">{viewingDoc.title}</h2>
                                     <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest border border-emerald-500/20">{viewingDoc.type}</span>
                                 </div>
                                 <button onClick={() => setViewingDoc(null)} className="p-2.5 text-gray-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all">

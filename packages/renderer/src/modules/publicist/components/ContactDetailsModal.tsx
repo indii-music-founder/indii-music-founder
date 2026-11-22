@@ -68,7 +68,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                         exit={{ opacity: 0, scale: 0.95, x: 20 }}
                         className="fixed top-0 right-0 h-full w-full max-w-md bg-slate-950 border-l border-white/10 shadow-2xl z-[70] overflow-y-auto"
                     >
-                        <div className="p-6 space-y-8">
+                        <div className="p-6 space-y-5">
                             {/* Header */}
                             <div className="flex justify-between items-start">
                                 <button
@@ -89,7 +89,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                                         <img src={contact.avatarUrl} alt={contact.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                            <User size={40} />
+                                            <User size={24} />
                                         </div>
                                     )}
                                 </div>

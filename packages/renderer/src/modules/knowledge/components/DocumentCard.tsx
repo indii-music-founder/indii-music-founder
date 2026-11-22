@@ -14,27 +14,27 @@ interface DocumentCardProps {
 export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onChat, onView }) => {
 
     const getIcon = () => {
-        if (doc.type === 'PDF') return <FileText size={32} className="text-red-400" />;
-        if (doc.type === 'MD' || doc.type === 'TXT' || doc.type === 'WIKI') return <FileCode size={32} className="text-emerald-400" />;
-        return <File size={32} className="text-blue-400" />;
+        if (doc.type === 'PDF') return <FileText size={18} className="text-red-400" />;
+        if (doc.type === 'MD' || doc.type === 'TXT' || doc.type === 'WIKI') return <FileCode size={18} className="text-emerald-400" />;
+        return <File size={18} className="text-blue-400" />;
     };
 
     return (
-        <div className="group relative w-full h-48 perspective-1000">
-            <div className="absolute inset-0 bg-[#161b22]/80 backdrop-blur-md border border-gray-800 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 transform group-hover:scale-105 group-hover:-translate-y-2 group-hover:border-[#FFE135]/30 group-hover:shadow-[0_0_20px_rgba(255,225,53,0.1)]">
+        <div className="group relative w-full h-28">
+            <div className="absolute inset-0 bg-[#161b22]/80 backdrop-blur-md border border-gray-800 rounded-xl p-3.5 flex flex-col justify-between transition-colors duration-200 group-hover:border-[#FFE135]/30">
                 {/* Header */}
                 <div className="flex items-start justify-between">
-                    <div className="p-3 bg-gray-800/50 rounded-xl group-hover:bg-[#FFE135]/10 transition-colors">
+                    <div className="p-1.5 bg-gray-800/50 rounded-lg group-hover:bg-[#FFE135]/10 transition-colors">
                         {getIcon()}
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {onView && doc.content && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); onView(doc); }}
-                                className="p-2 bg-gray-800 hover:bg-blue-500 text-gray-400 hover:text-white rounded-lg transition-colors"
+                                className="p-1.5 bg-gray-800 hover:bg-blue-500 text-gray-400 hover:text-white rounded-md transition-colors"
                                 title="View Document"
                             >
-                                <Eye size={16} />
+                                <Eye size={14} />
                             </button>
                         )}
                         <button
@@ -42,26 +42,26 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
                                 e.stopPropagation(); 
                                 if (doc.status !== 'needs_reupload') onChat(doc); 
                             }}
-                            className={`p-2 bg-gray-800 rounded-lg transition-colors ${doc.status === 'needs_reupload' ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:bg-[#FFE135] hover:text-black'}`}
+                            className={`p-1.5 bg-gray-800 rounded-md transition-colors ${doc.status === 'needs_reupload' ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:bg-[#FFE135] hover:text-black'}`}
                             title={doc.status === 'needs_reupload' ? "Must be re-uploaded to chat" : "Chat with Document"}
                             disabled={doc.status === 'needs_reupload'}
                         >
-                            <MessageSquare size={16} />
+                            <MessageSquare size={14} />
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
-                            className="p-2 bg-gray-800 hover:bg-red-500 text-gray-400 hover:text-white rounded-lg transition-colors"
+                            className="p-1.5 bg-gray-800 hover:bg-red-500 text-gray-400 hover:text-white rounded-md transition-colors"
                             title="Delete"
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                         </button>
                     </div>
                 </div>
 
                 {/* Content */}
                 <div>
-                    <h3 className="text-white font-medium truncate mb-1 text-lg group-hover:text-[#FFE135] transition-colors">{doc.title}</h3>
-                    <div className="flex items-center gap-3 text-xs text-gray-400 font-mono">
+                    <h3 className="text-white font-medium truncate mb-0.5 text-sm group-hover:text-[#FFE135] transition-colors" title={doc.title}>{doc.title}</h3>
+                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono">
                         <span>{doc.type}</span>
                         <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
                         <span>{doc.size}</span>
@@ -76,10 +76,10 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
 
                 {/* Active Indicator */}
                 {doc.status === 'indexed' && (
-                    <div className="absolute bottom-6 right-6 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                    <div className="absolute bottom-4 right-4 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                 )}
                 {doc.status === 'needs_reupload' && (
-                    <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border border-yellow-500/20">
+                    <div className="absolute bottom-3.5 right-3.5 flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border border-yellow-500/20">
                         <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></div>
                         Needs Re-upload
                     </div>

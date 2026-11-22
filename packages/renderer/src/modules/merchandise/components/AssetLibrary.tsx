@@ -159,7 +159,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {filteredAssets.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                        <ImageIcon size={48} className="text-neutral-700 mb-3" />
+                        <ImageIcon size={28} className="text-neutral-700 mb-3" />
                         <p className="text-sm text-neutral-500 mb-2">No assets found</p>
                         <p className="text-xs text-neutral-600">
                             {searchQuery ? 'Try a different search' : 'Upload or generate images to get started'}

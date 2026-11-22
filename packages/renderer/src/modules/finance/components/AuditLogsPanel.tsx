@@ -179,12 +179,12 @@ export function AuditLogsPanel() {
 
             {/* Loading / Empty / Table */}
             {loading ? (
-                <div className="flex items-center justify-center py-12">
+                <div className="flex items-center justify-center py-8">
                     <Loader2 size={20} className="animate-spin text-gray-500" />
                 </div>
             ) : filteredLogs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <InboxIcon size={32} className="text-gray-700 mb-3" />
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <InboxIcon size={20} className="text-gray-700 mb-3" />
                     <p className="text-sm font-bold text-gray-500">No Audit Logs</p>
                     <p className="text-[10px] text-gray-600 mt-1">System events and agent actions will appear here as they occur.</p>
                 </div>

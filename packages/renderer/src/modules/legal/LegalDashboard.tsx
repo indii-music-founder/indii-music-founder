@@ -318,7 +318,7 @@ Only return valid JSON.
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+                                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
                                     }`}
                             >
                                 <input
@@ -327,15 +327,15 @@ Only return valid JSON.
                                     onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                                     accept=".pdf,.docx,.txt"
                                 />
-                                <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
-                                <p className="text-lg font-medium mb-2 text-center text-white">Drop contract here</p>
+                                <Upload size={28} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
+                                <p className="text-base font-medium mb-2 text-center text-white">Drop contract here</p>
                                 <p className="text-sm text-gray-500 text-center">PDF, DOCX, TXT</p>
                                 <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
                                     Browse Files
                                 </button>
                             </div>
 
-                            <div className="border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02] rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
+                            <div className="border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02] rounded-xl p-6 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -343,8 +343,8 @@ Only return valid JSON.
                                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                                     onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                                 />
-                                <Camera size={48} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
-                                <p className="text-lg font-medium mb-2 text-center text-white">Scan Document</p>
+                                <Camera size={28} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
+                                <p className="text-base font-medium mb-2 text-center text-white">Scan Document</p>
                                 <p className="text-sm text-gray-500 text-center">Take a photo of a contract</p>
                                 <button className="mt-6 px-6 py-2 bg-white/5 group-hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
                                     Open Camera
@@ -355,7 +355,7 @@ Only return valid JSON.
 
                     {isAnalyzing && (
                         <div className="h-64 flex flex-col items-center justify-center">
-                            <Loader2 size={48} className="text-blue-500 animate-spin mb-4" />
+                            <Loader2 size={28} className="text-blue-500 animate-spin mb-4" />
                             <p className="text-gray-400 animate-pulse">Analyzing clauses and identifying risks...</p>
                         </div>
                     )}
@@ -589,7 +589,7 @@ function RiskScoresPanel({ result }: { result: { score: number; risks: string[] 
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Risk Assessment</h3>
             <div className="space-y-3">
                 <div className="p-3 rounded-lg bg-white/[0.02] text-center">
-                    <p className="text-lg font-black text-white mb-1">{result.score}</p>
+                    <p className="text-base font-black text-white mb-1">{result.score}</p>
                     <p className={`text-xs font-bold ${color}`}>{level}</p>
                     <div className="w-full h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
                         <div className={`h-full ${bgColor} rounded-full`} style={{ width: `${result.score}%` }} />

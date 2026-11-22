@@ -73,7 +73,7 @@ export function EmptyState({
             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
                 'flex flex-col items-center justify-center text-center',
-                compact ? 'py-8 px-6' : 'py-16 px-8',
+                compact ? 'py-8 px-6' : 'py-10 px-6',
                 className
             )}
         >
@@ -81,7 +81,7 @@ export function EmptyState({
             <div
                 className={cn(
                     'flex items-center justify-center rounded-2xl bg-white/5 border border-white/10',
-                    compact ? 'w-14 h-14 mb-4' : 'w-20 h-20 mb-6'
+                    compact ? 'w-14 h-14 mb-4' : 'w-12 h-12 mb-6'
                 )}
             >
                 {IconComponent ? (

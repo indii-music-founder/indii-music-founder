@@ -43,7 +43,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
     const isOwner = currentUser?.id === targetId;
 
     if (!targetId) {
-        return <div className="p-8 text-center text-gray-500">Store not found</div>;
+        return <div className="p-6 text-center text-gray-500">Store not found</div>;
     }
 
     return (
@@ -70,7 +70,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
                     ))}
                 </div>
             ) : products.length === 0 ? (
-                <div className="text-center py-16 bg-[#161b22] rounded-xl border border-gray-800 border-dashed">
+                <div className="text-center py-10 bg-[#161b22] rounded-xl border border-gray-800 border-dashed">
                     <p className="text-gray-500">No products available yet.</p>
                     {isOwner && (
                         <p className="text-sm text-gray-600 mt-2">Start selling by adding your first product.</p>

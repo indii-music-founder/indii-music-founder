@@ -21,7 +21,7 @@ export default function FilePreview({ variant = 'default' }: FilePreviewProps) {
         return (
             <div className={cn(
                 "flex flex-col items-center justify-center h-full text-gray-500",
-                variant === 'compact' ? "p-4" : "p-8"
+                variant === 'compact' ? "p-4" : "p-6"
             )}>
                 <File size={variant === 'compact' ? 24 : 48} className="mb-4 opacity-50" />
                 <p className={variant === 'compact' ? "text-xs" : ""}>Select a file to preview</p>
@@ -33,7 +33,7 @@ export default function FilePreview({ variant = 'default' }: FilePreviewProps) {
         return (
             <div className={cn(
                 "flex flex-col items-center justify-center h-full text-gray-500",
-                variant === 'compact' ? "p-4" : "p-8"
+                variant === 'compact' ? "p-4" : "p-6"
             )}>
                 <Folder size={variant === 'compact' ? 24 : 48} className="mb-4 opacity-50" />
                 <h2 className={cn("font-medium mt-2", variant === 'compact' ? "text-sm" : "text-xl")}>{selectedNode.name}</h2>
@@ -54,7 +54,7 @@ export default function FilePreview({ variant = 'default' }: FilePreviewProps) {
             )}
             <div className={cn(
                 "flex-1 flex items-center justify-center overflow-hidden bg-[#111]",
-                variant === 'compact' ? "p-2 bg-transparent" : "p-8"
+                variant === 'compact' ? "p-2 bg-transparent" : "p-6"
             )}>
                 {renderContent(selectedNode, variant)}
             </div>

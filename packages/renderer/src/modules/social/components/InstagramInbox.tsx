@@ -226,7 +226,7 @@ export const InstagramInbox: React.FC = () => {
                     {/* Comments List */}
                     <div className="space-y-3">
                         {comments.length === 0 ? (
-                            <div className="p-8 text-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/30">
+                            <div className="p-6 text-center rounded-xl border border-dashed border-zinc-800 bg-zinc-950/30">
                                 <p className="text-xs text-zinc-500">No comments loaded. Enter a Media ID above to fetch live comments.</p>
                             </div>
                         ) : (

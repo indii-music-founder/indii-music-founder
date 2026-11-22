@@ -279,9 +279,9 @@ test.describe('Right Panel & Swarm Tabs', () => {
         const rightPanel = page.locator('[aria-label="Context panel"]');
         await expect(rightPanel.locator('text=Knowledge Base').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
 
-        // "Ingest Document" is a native file input (aria-label "Upload knowledge documents")
+        // "Upload document" is a native file input (aria-label "Upload knowledge documents")
         // laid over a decorative button, so activating it opens the file chooser.
-        await expect(rightPanel.getByText('Ingest Document').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
+        await expect(rightPanel.getByText('Upload document').first()).toBeVisible(); // bypass-strict: select active panel/modal layer among stacked containers
         const fileInput = rightPanel.getByLabel('Upload knowledge documents');
         const [fileChooser] = await Promise.all([
             page.waitForEvent('filechooser'),

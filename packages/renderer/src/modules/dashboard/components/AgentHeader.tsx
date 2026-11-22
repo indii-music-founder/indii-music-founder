@@ -15,7 +15,7 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
     const isOffline = useStore(useShallow((state: StoreState) => state.isOffline));
 
     return (
-        <header className="h-20 flex-shrink-0 border-b border-white/5 bg-black/20 backdrop-blur-xl px-10 flex items-center justify-between z-40">
+        <header className="h-20 flex-shrink-0 border-b border-white/5 bg-black/20 backdrop-blur-xl px-6 flex items-center justify-between z-40">
             <div className="flex items-center gap-5">
                 <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-dept-creative/40 to-emerald-600/40 flex items-center justify-center shadow-lg shadow-dept-creative/10 border border-white/10 overflow-hidden">
                     <IndiiFavicon size={26} />

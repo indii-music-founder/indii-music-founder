@@ -287,7 +287,7 @@ const AgentSwarmDashboard: React.FC = () => {
 const StatTile: React.FC<{ label: string; value: string; hint?: string }> = ({ label, value, hint }) => (
     <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
         <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
-        <p className="text-lg font-bold text-white mt-1">{value}</p>
+        <p className="text-base font-bold text-white mt-1">{value}</p>
         {hint && <p className="text-[10px] text-gray-600 mt-0.5 leading-tight">{hint}</p>}
     </div>
 );

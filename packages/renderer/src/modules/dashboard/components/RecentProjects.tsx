@@ -123,7 +123,7 @@ export default function RecentProjects() {
                     ))}
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-4">
                     <div className="w-12 h-12 rounded-xl bg-gray-800/50 flex items-center justify-center mb-3">
                         <Sparkles size={20} className="text-gray-500" />
                     </div>

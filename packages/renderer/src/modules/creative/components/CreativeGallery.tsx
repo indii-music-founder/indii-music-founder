@@ -1140,7 +1140,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         // only a transient toast. Show honest loading and error states.
         if (!isHistoryInitialized) {
             return (
-                <div className="flex-1 p-8 flex flex-col items-center justify-center text-gray-500">
+                <div className="flex-1 p-6 flex flex-col items-center justify-center text-gray-500">
                     <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-dept-creative animate-spin mb-4" />
                     <p className="text-xs">Loading your creations…</p>
                 </div>
@@ -1148,9 +1148,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         }
         if (historySyncError) {
             return (
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-6">
                     <ActionableEmptyState
-                        icon={<ImageIcon size={48} />}
+                        icon={<ImageIcon size={28} />}
                         title="CLOUD SYNC UNAVAILABLE"
                         description={`${historySyncError} New assets you create will still appear here for this session.`}
                         actionLabel="Upload Media"
@@ -1167,9 +1167,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         }
         if (searchQuery.trim().length > 0) {
             return (
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-6">
                     <ActionableEmptyState
-                        icon={<ImageIcon size={48} />}
+                        icon={<ImageIcon size={28} />}
                         title="NO ASSETS FOUND"
                         description={`No assets match your search for "${searchQuery.trim()}". Clear the search to view all catalog assets.`}
                         actionLabel={onClearSearch ? 'Clear Search' : undefined}
@@ -1185,9 +1185,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             );
         }
         return (
-            <div className="flex-1 p-8">
+            <div className="flex-1 p-6">
                 <ActionableEmptyState
-                    icon={<ImageIcon size={48} />}
+                    icon={<ImageIcon size={28} />}
                     title="GALLERY IS EMPTY"
                     description="Upload media or generate new Autonomous assets to see them appear in your gallery."
                     actionLabel="Upload Media"

@@ -173,7 +173,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                     />
                 ) : (
                     <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-green-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-green-500/20 transition-colors">
-                        <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} aria-hidden="true" />
+                        <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={28} aria-hidden="true" />
                     </div>
                 )}
 

@@ -369,11 +369,11 @@ export default function PreSaveCampaignBuilder() {
                     </div>
 
                     {isLoadingList ? (
-                        <div className="flex items-center justify-center p-8 text-xs text-gray-500">
+                        <div className="flex items-center justify-center p-6 text-xs text-gray-500">
                             <Loader2 size={16} className="animate-spin mr-2" /> Loading campaigns...
                         </div>
                     ) : campaigns.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 p-8 text-center">
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 p-6 text-center">
                             <Bookmark size={28} className="text-gray-600 mb-2" />
                             <p className="text-sm font-semibold text-white">No smart links created yet</p>
                             <p className="mt-1 text-xs text-gray-500 max-w-sm">

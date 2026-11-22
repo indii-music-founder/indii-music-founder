@@ -500,7 +500,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     if (error) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-neutral-900/20 rounded-2xl border border-white/5">
-                <div className="text-center p-8">
+                <div className="text-center p-6">
                     <p className="text-red-400 text-sm mb-2">Canvas Error</p>
                     <p className="text-neutral-500 text-xs">{error}</p>
                 </div>

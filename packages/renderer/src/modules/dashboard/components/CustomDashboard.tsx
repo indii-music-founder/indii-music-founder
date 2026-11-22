@@ -114,7 +114,7 @@ export function CustomDashboard() {
     const addedTypes = new Set(widgets.map((w) => w.type));
 
     return (
-        <div className="@container space-y-5 @3xl:space-y-6 @5xl:space-y-8" data-testid="custom-dashboard">
+        <div className="@container space-y-5 @3xl:space-y-6 @5xl:space-y-5" data-testid="custom-dashboard">
             {/* Header */}
             <div className="flex flex-col gap-4 @3xl:flex-row @3xl:items-center @3xl:justify-between" data-testid="custom-dashboard-header">
                 <div className="flex min-w-0 items-center gap-3 @lg:gap-4">
@@ -169,7 +169,7 @@ export function CustomDashboard() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-2xl glass @lg:rounded-3xl @lg:p-6"
+                        className="relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-2xl glass @lg:rounded-2xl @lg:p-6"
                     >
                         <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-emerald-500 to-transparent" />
                         <div className="flex items-center justify-between mb-6">
@@ -239,7 +239,7 @@ export function CustomDashboard() {
                                 onDragOver={(e) => handleDragOver(e, widget.id)}
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                                className={`group relative min-h-[200px] overflow-hidden rounded-2xl border p-4 shadow-2xl transition-all @lg:min-h-[220px] @lg:rounded-3xl @lg:p-6 ${isOver
+                                className={`group relative min-h-[200px] overflow-hidden rounded-2xl border p-4 shadow-2xl transition-all @lg:min-h-[220px] @lg:rounded-2xl @lg:p-6 ${isOver
                                     ? 'border-emerald-500/50 bg-emerald-500/10 scale-[1.02]'
                                     : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
                                     } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
@@ -280,14 +280,14 @@ export function CustomDashboard() {
                         animate={{ opacity: 1 }}
                         className="col-span-full flex flex-col items-center justify-center py-32 text-center"
                     >
-                        <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                            <LayoutDashboard size={40} className="text-gray-700" />
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                            <LayoutDashboard size={24} className="text-gray-700" />
                         </div>
                         <h3 className="text-base font-black text-white uppercase tracking-tight">{t('dashboard.custom.emptyTitle')}</h3>
                         <p className="text-sm text-gray-500 mt-2 max-w-xs">{t('dashboard.custom.emptySubtitle')}</p>
                         <button
                             onClick={() => setShowPicker(true)}
-                            className="mt-8 px-8 py-3 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                            className="mt-8 px-6 py-3 bg-emerald-500 text-black font-black uppercase tracking-widest rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
                         >
                             {t('dashboard.custom.buildButton')}
                         </button>

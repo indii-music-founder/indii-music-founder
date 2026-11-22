@@ -33,7 +33,7 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
         return (
             <div className="w-full">
                 <ActionableEmptyState
-                    icon={<DollarSign size={48} />}
+                    icon={<DollarSign size={28} />}
                     title="NO REVENUE LOGGED"
                     description="When your streams and digital downloads generate revenue, they will appear here in the virtual ledger."
                     colorClasses={{

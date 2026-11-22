@@ -94,7 +94,7 @@ const BrandManager: React.FC = () => {
     const tabs = [
         { id: 'interview' as const, label: 'Brand Interview', icon: MessageCircle },
         { id: 'identity' as const, label: 'Identity Core', icon: User },
-        { id: 'visuals' as const, label: 'Visual DNA', icon: Palette },
+        { id: 'visuals' as const, label: 'Visual Identity', icon: Palette },
         { id: 'release' as const, label: 'Release Manifest', icon: Disc },
         { id: 'health' as const, label: 'Brand Health', icon: Activity },
     ];

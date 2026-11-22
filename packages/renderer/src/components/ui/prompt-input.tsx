@@ -118,7 +118,7 @@ function PromptInput({
             onClick={handleClick}
             data-testid="prompt-wrapper"
             className={cn(
-              "border-input bg-background cursor-text rounded-3xl border p-2 shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+              "border-input bg-background cursor-text rounded-2xl border p-2 shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
               effectiveDisabled && "cursor-not-allowed opacity-60",
               className
             )}

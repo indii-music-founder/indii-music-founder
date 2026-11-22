@@ -518,7 +518,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                 className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-[#14100C] border border-white/10 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.85),0_0_30px_rgba(255,184,0,0.1)] overflow-hidden text-gray-200"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#000000]/60 backdrop-blur-md">
+                <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-[#000000]/60 backdrop-blur-md">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#FFD700]/20 via-[#FFB800]/10 to-[#E65100]/20 border border-[#FFB800]/30 shadow-[0_0_15px_rgba(255,184,0,0.25)]">
                             <Compass size={22} className="text-[#FFD700]" />
@@ -569,7 +569,7 @@ export const RightsRegistrationWalkthroughModal: React.FC<RightsRegistrationWalk
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-6 py-3 space-y-6 custom-scrollbar">
                     {/* Organization Hero Banner */}
                     <div className="p-5 rounded-xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/10 relative overflow-hidden">
                         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">

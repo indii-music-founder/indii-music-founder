@@ -276,7 +276,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-9999 bg-black/90 backdrop-blur-xl flex items-center justify-center p-8"
+                    className="fixed inset-0 z-9999 bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
                     onClick={() => setPreviewId(null)}
                     data-testid="candidate-zoom-modal"
                 >

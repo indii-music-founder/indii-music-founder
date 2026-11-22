@@ -330,7 +330,7 @@ export const CharacterLibrary: React.FC = () => {
             {/* Drop Zone Overlay */}
             {isDragging && (
                 <div className="absolute inset-0 z-50 rounded-xl bg-blue-500/10 border-2 border-dashed border-blue-400 flex flex-col items-center justify-center gap-2 pointer-events-none">
-                    <Upload size={32} className="text-blue-400 animate-bounce" />
+                    <Upload size={20} className="text-blue-400 animate-bounce" />
                     <span className="text-sm font-bold text-blue-300 uppercase tracking-wider">
                         Drop Character Images Here
                     </span>
@@ -472,7 +472,7 @@ export const CharacterLibrary: React.FC = () => {
 
             {/* Add Options Modal */}
             {showAddOptions && (
-                <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-8" onClick={() => setShowAddOptions(false)}>
+                <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6" onClick={() => setShowAddOptions(false)}>
                     <div className="w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-xl flex flex-col overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
                             <h3 className="text-sm font-bold text-white flex items-center gap-2"><ImagePlus size={16} className="text-blue-400" /> ADD CHARACTER REFERENCE</h3>
@@ -518,7 +518,7 @@ export const CharacterLibrary: React.FC = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No Brand HQ assets found. Go to Brand HQ / Visual DNA to upload some!</div>
+                                    <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No Brand HQ assets found. Add images in Brand HQ, under Visual Identity.</div>
                                 )}
                             </div>
                             <div className="border-t border-white/10 pt-6">
@@ -573,7 +573,7 @@ export const CharacterLibrary: React.FC = () => {
             {previewIndex !== null && characterReferences[previewIndex] && (
                 <div
                     ref={previewDialogRef}
-                    className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8"
+                    className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
                     onClick={() => setPreviewIndex(null)}
                     data-testid="character-preview-modal"
                     role="dialog"
@@ -637,7 +637,7 @@ export const CharacterLibrary: React.FC = () => {
             {showAllGrid && (
                 <div
                     ref={allCharactersDialogRef}
-                    className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8"
+                    className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
                     onClick={() => setShowAllGrid(false)}
                     data-testid="all-characters-modal"
                     role="dialog"

@@ -131,7 +131,7 @@ export const ValidationRequirementsModal: React.FC<ValidationRequirementsModalPr
                         </div>
                         <button
                             onClick={onClose}
-                            className="px-8 py-2.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
+                            className="px-6 py-2.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
                         >
                             Got it
                         </button>

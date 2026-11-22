@@ -183,7 +183,7 @@ export function ContactFormFields({
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     aria-label={photoPreview ? 'Change contact photo' : 'Add contact photo'}
-                    className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden transition-all hover:border-indigo-500/30"
+                    className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden transition-all hover:border-indigo-500/30"
                 >
                     {photoPreview ? (
                         <img

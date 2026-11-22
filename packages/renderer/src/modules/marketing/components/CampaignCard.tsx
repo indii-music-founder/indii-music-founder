@@ -69,14 +69,14 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             <ActivityIcon size={13} className="text-[#00B8D4]" />
                             <span>Posts</span>
                         </div>
-                        <span className="text-lg font-bold text-gray-100">{campaign.posts?.length || 0}</span>
+                        <span className="text-base font-bold text-gray-100">{campaign.posts?.length || 0}</span>
                     </div>
                     <div className="bg-black/40 rounded-xl p-3 border border-white/5 group-hover:border-[#FFB800]/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-gray-400 mb-1 font-medium">
                             <CalendarIcon size={13} className="text-[#FFB800]" />
                             <span>Duration</span>
                         </div>
-                        <span className="text-lg font-bold text-gray-100">{campaign.durationDays}d</span>
+                        <span className="text-base font-bold text-gray-100">{campaign.durationDays}d</span>
                     </div>
                 </div>
 

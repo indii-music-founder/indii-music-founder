@@ -361,8 +361,8 @@ const DesktopSection: React.FC = () => {
                     <SelectDropdown
                         value={config.source}
                         options={[
-                            { value: 'github', label: 'GitHub Releases' },
-                            { value: 'firebase', label: 'Firebase Hosting' },
+                            { value: 'github', label: 'Main download server' },
+                            { value: 'firebase', label: 'Backup download server' },
                         ]}
                         onChange={handleSourceChange}
                     />

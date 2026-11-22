@@ -108,7 +108,7 @@ const BrandInterview: React.FC = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 space-y-6 custom-scrollbar">
                     <AnimatePresence mode="popLayout">
                         {history.map((msg, idx) => {
                             const hasText = msg.parts.some(p => p.text);

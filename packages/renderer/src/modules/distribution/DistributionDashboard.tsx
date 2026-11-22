@@ -164,7 +164,7 @@ export default function DistributionDashboard() {
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-4 md:p-8"
+                                className="p-4 md:p-6"
                             >
                                 <TabsContent value="releases" data-testid="distro-content-new" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Releases">

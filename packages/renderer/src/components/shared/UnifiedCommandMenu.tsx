@@ -194,13 +194,13 @@ export function UnifiedCommandMenu() {
                         autoFocus
                         value={searchQuery}
                         onValueChange={setSearchQuery}
-                        className="flex-1 w-full bg-transparent border-0 outline-none text-white placeholder-slate-400 text-lg h-full"
+                        className="flex-1 w-full bg-transparent border-0 outline-none text-white placeholder-slate-400 text-base h-full"
                         placeholder="Search commands, navigate modules, open settings..."
                     />
                 </div>
 
                 <Command.List className="max-h-[50vh] overflow-y-auto px-2 py-4 custom-scrollbar text-sm font-medium">
-                    <Command.Empty className="py-6 text-center text-slate-400">
+                    <Command.Empty className="py-4 text-center text-slate-400">
                         {eligibleSuggestedIntent && eligibleSuggestedIntent.targetModule && eligibleSuggestedIntent.targetModule !== 'none' ? (
                             <div className="flex flex-col items-center gap-2">
                                 <span className="text-slate-400">No exact command matches for &quot;{searchQuery}&quot;.</span>

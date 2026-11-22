@@ -51,7 +51,7 @@ export default function SelectOrg() {
             <div className="absolute inset-0 indii-noise-overlay opacity-[0.03] mix-blend-overlay pointer-events-none" />
 
             {/* Left Panel - Branding & Context */}
-            <div className="hidden md:flex w-1/3 max-w-md relative flex-col justify-between p-12 border-r border-white/5 bg-black/40 backdrop-blur-xl z-10">
+            <div className="hidden md:flex w-1/3 max-w-md relative flex-col justify-between p-8 border-r border-white/5 bg-black/40 backdrop-blur-xl z-10">
                 <div>
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-green-600 to-blue-600 flex items-center justify-center mb-8 shadow-lg shadow-green-900/20">
                         <Activity className="text-white" size={24} />
@@ -68,7 +68,7 @@ export default function SelectOrg() {
                     </motion.div>
                 </div>
 
-                <div className="mt-12 space-y-6">
+                <div className="mt-6 space-y-6">
                     <div className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                         <div className="flex items-center gap-3 mb-2">
                             <Zap size={16} className="text-green-400" />
@@ -91,7 +91,7 @@ export default function SelectOrg() {
             </div>
 
             {/* Right Panel - Interactive Selection */}
-            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 z-10 relative overflow-y-auto">
+            <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-8 z-10 relative overflow-y-auto">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -128,7 +128,7 @@ export default function SelectOrg() {
                                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500" />
                                                 )}
                                                 <div className="flex items-center gap-4 relative z-10">
-                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg shrink-0 transition-colors ${isActive ? 'bg-green-500 text-white' : 'bg-black/40 text-gray-400 group-hover:bg-white/10 group-hover:text-white'
+                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-base shrink-0 transition-colors ${isActive ? 'bg-green-500 text-white' : 'bg-black/40 text-gray-400 group-hover:bg-white/10 group-hover:text-white'
                                                         }`}>
                                                         {org.name.substring(0, 2).toUpperCase()}
                                                     </div>
@@ -176,7 +176,7 @@ export default function SelectOrg() {
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                className="bg-surface/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden"
+                                className="bg-surface/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-6 shadow-2xl relative overflow-hidden"
                             >
                                 <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-green-500 to-blue-500" />
 

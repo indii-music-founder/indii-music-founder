@@ -47,7 +47,7 @@ export const StandardProductCard = React.memo(({ product }: StandardProductCardP
                             </div>
                         )}
                     </div>
-                    <span className="text-primary font-black text-lg">{product.price}</span>
+                    <span className="text-primary font-black text-base">{product.price}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
                     {product.tags?.map(tag => (

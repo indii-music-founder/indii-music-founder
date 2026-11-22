@@ -1125,7 +1125,7 @@ export default function OmniWorkflow() {
                     ) : (
                         <div 
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex flex-col items-center justify-center p-12 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-green-500/40"
+                            className="flex flex-col items-center justify-center p-8 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-green-500/40"
                         >
                             <div className="p-4 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 mb-4 group-hover:scale-115 transition-all shadow-inner shadow-green-500/5">
                                 <Upload size={28} />

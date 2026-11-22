@@ -22,9 +22,9 @@ interface ReleaseStatusListProps {
 export default function ReleaseStatusList({ releases, onDeliver, onViewReport }: ReleaseStatusListProps) {
     if (releases.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-800 rounded-xl bg-[#161b22]/50">
+            <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-gray-800 rounded-xl bg-[#161b22]/50">
                 <div className="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 text-gray-500">
-                    <FileText size={32} />
+                    <FileText size={20} />
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1">No Releases Yet</h3>
                 <p className="text-gray-400 max-w-sm mb-6">Create your first release in the Studio to start distributing to platforms.</p>

@@ -693,7 +693,7 @@ export const QCPanel: React.FC = () => {
                                 <span className="text-2xl font-mono text-white tracking-tighter">
                                     {technicalFeatures.audit.integratedLoudness.toFixed(1)}
                                 </span>
-                                <span className="text-lg text-white/50 pb-0.5">LUFS</span>
+                                <span className="text-base text-white/50 pb-0.5">LUFS</span>
                             </div>
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
@@ -736,7 +736,7 @@ export const QCPanel: React.FC = () => {
                                 <span className="text-2xl font-mono text-white tracking-tighter">
                                     {technicalFeatures.audit.peakLevel.toFixed(2)}
                                 </span>
-                                <span className="text-lg text-white/50 pb-0.5">dBTP</span>
+                                <span className="text-base text-white/50 pb-0.5">dBTP</span>
                             </div>
                             <div className="space-y-2 mt-auto text-xs">
                                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
@@ -862,7 +862,7 @@ export const QCPanel: React.FC = () => {
                             </div>
 
                             <Button
-                                className="w-full bg-primary hover:bg-primary/80 text-primary-foreground font-bold py-5 text-xs shadow-md"
+                                className="w-full bg-primary hover:bg-primary/80 text-primary-foreground font-bold py-3 text-xs shadow-md"
                                 disabled={isSaving}
                                 data-testid="save-analysis-button"
                                 onClick={handleSaveAnalysis}
@@ -880,7 +880,7 @@ export const QCPanel: React.FC = () => {
                 ISSUE-1440: conditionally mounted (was CSS-hidden). */}
             {activeSubTab === 'metadata' && (
             <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {/* Input Panel */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 backdrop-blur-sm">
                         <div className="flex items-center gap-2 text-dept-distribution mb-4">

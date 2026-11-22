@@ -394,7 +394,7 @@ export function VisaChecklist() {
                     </div>
 
                     {entries.length === 0 && (
-                        <div className="flex flex-col items-center justify-center gap-3 py-16 bg-white/[0.01] border border-white/5 rounded-2xl text-center">
+                        <div className="flex flex-col items-center justify-center gap-3 py-10 bg-white/[0.01] border border-white/5 rounded-2xl text-center">
                             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
                                 <Globe size={20} className="text-gray-500" />
                             </div>

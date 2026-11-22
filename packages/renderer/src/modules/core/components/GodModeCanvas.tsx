@@ -25,7 +25,7 @@ export const GodModeCanvas: React.FC = () => {
                 className="w-full h-full flex items-center justify-center relative"
             >
                 {/* Central Node */}
-                <div className="absolute w-40 h-40 bg-white/5 border border-white/20 rounded-3xl flex items-center justify-center backdrop-blur-xl z-10 shadow-[0_0_50px_rgba(255,255,255,0.05)]">
+                <div className="absolute w-40 h-40 bg-white/5 border border-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl z-10 shadow-[0_0_50px_rgba(255,255,255,0.05)]">
                     <div className="text-center">
                         <div className="w-12 h-12 bg-white rounded-full mx-auto mb-3" />
                         <h3 className="font-bold text-white">Artist Nucleus</h3>

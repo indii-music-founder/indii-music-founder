@@ -26,12 +26,12 @@ export const MerchandiseDashboard: React.FC = () => {
     const merchPct = totalRevenue > 0 ? ((merchRevenue / totalRevenue) * 100).toFixed(1) : '--';
 
     return (
-        <div className="flex flex-col space-y-8 pb-12" data-testid="merch-dashboard-content">
+        <div className="flex flex-col space-y-5 pb-12" data-testid="merch-dashboard-content">
             {/* Header Stats Component - Upgraded to V2 */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group relative overflow-hidden p-8 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl"
+                className="group relative overflow-hidden p-6 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] shadow-2xl"
             >
                 {/* Dynamic animated glow */}
                 <motion.div
@@ -56,7 +56,7 @@ export const MerchandiseDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl backdrop-blur-md">
+                    <div className="flex items-center gap-5 bg-white/5 border border-white/5 p-4 rounded-2xl backdrop-blur-md">
                         <div className="text-right">
                             <div className="text-xs text-gray-500 font-bold uppercase tracking-tighter mb-1">Total Net Revenue</div>
                             <div className="text-xl font-black text-white leading-none">
@@ -109,7 +109,7 @@ export const MerchandiseDashboard: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white/5 border border-white/5 rounded-[2rem] p-8"
+                className="bg-white/5 border border-white/5 rounded-[2rem] p-6"
             >
                 <div className="flex items-center gap-2 mb-6 ml-1">
                     <TrendingUp size={16} className="text-gray-400" />
@@ -125,7 +125,7 @@ export const MerchandiseDashboard: React.FC = () => {
                 transition={{ delay: 0.4 }}
                 className="flex-1 min-h-0 bg-black/20 border border-white/5 rounded-[2rem] overflow-hidden shadow-xl"
             >
-                <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                <div className="p-6 border-b border-white/5 flex items-center justify-between">
                     <h3 className="text-lg font-bold text-white">Full Inventory Ledger</h3>
                     <motion.button
                         whileHover={{ scale: 1.05 }}

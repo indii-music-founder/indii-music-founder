@@ -21,11 +21,11 @@ const conversionCycleData: ConversionCycle[] = [];
 
 export const MerchandiseAnalytics: React.FC = () => {
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-8">
             {/* Sales Volume Trend */}
             <motion.div
                 whileHover={{ y: -5 }}
-                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
+                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-dept-royalties/5 blur-[80px] pointer-events-none rounded-full" />
 
@@ -71,7 +71,7 @@ export const MerchandiseAnalytics: React.FC = () => {
             {/* Peak Cycle Performance */}
             <motion.div
                 whileHover={{ y: -5 }}
-                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
+                className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-dept-creative/5 blur-[80px] pointer-events-none rounded-full" />
 

@@ -659,7 +659,7 @@ export default function CreativeStudio({ initialMode, embedded = false }: { init
                             <InfiniteCanvas />
                             {(canvasImages?.length || 0) === 0 && viewMode === 'canvas' && (
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-8 max-w-md">
+                                    <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-6 max-w-md">
                                         <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-80" />
                                         <h2 className="text-white text-lg font-semibold mb-2">Create Your First Image</h2>
                                         <p className="text-gray-300 text-sm mb-4">

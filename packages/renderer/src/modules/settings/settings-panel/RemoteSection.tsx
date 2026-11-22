@@ -320,12 +320,12 @@ const RemoteSection: React.FC = () => {
                     </div>
                     <div>
                         <p className="text-sm font-medium text-white">Desktop Asset Folders</p>
-                        <p className="text-xs text-slate-500">Only folders you approve here can be searched by your Studio agents. File contents and absolute paths are never shared.</p>
+                        <p className="text-xs text-slate-500">Only folders you approve here can be searched by your team. File contents and absolute paths are never shared.</p>
                     </div>
                 </div>
                 <div className="space-y-2 mb-3">
                     {assetFolders.length === 0 ? (
-                        <p className="text-xs text-slate-500 rounded-lg border border-slate-700/40 bg-black/20 px-3 py-2.5">No folders approved yet. Add Photos, Projects, Downloads, or a creative cache folder when you want agents to find local assets.</p>
+                        <p className="text-xs text-slate-500 rounded-lg border border-slate-700/40 bg-black/20 px-3 py-2.5">No folders approved yet. Add Photos, Projects, Downloads, or a creative cache folder when you want your team to find local assets.</p>
                     ) : assetFolders.map(folder => (
                         <div key={folder.id} className="flex items-center gap-2 rounded-lg border border-slate-700/40 bg-black/20 px-3 py-2">
                             <span className="flex-1 min-w-0 text-xs text-slate-200 truncate" title={folder.path}>{folder.label}</span>

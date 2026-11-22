@@ -35,7 +35,7 @@ export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {
           {scenario.map(line => (
             <div key={line.id} className="rounded-lg bg-black/20 border border-white/5 p-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{line.costType.replaceAll('_', ' ')}</p>
-              <p className="text-lg font-black text-white">${line.amount.toFixed(2)}</p>
+              <p className="text-base font-black text-white">${line.amount.toFixed(2)}</p>
               <p className="text-xs text-gray-400 mt-2">{line.notes}</p>
             </div>
           ))}

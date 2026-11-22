@@ -543,7 +543,7 @@ function AgentActivityWidget() {
             <div className="flex-1 space-y-2 overflow-hidden">
                 {!activity || activity.recentTasks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-2 opacity-20">
-                        <Bot size={32} />
+                        <Bot size={20} />
                         <p className="text-[8px] font-black uppercase tracking-widest">Awaiting Command</p>
                     </div>
                 ) : (
@@ -846,7 +846,7 @@ function BrandIdentityWidget() {
                     <div className="w-10 h-10 rounded-xl bg-fuchsia-500/20 flex items-center justify-center border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.2)] group-hover/widget:bg-fuchsia-500 group-hover/widget:text-black transition-all duration-500">
                         <Palette size={18} className="group-hover/widget:scale-110 transition-transform" />
                     </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Visual DNA</span>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Visual Identity</span>
                 </div>
                 
                 <div className="space-y-1">

@@ -63,7 +63,7 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
             {releases.length === 0 ? (
                 <div data-testid="releases-empty-state">
                     <ActionableEmptyState
-                        icon={<Radio size={48} />}
+                        icon={<Radio size={28} />}
                         title="NO ACTIVE RELEASES"
                         description="Submit your first release using the button above."
                         colorClasses={{

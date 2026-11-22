@@ -84,15 +84,15 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
     it('renders nothing when isOpen is false', () => {
         render(<KnowledgeChat {...defaultProps} isOpen={false} />);
-        expect(screen.queryByText('Neural Chat')).not.toBeInTheDocument();
+        expect(screen.queryByText('Document Chat')).not.toBeInTheDocument();
     });
 
     it('renders initial welcome message and active doc info', () => {
         render(<KnowledgeChat {...defaultProps} />);
 
-        expect(screen.getByText('Neural Chat')).toBeInTheDocument();
+        expect(screen.getByText('Document Chat')).toBeInTheDocument();
         expect(screen.getByText('Focus: Test Document.pdf')).toBeInTheDocument();
-        expect(screen.getByText(/Hello! I'm your Neural Knowledge Assistant/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ask me anything about your documents/i)).toBeInTheDocument();
     });
 
     it('handles progressive streaming responses correctly', async () => {
@@ -108,15 +108,15 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         render(<KnowledgeChat {...defaultProps} />);
 
         // Type and send message
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Explain quantum physics' } });
         fireEvent.click(screen.getByRole('button', { name: /send message/i }));
 
-        // Verify "Initializing Neural Link..." appears immediately
+        // Verify "Reading your documents…" appears immediately
         expect(screen.getByText('Explain quantum physics')).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByText(/Initializing Neural Link/i)).toBeInTheDocument();
+            expect(screen.getByText(/Reading your documents/i)).toBeInTheDocument();
         });
 
         // Verify intermediate stream states
@@ -126,7 +126,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
         // After stream ends, it should be added to messages list and streaming indicator removed.
         await waitFor(() => {
-            expect(screen.queryByText(/Initializing Neural Link/i)).not.toBeInTheDocument();
+            expect(screen.queryByText(/Reading your documents/i)).not.toBeInTheDocument();
         });
     });
 
@@ -142,7 +142,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
         render(<KnowledgeChat {...defaultProps} />);
 
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Crash me' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -174,7 +174,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
         render(<KnowledgeChat {...defaultProps} />);
 
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Read the selected document' } });
         fireEvent.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -185,13 +185,13 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
     it('clears a global draft when focus changes to a selected document', () => {
         const { rerender } = render(<KnowledgeChat {...defaultProps} activeDoc={null} />);
-        const globalInput = screen.getByPlaceholderText('Query Intelligence Base...');
+        const globalInput = screen.getByPlaceholderText('Ask about your documents…');
         fireEvent.change(globalInput, { target: { value: 'global-only draft' } });
         expect(globalInput).toHaveValue('global-only draft');
 
         rerender(<KnowledgeChat {...defaultProps} />);
 
-        expect(screen.getByPlaceholderText(/Neural Analysis of/i)).toHaveValue('');
+        expect(screen.getByPlaceholderText(/Ask about/i)).toHaveValue('');
     });
 
     it('turns an empty backend response into an explicit failure message', async () => {
@@ -200,7 +200,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         })());
 
         render(<KnowledgeChat {...defaultProps} />);
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Do not stall' } });
         fireEvent.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -217,7 +217,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         })());
 
         render(<KnowledgeChat {...defaultProps} />);
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Bound this query' } });
         fireEvent.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -226,20 +226,20 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         });
 
         expect(screen.getByText(/did not respond within 20 seconds/i)).toBeInTheDocument();
-        expect(screen.queryByText(/Initializing Neural Link/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Reading your documents/i)).not.toBeInTheDocument();
     });
 
     it('clears chat history', async () => {
         const { rerender } = render(<KnowledgeChat {...defaultProps} />);
 
-        expect(screen.getByText(/Hello!/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ask me anything about your documents/i)).toBeInTheDocument();
 
         const clearButton = screen.getByTitle('Clear Chat');
         fireEvent.click(clearButton);
 
         // Let's add a message first via interaction
         (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () { yield "Response"; })());
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Temp Msg' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -259,7 +259,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         await waitFor(() => {
             expect(screen.queryByText('Temp Msg')).not.toBeInTheDocument();
         });
-        expect(screen.getByText(/Hello!/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ask me anything about your documents/i)).toBeInTheDocument();
     });
 
     it('auto-scrolls to bottom as content streams', async () => {
@@ -277,7 +277,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
         render(<KnowledgeChat {...defaultProps} />);
 
-        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        const input = screen.getByPlaceholderText(/Ask about/i);
         fireEvent.change(input, { target: { value: 'Scroll Test' } });
         fireEvent.keyDown(input, { key: 'Enter' });
 

@@ -257,7 +257,7 @@ export const RightsCopilotModal: React.FC<RightsCopilotModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-3xl border border-white/10 bg-[#0d0d0d] p-6 shadow-2xl space-y-6">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0d0d0d] p-6 shadow-2xl space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-white/5 pb-4">
           <div>

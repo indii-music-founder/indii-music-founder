@@ -594,8 +594,8 @@ export function StoryboardTimeline() {
             {/* Main timeline scroll container */}
             <div className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar bg-black/45 flex items-center p-6 gap-6 relative select-none">
                 {!storyboardProject ? (
-                    <div className="w-full max-w-md mx-auto text-center space-y-4 py-16">
-                        <div className="w-16 h-16 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto text-neutral-500 animate-bounce">
+                    <div className="w-full max-w-md mx-auto text-center space-y-4 py-10">
+                        <div className="w-10 h-10 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto text-neutral-500 animate-bounce">
                             <CloudLightning size={28} className="text-green-400/50" />
                         </div>
                         <div className="space-y-1">

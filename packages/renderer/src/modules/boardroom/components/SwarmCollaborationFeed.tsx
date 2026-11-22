@@ -70,8 +70,8 @@ export function SwarmCollaborationFeed({ isOpen, onClose }: SwarmCollaborationFe
                         {/* Body */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {a2aMessages.length === 0 ? (
-                                <div className="text-center p-12 text-white/40">
-                                    <Bot className="mx-auto mb-4 opacity-20" size={32} />
+                                <div className="text-center p-8 text-white/40">
+                                    <Bot className="mx-auto mb-4 opacity-20" size={20} />
                                     <p className="text-xs font-medium text-gray-300">No agent-to-agent activity yet.</p>
                                     <p className="text-[10px] mt-2 opacity-80">Behind-the-scenes swarm negotiations will appear here in real-time.</p>
                                 </div>

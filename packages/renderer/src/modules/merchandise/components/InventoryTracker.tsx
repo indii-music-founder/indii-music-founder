@@ -78,8 +78,8 @@ export function InventoryTracker() {
                     </ResponsiveContainer>
                 </div>
             ) : (
-                <div className="py-16 text-center bg-white/[0.02] border border-white/5 rounded-xl">
-                    <Package size={32} className={`mx-auto text-neutral-700 mb-3 ${loading ? 'animate-pulse' : ''}`} />
+                <div className="py-10 text-center bg-white/[0.02] border border-white/5 rounded-xl">
+                    <Package size={20} className={`mx-auto text-neutral-700 mb-3 ${loading ? 'animate-pulse' : ''}`} />
                     <p className="text-sm font-bold text-neutral-500">{loading ? 'Loading Inventory...' : 'No Inventory Data'}</p>
                     {!loading && <p className="text-[10px] text-neutral-600 mt-1">Connect a merch provider (Printful, Printify, Shopify) to start tracking stock.</p>}
                 </div>

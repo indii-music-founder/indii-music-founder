@@ -318,7 +318,7 @@ function SummaryPanel({ icon, title, value, lines }: { icon: React.ReactNode; ti
         {icon}
         <div className="text-sm font-medium">{title}</div>
       </div>
-      <div className="mt-3 text-lg font-semibold text-white">{value}</div>
+      <div className="mt-3 text-base font-semibold text-white">{value}</div>
       <div className="mt-3 space-y-1 text-sm text-gray-400">
         {lines.map(line => <div key={line}>{line}</div>)}
       </div>

@@ -199,7 +199,7 @@ function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContact
             ) : contacts.length === 0 ? (
                 <div
                     onClick={handleOpenAdd}
-                    className="group border border-dashed border-red-950 rounded-lg py-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-red-500/5 hover:border-red-500/40 z-10"
+                    className="group border border-dashed border-red-950 rounded-lg py-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-red-500/5 hover:border-red-500/40 z-10"
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -542,7 +542,7 @@ const RoadManager: React.FC = () => {
                             itemCount={itinerary?.stops?.length ?? 0}
                         />
                     </div>
-                    <main className="flex-1 p-6 md:p-8 w-full">
+                    <main className="flex-1 p-6 md:p-6 w-full">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={activeTab}

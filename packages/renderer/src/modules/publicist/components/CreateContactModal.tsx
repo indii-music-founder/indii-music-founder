@@ -83,7 +83,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 border border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden"
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
                     >
                         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-slate-950/50">
                             <div>
@@ -182,7 +182,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !name || !outlet || !emailValid}
-                                    className="w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-slate-200 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full py-4 bg-white text-black rounded-xl font-bold text-base hover:bg-slate-200 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? (
                                         <>

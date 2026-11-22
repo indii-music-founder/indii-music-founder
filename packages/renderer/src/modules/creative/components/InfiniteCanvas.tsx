@@ -1615,7 +1615,7 @@ export default function InfiniteCanvas() {
             {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
                     <div className="flex flex-col items-center gap-4">
-                        <Loader2 size={48} className="animate-spin text-green-500" />
+                        <Loader2 size={28} className="animate-spin text-green-500" />
                         <p className="text-white font-bold animate-pulse">Dreaming...</p>
                     </div>
                 </div>

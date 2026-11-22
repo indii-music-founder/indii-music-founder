@@ -198,7 +198,7 @@ export const MasterPlaybookSection: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center p-12 text-slate-400">
+            <div className="flex items-center justify-center p-8 text-slate-400">
                 <Sparkles className="animate-spin mr-2" size={18} />
                 <span>Loading Artist Master Directive...</span>
             </div>
@@ -309,7 +309,7 @@ export const MasterPlaybookSection: React.FC = () => {
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                                         <Palette size={13} className="text-pink-400" />
-                                        Active Visual DNA Palette
+                                        Active Visual Palette
                                     </span>
                                     <span className="text-[10px] text-slate-400 font-mono">
                                         Cascaded across all 23 agents
@@ -338,7 +338,7 @@ export const MasterPlaybookSection: React.FC = () => {
                                     </div>
                                 ) : (
                                     <p className="text-xs text-slate-500 italic">
-                                        No brand colors defined yet. Add a palette rule or ask your Brand Manager agent.
+                                        No brand colors defined yet. Add a palette rule or ask your Brand Manager.
                                     </p>
                                 )}
                             </div>

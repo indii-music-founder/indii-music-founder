@@ -156,7 +156,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                             <button
                                 onClick={handleProcess}
                                 disabled={isParsing}
-                                className="group flex items-center gap-2 px-8 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="group flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isParsing ? 'Processing...' : 'Integrate Data'}
                                 <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" />

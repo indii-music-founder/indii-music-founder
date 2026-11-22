@@ -192,7 +192,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                             </div>
                         ) : versions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                                <History size={32} className="text-neutral-700 mb-3" />
+                                <History size={20} className="text-neutral-700 mb-3" />
                                 <p className="text-neutral-400 text-sm">No saved versions yet</p>
                                 <p className="text-neutral-600 text-xs mt-1">
                                     Your designs will be auto-saved as you work
@@ -267,7 +267,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     </div>
 
                     {/* Preview Area */}
-                    <div className="flex-1 bg-neutral-950 flex items-center justify-center p-8">
+                    <div className="flex-1 bg-neutral-950 flex items-center justify-center p-6">
                         {(previewVersion || selectedVersion) ? (
                             <div className="relative w-full max-w-lg aspect-square bg-neutral-800 rounded-xl overflow-hidden border border-white/10">
                                 {(previewVersion || selectedVersion)!.thumbnail ? (
@@ -278,13 +278,13 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-neutral-600">
-                                        <History size={48} />
+                                        <History size={28} />
                                     </div>
                                 )}
                             </div>
                         ) : (
                             <div className="text-center text-neutral-600">
-                                <Eye size={48} className="mx-auto mb-4 opacity-50" />
+                                <Eye size={28} className="mx-auto mb-4 opacity-50" />
                                 <p>Select a version to preview</p>
                             </div>
                         )}

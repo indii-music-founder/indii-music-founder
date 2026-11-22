@@ -112,7 +112,7 @@ export const CircuitBreakerPanel: React.FC = () => {
     const StateIcon = config.icon;
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
+        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-3 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Cost Circuit Breaker</h2>

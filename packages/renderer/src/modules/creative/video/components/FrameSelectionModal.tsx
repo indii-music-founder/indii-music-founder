@@ -162,8 +162,8 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                     {/* Generate Tab */}
                     {activeTab === 'generate' && (
                         <div className="h-full flex flex-col items-center justify-center max-w-lg mx-auto text-center p-4">
-                            <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-400">
-                                <Sparkles size={32} />
+                            <div className="w-10 h-10 bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-400">
+                                <Sparkles size={20} />
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">Generate a New Frame</h3>
                             <p className="text-gray-400 text-sm mb-6">

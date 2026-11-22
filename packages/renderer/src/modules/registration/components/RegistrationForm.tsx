@@ -508,7 +508,7 @@ function SubmissionResultView({
   if (result.success) {
     return (
       <div className="text-center space-y-4 py-4">
-        <CheckCircle2 size={40} className="text-green-400 mx-auto" />
+        <CheckCircle2 size={24} className="text-green-400 mx-auto" />
         <div>
           <p className="text-white font-semibold">Submitted to {adapter.name}</p>
           {result.confirmationNumber && (

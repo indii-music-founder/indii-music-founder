@@ -206,7 +206,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
     }));
 
     return (
-        <div className="relative shadow-2xl border border-white/10 rounded-3xl overflow-hidden bg-black">
+        <div className="relative shadow-2xl border border-white/10 rounded-2xl overflow-hidden bg-black">
             <canvas ref={canvasRef} />
         </div>
     );

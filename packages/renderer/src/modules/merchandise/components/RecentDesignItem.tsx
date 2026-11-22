@@ -33,7 +33,7 @@ export const RecentDesignItem = React.memo(({ product, onClick }: RecentDesignIt
                 {product.image ? (
                     <img src={product.image} alt="" aria-hidden="true" className="w-full h-full object-cover" />
                 ) : (
-                    <span className="text-lg" aria-hidden="true">🎨</span>
+                    <span className="text-base" aria-hidden="true">🎨</span>
                 )}
             </div>
             <div className="flex-1">

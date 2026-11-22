@@ -203,7 +203,7 @@ export default function AdBuyingPanel() {
                         </div>
                     ))}
                     {campaigns.length === 0 && (
-                        <div className="py-12 text-center bg-white/[0.02] border border-white/5 rounded-xl">
+                        <div className="py-8 text-center bg-white/[0.02] border border-white/5 rounded-xl">
                             <Target size={28} className="mx-auto text-gray-700 mb-3" />
                             <p className="text-sm text-gray-500">No campaigns running yet.</p>
                             <p className="text-xs text-gray-600 mt-1">Configure your targeting above and deploy your first campaign.</p>

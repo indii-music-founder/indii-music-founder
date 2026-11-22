@@ -106,11 +106,11 @@ export default function FanDataEnrichment() {
     const isCompleted = status === 'completed';
 
     return (
-        <div className="h-full flex flex-col p-6 lg:p-10 relative overflow-y-auto custom-scrollbar">
+        <div className="h-full flex flex-col p-6 lg:p-6 relative overflow-y-auto custom-scrollbar">
             {/* Background blur */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-dept-marketing/5 blur-3xl rounded-full pointer-events-none" />
 
-            <div className="max-w-4xl w-full mx-auto z-10 space-y-8">
+            <div className="max-w-4xl w-full mx-auto z-10 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
@@ -135,7 +135,7 @@ export default function FanDataEnrichment() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                     {/* Left Column: Configuration */}
                     <div className="lg:col-span-5 space-y-6">
                         {/* Upload Section */}
@@ -143,7 +143,7 @@ export default function FanDataEnrichment() {
                             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">
                                 1. Source Data
                             </label>
-                            <label className={`flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-2 border-dashed transition-all cursor-pointer bg-black/20 group h-48 relative overflow-hidden ${file ? 'border-dept-marketing/50' : 'border-white/10 hover:border-dept-marketing/30'
+                            <label className={`flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer bg-black/20 group h-48 relative overflow-hidden ${file ? 'border-dept-marketing/50' : 'border-white/10 hover:border-dept-marketing/30'
                                 }`}>
                                 <div className="absolute inset-0 bg-linear-to-br from-dept-marketing/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -279,7 +279,7 @@ export default function FanDataEnrichment() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="flex-1 flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 rounded-3xl p-10 mt-6 lg:mt-0"
+                                    className="flex-1 flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 rounded-2xl p-6 mt-6 lg:mt-0"
                                 >
                                     <div className="relative mb-8">
                                         <svg className="w-32 h-32 transform -rotate-90">
@@ -309,7 +309,7 @@ export default function FanDataEnrichment() {
                                         </div>
                                     </div>
                                     <div className="text-center space-y-2">
-                                        <p className="text-lg font-bold text-white">Aggregating Persona Hooks</p>
+                                        <p className="text-base font-bold text-white">Aggregating Persona Hooks</p>
                                         <p className="text-xs text-gray-500 font-mono italic">
                                             Processing: {currentEmail || 'Initializing...'}
                                         </p>
@@ -397,9 +397,9 @@ export default function FanDataEnrichment() {
                                     key="empty"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="flex-1 flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 border-dashed rounded-3xl p-10 mt-6 lg:mt-0"
+                                    className="flex-1 flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 border-dashed rounded-2xl p-6 mt-6 lg:mt-0"
                                 >
-                                    <Users size={48} className="text-gray-700 mb-4" />
+                                    <Users size={28} className="text-gray-700 mb-4" />
                                     <div className="text-center space-y-1">
                                         <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Enrichment Pipeline Offline</p>
                                         <p className="text-xs text-gray-600 font-medium">Upload a fan source to begin demographic mapping.</p>

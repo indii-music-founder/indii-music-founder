@@ -76,9 +76,9 @@ export class PublishingErrorBoundary extends Component<Props, State> {
             }
 
             return (
-                <div className="flex items-center justify-center min-h-[400px] bg-[#0A0A0A] border border-red-900/30 rounded-2xl p-8">
+                <div className="flex items-center justify-center min-h-[400px] bg-[#0A0A0A] border border-red-900/30 rounded-2xl p-6">
                     <div className="text-center max-w-md">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10 mb-4">
                             <AlertCircle className="w-8 h-8 text-red-500" />
                         </div>
 

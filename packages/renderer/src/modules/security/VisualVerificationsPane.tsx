@@ -66,7 +66,7 @@ export function VisualVerificationsPane() {
     if (records.length === 0) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-                <Camera size={32} className="mb-3 opacity-20" />
+                <Camera size={20} className="mb-3 opacity-20" />
                 <span className="font-bold uppercase tracking-widest text-[10px]">No Verification Logs</span>
             </div>
         );

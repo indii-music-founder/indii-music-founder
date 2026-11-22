@@ -135,12 +135,12 @@ export default function MomentumTracker() {
             </div>
 
             {analyticsLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+                <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
                     <Loader2 size={24} className="text-dept-marketing animate-spin" />
                     <p className="text-sm font-bold text-gray-500">Syncing Momentum Data...</p>
                 </div>
             ) : totalStreams === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-3 rounded-xl bg-white/[0.02] border border-white/5 border-dashed">
+                <div className="flex flex-col items-center justify-center py-10 text-center gap-3 rounded-xl bg-white/[0.02] border border-white/5 border-dashed">
                     <div className="w-12 h-12 rounded-xl bg-dept-marketing/10 flex items-center justify-center">
                         <Flame size={20} className="text-dept-marketing/60" />
                     </div>

@@ -308,7 +308,7 @@ export function DMCANoticeGenerator() {
                             </pre>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-12">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 py-8">
                             <div className="w-12 h-12 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center">
                                 <FileText size={20} className="text-gray-600" />
                             </div>

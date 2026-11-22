@@ -116,7 +116,7 @@ export const UploadQueueMonitor: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="p-8 text-center text-gray-500 text-xs">
+                        <div className="p-6 text-center text-gray-500 text-xs">
                             No uploads in queue
                         </div>
                     )}
