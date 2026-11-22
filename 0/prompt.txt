@@ -1,0 +1,15 @@
+Copy this into the new Codex chat:
+
+> **Finish the indii Boardroom browser work and verify it in the app.**
+>
+> Start by attaching to the open in-app browser tab at [app.indii.music](https://app.indii.music/?_chunk_reload=1795206524223). Inspect the signed-in Boardroom and reproduce the browser issue, including a site such as Spotify for Artists that blocks iframe embedding. Use the existing signed-in session. If the app asks for sign-in, give me the official sign-in link and let me complete it. The previous chat’s browser tool couldn’t attach to the tab, so check browser access in this chat before assuming the same blocker.
+>
+> Continue from the existing [Boardroom worktree](/private/tmp/indii-boardroom-shared-workspace) on `codex/boardroom-shared-workspace`. The first batch was pushed through Entire at `d70963b7e`. Check the worktree before editing. It was last left with **uncommitted** fixes for web Back and Forward, opening the committed URL externally, and handling known frame-blocking sites. Those fixes passed 120 local Boardroom tests. Preserve them and verify what’s present today.
+>
+> Complete the remaining work:
+>
+> - **Shared browser in Chrome.** Load supported HTTPS sites in an isolated hosted browser and show the live page inside Boardroom, including supported sites that disallow iframe embedding. Verify pointer, keyboard, scrolling, history, reload, and reconnect. Reader and Pin to Swarm should use the page the artist actually sees. Keep external open available for sites that require it.
+> - **Agent control and artist takeover.** Let the Conductor delegate research on mission-related public sites to an assigned specialist in the same visible session. Show who has control. The artist can take over immediately, explicitly hand control back, and stop the mission. Verify that delayed agent input is rejected after takeover or navigation. Keep credentials and MFA under artist control, and route account-changing actions through verified integrations and existing approvals.
+> - **Web Workbench and live acceptance.** Connect web artifact storage and verify exact-target opening. Run one signed-in mission from public-page research and pinning through Creative draft preparation and Workbench handoff. Confirm that the agent rail and Live Feed reflect the actual work.
+>
+> Treat the currently deployed app as a baseline until you can verify it’s running your changes. Keep working through implementation and verification. Publish the coherent update through Entire on the approved task branch. Report the exact commit, what you verified in the deployed app with a real account, and any specific blocker that remains. A passing unit suite or an open browser tab alone doesn’t establish that shared browsing works.
