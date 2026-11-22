@@ -1,3 +1,11 @@
+## 2026-11-22 Cloud Run reserved health path hid a reachable worker (CLOUD_RUN_RESERVED_HEALTH_PATH)
+
+- **Cause:** Boardroom served `/healthz`, a path intercepted by Cloud Run's frontend. Public probes returned Google's HTML 404 without container request logs even though the internal startup probe passed. Treating that probe as proof that every route failed led to unnecessary routing and organization-policy investigation.
+- **Fix:** Serve and deploy probes at `/health`. Check the actual WebSocket route separately; it accepted an upgrade and closed an unsigned connection with 1008 Sign-in required. The production Studio build now has explicit enabled defaults and checks public worker health before building.
+- **Runtime prerequisite:** The dedicated worker service account needs `firebaseauth.users.get` for the existing revocation check. A project custom role `boardroomTokenVerifier` supplies only that permission; no user-write or token-minting permissions are needed.
+
+- **Prevention:** Avoid Cloud Run reserved paths ending in `z`. Distinguish the frontend's response from the application's response and verify more than one path before blaming routing or expanding IAM. See https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths.
+
 ## 2026-11-22 Optional history enrichment exhausted preparation (OPTIONAL_HISTORY_BUDGET)
 
 - **Evidence:** Genuine signed-in app.indii.music with 2294 messages displayed “Context preparation timed out during conversation history” by ~34 seconds for a text-only reply. Stop and reload recovered idle. The stage contains both saved-memory retrieval and serial older-turn summarization; the live error does not isolate which inner wait stalled.

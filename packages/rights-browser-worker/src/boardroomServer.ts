@@ -51,8 +51,9 @@ function assignmentFrom(input: unknown): BoardroomAssignment {
 }
 
 const sockets = new WebSocketServer({ noServer: true, maxPayload: 8192, perMessageDeflate: false });
+// Cloud Run reserves some paths ending in z; use this route for public probes too.
 const server = createServer((request, response) => {
-  response.writeHead(request.url === '/healthz' ? 200 : 404).end();
+  response.writeHead(request.url === '/health' ? 200 : 404).end();
 });
 
 server.on('upgrade', (request, socket, head) => {
