@@ -3943,6 +3943,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Local run tips:** the installed Chromium is build 1243, so use a throwaway config outside git that sets `executablePath: '/opt/pw-browsers/chromium'`, `video: 'off'` and `screenshot: 'off'` (no ffmpeg). Do not run two Playwright jobs at once; they share the dev server on port 4242 and one can kill it.
 - **Live MCP run (2026-11-22 00:16 UTC / 2026-11-21 19:16 EST) — BLOCKED, not run to the Boardroom step:** environment https://app.indii.music, reached from https://indii.music; the owner signed in themself in the desktop app's built-in browser (existing account, not created in this run; no plan or tier was shown on the screens visited). `data-build-sha` on `app-container` = `c1f2c2ae6024638aafffc4a4c59b40f6722406ac` (#984), bundle `index-D8O9b5ak.js`. No mocks, route interception, store writes, injected auth or seeded data. Distribution loaded with no console errors and showed "NO ACTIVE RELEASES" ("Delivery Health: No releases yet", 0/4 distributors). The tab labelled "Catalogue" renders the distributor-connections panel (`value="connections"`); the release list is under "New Release". Opening Submit Release showed "No canonical masters found — ingest one first" and "No brand assets found — upload one first"; the form was cancelled without submitting. No release id existed, so no Boardroom prompt was sent, no paid AI call was made, and no gateway POST, Publicist message or `[McpClientService]` console output was produced. Root cause of the block is ISSUE-1692: even a completed Distribution release could not be used, because the release list and the pitch tool read different collections and the web submit path is desktop-only. Next: repair ISSUE-1692, then repeat this run with a release created through the UI.
 
+- **Live MCP run (2026-11-22 19:13 UTC / 14:13 EST) — FAIL, root cause found (ISSUE-1706):** genuine owner session in Chrome (owner signed in themself), build `e0cae2eba` (main after #996). Release created through the UI: Publishing → Create Release (Assembly Line Halo · Signal Bloom · Electronic · Single; fully AI-generated, Flow Music), the owner's own WAV (48 kHz/16-bit, 31.91 MB) and a cover made in Creative Studio (Cover Art Master preset, 2048² → in-app "Upscale (3000px Print Spec)", verified 3000×3000 @ 300 DPI), Compile Harness, Submit → record `proprietaryIngestionReleases/Ui98LcYSSwCYeMU0IkvD` reached `metadata_complete` and lists in Publishing and Distribution (PENDING). Boardroom: Publicist seated, prompt `Publicist: generate a playlist pitch for releaseId "Ui98LcYSSwCYeMU0IkvD" targeting a playlist that fits it.` First send: "Context preparation timed out during memory recall" (Boardroom issue tracked elsewhere; no tool call). Retry: the Publicist called `generate_playlist_pitch` twice; gateway healthy (Cloud Run `mcpendpoint` logs: SSE session for the owner uid, `POST /mcpEndpoint/message` 202/204, Arcjet allowed), but both results were `mcp-operation-result.v1` status `failed` with resource id `unknown`, i.e. the handler threw on `requireString(args, 'releaseId')` before any read. Also shown: "Publicist Director: Step failed · Request blocked by security policy" (console `[MultiTurnAutorater] … AppException: Request blocked by security policy`). No "Executed remote tool: generate_playlist_pitch". Cause: `PublicistAgent` declared the tool as `trackId`/`pitchAngle`; the server requires `releaseId` + `targetPlaylist` (ISSUE-1706, fixed on branch `claude/publicist-mcp-schema`). Re-run after that deploys.
 ### ISSUE-1692: No UI path creates a release the Publicist's `generate_playlist_pitch` tool accepts
 
 - **Status:** 🟡 PARTIAL — code repair on branch `fix/issue-1692-release-store`; awaiting deploy and a genuine production run
@@ -4110,3 +4111,48 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - Skipped as before: Mobile Remote touch targets, the public share and pre-save fan pages, and the Founders sales headline.
 - **Verification:** ESLint 0 errors; `npm run typecheck` exit 0; full renderer Vitest 9,108 passed, 2 failed — only `services/share/milestones.test.ts`, which fails the same way on unchanged `main` locally and passes in CI. Tests and e2e selectors updated for renamed copy; two Sidebar snapshots updated (class, border width and icon size only). No visual check on a deployed build.
 - **Acceptance:** on production, no emoji icons or banned phrases in the nine departments, Boardroom, Creative and Dashboard; Security's active nav item is red throughout; sidebar rows read compact with a single active marker; spot-check five dialogs for white primary buttons with readable text (screenshots).
+
+
+### ISSUE-1706: Publicist's generate_playlist_pitch declaration uses argument names the server rejects
+
+- **Status:** 🟡 PARTIAL — fixed on branch `claude/publicist-mcp-schema`; live re-run pending deploy
+- **Severity:** 🔴 CRITICAL (the Publicist's playlist pitch can never succeed)
+- **Module:** Agents / `PublicistAgent`, remote MCP `generate_playlist_pitch`
+- **Evidence:** live run 2026-11-22 (ISSUE-1691): two tool calls returned `status: failed` with resource id `unknown`. `packages/firebase/src/mcp/tools/generatePlaylistPitch.ts` requires `releaseId` and `targetPlaylist`; `packages/renderer/src/services/agent/definitions/PublicistAgent.ts` declared `trackId` (required) and `pitchAngle`, so the model sent `trackId` and the handler threw at `requireString(args, 'releaseId')`.
+- **Fix (branch):** the declaration now carries `releaseId` and `targetPlaylist` (required) and `curatorName`, with descriptions; a test pins it to the server schema.
+- **Verification:** `PublicistAgent.test.ts` + agent tools suites 464 passed / 24 skipped; typecheck exit 0; ESLint clean. Live re-run pending deploy.
+- **Acceptance:** live Boardroom run shows "Executed remote tool: generate_playlist_pitch" and a grounded draft for a real release, with no "Step failed".
+
+### ISSUE-1707: Create Release wizard: submit spinner never ends; silent cover rejection; asset drop and tools field problems
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing / `ReleaseWizard`, `useDDEXRelease`
+- **Evidence:** live run 2026-11-22 (ISSUE-1691), build `e0cae2eba`.
+  - After Submit, the record reached `metadata_complete` (catalogue showed it within seconds) but the dialog stayed on "Submitting release… Please wait" for 8+ minutes and never reached the complete step.
+  - With a 1276×1276 cover attached, Next stayed disabled on the Assets step with no message saying the cover is under 3000×3000.
+  - Dropping a Project Assets tile needs a real browser drag; the tile and drop zone work together only through native DnD, so keyboard and assistive users have no path from Project Assets to the cover slot.
+  - Double-clicking a Project Assets tile while the wizard is open opens Creative Canvas and navigates away, and the wizard loses everything entered.
+  - The "Autonomous tools used" field strips spaces ("Flow Music (flowmusic.app)" saved as "FlowMusic(flowmusic.app)").
+  - The AI-disclosure copy still says "ERN 4.3 Autonomous Content Disclosure", "New DDEX standards", "Intelligence-generated" and "Autonomous tools".
+- **Acceptance:** submit closes on completion with the release ID; an undersized cover shows the reason; a non-drag way to pick a Project Assets image exists; opening an asset does not discard the wizard; the tools field keeps spaces; disclosure copy is plain.
+
+### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / `CreativeCanvas`; workspace sync; upload queue
+- **Evidence:** live run 2026-11-22.
+  - "Save Canvas" took about 90 s and stored a 1276×1276 copy of a 3000×3000 artwork.
+  - After that save, leaving Creative Studio still raised "Unsaved Changes", and a hard navigation raised the browser's "Leave site?" guard.
+  - Each Studio page load asked "A newer workspace from another device is available. Load it now?" (answered Cancel each time).
+  - The Upload Queue showed "Assembly Line Halo.wav — Failed to save to cloud library" while the wizard upload of the same file succeeded.
+- **Acceptance:** canvas save keeps the source resolution and finishes in seconds; no unsaved-changes prompt after a successful save; the workspace prompt only appears when a genuinely newer workspace exists; the library upload succeeds or explains why not.
+
+### ISSUE-1709: Nine remote MCP tools are wired to agents without function declarations
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Agents / `McpTools` consumers
+- **Evidence:** audit 2026-11-22 against `packages/firebase/src/mcp/tools/*`: `fetch_brand_kit` (Brand), `queue_release_canvas_render` and `audit_asset_resolutions` (Creative), `draft_dsp_metadata` (Distribution), `calculate_recoupment` and `stage_stripe_payouts` (Finance), `register_split_sheet`, `draft_cwr_registration` and `audit_sample_clearance` (Legal) appear in the agents' function maps, but none has a `functionDeclarations` entry, so the model is never offered them. Only `generate_playlist_pitch` (wrong names, ISSUE-1706) and `schedule_campaign_waterfall` (matches) were declared.
+- **Acceptance:** each wired tool has a declaration whose names and required fields match its server `inputSchema`, with a contract test per tool, or the wiring is removed.
