@@ -302,13 +302,26 @@ jobs:
             echo "::error::Spotify, TikTok and Instagram public OAuth identifiers must be configured before deploying Studio."
             exit 1
           fi
+          if [ "$VITE_BOARDROOM_BROWSER_ENABLED" = "true" ]; then
+            node --input-type=module <<'NODE'
+          const endpoint = new URL(process.env.VITE_BOARDROOM_BROWSER_URL);
+          if (endpoint.protocol !== 'wss:' || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) {
+            throw new Error('The hosted browser requires a secure WebSocket endpoint without credentials or query parameters.');
+          }
+          endpoint.protocol = 'https:';
+          endpoint.pathname = '/health';
+          const response = await fetch(endpoint, { signal: AbortSignal.timeout(15000), redirect: 'error' });
+          if (response.status !== 200) throw new Error(`Hosted browser health check failed: HTTP ${response.status}`);
+          console.log('Hosted browser public health check passed.');
+          NODE
+          fi
           npm run build:studio
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
           NODE_ENV: production
           VITE_APP_TARGET: web
-          VITE_BOARDROOM_BROWSER_ENABLED: ${{ vars.VITE_BOARDROOM_BROWSER_ENABLED }}
-          VITE_BOARDROOM_BROWSER_URL: ${{ vars.VITE_BOARDROOM_BROWSER_URL }}
+          VITE_BOARDROOM_BROWSER_ENABLED: ${{ vars.VITE_BOARDROOM_BROWSER_ENABLED || 'true' }}
+          VITE_BOARDROOM_BROWSER_URL: ${{ vars.VITE_BOARDROOM_BROWSER_URL || 'wss://boardroom-browser-148015878263.us-central1.run.app' }}
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}

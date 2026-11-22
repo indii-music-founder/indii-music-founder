@@ -186,3 +186,7 @@ Whenever an agent (including yourself) or a human declares a task "done" or a re
 1. **Scrutinize:** Do not just run tests; verify what the tests actually cover.
 2. **Poke Holes:** Look for masked failures, mocked APIs that don't match reality, or incomplete edge cases.
 3. **Reject:** Actively look for a reason to reject the "done" state. We stop at bulletproof, not done.
+
+## Cloud Run health probes
+
+Use a public health path such as `/health`, avoiding reserved paths ending in `z`. An internal startup probe passing does not prove that the same path is publicly routable. Compare an actual application route or WebSocket upgrade before declaring the service unreachable or changing IAM. Boardroom deployment uses `/health`; see `CLOUD_RUN_RESERVED_HEALTH_PATH` in the error ledger.
