@@ -94,28 +94,28 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border-white/20"
+                    className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border-white/20"
                 >
-                    <div className="p-8 pb-4 flex justify-between items-center bg-white/5">
+                    <div className="p-6 pb-4 flex justify-between items-center bg-white/5">
                         <div>
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Plus size={20} className="text-teal-400" />
+                            <h3 className="text-lg font-black text-white uppercase tracking-tighter italic flex items-center gap-2">
+                                <Plus size={18} className="text-teal-400" />
                                 Add Expense
                             </h3>
-                            <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-bold">Manual Ledger Entry</p>
+                            <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-bold">Manual Ledger Entry</p>
                         </div>
                         <motion.button
                             whileHover={{ scale: 1.1, rotate: 90 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={onClose}
-                            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                             type="button"
                         >
-                            <X size={20} />
+                            <X size={16} />
                         </motion.button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <form onSubmit={handleSubmit} className="p-6 space-y-5">
                         <div className="space-y-4">
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Vendor / Merchant</label>

@@ -120,7 +120,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
     const renderStep1_Platform = () => (
         <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">1. Choose Platform</h3>
+            <h3 className="text-lg font-bold text-white">1. Choose Platform</h3>
             <div className="grid grid-cols-2 gap-4">
                 {PLATFORMS.map((p) => (
                     <button
@@ -168,7 +168,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
     const renderStep2_Identity = () => (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white">2. Generate Identity</h3>
+                <h3 className="text-lg font-bold text-white">2. Generate Identity</h3>
                 <button
                     onClick={handleGenerateIdentity}
                     disabled={isGenerating}
@@ -180,8 +180,8 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
             </div>
 
             {!generatedIdentity ? (
-                <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
-                    <Wand2 size={48} className="mx-auto mb-4 opacity-20" />
+                <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-800 rounded-xl">
+                    <Wand2 size={32} className="mx-auto mb-4 opacity-20" />
                     <p>Click generate to get Autonomous handle and bio ideas.</p>
                 </div>
             ) : (
@@ -219,7 +219,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
     const renderStep3_Assets = () => (
         <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">3. Select Assets</h3>
+            <h3 className="text-lg font-bold text-white">3. Select Assets</h3>
 
             <div className="grid grid-cols-1 gap-6">
                 {/* Profile Picture */}
@@ -274,16 +274,16 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
     );
 
     const renderStep4_Finish = () => (
-        <div className="space-y-8 text-center py-8">
+        <div className="space-y-6 text-center py-4">
             {(() => {
                 const selectedAssets = [profileImage, bannerImage].filter((asset): asset is ImageAsset => asset !== null);
                 const assetsReady = selectedAssets.every(asset => canTransferAsset(asset) && transferredAssetUrls.includes(asset.imageUrl));
                 return <>
-            <div className={`w-16 h-16 ${assetsReady ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-400'} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                <CheckCircle size={32} />
+            <div className={`w-12 h-12 ${assetsReady ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-400'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                <CheckCircle size={24} />
             </div>
             <div>
-                <h3 className="text-2xl font-bold text-white mb-2">{assetsReady ? 'Ready to Create!' : 'Finish asset handoff'}</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{assetsReady ? 'Ready to Create!' : 'Finish asset handoff'}</h3>
                 <p className="text-gray-400 max-w-md mx-auto">
                     {assetsReady ? `Your setup draft is saved for this project. Continue to ${platform.name} sign-up with your transferred assets.` : `Your setup draft is saved for this project. Transfer each selected asset below before continuing to ${platform.name} sign-up.`}
                 </p>
@@ -293,7 +293,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 href={platform.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-xl shadow-blue-900/20"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-xl shadow-blue-900/20"
             >
                 Go to {platform.name} Sign Up <ExternalLink size={20} />
             </a>
@@ -350,7 +350,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 </div>
 
                 {/* Body */}
-                <div className="p-8 overflow-y-auto flex-1">
+                <div className="p-6 overflow-y-auto flex-1">
                     {step === 1 && renderStep1_Platform()}
                     {step === 2 && renderStep2_Identity()}
                     {step === 3 && renderStep3_Assets()}

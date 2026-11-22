@@ -97,31 +97,31 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                 className="relative w-full max-w-4xl bg-bg-dark border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                 {/* Header */}
-                <div className="p-8 border-b border-gray-800 bg-linear-to-r from-blue-500/10 to-transparent flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center ring-1 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-                            <Calendar className="text-blue-400" size={28} />
+                <div className="px-6 py-5 border-b border-gray-800 bg-linear-to-r from-blue-500/10 to-transparent flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center ring-1 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                            <Calendar className="text-blue-400" size={20} />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase italic font-mono flex items-center gap-3">
+                            <h2 className="text-lg font-black text-white tracking-tighter uppercase italic font-mono flex items-center gap-2">
                                 <span className="text-blue-500/50">::</span> Day Sheet <span className="text-blue-500/50">::</span> {stop.city}
                             </h2>
-                            <p className="text-xs text-gray-500 font-mono uppercase tracking-[0.3em] font-bold mt-1">
+                            <p className="text-[10px] text-gray-500 font-mono uppercase tracking-[0.2em] font-bold mt-1">
                                 {formatTouringDate(stop.date, { weekday: 'long', month: 'long', day: 'numeric' })} <span className="text-gray-700">|</span> {stop.venue}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-3 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all transform hover:rotate-90"
+                        className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all transform hover:rotate-90"
                     >
-                        <X size={24} />
+                        <X size={18} />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 md:grid-cols-3 gap-12 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-8 custom-scrollbar">
                     {/* Schedule Section */}
-                    <section className="space-y-8">
+                    <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] flex items-center gap-3">
                                 <Clock size={14} className="animate-pulse" /> Run of Show
@@ -170,7 +170,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </section>
 
                     {/* Contacts Section */}
-                    <section className="space-y-8">
+                    <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-[10px] font-black text-green-400 uppercase tracking-[0.4em] flex items-center gap-3">
                                 <User size={14} /> Intelligence
@@ -244,7 +244,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </section>
 
                     {/* Settlement Section - ISSUE-705 Job 4 */}
-                    <section className="space-y-8">
+                    <section className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h3 className="text-[10px] font-black text-amber-400 uppercase tracking-[0.4em] flex items-center gap-3">
                                 <DollarSign size={14} /> Settlement Sheet
@@ -261,7 +261,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                         type="number"
                                         step="0.01"
                                         min="0"
-                                        className="w-full bg-transparent text-lg font-bold text-white outline-none border-b border-amber-500/20 focus:border-amber-500 pb-2"
+                                        className="w-full bg-transparent text-base font-bold text-white outline-none border-b border-amber-500/20 focus:border-amber-500 pb-2"
                                         placeholder="0.00"
                                         value={settlement.guarantee || ''}
                                         onChange={(e) => setSettlement({ ...settlement, guarantee: parseFloat(e.target.value) || 0 })}
@@ -320,16 +320,16 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                 </div>
 
                 {/* Footer */}
-                <div className="p-8 border-t border-gray-800 bg-black/40 flex justify-end gap-5">
+                <div className="px-6 py-4 border-t border-gray-800 bg-black/40 flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-8 py-3 rounded-xl text-xs font-black text-gray-500 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.2em]"
+                        className="px-5 py-2.5 rounded-xl text-xs font-black text-gray-500 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.2em]"
                     >
                         Abort
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-10 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
                     >
                         <Save size={16} className="group-hover:scale-125 transition-transform" />
                         Sync Intelligence

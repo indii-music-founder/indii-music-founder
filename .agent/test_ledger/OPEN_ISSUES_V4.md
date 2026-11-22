@@ -4039,3 +4039,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Fix (branch):** same visual language as Submit Release: `#0e0e0e` panel with `white/10` borders at `max-w-2xl`; compact inputs (`px-3 py-2 text-sm`) and 10px uppercase labels; `dept-publishing` (#8BC34A) for active and complete states instead of blue/green; drop zones `p-5` with a 24px icon and a 80px thumbnail; compact step bar that fits the dialog width (`<ol>`, `aria-current="step"`); white primary buttons and a `dept-publishing` Submit. No behavior change.
 - **Verification:** Publishing suites 54/54, `npm run typecheck` exit 0, ESLint clean. Structural only; no visual check on a deployed build.
 - **Acceptance:** on production, the Create Release dialog shows every step label unclipped, each step fits without an inner scroll at 1440×900, and it reads as the same family as Submit Release (side-by-side screenshot).
+
+### ISSUE-1700: Seven Studio dialogs use oversized headings, padding and icons for their box
+
+- **Status:** 🟡 PARTIAL — resized on branch `claude/modal-sizing-sweep`; not yet seen on production
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution / Finance / Publicist / Touring / Creative / Social
+- **Evidence:** owner report 2026-11-22 ("wrong text sizes" across pop-ups), after ISSUE-1699. A class-level sweep of the 99 `fixed inset-0` overlays against Submit Release (`text-lg` title, `max-w-xl`, `p-6`) found these dialogs out of scale: `ConnectDistributorModal` (`text-2xl` title, `p-8`, 48px icon tile in `max-w-lg`), `ExpenseManualEntryModal` (`text-xl`, `p-8` in `max-w-md`), `CampaignDetailsModal` (`text-3xl` title, `text-2xl` stats), `DaySheetModal` (`text-2xl`, `p-8`/`p-10`, `gap-12`, `px-10` buttons), `ReleaseKitModal` (`text-xl`/`text-2xl`), `FreeMiniCampaignModal` (`text-2xl`, `md:p-8`), `AccountCreationWizard` (`text-xl` step titles, `p-8` body, 48px icon).
+- **Fix (branch):** dialog titles to `text-lg font-black uppercase tracking-tighter italic` (the Submit Release header); body padding `p-8`/`p-10` → `p-6`; icon tiles 48–56px → 40px; large icons and stat numbers one step smaller; footer buttons compact. Class-only, no behavior change. Not changed on purpose: `DropCampaignWizard` (its `text-2xl` is the countdown readout) and `PreSaveCampaignBuilder` (page stats, not a dialog).
+- **Verification:** 26 affected suites 104/104, `npm run typecheck` exit 0, ESLint clean on all seven files. Structural only; no visual check on a deployed build.
+- **Acceptance:** on production, each of the seven dialogs fits its content without an inner scroll at 1440×900 and its title matches Submit Release in size (screenshot per dialog).
