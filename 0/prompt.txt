@@ -1,0 +1,9 @@
+Hey, you've got some new intelligence and we haven't worked on this for a while. So why don't you run, run through the chat and get back with me and tell me what, where we're at on this chat, on this campaign
+
+---
+
+Okay, so I think some of the updates that Claude code did on this project are awesome. But some of the images it created, probably PNGs for what you're talking about are really awful. They're kind of circle things that might be a record. They might be a sunrise. I don't know. But your goal is to bring in all the branding and tie it all together for those things that we just talked about. There's going to be some image updates that come in from Gemini. Those ones we'll leave alone for now
+
+---
+
+@end.md. Give me a handoff if there's anything that needs to go to a new agent and make sure everything is pushed to a new branch if there's anything to push
