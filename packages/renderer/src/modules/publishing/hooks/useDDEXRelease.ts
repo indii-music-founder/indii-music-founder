@@ -15,6 +15,7 @@ import { resolveReleaseWorkspace } from '@/services/distribution/releaseWorkspac
 import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { agentService } from '@/services/agent/AgentService';
+import { SubmitStepTimeoutError, withStepDeadline } from './submitDeadline';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
@@ -122,6 +123,8 @@ export interface UseDDEXReleaseReturn {
   submitRelease: () => Promise<string>;
   isSubmitting: boolean;
   submitError: string | null;
+  /** Plain-language name of the submission step in progress, for the progress view. */
+  submitStage: string | null;
   releaseId: string | null;
 
   // Reset
@@ -234,6 +237,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   }, [userDistributor, selectedDistributors]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitStage, setSubmitStage] = useState<string | null>(null);
   const [releaseId, setReleaseId] = useState<string | null>(null);
 
   // Update metadata
@@ -496,6 +500,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     setIsSubmitting(true);
     setSubmitError(null);
     setCurrentStep('submitting');
+    setSubmitStage('Saving your release');
 
     try {
       // ISSUE-964: a retry after a prior packaging failure reuses the
@@ -561,11 +566,14 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       // attach the resulting receipt to this exact release record.
       try {
         const audit = httpsCallable<{ releaseId: string }, { status: 'compliant' | 'non_compliant' | 'unknown' }>(functions, 'auditReleaseArtworkForDelivery');
-        const audited = await audit({ releaseId: docId });
+        setSubmitStage('Checking your cover art');
+        const audited = await withStepDeadline('Checking your cover art', 90_000, audit({ releaseId: docId }));
         if (audited.data.status !== 'compliant') {
           throw new Error(`Cover art needs repair: server conformance status is ${audited.data.status}. Replace or re-export the artwork before packaging.`);
         }
       } catch (auditError: unknown) {
+        // A stalled check says nothing about the artwork, so do not stamp the record as failed.
+        if (auditError instanceof SubmitStepTimeoutError) throw auditError;
         const auditErrorMessage = auditError instanceof Error ? auditError.message : 'Cover-art conformance audit failed';
         await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
           status: 'cover_art_audit_failed',
@@ -581,7 +589,8 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       // the record stays truthfully in packaging_failed with the real
       // error and can be retried without duplicating the draft.
       try {
-        await agentService.runAgent(
+        setSubmitStage('Packaging your release');
+        await withStepDeadline('Packaging your release', 330_000, agentService.runAgent(
           'publishing',
           `Package the definitive assets for release ID: ${docId}.
           Audio URL: ${assets.audioFile?.url}
@@ -589,8 +598,10 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           Master fingerprint: ${assets.audioFile?.masterFingerprint || metadata.masterFingerprint || 'unavailable'}
           ISRC: ${metadata.isrc || 'not assigned'}
           Cover Art URL: ${assets.coverArt?.url}`
-        );
+        ));
       } catch (agentError: unknown) {
+        // A stalled run is unknown, not failed: leave the record as it is so a retry or the server can finish it.
+        if (agentError instanceof SubmitStepTimeoutError) throw agentError;
         const packagingErrorMessage = agentError instanceof Error ? agentError.message : 'Packaging failed';
         logger.error('[useDDEXRelease] Definitive packaging failed:', agentError);
         await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
@@ -602,21 +613,33 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       }
 
       // Packaging confirmed — only now is it truthful to mark complete.
-      await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
-        status: 'metadata_complete',
-        updatedAt: serverTimestamp()
-      });
+      setSubmitStage('Finishing up');
+      try {
+        await withStepDeadline('Finishing up', 30_000, updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
+          status: 'metadata_complete',
+          updatedAt: serverTimestamp()
+        }));
+      } catch (finishError: unknown) {
+        // Packaging is confirmed. Firestore keeps an unacknowledged write queued
+        // and delivers it when the connection recovers, so a slow
+        // acknowledgement must not strand the artist on the spinner.
+        if (!(finishError instanceof SubmitStepTimeoutError)) throw finishError;
+        logger.warn('[useDDEXRelease] Release status write not acknowledged in time; it stays queued and will sync.', finishError);
+      }
 
       setCurrentStep('complete');
 
       return docId;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to submit release';
+      const errorMessage = error instanceof SubmitStepTimeoutError
+        ? `${error.message} Your release is saved as a draft. Check Publishing in a minute, or submit again.`
+        : error instanceof Error ? error.message : 'Failed to submit release';
       setSubmitError(errorMessage);
       setCurrentStep('review');
       throw error;
     } finally {
       setIsSubmitting(false);
+      setSubmitStage(null);
     }
   }, [workspace, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId, getValidationErrors]);
 
@@ -652,6 +675,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     submitRelease,
     isSubmitting,
     submitError,
+    submitStage,
     releaseId,
     resetWizard
   };

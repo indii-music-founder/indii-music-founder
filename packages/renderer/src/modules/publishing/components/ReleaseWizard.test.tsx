@@ -152,3 +152,11 @@ describe('ReleaseWizard Integration', () => {
     });
 
 });
+
+describe('parseAiTools (ISSUE-1707)', () => {
+    it('keeps spaces inside a tool name and drops empty entries', async () => {
+        const { parseAiTools } = await import('./ReleaseWizard');
+        expect(parseAiTools('Flow Music (flowmusic.app), Suno ,, ')).toEqual(['Flow Music (flowmusic.app)', 'Suno']);
+        expect(parseAiTools('Flow ')).toEqual(['Flow']);
+    });
+});

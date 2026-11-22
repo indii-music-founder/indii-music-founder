@@ -78,6 +78,32 @@ interface ReleaseWizardProps {
   onComplete?: (releaseId: string) => void;
 }
 
+/**
+ * ISSUE-1707: the tools field parsed and trimmed on every keystroke, so a
+ * space typed after a word vanished ("Flow Music" became "FlowMusic").
+ * It keeps what the artist typed and only derives the list from it.
+ */
+export function parseAiTools(text: string): string[] {
+  return text.split(',').map(part => part.trim()).filter(Boolean);
+}
+
+function AiToolsField({ tools, placeholder, onChange }: {
+  tools: string[] | undefined;
+  placeholder?: string;
+  onChange: (tools: string[]) => void;
+}) {
+  const [text, setText] = useState(() => (tools ?? []).join(', '));
+  return (
+    <input
+      type="text"
+      value={text}
+      onChange={e => { setText(e.target.value); onChange(parseAiTools(e.target.value)); }}
+      placeholder={placeholder}
+      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
+    />
+  );
+}
+
 export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProps) {
   const { t } = useTranslation();
   const {
@@ -101,6 +127,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     submitRelease,
     isSubmitting,
     submitError,
+    submitStage,
     releaseId
   } = useDDEXRelease();
 
@@ -535,10 +562,10 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         <div className="flex gap-3">
           <Sparkles className="text-amber-400 flex-shrink-0 mt-0.5" size={16} />
           <div>
-            <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-1">ERN 4.3 Autonomous Content Disclosure</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-1">AI Content Disclosure</h4>
             <p className="text-xs text-amber-300/80">
-              New DDEX standards require disclosure of Intelligence-generated content.
-              This helps platforms and listeners understand how the music was created.
+              Streaming platforms ask you to say how AI was used in making a release.
+              This helps them and listeners understand how the music was created.
             </p>
           </div>
         </div>
@@ -579,7 +606,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
           <div>
             <span className="text-white text-xs font-bold">Partially AI-Generated</span>
-            <p className="text-xs text-gray-400">Some elements were created using Autonomous tools</p>
+            <p className="text-xs text-gray-400">Some elements were created with AI tools</p>
           </div>
         </label>
       </div>
@@ -588,19 +615,17 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         <div className="space-y-4 mt-6">
           <div>
             <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
-              Autonomous Tools Used
+              AI Tools Used
             </label>
-            <input
-              type="text"
-              value={metadata.aiGeneratedContent?.aiToolsUsed?.join(', ') || ''}
-              onChange={e => updateMetadata({
+            <AiToolsField
+              tools={metadata.aiGeneratedContent?.aiToolsUsed}
+              placeholder={t('publishing.hints.ai_tools_example')}
+              onChange={aiToolsUsed => updateMetadata({
                 aiGeneratedContent: {
                   ...metadata.aiGeneratedContent,
-                  aiToolsUsed: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                  aiToolsUsed
                 } as ExtendedGoldenMetadata['aiGeneratedContent']
               })}
-              placeholder={t('publishing.hints.ai_tools_example')}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-publishing/50 transition-colors"
             />
             <p className="text-xs text-gray-500 mt-1">Separate multiple tools with commas</p>
           </div>
@@ -766,6 +791,19 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           </>
         )}
       </div>
+
+      {/* ISSUE-1707: say why Next is disabled once a file is attached but unusable. */}
+      {assets.coverArt && validationErrors.some(error => error.startsWith('Cover art:')) && (
+        <div role="alert" data-testid="release-assets-error" className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex gap-2.5">
+          <AlertCircle className="text-red-400 flex-shrink-0 mt-0.5" size={14} />
+          <div className="text-xs text-red-300/80 space-y-1">
+            {validationErrors.filter(error => error.startsWith('Cover art:')).map((error, i) => (
+              <p key={i}>{error}</p>
+            ))}
+            <p className="text-red-300/60">Use Replace Image to pick a different file.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -917,12 +955,12 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       {(metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.aiGeneratedContent?.isPartiallyAIGenerated) && (
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
           <h4 className="text-xs font-black uppercase tracking-widest text-amber-400 mb-2 flex items-center gap-2">
-            <Sparkles size={14} /> Autonomous Content Disclosure
+            <Sparkles size={14} /> AI Content Disclosure
           </h4>
           <p className="text-xs text-gray-300">
             {metadata.aiGeneratedContent.isFullyAIGenerated
               ? 'This release is fully AI-generated'
-              : 'This release contains Intelligence-generated elements'
+              : 'This release contains AI-generated elements'
             }
             {metadata.aiGeneratedContent.aiToolsUsed?.length
               ? ` using ${metadata.aiGeneratedContent.aiToolsUsed.join(', ')}`
@@ -939,7 +977,9 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     <div className="flex flex-col items-center justify-center py-8">
       <Loader2 size={28} className="text-dept-publishing animate-spin mb-3" />
       <h3 className="text-sm font-black uppercase tracking-widest text-white mb-1">Submitting Release</h3>
-      <p className="text-xs text-gray-400">Please wait while we process your release...</p>
+      <p className="text-xs text-gray-400" role="status" aria-live="polite" data-testid="release-submit-stage">
+        {submitStage ? `${submitStage}…` : 'Please wait while we process your release…'}
+      </p>
     </div>
   );
 
