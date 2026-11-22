@@ -120,6 +120,8 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 ## Pitfall Library (Pragmatic Rules)
 
+- **Context preparation:** Bound pre-execution reads with a shared deadline and Stop fence. Publish a response row before preparing context, propagate interruption through optional fallbacks, and never execute with a missing required directive.
+
 **Tool prerequisites are part of the public contract.** Update the tool declaration and tests together. Cover both a permitted call and refusal without the required context.
 
 **Live status needs a source.** Model, quota, risk, and cost indicators must come from the run or service they describe. Treat missing observations as unavailable. Reserve zero for an observed zero.

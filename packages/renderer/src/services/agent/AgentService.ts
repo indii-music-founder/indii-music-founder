@@ -494,9 +494,6 @@ export class AgentService {
             // Every turn resolves current context and executes its selected route.
             // Repeated text can refer to changed assets, approvals, or external state.
 
-            // 1. Resolve Context
-            const context = await this.contextPipeline.buildContext();
-
             // 2. Workflow Coordination (The Brain)
             const responseId = uuidv4();
             const msgPayload: AgentMessage = {
@@ -513,6 +510,21 @@ export class AgentService {
                 this.appendRunMessage(store, msgPayload, runSessionId);
             } else {
                 this.appendRunMessage(store, msgPayload, runSessionId);
+            }
+
+            // Preparation has its own deadline and Stop fence before execution is admitted.
+            let context: PipelineContext;
+            try {
+                context = await this.contextPipeline.buildContext(executionSignal);
+                executionSignal?.throwIfAborted();
+            } catch (error) {
+                store.getState().updateAgentMessage(responseId, {
+                    text: isUserCancellation(error, executionSignal)
+                        ? USER_STOPPED_TEXT
+                        : `❌ **Error:** ${errorText(error) || 'Context preparation failed.'}`,
+                    isStreaming: false,
+                });
+                return;
             }
 
             // Create a timeout controller
