@@ -436,10 +436,10 @@ export const MasterPlaybookSection: React.FC = () => {
                     data-testid="save-playbook-button"
                     onClick={handleSave}
                     disabled={isSaving}
-                    className={`flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-lg text-white transition-all shadow-md ${
+                    className={`flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-lg text-black transition-all ${
                         isSaving
-                            ? 'bg-emerald-700 opacity-60 cursor-wait'
-                            : 'bg-emerald-600 hover:bg-emerald-500 active:scale-95'
+                            ? 'bg-white/60 cursor-wait'
+                            : 'bg-white hover:bg-gray-200 active:scale-95'
                     }`}
                 >
                     {isSaving ? (

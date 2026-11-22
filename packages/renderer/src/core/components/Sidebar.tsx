@@ -46,30 +46,21 @@ const NavItem = React.memo(function NavItem({
                     <button
                         onClick={() => onNavigate(item.id)}
                         className={cn(
-                            "w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5",
+                            "w-[calc(100%-8px)] mx-1 flex items-center gap-2.5 py-1.5 text-[13px] rounded-md transition-colors duration-200 relative group overflow-hidden mb-px",
                             isSidebarOpen ? "px-3" : "justify-center px-0",
                             isActive
-                                ? `${colors.text} font-bold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)] ring-1 ring-white/10`
+                                ? `${colors.text} font-semibold`
                                 : "text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
                         )}
                         style={{
                             '--dept-color': `var(${colors.cssVar})`,
-                            backgroundColor: isActive ? `color-mix(in srgb, var(${colors.cssVar}) 15%, transparent)` : undefined,
-                            borderLeft: isActive ? `3px solid var(${colors.cssVar})` : '3px solid transparent'
+                            backgroundColor: isActive ? `color-mix(in srgb, var(${colors.cssVar}) 12%, transparent)` : undefined,
+                            borderLeft: isActive ? `2px solid var(${colors.cssVar})` : '2px solid transparent'
                         } as React.CSSProperties}
                         data-testid={`nav-item-${item.id}`}
                         aria-current={isActive ? 'page' : undefined}
                         aria-label={!isSidebarOpen ? item.label : undefined}
                     >
-                        {/* Active Indicator Pillar */}
-                        {isActive && isSidebarOpen && (
-                            <motion.div
-                                layoutId="active-pill"
-                                className="absolute left-0 top-0 w-2.5 h-full opacity-100 rounded-r-md"
-                                style={{ backgroundColor: 'var(--dept-color)', boxShadow: '0 0 12px 2px var(--dept-color)' }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            />
-                        )}
 
                         {/* Interactive Glow Backlight */}
                         <div
@@ -83,10 +74,10 @@ const NavItem = React.memo(function NavItem({
                         />
 
                         <item.icon
-                            size={18}
+                            size={16}
                             className={cn(
                                 "relative z-10 transition-transform duration-300 group-hover:scale-110",
-                                isActive ? "drop-shadow-[0_0_8px_var(--dept-color)]" : "opacity-70 group-hover:opacity-100"
+                                isActive ? "" : "opacity-70 group-hover:opacity-100"
                             )}
                         />
 
@@ -299,11 +290,11 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Swarm Intelligence & Automations Cluster */}
+            {/* Swarm Team & Automations Cluster */}
             <div className={`px-3 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-2 border-b border-white/5 border-dashed'}`}>
                 {isSidebarOpen && (
                     <div className="px-2 pb-1.5 text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
-                        Intelligence & Automations
+                        Team & Automations
                     </div>
                 )}
                 <div className="space-y-1">

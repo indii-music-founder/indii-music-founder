@@ -484,7 +484,7 @@ export const PlatformWalkthroughModal: React.FC<PlatformWalkthroughModalProps> =
                         </div>
                         <div>
                             <h2 id={titleId} className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                                Platform Connection Copilot
+                                Connection Guide
                                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-md bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFD700]">
                                     Guided Walkthrough
                                 </span>

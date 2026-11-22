@@ -343,7 +343,7 @@ export default function ShowroomUI() {
                                                 toast.success("Sent to Veo!");
                                             }}
                                             className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-cyan-600/40 hover:bg-cyan-600/20 transition-all flex items-center justify-center z-20"
-                                            title="Send to Veo for video generation"
+                                            title="Send to video generation"
                                         >
                                             <Send size={14} className="text-cyan-400" />
                                         </button>

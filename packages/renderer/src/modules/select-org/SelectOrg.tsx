@@ -63,7 +63,7 @@ export default function SelectOrg() {
                         <p className="text-gray-400 text-sm leading-relaxed">
                             Welcome {userProfile?.displayName ? 'back, ' + userProfile.displayName : 'to indii'}.
                             <br /><br />
-                            Select an existing organization to orchestrate your creative agents, or establish a new studio to begin your journey.
+                            Pick an organization to work in, or start a new studio to begin your journey.
                         </p>
                     </motion.div>
                 </div>

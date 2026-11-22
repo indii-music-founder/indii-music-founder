@@ -41,7 +41,7 @@ describe('DaySheetModal', () => {
         fireEvent.change(screen.getByLabelText('Promoter email'), {
             target: { value: 'promoter@example.com' },
         });
-        fireEvent.click(screen.getByRole('button', { name: /sync intelligence/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^sync$/i }));
 
         expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
             contacts: [expect.objectContaining({ email: 'promoter@example.com' })],

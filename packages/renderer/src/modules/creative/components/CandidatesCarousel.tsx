@@ -79,7 +79,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
                             aria-label={`Select candidate ${idx + 1}: ${cand.prompt}${isRecommended ? ' (Recommended Pick)' : ''}`}
                         >
                             <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg group-focus-within:ring-2 group-focus-within:ring-white text-white ${
-                                isRecommended ? 'bg-amber-500 hover:bg-amber-400 text-black' : 'bg-green-600 hover:bg-green-500'
+                                isRecommended ? 'bg-white hover:bg-gray-200 text-black' : 'bg-white hover:bg-gray-200'
                             }`}>
                                 {isRecommended ? 'Select Pick' : 'Select'}
                             </span>

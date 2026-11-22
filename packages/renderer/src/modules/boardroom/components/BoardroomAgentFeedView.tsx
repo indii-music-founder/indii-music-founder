@@ -238,7 +238,7 @@ export function BoardroomAgentFeedView() {
             <div className="space-y-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-white/80 flex items-center gap-2">
                     <Cpu size={14} className="text-indigo-400" />
-                    Multi-Agent Graph Workflow Execution
+                    Team Workflow Run
                 </span>
                 {graphNodes.length === 0 ? (
                     <div className="p-6 rounded-2xl bg-white/5 border border-white/5 text-center text-white/40">
@@ -296,7 +296,7 @@ export function BoardroomAgentFeedView() {
             <div className="space-y-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-white/80 flex items-center gap-2">
                     <Radio size={14} className="text-cyan-400" />
-                    Real-time Agent-to-Agent Handoff Stream
+                    Live Handoffs Between Specialists
                 </span>
                 {a2aMessages.length === 0 ? (
                     <div className="p-6 rounded-2xl bg-white/5 border border-white/5 text-center text-white/40">

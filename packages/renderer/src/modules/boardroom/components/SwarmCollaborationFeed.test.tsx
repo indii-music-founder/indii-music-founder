@@ -35,7 +35,7 @@ describe('SwarmCollaborationFeed approvals', () => {
     it('exposes a modal name and dismisses the focused drawer on Escape', () => {
         const onClose = vi.fn();
         render(<SwarmCollaborationFeed isOpen onClose={onClose} />);
-        const dialog = screen.getByRole('dialog', { name: 'Swarm Collaboration Feed' });
+        const dialog = screen.getByRole('dialog', { name: 'Team Activity' });
         expect(dialog).toHaveAttribute('aria-modal', 'true');
         const close = screen.getByRole('button', { name: 'Close collaboration feed' });
         expect(close).toHaveFocus();

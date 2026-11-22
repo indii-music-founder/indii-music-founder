@@ -33,7 +33,7 @@ export const GenerativeUIMorpher: React.FC = () => {
                         className="w-full max-w-2xl bg-linear-to-br from-green-900/40 to-black border border-green-500/20 p-6 rounded-2xl"
                     >
                         <h2 className="text-xl font-black text-white mb-2 tracking-tight">Creative Studio</h2>
-                        <p className="text-green-200/60 mb-8">Your canvas is ready. Let's make some magic.</p>
+                        <p className="text-green-200/60 mb-8">Your canvas is ready.</p>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="h-32 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center justify-center text-green-400 font-mono text-sm">Drop Audio Here</div>
                             <div className="h-32 bg-green-500/10 rounded-2xl border border-green-500/20 flex items-center justify-center text-green-400 font-mono text-sm">Generate Artwork</div>

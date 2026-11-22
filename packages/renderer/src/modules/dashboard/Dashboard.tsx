@@ -125,7 +125,7 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-4 flex-shrink-0 ml-6">
                                     <button
                                         onClick={() => setModule('founders-checkout')}
-                                        className="group relative flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider overflow-hidden"
+                                        className="group relative flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-200 text-black font-black text-xs rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider overflow-hidden"
                                     >
                                         <motion.div 
                                             animate={{ x: ['-200%', '200%'] }}

@@ -55,7 +55,7 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('./SwarmGraph', () => ({
     serverTimestamp: vi.fn(),
-    SwarmGraph: () => <div data-testid="swarm-graph-mock">Swarm Graph</div>
+    SwarmGraph: () => <div data-testid="swarm-graph-mock">Team Graph</div>
 }));
 
 vi.mock('./XRayPanel', () => ({

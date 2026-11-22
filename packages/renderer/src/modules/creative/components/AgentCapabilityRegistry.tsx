@@ -80,7 +80,7 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
             ) : (
               <>
                 <p className="text-sm text-gray-400">Specialist Roster runs in the desktop app.</p>
-                <p className="text-xs text-gray-600 mt-1">Open indii on desktop to view the A2A agent network.</p>
+                <p className="text-xs text-gray-600 mt-1">Open indii on desktop to view your team's network.</p>
               </>
             )}
           </div>
@@ -144,7 +144,6 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
 
       <div className="p-4 border-t border-white/10 bg-black/40">
         <div className="flex items-center justify-between text-[9px] font-mono text-gray-500 uppercase">
-          <span>Registry Latency: 12ms</span>
           <span>Last Updated: {lastUpdated}</span>
         </div>
       </div>

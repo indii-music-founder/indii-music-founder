@@ -346,7 +346,7 @@ export function BoardroomWorkbenchView() {
                                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/35 border border-indigo-500/30 text-indigo-200 text-xs font-bold transition-all"
                                     >
                                         <Pin size={13} />
-                                        <span>Pin to Swarm</span>
+                                        <span>Pin for Team</span>
                                     </button>
                                     <button
                                         type="button"

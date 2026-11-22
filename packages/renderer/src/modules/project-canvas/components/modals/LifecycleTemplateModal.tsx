@@ -167,7 +167,7 @@ export const LifecycleTemplateModal: React.FC<LifecycleTemplateModalProps> = ({
                         </button>
                         <button
                             onClick={handleApply}
-                            className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-purple-600/20 transition-all"
+                            className="px-4 py-2 rounded-xl bg-white hover:bg-gray-200 text-black text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-purple-600/20 transition-all"
                         >
                             <span>Apply Template</span>
                             <ArrowRight size={13} />

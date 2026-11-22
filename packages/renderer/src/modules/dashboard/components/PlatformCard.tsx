@@ -18,9 +18,9 @@ interface FeatureRow {
 
 const features: FeatureRow[] = [
     { key: 'creativeStudio', label: 'Creative Studio', icon: Zap, web: true, desktop: true },
-    { key: 'agentOrchestration', label: 'Agent Orchestration', icon: Cpu, web: true, desktop: true },
+    { key: 'agentOrchestration', label: 'Team Coordination', icon: Cpu, web: true, desktop: true },
     { key: 'distributionPipeline', label: 'Distribution Pipeline', icon: Upload, web: 'limited', desktop: true },
-    { key: 'audioDNA', label: 'Audio DNA Analyzer', icon: Headphones, web: 'limited', desktop: true },
+    { key: 'audioDNA', label: 'Audio Analyzer', icon: Headphones, web: 'limited', desktop: true },
     { key: 'localFile', label: 'Local File Processing', icon: HardDrive, web: false, desktop: true },
     { key: 'sftp', label: 'SFTP Delivery', icon: Radio, web: false, desktop: true },
     { key: 'offlineMode', label: 'Offline Mode', icon: Lock, web: false, desktop: true },

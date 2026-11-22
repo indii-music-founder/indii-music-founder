@@ -258,7 +258,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                                 data-testid="candidate-apply-btn"
                                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
                                     selected.size > 0
-                                        ? 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]'
+                                        ? 'bg-white hover:bg-gray-200 text-black shadow-[0_0_12px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]'
                                         : 'bg-gray-800 text-gray-600 cursor-not-allowed'
                                 }`}
                             >

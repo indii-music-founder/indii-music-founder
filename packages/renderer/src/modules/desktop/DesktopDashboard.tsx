@@ -72,7 +72,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Power}
                                 title="Run on System Startup"
-                                description="No startup preference is connected to the Electron main process in this build."
+                                description="Startup settings aren't available in this version."
                                 status="unavailable"
                             />
 
@@ -88,7 +88,7 @@ export default function DesktopDashboard() {
                             <SettingCard
                                 icon={Database}
                                 title="Offline Vault Synchronization"
-                                description="Project-file mirroring is not implemented. Firestore's built-in local cache does not provide a separate file vault."
+                                description="Offline copies of project files aren't available yet."
                                 status="unavailable"
                             />
 

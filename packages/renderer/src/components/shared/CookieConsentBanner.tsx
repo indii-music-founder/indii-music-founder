@@ -330,7 +330,7 @@ export function CookieConsentBanner() {
                                 <div className="flex-1" />
                                 <button
                                     onClick={handleSaveCustom}
-                                    className="px-6 py-2.5 text-sm font-medium bg-green-600 hover:bg-green-500 text-white rounded-xl transition-colors"
+                                    className="px-6 py-2.5 text-sm font-medium bg-white hover:bg-gray-200 text-black rounded-xl transition-colors"
                                 >
                                     Save Preferences
                                 </button>
@@ -353,7 +353,7 @@ export function CookieConsentBanner() {
                                 <div className="flex-1 order-1 sm:order-3" />
                                 <button
                                     onClick={handleAcceptAll}
-                                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium bg-green-600 hover:bg-green-500 text-white rounded-xl transition-colors order-1 sm:order-4"
+                                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium bg-white hover:bg-gray-200 text-black rounded-xl transition-colors order-1 sm:order-4"
                                 >
                                     Accept All
                                 </button>

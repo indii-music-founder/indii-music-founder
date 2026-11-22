@@ -189,7 +189,7 @@ export default function WorkflowLab() {
             animate: true,
             steps: [
                 { element: '#tour-workflow-controls', popover: { title: 'Controls Panel', description: 'Manage your workflow files, run executions, and save changes here.' } },
-                { element: '#tour-workflow-generator', popover: { title: 'Autonomous Generator', description: 'Describe what you want to achieve, and let Autonomous build the initial node structure for you.' } },
+                { element: '#tour-workflow-generator', popover: { title: 'Workflow Generator', description: 'Describe what you want to achieve, and we’ll draft the workflow for you.' } },
                 { element: '#tour-workflow-canvas', popover: { title: 'Node Editor', description: 'Drag and drop nodes here. Connect them to build automation logic.' } },
                 { element: '#tour-workflow-library', popover: { title: 'Node Library', description: 'A collection of available triggers, actions, and logic gates.' } },
                 { element: '#tour-workflow-inspector', popover: { title: 'Inspector', description: 'Select a node to view and edit its detailed configuration.' } },
@@ -564,7 +564,7 @@ export default function WorkflowLab() {
                                     <button
                                         onClick={handleAiEditWorkflow}
                                         disabled={isAiEditing || !aiEditInstruction.trim() || nodes.length === 0}
-                                        className="w-full py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                                        className="w-full py-1.5 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                                     >
                                         {isAiEditing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                                         {isAiEditing ? 'Editing...' : 'Apply Edit (⌘↵)'}

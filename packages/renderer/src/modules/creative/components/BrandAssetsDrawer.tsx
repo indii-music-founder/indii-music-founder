@@ -352,7 +352,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect, className }: Bran
                     onClick={() => setActiveTab('generate')}
                     className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${activeTab === 'generate' ? 'bg-[#333] text-white' : 'text-gray-500 hover:text-gray-300'}`}
                 >
-                    Generate Intelligence
+                    Generate
                 </button>
             </div>
 

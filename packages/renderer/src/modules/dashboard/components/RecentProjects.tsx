@@ -131,7 +131,7 @@ export default function RecentProjects() {
                     <p className="text-[10px] text-gray-600 mb-4">Create your first to get started</p>
                     <button
                         onClick={handleNewProject}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors"
+                        className="px-4 py-2 bg-white hover:bg-gray-200 text-black text-xs font-bold rounded-lg transition-colors"
                     >
                         Create Project
                     </button>

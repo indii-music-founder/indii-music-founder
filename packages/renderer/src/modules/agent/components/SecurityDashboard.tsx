@@ -66,7 +66,7 @@ export const SecurityDashboard: React.FC = () => {
                 {loading ? (
                     <div className="text-sm text-muted-foreground">Analyzing historical telemetry...</div>
                 ) : suggestions.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">Agents are performing optimally. No suggestions at this time.</div>
+                    <div className="text-sm text-muted-foreground">No suggestions right now.</div>
                 ) : (
                     <div className="space-y-4">
                         {suggestions.map((suggestion) => (

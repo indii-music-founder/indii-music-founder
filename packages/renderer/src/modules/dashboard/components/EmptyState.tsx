@@ -186,7 +186,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot, hideAp
                 transition={{ delay: 0.2 }}
                 className="text-emerald-200/60 font-medium uppercase tracking-[0.15em] text-[10px] mt-4 mb-6 text-center"
             >
-                Your Creative Intelligence Engine • What Would You Like To Do?
+                What would you like to do?
             </motion.p>
 
             {/* Quick-Action Approval Gate Operational Banner (Promoted Visibility) */}

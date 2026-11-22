@@ -147,7 +147,7 @@ export const CanvasSnapshotModal: React.FC<CanvasSnapshotModalProps> = ({
                     <button
                         onClick={handleCreateSnapshot}
                         disabled={!snapshotName.trim()}
-                        className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-black font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
+                        className="px-4 py-2 bg-white hover:bg-gray-200 disabled:opacity-50 text-black font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-amber-600/20"
                     >
                         <Save size={13} />
                         <span>Save Snapshot</span>

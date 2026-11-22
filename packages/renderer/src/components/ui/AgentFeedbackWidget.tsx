@@ -117,7 +117,7 @@ export const AgentFeedbackWidget = () => {
                             <Button variant="ghost" size="sm" disabled={isSaving} onClick={() => setIsCommenting(false)} className="flex-1">
                                 Cancel
                             </Button>
-                            <Button variant="default" size="sm" disabled={isSaving} onClick={() => handleRating('negative')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button variant="default" size="sm" disabled={isSaving} onClick={() => handleRating('negative')} className="flex-1 bg-white hover:bg-gray-200 text-black">
                                 <Check className="w-4 h-4 mr-2" />
                                 {isSaving ? 'Saving…' : 'Save Feedback'}
                             </Button>

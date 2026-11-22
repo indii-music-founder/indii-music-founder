@@ -65,7 +65,7 @@ export const SessionTimeoutOverlay: React.FC = () => {
                         animate={{ scale: 1, y: 0 }}
                         exit={{ scale: 0.95, y: -10, opacity: 0 }}
                         transition={{ delay: 0.2, duration: 0.4 }}
-                        className="bg-black/60 border border-white/10 rounded-[2.5rem] p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden"
+                        className="bg-black/60 border border-white/10 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden"
                     >
                         {/* Ambient Glow */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-blue-500/20 blur-[60px] pointer-events-none rounded-full" />

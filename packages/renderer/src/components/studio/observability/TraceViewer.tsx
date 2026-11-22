@@ -65,7 +65,7 @@ export const TraceViewer = React.memo(() => {
                             data-testid="graph-trigger"
                         >
                             <Network size={14} />
-                            Swarm Graph
+                            Team Graph
                         </TabsTrigger>
                     </TabsList>
                 </div>

@@ -629,7 +629,7 @@ function QueryPanel({
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-600">
                     <Search size={24} className="opacity-20" />
                     <p className="text-sm">Ask anything about your stored memories</p>
-                    <p className="text-xs text-gray-700">The Autonomous will search, synthesize, and cite relevant memories.</p>
+                    <p className="text-xs text-gray-700">Your team will search and cite the relevant memories.</p>
                 </div>
             )}
         </div>
@@ -696,8 +696,8 @@ function IngestPanel({
             <div className="mt-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                 <p className="text-xs text-gray-500 leading-relaxed">
                     <strong className="text-gray-400">How ingestion works:</strong> Your text is automatically analyzed
-                    with Gemini to extract entities, assign topics, score importance, and generate a summary.
-                    The structured memory is then stored in Firestore and can be queried or consolidated with other
+                    to extract entities, assign topics, score importance, and generate a summary.
+                    The structured memory is saved to your account and can be searched or consolidated with other
                     memories to generate cross-cutting insights.
                 </p>
             </div>
@@ -1004,7 +1004,7 @@ function ApprovalsPanel({
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => onApprove(item.id)}
-                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-semibold transition-colors"
                                     >
                                         <CheckCircle size={14} />
                                         Approve Action

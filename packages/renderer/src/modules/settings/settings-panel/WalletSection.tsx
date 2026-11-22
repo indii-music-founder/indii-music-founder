@@ -346,7 +346,7 @@ export const WalletSection: React.FC = () => {
                                     data-testid={`buy-pack-${pack.id}`}
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                                         isGrowth
-                                            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                                            ? 'bg-white hover:bg-gray-200 text-black shadow-md'
                                             : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                                     } disabled:opacity-50`}
                                 >
@@ -465,7 +465,7 @@ export const WalletSection: React.FC = () => {
                                 onClick={() => void handleSaveAutoReloadSettings()}
                                 disabled={savingSettings}
                                 data-testid="save-auto-reload-settings"
-                                className="py-2 px-4 rounded-xl text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-md"
+                                className="py-2 px-4 rounded-xl text-xs font-semibold bg-white hover:bg-gray-200 text-black transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-md"
                             >
                                 {savingSettings ? (
                                     <>

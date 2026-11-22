@@ -56,7 +56,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
                 {isOwner && (
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-lg shadow-blue-900/20"
+                        className="px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg font-bold text-sm flex items-center gap-2 transition-colors"
                     >
                         <Plus size={16} /> Add Product
                     </button>

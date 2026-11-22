@@ -61,7 +61,7 @@ const BriefingStep: React.FC<BriefingStepProps> = ({
                 <button
                     onClick={onNext}
                     disabled={isThinking}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-200 text-black rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isThinking ? (
                         <>

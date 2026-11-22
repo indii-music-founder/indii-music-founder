@@ -716,7 +716,7 @@ export default function AgentChat({
                             className="flex items-center gap-3 px-4 py-3.5 rounded-[20px] bg-white/[0.04] border border-white/10 w-fit"
                         >
                             <Loader2 className="w-4 h-4 text-[#00ff66] animate-spin" />
-                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest font-mono">Agent is thinking…</span>
+                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest font-mono">Thinking…</span>
                         </motion.div>
                     )}
                 </AnimatePresence>

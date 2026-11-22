@@ -107,7 +107,7 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Search size={14} /> Retrieval Index</span>
-                            <span className="text-xs text-gray-300 font-mono">Gemini File Search</span>
+                            <span className="text-xs text-gray-300 font-mono">Document search</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Search size={14} /> Last Sync</span>

@@ -248,7 +248,7 @@ export function AgentModePicker({
                         </div>
                         <div className="text-[11px] font-bold text-white/80 mb-1">Boardroom Active</div>
                         <p className="text-[10px] text-white/40 max-w-[180px] mx-auto leading-relaxed">
-                            Full swarm mode. 21 department heads collaborate freely on your project.
+                            Full team. All 21 department heads work on your project together.
                         </p>
                     </motion.div>
                 )}

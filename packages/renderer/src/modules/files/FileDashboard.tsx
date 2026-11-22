@@ -364,7 +364,7 @@ export default function FileDashboard() {
                     />
                     <NavItem
                         icon={Music}
-                        label="Audio DNA"
+                        label="Audio Profile"
                         count={fileNodes.filter((n: FileNode) => n.fileType === 'audio' && !n.isTrashed).length}
                         onClick={() => {
                             setActiveTab('active');

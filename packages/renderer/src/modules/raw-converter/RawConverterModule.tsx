@@ -275,7 +275,7 @@ export const RawConverterModule: React.FC = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleSelectFiles}
-                        className="px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition shadow-lg shadow-purple-900/20 flex items-center gap-2"
+                        className="px-4 py-2 text-sm font-medium rounded-lg bg-white hover:bg-gray-200 text-black transition flex items-center gap-2"
                     >
                         <Camera className="w-4 h-4" />
                         Select RAW Files
@@ -386,7 +386,7 @@ export const RawConverterModule: React.FC = () => {
                             <button
                                 onClick={handleStartConversion}
                                 disabled={queue.length === 0}
-                                className="px-5 py-2 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition shadow-lg shadow-purple-900/30 flex items-center gap-2"
+                                className="px-5 py-2 text-xs font-semibold rounded-lg bg-white hover:bg-gray-200 text-black transition flex items-center gap-2"
                             >
                                 <RefreshCw className="w-4 h-4" />
                                 Convert {queue.length} Photo{queue.length > 1 ? 's' : ''} to DNG

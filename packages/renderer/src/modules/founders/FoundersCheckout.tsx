@@ -309,7 +309,7 @@ export default function FoundersCheckout() {
 
                             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500 font-mono">
                                 <ShieldCheck size={14} className="text-amber-500/80" />
-                                <span>Guaranteed Secure via Stripe SSL Protocol</span>
+                                <span>Secure checkout by Stripe</span>
                             </div>
                         </div>
 

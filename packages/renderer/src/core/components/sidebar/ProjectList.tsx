@@ -199,7 +199,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
             }}
           />
         ) : isArchivedList ? (
-          <div className={cn('flex min-w-0 flex-1 items-center gap-3 py-2', isSidebarOpen ? 'px-3' : 'justify-center px-0')}>{projectLabel}</div>
+          <div className={cn('flex min-w-0 flex-1 items-center gap-2.5 py-1.5 text-[13px]', isSidebarOpen ? 'px-3' : 'justify-center px-0')}>{projectLabel}</div>
         ) : (
           <button
             type="button"
@@ -209,7 +209,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
               syncProject(project.id);
               void navigateToModule(useStore, 'project-canvas');
             }}
-            className={cn('flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg py-2 text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400', isSidebarOpen ? 'px-3' : 'justify-center px-0')}
+            className={cn('flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-md py-1.5 text-[13px] text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-400', isSidebarOpen ? 'px-3' : 'justify-center px-0')}
           >
             {projectLabel}
           </button>

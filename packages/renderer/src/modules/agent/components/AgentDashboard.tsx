@@ -404,7 +404,7 @@ const AgentDashboard: React.FC = () => {
                         {activeTab === 'loops' && (
                             <div data-testid="agent-content-loops" className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 bg-[--background]">
                                 <div className="max-w-4xl mx-auto space-y-6">
-                                    <h1 className="text-xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
+                                    <h1 className="text-xl font-bold text-white tracking-tight">Automated Loops</h1>
                                     <AgentLoopMonitor />
                                 </div>
                             </div>

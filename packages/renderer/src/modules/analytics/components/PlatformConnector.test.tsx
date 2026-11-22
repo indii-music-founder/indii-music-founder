@@ -73,13 +73,13 @@ describe('PlatformConnector', () => {
         expect(screen.getByRole('button', { name: 'Open walkthrough guide for LinkedIn' })).toBeInTheDocument();
     });
 
-    it('opens PlatformWalkthroughModal when Setup Walkthrough Copilot button is clicked', async () => {
+    it('opens PlatformWalkthroughModal when Setup Guide button is clicked', async () => {
         render(<PlatformConnector />);
 
-        const copilotBtn = await screen.findByRole('button', { name: /Setup Walkthrough Copilot/i });
+        const copilotBtn = await screen.findByRole('button', { name: /Setup Guide/i });
         fireEvent.click(copilotBtn);
 
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText('Platform Connection Copilot')).toBeInTheDocument();
+        expect(screen.getByText('Connection Guide')).toBeInTheDocument();
     });
 });

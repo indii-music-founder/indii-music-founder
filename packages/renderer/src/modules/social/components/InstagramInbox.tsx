@@ -192,7 +192,7 @@ export const InstagramInbox: React.FC = () => {
                         <button
                             type="submit"
                             disabled={sendingDm}
-                            className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold flex items-center gap-2 transition-all shadow-md disabled:opacity-50"
+                            className="px-5 py-2.5 rounded-lg bg-white hover:bg-gray-200 text-black text-xs font-semibold flex items-center gap-2 transition-all shadow-md disabled:opacity-50"
                         >
                             {sendingDm ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             <span>Send Instagram DM</span>
@@ -263,7 +263,7 @@ export const InstagramInbox: React.FC = () => {
                                                     type="button"
                                                     onClick={() => void handleSendReply(comment.id)}
                                                     disabled={submittingReply}
-                                                    className="px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                                                    className="px-3 py-1.5 rounded-md bg-white hover:bg-gray-200 text-black text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
                                                 >
                                                     {submittingReply ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                                                     <span>Post Reply</span>

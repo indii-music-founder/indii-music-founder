@@ -329,10 +329,10 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
+                        className="px-6 py-2.5 bg-white hover:bg-gray-200 text-black rounded-xl text-xs font-black shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-all flex items-center gap-3 uppercase tracking-[0.2em] group"
                     >
                         <Save size={16} className="group-hover:scale-125 transition-transform" />
-                        Sync Intelligence
+                        Sync
                     </button>
                 </div>
             </motion.div>

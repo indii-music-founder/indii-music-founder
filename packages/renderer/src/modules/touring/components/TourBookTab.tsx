@@ -270,7 +270,7 @@ function DaySheetsList({
                                             <Button
                                                 onClick={() => onSendAdvanceEmail(stop)}
                                                 disabled={sendingEmailFor === stop.id}
-                                                className="flex-1 bg-blue-600 hover:bg-blue-500 text-xs flex items-center justify-center gap-2"
+                                                className="flex-1 bg-white hover:bg-gray-200 text-black text-xs flex items-center justify-center gap-2"
                                             >
                                                 <Mail size={14} />
                                                 {sendingEmailFor === stop.id ? 'Sending...' : 'Send Advance Email'}

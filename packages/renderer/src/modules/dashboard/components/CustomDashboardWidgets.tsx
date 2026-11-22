@@ -80,7 +80,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     approval_gates: { label: 'Approval Gates', icon: ShieldCheck, description: 'Pending approval gates and one-click authorization' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
-    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent Autonomous agent tasks and completions' },
+    agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent tasks your team finished' },
     audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
     active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
     pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },
@@ -88,7 +88,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     brand_identity: { label: 'Brand Integrity', icon: Palette, description: 'Visual identity and brand compliance scores' },
     merch_sales: { label: 'Merchandise', icon: ShoppingBag, description: 'Recent sales and inventory alerts' },
     tour_status: { label: 'Tour & Shows', icon: MapPin, description: 'Ticket sales and upcoming tour dates' },
-    cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate API costs for generative intelligence' },
+    cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate generation costs' },
 };
 
 export const DEFAULT_WIDGETS: Widget[] = [
@@ -529,7 +529,7 @@ function AgentActivityWidget() {
                     <div className="w-10 h-10 rounded-xl bg-dept-creative-muted flex items-center justify-center border border-dept-creative-muted shadow-[0_0_15px_rgba(0,255,102,0.1)] group-hover/widget:bg-dept-creative group-hover/widget:text-black transition-all duration-500">
                         <Bot size={18} className="group-hover/widget:rotate-12 transition-transform" />
                     </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Neural Engine</span>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Your Team</span>
                 </div>
                 {activity && activity.runningCount > 0 && (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -544,7 +544,7 @@ function AgentActivityWidget() {
                 {!activity || activity.recentTasks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-2 opacity-20">
                         <Bot size={20} />
-                        <p className="text-[8px] font-black uppercase tracking-widest">Awaiting Command</p>
+                        <p className="text-[8px] font-black uppercase tracking-widest">Ready</p>
                     </div>
                 ) : (
                     activity.recentTasks.slice(0, 3).map((task) => (
@@ -660,7 +660,7 @@ function ActiveCampaignsWidget() {
         return (
             <WidgetEmptyState
                 icon={Activity}
-                label="Market Velocity"
+                label="Market Momentum"
                 promise="Track every running campaign and its momentum from one place."
                 ctaLabel="Plan a campaign"
                 ctaModule="marketing"
@@ -676,7 +676,7 @@ function ActiveCampaignsWidget() {
                     <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center border border-teal-500/30 shadow-[0_0_15px_rgba(20,184,166,0.2)] group-hover/widget:bg-teal-500 group-hover/widget:text-black transition-all duration-500">
                         <Activity size={18} className="group-hover/widget:animate-pulse transition-transform" />
                     </div>
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Market Velocity</span>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Market Momentum</span>
                 </div>
                 
                 <div className="space-y-1">
@@ -910,7 +910,7 @@ function MerchSalesWidget() {
                     <p className={`text-2xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
                         {data?.weeklyRevenue.formatted || '$0'}
                     </p>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Gross Merchandise Volume</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Merch Sales</p>
                 </div>
             </div>
 

@@ -91,7 +91,7 @@ export function BoardroomTable({ messages, activeCount }: BoardroomTableProps) {
                         {isStreaming && (
                             <span className="flex items-center gap-1 text-cyan-400 font-mono">
                                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                                <span>active swarm</span>
+                                <span>active team</span>
                             </span>
                         )}
                     </div>

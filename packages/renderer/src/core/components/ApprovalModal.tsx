@@ -54,7 +54,7 @@ export function ApprovalModal() {
                 {/* Content */}
                 <div className="px-6 py-5">
                     <p className="text-gray-300 mb-4">
-                        The Autonomous agent wants to perform the following action:
+                        Your team wants to take this action:
                     </p>
                     <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 font-mono text-sm text-white whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
                         {pendingApproval.content}
@@ -75,7 +75,7 @@ export function ApprovalModal() {
                     </button>
                     <button
                         onClick={handleApprove}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-200 text-black rounded-lg transition-colors"
                     >
                         <Check className="w-4 h-4" />
                         Approve

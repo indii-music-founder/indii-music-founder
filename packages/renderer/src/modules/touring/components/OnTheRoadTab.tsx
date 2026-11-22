@@ -113,7 +113,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     <CardHeader>
                         <CardTitle className="text-base font-bold text-white flex items-center gap-2 mb-1">
                             <Navigation className="text-blue-500" size={20} />
-                            Command Center
+                            Control Center
                         </CardTitle>
                         <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Mission Control</p>
                     </CardHeader>

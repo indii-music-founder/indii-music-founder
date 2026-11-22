@@ -210,7 +210,7 @@ export default function GrowthIntelligenceDashboard() {
                             <Brain size={18} className="text-emerald-400" />
                         </div>
                         <div>
-                            <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
+                            <h1 className="text-base font-bold text-white">Growth Insights</h1>
                             <p className="text-xs text-slate-400">Engagement heuristics · Pattern detection · Provider-data limitations</p>
                         </div>
                     </div>
@@ -231,7 +231,7 @@ export default function GrowthIntelligenceDashboard() {
                         <Brain size={18} className="text-emerald-400" />
                     </div>
                     <div>
-                        <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
+                        <h1 className="text-base font-bold text-white">Growth Insights</h1>
                         <p className="text-xs text-slate-400">
                             Engagement heuristics · Pattern detection · Provider-data limitations
                         </p>
@@ -523,7 +523,7 @@ export default function GrowthIntelligenceDashboard() {
 
                             {activeTab === 'regions' && (
                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-5">
-                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Geographic Diffusion</p>
+                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Where Fans Are</p>
                                     {selectedReport.track.regions.length === 0 ? (
                                         <div className="text-center py-8 text-slate-500 text-sm">
                                             <Globe size={28} className="mx-auto mb-2 opacity-30" />

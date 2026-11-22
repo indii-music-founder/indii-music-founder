@@ -276,9 +276,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         >
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Generation Engine</span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Generator</span>
                                     <div className="flex items-center gap-1.5 p-2 bg-black/60 rounded-lg border border-green-500/20 font-mono text-[9px] text-green-400 font-bold">
-                                        Gemini Omni Flash · 4 task modes
+                                        4 task modes
                                     </div>
                                 </div>
 
@@ -769,7 +769,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         onClick={() => setStudioControls({ model: 'fast' })}
                                         aria-pressed={studioControls.model === 'fast'}
                                         className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'fast' ? 'text-white' : 'text-gray-500'}`}
-                                        title="Nano Banana 2 (Gemini 3.1 Flash) — Speed + quality"
+                                        title="Fast — speed + quality"
                                     >
                                         Flash
                                     </button>
@@ -777,7 +777,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         onClick={() => setStudioControls({ model: 'pro' })}
                                         aria-pressed={studioControls.model === 'pro'}
                                         className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-green-300' : 'text-gray-500'}`}
-                                        title="Nano Banana Pro (Gemini 3 Pro) — Max quality, 14 refs, 5 chars"
+                                        title="Pro — max quality, 14 references, 5 characters"
                                     >
                                         Pro
                                     </button>

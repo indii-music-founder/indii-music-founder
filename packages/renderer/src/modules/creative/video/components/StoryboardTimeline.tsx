@@ -608,7 +608,7 @@ export function StoryboardTimeline() {
                         </div>
                         <button
                             onClick={() => audioInputRef.current?.click()}
-                            className="px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-green-500/20"
+                            className="px-5 py-2.5 rounded-full bg-white hover:bg-gray-200 text-black text-xs font-black uppercase tracking-wider transition-all"
                         >
                             Select Audio File
                         </button>
@@ -740,7 +740,7 @@ export function StoryboardTimeline() {
                                         <button
                                             disabled={slot.isGenerating}
                                             onClick={() => renderSlotVideo(slot, index)}
-                                            className="w-full flex items-center justify-center gap-2.5 py-2 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800/40 disabled:text-neutral-500 text-xs font-bold uppercase tracking-widest transition-all mt-1"
+                                            className="w-full flex items-center justify-center gap-2.5 py-2 rounded-xl bg-white hover:bg-gray-200 disabled:bg-green-800/40 disabled:text-neutral-500 text-black text-xs font-bold uppercase tracking-widest transition-all mt-1"
                                         >
                                             <CloudLightning size={12} className="text-green-300 animate-pulse" />
                                             {slot.videoUrl ? 'Re-render Block' : 'Render Segment'}

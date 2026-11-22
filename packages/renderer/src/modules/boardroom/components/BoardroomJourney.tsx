@@ -224,7 +224,7 @@ export function BoardroomJourney() {
         <div
             ref={containerRef}
             role="group"
-            aria-label="Boardroom executive missions and governance"
+            aria-label="Boardroom missions and approvals"
             data-testid="boardroom-journey"
             className="relative flex min-w-0 items-center gap-1.5"
             onKeyDown={event => {
@@ -251,7 +251,7 @@ export function BoardroomJourney() {
                     aria-expanded={isMissionsOpen}
                     aria-controls="boardroom-missions-options"
                     aria-label="Missions"
-                    title="Executive missions & swarm seating presets"
+                    title="Missions & seating presets"
                     onClick={() => {
                         setIsMissionsOpen(value => !value);
                         setIsGovernanceOpen(false);

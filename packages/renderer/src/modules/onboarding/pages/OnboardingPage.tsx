@@ -128,7 +128,7 @@ export default function OnboardingPage() {
                             <span className="text-black font-black text-2xl">i</span>
                         </div>
                         <h1 className="text-xl font-extrabold tracking-tight">Choose Your Career Path</h1>
-                        <p className="text-gray-400 text-base lg:text-lg max-w-xl mx-auto">Select a path to automatically seat the most relevant specialist agents in your boardroom and customize your workspace.</p>
+                        <p className="text-gray-400 text-base lg:text-lg max-w-xl mx-auto">Select a path to automatically seat the most relevant specialists in your boardroom and customize your workspace.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
                             {[
                                 { id: 'dj', name: 'DJ / Performer', desc: 'Focuses on live performances, bookings, social media engagement, and creative set aesthetics.' },
@@ -388,7 +388,7 @@ export default function OnboardingPage() {
                                 className="hidden"
                                 accept="image/*,audio/*,.mp3,.wav,.flac,.pdf,text/*"
                             />
-                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">Secure Intelligence Workspace • Advanced Intelligence Engine</p>
+                            <p className="mt-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest text-center lg:text-left ml-2">Private workspace</p>
                         </div>
                     </div>
                 </main>

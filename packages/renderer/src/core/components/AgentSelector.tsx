@@ -73,7 +73,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                     <Search size={14} className="absolute left-3.5 top-3 text-gray-500" />
                     <input
                         type="text"
-                        placeholder="SUMMON SPECIALIST..."
+                        placeholder="ADD A SPECIALIST…"
                         className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-green-500/50 focus:ring-4 focus:ring-green-500/5 transition-all font-mono tracking-tight"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -86,7 +86,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                 {isLoadingAgents ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 py-12">
                         <Loader2 size={24} className="animate-spin text-green-500" />
-                        <span className="text-xs uppercase tracking-wider">Summoning Agents...</span>
+                        <span className="text-xs uppercase tracking-wider">Loading specialists…</span>
                     </div>
                 ) : agentsError ? (
                     <div className="flex flex-col items-center justify-center h-full text-red-400 gap-3 text-center px-4 py-12">
@@ -140,7 +140,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
             </div>
 
             <div className="p-4 bg-white/[0.01] border-t border-white/5 flex justify-center">
-                <p className="text-[9px] text-gray-600 uppercase font-bold tracking-[0.3em]">Select agent to initialize context</p>
+                <p className="text-[9px] text-gray-600 uppercase font-bold tracking-[0.3em]">Pick a specialist</p>
             </div>
         </motion.div>
     );

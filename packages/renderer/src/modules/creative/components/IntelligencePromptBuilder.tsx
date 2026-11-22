@@ -284,8 +284,8 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                     <button
                         onClick={handleImprove}
                         disabled={isImproving || !currentPrompt.trim()}
-                        title="Improve prompt with Intelligence"
-                        aria-label="Improve with Intelligence"
+                        title="Improve prompt"
+                        aria-label="Improve"
                         className="ml-auto w-[230px] sm:w-[240px] px-3.5 py-1.5 text-xs rounded-full bg-dept-creative/15 hover:bg-dept-creative/25 text-dept-creative border border-dept-creative/30 font-semibold flex items-center justify-center gap-2 hover:border-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shrink-0"
                     >
                         {isImproving ? (
@@ -298,7 +298,7 @@ function IntelligencePromptBuilder({ onAddTag, mode = 'image', sequence = [], se
                         ) : (
                             <Sparkles size={13} className="shrink-0" />
                         )}
-                        <span className="truncate">Improve with Intelligence</span>
+                        <span className="truncate">Improve</span>
                     </button>
                 )}
             </div>

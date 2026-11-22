@@ -612,8 +612,8 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                             ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300"
                             : "bg-indigo-600/20 hover:bg-indigo-600/35 border-indigo-500/30 text-indigo-200"
                     )}
-                    title="Pin this page into Boardroom swarm context"
-                    aria-label="Pin page to swarm"
+                    title="Share this page with your team"
+                    aria-label="Pin page for your team"
                     data-testid="boardroom-browser-pin-btn"
                 >
                     {isPinned ? <Check size={12} /> : <Pin size={12} />}

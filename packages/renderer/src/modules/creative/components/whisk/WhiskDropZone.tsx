@@ -191,7 +191,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                     exit={{ opacity: 0, y: -10 }}
                                     className="mb-2 p-2 rounded-lg bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30"
                                 >
-                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">✨ Autonomous Suggestions</p>
+                                    <p className="text-[9px] text-yellow-400 font-bold mb-1.5 uppercase tracking-wider">Suggestions</p>
                                     <div className="space-y-1">
                                         {inspirations.map((idea, i) => (
                                             <button

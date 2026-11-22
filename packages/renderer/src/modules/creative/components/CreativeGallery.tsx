@@ -1189,7 +1189,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                 <ActionableEmptyState
                     icon={<ImageIcon size={28} />}
                     title="GALLERY IS EMPTY"
-                    description="Upload media or generate new Autonomous assets to see them appear in your gallery."
+                    description="Upload media or generate new assets to see them appear in your gallery."
                     actionLabel="Upload Media"
                     onAction={() => fileInputRef.current?.click()}
                     colorClasses={{

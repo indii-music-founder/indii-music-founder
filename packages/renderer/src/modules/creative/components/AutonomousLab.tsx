@@ -72,7 +72,7 @@ export default function AutonomousLab() {
 
     const steps = [
         { id: 1, name: 'Establish Scene', description: 'Drop your establishing shot' },
-        { id: 2, name: 'Cinematic Analysis', description: 'Engine predicts logical progression' },
+        { id: 2, name: 'Cinematic Analysis', description: 'Predicts what comes next' },
         { id: 3, name: 'Synthesize', description: 'Rendering the conclusion frame' },
         { id: 4, name: 'Sequence Ready', description: 'Frames primed for generation' }
     ];
@@ -140,7 +140,7 @@ export default function AutonomousLab() {
 
         } catch (err: unknown) {
             logger.error("Synthesis Failure:", err);
-            const msg = err instanceof Error ? err.message : 'Synthesis failed.';
+            const msg = err instanceof Error ? err.message : 'Generation failed.';
             setError(msg);
             setStatus('error');
             toast.error(`Error: ${msg}`);
@@ -167,7 +167,7 @@ export default function AutonomousLab() {
                 styleImage: { mimeType: 'image/png', data: source },
                 prompt: predictedPrompt.trim()
             });
-            if (!result?.url) throw new Error('Updated target synthesis failed.');
+            if (!result?.url) throw new Error('Regeneration failed.');
             const targetAsset: HistoryItem = { id: crypto.randomUUID(), url: result.url, prompt: `Conclusion: ${predictedPrompt.trim().substring(0, 50)}...`, type: 'image', timestamp: Date.now(), projectId: currentProjectId };
             addToHistory(targetAsset);
             setTargetImage(targetAsset);
@@ -175,7 +175,7 @@ export default function AutonomousLab() {
             setStatus('complete');
             toast.success('Updated trajectory applied to a new target frame.');
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Updated target synthesis failed.';
+            const message = err instanceof Error ? err.message : 'Regeneration failed.';
             setError(message);
             setStatus('complete');
             toast.error(message);
@@ -282,7 +282,7 @@ export default function AutonomousLab() {
                 <div className="space-y-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08]">
                         <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Generative Engine</span>
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-300">Sequence Builder</span>
                     </div>
                     <h1 className="text-xl font-light tracking-tight text-white">
                         Sequence Architect
@@ -306,11 +306,11 @@ export default function AutonomousLab() {
                         <Button
                             onClick={runArchitectProcess}
                             disabled={status === 'running' || !seedImage}
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 h-auto rounded-xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.2)] disabled:opacity-50"
+                            className="bg-white hover:bg-gray-200 text-black px-6 py-4 h-auto rounded-xl transition-all shadow-[0_0_30px_rgba(37,99,235,0.2)] disabled:opacity-50"
                         >
                             <div className="flex items-center gap-3">
                                 {status === 'running' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-                                <span className="font-semibold tracking-wide">Synthesize Sequence</span>
+                                <span className="font-semibold tracking-wide">Generate Sequence</span>
                             </div>
                         </Button>
                     )}
@@ -370,7 +370,7 @@ export default function AutonomousLab() {
                                     />
                                     <div className="mt-3 flex items-center justify-between gap-3">
                                         <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold px-2 py-1 bg-white/[0.03] rounded-md border border-white/[0.05]">{predictedPrompt.trim() === appliedTrajectory ? 'Applied to target frame' : 'Draft only — target frame unchanged'}</span>
-                                        <Button onClick={() => void applyTrajectory()} disabled={status === 'running' || !predictedPrompt.trim() || predictedPrompt.trim() === appliedTrajectory} className="text-xs">Apply &amp; re-synthesize</Button>
+                                        <Button onClick={() => void applyTrajectory()} disabled={status === 'running' || !predictedPrompt.trim() || predictedPrompt.trim() === appliedTrajectory} className="text-xs">Apply &amp; regenerate</Button>
                                     </div>
                                 </motion.div>
                             )}
@@ -563,7 +563,7 @@ export default function AutonomousLab() {
                                         <Button 
                                             onClick={handleAddCustom}
                                             disabled={currentTotalSec + (customType === 'seconds' ? customValue : (customValue * 60) / bpm) > 60}
-                                            className="bg-blue-600 hover:bg-blue-500 text-white shadow-lg h-[38px] px-6 rounded-lg transition-all"
+                                            className="bg-white hover:bg-gray-200 text-black shadow-lg h-[38px] px-6 rounded-lg transition-all"
                                         >
                                             <Plus className="w-4 h-4 mr-2" /> Add
                                         </Button>

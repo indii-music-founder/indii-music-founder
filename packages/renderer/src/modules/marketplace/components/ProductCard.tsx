@@ -138,7 +138,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         className={`w-full mt-auto py-1.5 px-3 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
-                                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                                : 'bg-white hover:bg-gray-200 text-black'
                             }`}
                     >
                         {purchasing ? (

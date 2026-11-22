@@ -130,7 +130,7 @@ export const SmartNextActionBanner: React.FC<SmartNextActionBannerProps> = ({
                 <button
                     onClick={handleActionClick}
                     data-testid="smart-action-navigate-btn"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-medium transition-colors shadow-sm"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-gray-200 text-black font-medium transition-colors shadow-sm"
                 >
                     <span>Proceed to {targetLabel}</span>
                     <ArrowRight className="w-3 h-3" />

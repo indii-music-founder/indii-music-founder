@@ -144,7 +144,7 @@ export const PrintSpecDialog = createCallable<PrintSpecProps, PrintPlan | null>(
                         Close
                     </button>
                     {download ? <a href={download.href} download={download.filename} data-testid="printspec-download" className="px-4 py-2 text-sm rounded-md bg-purple-600 text-white">Download print files</a> : <button
-                        className="px-4 py-2 text-sm font-medium rounded-md bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-60"
+                        className="px-4 py-2 text-sm font-medium rounded-md bg-white hover:bg-gray-200 text-black transition-colors disabled:opacity-60"
                         data-testid="printspec-use-plan"
                         disabled={exporting || verdict === 'insufficient'}
                         onClick={async () => {

@@ -157,7 +157,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                         <button
                             onClick={handleCapture}
                             disabled={!!error || isInitializing}
-                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Camera size={20} />
                             Capture
@@ -173,7 +173,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                             </button>
                             <button
                                 onClick={handleConfirm}
-                                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
+                                className="flex items-center gap-2 bg-white hover:bg-gray-200 text-black px-6 py-3 rounded-full font-bold transition-colors"
                             >
                                 <Check size={20} />
                                 Use Photo

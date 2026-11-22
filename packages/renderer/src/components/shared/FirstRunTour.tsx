@@ -114,9 +114,9 @@ export function FirstRunTour() {
                     // Step 3: Autonomous Chat / Agent panel
                     element: '[data-testid="chat-toggle"], [aria-label*="agent" i], [aria-label*="AI" i], [aria-label*="chat" i]',
                     popover: {
-                        title: 'Intelligence Agent',
+                        title: 'Your Team',
                         description:
-                            'Your intelligence assistant is always one click away. Ask it to generate campaign briefs, review contracts, write lyrics, plan tours, or take any action across the platform.',
+                            'Your team is always one click away. Ask it to generate campaign briefs, review contracts, write lyrics, plan tours, or take any action across the platform.',
                         side: 'left',
                         align: 'center',
                     },
@@ -209,7 +209,7 @@ export function FirstRunTour() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2">
             <button
                 onClick={() => startTour()}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold motion-safe:transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/30"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-200 text-black text-xs font-bold motion-safe:transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] border border-green-500/30"
             >
                 <Play size={12} className="fill-current" />
                 Start Tour

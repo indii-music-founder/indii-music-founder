@@ -81,7 +81,7 @@ export const RiderChecklist: React.FC = () => {
                             <Button
                                 type="submit"
                                 disabled={!newItemLabel.trim()}
-                                className="p-3 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
+                                className="p-3 bg-white hover:bg-gray-200 text-black rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
                                 aria-label="Add Item"
                             >
                                 <Plus size={18} />

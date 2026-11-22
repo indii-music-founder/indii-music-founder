@@ -74,7 +74,7 @@ describe('Boardroom page classification', () => {
             onStateChange: (listener: typeof onStateChange) => { onStateChange = listener; return vi.fn(); },
         } });
         render(<BoardroomBrowserView />);
-        const pin = screen.getByRole('button', { name: 'Pin page to swarm' });
+        const pin = screen.getByRole('button', { name: 'Pin page for your team' });
 
         fireEvent.click(pin);
         await waitFor(() => expect(mocks.judge).toHaveBeenCalledTimes(1));
@@ -103,7 +103,7 @@ describe('Boardroom page classification', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Navigate to URL' }));
 
         expect(await screen.findByRole('alert')).toHaveTextContent('could not be loaded');
-        expect(screen.getByRole('button', { name: 'Pin page to swarm' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Pin page for your team' })).toBeDisabled();
     });
     it('offers external open when the web runtime has no reader', () => {
         render(<BoardroomBrowserView />);

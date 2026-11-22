@@ -762,7 +762,7 @@ export default function ScreenwriterDashboard() {
                             className="space-y-6"
                         >
                             <div className="p-5 rounded-xl border border-white/5 bg-white/1">
-                                <h3 className="text-sm font-black uppercase text-white mb-2">Google Veo Video Prompt compiler</h3>
+                                <h3 className="text-sm font-black uppercase text-white mb-2">Video prompt builder</h3>
                                 <p className="text-xs text-gray-400 mb-6">Modify text-to-video instructions synced specifically to Scene {activeScene.sceneNumber}. Output directly exports to generative pipelines.</p>
                                 
                                 <div className="space-y-4">

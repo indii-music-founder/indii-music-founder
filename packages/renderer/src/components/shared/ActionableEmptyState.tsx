@@ -34,7 +34,7 @@ export const ActionableEmptyState: React.FC<ActionableEmptyStateProps> = ({
             initial={{ opacity: 0, scale: 0.98, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className={`w-full flex justify-center items-center py-12 px-6 rounded-[2.5rem] border border-dashed ${colorClasses.border} ${colorClasses.bg} relative overflow-hidden group`}
+            className={`w-full flex justify-center items-center py-12 px-6 rounded-2xl border border-dashed ${colorClasses.border} ${colorClasses.bg} relative overflow-hidden group`}
         >
             {/* Ambient Background Glow on Hover */}
             <div className={`absolute inset-0 bg-linear-to-t ${(colorClasses.bg || 'bg-white/5').replace('/5', '/0')} to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none`} />
@@ -44,7 +44,7 @@ export const ActionableEmptyState: React.FC<ActionableEmptyStateProps> = ({
                     initial={{ y: 10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className={`p-5 rounded-[2rem] bg-black/20 border border-white/5 backdrop-blur-xl mb-6 flex items-center justify-center ${colorClasses.text} ${colorClasses.glow} transition-shadow duration-500`}
+                    className={`p-5 rounded-2xl bg-black/20 border border-white/5 backdrop-blur-xl mb-6 flex items-center justify-center ${colorClasses.text} ${colorClasses.glow} transition-shadow duration-500`}
                 >
                     {icon || <Sparkles size={24} />}
                 </motion.div>

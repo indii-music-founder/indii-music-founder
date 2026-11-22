@@ -222,7 +222,7 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
                         disabled={isAnalyzing || !hasFootage}
                         data-testid="run-slicer-btn"
                         title={!hasFootage ? 'Select or add video footage to slice' : undefined}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-white transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium text-black transition-colors"
                     >
                         <Sparkles className="w-3.5 h-3.5" />
                         {isAnalyzing ? 'Analyzing…' : 'Slice Footage'}
@@ -258,7 +258,7 @@ export const VideoChunkSlicerCard: React.FC<VideoChunkSlicerCardProps> = ({
                         onClick={handleAddToTimeline}
                         disabled={keptCount === 0}
                         data-testid="apply-gold-takes-btn"
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-green-600 hover:bg-green-500 disabled:opacity-40 text-xs font-medium text-white transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-gray-200 disabled:opacity-40 text-xs font-medium text-black transition-colors"
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Add {keptCount} Takes to Timeline

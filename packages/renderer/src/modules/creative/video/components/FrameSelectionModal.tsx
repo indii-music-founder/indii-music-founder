@@ -180,7 +180,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                                 <button
                                     onClick={handleGenerate}
                                     disabled={isGenerating || !prompt.trim()}
-                                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                                    className="w-full bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-black py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
                                 >
                                     {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                                     Generate Frame

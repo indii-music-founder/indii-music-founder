@@ -153,7 +153,7 @@ describe('BoardroomModule', () => {
         expect(screen.getByText('Boardroom HQ')).toBeInTheDocument();
     });
 
-    it('keeps Boardroom executive missions and governance inside the single 48px header row without a stacked digest bar', () => {
+    it('keeps Boardroom missions and approvals inside the single 48px header row without a stacked digest bar', () => {
         render(<BoardroomModule />);
         const headerRow = screen.getByTestId('boardroom-header');
         const journey = screen.getByTestId('boardroom-journey');
