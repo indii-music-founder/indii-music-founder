@@ -125,16 +125,16 @@ export default function SocialDashboard() {
                 bgBlobClass="bg-dept-social/10"
                 iconBgClass="bg-dept-social"
                 iconShadowClass="shadow-dept-social/20"
-                leftPanel={<><aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                leftPanel={<><div className="flex min-w-0 flex-col gap-3">
                     <AccountStatsPanel stats={stats} />
                     <PlatformFiltersPanel />
                     <BestTimesPanel />
-                </aside></>}
-                rightPanel={<><aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                </div></>}
+                rightPanel={<><div className="flex min-w-0 flex-col gap-3">
                     <DraftsQueuePanel scheduledPosts={scheduledPosts} />
                     <PlatformStatusPanel />
                     <TrendingTopicsPanel />
-                </aside></>}
+                </div></>}
                 actions={<><button
                                     onClick={() => setIsAccountWizardOpen(true)}
                                     className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-xs font-bold border border-white/5"

@@ -124,7 +124,7 @@ export default function PublishingDashboard() {
                 bgBlobClass="bg-blue-500/8"
                 iconBgClass="bg-linear-to-br from-blue-500 to-blue-400"
                 iconShadowClass="shadow-blue-500/20"
-                leftPanel={<><aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                leftPanel={<><div className="flex min-w-0 flex-col gap-3">
                     <ReleaseStatsPanel stats={stats} earnings={finance.earningsSummary?.totalNetRevenue} />
                     <ActiveReleasePanel releases={releases} onSelect={setSelectedReleaseId} />
                     <PendingActionsPanel
@@ -133,8 +133,8 @@ export default function PublishingDashboard() {
                         onNewRelease={() => setIsWizardOpen(true)}
                         onImportDSR={() => setIsDSRModalOpen(true)}
                     />
-                </aside></>}
-                rightPanel={<><aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-publishing/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                </div></>}
+                rightPanel={<><div className="flex min-w-0 flex-col gap-3">
                     <PerformancePanel releases={releases} />
                     <PublishingErrorBoundary componentName="Distributor Connections">
                         <DistributorConnectionsPanel />
@@ -142,7 +142,7 @@ export default function PublishingDashboard() {
                     <PublishingErrorBoundary componentName="Earnings Dashboard">
                         <EarningsDashboard />
                     </PublishingErrorBoundary>
-                </aside></>}
+                </div></>}
                 actions={
                     <div className="flex items-center gap-2">
                         <DepartmentJourneyBar

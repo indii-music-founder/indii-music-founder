@@ -3,7 +3,7 @@
 exports[`Sidebar > matches snapshot in collapsed state 1`] = `
 <nav
   aria-label="Main navigation"
-  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
+  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto overflow-x-hidden shadow-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
   style="background-color: var(--color-surface-elevated, rgba(13, 17, 23, 0.6));"
 >
   <div
@@ -85,7 +85,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       </button>
       <button
         aria-label="Workflow Builder"
-        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
         data-state="closed"
         data-testid="nav-item-workflow"
         style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -102,7 +102,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       </button>
       <button
         aria-label="Knowledge Base"
-        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
         data-state="closed"
         data-testid="nav-item-knowledge"
         style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -137,7 +137,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       >
         <button
           aria-label="Road/tour"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -154,7 +154,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Booking Agent"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -171,7 +171,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Creative Director"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -197,7 +197,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
       >
         <button
           aria-label="Marketing Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -214,7 +214,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Legal Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -231,7 +231,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Publishing Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -248,7 +248,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Finance Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -265,7 +265,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Distribution Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-distribution"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -282,7 +282,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Licensing Department"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -299,7 +299,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Art & Merch Dept"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-merch"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -316,7 +316,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Registration Center"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-registration"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -333,7 +333,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
         </button>
         <button
           aria-label="Security Agent"
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 justify-center px-0 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-security"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -424,7 +424,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
 exports[`Sidebar > matches snapshot in expanded state 1`] = `
 <nav
   aria-label="Main navigation"
-  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto custom-scrollbar shadow-2xl"
+  class="hidden md:flex h-full flex-col flex-shrink-0 relative z-20 backdrop-blur-2xl border-r border-white/5 transition-colors duration-500 overflow-y-auto overflow-x-hidden shadow-2xl custom-scrollbar"
   style="background-color: var(--color-surface-elevated, rgba(13, 17, 23, 0.6));"
 >
   <div
@@ -571,7 +571,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         </button>
       </div>
       <button
-        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
         data-state="closed"
         data-testid="nav-item-workflow"
         style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -592,7 +592,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         </span>
       </button>
       <button
-        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+        class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
         data-state="closed"
         data-testid="nav-item-knowledge"
         style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -646,7 +646,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         style="height: auto; opacity: 1;"
       >
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -667,7 +667,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-agent"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -688,7 +688,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-creative"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -733,7 +733,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         style="height: auto; opacity: 1;"
       >
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-marketing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -754,7 +754,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-legal"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -775,7 +775,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-publishing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -796,7 +796,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-finance"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -817,7 +817,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-distribution"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -838,7 +838,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-licensing"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -859,7 +859,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-merch"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -880,7 +880,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-registration"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
@@ -901,7 +901,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           </span>
         </button>
         <button
-          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 py-2 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 px-3 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-security"
           style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
