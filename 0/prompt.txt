@@ -1,0 +1,33 @@
+I want you to focus on the website. We have basically two of them. We have our passport, which is our funnel. And then we have our website, which is also considered our wiki. I want you to take a look at them and give me a review honestly because I just had some agents do some work. I let them go to town and I just want your peer review from a professional position. We're looking for all of the award-winning features, right? So we want this to be judged for awards. So if you can help us get there, that'd be great
+
+---
+
+All right, so I just wanna comment real quick on the only thing that I've read so far which is the move I'd make for awards, I could give you a high five if you if you had a hand because I'm literally literally working on that right now relative to you know reading what you said otherwise but I have somebody. I'm waiting to hear from that Detroit techno artist they're out of town until Frid, which is today so maybe I'll hear from him this weekend but soon this person is somebody that actually has been following my Instagram so it kinda could work out real good so what that said let's try to let's try to put that plan together and what what it would look like high-level and then we'll work on bringing it closer as we get this person in line.
+
+---
+
+Okay, so your recommendations are all good. If you have questions, I'm here to answer them real quick so we can move forward. I am waiting on an artist already to get back with me to do exactly what you were saying what you would do, which is, you know, get a local artist to run some tracks through here. One caveat is I don't necessarily have the fees paid that I need to, particularly to release music. But we'll get to that
+
+---
+
+So make the changes to the copy that you are recommending
+
+---
+
+Any branches that you send to GitHub don't have the review turned on the complicates things. I'm a solo entrepreneur. I don't need a review and GitHub. Make that so for all of the agents ever forever. That's the way it used to be.
+
+---
+
+Okay, so the entire gate was turned off so we shouldn't have a problem anymore
+
+---
+
+[go.md](.agent/workflows/go.md)
+
+---
+
+[go.md](.agent/workflows/go.md)
+
+---
+
+[end.md](.agent/workflows/end.md)
