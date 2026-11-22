@@ -1,0 +1,79 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M820N704Z9JAS1H324FZVHRS",
+  "session_id": "01a19261-996b-7772-8928-6c46a192927d",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-22T16:15:36.155711Z",
+  "branch": "fix/boardroom-mcp-sse-e2e",
+  "checkpoints_count": 5,
+  "save_step_count": 14,
+  "files_touched": [
+    ".agent/capabilities/catalog.json",
+    ".agent/capabilities/catalog.md",
+    ".agent/capabilities/registry.json",
+    ".agent/skills/pp/SKILL.md",
+    ".agent/workflows/pp.md",
+    "AGENTS.md",
+    "e2e/fixtures/auth.ts",
+    "e2e/fixtures/mcpTestServer.ts",
+    "e2e/mcp-a2a-routing.spec.ts",
+    "e2e/mcp-boardroom-collaboration.spec.ts",
+    "packages/renderer/src/modules/boardroom/components/ParticipantSelector.test.tsx",
+    "packages/renderer/src/services/agent/tools/McpTools.test.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.2-sol",
+  "turn_id": "bb13c5116502",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 5168553,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 383798528,
+    "output_tokens": 501071,
+    "api_call_count": 1897,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 9630,
+    "layers": {
+      "betterleaks": 14,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 24,
+      "credentialed_uri": 0,
+      "entropy": 12554,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-codex-middle-2026-11-21T13:56:47.109106Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "middle"
+      },
+      "source": {
+        "agent": "codex",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "0483b2bb503b",
+      "timestamp": "2026-11-21T13:56:47.109106Z",
+      "native": {
+        "command": "/middle"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/middle",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 5
+  }
+}

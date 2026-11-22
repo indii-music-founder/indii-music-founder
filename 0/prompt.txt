@@ -1,0 +1,39 @@
+We have retired V3 into V4. Can you go look for it?
+
+---
+
+# Files pasted by the user:
+
+## "# Plan: Boardroom modernization, OPEN_ISSUES_V4, and a plan shared with all age…": /Volumes/X SSD 2025/Users/narrowchannel/.codex/attachments/07c27327-3df5-4cd3-9291-cabaea4ddecd/Pasted text.txt
+
+Pasted text contains the user's request.
+
+## My request:
+
+---
+
+ok
+
+---
+
+My bad, so we don't wait for the CI around here. We have a team that does that. So you just keep working. You are the team that fixes everything that is on those documents. We can't wait, we can't pause, we can't wait around. If something goes wrong, we'll handle it. You do your best
+
+---
+
+Okay, moving forward, you don't have to have any kind of review in GitHub. That needs to get changed. An agent changed that instruction. I'm telling you, don't follow it. Just put them on a branch because you're going to work faster than we can over in GitHub. So just do new branches, please
+
+---
+
+Make sure that you are pushing to new branches when you have enough to make it worth it
+
+---
+
+/middle
+
+---
+
+It looks like another agent already grabbed issue one six six three. So let's move beyond that. What do you have to do beyond that?
+
+---
+
+@end.md. Give me a handoff if there's anything that needs to go to a new agent and make sure everything is pushed to a new branch if there's anything to push
