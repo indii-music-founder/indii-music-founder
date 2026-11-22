@@ -14,7 +14,8 @@ export class SummaryService {
      * @param text - The conversation history text to summarize.
      * @returns A concise markdown-formatted summary of the conversation.
      */
-    static async summarize(text: string): Promise<string> {
+    static async summarize(text: string, signal?: AbortSignal): Promise<string> {
+        signal?.throwIfAborted();
         if (!text || text.length < 500) return text; // Don't summarize tiny snippets
 
         Logger.info('SummaryService', 'Compressing conversation history...');
@@ -49,7 +50,10 @@ export class SummaryService {
                 {
                     ...INTELLIGENCE_CONFIG.THINKING.LOW,
                     maxOutputTokens: 512
-                }
+                },
+                undefined,
+                undefined,
+                { signal }
             );
 
             const timeoutPromise = new Promise<never>((_, reject) => {
@@ -57,6 +61,7 @@ export class SummaryService {
             });
 
             const response = await Promise.race([summarizePromise, timeoutPromise]);
+            signal?.throwIfAborted();
 
             if (!response || !response.response) {
                 throw new Error('Invalid response structure from AutonomousIntelligence');

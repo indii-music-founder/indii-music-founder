@@ -6,6 +6,12 @@
 
 - **Prevention:** Avoid Cloud Run reserved paths ending in `z`. Distinguish the frontend's response from the application's response and verify more than one path before blaming routing or expanding IAM. See https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths.
 
+## 2026-11-22 Optional history enrichment exhausted preparation (OPTIONAL_HISTORY_BUDGET)
+
+- **Evidence:** Genuine signed-in app.indii.music with 2294 messages displayed “Context preparation timed out during conversation history” by ~34 seconds for a text-only reply. Stop and reload recovered idle. The stage contains both saved-memory retrieval and serial older-turn summarization; the live error does not isolate which inner wait stalled.
+- **Fix:** Budget saved-memory recall (1 second) and older-turn summary (5 seconds) independently inside the required preparation deadline. Continue with recent turns and explicit missing-context notices in both the UI and provider context. Pass Stop through history; fence queued summaries and later chunks after cancellation/budget expiry. Never label partial summaries complete or cache late results. Required artist directives remain fail-closed.
+- **Prevention:** Optional enrichment needs a shorter budget than required context. Preserve recent conversation without claiming absent historical instructions, approvals, or facts. Non-cancellable reads may finish; they cannot schedule subsequent summary chunks or enter the current turn after expiry.
+
 ## 2026-11-22 Context preparation outlived Stop (CONTEXT_PREPARATION_DEADLINE)
 
 - **Cause:** AgentService awaited context construction before creating a response row or starting the execution timeout; context reads received no execution signal. Live acceptance showed a pending turn with no visible response and no immediate Stop recovery.

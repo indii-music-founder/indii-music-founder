@@ -190,3 +190,5 @@ Whenever an agent (including yourself) or a human declares a task "done" or a re
 ## Cloud Run health probes
 
 Use a public health path such as `/health`, avoiding reserved paths ending in `z`. An internal startup probe passing does not prove that the same path is publicly routable. Compare an actual application route or WebSocket upgrade before declaring the service unreachable or changing IAM. Boardroom deployment uses `/health`; see `CLOUD_RUN_RESERVED_HEALTH_PATH` in the error ledger.
+
+**Optional conversation enrichment must have its own budget.** Saved-memory and older-history reads must settle before the required-context deadline, propagate Stop, and disclose missing context to the artist and model. Never cache a partial/late summary as complete or allow timed-out serial work to schedule more model calls. Required artist directives remain mandatory.

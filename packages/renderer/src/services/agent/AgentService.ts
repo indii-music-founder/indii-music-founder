@@ -527,6 +527,12 @@ export class AgentService {
                 return;
             }
 
+            if (context.historyWarning) {
+                this.appendRunMessage(store, {
+                    id: uuidv4(), role: 'system', text: context.historyWarning, timestamp: Date.now(),
+                }, runSessionId);
+            }
+
             // Create a timeout controller
             const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
 
