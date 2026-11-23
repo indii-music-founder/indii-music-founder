@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     ipcMainHandlers: new Map<string, (...args: unknown[]) => unknown>(),
+    frameHandler: null as null | ((details: { url: string; resourceType: string }, callback: (result: { cancel: boolean }) => void) => void),
     onBeforeRequest: vi.fn(),
+    fromPartition: vi.fn(),
     safeUrl: vi.fn(async (url: string) => {
         if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes('169.254.169.254')) throw new Error('Security Violation: Access to private network or metadata is denied.');
     }),
@@ -49,10 +51,10 @@ vi.mock('electron', () => ({
         openExternal: mocks.shellOpenExternal,
     },
     session: {
-        fromPartition: vi.fn(() => ({
+        fromPartition: mocks.fromPartition.mockImplementation(() => ({
             setPermissionRequestHandler: vi.fn(),
             setPermissionCheckHandler: vi.fn(),
-            webRequest: { onBeforeRequest: mocks.onBeforeRequest },
+            webRequest: { onBeforeRequest: mocks.onBeforeRequest.mockImplementation((handler) => { mocks.frameHandler = handler; }) },
         })),
     },
     BrowserWindow: {
@@ -79,7 +81,18 @@ vi.mock('../utils/network-security', () => ({
 
 import { registerBoardroomBrowserHandlers } from './boardroomBrowser';
 
-const frameRequestHandler = mocks.onBeforeRequest.mock.calls[0]?.[0] as (details: { url: string; resourceType: string }, callback: (result: { cancel: boolean }) => void) => void;
+// The partition session is created on first use, after the app is ready.
+const fromPartitionCallsAtImport = mocks.fromPartition.mock.calls.length;
+
+const frameRequestHandler = (details: { url: string; resourceType: string }, callback: (result: { cancel: boolean }) => void) => {
+    if (!mocks.frameHandler) throw new Error('Partition session was never created');
+    mocks.frameHandler(details, callback);
+};
+
+async function ensurePartitionSession() {
+    const event = { sender: { id: 1 }, senderFrame: { url: 'http://localhost:4243' } };
+    await mocks.ipcMainHandlers.get('boardroom-browser:attach')!(event, { initialUrl: 'https://artists.spotify.com' });
+}
 
 describe('BoardroomBrowser IPC Handlers', () => {
     beforeEach(() => {
@@ -201,7 +214,12 @@ describe('BoardroomBrowser IPC Handlers', () => {
         listener('did-stop-loading')();
     });
 
+    it('does not touch the Electron session when the module is imported', () => {
+        expect(fromPartitionCallsAtImport).toBe(0);
+    });
+
     it('validates frame requests including redirect destinations', async () => {
+        await ensurePartitionSession();
         const blocked = vi.fn();
         frameRequestHandler({ url: 'http://127.0.0.1/private', resourceType: 'mainFrame' }, blocked);
         await vi.waitFor(() => expect(blocked).toHaveBeenCalledWith({ cancel: true }));
@@ -223,6 +241,7 @@ describe('BoardroomBrowser IPC Handlers', () => {
     });
 
     it('cancels stalled validation once and ignores a late DNS result', async () => {
+        await ensurePartitionSession();
         vi.useFakeTimers();
         try {
             let finish!: () => void;

@@ -4246,3 +4246,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Change (branch):** version 2.0.0 and release name "Founders Version Two" (2); on update available, the toast and Settings show a download button — unsigned macOS opens the GitHub release page for that version (`releaseDownloadUrl`), other platforms download in place then offer Restart and Install; new `updater:download` IPC; `updater:check` compares versions; install-in-place refused on macOS; source default `github` everywhere. Tests: `updaterPolicy` 6/6 (platform rule, release URL incl. path-injection fallback, version compare), new `UpdaterMonitor` 2/2; typecheck exit 0; ESLint 0 errors.
 - **Not covered:** true one-click install on macOS needs an Apple Developer ID certificate and notarization (no signing secrets exist in the repo); until then each Mac update is a new DMG install.
 - **Acceptance:** tag `v2.0.0` produces a green Release run with DMG, blockmap and `latest-mac.yml`; a 1.83.0+ install shows "Update Available" with a working download button; Settings → Desktop shows "Founders Version Two".
+
+### ISSUE-1717: Every packaged desktop build since 2026-11-08 crashes at launch (no window)
+
+- **Status:** 🟡 PARTIAL — addressed on branch `claude/desktop-version-two`; not yet in a released build
+- **Severity:** 🔴 CRITICAL
+- **Module:** Desktop main process / Boardroom browser
+- **Evidence:** 2026-11-23, local `build:desktop:mac` of 2.0.0: the app process starts, creates no renderer and no window, and writes no log. Running the built main process directly: `App threw an error during load — TypeError: Session can only be received when app is ready` at `new BoardroomBrowserController`. `boardroomBrowser.ts` built the controller at import (`export const boardroomBrowserController = new BoardroomBrowserController()`) with a class field `session.fromPartition('persist:boardroom-browser')`, added in `bede26ef8` (2026-11-08). The unit test hid it: its Electron mock allows `fromPartition` at any time and it read the request handler captured at import.
+- **Change (branch):** the partition session is created and hardened on first use (lazy getter), after the app is ready. Test: new "does not touch the Electron session when the module is imported" case; frame-request tests create the session through `attach` first. boardroomBrowser 14/14. After the change the main process reaches "App Ready (Primary Instance)".
+- **Acceptance:** the packaged 2.0.0 app opens its window on macOS.

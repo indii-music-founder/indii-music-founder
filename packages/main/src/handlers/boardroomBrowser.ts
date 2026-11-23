@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { BrowserWindow, WebContentsView, ipcMain, session, shell, type IpcMainInvokeEvent } from 'electron';
+import { BrowserWindow, WebContentsView, ipcMain, session, shell, type IpcMainInvokeEvent, type Session } from 'electron';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
@@ -33,7 +33,10 @@ class BoardroomBrowserController {
     private view: WebContentsView | null = null;
     private pageRevision = 0;
     private ownerWindow: BrowserWindow | null = null;
-    private partitionSession = session.fromPartition('persist:boardroom-browser');
+    // Created on first use: `session.fromPartition` throws before the app is
+    // ready, and this controller is constructed when the module is imported
+    // (ISSUE-1717 — every packaged build since 2026-11-08 crashed at launch).
+    private hardenedSession: Session | null = null;
 
     private currentState: BoardroomBrowserState = {
         url: 'https://artists.spotify.com',
@@ -44,13 +47,20 @@ class BoardroomBrowserController {
         error: null,
     };
 
-    constructor() {
-        // Harden the partition session
-        this.partitionSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
-        this.partitionSession.setPermissionCheckHandler(() => false);
+    private get partitionSession(): Session {
+        if (this.hardenedSession) return this.hardenedSession;
+        const partition = session.fromPartition('persist:boardroom-browser');
+        this.hardenSession(partition);
+        this.hardenedSession = partition;
+        return partition;
+    }
+
+    private hardenSession(partitionSession: Session): void {
+        partitionSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
+        partitionSession.setPermissionCheckHandler(() => false);
         // Validate page requests as well as frame navigations and redirects:
         // scripts and fetches can otherwise reach private network destinations.
-        this.partitionSession.webRequest.onBeforeRequest(
+        partitionSession.webRequest.onBeforeRequest(
             (details, callback) => {
                 // WebSocket URLs use the same network hosts as HTTP(S).
                 const checkUrl = details.url.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:');
