@@ -31,6 +31,8 @@ import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
+import { useAssetPickRequest } from '@/services/creative/assetPickRequest';
+import { useStore } from '@/core/store';
 
 // Step configuration
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
@@ -130,6 +132,35 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     submitStage,
     releaseId
   } = useDDEXRelease();
+
+  // ISSUE-1707: while this dialog is open, Project Assets must not navigate to the
+  // Studio editor (it would discard the form). On the Assets step it hands over
+  // a clicked image as cover art instead; elsewhere it explains why it won't open.
+  React.useEffect(() => {
+    useAssetPickRequest.getState().setGuard('Create Release');
+    return () => {
+      useAssetPickRequest.getState().setGuard(null);
+      useAssetPickRequest.getState().setRequest(null);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (currentStep === 'assets' && !assets.coverArt) {
+      useAssetPickRequest.getState().setRequest({
+        purpose: 'cover art',
+        accept: 'image',
+        onPick: async asset => { await uploadCoverByUrl(asset.url); },
+      });
+    } else {
+      useAssetPickRequest.getState().setRequest(null);
+    }
+  }, [currentStep, assets.coverArt, uploadCoverByUrl]);
+
+  const openProjectAssets = () => {
+    const state = useStore.getState();
+    state.setRightPanelTab('assets');
+    if (!state.isRightPanelOpen) state.toggleRightPanel();
+  };
 
   // ISSUE-1440: optional identifier fields are secondaries — collapsed by default
   // so the required metadata grid stays scannable.
@@ -780,6 +811,14 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 Choose Image
               </button>
             </div>
+            <button
+              type="button"
+              onClick={openProjectAssets}
+              data-testid="cover-from-project-assets"
+              className="mt-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-colors"
+            >
+              Or choose from Project Assets
+            </button>
             {uploadProgress.cover > 0 && uploadProgress.cover < 100 && (
               <div className="mt-3 w-full max-w-xs mx-auto bg-white/10 rounded-full h-1">
                 <div

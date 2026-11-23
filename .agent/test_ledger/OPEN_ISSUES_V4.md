@@ -4138,13 +4138,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - The AI-disclosure copy still says "ERN 4.3 Autonomous Content Disclosure", "New DDEX standards", "Intelligence-generated" and "Autonomous tools".
 - **Server evidence for the spinner (2026-11-22):** the record `proprietaryIngestionReleases/Ui98LcYSSwCYeMU0IkvD` read back from Firestore had `status: metadata_complete`, `updatedAt` 19:10:52Z against `createdAt` 19:06:08Z, no `packagingError`, no `coverArtAuditError`, so the server finished while the client stayed on "Submitting". Which awaited step stalled is not proven (the audit call, the packaging run, or the final status write's acknowledgement are all awaited with no client deadline; `runAgent` itself is bounded at 5 min, which the stall exceeded).
 - **Fix (branch):** every awaited step after the draft is created now has a deadline (cover check 90 s, packaging 330 s, final write 30 s) via `withStepDeadline`; the progress view names the step in plain words ("Checking your cover art…", "Packaging your release…", "Finishing up…"); a stalled check or run no longer stamps the record failed and tells the artist the draft is saved; a slow acknowledgement of the final status write no longer blocks completion (Firestore keeps the write queued). The Assets step now shows the cover's reason ("Cover art: …") with "Use Replace Image" once an unusable cover is attached. The tools field keeps what is typed (spaces survived only until the next keystroke before) and the list is derived from it. Disclosure copy is plain ("AI Content Disclosure", "Streaming platforms ask you to say how AI was used…", "AI Tools Used"); the legally relevant "Fully/Partially AI-Generated" wording stays.
-- **Still open from the list:** a non-drag way to choose a Project Assets image for the cover, and a guard so opening an asset from Project Assets does not discard the open wizard.
+- **Remaining two items (branch `claude/wizard-and-canvas-fixes`):** Project Assets now has a pick mode: the wizard registers a request on the Assets step (and a guard for every step while it is open), so clicking an image in Project Assets uses it as cover art (banner "Choose an image for your cover art", aria-label "Use as cover art: …"), an "Or choose from Project Assets" button opens the panel on that tab, and clicking an asset while the wizard is open no longer navigates to the Studio editor (it says to finish or close Create Release). Video tiles are refused for a cover. Tests: 3 new `AssetsPanel` cases, `assetPickRequest` store tests.
 - **Verification:** publishing suites 58/58 (new tests: `submitDeadline`, `parseAiTools`); typecheck exit 0; ESLint 0 errors. The stall's root cause is not verified; the next live run will show the named step.
 - **Acceptance:** submit closes on completion with the release ID; an undersized cover shows the reason; a non-drag way to pick a Project Assets image exists; opening an asset does not discard the wizard; the tools field keeps spaces; disclosure copy is plain.
 
 ### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; slowness cause not proven; not yet seen on production
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / `CreativeCanvas`; workspace sync; upload queue
 - **Evidence:** live run 2026-11-22.
@@ -4152,6 +4152,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - After that save, leaving Creative Studio still raised "Unsaved Changes", and a hard navigation raised the browser's "Leave site?" guard.
   - Each Studio page load asked "A newer workspace from another device is available. Load it now?" (answered Cancel each time).
   - The Upload Queue showed "Assembly Line Halo.wav — Failed to save to cloud library" while the wizard upload of the same file succeeded.
+- **Causes found and changes (branch `claude/wizard-and-canvas-fixes`):**
+  - Canvas save size: `CanvasOperationsService.saveCanvas()` exported at a fixed 2x of the on-screen artboard, so a 3000×3000 artwork on a normal window saved at ~1276×1276. It now exports at the base image's native resolution (never below the old 2x, longest side capped at 6000 px) via `exportMultiplierFor`.
+  - Slow save: not proven (an upload of a ~16 MB PNG plus several Firestore writes, while the Firestore write channel returned 503 and re-connected repeatedly in the same session). The save now logs per-phase timings (`exportedPng`, `blobReady`, `uploaded`, `sessionsPersisted`, `bytes`) so the next run names the slow phase.
+  - False unsaved-changes guard: `CreativeStudio` counted any non-empty prompt as unsaved, including one already generated from. Only text typed since the last finished generation (or an active generation) counts.
+  - Workspace prompt on every load: `useWorkspaceSync` compared the cloud snapshot time with an in-memory push time that is zero on each page load, so any snapshot from another device looked newer every time. The newest cloud snapshot this browser has already answered is now remembered per user and scope (`indii_workspaceSync_handled:…`); the prompt returns only when another device saved since.
+  - Library upload: `StorageService` called `fetch()` on a `data:` URL for audio and video, which the production CSP `connect-src` blocks (console: "Cloud upload failed: TypeError: Failed to fetch"; queue: "Failed to save to cloud library"). Data URLs are now decoded locally (`mediaUrlToBlob`).
+  - Tests: `exportMultiplierFor` (4), `mediaUrlToBlob` (3).
 - **Acceptance:** canvas save keeps the source resolution and finishes in seconds; no unsaved-changes prompt after a successful save; the workspace prompt only appears when a genuinely newer workspace exists; the library upload succeeds or explains why not.
 
 ### ISSUE-1709: Nine remote MCP tools are wired to agents without function declarations
@@ -4161,3 +4168,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Module:** Agents / `McpTools` consumers
 - **Evidence:** audit 2026-11-22 against `packages/firebase/src/mcp/tools/*`: `fetch_brand_kit` (Brand), `queue_release_canvas_render` and `audit_asset_resolutions` (Creative), `draft_dsp_metadata` (Distribution), `calculate_recoupment` and `stage_stripe_payouts` (Finance), `register_split_sheet`, `draft_cwr_registration` and `audit_sample_clearance` (Legal) appear in the agents' function maps, but none has a `functionDeclarations` entry, so the model is never offered them. Only `generate_playlist_pitch` (wrong names, ISSUE-1706) and `schedule_campaign_waterfall` (matches) were declared.
 - **Acceptance:** each wired tool has a declaration whose names and required fields match its server `inputSchema`, with a contract test per tool, or the wiring is removed.
+
+
+### ISSUE-1710: Boardroom first send fails with "Context preparation timed out during memory recall"
+
+- **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; not yet seen on production
+- **Severity:** 🟠 HIGH (the first send of most Boardroom sessions fails; the artist must resend several times)
+- **Module:** Agents / `ContextPipeline`, `ContextPreparation`
+- **Evidence:** live runs 2026-11-22 (ISSUE-1691): the first three sends of each Publicist prompt returned "❌ Error: Context preparation timed out during memory recall. Please retry."; the fourth ran the tool. Earlier history stages ("during conversation history") had been bounded by #989/#990; memory recall had not.
+- **Cause:** `ContextPipeline.buildContext` ran memory recall, fallback memories, active plans and product-skill search under one shared 30 s `ContextPreparation` budget, and a deadline in `ContextPreparation.wait` is sticky: after it fires, `preparation.throwIfStopped()` in each stage's "non-blocking" catch rethrows it, so an enrichment that merely ran slow failed the whole turn. Which read was slow in the 2,300-message session was not measured.
+- **Fix (branch):** those four reads now use `readOptionalContext` with their own budgets (memory recall 8 s, fallback memories 3 s, active plans 3 s, product skill 3 s); a timeout or failure logs a warning, the turn continues without that context, and when memories were skipped the reply carries "Saved memories are unavailable for this reply." Conversation history and the artist master directive stay required. Stop still cancels immediately (`readOptionalContext` rethrows it; covered by its existing tests).
+- **Verification:** agent component suites 31/31; full renderer run 9,126 passed, 2 failed (the known `services/share/milestones.test.ts`, same on unchanged `main`); typecheck exit 0; ESLint 0 errors. No ContextPipeline-level test: the pipeline needs the full store and service graph, so the behavior rests on `readOptionalContext`'s tests plus a live check.
+- **Acceptance:** on production, the first Boardroom send after a page load returns a reply (or the memories-unavailable note) instead of the timeout error, in a session with a long history.
