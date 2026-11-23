@@ -5,7 +5,7 @@ import {
 } from '@shared/schemas/capabilitySnapshot';
 import { httpsCallable } from 'firebase/functions';
 
-import { functions } from '@/services/firebase';
+import { auth, functions } from '@/services/firebase';
 
 const CLIENT_FAILURE_TTL_MS = 30_000;
 
@@ -45,7 +45,24 @@ export function parseFreshCapabilitySnapshot(
     return isFresh ? snapshot : createFailClosedCapabilitySnapshot(now);
 }
 
-export async function loadCapabilitySnapshot(): Promise<CapabilitySnapshot> {
+function isFailClosed(snapshot: CapabilitySnapshot): boolean {
+    return Object.values(snapshot.capabilities).every(entry => entry.status !== 'available');
+}
+
+// ISSUE-1658: every Boardroom seat fetched this callable before running (up to
+// 20 s each, 3-9 seats per send). Reuse a fresh server snapshot until its own
+// `expiresAt` and share one request between seats; never cache a fail-closed
+// result, so a transient failure is retried on the next call.
+let cached: { uid: string | null; snapshot: CapabilitySnapshot } | undefined;
+let inFlight: { uid: string | null; promise: Promise<CapabilitySnapshot> } | undefined;
+
+/** Test hook: forget the cached snapshot. */
+export function resetCapabilitySnapshotCache(): void {
+    cached = undefined;
+    inFlight = undefined;
+}
+
+async function fetchCapabilitySnapshot(): Promise<CapabilitySnapshot> {
     try {
         const callable = httpsCallable<Record<string, never>, unknown>(
             functions,
@@ -57,4 +74,22 @@ export async function loadCapabilitySnapshot(): Promise<CapabilitySnapshot> {
     } catch {
         return createFailClosedCapabilitySnapshot(Date.now());
     }
+}
+
+export async function loadCapabilitySnapshot(): Promise<CapabilitySnapshot> {
+    const uid = auth?.currentUser?.uid ?? null;
+    const now = Date.now();
+    if (cached && cached.uid === uid && cached.snapshot.expiresAt > now) {
+        const stillFresh = parseFreshCapabilitySnapshot(cached.snapshot, now);
+        if (!isFailClosed(stillFresh)) return stillFresh;
+    }
+    if (inFlight && inFlight.uid === uid) return inFlight.promise;
+    const promise = fetchCapabilitySnapshot().then(snapshot => {
+        if (!isFailClosed(snapshot)) cached = { uid, snapshot };
+        return snapshot;
+    }).finally(() => {
+        if (inFlight?.promise === promise) inFlight = undefined;
+    });
+    inFlight = { uid, promise };
+    return promise;
 }
