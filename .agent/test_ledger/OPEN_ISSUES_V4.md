@@ -4144,7 +4144,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
 
-- **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; slowness cause not proven; not yet seen on production
+- **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; workspace prompt and slow save not changed; not yet seen on production
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / `CreativeCanvas`; workspace sync; upload queue
 - **Evidence:** live run 2026-11-22.
@@ -4155,8 +4155,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Causes found and changes (branch `claude/wizard-and-canvas-fixes`):**
   - Canvas save size: `CanvasOperationsService.saveCanvas()` exported at a fixed 2x of the on-screen artboard, so a 3000×3000 artwork on a normal window saved at ~1276×1276. It now exports at the base image's native resolution (never below the old 2x, longest side capped at 6000 px) via `exportMultiplierFor`.
   - Slow save: not proven (an upload of a ~16 MB PNG plus several Firestore writes, while the Firestore write channel returned 503 and re-connected repeatedly in the same session). The save now logs per-phase timings (`exportedPng`, `blobReady`, `uploaded`, `sessionsPersisted`, `bytes`) so the next run names the slow phase.
-  - False unsaved-changes guard: `CreativeStudio` counted any non-empty prompt as unsaved, including one already generated from. Only text typed since the last finished generation (or an active generation) counts.
-  - Workspace prompt on every load: `useWorkspaceSync` compared the cloud snapshot time with an in-memory push time that is zero on each page load, so any snapshot from another device looked newer every time. The newest cloud snapshot this browser has already answered is now remembered per user and scope (`indii_workspaceSync_handled:…`); the prompt returns only when another device saved since.
+  - False unsaved-changes guard: `CreativeStudio` counted any non-empty prompt as unsaved, including one already generated from. Only text typed since the last finished generation (or an active generation) counts; the prompt a generation started with is what gets settled, so edits made while it runs stay unsaved (Codex P2).
+  - Workspace prompt on every load: cause found, NOT changed. `useWorkspaceSync` compares the cloud snapshot time with an in-memory push time that is zero on each page load, so a snapshot last written by another device looks newer every time. A first attempt remembered the answered snapshot in localStorage; Codex review (P2 on #1002) correctly showed that skipping the prompt after a reload can leave an empty local workspace marked hydrated and then overwrite the cloud copy, because the store persists only presentation preferences. That change was reverted. The prompt stays until a safe design exists (for example persisting the snapshot itself with the acknowledgement).
   - Library upload: `StorageService` called `fetch()` on a `data:` URL for audio and video, which the production CSP `connect-src` blocks (console: "Cloud upload failed: TypeError: Failed to fetch"; queue: "Failed to save to cloud library"). Data URLs are now decoded locally (`mediaUrlToBlob`).
   - Tests: `exportMultiplierFor` (4), `mediaUrlToBlob` (3).
 - **Acceptance:** canvas save keeps the source resolution and finishes in seconds; no unsaved-changes prompt after a successful save; the workspace prompt only appears when a genuinely newer workspace exists; the library upload succeeds or explains why not.

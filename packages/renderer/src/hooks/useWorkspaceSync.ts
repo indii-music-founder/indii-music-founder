@@ -163,14 +163,7 @@ export function useWorkspaceSync(): void {
                 const cloudTime = typeof toMillis === 'function'
                     ? toMillis.call(updatedAt)
                     : 0;
-                // ISSUE-1708: lastPushTimeRef is empty on every page load, so any
-                // snapshot from another device looked "newer" each time and the same
-                // prompt came back after the artist had already answered it. Remember
-                // the newest cloud snapshot this browser has already decided on.
-                const handledKey = `indii_workspaceSync_handled:${userId}:${workspaceScope}`;
-                let handledTime = 0;
-                try { handledTime = Number(localStorage.getItem(handledKey)) || 0; } catch { /* storage blocked: fall back to asking */ }
-                const localTime = Math.max(lastPushTimeRef.current, handledTime);
+                const localTime = lastPushTimeRef.current;
 
                 if (cloudTime <= localTime) {
                     logger.info('[WorkspaceSync] Local state is newer or equal, keeping local');
@@ -184,8 +177,6 @@ export function useWorkspaceSync(): void {
                 });
 
                 if (!active) return;
-
-                try { localStorage.setItem(handledKey, String(cloudTime)); } catch { /* storage blocked: the prompt may return next load */ }
 
                 if (shouldLoad) {
                     logger.info('[WorkspaceSync] User confirmed, applying cloud snapshot');

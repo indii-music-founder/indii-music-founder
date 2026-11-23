@@ -269,6 +269,18 @@ describe('AssetsPanel', () => {
             expect(useAssetPickRequest.getState().request).toBeNull();
         });
 
+        it('re-arms the request when the dialog could not use the image, so the artist can pick again', async () => {
+            const onPick = vi.fn().mockRejectedValue(new Error('storage unavailable'));
+            useAssetPickRequest.getState().setGuard('Create Release');
+            useAssetPickRequest.getState().setRequest({ purpose: 'cover art', accept: 'image', onPick });
+            render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Use as cover art: beautiful neon city sunset' }));
+
+            await waitFor(() => expect(useAssetPickRequest.getState().request).not.toBeNull());
+            expect(mockSetModule).not.toHaveBeenCalled();
+        });
+
         it('does not hand over a video when an image was requested', () => {
             const onPick = vi.fn();
             useAssetPickRequest.getState().setRequest({ purpose: 'cover art', accept: 'image', onPick });

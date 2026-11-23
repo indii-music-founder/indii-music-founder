@@ -228,7 +228,13 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
             }
             useAssetPickRequest.getState().setRequest(null);
             void Promise.resolve(pickRequest.onPick({ id: asset.id, type: asset.type, url: asset.url, prompt: asset.prompt }))
-                .catch((error: unknown) => toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`));
+                .catch((error: unknown) => {
+                    toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`);
+                    // Re-arm so the artist can pick again without leaving the step; the
+                    // dialog's effect does not re-run, because nothing it depends on changed.
+                    const picker = useAssetPickRequest.getState();
+                    if (picker.request === null && picker.guard !== null) picker.setRequest(pickRequest);
+                });
             return;
         }
         if (navigationGuard && (asset.type === 'image' || asset.type === 'video')) {
