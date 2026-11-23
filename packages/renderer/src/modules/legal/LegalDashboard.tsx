@@ -283,7 +283,7 @@ Only return valid JSON.
                     setContractsRefreshKey(prev => prev + 1);
                 }}
             />
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
                     <TabsList className="bg-transparent gap-6 p-0 h-12">
                         <TabsTrigger value="contracts" data-testid="legal-tab-contracts" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">

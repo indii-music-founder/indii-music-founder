@@ -168,7 +168,7 @@ export default function FinanceDashboard() {
                 </>
             }
         >
-            <Tabs value={currentTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={currentTab} onValueChange={handleTabChange} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div className="border-b border-white/5 flex-shrink-0">
                     <div className="px-4 md:px-6 flex items-center gap-1 overflow-x-auto">
                         {TAB_GROUPS.map(group => {
