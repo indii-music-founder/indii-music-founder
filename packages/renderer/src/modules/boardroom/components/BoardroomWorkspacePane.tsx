@@ -184,11 +184,8 @@ export function BoardroomWorkspacePane({ hasOverlayOpen = false, isOpen = true }
                         title={jevRecommendation.reasoningHint}
                     >
                         <Sparkles size={11} className="text-indigo-400 group-hover:rotate-12 transition-transform shrink-0" />
-                        <span className="font-semibold text-indigo-300 shrink-0">Jev Suggests:</span>
+                        <span className="font-semibold text-indigo-300 shrink-0">Suggested:</span>
                         <span className="font-bold text-white">{recommendedTabLabel}</span>
-                        {jevRecommendation.recommendedModule && (
-                            <span className="text-indigo-300/80 font-mono text-[10px]">({jevRecommendation.recommendedModule})</span>
-                        )}
                     </button>
                 </div>
             )}

@@ -55,7 +55,7 @@ const AppearanceSection: React.FC = () => {
                     />
                 </SettingRow>
 
-                <SettingRow icon={Sparkles} label="Expand Cognitive Logic" description="Show how your team reached each answer as soon as it arrives.">
+                <SettingRow icon={Sparkles} label="Open “How we got here” by default" description="Show how your team reached each answer as soon as it arrives.">
                     <Toggle
                         enabled={showCognitiveLogicByDefault}
                         onChange={(v) => updatePreferences({ showCognitiveLogicByDefault: v })}

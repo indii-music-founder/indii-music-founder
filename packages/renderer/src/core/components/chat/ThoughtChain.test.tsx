@@ -27,7 +27,7 @@ describe('ThoughtChain', () => {
     it('is collapsed by default and can be expanded', () => {
         render(<ThoughtChain thoughts={thoughts} messageId="message-1" />);
 
-        const toggle = screen.getByRole('button', { name: /cognitive logic/i });
+        const toggle = screen.getByRole('button', { name: /how we got here/i });
         expect(toggle).toHaveAttribute('aria-expanded', 'false');
         expect(screen.queryByText('Analyzing the request')).not.toBeInTheDocument();
 
@@ -40,7 +40,7 @@ describe('ThoughtChain', () => {
     it('honors an expanded-by-default preference for a new message card', () => {
         render(<ThoughtChain thoughts={thoughts} messageId="message-2" defaultOpen />);
 
-        expect(screen.getByRole('button', { name: /cognitive logic/i })).toHaveAttribute('aria-expanded', 'true');
+        expect(screen.getByRole('button', { name: /how we got here/i })).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByText('Analyzing the request')).toBeInTheDocument();
     });
 });
