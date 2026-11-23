@@ -35,6 +35,13 @@ describe('TraceService', () => {
     });
 
     describe('startTrace', () => {
+        it('returns the trace id without waiting for the start write (ISSUE-1658)', async () => {
+            vi.mocked(setDoc).mockReturnValueOnce(new Promise(() => {}) as never);
+            const traceId = await TraceService.startTrace('user-1', 'orchestrator', 'Hello');
+            expect(traceId).toBeTruthy();
+            expect(setDoc).toHaveBeenCalled();
+        });
+
         it('preserves the Firestore server timestamp sentinel', async () => {
             const timestamp = { isEqual: vi.fn() } as unknown as ReturnType<typeof serverTimestamp>;
             vi.mocked(serverTimestamp).mockReturnValue(timestamp);
