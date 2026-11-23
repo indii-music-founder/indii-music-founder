@@ -580,6 +580,7 @@ vi.mock('firebase/firestore', () => {
         enableNetwork: vi.fn(() => Promise.resolve()),
         persistentLocalCache: vi.fn(() => ({})),
         persistentMultipleTabManager: vi.fn(() => ({})),
+        persistentSingleTabManager: vi.fn(() => ({})),
         runTransaction: vi.fn((dbOrCallback, maybeCallback) => {
             const callback = typeof maybeCallback === 'function' ? maybeCallback : dbOrCallback;
             return callback({
