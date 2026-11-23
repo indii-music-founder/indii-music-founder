@@ -3527,13 +3527,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1658: Per-seat pre-flight is ~6 serial uncached round trips [O5]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — capability snapshot part changed on branch `claude/seat-preflight`; trace, budget and reservation round trips unchanged
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O5 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Per-seat pre-flight is ~6 serial uncached round trips: capability snapshot callable (`CapabilitySnapshotService.ts:48`, `BaseAgent.ts:1163`), awaited `startTrace` (`AgentExecutor.ts:88`), `checkBudget` per loop (`BaseAgent.ts:1309`), quota then headers then reservation (`FirebaseIntelligenceService.ts:1000-1031`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+
+- **Change (2026-11-23, part 1 of O5):** `loadCapabilitySnapshot` fetched the `getCapabilitySnapshot` callable for every seat (20 s timeout each). It now reuses a fresh server snapshot until the snapshot's own `expiresAt` (per signed-in uid), shares one in-flight request between parallel seats, and never caches a fail-closed result. Tests: `CapabilitySnapshotService.cache.test.ts` (3 parallel seats → 1 request; refetch after expiry; failure not cached); agent suites passed; renderer tsc 0 errors; ESLint 0 errors. Not changed: awaited `startTrace`, per-loop `checkBudget`, and the serial quota → headers → reservation calls.
 
 ---
 
