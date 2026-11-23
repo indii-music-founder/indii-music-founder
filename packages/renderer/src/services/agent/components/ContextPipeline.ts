@@ -1,4 +1,5 @@
 import { ContextPreparation } from './ContextPreparation';
+import { readOptionalContext } from './OptionalContext';
 import { ContextResolver } from './ContextResolver';
 import { AgentContext, Directive } from '../types';
 import { Timestamp } from 'firebase/firestore';
@@ -58,21 +59,44 @@ export class ContextPipeline {
         let relevantMemories: string[] = [];
         let userAlignmentRules: string[] = [];
 
+        // ISSUE-1708: memory recall, fallback memories, active plans and product
+        // skills are enrichment. A slow one used to burn the shared 30 s budget
+        // and fail the artist's message ("Context preparation timed out");
+        // each now has its own short budget and the turn continues without it.
+        let memoriesUnavailable = false;
+        const fallbackMemories = async (): Promise<string[]> => {
+            const fallback = await readOptionalContext('fallback memories',
+                () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString), 3_000, signal);
+            if (fallback.unavailable !== undefined) {
+                logger.warn('[ContextPipeline] Fallback memories unavailable (non-blocking):', fallback.unavailable);
+                memoriesUnavailable = true;
+                return [];
+            }
+            return fallback.value;
+        };
+
         if (userId && isKnowledgeBaseEnabled) {
-            try {
-                // Extract the user's latest message for intent matching
-                const recentContext = this.extractRecentContext(chatHistoryString);
+            // Extract the user's latest message for intent matching
+            const recentContext = this.extractRecentContext(chatHistoryString);
 
-                // Determine active agent ID
-                const agentId = stateContext.activeModule || 'generalist';
+            // Determine active agent ID
+            const agentId = stateContext.activeModule || 'generalist';
 
-                // Assemble context from all 4 layers in parallel
-                const bigBrainContext = await preparation.wait('memory recall', () => bigBrainEngine.assembleContext(
-                    userId,
-                    agentId,
-                    recentContext,
-                    stateContext.projectId
-                ));
+            // Assemble context from all 4 layers in parallel
+            const recall = await readOptionalContext('memory recall', () => bigBrainEngine.assembleContext(
+                userId,
+                agentId,
+                recentContext,
+                stateContext.projectId
+            ), 8_000, signal);
+
+            if (recall.unavailable !== undefined) {
+                logger.warn('[ContextPipeline] BigBrain assembly unavailable (non-blocking):', recall.unavailable);
+                // Fallback: still try to get basic memories
+                relevantMemories = await fallbackMemories();
+                memoriesUnavailable = true;
+            } else {
+                const bigBrainContext = recall.value;
 
                 // Format into XML block for prompt injection
                 autoRecallBlock = bigBrainEngine.formatForPrompt(bigBrainContext);
@@ -94,22 +118,19 @@ export class ContextPipeline {
                     `episodic:${bigBrainContext.meta.episodicMatches}, ` +
                     `rules:${bigBrainContext.meta.alignmentRuleCount})`
                 );
-            } catch (err: unknown) {
-                preparation.throwIfStopped();
-                logger.warn('[ContextPipeline] BigBrain assembly failed (non-blocking):', err);
-                // Fallback: still try to get basic memories
-                relevantMemories = await preparation.wait('fallback memories', () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString));
             }
         } else if (isKnowledgeBaseEnabled) {
             // No user but knowledge base enabled — basic memory retrieval
-            relevantMemories = await preparation.wait('fallback memories', () => this.fallbackRetrieveMemories(stateContext.projectId, chatHistoryString));
+            relevantMemories = await fallbackMemories();
         }
 
         // 4. Fetch Active Living Plans (V2 Continuity)
         let activePlanBlock = '';
         if (stateContext.projectId) {
             try {
-                const activePlans = await preparation.wait('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'));
+                const plansRead = await readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 3_000, signal);
+                if (plansRead.unavailable !== undefined) logger.warn('[ContextPipeline] Active plans unavailable (non-blocking):', plansRead.unavailable);
+                const activePlans = plansRead.unavailable !== undefined ? [] : plansRead.value;
                 if (activePlans.length > 0) {
                     // Use the most recent executing plan
                     const plan = activePlans[0];
@@ -180,7 +201,12 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         let activeProductSkillBlock = '';
         try {
             const recentContext = this.extractRecentContext(chatHistoryString);
-            let skill = recentContext ? await preparation.wait('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext)) : undefined;
+            let skill: Awaited<ReturnType<typeof ProductSkillRegistry.searchProductSkillByIntentAsync>> | undefined;
+            if (recentContext) {
+                const skillRead = await readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext), 3_000, signal);
+                if (skillRead.unavailable !== undefined) logger.warn('[ContextPipeline] Product skill search unavailable (non-blocking):', skillRead.unavailable);
+                else skill = skillRead.value;
+            }
 
             if (!skill && stateContext.activeModule) {
                 skill = ProductSkillRegistry.getSkillForModule(stateContext.activeModule);
@@ -205,7 +231,7 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             ...stateContext,
             chatHistoryString,
             historicalSummary,
-            historyWarning,
+            historyWarning: historyWarning ?? (memoriesUnavailable ? 'Saved memories are unavailable for this reply.' : undefined),
             relevantMemories,
             userAlignmentRules: [...(userAlignmentRules || []), ...ambitionDialNotes],
             memoryContext,

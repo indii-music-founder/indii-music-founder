@@ -14,6 +14,7 @@ import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { projectBucketMatches } from '@/core/constants';
 import { useToast } from '@/core/context/ToastContext';
+import { useAssetPickRequest } from '@/services/creative/assetPickRequest';
 
 type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
 type ViewStyle = 'grid' | 'list';
@@ -110,6 +111,8 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
     const [viewStyle, setViewStyle] = useState<ViewStyle>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const toast = useToast();
+    const pickRequest = useAssetPickRequest(state => state.request);
+    const navigationGuard = useAssetPickRequest(state => state.guard);
 
     // Aggregate all assets into a single sorted list
     // ISSUE-1395 (audit): "Project Assets" rendered every project's assets —
@@ -216,6 +219,22 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
     ];
 
     const handleAssetClick = (asset: HistoryItem) => {
+        // ISSUE-1707: an open dialog asked for an image — hand it over instead of
+        // navigating away from the dialog.
+        if (pickRequest) {
+            if (asset.type !== pickRequest.accept || !asset.url) {
+                toast?.info(`Pick an image to use as ${pickRequest.purpose}.`);
+                return;
+            }
+            useAssetPickRequest.getState().setRequest(null);
+            void Promise.resolve(pickRequest.onPick({ id: asset.id, type: asset.type, url: asset.url, prompt: asset.prompt }))
+                .catch((error: unknown) => toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`));
+            return;
+        }
+        if (navigationGuard && (asset.type === 'image' || asset.type === 'video')) {
+            toast?.info(`Finish or close ${navigationGuard} before opening this in Studio.`);
+            return;
+        }
         // ISSUE-1395 follow-up: a VIDEO asset opens the video player (production
         // stage), not the image 'magic edit' canvas. Only images open the editor.
         if (asset.type === 'video') {
@@ -323,6 +342,19 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                 </div>
             </div>
 
+            {pickRequest && (
+                <div role="status" data-testid="asset-pick-banner" className="px-3 py-2 flex items-center justify-between gap-2 border-b border-white/[0.06] bg-white/[0.04] shrink-0">
+                    <span className="text-[11px] font-bold text-white">Choose an image for your {pickRequest.purpose}</span>
+                    <button
+                        type="button"
+                        onClick={() => useAssetPickRequest.getState().setRequest(null)}
+                        className="text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-white transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            )}
+
             {/* Filter Bar */}
             <div className="px-3 py-2 flex gap-1 overflow-x-auto no-scrollbar border-b border-white/[0.04] shrink-0">
                 {filterButtons.map(({ id, label, icon: Icon, count }) => (
@@ -378,7 +410,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     className="group relative hover:z-40 focus-within:z-40 aspect-square bg-white/[0.03] rounded-lg overflow-hidden border border-white/[0.06] hover:border-white/[0.15] transition-all cursor-pointer"
                                 >
-                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={`Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
+                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={pickRequest ? `Use as ${pickRequest.purpose}: ${asset.prompt || 'Untitled'}` : `Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
                                     <div className="absolute bottom-1 right-1 z-30"><MediaFileDetails item={asset} compact /></div>
                                     {/* Thumbnail */}
                                     {asset.type === 'video' ? (
@@ -447,7 +479,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     exit={{ opacity: 0, x: -10 }}
                                     className="relative flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-all cursor-pointer group text-left"
                                 >
-                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={`Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
+                                    <button type="button" className="absolute inset-0 z-[2]" aria-label={pickRequest ? `Use as ${pickRequest.purpose}: ${asset.prompt || 'Untitled'}` : `Edit in Studio: ${asset.prompt || 'Untitled'}`} onClick={() => handleAssetClick(asset)} />
                                     {/* Mini thumbnail */}
                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-white/[0.04] flex-shrink-0 flex items-center justify-center">
                                         {asset.type === 'image' && asset.url ? (

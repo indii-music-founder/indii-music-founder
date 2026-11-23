@@ -11,7 +11,7 @@ declare module 'fabric' {
         toJSON(propertyFilter?: string[]): unknown;
     }
 }
-import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
+import { exportMultiplierFor, hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
@@ -1239,7 +1239,16 @@ export class CanvasOperationsService {
      */
     saveCanvas(): string {
         if (!this.canvas) return '';
-        return this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
+        return this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: this.nativeExportMultiplier() });
+    }
+
+    /** ISSUE-1708: export at the base image's native resolution, not 2x the on-screen size. */
+    private nativeExportMultiplier(): number {
+        if (!this.canvas) return 2;
+        const base = this.canvas.getObjects().find(obj =>
+            obj.type?.toLowerCase() === 'image' &&
+            (obj as fabric.Object & { data?: { isBaseImage?: boolean } }).data?.isBaseImage);
+        return exportMultiplierFor(Math.abs(base?.scaleX ?? 0), this.canvas.getWidth(), this.canvas.getHeight());
     }
 
     /**
@@ -1249,7 +1258,7 @@ export class CanvasOperationsService {
         if (!this.canvas) return null;
 
         try {
-            const dataUrl = exportedDataUrl ?? this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: 2 });
+            const dataUrl = exportedDataUrl ?? this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: this.nativeExportMultiplier() });
             return imageDataUrlToBlob(dataUrl);
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';

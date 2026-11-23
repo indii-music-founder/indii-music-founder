@@ -1100,6 +1100,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
 
         setIsSavingCanvas(true);
+        // ISSUE-1708: phase timings, so a slow save names the phase that was slow.
+        const saveStartedAt = performance.now();
+        const phaseMs: Record<string, number> = {};
+        const markPhase = (name: string) => { phaseMs[name] = Math.round(performance.now() - saveStartedAt); };
         try {
             // Capture the editable objects before uploads or gallery updates can
             // replace this canvas while the save is in flight.
@@ -1112,12 +1116,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             }
 
             // 2. Upload blob to Firebase Storage as a persistent asset
+            markPhase('exportedPng');
             const blob = await canvasOps.getBlob(dataUrl);
+            markPhase('blobReady');
             let storageUri: string | undefined;
             let exportedAssetId: string | undefined;
             let exportedUrl: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
+                markPhase('uploaded');
                 exportedAssetId = assetId;
                 storageUri = currentUserStorageUri(assetId);
                 exportedUrl = storageUri ? await resolveStorageUrl(storageUri) : dataUrl;
@@ -1173,6 +1180,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 }, { lastAction: 'save_canvas', status: 'completed', outputUri: storageUri });
             }
             draftSynced = draftSynced && sessionSynced && exportSessionSynced;
+            markPhase('sessionsPersisted');
+            logger.info('[CreativeStudio] Canvas save timings (ms since start)', { ...phaseMs, bytes: blob ? blob.size : 0 });
             // ISSUE-917: Only show success if storage actually succeeded
             if (storageUri && draftSynced) {
                 toast.success('Saved to gallery & cloud!');

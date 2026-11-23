@@ -312,7 +312,19 @@ export default function CreativeStudio({ initialMode, embedded = false }: { init
         }
     }, [pendingStageHandoff?.image, consumeStageHandoff, addCharacterReference, toast]);
 
-    const isDirty = React.useMemo(() => (prompt && prompt.length > 0) || isGenerating, [prompt, isGenerating]);
+    // ISSUE-1708: a prompt that has already been generated from is not unsaved
+    // work. Only text typed since the last finished generation counts, so leaving
+    // after a successful render no longer raises "Unsaved Changes".
+    const [settledPrompt, setSettledPrompt] = React.useState('');
+    const wasGeneratingRef = React.useRef(false);
+    React.useEffect(() => {
+        if (wasGeneratingRef.current && !isGenerating) setSettledPrompt(prompt ?? '');
+        wasGeneratingRef.current = isGenerating;
+    }, [isGenerating, prompt]);
+    const isDirty = React.useMemo(
+        () => Boolean(prompt && prompt.trim().length > 0 && prompt !== settledPrompt) || isGenerating,
+        [prompt, settledPrompt, isGenerating],
+    );
     useUnsavedChanges(isDirty);
 
     useEffect(() => {

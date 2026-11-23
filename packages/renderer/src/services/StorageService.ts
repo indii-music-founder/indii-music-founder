@@ -8,6 +8,7 @@ import { ref, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage
 import { HistoryItem } from '@/core/types/history';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
+import { mediaUrlToBlob } from './storage/mediaUrlToBlob';
 import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
@@ -222,7 +223,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         // the item stayed ephemeral in memory and vanished on
                         // the next history snapshot rebuild. Upload media
                         // bytes directly with their real MIME.
-                        const blob = await (await fetch(item.url)).blob();
+                        const blob = await mediaUrlToBlob(item.url);
                         const ext = mimeType.startsWith('video/') ? 'mp4'
                             : mimeType === 'audio/wav' || mimeType === 'audio/x-wav' ? 'wav'
                                 : mimeType === 'audio/mp4' || mimeType === 'audio/x-m4a' ? 'm4a'

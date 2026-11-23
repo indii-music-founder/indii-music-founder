@@ -3,6 +3,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AssetsPanel from './AssetsPanel';
 import { useStore } from '@/core/store';
+import { useAssetPickRequest } from '@/services/creative/assetPickRequest';
 
 // Mock store
 vi.mock('@/core/store', () => {
@@ -250,5 +251,41 @@ describe('AssetsPanel', () => {
         const deleteUpImageBtn = screen.getAllByTitle('Remove from project')[4];
         fireEvent.click(deleteUpImageBtn);
         expect(mockRemoveUploadedImageFromProject).toHaveBeenCalledWith('up-img-1');
+    });
+
+    describe('asset pick request (ISSUE-1707)', () => {
+        beforeEach(() => useAssetPickRequest.setState({ request: null, guard: null }));
+
+        it('hands a clicked image to the open dialog instead of opening the Studio editor', async () => {
+            const onPick = vi.fn().mockResolvedValue(undefined);
+            useAssetPickRequest.getState().setRequest({ purpose: 'cover art', accept: 'image', onPick });
+            render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+            expect(screen.getByTestId('asset-pick-banner')).toHaveTextContent('Choose an image for your cover art');
+            fireEvent.click(screen.getByRole('button', { name: 'Use as cover art: beautiful neon city sunset' }));
+
+            await waitFor(() => expect(onPick).toHaveBeenCalledWith(expect.objectContaining({ id: 'gen-img-1', type: 'image', url: 'https://example.com/gen-img-1.jpg' })));
+            expect(mockSetModule).not.toHaveBeenCalled();
+            expect(useAssetPickRequest.getState().request).toBeNull();
+        });
+
+        it('does not hand over a video when an image was requested', () => {
+            const onPick = vi.fn();
+            useAssetPickRequest.getState().setRequest({ purpose: 'cover art', accept: 'image', onPick });
+            render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Use as cover art: guitar performance vertical close-up' }));
+            expect(onPick).not.toHaveBeenCalled();
+            expect(mockSetModule).not.toHaveBeenCalled();
+        });
+
+        it('refuses to leave an open dialog for the Studio editor', () => {
+            useAssetPickRequest.getState().setGuard('Create Release');
+            render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Edit in Studio: beautiful neon city sunset' }));
+            expect(mockSetModule).not.toHaveBeenCalled();
+            expect(mockSetViewMode).not.toHaveBeenCalled();
+        });
     });
 });

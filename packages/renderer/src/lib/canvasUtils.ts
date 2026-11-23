@@ -40,3 +40,20 @@ export function scaleImageToCanvas(
         hasBorders: false,
     });
 }
+
+/** Longest side, in pixels, a saved canvas export may have (keeps PNG encoding and upload bounded). */
+export const MAX_CANVAS_EXPORT_SIDE = 6000;
+
+/**
+ * ISSUE-1708: the artboard is fitted to the window, so the old fixed 2x export
+ * saved a 3000x3000 artwork as ~1276x1276 on a normal screen. This picks the
+ * multiplier that restores the base image's native resolution (never below
+ * the old 2x, never above MAX_CANVAS_EXPORT_SIDE).
+ */
+export function exportMultiplierFor(baseImageScale: number, canvasWidth: number, canvasHeight: number): number {
+    const longest = Math.max(canvasWidth, canvasHeight);
+    if (!Number.isFinite(baseImageScale) || baseImageScale <= 0 || !Number.isFinite(longest) || longest <= 0) return 2;
+    const native = 1 / baseImageScale;
+    const cap = MAX_CANVAS_EXPORT_SIDE / longest;
+    return Math.max(2, Math.min(native, cap));
+}
