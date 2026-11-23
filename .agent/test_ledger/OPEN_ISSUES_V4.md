@@ -3543,13 +3543,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1659: Persona finalizer adds 2 LLM calls per seat inside the chunk barrier (AS:1634, PersonaResponseService.ts:171-1 [O6]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — change on branch `claude/persona-finalizer`; not yet seen on production
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O6 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Persona finalizer adds 2 LLM calls per seat inside the chunk barrier (`AS:1634`, `PersonaResponseService.ts:171-185`); seats 4-9 wait and the client limiter throttles. (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+
+- **Change (2026-11-23):** in the Boardroom seat loop the persona style pass (`applyCompletedResponse` → `finalizePersonaAgentResponse`, 2 model calls) was awaited inside the chunk, so the next chunk's seats waited for it. The seat's own reply is now shown at once (not streaming) and passed to later seats as context; the style pass runs in the background and replaces the text when ready (a failure keeps the reply as shown). Direct and department flows are unchanged. Test: a style pass that never finishes no longer blocks chunk 2 (on the old code `executeFlow` would hang); boardroom intent suite 31/31; agent + persona suites passed; renderer tsc 0 errors; ESLint 0 errors. Trade-off: a styled reply may replace the plain one a few seconds after it appears.
 
 ---
 
