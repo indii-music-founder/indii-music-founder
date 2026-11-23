@@ -542,6 +542,7 @@ vi.mock('firebase/firestore', () => {
             return Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' });
         }),
         getDocFromServer: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
+        getDocFromCache: vi.fn(() => Promise.reject(new Error('Failed to get document from cache.'))),
         getUsageStats: vi.fn(() => Promise.resolve({
             data: {
                 tier: 'free',
