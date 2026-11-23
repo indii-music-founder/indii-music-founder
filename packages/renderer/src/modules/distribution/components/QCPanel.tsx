@@ -249,6 +249,19 @@ export const QCPanel: React.FC = () => {
                     'Waiting for the server analysis receipt — this can take a few minutes…',
                 );
                 resultProfile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId, signal);
+                // ISSUE-1694: save the analysed master to the track library so
+                // Submit Release can list it (same path the storyboard upload uses).
+                if (signal.aborted) throw new DOMException('Analysis cancelled', 'AbortError');
+                // A failed library write must not hide the analysis the artist just waited for.
+                try {
+                    const { trackIngestion } = await import('@/services/ingestion/TrackIngestionService');
+                    await trackIngestion.saveAnalyzedMaster(audioFile, {
+                        profile: resultProfile, fingerprint: masterFingerprint, userId, masterAsset,
+                    });
+                } catch (saveError) {
+                    logger.error('[QCPanel] Saving the analysed master to the track library failed:', saveError);
+                    toast.error('Your master was analyzed, but it could not be added to your track library. Try again before submitting a release.');
+                }
             }
 
             const newTags: Set<string> = new Set();

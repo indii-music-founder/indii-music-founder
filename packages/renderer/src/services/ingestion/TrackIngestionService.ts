@@ -39,13 +39,12 @@ export class TrackIngestionService {
             masterFingerprint: fingerprint,
         });
 
-        const observedAt = new Date().toISOString();
-        const embeddedTags = await this.extractEmbeddedTags(file, observedAt);
-
         // 2. Check Library (Idempotency)
         if (!options?.forceReanalyze) {
             const existing = await trackLibrary.getByFingerprint(fingerprint);
             if (existing) {
+                const observedAt = new Date().toISOString();
+                const embeddedTags = await this.extractEmbeddedTags(file, observedAt);
                 Logger.info('TrackIngestion', `Track already exists: ${fingerprint}`);
                 const hydrated = {
                     ...existing,
@@ -98,6 +97,28 @@ export class TrackIngestionService {
         Logger.info('TrackIngestion', 'Waiting for protected canonical-master analysis receipt...');
         const profile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId);
 
+        return this.saveAnalyzedMaster(file, {
+            profile, fingerprint, userId, masterAsset, artistContext: options?.artistContext,
+        });
+    }
+
+    /**
+     * Steps 4-5 of ingestion for a master that is already uploaded and analysed:
+     * map the analysis to library metadata and save the track. ISSUE-1694: the
+     * Distribution QC panel analysed masters but never saved them, so Submit
+     * Release (which lists `trackLibrary`) could not offer them.
+     */
+    async saveAnalyzedMaster(file: File, input: {
+        profile: Awaited<ReturnType<typeof audioIntelligence.analyzeCanonicalMaster>>;
+        fingerprint: string;
+        userId: string;
+        masterAsset: Awaited<ReturnType<typeof masterAudioService.persist>>;
+        artistContext?: ArtistContext;
+    }): Promise<ExtendedGoldenMetadata> {
+        const { profile, fingerprint, userId, masterAsset, artistContext } = input;
+        const observedAt = new Date().toISOString();
+        const embeddedTags = await this.extractEmbeddedTags(file, observedAt);
+
         // 4. Map to Golden Metadata
         const metadata = this.mapProfileToMetadata(file, profile, fingerprint, userId, masterAsset);
         metadata.songIntake = withPlannedSongIntakeQuestions({
@@ -113,7 +134,7 @@ export class TrackIngestionService {
             embeddedTags,
             catalogMatches: [],
             possibleExistingRelease: 'UNKNOWN',
-            artistContext: options?.artistContext,
+            artistContext,
             createdAt: observedAt,
             updatedAt: observedAt,
         });
