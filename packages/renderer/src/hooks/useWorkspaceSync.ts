@@ -15,6 +15,7 @@ import { normalizeWorkspaceScope, workspaceSyncService } from '@/services/sync/W
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 
 export function useWorkspaceSync(): void {
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,6 +172,18 @@ export function useWorkspaceSync(): void {
                     return;
                 }
 
+                // ISSUE-1708: the prompt exists to protect work on THIS device. On a
+                // page load there usually is none (the store keeps only
+                // preferences), yet it asked on every load whenever another device
+                // had saved last. Load the newer copy without asking when this
+                // device has no work of its own that differs from it.
+                if (!hasLocalWorkToLose(getWorkspaceSnapshot(useStore.getState()), snapshot)) {
+                    logger.info('[WorkspaceSync] Newer workspace from another device and nothing local to lose; loading it');
+                    applyWorkspaceSnapshot(snapshot);
+                    markHydrated();
+                    return;
+                }
+
                 // Cloud is newer and from another device → show conflict prompt
                 const shouldLoad = await ConfirmDialog.call({
                     message: 'A newer workspace from another device is available. Load it now? This will replace your current workspace state.',
@@ -273,3 +286,27 @@ export function useWorkspaceSync(): void {
         };
     }, [queuePush]);
 }
+
+type WorkspaceContent = Pick<WorkspaceSnapshot, 'notes' | 'referencedAssets' | 'selectedPlanId' | 'creativePrompt'>;
+
+function workspaceContent(snapshot: Partial<WorkspaceSnapshot>): WorkspaceContent {
+    return {
+        notes: snapshot.notes ?? [],
+        referencedAssets: snapshot.referencedAssets ?? [],
+        selectedPlanId: snapshot.selectedPlanId ?? null,
+        creativePrompt: (snapshot.creativePrompt ?? '').trim(),
+    };
+}
+
+/**
+ * True when loading `cloud` would discard something the artist made on this
+ * device: notes, referenced assets, a selected plan or a typed prompt that the
+ * cloud copy does not already have. Layout and seat choices are not counted.
+ */
+export function hasLocalWorkToLose(local: Partial<WorkspaceSnapshot>, cloud: Partial<WorkspaceSnapshot>): boolean {
+    const mine = workspaceContent(local);
+    const isEmpty = mine.notes.length === 0 && mine.referencedAssets.length === 0 && !mine.selectedPlanId && !mine.creativePrompt;
+    if (isEmpty) return false;
+    return JSON.stringify(mine) !== JSON.stringify(workspaceContent(cloud));
+}
+
