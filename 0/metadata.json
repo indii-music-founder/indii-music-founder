@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M842XB8SVCTW0YSN60KZA40B",
+  "session_id": "1e0a63ba-0c56-4351-82f4-9fdef6f9fae1",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-23T11:33:28.070331Z",
+  "branch": "claude/canvas-save-crop",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    ".agent/test_ledger/OPEN_ISSUES_V4.md",
+    "packages/renderer/src/lib/canvasUtils.export.test.ts",
+    "packages/renderer/src/lib/canvasUtils.ts",
+    "packages/renderer/src/modules/creative/services/CanvasOperationsService.test.ts",
+    "packages/renderer/src/modules/creative/services/CanvasOperationsService.ts"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "d365bd2ea0be",
+  "checkpoint_transcript_start": 270,
+  "transcript_lines_at_start": 270,
+  "compact_transcript_start": 37,
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 297665,
+    "cache_read_tokens": 14661198,
+    "output_tokens": 29831,
+    "api_call_count": 69
+  },
+  "redaction": {
+    "replacements": 20,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 18,
+      "key_context": 2,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
