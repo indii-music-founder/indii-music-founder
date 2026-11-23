@@ -4168,10 +4168,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1709: Nine remote MCP tools are wired to agents without function declarations
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — declarations added on branch `claude/mcp-tool-declarations`; no live call made yet
 - **Severity:** 🟡 MEDIUM
 - **Module:** Agents / `McpTools` consumers
 - **Evidence:** audit 2026-11-22 against `packages/firebase/src/mcp/tools/*`: `fetch_brand_kit` (Brand), `queue_release_canvas_render` and `audit_asset_resolutions` (Creative), `draft_dsp_metadata` (Distribution), `calculate_recoupment` and `stage_stripe_payouts` (Finance), `register_split_sheet`, `draft_cwr_registration` and `audit_sample_clearance` (Legal) appear in the agents' function maps, but none has a `functionDeclarations` entry, so the model is never offered them. Only `generate_playlist_pitch` (wrong names, ISSUE-1706) and `schedule_campaign_waterfall` (matches) were declared.
+- **Change (branch):** `tools/McpToolDeclarations.ts` declares all nine with the server's argument names and required fields, added to Brand (`fetch_brand_kit`), Creative (`queue_release_canvas_render`, `audit_asset_resolutions`), Distribution (`draft_dsp_metadata`), Finance (`calculate_recoupment`, `stage_stripe_payouts`) and Legal (`register_split_sheet`, `draft_cwr_registration`, `audit_sample_clearance`). `queue_release_canvas_render` and `stage_stripe_payouts` had no risk entry, so dispatch would have refused them; both are now approval tools in `AdditionalToolRiskCatalog`. `McpToolDeclarations.test.ts` reads each server tool's `inputSchema` and checks property names and required fields against its declaration, and checks each agent both declares and wires the tool (a deliberately misnamed property made it fail).
+- **Verification:** agent suites 2,369 passed / 18 skipped; typecheck exit 0; ESLint 0 errors. No live call to any of the nine yet.
+- **Description review (2026-11-22):** Jev compared each description with the server tool's behavior: 3 calls, 13,633/3,157 tokens, 2/9 flagged on the first pass (`audit_asset_resolutions` said "artwork and media" but the server checks only the cover file; `audit_sample_clearance` did not say it reads declared metadata only and cannot find undeclared samples), 0/9 after the rewrite. Three low-confidence items were also tightened by hand so the model does not overstate results: the split sheet is recorded unsigned with no contract, the metadata draft is not sent, and payout staging checks each recipient's payout account. `queue_release_canvas_render` now says the video is made from the cover art and the artist's own audio. Contract test 9/9; ESLint clean.
 - **Acceptance:** each wired tool has a declaration whose names and required fields match its server `inputSchema`, with a contract test per tool, or the wiring is removed.
 
 
@@ -4195,3 +4198,14 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Evidence:** production 2026-11-23 04:30 UTC, build `c4a2d1df2`, 1920 px wide window. With the Messages panel open, the dialog's right part (Artist Name field edge and the Next button) sits under the panel; with Project Assets open the panel covers the Assets step's right half. Seen in screenshots only; which element sits on top was not confirmed (`elementFromPoint` at Next's centre returned a `space-y-6` element, not the button).
 - **Acceptance:** the dialog sits above the side panels, or is laid out within the space they leave, at 1280–1920 px widths.
 
+
+### ISSUE-1711: Security policy blocks the post-turn quality check (and, once, a Publicist step) for the owner
+
+- **Status:** 🟡 PARTIAL — diagnostic logging on branch `claude/autorater-arcjet-block`; cause of the denial not yet known
+- **Severity:** 🟡 MEDIUM (the quality check is silent to the artist; the 19:13 run also showed "Publicist Director: Step failed · Request blocked by security policy" in the transcript)
+- **Module:** Agents / `MultiTurnAutorater`; backend `generateContentStream` Arcjet guard
+- **Evidence:** both live MCP runs on 2026-11-22 (ISSUE-1691) logged `[MultiTurnAutorater] … AppException: Request blocked by security policy` in the console. Cloud Logging (3-day window) has exactly three `[Arcjet] Request blocked` entries, all on Cloud Run service `generatecontentstream`, policy `admin`: 19:13:41Z (`req_01m82avcb2f6m90fprknmx29a7`), 19:13:44Z (`req_01m82avette5jtytckg8rmhmdm`), 21:01:48Z (`req_01m82h1b77fg7tn7yh5wm70204`). `packages/firebase/src/functions/security/arcjet.ts` returns this 403 for any denial that is not a rate limit; the only other rule is `shield` (request-content attack detection), so the likely cause is a shield false positive on a prompt that carries the whole conversation trace (raw tool output included). Not proven: the block log did not record the reason.
+- **Change (branch):** the block log now includes `reasonType` (`decision.reason.type`, e.g. `SHIELD`); test in `arcjet.test.ts` (18/18).
+- **Not done:** the autorater traces could not be classified by Jev, because a blocked call stores nothing and the client keeps no copy. Jev: not needed yet, no traces to judge.
+- **Next:** after deploy, read the next `[Arcjet] Request blocked` entry's `reasonType`; if `SHIELD`, decide between sending the trace in a form shield does not misread and scoping shield away from authenticated generation bodies (security call, deterministic, not for Jev).
+- **Acceptance:** no `Request blocked by security policy` on a normal Boardroom turn for a genuine account, with the denying rule named in logs for any real block.
