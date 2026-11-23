@@ -2830,3 +2830,11 @@ committing.
 - FIX: `OnboardingPage` waits ("Loading your profile…" + Retry) until the profile has a uid; `loadUserProfile` keeps local edits whose `updatedAt` is newer than the stored copy (`profileUpdatedAtMs` shared with the listener).
 - DIAGNOSIS THAT WORKED: subscribe to the store in the page and record every `userProfile` change with `new Error().stack`; it named `resetStoreForAccountBoundary` and `loadUserProfile` in one run after many selector guesses failed.
 - PREVENTION: Any UI that edits account state must render only once that account's own data has loaded. Every loader that writes state after an `await` must not overwrite newer local edits. In e2e, seed store state only after the app's boundary reset and profile load have settled.
+
+## 2026-11-23 — engine-dsp deploy fails with "Quota exceeded for total allowable CPU per project per region" (CLOUD_RUN_REGIONAL_CPU_QUOTA)
+
+**SEVERITY:** Medium (main deploy run red; Hosting, rules and Functions had already deployed, so only the engine-dsp worker stayed on its old revision)
+- BUG: In deploy run 45173897673 the "Deploy authenticated print preparation worker" step builds and rolls out `print-prep` and `engine-dsp` at the same time. Revision `engine-dsp-00720-qxf` was refused with `Quota exceeded for total allowable CPU per project per region` (seen with `gcloud run revisions list --service engine-dsp`); the step only printed "Creating Revision…failed" and a container-failed-to-start link, and the revision log had no container output because it never started.
+- FIX: Rerun the failed job (`gh run rerun <id> --failed`) once the other rollout has finished; earlier revisions keep serving.
+- DIAGNOSIS THAT WORKED: `gcloud run revisions list --service <svc> --limit 4 --format='value(name,status.conditions[0].status,status.conditions[0].message)'` gives the real reason when the deploy log only says the container failed to start.
+- PREVENTION: Before calling a Cloud Run deploy failure a code problem, read the revision's condition message. If quota keeps recurring, deploy `print-prep` and `engine-dsp` one after the other in the workflow, or request more regional CPU quota.
