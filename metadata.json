@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M851VNH6B8M2B7SPNRTYAE2P",
+  "strategy": "manual-commit",
+  "branch": "claude/dropzone-no-base64",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".agent/test_ledger/OPEN_ISSUES_V4.md",
+    "packages/renderer/src/components/shared/GlobalDropZone.test.tsx",
+    "packages/renderer/src/components/shared/GlobalDropZone.tsx",
+    "packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts",
+    "packages/renderer/src/services/StorageService.mediaExtension.test.ts",
+    "packages/renderer/src/services/StorageService.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 16433,
+    "cache_read_tokens": 8066502,
+    "output_tokens": 9062,
+    "api_call_count": 13
+  },
+  "redaction": {
+    "replacements": 37,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 22,
+      "key_context": 15,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
