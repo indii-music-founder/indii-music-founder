@@ -323,6 +323,8 @@ export default function CreativeStudio({ initialMode, embedded = false }: { init
         // when it ends: edits made while it ran are still unsubmitted work.
         if (!wasGeneratingRef.current && isGenerating) submittedPromptRef.current = prompt ?? '';
         if (wasGeneratingRef.current && !isGenerating) setSettledPrompt(submittedPromptRef.current);
+    React.useEffect(() => {
+        if (wasGeneratingRef.current && !isGenerating) setSettledPrompt(prompt ?? '');
         wasGeneratingRef.current = isGenerating;
     }, [isGenerating, prompt]);
     const isDirty = React.useMemo(

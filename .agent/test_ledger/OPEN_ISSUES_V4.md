@@ -4126,7 +4126,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1707: Create Release wizard: submit spinner never ends; silent cover rejection; asset drop and tools field problems
 
-- **Status:** 🟡 PARTIAL — four of six items addressed on branch `claude/release-wizard-submit`; not yet seen on production
+- **Status:** 🟡 PARTIAL — four of six items merged in #1000 (`b602cb07d`) and checked on production 2026-11-22 (three of them; the submit deadlines need a full submit)
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / `ReleaseWizard`, `useDDEXRelease`
 - **Evidence:** live run 2026-11-22 (ISSUE-1691), build `e0cae2eba`.
@@ -4142,9 +4142,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Verification:** publishing suites 58/58 (new tests: `submitDeadline`, `parseAiTools`); typecheck exit 0; ESLint 0 errors. The stall's root cause is not verified; the next live run will show the named step.
 - **Acceptance:** submit closes on completion with the release ID; an undersized cover shows the reason; a non-drag way to pick a Project Assets image exists; opening an asset does not discard the wizard; the tools field keeps spaces; disclosure copy is plain.
 
+- **Production check (2026-11-22, build `b602cb07d`, owner session, no submit so no paid call):** (1) disclosure step shows "AI Content Disclosure" and "Streaming platforms ask you to say how AI was used in making a release." with none of "Autonomous", "DDEX" or "Intelligence-generated"; (2) the tools field kept "Flow Music (flowmusic.app)" with its space after typing it one character at a time; (3) attaching the 1276×1276 cover left Next disabled and showed "Cover art: Image too small. Minimum: 3000x3000px. Current: 1276x1276px" with "Use Replace Image to pick a different file." **Not yet checked:** the submit deadlines and the named progress line, which need a full submit (one paid packaging call).
+
 ### ISSUE-1708: Creative Canvas save is slow and downsizes; false unsaved-changes guard; workspace prompt on every load; library upload fails
 
 - **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; workspace prompt and slow save not changed; not yet seen on production
+- **Status:** 🟡 PARTIAL — branch `claude/wizard-and-canvas-fixes`; slowness cause not proven; not yet seen on production
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / `CreativeCanvas`; workspace sync; upload queue
 - **Evidence:** live run 2026-11-22.
@@ -4157,6 +4160,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - Slow save: not proven (an upload of a ~16 MB PNG plus several Firestore writes, while the Firestore write channel returned 503 and re-connected repeatedly in the same session). The save now logs per-phase timings (`exportedPng`, `blobReady`, `uploaded`, `sessionsPersisted`, `bytes`) so the next run names the slow phase.
   - False unsaved-changes guard: `CreativeStudio` counted any non-empty prompt as unsaved, including one already generated from. Only text typed since the last finished generation (or an active generation) counts; the prompt a generation started with is what gets settled, so edits made while it runs stay unsaved (Codex P2).
   - Workspace prompt on every load: cause found, NOT changed. `useWorkspaceSync` compares the cloud snapshot time with an in-memory push time that is zero on each page load, so a snapshot last written by another device looks newer every time. A first attempt remembered the answered snapshot in localStorage; Codex review (P2 on #1002) correctly showed that skipping the prompt after a reload can leave an empty local workspace marked hydrated and then overwrite the cloud copy, because the store persists only presentation preferences. That change was reverted. The prompt stays until a safe design exists (for example persisting the snapshot itself with the acknowledgement).
+  - False unsaved-changes guard: `CreativeStudio` counted any non-empty prompt as unsaved, including one already generated from. Only text typed since the last finished generation (or an active generation) counts.
+  - Workspace prompt on every load: `useWorkspaceSync` compared the cloud snapshot time with an in-memory push time that is zero on each page load, so any snapshot from another device looked newer every time. The newest cloud snapshot this browser has already answered is now remembered per user and scope (`indii_workspaceSync_handled:…`); the prompt returns only when another device saved since.
   - Library upload: `StorageService` called `fetch()` on a `data:` URL for audio and video, which the production CSP `connect-src` blocks (console: "Cloud upload failed: TypeError: Failed to fetch"; queue: "Failed to save to cloud library"). Data URLs are now decoded locally (`mediaUrlToBlob`).
   - Tests: `exportMultiplierFor` (4), `mediaUrlToBlob` (3).
 - **Acceptance:** canvas save keeps the source resolution and finishes in seconds; no unsaved-changes prompt after a successful save; the workspace prompt only appears when a genuinely newer workspace exists; the library upload succeeds or explains why not.

@@ -235,6 +235,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                     const picker = useAssetPickRequest.getState();
                     if (picker.request === null && picker.guard !== null) picker.setRequest(pickRequest);
                 });
+                .catch((error: unknown) => toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`));
             return;
         }
         if (navigationGuard && (asset.type === 'image' || asset.type === 'video')) {
