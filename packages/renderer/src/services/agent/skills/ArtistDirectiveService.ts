@@ -11,7 +11,7 @@
  * Stored at: users/{uid}/skills/artist_master_directive
  */
 
-import { doc, getDoc, setDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, getDocFromCache, setDoc, onSnapshot, type DocumentSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
@@ -23,6 +23,9 @@ import {
     type ArtistMasterDirective,
     type DirectiveSectionKey,
 } from '@indii/shared';
+
+/** How long to wait for the server before trying this device's saved copy. */
+const SERVER_READ_GRACE_MS = 5_000;
 
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
@@ -95,25 +98,46 @@ export class ArtistDirectiveService {
         }
 
         try {
-            const snap = await getDoc(getDirectiveDocRef(uid));
-            const data = snap.data();
-            if (!snap.exists() || !data || Object.keys(data).length === 0) {
-                this.cachedDirective = DEFAULT_ARTIST_MASTER_DIRECTIVE;
-                this.cachedUid = uid;
-                return DEFAULT_ARTIST_MASTER_DIRECTIVE;
+            const ref = getDirectiveDocRef(uid);
+            const serverRead = getDoc(ref);
+            let graceTimer: ReturnType<typeof setTimeout> | undefined;
+            const fast = await Promise.race([
+                serverRead.then(snap => ({ snap })),
+                new Promise<undefined>(resolve => { graceTimer = setTimeout(() => resolve(undefined), SERVER_READ_GRACE_MS); }),
+            ]).finally(() => clearTimeout(graceTimer));
+            if (fast) return this.acceptSnapshot(uid, fast.snap);
+
+            // ISSUE-1710: with several app tabs sharing the Firestore cache, a read
+            // can wait 30 s+ behind a throttled background tab. Use this device's
+            // saved copy when there is one (not kept as the in-memory copy, so the
+            // next turn asks the server again); otherwise keep waiting for the server.
+            const cached = await getDocFromCache(ref).catch(() => undefined);
+            if (cached?.exists()) {
+                logger.warn('[ArtistDirectiveService] Server read slow; using the copy saved on this device');
+                serverRead.catch(() => undefined);
+                return this.parseSnapshot(cached);
             }
-
-            const rawData = normalizeStoredDirective(data);
-            const parsed = ArtistMasterDirectiveSchema.safeParse(rawData);
-            if (!parsed.success) throw new Error('Stored artist directive failed schema validation');
-
-            this.cachedDirective = parsed.data;
-            this.cachedUid = uid;
-            return parsed.data;
+            return this.acceptSnapshot(uid, await serverRead);
         } catch (err) {
             logger.error('[ArtistDirectiveService] getDirective failed', err);
             throw err;
         }
+    }
+
+    /** Parse a stored directive; a missing or empty doc means defaults. */
+    private parseSnapshot(snap: DocumentSnapshot): ArtistMasterDirective {
+        const data = snap.data();
+        if (!snap.exists() || !data || Object.keys(data).length === 0) return DEFAULT_ARTIST_MASTER_DIRECTIVE;
+        const parsed = ArtistMasterDirectiveSchema.safeParse(normalizeStoredDirective(data));
+        if (!parsed.success) throw new Error('Stored artist directive failed schema validation');
+        return parsed.data;
+    }
+
+    private acceptSnapshot(uid: string, snap: DocumentSnapshot): ArtistMasterDirective {
+        const directive = this.parseSnapshot(snap);
+        this.cachedDirective = directive;
+        this.cachedUid = uid;
+        return directive;
     }
 
     /**

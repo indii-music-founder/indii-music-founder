@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getDoc, getDocFromCache, setDoc, onSnapshot } from 'firebase/firestore';
 import { artistDirectiveService, ArtistDirectiveService } from './ArtistDirectiveService';
 import { DEFAULT_ARTIST_MASTER_DIRECTIVE, type ArtistMasterDirective } from '@indii/shared';
 
@@ -46,6 +46,48 @@ describe('ArtistDirectiveService', () => {
         expect(directive.artistName).toBe('Siren Sound');
         expect(directive.lastModifiedBy).toBe('agent');
         expect(directive.lastModifiedReason).toBe('Conductor calibrated mastering profile');
+    });
+
+    describe('slow server read (ISSUE-1710)', () => {
+        const saved: ArtistMasterDirective = { ...DEFAULT_ARTIST_MASTER_DIRECTIVE, artistName: 'Signal Bloom' };
+        const snap = (d: ArtistMasterDirective) => ({ exists: () => true, data: () => d }) as any;
+
+        it('uses the copy saved on this device after 5 s, and asks the server again next time', async () => {
+            vi.useFakeTimers();
+            try {
+                vi.mocked(getDoc).mockReturnValueOnce(new Promise(() => {}) as any);
+                vi.mocked(getDocFromCache).mockResolvedValueOnce(snap(saved));
+                const pending = service.getDirective('user-test-123');
+                await vi.advanceTimersByTimeAsync(5_000);
+                await expect(pending).resolves.toMatchObject({ artistName: 'Signal Bloom' });
+
+                vi.mocked(getDoc).mockResolvedValueOnce(snap({ ...saved, artistName: 'From server' }));
+                await expect(service.getDirective('user-test-123')).resolves.toMatchObject({ artistName: 'From server' });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('keeps waiting for the server when nothing is saved on this device', async () => {
+            vi.useFakeTimers();
+            try {
+                let resolveServer!: (v: unknown) => void;
+                vi.mocked(getDoc).mockReturnValueOnce(new Promise(r => { resolveServer = r; }) as any);
+                vi.mocked(getDocFromCache).mockRejectedValueOnce(new Error('Failed to get document from cache.'));
+                const pending = service.getDirective('user-test-123');
+                await vi.advanceTimersByTimeAsync(5_000);
+                resolveServer(snap({ ...saved, artistName: 'Late server' }));
+                await expect(pending).resolves.toMatchObject({ artistName: 'Late server' });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('does not touch the device copy when the server answers in time', async () => {
+            vi.mocked(getDoc).mockResolvedValueOnce(snap(saved));
+            await service.getDirective('user-test-123');
+            expect(getDocFromCache).not.toHaveBeenCalled();
+        });
     });
 
     it('rejects a corrupt stored directive without replacing it', async () => {
