@@ -97,7 +97,8 @@ describe('HistoryManager compaction', () => {
 
         await new HistoryManager().getCompiledView();
 
-        expect(SummaryService.summarize).toHaveBeenCalledTimes(3);
+        // Folded by whole turns (ISSUE-1661): the 18k turn takes 3 calls, the 15 short turns one more.
+        expect(SummaryService.summarize).toHaveBeenCalledTimes(4);
         for (const [input] of vi.mocked(SummaryService.summarize).mock.calls) {
             expect(input.length).toBeLessThan(8_100);
         }
@@ -110,7 +111,7 @@ describe('HistoryManager compaction', () => {
 
         await new HistoryManager().getCompiledView();
 
-        expect(SummaryService.summarize).toHaveBeenCalledTimes(3);
+        expect(SummaryService.summarize).toHaveBeenCalledTimes(4);
         for (const [input] of vi.mocked(SummaryService.summarize).mock.calls) {
             expect(input.length).toBeLessThanOrEqual(8_000);
         }
@@ -167,4 +168,38 @@ describe('HistoryManager compaction', () => {
         expect(formatted).toContain('User: [Attached: master-take.wav (audio/wav)]');
         expect(formatted).toContain('Assistant: Listening to master-take.wav now.');
     });
+
+    describe('long sessions (ISSUE-1661)', () => {
+        it('keeps summarizing after the send stops waiting, and the next send reuses the progress', async () => {
+            vi.useFakeTimers();
+            try {
+                const manager = new HistoryManager();
+                const history = messages(15 + 40).map((message, index) => index < 40 ? { ...message, text: `T${index} ` + 'y'.repeat(3_000) } : message);
+                vi.mocked(useStore.getState).mockReturnValue({ agentHistory: history, activeSessionId: 'session-a' } as ReturnType<typeof useStore.getState>);
+                vi.mocked(SummaryService.summarize).mockImplementation(() => new Promise(resolve => setTimeout(() => resolve('Rolling summary'), 1_000)));
+
+                const first = manager.getCompiledHistory();
+                await vi.advanceTimersByTimeAsync(5_000);
+                const compiled = await first;
+                // Cut off at 5 s with part of the history summarized: that part is used, not dropped.
+                expect(compiled.historicalSummary).toContain('Rolling summary');
+                expect(compiled.historicalSummary).toMatch(/covers the first \d+ of 40 older turns/);
+                expect(compiled.historyWarning).toBeUndefined();
+
+                // The summary was not cancelled: it finishes in the background.
+                const callsAfterFirst = vi.mocked(SummaryService.summarize).mock.calls.length;
+                await vi.advanceTimersByTimeAsync(60_000);
+                const total = vi.mocked(SummaryService.summarize).mock.calls.length;
+                expect(total).toBeGreaterThan(callsAfterFirst);
+
+                // The next send reuses all of it.
+                const second = await manager.getCompiledHistory();
+                expect(second.historicalSummary).toBe('Rolling summary');
+                expect(vi.mocked(SummaryService.summarize).mock.calls.length).toBe(total);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
 });
+

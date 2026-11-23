@@ -1142,6 +1142,9 @@ ${capabilitiesBlock}
                 const text = c.parts.map(p => 'text' in p ? p.text : '[Attachment]').join(' ');
                 return `${role}: ${text}`;
             }).join('\n\n');
+            // ISSUE-1661: keep the older-conversation summary the pipeline built.
+            const { withOlderHistorySummary } = await importWithRetry(() => import('./components/olderHistorySummary'));
+            safeHistory = withOlderHistorySummary(safeHistory, (context as { historicalSummary?: unknown } | undefined)?.historicalSummary);
         } else {
             // Fallback: Naive slicing if no structured history is available
             const MAX_HISTORY_CHARS = 32000;
