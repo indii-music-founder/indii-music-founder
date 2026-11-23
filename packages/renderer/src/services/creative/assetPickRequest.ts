@@ -18,6 +18,8 @@ export interface AssetPickRequest {
 
 interface AssetPickState {
     request: AssetPickRequest | null;
+    /** Bumped on every setRequest, so a late callback can tell the dialog moved on. */
+    requestVersion: number;
     guard: string | null;
     setRequest: (request: AssetPickRequest | null) => void;
     setGuard: (guard: string | null) => void;
@@ -25,7 +27,8 @@ interface AssetPickState {
 
 export const useAssetPickRequest = create<AssetPickState>(set => ({
     request: null,
+    requestVersion: 0,
     guard: null,
-    setRequest: request => set({ request }),
+    setRequest: request => set(state => ({ request, requestVersion: state.requestVersion + 1 })),
     setGuard: guard => set({ guard }),
 }));

@@ -317,8 +317,12 @@ export default function CreativeStudio({ initialMode, embedded = false }: { init
     // after a successful render no longer raises "Unsaved Changes".
     const [settledPrompt, setSettledPrompt] = React.useState('');
     const wasGeneratingRef = React.useRef(false);
+    const submittedPromptRef = React.useRef('');
     React.useEffect(() => {
-        if (wasGeneratingRef.current && !isGenerating) setSettledPrompt(prompt ?? '');
+        // Settle the prompt the generation started with, not whatever is in the box
+        // when it ends: edits made while it ran are still unsubmitted work.
+        if (!wasGeneratingRef.current && isGenerating) submittedPromptRef.current = prompt ?? '';
+        if (wasGeneratingRef.current && !isGenerating) setSettledPrompt(submittedPromptRef.current);
         wasGeneratingRef.current = isGenerating;
     }, [isGenerating, prompt]);
     const isDirty = React.useMemo(

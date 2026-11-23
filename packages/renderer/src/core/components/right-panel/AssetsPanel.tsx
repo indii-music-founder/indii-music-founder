@@ -227,8 +227,17 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                 return;
             }
             useAssetPickRequest.getState().setRequest(null);
+            const armedVersion = useAssetPickRequest.getState().requestVersion;
             void Promise.resolve(pickRequest.onPick({ id: asset.id, type: asset.type, url: asset.url, prompt: asset.prompt }))
-                .catch((error: unknown) => toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`));
+                .catch((error: unknown) => {
+                    toast?.error(error instanceof Error ? error.message : `Could not use that image as ${pickRequest.purpose}.`);
+                    // Re-arm so the artist can pick again without leaving the step (the
+                    // dialog's effect does not re-run, because nothing it depends on
+                    // changed) — but only if the dialog has not changed the request
+                    // since, e.g. by leaving the Assets step while the upload ran.
+                    const picker = useAssetPickRequest.getState();
+                    if (picker.requestVersion === armedVersion && picker.guard !== null) picker.setRequest(pickRequest);
+                });
             return;
         }
         if (navigationGuard && (asset.type === 'image' || asset.type === 'video')) {

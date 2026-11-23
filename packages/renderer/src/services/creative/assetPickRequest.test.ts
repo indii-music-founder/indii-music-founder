@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetPickRequest } from './assetPickRequest';
 
 describe('assetPickRequest (ISSUE-1707)', () => {
-    beforeEach(() => useAssetPickRequest.setState({ request: null, guard: null }));
+    beforeEach(() => useAssetPickRequest.setState({ request: null, requestVersion: 0, guard: null }));
 
     it('starts with no request and no guard', () => {
         expect(useAssetPickRequest.getState()).toMatchObject({ request: null, guard: null });
