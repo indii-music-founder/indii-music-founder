@@ -98,9 +98,11 @@ jobs:
           fi
 
           shopt -s nullglob
+          # Bracket globs so nullglob drops manifests this platform did not build
+          # (a literal dist-electron/latest.yml on macOS failed v2.0.0's upload).
           FILES=(dist-electron/*.dmg dist-electron/*.dmg.blockmap dist-electron/*-mac.zip dist-electron/*-mac.zip.blockmap \
                   dist-electron/*.exe dist-electron/*.exe.blockmap dist-electron/*.AppImage \
-                  dist-electron/latest-mac.yml dist-electron/latest.yml dist-electron/latest-linux.yml)
+                  dist-electron/latest-ma[c].yml dist-electron/lates[t].yml dist-electron/latest-linu[x].yml)
           if [ ${#FILES[@]} -eq 0 ]; then
             echo "::error::No release artifacts found in dist-electron to upload"
             exit 1

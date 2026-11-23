@@ -7,7 +7,9 @@
   },
   "files": [
     "dist/**/*",
-    "package.json"
+    "package.json",
+    "!node_modules/@rollup/rollup-linux-x64-gnu",
+    "!node_modules/@esbuild"
   ],
   "asarUnpack": [
     "**/node_modules/ffmpeg-static/**",
@@ -82,13 +84,11 @@
     "target": [
       "nsis"
     ],
-
-    "signingHashAlgorithms": [
-      "sha256"
-    ]
+    "verifyUpdateCodeSignature": false
   },
   "nsis": {
     "oneClick": false,
     "allowToChangeInstallationDirectory": true
-  }
+  },
+  "npmRebuild": false
 }
