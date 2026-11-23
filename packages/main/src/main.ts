@@ -572,7 +572,7 @@ if (!gotTheLock) {
             'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path', 'video:compile-preview', 'video:read-artifact',
             'video:probe-media', 'probe-media',
             'power:get-state', 'window:show', 'window:hide',
-            'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
+            'updater:check', 'updater:install', 'updater:download', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'show-notification',
             'web3:execute-transaction', 'web3:get-provider-metadata', 'web3:set-rpc-url', 'web3:get-balance',

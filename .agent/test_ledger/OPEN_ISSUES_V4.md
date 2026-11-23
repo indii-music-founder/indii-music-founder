@@ -4248,6 +4248,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Not covered:** true one-click install on macOS needs an Apple Developer ID certificate and notarization (no signing secrets exist in the repo); until then each Mac update is a new DMG install.
 - **Acceptance:** tag `v2.0.0` produces a green Release run with DMG, blockmap and `latest-mac.yml`; a 1.83.0+ install shows "Update Available" with a working download button; Settings → Desktop shows "Founders Version Two".
 
+- **Main deploy follow-up (2026-11-23):** #1013 added the `updater:download` IPC handler and preload call but not the channel in `KNOWN_IPC_CHANNELS` (`packages/main/src/main.ts`), so the two IPC parity tests failed and main deploy run actions/runs/45214184926 went red (unit shards 6 and 10). The allowlist is logged, not enforced, so the download call itself was not blocked. Fixed on branch `claude/ipc-updater-download`; `packages/main` suites 87 files passed; ESLint 0 errors.
 ### ISSUE-1717: Every packaged desktop build since 2026-11-08 crashes at launch (no window)
 
 - **Status:** 🟡 PARTIAL — addressed on branch `claude/desktop-version-two`; not yet in a released build
