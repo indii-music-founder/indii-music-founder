@@ -214,11 +214,15 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
     async updateMessage(sessionId: string, messageId: string, updates: Partial<AgentMessage>): Promise<void> {
         const sessionRef = doc(db, 'sessions', sessionId);
-        const initial = await getDocFromServer(sessionRef);
-        if (!initial.exists()) throw new Error(`Session '${sessionId}' no longer exists.`);
-        const expectedEpoch = activeMessageEpoch(initial.data());
         const firestoreUpdates: Record<string, unknown> = { ...updates };
+        // Only an attachment upload needs the generation before the
+        // transaction (so a stale message never uploads files); streamed text
+        // reads it inside the transaction instead of a separate server read.
+        let expectedEpoch: number | undefined;
         if (updates.attachments !== undefined) {
+            const initial = await getDocFromServer(sessionRef);
+            if (!initial.exists()) throw new Error(`Session '${sessionId}' no longer exists.`);
+            expectedEpoch = activeMessageEpoch(initial.data());
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error('User must be authenticated to update message attachments.');
             if (updates.attachments.some(attachment => attachment.loadFailed)) throw new Error('Cannot save an attachment that could not be loaded.');
@@ -227,11 +231,16 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         const messageRef = doc(db, 'sessions', sessionId, 'messages', messageId);
         await runTransaction(db, async transaction => {
             const parent = await transaction.get(sessionRef);
-            if (!parent.exists() || activeMessageEpoch(parent.data()) !== expectedEpoch) throw new SessionPersistenceConflict('Conversation changed while this message was being saved.');
+            if (!parent.exists()) throw new Error(`Session '${sessionId}' no longer exists.`);
+            const epoch = activeMessageEpoch(parent.data());
+            if (expectedEpoch !== undefined && epoch !== expectedEpoch) throw new SessionPersistenceConflict('Conversation changed while this message was being saved.');
             const current = await transaction.get(messageRef);
-            if (!current.exists() || messageEpoch(current.data()) !== expectedEpoch) throw new SessionPersistenceConflict('Message no longer belongs to the current conversation generation.');
-            transaction.update(messageRef, cleanFirestoreData({ ...firestoreUpdates, messageEpoch: expectedEpoch }));
-            transaction.update(sessionRef, { updatedAt: serverTimestamp(), messageStorage: 'subcollection' });
+            if (!current.exists() || messageEpoch(current.data()) !== epoch) throw new SessionPersistenceConflict('Message no longer belongs to the current conversation generation.');
+            transaction.update(messageRef, cleanFirestoreData({ ...firestoreUpdates, messageEpoch: epoch }));
+            // ISSUE-1655: no write to the shared session document here. Every
+            // seat's streamed update used to bump `updatedAt` on it, so 3-9
+            // parallel seats' transactions collided and retried. The session
+            // only reads here; appends still move `updatedAt`.
         });
     }
 

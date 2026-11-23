@@ -221,7 +221,17 @@ describe('SessionService Persistence (Dual Write)', () => {
         await sessionService.updateMessage('session-123', 'message-1', { attachments: [attachment], text: 'Updated' });
         expect(firestoreMocks.storeAttachments).toHaveBeenCalledWith('test-user-id', 'session-123', 'message-1', [attachment]);
         expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123/messages/message-1' }, { attachments: [reference], text: 'Updated', messageEpoch: 0 });
-        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.objectContaining({ messageStorage: 'subcollection' }));
+        expect(firestoreMocks.transactionUpdate).not.toHaveBeenCalledWith({ path: 'sessions/session-123' }, expect.anything());
+    });
+
+    it('streams a text update without a separate server read or a write to the shared session doc (ISSUE-1655)', async () => {
+        firestoreMocks.serverGet.mockClear();
+        firestoreMocks.transactionGet.mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 2 }) })
+            .mockResolvedValueOnce({ exists: () => true, data: () => ({ messageEpoch: 2 }) });
+        await sessionService.updateMessage('session-123', 'message-1', { text: 'partial reply' });
+        expect(firestoreMocks.serverGet).not.toHaveBeenCalled();
+        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledTimes(1);
+        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith({ path: 'sessions/session-123/messages/message-1' }, { text: 'partial reply', messageEpoch: 2 });
     });
 
     it('does not replace a saved attachment with an unavailable placeholder', async () => {
