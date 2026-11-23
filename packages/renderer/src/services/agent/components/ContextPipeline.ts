@@ -9,6 +9,7 @@ import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 import { bigBrainEngine } from '../memory/BigBrainEngine';
 import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
+import { Logger } from '@/core/logger/Logger';
 import { auth } from '@/services/firebase';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { IdeaParkingService } from '../tools/IdeaParking';
@@ -44,16 +45,38 @@ export class ContextPipeline {
 
     async buildContext(signal?: AbortSignal): Promise<PipelineContext> {
         const preparation = new ContextPreparation(signal);
+        const { useStore } = await preparation.wait('context store', () => importWithRetry(() => import('@/core/store')));
+        const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
+        const userId = userProfile?.uid || auth.currentUser?.uid;
+
+        // ISSUE-1710: the artist master directive is required, but it used to be
+        // read last, with whatever was left of the shared 30 s budget after the
+        // history and enrichment reads. Start it now so it overlaps them.
+        const directiveRead = userId ? artistDirectiveService.getDirective(userId) : undefined;
+        let directiveReady: { value: Awaited<ReturnType<typeof artistDirectiveService.getDirective>> } | undefined;
+        directiveRead?.then(value => { directiveReady = { value }; }, () => undefined); // a failure is reported by the wait below
+
         // 1. Fetch State (The "Working Context")
         const stateContext = await preparation.wait('working context', () => this.resolver.resolveContext());
 
         // 2. Fetch History (The "Session")
         const { view: chatHistoryString, historicalSummary, historyWarning } = await preparation.wait('conversation history', () => this.historyManager.getCompiledHistory(signal));
 
+        // Plans and product skill are independent of memory recall; start them
+        // together so their budgets overlap instead of adding up.
+        const plansReadPending = stateContext.projectId
+            ? readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 3_000, signal)
+            : undefined;
+        const recentContextForSkill = this.extractRecentContext(chatHistoryString);
+        const skillReadPending = recentContextForSkill
+            ? readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContextForSkill), 3_000, signal)
+            : undefined;
+        // Rejects only on Stop; awaited inside try/catch below. Avoids an unhandled
+        // rejection if Stop lands before either is awaited.
+        plansReadPending?.catch(() => undefined);
+        skillReadPending?.catch(() => undefined);
+
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
-        const { useStore } = await preparation.wait('context store', () => importWithRetry(() => import('@/core/store')));
-        const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
-        const userId = userProfile?.uid || auth.currentUser?.uid;
 
         let autoRecallBlock = '';
         let relevantMemories: string[] = [];
@@ -124,11 +147,14 @@ export class ContextPipeline {
             relevantMemories = await fallbackMemories();
         }
 
+        preparation.mark('memory recall');
+
         // 4. Fetch Active Living Plans (V2 Continuity)
         let activePlanBlock = '';
-        if (stateContext.projectId) {
+        if (plansReadPending) {
             try {
-                const plansRead = await readOptionalContext('active plans', () => livingPlanService.getPlansForProject(stateContext.projectId!, 'executing'), 3_000, signal);
+                const plansRead = await plansReadPending;
+                preparation.mark('active plans');
                 if (plansRead.unavailable !== undefined) logger.warn('[ContextPipeline] Active plans unavailable (non-blocking):', plansRead.unavailable);
                 const activePlans = plansRead.unavailable !== undefined ? [] : plansRead.value;
                 if (activePlans.length > 0) {
@@ -200,10 +226,10 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         // 8. Resolve Active Product Skill Playbook
         let activeProductSkillBlock = '';
         try {
-            const recentContext = this.extractRecentContext(chatHistoryString);
             let skill: Awaited<ReturnType<typeof ProductSkillRegistry.searchProductSkillByIntentAsync>> | undefined;
-            if (recentContext) {
-                const skillRead = await readOptionalContext('product skill', () => ProductSkillRegistry.searchProductSkillByIntentAsync(recentContext), 3_000, signal);
+            if (skillReadPending) {
+                const skillRead = await skillReadPending;
+                preparation.mark('product skill');
                 if (skillRead.unavailable !== undefined) logger.warn('[ContextPipeline] Product skill search unavailable (non-blocking):', skillRead.unavailable);
                 else skill = skillRead.value;
             }
@@ -221,7 +247,13 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
         }
 
         // 8.5 Resolve Tier 0 Artist Master Directive (Living User Skill)
-        const directiveObj = await preparation.wait('artist master directive', () => artistDirectiveService.getDirective(userId));
+        preparation.throwIfStopped();
+        // Already read: use it even if the enrichment reads spent the shared budget.
+        const directiveObj = directiveReady
+            ? directiveReady.value
+            : await preparation.wait('artist master directive', () => directiveRead ?? artistDirectiveService.getDirective(userId));
+        if (directiveReady) preparation.mark('artist master directive');
+        Logger.info('ContextPipeline', 'Context ready', preparation.timings());
         const artistMasterDirectiveBlock = artistDirectiveService.formatDirectiveForPrompt(directiveObj);
 
         preparation.throwIfStopped();
