@@ -29,7 +29,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 }
 
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, browserPopupRedirectResolver, connectAuthEmulator } from 'firebase/auth';
 
@@ -82,7 +82,8 @@ export const ai = {
  * This provides:
  * - Multi-device sync: Changes sync automatically across all devices
  * - Offline support: App works offline, syncs when back online
- * - Multi-tab support: Works across browser tabs simultaneously
+ * - Tabs: the first tab keeps the offline cache; any other tab of the app
+ *   runs on an in-memory cache with its own connection (ISSUE-1710).
  *
  * Data is stored in Firestore (cloud) with automatic IndexedDB caching.
  * No custom IndexedDB schema needed - Firebase handles it internally.
@@ -99,8 +100,15 @@ let functionsWest1: ReturnType<typeof getFunctions> | any = null;
 try {
     try {
         db = initializeFirestore(app, {
+            // ISSUE-1710: a shared multi-tab cache routes every tab's reads
+            // through one "primary" tab. When that tab sat in the background,
+            // Chrome throttled it and Firestore reads in the visible tab stalled
+            // for 30 s+ (Boardroom "took too long" on every send, 5 tabs open).
+            // With a single-tab cache each tab has its own connection; a tab
+            // that can't take the cache falls back to memory (handled by the
+            // SDK: failed-precondition → "Falling back to memory cache").
             localCache: persistentLocalCache({
-                tabManager: persistentMultipleTabManager()
+                tabManager: persistentSingleTabManager({ forceOwnership: false })
             }),
             experimentalForceLongPolling: true
         });

@@ -33,6 +33,7 @@ vi.mock('firebase/firestore', () => {
         })),
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
+        persistentSingleTabManager: vi.fn(),
         Timestamp: {
             now: () => ({
                 serverTimestamp: vi.fn(), toMillis: () => 1000

@@ -99,6 +99,7 @@ vi.mock('firebase/firestore', () => ({
     })),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
+    persistentSingleTabManager: vi.fn(),
     collection: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn(),

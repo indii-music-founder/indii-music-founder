@@ -51,6 +51,7 @@ vi.mock('firebase/firestore', () => ({
   persistentMultipleTabManager: vi.fn(() => ({
     serverTimestamp: vi.fn(),
   })),
+  persistentSingleTabManager: vi.fn(() => ({ kind: 'single-tab' })),
   getFirestore: vi.fn(() => ({
     serverTimestamp: vi.fn(),
   })),
@@ -164,5 +165,19 @@ describe('Firebase App Check Initialization', () => {
     await import('./firebase');
 
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
+  });
+
+  it('gives each tab its own Firestore connection: single-tab cache, no forced ownership (ISSUE-1710)', async () => {
+    vi.doMock('@/config/env', () => ({
+      env: { appCheckKey: '', DEV: false },
+      firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
+    }));
+    const firestore = await import('firebase/firestore');
+
+    await import('./firebase');
+
+    expect(firestore.persistentSingleTabManager).toHaveBeenCalledWith({ forceOwnership: false });
+    expect(firestore.persistentLocalCache).toHaveBeenCalledWith({ tabManager: { kind: 'single-tab' } });
+    expect(firestore.persistentMultipleTabManager).not.toHaveBeenCalled();
   });
 });
