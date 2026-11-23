@@ -143,6 +143,14 @@ describe('RightPanel', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(defaultState);
     });
 
+    it('publishes its width for dialogs to centre beside it, and clears it on unmount (ISSUE-1712)', () => {
+        const { unmount } = render(<RightPanel />);
+        const width = document.documentElement.style.getPropertyValue('--right-panel-width');
+        expect(width).toMatch(/^\d+px$/);
+        unmount();
+        expect(document.documentElement.style.getPropertyValue('--right-panel-width')).toBe('');
+    });
+
     it('renders collapsed state with tab buttons', () => {
         render(<RightPanel />);
 
