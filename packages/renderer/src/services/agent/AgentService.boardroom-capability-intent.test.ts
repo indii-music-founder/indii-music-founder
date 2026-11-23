@@ -112,6 +112,34 @@ describe('AgentService Boardroom capability intent dispatch (structural only)', 
         });
     });
 
+    it('does not hold later seats while a persona style pass is still running (ISSUE-1659)', async () => {
+        const messages: Array<Record<string, unknown>> = [{ id: 'response-0', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeAgents: ['generalist', 'marketing', 'legal', 'finance'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(message => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        // The style pass never finishes.
+        const finalizer = vi.fn(() => new Promise<{ text: string }>(() => {}));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore = vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Plan the launch', undefined, {}, 'response-0');
+
+        // Chunk 2 (finance) still ran, and each seat's reply is shown unstyled.
+        expect(capturedExecutions.map(execution => execution.agentId)).toEqual(['generalist', 'marketing', 'legal', 'finance']);
+        expect(messages.some(message => message.text === 'finance response' && message.isStreaming === false)).toBe(true);
+        expect(finalizer).toHaveBeenCalled();
+    });
+
     it('preserves one frozen raw task across chunks while retaining enhanced and prior context', async () => {
         const messages = [{
             id: 'response-0',

@@ -1704,12 +1704,23 @@ export class AgentService {
                         // indicator must not stay "typing..." for its duration —
                         // the founder saw exactly that (dots stuck after the
                         // reply landed).
-                        useStore.getState().updateAgentMessage(resId, { isStreaming: false });
-                        const completedText = await this.applyCompletedResponse(
+                        // ISSUE-1659: the persona style pass is 2 more model calls per
+                        // seat. Awaiting it here held the whole chunk (seats 4-9
+                        // waited). Show the specialist's own reply now, hand that
+                        // substance to later seats, and apply the style pass in the
+                        // background when it is ready.
+                        useStore.getState().updateAgentMessage(resId, {
+                            text: result.text,
+                            thoughtSignature: result.thoughtSignature,
+                            ...(planId ? { planId } : {}),
+                            isStreaming: false,
+                        });
+                        const seatResult = result;
+                        void this.applyCompletedResponse(
                             agentId,
                             task.rawUserUtterance,
                             resId,
-                            result,
+                            seatResult,
                             (id, updates) => useStore.getState().updateAgentMessage(id, updates),
                             () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === resId),
                             {
@@ -1721,9 +1732,7 @@ export class AgentService {
                                     logger.error(`[AgentService] Swarm measurement sync failed for ${resId}:`, err)
                                 );
                             },
-                        );
-
-                        result.text = completedText;
+                        ).catch(err => logger.warn(`[AgentService] Persona style pass failed for ${resId}; the specialist reply stays as shown.`, err));
                     } else {
                         if (currentStreamedText.length > 0) {
                             useStore.getState().updateAgentMessage(resId, {
