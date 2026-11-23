@@ -10,6 +10,7 @@ vi.mock('fabric', () => {
         height = 600;
         activeObject: any = null;
         backgroundColor = '#1a1a1a';
+        viewportTransform = [1, 0, 0, 1, 0, 0];
         on = vi.fn();
         off = vi.fn();
         dispose = vi.fn();
@@ -62,6 +63,9 @@ vi.mock('fabric', () => {
         Canvas: MockCanvas,
         Path: MockPath,
         Group: MockGroup,
+        util: {
+            transformPoint: (p: { x: number; y: number }, m: number[]) => ({ x: p.x * m[0] + p.y * m[2] + m[4], y: p.x * m[1] + p.y * m[3] + m[5] }),
+        },
     };
 });
 
@@ -131,5 +135,27 @@ describe('CanvasOperationsService blank sketch layers', () => {
         expect(result?.instagram).toContain('data:image/png');
         expect(mockCanvasInstance.setDimensions).toHaveBeenCalledWith({ width: 1080, height: 1350 });
         expect(mockCanvasInstance.toObject).toHaveBeenCalledWith(['data', 'id']);
+    });
+
+    it('saves only the base image area at its native size (no fitting padding)', () => {
+        const service = new CanvasOperationsService();
+        const canvasEl = document.createElement('canvas');
+        document.body.appendChild(canvasEl);
+        service.initialize(canvasEl);
+        mockCanvasInstance.width = 638;
+        mockCanvasInstance.height = 638;
+        const scale = 598 / 3000;
+        mockCanvasInstance.objects.push({
+            type: 'image',
+            data: { isBaseImage: true },
+            scaleX: scale,
+            getCoords: () => [{ x: 20, y: 20 }, { x: 618, y: 20 }, { x: 618, y: 618 }, { x: 20, y: 618 }],
+        });
+
+        service.saveCanvas();
+
+        const options = mockCanvasInstance.toDataURL.mock.calls.at(-1)[0];
+        expect(options).toMatchObject({ format: 'png', left: 20, top: 20, width: 598, height: 598 });
+        expect(Math.trunc(options.width * options.multiplier)).toBe(3000);
     });
 });
