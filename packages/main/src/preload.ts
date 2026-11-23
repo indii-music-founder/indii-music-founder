@@ -218,6 +218,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),
         install: () => ipcRenderer.invoke('updater:install'),
+        download: (version?: string) => ipcRenderer.invoke('updater:download', version),
         setChannel: (channel: 'stable' | 'beta') => ipcRenderer.invoke('updater:set-channel', channel),
         setSource: (source: 'github' | 'firebase') => ipcRenderer.invoke('updater:set-source', source),
         getConfig: () => ipcRenderer.invoke('updater:get-config'),

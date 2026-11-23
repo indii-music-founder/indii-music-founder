@@ -7,11 +7,11 @@ import { validateSender } from './utils/ipc-security';
  *
  * Events are forwarded to the renderer via IPC for UI notifications and custom dialogs.
  */
-import { BrowserWindow, ipcMain, Notification, app } from 'electron';
+import { BrowserWindow, ipcMain, Notification, app, shell } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import Store from 'electron-store';
-import { isLocalUnsignedBuild } from './updaterPolicy';
+import { canInstallInPlace, isLocalUnsignedBuild, isNewerVersion, releaseDownloadUrl } from './updaterPolicy';
 
 // Initialize configuration store
 interface IUpdaterStore {
@@ -20,8 +20,8 @@ interface IUpdaterStore {
 }
 const store = new Store() as unknown as IUpdaterStore;
 
-export const RELEASE_DISPLAY_NAME = 'Founders Version One';
-export const RELEASE_DISPLAY_NUMBER = 1;
+export const RELEASE_DISPLAY_NAME = 'Founders Version Two';
+export const RELEASE_DISPLAY_NUMBER = 2;
 
 // electron-updater is an optional dependency - gracefully handle if missing
 let autoUpdater: typeof import('electron-updater').autoUpdater | null = null;
@@ -155,19 +155,6 @@ export function setupAutoUpdater(): void {
         sendToRenderer('updater:checking');
     });
 
-    function isNewerVersion(remote: string, current: string): boolean {
-        const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
-        const r = parse(remote);
-        const c = parse(current);
-        for (let i = 0; i < Math.max(r.length, c.length); i++) {
-            const rPart = r[i] ?? 0;
-            const cPart = c[i] ?? 0;
-            if (rPart > cPart) return true;
-            if (rPart < cPart) return false;
-        }
-        return false;
-    }
-
     autoUpdater.on('update-available', (info: unknown) => {
         const updateInfo = info as Record<string, unknown>;
         const version = (updateInfo.version as string) || 'Unknown';
@@ -180,11 +167,19 @@ export function setupAutoUpdater(): void {
         }
 
         log.info(`[Updater] Update available: ${version} (current: ${currentVersion})`);
+        lastAvailableVersion = version;
         sendToRenderer('updater:available', { version });
 
         showUpdaterNotification(
             'indii Update Available',
-            `Version ${version} is available.`
+            canInstallInPlace(process.platform)
+                ? `Version ${version} is available. Click to download it.`
+                : `Version ${version} is available. Click to download the new installer.`,
+            () => {
+                startUpdateDownload(version).catch((err: unknown) => {
+                    log.warn('[Updater] Download from notification failed:', formatUpdaterErrorMessage(err));
+                });
+            }
         );
     });
 
@@ -228,6 +223,25 @@ export function setupAutoUpdater(): void {
     });
 }
 
+let lastAvailableVersion: string | undefined;
+
+/**
+ * Get the new version onto the machine. Unsigned macOS builds cannot be
+ * swapped in by Squirrel.Mac, so they open the release page with the new
+ * installer; other platforms download in place and offer a restart.
+ */
+async function startUpdateDownload(version?: string): Promise<{ mode: 'browser' | 'in-place' }> {
+    if (!canInstallInPlace(process.platform)) {
+        const url = releaseDownloadUrl(version ?? lastAvailableVersion);
+        log.info(`[Updater] Opening release page for manual install: ${url}`);
+        await shell.openExternal(url);
+        return { mode: 'browser' };
+    }
+    if (!autoUpdater) throw new Error('Updates are not available in this build.');
+    await autoUpdater.downloadUpdate();
+    return { mode: 'in-place' };
+}
+
 let handlersRegistered = false;
 
 export function registerUpdaterHandlers(): void {
@@ -242,7 +256,9 @@ export function registerUpdaterHandlers(): void {
         }
         try {
             const result = await autoUpdater.checkForUpdates();
-            return { available: !!result?.updateInfo, version: result?.updateInfo?.version };
+            const version = result?.updateInfo?.version;
+            // updateInfo is returned even when the feed holds this same version.
+            return { available: !!version && isNewerVersion(version, app.getVersion()), version };
         } catch (err: unknown) {
             const message = formatUpdaterErrorMessage(err);
             return { available: false, error: message };
@@ -251,8 +267,20 @@ export function registerUpdaterHandlers(): void {
 
     ipcMain.handle('updater:install', (event) => {
         validateSender(event);
-        if (autoUpdater && !isLocalUnsignedBuild(process.resourcesPath)) {
+        if (autoUpdater && !isLocalUnsignedBuild(process.resourcesPath) && canInstallInPlace(process.platform)) {
             autoUpdater.quitAndInstall(false, true);
+        }
+    });
+
+    ipcMain.handle('updater:download', async (event, version?: unknown) => {
+        validateSender(event);
+        if (isLocalUnsignedBuild(process.resourcesPath)) {
+            return { mode: 'unavailable' as const, error: 'Updates are turned off in local builds.' };
+        }
+        try {
+            return await startUpdateDownload(typeof version === 'string' ? version : undefined);
+        } catch (err: unknown) {
+            return { mode: 'unavailable' as const, error: formatUpdaterErrorMessage(err) };
         }
     });
 
@@ -261,7 +289,7 @@ export function registerUpdaterHandlers(): void {
         validateSender(event);
         if (autoUpdater) {
             store.set('updater-channel', channel);
-            const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
+            const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
             applyUpdaterConfig(currentSource, channel);
             log.info(`[Updater] Channel set and persisted to: ${channel}`);
         }
@@ -281,11 +309,12 @@ export function registerUpdaterHandlers(): void {
     ipcMain.handle('updater:get-config', (event) => {
         validateSender(event);
         const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
-        const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
+        const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
         return {
             channel: currentChannel,
             source: currentSource,
             isAvailable: !!autoUpdater && !isLocalUnsignedBuild(process.resourcesPath),
+            installMode: canInstallInPlace(process.platform) ? 'in-place' : 'browser',
             releaseName: RELEASE_DISPLAY_NAME,
             releaseNumber: RELEASE_DISPLAY_NUMBER,
             technicalVersion: app.getVersion()

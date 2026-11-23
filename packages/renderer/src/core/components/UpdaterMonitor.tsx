@@ -66,6 +66,22 @@ export const UpdaterMonitor: React.FC = () => {
         window.electronAPI?.updater?.install();
     };
 
+    // Unsigned macOS builds open the release page for the new installer;
+    // other platforms download in place and then offer Restart and Install.
+    const handleDownload = async () => {
+        const updater = window.electronAPI?.updater;
+        if (!updater?.download) return;
+        const result = await updater.download(version || undefined);
+        if (result.mode === 'unavailable') {
+            setError(result.error || 'The update could not be downloaded.');
+            setStatus('error');
+        } else if (result.mode === 'browser') {
+            setIsVisible(false);
+        } else {
+            setStatus('downloading');
+        }
+    };
+
     const close = () => setIsVisible(false);
 
     return (
@@ -92,7 +108,7 @@ export const UpdaterMonitor: React.FC = () => {
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">
                                     {status === 'checking' && 'Checking Updates...'}
-                                    {status === 'available' && 'Update Ready'}
+                                    {status === 'available' && 'Update Available'}
                                     {status === 'downloading' && 'Downloading...'}
                                     {status === 'downloaded' && 'Update Ready'}
                                     {status === 'error' && 'Update Failed'}
@@ -141,9 +157,17 @@ export const UpdaterMonitor: React.FC = () => {
                         )}
 
                         {status === 'available' && !progress && (
-                            <p className="text-xs text-gray-400 leading-relaxed">
-                                Preparing to download update <span className="text-green-400 font-mono">{version}</span>...
-                            </p>
+                            <div className="space-y-3">
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                    Version <span className="text-green-400 font-mono">{version}</span> is available.
+                                </p>
+                                <button
+                                    onClick={handleDownload}
+                                    className="w-full py-2.5 bg-linear-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-green-900/20 active:scale-[0.98]"
+                                >
+                                    Download Update
+                                </button>
+                            </div>
                         )}
                     </div>
                 </motion.div>
