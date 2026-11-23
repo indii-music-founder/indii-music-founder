@@ -3489,13 +3489,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1655: Every streamed message update reads and transacts on the shared session doc (core/store/slices/agent/agentSess [O2]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — change on branch `claude/session-stream-writes`; not yet seen on production
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O2 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Every streamed message update reads and transacts on the shared session doc (`core/store/slices/agent/agentSessionSlice.ts:598-628`, `SessionService.ts:213-235`); 3-9 parallel seats contend on one document, causing retries and unsaved messages. (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+
+- **Change (2026-11-23):** text streaming was already coalesced into one write lane per message (`enqueueStreamingText`), but each write still did a `getDocFromServer` on the session plus a transaction that wrote `updatedAt`/`messageStorage` to the shared session doc, so parallel seats' transactions conflicted. `SessionService.updateMessage` now reads the generation inside the transaction and writes only the message doc (the separate server read stays only for attachment uploads). Rules unaffected (`getAfter` on the session works without a session write). Tests: new streaming case (no server read, one write, message doc only) fails on the old code; attachment test now asserts no session write; session + agent store suites 9 files passed; ESLint 0 errors; renderer tsc 0 errors. Not measured live: retry counts with several seats.
 
 ---
 
