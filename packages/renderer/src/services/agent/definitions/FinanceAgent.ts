@@ -190,6 +190,8 @@ export const FinanceAgent: AgentConfig = {
     authorizedTools: ['list_domain_records', 'royalty_distribution_calculator', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'web_extract', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts', 'foundry_inspect_format', 'foundry_parse_and_validate', 'foundry_normalize_to_graph'],
     tools: [{
         functionDeclarations: [
+            CALCULATE_RECOUPMENT_DECLARATION,
+            STAGE_STRIPE_PAYOUTS_DECLARATION,
             ...financeRetrievalDeclarations,
             {
                 name: "royalty_distribution_calculator",
@@ -432,6 +434,7 @@ export const FinanceAgent: AgentConfig = {
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
+import { CALCULATE_RECOUPMENT_DECLARATION, STAGE_STRIPE_PAYOUTS_DECLARATION } from '../tools/McpToolDeclarations';
 
 
 // Freeze the schema to prevent cross-test contamination

@@ -59,7 +59,11 @@ function mockDecision(options: DecisionOptions = {}) {
         isErrored: () => Boolean(options.errored),
         reason: options.errored
             ? { message: options.errorMessage ?? "Arcjet service error" }
-            : { isRateLimit: () => Boolean(options.rateLimit), reset: options.reset ?? 17 },
+            : {
+                type: options.rateLimit ? "RATE_LIMIT" : "SHIELD",
+                isRateLimit: () => Boolean(options.rateLimit),
+                reset: options.reset ?? 17,
+            },
     };
 }
 
@@ -150,6 +154,27 @@ describe("Arcjet request protection", () => {
             retryAfterSeconds: 22,
         });
         expect(mocks.freeProtect).toHaveBeenCalledWith(request, { userId: "user_123", correlationId: "operation-1" });
+    });
+
+    it("returns 403 for a non-rate-limit denial and logs which rule denied it (ISSUE-1711)", async () => {
+        mocks.freeProtect.mockResolvedValue(mockDecision({ denied: true }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        })).resolves.toEqual({
+            allowed: false,
+            status: 403,
+            code: "REQUEST_BLOCKED",
+            message: "Request blocked by security policy.",
+        });
+        expect(mocks.loggerWarn).toHaveBeenCalledWith("[Arcjet] Request blocked", expect.objectContaining({
+            policy: "verified-free",
+            operationId: "operation-1",
+            reasonType: "SHIELD",
+        }));
     });
 
     it("fails closed on a transient Arcjet service error for an authenticated operation", async () => {

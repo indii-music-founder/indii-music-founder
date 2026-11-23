@@ -11,7 +11,7 @@ declare module 'fabric' {
         toJSON(propertyFilter?: string[]): unknown;
     }
 }
-import { exportMultiplierFor, hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
+import { exportMultiplierFor, hexToRgba, nativeExportRegion, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
@@ -1142,7 +1142,7 @@ export class CanvasOperationsService {
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.
      */
-    getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean }): string {
+    getFlattenedDataURL(options?: { format?: string; quality?: number; multiplier?: number; excludeAnnotations?: boolean; left?: number; top?: number; width?: number; height?: number }): string {
         if (!this.canvas) return '';
 
         const allObjects = this.canvas.getObjects();
@@ -1170,6 +1170,9 @@ export class CanvasOperationsService {
                 format: (options?.format as 'png' | 'jpeg') ?? 'png',
                 quality: options?.quality ?? 1,
                 multiplier: options?.multiplier ?? 2,
+                ...(options?.width !== undefined && options?.height !== undefined
+                    ? { left: options.left ?? 0, top: options.top ?? 0, width: options.width, height: options.height }
+                    : {}),
             });
 
             return dataUrl;
@@ -1239,16 +1242,29 @@ export class CanvasOperationsService {
      */
     saveCanvas(): string {
         if (!this.canvas) return '';
-        return this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: this.nativeExportMultiplier() });
+        return this.getFlattenedDataURL({ format: 'png', quality: 1, ...this.nativeExportRegion() });
     }
 
-    /** ISSUE-1708: export at the base image's native resolution, not 2x the on-screen size. */
-    private nativeExportMultiplier(): number {
-        if (!this.canvas) return 2;
+    /**
+     * ISSUE-1708: export the base image's area at its native resolution, not
+     * 2x the on-screen artboard (which also carried the fitting padding).
+     */
+    private nativeExportRegion(): { multiplier: number; left?: number; top?: number; width?: number; height?: number } {
+        if (!this.canvas) return { multiplier: 2 };
+        const canvasWidth = this.canvas.getWidth();
+        const canvasHeight = this.canvas.getHeight();
         const base = this.canvas.getObjects().find(obj =>
             obj.type?.toLowerCase() === 'image' &&
             (obj as fabric.Object & { data?: { isBaseImage?: boolean } }).data?.isBaseImage);
-        return exportMultiplierFor(Math.abs(base?.scaleX ?? 0), this.canvas.getWidth(), this.canvas.getHeight());
+        if (!base) return { multiplier: exportMultiplierFor(0, canvasWidth, canvasHeight) };
+        // aCoords are in the scene plane; toDataURL crops in screen pixels.
+        const vpt = this.canvas.viewportTransform;
+        const corners = base.getCoords().map(point => fabric.util.transformPoint(point, vpt));
+        const xs = corners.map(point => point.x);
+        const ys = corners.map(point => point.y);
+        const bounds = { left: Math.min(...xs), top: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
+        const screenScale = Math.abs(base.scaleX ?? 0) * Math.abs(vpt[0] || 1);
+        return nativeExportRegion(bounds, screenScale, canvasWidth, canvasHeight);
     }
 
     /**
@@ -1258,7 +1274,7 @@ export class CanvasOperationsService {
         if (!this.canvas) return null;
 
         try {
-            const dataUrl = exportedDataUrl ?? this.getFlattenedDataURL({ format: 'png', quality: 1, multiplier: this.nativeExportMultiplier() });
+            const dataUrl = exportedDataUrl ?? this.getFlattenedDataURL({ format: 'png', quality: 1, ...this.nativeExportRegion() });
             return imageDataUrlToBlob(dataUrl);
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
