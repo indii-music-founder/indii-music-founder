@@ -204,6 +204,11 @@ export function formatBoardroomReceipt(receipt: BoardroomStepReceipt, founderDia
         return result.message || `${call.name}: tool returned a result.`;
     });
     if (receipt.status === 'response') details.push(receipt.response.text);
+    // ISSUE-1660: when every tool result is verified, the agent's own write-up
+    // is the deliverable (a pitch, a summary). It used to be dropped, so the
+    // artist saw only "Tool results received". Partial and pending steps still
+    // leave prose out, so it cannot claim more than the tools verified.
+    if (receipt.status === 'completed' && receipt.response.text.trim()) details.push(receipt.response.text.trim());
     if (receipt.status === 'pending' && /AWAITING_.*APPROVAL/.test(receipt.response.error ?? '')) {
         details.push('Review the pending request in the Approvals panel before further work.');
     }

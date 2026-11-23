@@ -3551,13 +3551,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1660: Action steps never stream tokens and drop agent prose from receipts (AS:1360-1386, BoardroomActionPlan.ts:206) [O7]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — change on branch `claude/action-step-stream`; not yet seen on production
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O7 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** Action steps never stream tokens and drop agent prose from receipts (`AS:1360-1386`, `BoardroomActionPlan.ts:206`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+
+- **Change (2026-11-23):** seen on production 2026-11-22 (ISSUE-1691/1706): the Publicist's step showed only "Tool results received / Executed remote tool: generate_playlist_pitch", never the pitch. `formatBoardroomReceipt` now adds the agent's write-up when the step is fully verified (`completed`); partial and pending steps still leave prose out (existing truth-discipline tests unchanged). Action steps now stream tokens into their message instead of showing "Working on the assigned step…" until the receipt. Tests: new receipt case (verified step shows the write-up); orchestration 103 passed; agent suites 266 files passed; renderer tsc 0 errors; ESLint 0 errors. Token streaming has no dedicated unit test.
 
 ---
 

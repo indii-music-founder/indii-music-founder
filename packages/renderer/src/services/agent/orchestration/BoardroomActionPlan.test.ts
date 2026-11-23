@@ -83,6 +83,16 @@ describe('Boardroom action ownership and evidence (structural only)', () => {
         expect(formatBoardroomReceipt(receipt)).not.toContain('The action has not run');
         expect(readyBoardroomSteps([first, next], [receipt])).toEqual([]);
     });
+    it('shows the agent write-up with a fully verified step, e.g. the drafted pitch (ISSUE-1660)', () => {
+        const receipt = receiptForBoardroomStep(first, {
+            text: 'Here is the pitch for Assembly Line Halo: ...',
+            toolCalls: [{ name: 'generate_playlist_pitch', args: {}, result: { success: true, message: 'Executed remote tool: generate_playlist_pitch' } }],
+        });
+        expect(receipt.status).toBe('completed');
+        const text = formatBoardroomReceipt(receipt);
+        expect(text).toContain('Executed remote tool: generate_playlist_pitch');
+        expect(text).toContain('Here is the pitch for Assembly Line Halo');
+    });
     it('does not treat a prose success claim or an opaque tool result as verified execution', () => {
         expect(receiptForBoardroomStep(first, { text: 'All files saved' }).status).toBe('response');
         expect(receiptForBoardroomStep(first, { text: 'Done', toolCalls: [{ name: 'receipt', args: {}, result: 'unstructured success' }] }).status).toBe('failed');
