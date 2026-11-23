@@ -22,7 +22,7 @@ export const FETCH_BRAND_KIT_DECLARATION: FunctionDeclaration = {
 
 export const QUEUE_RELEASE_CANVAS_RENDER_DECLARATION: FunctionDeclaration = {
     name: 'queue_release_canvas_render',
-    description: 'Queue a looping canvas video render for one of the artist\'s releases. Returns a render job; it does not post anywhere.',
+    description: 'Queue a looping canvas video for one of the artist’s releases, made from its cover art and the artist’s own uploaded audio. Returns a render job; it does not post anywhere.',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -45,7 +45,7 @@ export const QUEUE_RELEASE_CANVAS_RENDER_DECLARATION: FunctionDeclaration = {
 
 export const AUDIT_ASSET_RESOLUTIONS_DECLARATION: FunctionDeclaration = {
     name: 'audit_asset_resolutions',
-    description: "Check a release's artwork and media against store resolution requirements.",
+    description: "Check a release's cover art file against store cover requirements (size and format). Does not check audio or video.",
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -57,7 +57,7 @@ export const AUDIT_ASSET_RESOLUTIONS_DECLARATION: FunctionDeclaration = {
 
 export const DRAFT_DSP_METADATA_DECLARATION: FunctionDeclaration = {
     name: 'draft_dsp_metadata',
-    description: 'Draft the store delivery metadata (XML) for a release. Draft mode fills and flags missing dates; delivery mode requires them.',
+    description: 'Draft store metadata (XML) for a release. Not ready to deliver as-is and nothing is sent. Draft mode fills in and flags missing dates; delivery mode requires them.',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -88,7 +88,7 @@ export const CALCULATE_RECOUPMENT_DECLARATION: FunctionDeclaration = {
 
 export const STAGE_STRIPE_PAYOUTS_DECLARATION: FunctionDeclaration = {
     name: 'stage_stripe_payouts',
-    description: 'Stage a royalty payout figure for a month for later human approval. Never moves money.',
+    description: 'Stage a royalty payout figure for one month and check each recipient’s payout account, for later human approval. Never moves money.',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -101,7 +101,7 @@ export const STAGE_STRIPE_PAYOUTS_DECLARATION: FunctionDeclaration = {
 
 export const REGISTER_SPLIT_SHEET_DECLARATION: FunctionDeclaration = {
     name: 'register_split_sheet',
-    description: 'Record a split sheet for a track. Percentages must add up to 100.',
+    description: 'Record an unsigned split sheet for a track. Percentages must add up to 100. Does not collect signatures or create a contract.',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -143,7 +143,7 @@ export const DRAFT_CWR_REGISTRATION_DECLARATION: FunctionDeclaration = {
 
 export const AUDIT_SAMPLE_CLEARANCE_DECLARATION: FunctionDeclaration = {
     name: 'audit_sample_clearance',
-    description: 'Check a track for sample-clearance gaps.',
+    description: 'Report sample-clearance status from the samples declared in a track’s metadata. Does not listen to the audio, so undeclared samples are not found.',
     parameters: {
         type: 'OBJECT',
         properties: {
