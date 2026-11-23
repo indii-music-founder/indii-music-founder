@@ -289,12 +289,14 @@ export interface ElectronAPI {
     updater?: {
         check: () => Promise<{ available: boolean; version?: string; error?: string }>;
         install: () => Promise<void>;
+        download?: (version?: string) => Promise<{ mode: 'browser' | 'in-place' | 'unavailable'; error?: string }>;
         setChannel: (channel: 'stable' | 'beta') => Promise<void>;
         setSource: (source: 'github' | 'firebase') => Promise<void>;
         getConfig: () => Promise<{
             channel: 'stable' | 'beta';
             source: 'github' | 'firebase';
             isAvailable: boolean;
+            installMode?: 'browser' | 'in-place';
             releaseName?: string;
             releaseNumber?: number;
             technicalVersion?: string;

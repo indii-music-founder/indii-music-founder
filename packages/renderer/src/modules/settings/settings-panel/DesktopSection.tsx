@@ -61,6 +61,7 @@ interface UpdateConfig {
     channel: 'stable' | 'beta';
     source: 'github' | 'firebase';
     isAvailable: boolean;
+    installMode?: 'browser' | 'in-place';
     releaseName?: string;
     releaseNumber?: number;
     technicalVersion?: string;
@@ -81,8 +82,8 @@ const DesktopSection: React.FC = () => {
         channel: 'stable',
         source: 'github',
         isAvailable: false,
-        releaseName: 'Founders Version One',
-        releaseNumber: 1,
+        releaseName: 'Founders Version Two',
+        releaseNumber: 2,
     });
     const [isElectron] = useState(() => !!window.electronAPI);
 
@@ -177,6 +178,19 @@ const DesktopSection: React.FC = () => {
         window.electronAPI?.updater?.install();
     }, []);
 
+    const handleDownload = useCallback(async () => {
+        const updater = window.electronAPI?.updater;
+        if (!updater?.download) return;
+        setErrorMessage('');
+        const result = await updater.download(availableVersion || undefined);
+        if (result.mode === 'unavailable') {
+            setStatus('error');
+            setErrorMessage(result.error || 'The update could not be downloaded.');
+        } else if (result.mode === 'in-place') {
+            setStatus('downloading');
+        }
+    }, [availableVersion]);
+
     const handleChannelChange = useCallback(async (value: string) => {
         const channel = value as 'stable' | 'beta';
         const updater = window.electronAPI?.updater;
@@ -258,7 +272,7 @@ const DesktopSection: React.FC = () => {
                             <Monitor size={18} className={moduleColor.text} />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-white">{config.releaseName || 'Founders Version One'}</p>
+                            <p className="text-sm font-semibold text-white">{config.releaseName || 'Founders Version Two'}</p>
                             <p className="text-xs text-slate-500 font-mono mt-0.5">
                                 indii Studio
                                 <span className="ml-2 text-slate-600">•</span>
@@ -320,6 +334,19 @@ const DesktopSection: React.FC = () => {
                 </button>
 
                 <AnimatePresence>
+                    {status === 'available' && (
+                        <motion.button
+                            id="settings-download-update"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            onClick={handleDownload}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
+                        >
+                            <Download size={14} />
+                            {config.installMode === 'browser' ? `Get v${availableVersion} installer` : `Download v${availableVersion}`}
+                        </motion.button>
+                    )}
                     {status === 'downloaded' && (
                         <motion.button
                             id="settings-install-update"
