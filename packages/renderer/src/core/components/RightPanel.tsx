@@ -114,6 +114,14 @@ export default function RightPanel() {
         isRightPanelOpen,
         preferredPanelWidth: rightPanelWidth,
     });
+    // ISSUE-1712: publish the panel's width so full-screen dialogs can centre in
+    // the space beside it instead of under it (the panel stays usable, e.g. to
+    // pick a cover from Project Assets while Create Release is open).
+    React.useEffect(() => {
+        const root = document.documentElement;
+        root.style.setProperty('--right-panel-width', `${Math.max(0, Math.round(effectivePanelWidth))}px`);
+        return () => { root.style.removeProperty('--right-panel-width'); };
+    }, [effectivePanelWidth]);
     const latestMessage = agentHistory[agentHistory.length - 1];
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`

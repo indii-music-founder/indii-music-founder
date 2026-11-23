@@ -4240,6 +4240,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Acceptance:** the dialog sits above the side panels, or is laid out within the space they leave, at 1280–1920 px widths.
 
 
+- **Change (2026-11-23, branch `claude/dialog-over-panel`):** the panel publishes its width as `--right-panel-width` on the document root (`RightPanel.tsx`), and the Create Release overlay pads its right side by that width on large screens, so the dialog centres in the space beside the panel; the panel stays clickable for the Project Assets cover pick. Production check of the layout (2026-11-23, live DOM on build `057eba5c2`, padding applied inline then reverted): panel 800 px wide starting at x=1120; before, Next's centre was covered; after, Next was the top element and the dialog's right edge was at x=896. Test: `RightPanel.test.tsx` checks the variable is set and cleared; RightPanel + publishing suites 9 files passed; ESLint 0 errors.
 ### ISSUE-1711: Security policy blocks the post-turn quality check (and, once, a Publicist step) for the owner
 
 - **Status:** 🟡 PARTIAL — diagnostic logging on branch `claude/autorater-arcjet-block`; cause of the denial not yet known
