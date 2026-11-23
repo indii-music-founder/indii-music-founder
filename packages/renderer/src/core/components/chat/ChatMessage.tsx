@@ -61,6 +61,7 @@ import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
 } from '@/services/agent/AgentVisualIdentity';
+import { displaySenderId } from '@/services/commands/entryCommandSender';
 
 /**
  * Canonical mapping between typed AgentVisualIconKey identifiers and Lucide icons.
@@ -266,7 +267,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
         state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
     );
     const agentIdentity = useMemo(
-        () => resolveAgentVisualIdentity(msg.agentId),
+        () => resolveAgentVisualIdentity(displaySenderId(msg.agentId)),
         [msg.agentId],
     );
     const AgentIcon = AGENT_ICONS[agentIdentity.iconKey] || AGENT_ICONS.bot || Bot;
