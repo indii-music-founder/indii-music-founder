@@ -4236,3 +4236,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Not done:** the autorater traces could not be classified by Jev, because a blocked call stores nothing and the client keeps no copy. Jev: not needed yet, no traces to judge.
 - **Next:** after deploy, read the next `[Arcjet] Request blocked` entry's `reasonType`; if `SHIELD`, decide between sending the trace in a form shield does not misread and scoping shield away from authenticated generation bodies (security call, deterministic, not for Jev).
 - **Acceptance:** no `Request blocked by security policy` on a normal Boardroom turn for a genuine account, with the denying rule named in logs for any real block.
+
+### ISSUE-1715: Distribution center column is cut off at the bottom
+
+- **Status:** 🟡 PARTIAL — addressed on branch `claude/upload-and-distribution-scroll`; not yet seen on production
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution (also Finance and Legal tab shells)
+- **Evidence:** production 2026-11-23, owner's screenshot of /distribution: the release card under "Submit Release" ends at the window edge with no way to scroll. Live measurement: the column `flex-1 flex flex-col min-w-0` was 1128px tall inside a 907px `main` with `overflow-hidden`, so 221px was clipped; the inner `overflow-y-auto` never got a bounded height (no `min-h-0` in the flex chain).
+- **Change (branch):** `min-h-0` on the Distribution column, its Tabs, and the scroll area (scroll area now shows the standard thin scrollbar instead of hiding it); `min-h-0` on the Finance and Legal Tabs shells, which use the same pattern. DistributionDashboard tests 14/14.
+- **Acceptance:** on production at a short window height the Distribution center column scrolls to the end of the release card.
