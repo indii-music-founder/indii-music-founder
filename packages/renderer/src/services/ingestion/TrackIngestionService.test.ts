@@ -228,4 +228,22 @@ describe('TrackIngestionService', () => {
         vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(null);
         await expect(service.ingestTrack(mockFile)).rejects.toThrow('Failed to fingerprint');
     });
+
+    it('saveAnalyzedMaster saves an already analysed master to the library without re-uploading (ISSUE-1694)', async () => {
+        vi.mocked(trackLibrary.saveTrack).mockResolvedValue(undefined as never);
+
+        const saved = await service.saveAnalyzedMaster(mockFile, {
+            profile: mockProfile as never,
+            fingerprint: mockFingerprint,
+            userId: 'owner-1',
+            masterAsset: mockMasterAsset as never,
+        });
+
+        expect(masterAudioService.persist).not.toHaveBeenCalled();
+        expect(audioIntelligence.analyzeCanonicalMaster).not.toHaveBeenCalled();
+        expect(trackLibrary.saveTrack).toHaveBeenCalledWith(saved);
+        expect(saved.masterAsset).toEqual(mockMasterAsset);
+        expect(saved.songIntake).toMatchObject({ ownerUid: 'owner-1', fingerprint: mockFingerprint, technicalAnalysisComplete: true });
+    });
 });
+

@@ -3983,7 +3983,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1694: A master ingested on the web never reaches the track library, so Submit Release cannot list it
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — change on branch `claude/qc-master-to-library`; not yet seen on production
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution QC (Pre-Flight Audio & QC) / Track library / Submit Release
 - **Evidence:** source on main `8253704d3`. Submit Release lists only masters from `trackLibrary.list()` (`users/{uid}/tracks` with `masterFingerprint` and `masterAsset.audioProperties`; `SubmitReleaseModal.tsx:118-121`), and the live account showed "No canonical masters found — ingest one first" (2026-11-21 run). Distribution's own ingest, the QC tab's web path, uploads the master (`masterAudioService.persist`) and waits for the server analysis receipt (`QCPanel.tsx:233-251`), but never calls `trackLibrary.saveTrack`; no Cloud Function writes `users/{uid}/tracks` from that receipt (only the developer SDK endpoint `sdkTracks.ts:35` creates tracks). On the web, the only UI that saves a canonical master to the library is the Creative video storyboard's audio upload (`StoryboardTimeline.tsx:196`, via `trackIngestion.ingestTrack`).
@@ -3991,6 +3991,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Fix:** after a successful canonical-master analysis on the web, save the track to the library through the same `trackIngestion` path the storyboard uses (one ingestion service, not a second copy), or point Submit Release's empty state at a path that does.
 - **Acceptance:** on production with a genuine account, ingest a WAV in Distribution → Pre-Flight Audio & QC, open Submit Release, and select that master; reload keeps it.
 
+- **Change (branch `claude/qc-master-to-library`, 2026-11-23):** `TrackIngestionService.saveAnalyzedMaster` (steps 4-5 of ingestion, extracted so there is one path) maps an already uploaded and analysed master to library metadata and saves it; `ingestTrack` now calls it, and the QC panel's web path calls it after the analysis receipt. A failed library write no longer hides the analysis: it shows "Your master was analyzed, but it could not be added to your track library. Try again before submitting a release." (Jev: 1 call, 500/71 tokens, 0/1 flagged). Test: `saveAnalyzedMaster` saves without re-uploading or re-analysing; ingestion + distribution suites 17 files passed; typecheck exit 0; ESLint 0 errors. Not verified live.
 ### ISSUE-1695: Publishing catalogue fails with "Missing or insufficient permissions" in the personal workspace
 
 - **Status:** 🟡 PARTIAL — repair on branch `claude/publishing-personal-workspace` (with ISSUE-1696); awaiting deploy and a genuine production check
