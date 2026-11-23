@@ -98,6 +98,7 @@ export class HistoryManager {
         // Recent saved memories are optional context. The engine's retrieve()
         // currently ignores its query, so do not present these as semantic matches.
         let memoryRecall = '';
+        let memoriesUnavailable = false;
         if (userId && state.isKnowledgeBaseEnabled && history.length > 0) {
             const recall = await readOptionalContext('recent saved memories',
                 () => alwaysOnMemoryEngine.retrieve({ limit: 3 }), 1_000, signal);
@@ -105,6 +106,7 @@ export class HistoryManager {
             if (recall.unavailable) {
                 Logger.warn('HistoryManager', 'Recent saved memories unavailable:', recall.unavailable);
                 notices.push('Recent saved memories are unavailable for this turn.');
+                memoriesUnavailable = true;
             }
             if (recent.length > 0) {
                 memoryRecall = `\n## Recent Saved Memories\n${recent.map(r => `- ${r.summary || r.content}`).join('\n')}\n`;
@@ -124,15 +126,25 @@ export class HistoryManager {
         // 3. Fold every older turn into a bounded rolling summary. The active
         // store retains the full session; getRecentHistory() is only a display
         // window and must not decide what the summarizer can see.
+        // ISSUE-1661: the summary used to be cancelled at the 5 s budget on every
+        // send, so a long session never finished (or cached) it and each send
+        // started over. It now keeps running in the background, saving progress
+        // after each turn; a send that can't wait uses whatever part is done.
+        const sessionId = state.activeSessionId || null;
         const result = await readOptionalContext('older conversation summary',
-            enrichmentSignal => this.summarizeOlder(state.activeSessionId || null, olderTurns, enrichmentSignal),
+            () => this.summarizeOlder(sessionId, olderTurns),
             5_000, signal);
-        const summary = result.value || '';
-        if (result.unavailable) {
+        const partial = result.unavailable ? this.cachedSummaryPrefix(sessionId, olderTurns) : undefined;
+        const summary = result.value || partial?.summary || '';
+        if (partial) {
+            Logger.info('HistoryManager', `Using a partial summary (${partial.covered} of ${olderTurns.length} older turns); the rest continues in the background`);
+            notices.push(`The summary above covers the first ${partial.covered} of ${olderTurns.length} older turns; turns after that and before the recent ${this.MAX_RECENT_TURNS} are not summarized for this turn. Ask the artist to restate any detail from them that the current request needs.`);
+        } else if (result.unavailable) {
             Logger.warn('HistoryManager', 'Older conversation summary unavailable:', result.unavailable);
             notices.push(`Older conversation context (${olderTurns.length} turns) is unavailable for this turn. Only the recent ${this.MAX_RECENT_TURNS} turns below are available. Do not infer earlier instructions, approvals, facts, or completion; ask the artist to restate any earlier detail needed for the current request.`);
         }
         const historicalSummary = [summary, ...notices].filter(Boolean).join('\n');
+        const olderContextMissing = Boolean(result.unavailable) && !partial;
 
         // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
@@ -143,43 +155,88 @@ ${notices.join('\n')}
 ${memoryRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
-`.trim(), historicalSummary, historyWarning: notices.length
-            ? (result.unavailable
-                ? 'Earlier conversation context is unavailable for this reply. Restate any earlier details needed for this request.'
-                : 'Saved memories are unavailable for this reply.')
-            : undefined };
+`.trim(), historicalSummary, historyWarning: olderContextMissing
+            ? 'Earlier conversation context is unavailable for this reply. Restate any earlier details needed for this request.'
+            : memoriesUnavailable ? 'Saved memories are unavailable for this reply.' : undefined };
+    }
+
+    /** The cached summary for this session if it covers a prefix of `olderTurns`. */
+    private cachedSummaryPrefix(sessionId: string | null, olderTurns: AgentMessage[]): { summary: string; covered: number } | undefined {
+        const cache = this.summaryCache;
+        if (!cache || cache.sessionId !== sessionId || !cache.summary || cache.source.length === 0) return undefined;
+        if (!this.isPrefixOf(cache.source, olderTurns)) return undefined;
+        return { summary: cache.summary, covered: cache.source.length };
+    }
+
+    private isPrefixOf(source: Array<Pick<AgentMessage, 'id' | 'role' | 'text'>>, turns: AgentMessage[]): boolean {
+        return source.length <= turns.length && source.every((message, index) => {
+            const current = turns[index];
+            return current?.id === message.id && current.role === message.role && current.text === message.text;
+        });
     }
 
     private summarizeOlder(sessionId: string | null, olderTurns: AgentMessage[], signal?: AbortSignal): Promise<string> {
         const work = this.summaryQueue.then(async () => {
             signal?.throwIfAborted();
             const cache = this.summaryCache;
-            const reusable = cache?.sessionId === sessionId
-                && cache.source.length <= olderTurns.length
-                && cache.source.every((message, index) => {
-                    const current = olderTurns[index];
-                    return current?.id === message.id && current.role === message.role && current.text === message.text;
-                });
-            const summarizedCount = reusable ? cache.source.length : 0;
+            const reusable = cache?.sessionId === sessionId && this.isPrefixOf(cache.source, olderTurns);
+            let covered = reusable ? cache.source.length : 0;
             let summary = reusable ? cache.summary : '';
-            const newHistory = this.formatHistory(olderTurns.slice(summarizedCount));
-
-            for (let offset = 0; offset < newHistory.length;) {
-                signal?.throwIfAborted();
-                const prefix = summary ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n` : '';
-                const available = this.SUMMARY_INPUT_CHARS - prefix.length;
-                if (available <= 0) throw new Error('Conversation summary exceeds the summarizer input budget.');
-                const chunk = newHistory.slice(offset, offset + available);
-                summary = await SummaryService.summarize(prefix + chunk, signal);
-                signal?.throwIfAborted();
-                offset += chunk.length;
-            }
-
-            this.summaryCache = {
-                sessionId,
-                source: olderTurns.map(({ id, role, text }) => ({ id, role, text })),
-                summary,
+            const save = (count: number) => {
+                this.summaryCache = {
+                    sessionId,
+                    source: olderTurns.slice(0, count).map(({ id, role, text }) => ({ id, role, text })),
+                    summary,
+                };
             };
+            const prefixFor = () => summary ? `Prior conversation summary:\n${summary}\n\nFurther conversation:\n` : '';
+            const fold = async (text: string) => {
+                signal?.throwIfAborted();
+                summary = await SummaryService.summarize(prefixFor() + text, signal);
+                signal?.throwIfAborted();
+            };
+
+            // Fold whole turns, so progress can be saved after each one and a
+            // later send continues from there instead of starting over.
+            let buffer = '';
+            let bufferEnd = covered;
+            for (let index = covered; index < olderTurns.length; index++) {
+                const turnText = this.formatHistory([olderTurns[index]!]) + '\n';
+                const available = this.SUMMARY_INPUT_CHARS - prefixFor().length;
+                if (available <= 0) throw new Error('Conversation summary exceeds the summarizer input budget.');
+                if (buffer.length + turnText.length <= available) {
+                    buffer += turnText;
+                    bufferEnd = index + 1;
+                    continue;
+                }
+                if (buffer) {
+                    await fold(buffer);
+                    covered = bufferEnd;
+                    save(covered);
+                    buffer = '';
+                }
+                // A single turn longer than the budget is folded in pieces.
+                const roomNow = this.SUMMARY_INPUT_CHARS - prefixFor().length;
+                if (turnText.length <= roomNow) {
+                    buffer = turnText;
+                    bufferEnd = index + 1;
+                    continue;
+                }
+                for (let offset = 0; offset < turnText.length;) {
+                    const room = this.SUMMARY_INPUT_CHARS - prefixFor().length;
+                    if (room <= 0) throw new Error('Conversation summary exceeds the summarizer input budget.');
+                    const piece = turnText.slice(offset, offset + room);
+                    await fold(piece);
+                    offset += piece.length;
+                }
+                covered = index + 1;
+                save(covered);
+            }
+            if (buffer) {
+                await fold(buffer);
+                covered = bufferEnd;
+            }
+            save(covered);
             return summary;
         });
         this.summaryQueue = work.then(() => undefined, () => undefined);

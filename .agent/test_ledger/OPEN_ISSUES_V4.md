@@ -3563,13 +3563,15 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1661: History summarization blocks every send but agents discard it (HistoryManager.ts:105-118, BaseAgent.ts:1120-11 [O8]
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — change on branch `claude/history-summary-unused`; not yet seen on production
 - **Severity:** HIGH
 - **Module:** Boardroom orchestration / services
 - **Plan item:** O8 in `docs/plans/boardroom-modernization-plan-2026-11-19.md`
 - **Evidence:** History summarization blocks every send but agents discard it (`HistoryManager.ts:105-118`, `BaseAgent.ts:1120-1143`). (read-only audit 2026-11-19; not yet reproduced at runtime)
 - **Fix:** See plan phase table for the owning phase.
 - **Acceptance:** Failing-first regression test, then fix; real signed-in acceptance stays PARTIAL per `.agent/REAL_USER_AUTHENTICITY.md`.
+
+- **Change (2026-11-23):** reproduced on production as part of ISSUE-1710 ("Timed out during older conversation summary" at 5 s and "Failed to generate a complete history summary" on every send in a 2,305-turn session). `HistoryManager.summarizeOlder` now folds whole turns and saves progress after each one; the send waits at most 5 s as before, but the summary is no longer cancelled and keeps running in the background, so a later send reuses it; a send that can't wait uses the part that is done, with a note on how much it covers (Jev on that model-facing note: 1 call, 529/69 tokens, 0/1 flagged). `BaseAgent` now puts the older-turn summary in front of the structured recent turns (`withOlderHistorySummary`), so agents receive it. The "saved memories unavailable" reply warning now appears only when memories were actually unavailable. Tests: long-session background case + helper tests; two bound tests now expect 4 calls (the oversized turn is folded on its own); agent suites 267 files passed; typecheck exit 0; ESLint 0 errors.
 
 ---
 
