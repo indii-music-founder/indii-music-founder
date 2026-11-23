@@ -46,6 +46,7 @@ import {
     type AgentVisualIconKey,
 } from '@/services/agent/AgentVisualIdentity';
 import { buildAttachmentDataUri } from './boardroomAttachmentDataUri';
+import { displaySenderId } from '@/services/commands/entryCommandSender';
 
 const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
     bot: Bot,
@@ -292,7 +293,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 )}
                 <AnimatePresence initial={false}>
                     {visibleMessages.map((msg) => {
-                        const identity = resolveAgentVisualIdentity(msg.agentId);
+                        const identity = resolveAgentVisualIdentity(displaySenderId(msg.agentId));
                         const isUser = msg.role === 'user';
                         const AgentIcon = AGENT_ICONS[identity.iconKey];
                         const displayText = sanitizeBoardroomMessage(
