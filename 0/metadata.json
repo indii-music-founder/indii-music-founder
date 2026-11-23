@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M82YGYT93TA1YJCN9S0BDJTS",
+  "session_id": "5b1db18a-bced-4722-94e9-697d40cefe19",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-23T00:57:33.840366Z",
+  "branch": "claude/wizard-and-canvas-fixes",
+  "checkpoints_count": 2,
+  "save_step_count": 5,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "dd6c1bd1f369",
+  "checkpoint_transcript_start": 9407,
+  "transcript_lines_at_start": 9407,
+  "compact_transcript_start": 1095,
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 13803,
+    "cache_read_tokens": 7482616,
+    "output_tokens": 6951,
+    "api_call_count": 9
+  },
+  "redaction": {
+    "replacements": 187,
+    "layers": {
+      "betterleaks": 4,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 103,
+      "key_context": 80,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 82
+  }
+}
