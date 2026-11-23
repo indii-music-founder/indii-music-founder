@@ -209,6 +209,8 @@ const APPROVAL_TOOLS = [
     'orchestrate_video_render',
     'pitch_story',
     'promote_asset_version',
+    // ISSUE-1709: paid render job; declared to the Creative agent now.
+    'queue_release_canvas_render',
     'register_catalog_work',
     'register_copyright',
     'register_split_sheet',
@@ -227,6 +229,8 @@ const APPROVAL_TOOLS = [
     'set_entity_anchor',
     'sftp_direct_ingestion',
     'spin_up_qa_sandbox',
+    // ISSUE-1709: stages a payout figure for human approval (moves no money).
+    'stage_stripe_payouts',
     'start_pro_registration',
     'subscribe_to_event',
     'toggle_content_id',

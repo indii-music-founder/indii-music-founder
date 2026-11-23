@@ -6,6 +6,7 @@ import { CanvasTools } from '../tools/CanvasTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
+import { QUEUE_RELEASE_CANVAS_RENDER_DECLARATION, AUDIT_ASSET_RESOLUTIONS_DECLARATION } from '../tools/McpToolDeclarations';
 import { StorageTools } from '../tools/StorageTools';
 import { VideoProjectTools } from '../tools/VideoProjectTools';
 import { VideoTools } from '../tools/VideoTools';
@@ -151,6 +152,8 @@ export const CreativeAgent: AgentConfig = {
     ],
     tools: [{
         functionDeclarations: [
+            QUEUE_RELEASE_CANVAS_RENDER_DECLARATION,
+            AUDIT_ASSET_RESOLUTIONS_DECLARATION,
             ...creativeRetrievalDeclarations,
             ...PRINT_TOOL_DECLARATIONS,
             CREATE_ARTIFACT_DECLARATION,

@@ -174,6 +174,7 @@ export const BrandAgent: AgentConfig = {
     authorizedTools: ['save_memory', 'recall_memories', 'verify_output', 'analyze_brand_consistency', 'scan_brand_compliance', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
+            FETCH_BRAND_KIT_DECLARATION,
             ...brandRetrievalDeclarations,
             {
                 name: 'verify_output',
@@ -300,6 +301,7 @@ export const BrandAgent: AgentConfig = {
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { McpTools } from '../tools/McpTools';
+import { FETCH_BRAND_KIT_DECLARATION } from '../tools/McpToolDeclarations';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(BrandAgent);

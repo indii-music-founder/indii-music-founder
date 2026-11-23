@@ -87,6 +87,9 @@ export const LegalAgent: AgentConfig = {
     ],
     tools: [{
         functionDeclarations: [
+            REGISTER_SPLIT_SHEET_DECLARATION,
+            DRAFT_CWR_REGISTRATION_DECLARATION,
+            AUDIT_SAMPLE_CLEARANCE_DECLARATION,
             ...legalRetrievalDeclarations,
             {
                 name: "contract_generator_and_review_tool",
@@ -302,6 +305,7 @@ export const LegalAgent: AgentConfig = {
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
+import { REGISTER_SPLIT_SHEET_DECLARATION, DRAFT_CWR_REGISTRATION_DECLARATION, AUDIT_SAMPLE_CLEARANCE_DECLARATION } from '../tools/McpToolDeclarations';
 
 
 // Freeze the schema to prevent cross-test contamination
