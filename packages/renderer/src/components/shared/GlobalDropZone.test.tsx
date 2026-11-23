@@ -31,4 +31,21 @@ describe('GlobalDropZone (ISSUE-1693)', () => {
         expect(progress.every(value => value >= 0 && value <= 100)).toBe(true);
         expect(store.updateUploadStatus.mock.calls[0]?.[1]).toBe('uploading');
     });
+
+    it('uploads dropped audio as the file itself (blob: URL), not a base64 copy', async () => {
+        const createObjectURL = vi.fn(() => 'blob:https://app.indii.music/abc');
+        Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, configurable: true });
+        store.updateUploadStatus.mockClear();
+        render(<GlobalDropZone><div /></GlobalDropZone>);
+        const file = new File(['RIFF....'], 'master.mp3', { type: 'audio/mpeg' });
+        const drop = new Event('drop', { bubbles: true, cancelable: true }) as DragEvent;
+        Object.defineProperty(drop, 'dataTransfer', { value: { files: [file] } });
+
+        window.dispatchEvent(drop);
+
+        await waitFor(() => expect(store.updateUploadStatus).toHaveBeenCalledWith(expect.any(String), 'success'));
+        expect(createObjectURL).toHaveBeenCalledWith(file);
+        expect(store.addUploadedAudio).toHaveBeenCalledWith(expect.objectContaining({ type: 'music', url: 'blob:https://app.indii.music/abc' }));
+    });
 });
+

@@ -9,6 +9,17 @@ import { HistoryItem } from '@/core/types/history';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
 import { mediaUrlToBlob } from './storage/mediaUrlToBlob';
+
+/** File extension for an uploaded audio/video MIME type. */
+export function mediaExtension(mimeType: string): string {
+    if (mimeType.startsWith('video/')) return 'mp4';
+    if (mimeType === 'audio/wav' || mimeType === 'audio/x-wav' || mimeType === 'audio/wave') return 'wav';
+    if (mimeType === 'audio/mp4' || mimeType === 'audio/x-m4a') return 'm4a';
+    if (mimeType === 'audio/flac' || mimeType === 'audio/x-flac') return 'flac';
+    if (mimeType === 'audio/ogg') return 'ogg';
+    if (mimeType === 'audio/webm') return 'webm';
+    return 'mp3';
+}
 import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
@@ -198,6 +209,28 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             }
         }
 
+        // ISSUE-1693: a dropped audio or video file arrives as a blob: URL for
+        // the File itself (no base64 copy of a 30+ MB master in memory).
+        // (blob: video is already handled by the branch above.)
+        if (item.url.startsWith('blob:') && item.type === 'music') {
+            const { auth } = await import('./firebase');
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('User must be authenticated to upload media.');
+            try {
+                const blob = await mediaUrlToBlob(item.url);
+                const ext = mediaExtension(blob.type || 'audio/mpeg');
+                const storagePath = `users/${userId}/assets/${item.id}.${ext}`;
+                const storageRef = ref(storage, storagePath);
+                await uploadBytes(storageRef, blob, blob.type ? { contentType: blob.type } : undefined);
+                imageUrl = await getDownloadURL(storageRef);
+                storageUri = `gs://${storage.app.options.storageBucket}/${storagePath}`;
+            } catch (error: unknown) {
+                logger.error('[StorageService] Cloud upload failed:', error);
+                events.emit('SYSTEM_ALERT', { level: 'error', message: 'Media upload failed' });
+                throw error;
+            }
+        }
+
         // If it's a base64 data URL, use CloudStorageService
         if (item.url.startsWith('data:')) {
             const { auth } = await import('./firebase');
@@ -224,12 +257,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         // the next history snapshot rebuild. Upload media
                         // bytes directly with their real MIME.
                         const blob = await mediaUrlToBlob(item.url);
-                        const ext = mimeType.startsWith('video/') ? 'mp4'
-                            : mimeType === 'audio/wav' || mimeType === 'audio/x-wav' ? 'wav'
-                                : mimeType === 'audio/mp4' || mimeType === 'audio/x-m4a' ? 'm4a'
-                                    : mimeType === 'audio/flac' ? 'flac'
-                                        : mimeType === 'audio/ogg' ? 'ogg'
-                                            : mimeType === 'audio/webm' ? 'webm' : 'mp3';
+                        const ext = mediaExtension(mimeType);
                         const storageRef = ref(storage, `users/${userId}/assets/${item.id}.${ext}`);
                         await uploadBytes(storageRef, blob);
                         imageUrl = await getDownloadURL(storageRef);

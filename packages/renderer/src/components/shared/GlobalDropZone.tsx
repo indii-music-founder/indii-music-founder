@@ -147,6 +147,34 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                     (async () => {
                         updateUploadStatus(queueId, 'uploading');
 
+                        // Audio goes up as the File itself (blob: URL), not a base64
+                        // copy; a 33 MB WAV used to become a ~45 MB string first.
+                        if (isAudio) {
+                            const objectUrl = URL.createObjectURL(file);
+                            try {
+                                const success = await addUploadedAudio({
+                                    id: crypto.randomUUID(),
+                                    type: 'music',
+                                    url: objectUrl,
+                                    prompt: file.name,
+                                    timestamp: Date.now(),
+                                    projectId: currentProjectId,
+                                    origin: 'uploaded',
+                                });
+                                if (!success) {
+                                    updateUploadStatus(queueId, 'error', 'Failed to save to cloud library');
+                                    return;
+                                }
+                                audioCount++;
+                                updateUploadProgress(queueId, 100);
+                                updateUploadStatus(queueId, 'success');
+                            } catch (error) {
+                                logger.error('Audio upload failed', error);
+                                updateUploadStatus(queueId, 'error', 'Failed to save to cloud library');
+                            }
+                            return;
+                        }
+
                         const reader = new FileReader();
                         reader.onprogress = (event) => {
                             if (event.lengthComputable && event.total > 0) {
