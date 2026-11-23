@@ -246,10 +246,13 @@ function mapDecision(
         };
     }
 
+    // ISSUE-1711: name the rule that denied the request (SHIELD, BOT, ...);
+    // without it a false positive cannot be told apart from real abuse.
     logger.warn("[Arcjet] Request blocked", {
         decisionId: decision.id,
         policy,
         operationId,
+        reasonType: decision.reason.type,
     });
     return {
         allowed: false,
