@@ -617,7 +617,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                     data-testid="boardroom-browser-pin-btn"
                 >
                     {isPinned ? <Check size={12} /> : <Pin size={12} />}
-                    <span className="hidden @[500px]:inline">{isPinning ? 'Pinning…' : isPinned ? 'Pinned' : 'Pin to Swarm'}</span>
+                    <span className="hidden @[500px]:inline">{isPinning ? 'Pinning…' : isPinned ? 'Pinned' : 'Pin to Boardroom'}</span>
                 </button>
 
                 {/* Web Fallback Reader Mode Toggle */}
@@ -818,7 +818,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                 </div>
                                 <p className="text-[11px] font-mono text-white/40 truncate">{committedUrl}</p>
                                 <p className="text-xs text-white/65 leading-relaxed pt-1">
-                                    {portalTitle} blocks inline web iframe embedding (<code className="text-white/80">X-Frame-Options</code>). Open it directly in a browser tab or use the desktop app for native view.
+                                    {portalTitle} can’t be shown inside indii. Open it in a new tab.
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -858,7 +858,7 @@ export function BoardroomBrowserView({ isVisible = true }: BoardroomBrowserViewP
                                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/85 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
                                 >
                                     <Pin size={12} />
-                                    <span>{isPinning ? 'Pinning…' : 'Pin to Swarm'}</span>
+                                    <span>{isPinning ? 'Pinning…' : 'Pin to Boardroom'}</span>
                                 </button>
                             </div>
                         </div>

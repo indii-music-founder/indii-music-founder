@@ -85,7 +85,7 @@ describe('ChatMessage companion mode cognitive logic', () => {
         expect(screen.getByText(/Consistency comes down to sustainable rituals/i)).toBeInTheDocument();
 
         // Cognitive Logic toggle button is rendered and collapsed by default
-        const toggle = screen.getByRole('button', { name: /cognitive logic/i });
+        const toggle = screen.getByRole('button', { name: /how we got here/i });
         expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
         // Detailed reasoning trace is hidden initially

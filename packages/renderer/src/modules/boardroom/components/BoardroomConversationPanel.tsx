@@ -350,7 +350,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     {/* Agent Name Label */}
                                     {!isUser && (
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1 truncate">
-                                            {identity.displayName}
+                                            {/* A system notice (no sender) is not an agent: don't label it "Unknown Agent". */}
+                                            {msg.role === 'system' && !msg.agentId ? 'Notice' : identity.displayName}
                                         </p>
                                     )}
                                     {isUser && (

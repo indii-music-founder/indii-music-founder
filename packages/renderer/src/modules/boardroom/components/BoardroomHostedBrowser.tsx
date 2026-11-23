@@ -361,7 +361,7 @@ export default function BoardroomHostedBrowser({ endpoint, initialUrl, onClose }
                 <button type="button" onClick={() => send('forward')} disabled={!mayOperate}>Forward</button>
                 <button type="button" onClick={() => send('reload')} disabled={!mayOperate}>Reload</button>
                 <button type="button" onClick={() => { captureIntent.current = 'reader'; send('capture'); }} disabled={!mayOperate}>Reader</button>
-                <button type="button" onClick={() => { captureIntent.current = 'pin'; send('capture'); }} disabled={!mayOperate}>Pin to Swarm</button>
+                <button type="button" onClick={() => { captureIntent.current = 'pin'; send('capture'); }} disabled={!mayOperate}>Pin to Boardroom</button>
                 <a href={pageUrl} target="_blank" rel="noopener noreferrer">Open externally</a>
                 <button type="button" onClick={onClose}>Close live browser</button>
             </div>

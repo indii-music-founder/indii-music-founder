@@ -37,7 +37,7 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact, defaultOpen = 
             >
                 <div className={cn("w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]", isOpen ? 'animate-pulse' : '')} />
                 <span className={cn("font-bold text-gray-400 uppercase tracking-[0.15em] flex items-center gap-1.5", compact ? "text-[8px]" : "text-[10px]")}>
-                    <TextEffect per='char' preset='fade'>Cognitive Logic</TextEffect>
+                    <TextEffect per='char' preset='fade'>How we got here</TextEffect>
                 </span>
                 <span className={cn("text-gray-600 group-hover:text-gray-400 transition-transform", isOpen ? 'rotate-180' : '')}>
                     <ChevronDown size={compact ? 10 : 12} />

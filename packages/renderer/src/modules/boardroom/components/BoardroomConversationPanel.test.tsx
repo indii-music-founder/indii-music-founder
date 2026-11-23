@@ -238,6 +238,15 @@ describe('BoardroomConversationPanel', () => {
         expect(screen.getByLabelText('Unknown Agent, neutral fallback identity')).toBeInTheDocument();
     });
 
+    it('labels a sender-less system notice "Notice", not "Unknown Agent"', () => {
+        const messages = [
+            { id: 'msg-1', role: 'system' as const, text: 'Saved memories are unavailable for this reply.', timestamp: Date.now() },
+        ];
+        render(<BoardroomConversationPanel messages={messages} />);
+        expect(screen.getByText('Notice')).toBeInTheDocument();
+        expect(screen.queryByText('Unknown Agent')).not.toBeInTheDocument();
+    });
+
     // --- Multi-Agent Conversation ---
 
     it('renders multiple agents in order', () => {
