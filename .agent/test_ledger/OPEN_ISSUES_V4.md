@@ -4255,7 +4255,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1716: Installed desktop app never updates itself; ship Founders Version Two (2.0.0)
 
-- **Status:** 🟡 PARTIAL — addressed on branch `claude/desktop-version-two`; v2.0.0 not yet tagged or released
+- **Status:** 🟡 PARTIAL — v2.0.0 published; in-app update prompt not yet seen from an older install
 - **Severity:** 🟠 HIGH
 - **Module:** Desktop (Electron) updater, release pipeline, Settings → Desktop
 - **Evidence:** 2026-11-23, the owner's installed app is v1.80.1 (September) while GitHub Releases has v1.83.0 with a valid `latest-mac.yml`. Release workflow history: v1.80.1 failed (publish step), v1.81.0 failed twice (`no matches found for dist-electron/latest.yml`, since fixed with `nullglob`), v1.83.0 cancelled; assets were uploaded by hand. In the app, `autoDownload` is off and nothing ever calls `downloadUpdate()`, so "update available" led nowhere (the toast said "Preparing to download update…" forever). macOS builds are unsigned (`mac.identity: null`), which Squirrel.Mac cannot install in place even if downloaded. `updater:check` reported `available: true` whenever the feed answered, even for the same version. The Settings/get-config default source was `firebase` while the startup default was `github`.
@@ -4264,14 +4264,19 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Acceptance:** tag `v2.0.0` produces a green Release run with DMG, blockmap and `latest-mac.yml`; a 1.83.0+ install shows "Update Available" with a working download button; Settings → Desktop shows "Founders Version Two".
 
 - **Main deploy follow-up (2026-11-23):** #1013 added the `updater:download` IPC handler and preload call but not the channel in `KNOWN_IPC_CHANNELS` (`packages/main/src/main.ts`), so the two IPC parity tests failed and main deploy run actions/runs/45214184926 went red (unit shards 6 and 10). The allowlist is logged, not enforced, so the download call itself was not blocked. Fixed on branch `claude/ipc-updater-download`; `packages/main` suites 87 files passed; ESLint 0 errors.
+- **Release (2026-11-23):** v2.0.0 tagged on `f4dc8b904` (#1024); Release run https://github.com/indii-music-founder/indii-music-founder/actions/runs/45252898158 green, assets `indii.music-2.0.0-arm64.dmg` (681,878,559 bytes), blockmap, `latest-mac.yml`. Packaged 2.0.0 checked locally: `getConfig` → Founders Version Two / 2 / installMode browser; `check` ignores 1.83.0 as older. #1013 missed the `updater:download` IPC allowlist entry (main.ipc.test failed in deploy run 45214184926); fixed by `c9bcf6f8a`, which is in v2.0.0. An earlier v2.0.0 tag landed on another session's unmerged commit (`48aa72877`); that run was cancelled before publishing and the tag was moved.
+
 ### ISSUE-1717: Every packaged desktop build since 2026-11-08 crashes at launch (no window)
 
-- **Status:** 🟡 PARTIAL — addressed on branch `claude/desktop-version-two`; not yet in a released build
+- **Status:** ✅ FIXED — packaged 2.0.0 opens its window
 - **Severity:** 🔴 CRITICAL
 - **Module:** Desktop main process / Boardroom browser
 - **Evidence:** 2026-11-23, local `build:desktop:mac` of 2.0.0: the app process starts, creates no renderer and no window, and writes no log. Running the built main process directly: `App threw an error during load — TypeError: Session can only be received when app is ready` at `new BoardroomBrowserController`. `boardroomBrowser.ts` built the controller at import (`export const boardroomBrowserController = new BoardroomBrowserController()`) with a class field `session.fromPartition('persist:boardroom-browser')`, added in `bede26ef8` (2026-11-08). The unit test hid it: its Electron mock allows `fromPartition` at any time and it read the request handler captured at import.
 - **Change (branch):** the partition session is created and hardened on first use (lazy getter), after the app is ready. Test: new "does not touch the Electron session when the module is imported" case; frame-request tests create the session through `attach` first. boardroomBrowser 14/14. After the change the main process reaches "App Ready (Primary Instance)".
 - **Acceptance:** the packaged 2.0.0 app opens its window on macOS.
+- **Closure evidence:** commit ca1b80f34 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/45252898158
+- **Verified:** packaged 2.0.0 built from `ca1b80f34` opened its window and loaded the studio locally on 2026-11-23 (main log "App Ready (Primary Instance)"); the v2.0.0 Release run above published DMG, blockmap and latest-mac.yml.
+
 ### ISSUE-1715: Distribution center column is cut off at the bottom
 
 - **Status:** 🟡 PARTIAL — addressed on branch `claude/upload-and-distribution-scroll`; not yet seen on production
@@ -4283,10 +4288,11 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1718: Desktop builds ship without MCP servers, execution scripts or agent catalog; v2.0.0 release upload failed
 
-- **Status:** 🟡 PARTIAL — addressed on branch `claude/v2-release-closeout`; v2.0.0 not yet republished
+- **Status:** 🟡 PARTIAL — v2.0.0 published with MCP servers; not yet seen connecting in an installed app
 - **Severity:** 🟠 HIGH
 - **Module:** Desktop packaging (`electron-builder.json`, `package.json`), `scripts/verify-packed-mcp.cjs`, `.github/workflows/release.yml`
 - **Evidence:** 2026-11-23, packaged 2.0.0 app logged "[MCP] Local MCP server is not built; skipping local MCP connection"; its `Resources/` held no `mcp-server-local`, `mcp-server-harness`, `execution` or `agents`. `package.json` carried its own `build` block, which electron-builder uses instead of `electron-builder.json`, so `beforePack` (MCP bundling), `afterPack` (pack verification) and every `extraResources` entry were silently skipped. With the JSON config active: `win.signingHashAlgorithms` fails the electron-builder 26 schema, and electron-builder drops `node_modules` from `extraResources` even with an explicit filter, so the bundled local MCP server crashed on start (`Cannot find module 'ffprobe-static'`; afterPack: "MCP error -32000: Connection closed"). Release run actions/runs/45247439287 built the DMG, then the publish step failed with "no matches found for `dist-electron/latest.yml`": `nullglob` only drops unmatched globs, and the manifest names were literals. The v2.0.0 release page exists with no files.
 - **Change (branch):** one config: `package.json` `build` removed; its `files` exclusions, `npmRebuild: false` and `win` block merged into `electron-builder.json`. `verify-packed-mcp.cjs` copies `dist/bundled-mcp/{local,harness}/node_modules` into the packed resources before verifying. `release.yml` brackets the manifest names so missing ones drop out. Local `electron-builder --mac dir`: exit 0; Resources now holds both MCP servers with their runtime packages, `execution` and `agents`; afterPack started both servers and found their tools.
 - **Not covered:** `packages/raw-converter/target/release/indii-raw` is not built anywhere in CI (electron-builder logs "file source doesn't exist" and skips it); RAW conversion is unavailable in packaged builds.
 - **Acceptance:** re-tagged v2.0.0 Release run is green with DMG, blockmap and `latest-mac.yml` attached; the installed app connects to the local MCP server.
+- **Release (2026-11-23):** merged as `f4dc8b904` (#1024); v2.0.0 Release run https://github.com/indii-music-founder/indii-music-founder/actions/runs/45252898158 green with all three assets (DMG grew from ~295 MB to ~682 MB with the bundled servers, scripts and catalog).
