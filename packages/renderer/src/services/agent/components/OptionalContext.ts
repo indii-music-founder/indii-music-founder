@@ -1,4 +1,4 @@
-import { ContextPreparation } from './ContextPreparation';
+import { ContextPreparation, ContextPreparationTimeout } from './ContextPreparation';
 
 /** Optional enrichment must leave time for required context and execution. */
 export async function readOptionalContext<T>(
@@ -18,6 +18,8 @@ export async function readOptionalContext<T>(
         return { value };
     } catch (error) {
         signal?.throwIfAborted();
+        // Log-facing reason: name the stage for a timeout (its message is artist-facing).
+        if (error instanceof ContextPreparationTimeout) return { unavailable: `timed out during ${error.stage}` };
         return { unavailable: error instanceof Error ? error.message : String(error) };
     } finally {
         // Fence subsequent work in a serial enrichment after timeout or Stop.

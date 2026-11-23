@@ -1,5 +1,16 @@
 import { Logger } from '@/core/logger/Logger';
 
+/**
+ * A context read ran out of time. The message is what the artist sees, so it
+ * stays plain; the internal stage name is kept on `stage` and in the log.
+ */
+export class ContextPreparationTimeout extends Error {
+    constructor(readonly stage: string) {
+        super('Getting this reply ready took too long. Please send your message again.');
+        this.name = 'ContextPreparationTimeout';
+    }
+}
+
 /** One deadline for context reads; cancellation never admits a late result. */
 export class ContextPreparation {
     private readonly startedAt: number;
@@ -32,7 +43,7 @@ export class ContextPreparation {
         this.throwIfStopped();
         const remaining = this.deadline - Date.now();
         const timeout = () => {
-            this.failure = new Error(`Context preparation timed out during ${stage}. Please retry.`);
+            this.failure = new ContextPreparationTimeout(stage);
             Logger.warn('ContextPreparation', `Timed out during ${stage}`, this.timings());
             return this.failure;
         };

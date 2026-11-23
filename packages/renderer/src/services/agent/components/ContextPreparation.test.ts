@@ -27,11 +27,11 @@ describe('ContextPreparation', () => {
         await expect(preparation.wait('history', async () => 'history')).resolves.toBe('history');
         await vi.advanceTimersByTimeAsync(60);
         const pending = preparation.wait('artist master directive', () => new Promise(() => {}));
-        const rejected = expect(pending).rejects.toThrow('artist master directive');
+        const rejected = expect(pending).rejects.toMatchObject({ stage: 'artist master directive', message: 'Getting this reply ready took too long. Please send your message again.' });
         await vi.advanceTimersByTimeAsync(40);
         await rejected;
         const next = vi.fn(async () => 'must not run');
-        await expect(preparation.wait('execution', next)).rejects.toThrow('artist master directive');
+        await expect(preparation.wait('execution', next)).rejects.toMatchObject({ stage: 'artist master directive', message: 'Getting this reply ready took too long. Please send your message again.' });
         expect(next).not.toHaveBeenCalled();
         expect(vi.getTimerCount()).toBe(0);
     });
@@ -45,7 +45,7 @@ describe('ContextPreparation', () => {
         await vi.advanceTimersByTimeAsync(50);
         preparation.mark('memory recall');
         const pending = preparation.wait('artist master directive', () => new Promise(() => {}));
-        const rejected = expect(pending).rejects.toThrow('artist master directive');
+        const rejected = expect(pending).rejects.toMatchObject({ stage: 'artist master directive', message: 'Getting this reply ready took too long. Please send your message again.' });
         await vi.advanceTimersByTimeAsync(20);
         await rejected;
         expect(warn).toHaveBeenCalledWith('ContextPreparation', 'Timed out during artist master directive', {
