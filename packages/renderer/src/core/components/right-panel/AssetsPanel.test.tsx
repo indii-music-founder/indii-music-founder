@@ -254,7 +254,7 @@ describe('AssetsPanel', () => {
     });
 
     describe('asset pick request (ISSUE-1707)', () => {
-        beforeEach(() => useAssetPickRequest.setState({ request: null, guard: null }));
+        beforeEach(() => useAssetPickRequest.setState({ request: null, requestVersion: 0, guard: null }));
 
         it('hands a clicked image to the open dialog instead of opening the Studio editor', async () => {
             const onPick = vi.fn().mockResolvedValue(undefined);
@@ -279,6 +279,23 @@ describe('AssetsPanel', () => {
 
             await waitFor(() => expect(useAssetPickRequest.getState().request).not.toBeNull());
             expect(mockSetModule).not.toHaveBeenCalled();
+        });
+
+        it('does not re-arm when the dialog moved on while the failed upload ran', async () => {
+            let rejectPick!: (error: Error) => void;
+            const onPick = vi.fn(() => new Promise<void>((_, reject) => { rejectPick = reject; }));
+            useAssetPickRequest.getState().setGuard('Create Release');
+            useAssetPickRequest.getState().setRequest({ purpose: 'cover art', accept: 'image', onPick });
+            render(<AssetsPanel toggleRightPanel={mockToggleRightPanel} />);
+
+            fireEvent.click(screen.getByRole('button', { name: 'Use as cover art: beautiful neon city sunset' }));
+            await waitFor(() => expect(onPick).toHaveBeenCalled());
+            // The wizard leaves the Assets step: it clears the request (a new version).
+            useAssetPickRequest.getState().setRequest(null);
+            rejectPick(new Error('storage unavailable'));
+
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(useAssetPickRequest.getState().request).toBeNull();
         });
 
         it('does not hand over a video when an image was requested', () => {
