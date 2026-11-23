@@ -1,0 +1,205 @@
+Copy everything inside the block:
+
+```text
+You're picking up an indii (indii-music-founder) session. You are Claude, the fixing agent, and you work as a pair with TypeSafe Jev: you're Batman, Jev is Robin. You do the code, the git work and the final calls. Jev does the fast semantic judgments wherever meaning decides. Be terse, direct and platinum quality. Never declare victory, and verify before saying anything works.
+
+═══ JEV: YOUR PARTNER (use it by default, not as an afterthought) ═══
+WHAT JEV IS: TypeSafe System One, model `jev-latest`. It answers structured semantic questions in batches, quickly and cheaply. The house judgment layer lives in packages/renderer/src/config/typesafeJudgments.ts, and server-side calls go through the `typesafeJudge` callable.
+
+WHEN TO CALL JEV (required, every time one applies):
+- Any user-visible or model-facing text you add or change: UI copy, error messages, toasts, tool/function descriptions, agent prompts. Check it against directives/brand_voice_and_copy.md.
+- Triaging review comments (Codex, CodeRabbit): real problem / partly real / noise.
+- Grading generated output (for example a Publicist pitch draft: grounded in release data, no invented facts, under 200 words, no hype).
+- Classifying or sorting many items (issues, strings, logs, stale notes) before you act.
+- Any time you're about to make a judgment call about meaning across more than ~5 items.
+Not for: arithmetic, exact lookups, security or authorization decisions, identifiers. Those stay deterministic in code.
+
+HOW TO CALL JEV:
+- Key: TYPESAFE_API_KEY in the main checkout's .env (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/.env). Read it inside a Node script. Never print, log, commit or send it anywhere except the TypeSafe API.
+- Endpoint: POST https://api.typesafe.ai/v1/systemone
+  Headers: Authorization: Bearer <key>, Content-Type: application/json
+  Body: { "state": {…context…}, "questions": { "<id>": {…} }, "model": "jev-latest" }
+- Question types:
+  - choice: { type:'choice', instructions:{ task:'…', <item fields> }, criteria:{ optionA:'when A applies', optionB:'…' } }. Returns answers[id].choice and .confidence.
+  - noul: probability that a condition holds.
+  - score: a degree, only for ranking.
+- Batch about 25 questions per call. Treat confidence < 0.65 as "unclear". Sum usage.input_tokens and output_tokens.
+- Reference script pattern used this session (rebuild it in your scratchpad):
+  1. Extract strings from the target files (JSX text nodes, and title/placeholder/label/description/message props).
+  2. Dedupe.
+  3. Ask a 'choice' per string with these criteria:
+     - clean
+     - ai_hype (AI/neural/intelligence-engine hype)
+     - plumbing (vendor or model names, protocols like DDEX/Gemini/Veo/Firestore, ticket numbers, latency figures, code identifiers)
+     - aggressive_or_mystical (swarm/command/supremacy, DNA/alchemy/soul)
+     - jargon_or_verbose
+  4. Print the flagged ones with file:line.
+- JEV ADVISES, YOU DECIDE: check every flag by hand. Expect false positives such as code identifiers, legitimate industry terms (ISRC, SFTP, Stripe Connect, Printful, BWARM, DDEX licence steps), legally required text (privacy/terms, cookie consent, the "AI Disclosure" release step, the SynthID notice), developer-only tools and style names. Rewrite only the real ones.
+- REPORT every use: "Jev: <calls> calls, <in>/<out> tokens, <flagged>/<total> flagged, <kept> kept on purpose". Put it in the PR body and in the ledger entry. If a change has nothing Jev should judge, write "Jev: not needed, <reason>".
+
+═══ REPO / WORKFLOW ═══
+- Worktree: /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-modal-sizing. Don't touch the main checkout's uncommitted files.
+- Remotes: `origin` = Entire, `github` = GitHub mirror.
+  - For every change, branch from a fresh `github/main` and push to BOTH (`git push github <br>`, then `git push origin <br>`).
+  - The Entire push often says "failed" because of tags. Retry; it lands. Verify with `git ls-remote github refs/heads/<br>`.
+- PRs: `gh pr create --repo indii-music-founder/indii-music-founder --base main`.
+  - The app blocks me from merging, so the user merges.
+  - Turn on Auto-fix (mcp__ccd_pr__set_monitor) only after the user says yes.
+  - If a PR merges before review fixes land, open a follow-up PR from main right away.
+- Ledger: .agent/test_ledger/OPEN_ISSUES_V4.md. Every fix gets an entry.
+  - Run `node scripts/validate-issue-ledger.mjs github/main` and make sure it prints "preserved" before committing.
+  - Never put FIXED/COMPLETED/CLOSED in a Status line unless there is a "Closure evidence:" line with a commit and a CI run URL. Use "🟡 PARTIAL — … on branch …".
+- Before each PR:
+  - eslint on the changed files
+  - `npm run typecheck`
+  - the relevant Vitest suites. The only known full-run failures are 2 in services/share/milestones.test.ts; they fail on main locally and pass in CI.
+  - Jev, per the rules above.
+- Commit trailer: "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>".
+- PR bodies: short plain sections with real numbers, a Jev line, an explicit "not verified" list, and end with "🤖 Generated with [Claude Code](https://claude.com/claude-code)".
+- Gotchas from this session:
+  - Never put an apostrophe inside single-quoted TS strings (use ’).
+  - Check `ls` before writing a test file so you don't overwrite an existing one.
+  - Don't chain the ledger validator with `| tail -1 &&`; it hides failures.
+
+═══ USER PREFERENCES (also in memory) ═══
+- Compact text everywhere. The Submit Release dialog is the reference: text-lg titles, 10px uppercase labels, text-sm body, p-6. Big text = slop.
+- No slop: follow directives/brand_voice_and_copy.md. Plain human copy; no AI hype, vendor names, swarm/neural/copilot language or emoji icons.
+- No mock data. Honest empty states.
+- Desktop-app items are batched for a later desktop session (release delivery is one); don't chase them.
+- Never declare victory. Say "working tree", not "dirty tree".
+
+═══ STATE (2026-11-23) ═══
+- Merged to main: #993–#1003.
+  - compact UI and de-slop across every page (Jev triaged 5,921 strings)
+  - Publishing single-column layout
+  - Publicist MCP argument fix (#998)
+  - release form fixes (#1000)
+  - cover pick from Project Assets, native-size canvas save, data-URL uploads, Boardroom context budgets (#1002)
+  - review fixes (#1003, c4a2d1df2)
+- #1003's deploy was running. Check `gh run list --repo indii-music-founder/indii-music-founder --branch main`.
+- OPEN: #1005 (branch claude/mcp-tool-declarations, ISSUE-1709).
+  - Declares 9 wired MCP tools to Brand, Creative, Distribution, Finance and Legal, with a contract test (tools/McpToolDeclarations.test.ts) against the server inputSchema.
+  - Needs CI and the user's merge. Auto-fix not on (ask).
+  - Its 9 tool descriptions have NOT been through Jev yet; do that first.
+- Live MCP: Publicist generate_playlist_pitch PASSED the stated criteria on production for release Ui98LcYSSwCYeMU0IkvD ("Assembly Line Halo" by Signal Bloom). The pitch TEXT was never read back. The other 9 tools have never been called live.
+
+═══ NEXT, IN ORDER ═══
+1. Jev pass on the 9 tool descriptions in #1005: clear for a model deciding when to call, no slop. Fix the real flags and push to the branch.
+2. After #1003 deploys, check production in Claude in Chrome. Notes: the tab is on app.indii.music; Chrome's `find` 403s, so use read_page/javascript_tool; choose Cancel at the "newer workspace" prompt on load.
+   - Cover pick from Project Assets: "Or choose from Project Assets", the banner, a click uses the image, no navigation away.
+   - Canvas save keeps native size; read the "[CreativeStudio] Canvas save timings" console log.
+   - Audio/video library upload succeeds.
+   - The Boardroom first send doesn't hit "Context preparation timed out".
+   - Visual pass of the compact UI in Settings, Knowledge Base, Notes, Workflow and the department dialogs.
+   Record a dated production-check bullet on ISSUE-1707, 1708 and 1710 in a ledger PR.
+3. Read back the Publicist pitch draft and have Jev grade it: grounded in the release data, no invented streams/placements/quotes, under 200 words, plain voice. Report the grade and the text.
+4. Still open: ISSUE-1708.
+   (a) The "newer workspace" prompt on every load. A safe fix must persist the snapshot itself together with the acknowledgement; a persisted timestamp alone can overwrite the cloud with an empty workspace (that's why it was reverted in #1003).
+   (b) Slow canvas save, cause unknown; use the timing logs.
+5. Needs the user's yes (paid): one full release submit to verify #1000's submit deadlines and named progress line.
+6. Not logged yet: the "[MultiTurnAutorater] Request blocked by security policy" console error. Log it, and have Jev classify the autorater traces if you can get them.
+
+Start by reading the ledger entries ISSUE-1691 and 1706–1710, then check the #1003 deploy and #1005 CI, then do step 1 with Jev.
+```
+
+---
+
+<task-notification>
+<task-id>b88h5ayuw</task-id>
+<tool-use-id>toolu_01Lds1czpyysgeS5HDLLmEy8</tool-use-id>
+<output-file>/private/tmp/claude-502/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/1e0a63ba-0c56-4351-82f4-9fdef6f9fae1/tasks/b88h5ayuw.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for main deploy run to finish" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Ok
+
+---
+
+Yes
+
+---
+
+Yes
+
+---
+
+Ok using jev still?
+
+---
+
+I'm still in bed. Keep working
+
+---
+
+<task-notification>
+<task-id>bog70wkzh</task-id>
+<tool-use-id>toolu_0138QW8Bq6vGuBiWs3vw9hka</tool-use-id>
+<output-file>/private/tmp/claude-502/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/1e0a63ba-0c56-4351-82f4-9fdef6f9fae1/tasks/bog70wkzh.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for main deploy run" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bra33l2gv</task-id>
+<tool-use-id>toolu_01Kk4KTdhtWNKgeJnGotF3sk</tool-use-id>
+<output-file>/private/tmp/claude-502/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/1e0a63ba-0c56-4351-82f4-9fdef6f9fae1/tasks/bra33l2gv.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for deploy rerun result" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bd9oesn4o</task-id>
+<tool-use-id>toolu_01T6UKioexYvV8dWtZCtMRjy</tool-use-id>
+<output-file>/private/tmp/claude-502/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/1e0a63ba-0c56-4351-82f4-9fdef6f9fae1/tasks/bd9oesn4o.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll until deploy rerun completes" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Everything is on main.
+
+---
+
+I'm away from the computer I'm on my phone app
+
+---
+
+<task-notification>
+<task-id>bmfznzg0w</task-id>
+<tool-use-id>toolu_01KAzRcq1aSWgfNX2tPQbvgk</tool-use-id>
+<output-file>/private/tmp/claude-502/-Volumes-X-SSD-2025-Users-narrowchannel-Desktop-indii-music-founder/1e0a63ba-0c56-4351-82f4-9fdef6f9fae1/tasks/bmfznzg0w.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for main deploy of all three PRs" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+OK, I mean if you need to change how tabs worked and do it if it's gonna make it better then do it
+
+---
+
+Also, I'm back on mobile and until I get to the computer keep working
+
+---
+
+Yes, I understand there's things that I have to do when I get on my computer but that's not an excuse for you to stop working. As long as you keep pushing things to branches we're good because I'm getting low on tokens for over a week so we wanna make sure we get as much work completed and pushed especially the important stuff. I'm willing to overlook that live tests. You can double back on those another time.
+
+---
+
+Start now
+
+---
+
+What's left in this chat to do? Do all our MCP tools work?
+
+---
+
+@.agent/workflows/go.md
