@@ -5,11 +5,6 @@ import { FileAudio, FileImage, FileText } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 
-const rand = () => {
-    const randValues = new Uint32Array(1);
-    crypto.getRandomValues(randValues);
-    return (randValues[0] ?? 0) / 4294967295;
-};
 async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?: string }> {
     if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
         return new Promise((resolve) => {
@@ -147,26 +142,17 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                         type: itemType
                     }]);
 
-                    // Local import progress using async delay to avoid unmanaged intervals
+                    // ISSUE-1693: progress is the real read of the file (it used to be
+                    // random increments that reported work that was not happening).
                     (async () => {
-                        await delay(rand() * 1000);
                         updateUploadStatus(queueId, 'uploading');
 
-                        let currentProgress = 0;
-                        while (currentProgress < 100) {
-                            currentProgress += Math.floor(rand() * 20) + 10;
-                            if (currentProgress >= 100) {
-                                currentProgress = 100;
-                            }
-                            updateUploadProgress(queueId, currentProgress);
-
-                            if (currentProgress < 100) {
-                                await delay(200 + rand() * 300);
-                            }
-                        }
-
-                        // Read the local file when import progress finishes
                         const reader = new FileReader();
+                        reader.onprogress = (event) => {
+                            if (event.lengthComputable && event.total > 0) {
+                                updateUploadProgress(queueId, Math.round((event.loaded / event.total) * 100));
+                            }
+                        };
                         reader.onload = async (e) => {
                             const result = e.target?.result as string;
                             if (!result) {

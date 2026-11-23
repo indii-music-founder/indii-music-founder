@@ -3972,7 +3972,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1693: Dropping an audio file anywhere in the web app always fails ("Failed to save to cloud library")
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — data-URL upload changed in #1002; simulated progress replaced on branch `claude/dropzone-real-progress`; not yet seen on production
 - **Severity:** 🟠 HIGH
 - **Module:** Global drop zone / StorageService / Hosting CSP
 - **Evidence:** production build `8253704d3`, 2026-11-22 ~01:30 UTC, owner account, built-in browser. Dragging `Assembly Line Halo.wav` (WAV, 16-bit/48 kHz, 33.5 MB) onto the page while the Publishing Create Release dialog was open put two entries in the Upload Queue, both "Failed to save to cloud library"; a dropped PNG in the same gesture succeeded. Console: `Connecting to 'data:audio/wav;base64,…' violates the following Content Security Policy directive: "connect-src 'self' blob: …"`, then `[StorageService] Cloud upload failed: TypeError: Failed to fetch` and `[Store] Failed to save item`. Source: `GlobalDropZone.tsx` reads the file with `FileReader` into a `data:` URL (`:169-189`) and calls `addUploadedAudio`; `StorageService` uploads audio/video data URLs with `await (await fetch(item.url)).blob()` (`packages/renderer/src/services/StorageService.ts:225`). `firebase.json`'s CSP `connect-src` has `'self' blob:` but no `data:`, so that fetch is always refused on hosted web. Images take a different branch and succeed.
@@ -3981,6 +3981,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Fix:** convert the dropped `File` straight to a `Blob` (no `data:` round trip) and upload with `uploadBytes`; or decode the base64 without `fetch` as the image branch does. Do not widen the CSP to `data:`. Replace the simulated progress with real `uploadBytesResumable` progress. Consider letting an open dialog with a file input claim the drop.
 - **Acceptance:** on https://indii.music with a genuine account, drop a real WAV: it appears in the library, survives reload and plays; progress reflects bytes sent; no CSP error in the console. Unit test covers the audio branch without `fetch(data:)`.
 
+- **Change (2026-11-23):** the CSP cause was addressed in #1002 (`mediaUrlToBlob` decodes `data:` URLs locally instead of `fetch`). Branch `claude/dropzone-real-progress` removes the simulated progress (random delay and random increments) from `GlobalDropZone`: the item is marked uploading at once and progress is the `FileReader` read progress. Test `GlobalDropZone.test.tsx` (drop a file → progress ends at 100, then success); it would also pass on the old code, so it guards the flow rather than proving the change. ESLint 0 errors. Still open: the base64 round trip holds a 33 MB WAV as a ~45 MB string, and a drop over an open dialog goes to the global queue.
 ### ISSUE-1694: A master ingested on the web never reaches the track library, so Submit Release cannot list it
 
 - **Status:** 🔴 OPEN
