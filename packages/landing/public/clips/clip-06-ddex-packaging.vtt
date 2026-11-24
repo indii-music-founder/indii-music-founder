@@ -1,13 +1,7 @@
 WEBVTT
 
-00:00.000 --> 00:04.500
-When your record is ready for global distribution,
+00:00.000 --> 00:03.800
+Assemble mastered audio, artwork, identifiers, and DDEX ERN 4.3 metadata together.
 
-00:04.500 --> 00:09.500
-indii compiles official DDEX ERN 4.3 delivery packages.
-
-00:09.500 --> 00:15.500
-Full schema validation, lossless audio checksums, and distributor-grade metadata trees.
-
-00:15.500 --> 00:22.000
-You own your DPID, and you own your distribution pipe.
+00:03.800 --> 00:08.000
+Run pre-flight checks before your delivery-ready package moves forward.
