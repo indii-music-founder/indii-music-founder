@@ -20,14 +20,27 @@ export interface PayoutRecord {
     releases: { id: string; title: string; amount: number }[];
 }
 
+function resolveOwnerUid(
+    user: { uid?: string | null } | null | undefined,
+    userProfile: { uid?: string | null; id?: string | null } | null | undefined
+): string {
+    return (
+        user?.uid ||
+        userProfile?.uid ||
+        (userProfile?.id && userProfile.id !== 'pending' ? userProfile.id : '')
+    );
+}
+
 /**
  * Fetch analytics time-series data from Firestore
- * Collection: users/{userId}/analytics/daily/{date}
+ * Collection: users/{userId}/analytics
  */
 export function useAnalytics(dateRange: { start: string; end: string }) {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { user, userProfile } = useStore(useShallow(state => ({
+        user: state.user,
+        userProfile: state.userProfile,
     })));
+    const resolvedUid = resolveOwnerUid(user, userProfile);
     const [data, setData] = useState<TimeSeriesDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -41,10 +54,10 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
     }, []);
 
     useEffect(() => {
-        if (!userProfile?.id) return;
+        if (!resolvedUid) return;
 
         const db = getFirestore();
-        const analyticsRef = collection(db, `users/${userProfile.id}/analytics`);
+        const analyticsRef = collection(db, `users/${resolvedUid}/analytics`);
 
         const startDate = new Date(dateRange.start);
         const endDate = new Date(dateRange.end);
@@ -73,17 +86,10 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
                     });
                 });
 
-                let hasAnyData = false;
-
                 for (let i = 0; i <= days; i++) {
                     const dateObj = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
                     const dateStr = dateObj.toISOString().split('T')[0]!;
                     const existing = dataMap.get(dateStr);
-
-                    if (existing && (existing.streams > 0 || existing.revenue > 0)) {
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        hasAnyData = true;
-                    }
 
                     contiguousData.push({
                         date: dateStr,
@@ -93,8 +99,6 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
                 }
 
                 setData(contiguousData);
-                // Attach a custom property or we can calculate it in the component
-                // Actually it's better to just return the data and let the component check
                 setLoading(false);
             },
             (err) => {
@@ -107,7 +111,7 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
         );
 
         return () => unsubscribe();
-    }, [userProfile?.id, dateRange.start, dateRange.end, refreshKey]);
+    }, [resolvedUid, dateRange.start, dateRange.end, refreshKey]);
 
     return {
         data,
@@ -122,9 +126,11 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
  * Collection: users/{userId}/payouts
  */
 export function usePayouts() {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { user, userProfile } = useStore(useShallow(state => ({
+        user: state.user,
+        userProfile: state.userProfile,
     })));
+    const resolvedUid = resolveOwnerUid(user, userProfile);
     const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -138,10 +144,10 @@ export function usePayouts() {
     }, []);
 
     useEffect(() => {
-        if (!userProfile?.id) return;
+        if (!resolvedUid) return;
 
         const db = getFirestore();
-        const payoutsRef = collection(db, `users/${userProfile.id}/payouts`);
+        const payoutsRef = collection(db, `users/${resolvedUid}/payouts`);
 
         const q = query(
             payoutsRef,
@@ -180,7 +186,7 @@ export function usePayouts() {
         );
 
         return () => unsubscribe();
-    }, [userProfile?.id, refreshKey]);
+    }, [resolvedUid, refreshKey]);
 
     return {
         payouts,

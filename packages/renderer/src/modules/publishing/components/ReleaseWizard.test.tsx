@@ -151,6 +151,14 @@ describe('ReleaseWizard Integration', () => {
         expect(screen.getByTestId('territories-select')).toHaveTextContent('2 territories selected');
     });
 
+    it('stacks dialog overlay above ChatOverlay (z-[600]) while keeping side-panel clearance (ISSUE-1697)', () => {
+        render(<ReleaseWizard />);
+
+        const dialog = screen.getByRole('dialog');
+        expect(dialog.className).toContain('z-[700]');
+        expect(dialog.className).toContain('lg:pr-[calc(var(--right-panel-width,0px)+1rem)]');
+    });
+
 });
 
 describe('parseAiTools (ISSUE-1707)', () => {

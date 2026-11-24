@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
     location: { pathname: '/', search: '' },
     setModule: vi.fn(),
     currentModule: { value: 'dashboard' },
+    conversationMode: { value: 'department' as 'direct' | 'department' | 'boardroom' },
+    setConversationMode: vi.fn(),
     distributionTab: { value: 'releases' },
     financeTab: { value: 'overview' },
     setDistributionTab: vi.fn(),
@@ -26,6 +28,8 @@ vi.mock('@/core/store', () => {
         const state = {
             currentModule: mocks.currentModule.value,
             setModule: mocks.setModule,
+            conversationMode: mocks.conversationMode.value,
+            setConversationMode: mocks.setConversationMode,
             distributionTab: mocks.distributionTab.value,
             financeTab: mocks.financeTab.value,
         };
@@ -34,6 +38,8 @@ vi.mock('@/core/store', () => {
     storeFn.getState = () => ({
         currentModule: mocks.currentModule.value,
         setModule: mocks.setModule,
+        conversationMode: mocks.conversationMode.value,
+        setConversationMode: mocks.setConversationMode,
         distributionTab: mocks.distributionTab.value,
         financeTab: mocks.financeTab.value,
         setDistributionTab: mocks.setDistributionTab,
@@ -44,7 +50,7 @@ vi.mock('@/core/store', () => {
 
 // Mock constants
 vi.mock('@/core/constants', () => ({
-    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge', 'distribution', 'settings'].includes(m)
+    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge', 'distribution', 'publishing', 'settings'].includes(m)
 }));
 
 // These isolated hook tests are structural-only; deployed navigation requires real-user verification.
@@ -55,6 +61,7 @@ describe('useURLSync', () => {
         mocks.location.pathname = '/';
         mocks.location.search = '';
         mocks.currentModule.value = 'dashboard';
+        mocks.conversationMode.value = 'department';
         mocks.distributionTab.value = 'releases';
         mocks.financeTab.value = 'overview';
         // Structural hook fixture: Zustand setters publish synchronously.
@@ -253,5 +260,37 @@ describe('useURLSync', () => {
 
         expect(mocks.navigate).toHaveBeenCalledWith('/finance');
         window.history.replaceState(null, '', '/');
+    });
+
+    it('exits Boardroom mode on direct deep link to a module route like /publishing (ISSUE-1697)', () => {
+        mocks.location.pathname = '/publishing';
+        mocks.conversationMode.value = 'boardroom';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setConversationMode).toHaveBeenCalledWith('department');
+        expect(mocks.setModule).toHaveBeenCalledWith('publishing');
+    });
+
+    it('exits Boardroom mode when URL navigates from / to /publishing (ISSUE-1697)', () => {
+        mocks.conversationMode.value = 'boardroom';
+        const { rerender } = renderHook(() => useURLSync());
+
+        expect(mocks.setConversationMode).not.toHaveBeenCalled();
+
+        mocks.location.pathname = '/publishing';
+        rerender();
+
+        expect(mocks.setConversationMode).toHaveBeenCalledWith('department');
+        expect(mocks.setModule).toHaveBeenCalledWith('publishing');
+    });
+
+    it('preserves Boardroom mode on root / load (ISSUE-1697)', () => {
+        mocks.location.pathname = '/';
+        mocks.conversationMode.value = 'boardroom';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setConversationMode).not.toHaveBeenCalled();
     });
 });

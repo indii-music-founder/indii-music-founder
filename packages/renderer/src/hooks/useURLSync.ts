@@ -124,6 +124,28 @@ export function useURLSync(options: URLSyncOptions = {}) {
         const urlTab = new URLSearchParams(location.search).get('tab') || undefined;
         const effectiveTab = urlTab ?? aliasTab;
 
+        const isInitialUrlSync = !hasInitializedFromURL.current;
+        const liveStore = useStore.getState() as {
+            currentModule?: string;
+            conversationMode?: 'direct' | 'department' | 'boardroom';
+            setConversationMode?: (mode: 'direct' | 'department' | 'boardroom') => void;
+            setDistributionTab: (tab: string) => void;
+            setFinanceTab: (tab: string) => void;
+            distributionTab?: string;
+            financeTab?: string;
+        };
+
+        // Explicit module routes (e.g. /publishing) should reveal that module
+        // instead of keeping the full-screen Boardroom overlay pinned on top (ISSUE-1697).
+        if (
+            pathSegments.length > 0 &&
+            isValidModule(targetModule) &&
+            liveStore.conversationMode === 'boardroom' &&
+            (isInitialUrlSync || targetModule !== liveStore.currentModule)
+        ) {
+            liveStore.setConversationMode?.('department');
+        }
+
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             pendingPathModule.current = targetModule;
             pendingPathTab.current = TAB_STATE[targetModule] ? effectiveTab : undefined;
@@ -140,7 +162,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
             const config = TAB_STATE[targetModule];
             if (config) {
                 const addressedTab = effectiveTab ?? config.defaultTab;
-                const store = useStore.getState() as unknown as Record<string, unknown> & {
+                const store = liveStore as unknown as Record<string, unknown> & {
                     setDistributionTab: (tab: string) => void;
                     setFinanceTab: (tab: string) => void;
                 };
