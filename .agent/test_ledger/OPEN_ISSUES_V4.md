@@ -4302,12 +4302,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1719: v2.0.0 desktop release can't sign in ("Missing VITE_FIREBASE_API_KEY in .env"); unsigned DMG shows "damaged"
 
-- **Status:** 🟡 PARTIAL — env fix on branch `claude/release-env`; needs a re-tagged release; "damaged" not addressed
+- **Status:** 🟡 PARTIAL — v2.0.1 env landed (#1030); ad-hoc signing and v2.0.2 bump on branch `antigravity/desktop-adhoc-signing-202` (2026-11-24); awaiting v2.0.2 tag and owner Gatekeeper/sign-in check
 - **Severity:** 🔴 CRITICAL
 - **Module:** `.github/workflows/release.yml`, desktop sign-in, macOS Gatekeeper
 - **Evidence:** 2026-11-23, owner installed v2.0.0 from release run actions/runs/45252898158. First open: macOS "“indii.music” is damaged and can't be opened" (quarantined unsigned app; cleared by the owner with `xattr -dr com.apple.quarantine`). Then the sign-in screen showed "Missing VITE_FIREBASE_API_KEY in .env". The release workflow's build step passed no `VITE_*` values to `npm run build:studio`; earlier DMGs were built locally with a `.env`. The sign-in card also still read "Founders Release • v1.0".
 - **Change (branch):** the release build step gets the same `VITE_*` environment as the hosting deploy (without `VITE_APP_TARGET: web`) and fails if the Firebase identifiers are missing; sign-in label reads v2.0.
 - **Open:** "damaged" on first open — an ad-hoc signature (`mac.identity: "-"`) should turn it into the right-click-Open "unidentified developer" warning; not tested.
+- **Ad-hoc signing & v2.0.2 prep (2026-11-24, branch `antigravity/desktop-adhoc-signing-202`):** set `"mac": { "identity": "-" }` in `electron-builder.json` (keeping `hardenedRuntime: false`, `gatekeeperAssess: false`, `notarize: false`), added `codesign --verify --deep --strict --verbose=2 "dist-electron/mac-arm64/indii.music.app"` after packaging in `.github/workflows/release.yml`, and bumped the workspace version to `2.0.2` so `v2.0.2` can be tagged cleanly after merge. Local `npm run build:studio` + `CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dir --arm64 --publish never` sealed all 727 bundle files with `Signature=adhoc` and passed `codesign --verify --deep --strict` (`valid on disk`, `satisfies its Designated Requirement`). Quarantine Gatekeeper prompt and v2.0.2 DMG sign-in remain pending tag release on macOS. Jev: not needed, build configuration and version bump only.
 - **Acceptance:** a new v2.0.x DMG signs in with no manual steps beyond the first-open warning.
 
 

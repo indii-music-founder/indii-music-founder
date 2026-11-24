@@ -61,7 +61,7 @@ jobs:
       - name: Verify isolated desktop MCP packages
         run: npm run verify:desktop:mcp
 
-      - name: Build Apple Silicon DMG installer (Unsigned / No Certificates Required)
+      - name: Build Apple Silicon DMG installer (Ad-Hoc Signed / No Certificates Required)
         if: runner.os == 'macOS'
         run: |
           set -euo pipefail
@@ -72,6 +72,7 @@ jobs:
           done
           npm run build:studio
           CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dmg --arm64 --publish never
+          codesign --verify --deep --strict --verbose=2 "dist-electron/mac-arm64/indii.music.app"
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           NODE_ENV: production
