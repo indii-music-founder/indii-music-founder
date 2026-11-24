@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAnalytics, usePayouts } from './useAnalytics';
 import { useStore } from '@/core/store';
-import { getFirestore, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock dependencies
@@ -114,6 +114,27 @@ describe('useAnalytics', () => {
         unmount();
         expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
     });
+
+    it('does not subscribe to users/pending/analytics while profile is placeholder pending (ISSUE-1698)', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            user: null,
+            userProfile: { id: 'pending', uid: '' },
+        });
+        renderHook(() => useAnalytics({ start: '2026-03-01', end: '2026-03-30' }));
+
+        expect(collection).not.toHaveBeenCalled();
+        expect(onSnapshot).not.toHaveBeenCalled();
+    });
+
+    it('uses authenticated user.uid instead of stale profile.id for analytics path (ISSUE-1698)', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            user: { uid: 'auth-uid-1' },
+            userProfile: { id: 'pending', uid: '' },
+        });
+        renderHook(() => useAnalytics({ start: '2026-03-01', end: '2026-03-30' }));
+
+        expect(collection).toHaveBeenCalledWith(expect.anything(), 'users/auth-uid-1/analytics');
+    });
 });
 
 describe('usePayouts', () => {
@@ -194,5 +215,26 @@ describe('usePayouts', () => {
         expect(result.current.loading).toBe(true);
         expect(result.current.error).toBeNull();
         expect(onSnapshot).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not subscribe to users/pending/payouts while profile is placeholder pending (ISSUE-1698)', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            user: null,
+            userProfile: { id: 'pending', uid: '' },
+        });
+        renderHook(() => usePayouts());
+
+        expect(collection).not.toHaveBeenCalled();
+        expect(onSnapshot).not.toHaveBeenCalled();
+    });
+
+    it('uses authenticated user.uid instead of stale profile.id for payouts path (ISSUE-1698)', () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            user: { uid: 'auth-uid-1' },
+            userProfile: { id: 'other-profile-id', uid: '' },
+        });
+        renderHook(() => usePayouts());
+
+        expect(collection).toHaveBeenCalledWith(expect.anything(), 'users/auth-uid-1/payouts');
     });
 });

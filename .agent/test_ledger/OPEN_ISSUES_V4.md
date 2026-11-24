@@ -4031,20 +4031,22 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1697: Agent chat panel covers the Create Release dialog; opening /publishing directly leaves the Boardroom on screen
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/studio-publishing-fixes-1697-1698` (2026-11-24); awaiting deploy and live check
 - **Severity:** 🟡 MEDIUM
 - **Module:** Studio layout (right agent panel, Boardroom overlay)
 - **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, viewport 1900×943. (1) With the Publishing Director chat panel open, the Create Release dialog's right column (Artist Name, Release Type, Release Date) sat underneath the panel: a click on Artist Name landed in the panel and the typed text never reached the dialog (the field stayed empty until the panel was closed). Nothing was sent. (2) Navigating to https://app.indii.music/publishing while the Boardroom was open changed the URL but kept the Boardroom on screen until "Back to Studio" was clicked.
 - **Impact:** an artist can fill a release form "correctly" and still submit missing fields; deep links into a department do not open it.
 - **Fix:** render modal dialogs above the agent panel (or dock the panel while a modal is open); close or route past the Boardroom overlay when the URL names a module.
+- **Change (branch `antigravity/studio-publishing-fixes-1697-1698`, 2026-11-24):** (1) `ReleaseWizard` backdrop overlay raised from `z-[100]` to `z-[700]` (above floating `ChatOverlay` at `z-[600]`, below Boardroom/modals/toasts) while preserving `lg:pr-[calc(var(--right-panel-width,0px)+1rem)]` clearance for `RightPanel`; (2) `useURLSync` now calls `setConversationMode('department')` when resolving an explicit `/<module>` route on initial load or module navigation so deep links like `/publishing` reveal the target module instead of staying under the Boardroom overlay (root `/` preserves Boardroom). Structural tests: `ReleaseWizard.test.tsx` (10/10) and `useURLSync.test.ts` (22/22). Jev: not needed, z-index and URL sync only.
 - **Acceptance:** with the chat panel open, every Create Release field is visible and receives input; a direct /publishing link opens Publishing.
 
 ### ISSUE-1698: Publishing analytics and payouts fail with permission errors for the owner account
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — code repair on branch `antigravity/studio-publishing-fixes-1697-1698` (2026-11-24); awaiting deploy and live check
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / `useAnalytics` (`users/{uid}/analytics`, `users/{uid}/payouts`)
 - **Evidence:** 2026-11-22 13:40 UTC, Chrome, owner account, /publishing console: `[usePayouts] Error: FirebaseError: Missing or insufficient permissions.` and `[useAnalytics] Error: FirebaseError: Missing or insufficient permissions.` They read `users/{userProfile.id}/analytics` and `users/{userProfile.id}/payouts` (`useAnalytics.ts:47`, `:144`). ISSUE-1580 (PARTIAL) records rules added for user analytics and payouts. Root cause not established: candidates are `userProfile.id` differing from `auth.uid`, the deployed rules lacking those matches, or the date-range query shape. Not investigated further in this run.
+- **Change (branch `antigravity/studio-publishing-fixes-1697-1698`, 2026-11-24):** root cause found in `DEFAULT_USER_PROFILE` (`profileSlice.ts`), which initializes `userProfile.id` to `'pending'` and `uid` to `''`. Because `'pending'` is truthy, `useAnalytics` and `usePayouts` subscribed to `users/pending/analytics` and `users/pending/payouts`, which `firestore.rules` (`isOwner(userId)`) rejects. Both hooks now resolve the owner UID via `user?.uid || userProfile?.uid || (userProfile?.id && userProfile.id !== 'pending' ? userProfile.id : '')` and skip subscribing until an authenticated owner UID is present. Structural tests: `useAnalytics.test.ts` (11/11, failing-first regressions for `'pending'` and `user.uid` priority). Jev: not needed, UID resolution logic only.
 - **Acceptance:** with a genuine account, Publishing → Insights and Royalties load without permission errors (empty states allowed when there is no data).
 
 ### ISSUE-1699: Create Release wizard is oversized and off-style next to the other Studio dialogs
@@ -4227,11 +4229,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1713: "Jev Suggests" chip shows an internal tool name in the Boardroom
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED — chip uses "Suggested: <tab>" on production (verified 2026-11-23 under ISSUE-1714)
 - **Severity:** 🟢 LOW
 - **Module:** Boardroom / browser panel header
 - **Evidence:** production 2026-11-23, build `c4a2d1df2`: the Boardroom's browser panel shows a chip "Jev Suggests: Agent Live Feed" / "Jev Suggests: Studio Preview". Jev is the internal judgment service; `directives/brand_voice_and_copy.md` rule 2 says not to show the plumbing.
 - **Acceptance:** the chip uses plain words (e.g. "Suggested: Studio Preview") or is removed.
+- **Closure evidence:** commit 925d01f53 CI https://github.com/indii-music-founder/indii-music-founder/actions/runs/45186524129 (production check 2026-11-23 observed "Suggested: Studio Preview" with no internal tool name; recorded under ISSUE-1714)
 
 - **Production check (2026-11-23 04:26–04:45 UTC, build `c4a2d1df2` after #1003, deploy run actions/runs/45109395764, owner's existing Chrome session, no injected state or mocks): FAIL.** First send after load ("Conductor only: reply READY. Do not call tools or change records.") at 04:27:36Z returned "Context preparation timed out during artist master directive. Please retry." about 30 s later. Console: recent saved memories timed out at 04:27:37 (1 s budget), history compression of 2,298 turns started and the older-conversation summary gave up at 04:27:42 (5 s budget); no `[ContextPipeline]` line after that. So the degrade paths work, but the shared 30 s `ContextPreparation` clock still runs while the optional reads (up to 8+3+3+3 s) wait, and the required directive read then fails. Whether the directive read itself was slow, or the clock was already spent, is not measured. Next: give each required stage its own measured budget (or start the shared clock only for required reads) and log per-stage durations; keep the directive required, as it carries the artist's standing instructions.
 
@@ -4282,11 +4285,12 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 ### ISSUE-1715: Distribution center column is cut off at the bottom
 
-- **Status:** 🟡 PARTIAL — addressed on branch `claude/upload-and-distribution-scroll`; not yet seen on production
+- **Status:** 🟡 PARTIAL — deployed on main in #1012 (`a667445c9`, CI run 45258173658); short-window production scroll check pending
 - **Severity:** 🟡 MEDIUM
 - **Module:** Distribution (also Finance and Legal tab shells)
 - **Evidence:** production 2026-11-23, owner's screenshot of /distribution: the release card under "Submit Release" ends at the window edge with no way to scroll. Live measurement: the column `flex-1 flex flex-col min-w-0` was 1128px tall inside a 907px `main` with `overflow-hidden`, so 221px was clipped; the inner `overflow-y-auto` never got a bounded height (no `min-h-0` in the flex chain).
 - **Change (branch):** `min-h-0` on the Distribution column, its Tabs, and the scroll area (scroll area now shows the standard thin scrollbar instead of hiding it); `min-h-0` on the Finance and Legal Tabs shells, which use the same pattern. DistributionDashboard tests 14/14.
+- **Deploy sync (2026-11-24):** #1012 (`a667445c9`) is live via green production deploy run `https://github.com/indii-music-founder/indii-music-founder/actions/runs/45258173658`; short-window screenshot check remains open before setting terminal status.
 - **Acceptance:** on production at a short window height the Distribution center column scrolls to the end of the release card.
 
 ### ISSUE-1718: Desktop builds ship without MCP servers, execution scripts or agent catalog; v2.0.0 release upload failed
