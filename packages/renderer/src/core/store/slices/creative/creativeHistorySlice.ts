@@ -562,7 +562,9 @@ export function buildCreativeHistoryState(
                     import('@/core/store').then(({ useStore }) => {
                         const { currentProjectId, createFileNode, user } = useStore.getState();
                         if (user?.uid) {
-                            const { extension, mimeType } = inferMediaExtension(audio);
+                            // The saved path carries the real extension (a blob: or data:
+                            // URL has none, which named every upload .mp3).
+                            const { extension, mimeType } = inferMediaExtension({ ...audio, storageUri: savedInfo.storageUri ?? audio.storageUri });
                             const filename = `uploaded-${audio.id.slice(0, 8)}.${extension}`;
                             createFileNode(
                                 filename,
