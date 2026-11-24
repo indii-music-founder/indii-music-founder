@@ -65,10 +65,13 @@ export class TraceService {
                 }
             };
 
-            await setDoc(doc(db, this.COLLECTION, traceId), {
+            // ISSUE-1658: the id is minted locally, so the seat need not wait for
+            // the write; Firestore applies this client's writes in order, so later
+            // step updates still land after it.
+            void Promise.resolve(setDoc(doc(db, this.COLLECTION, traceId), {
                 ...cleanFirestoreData(trace),
                 startTime: serverTimestamp()
-            });
+            })).catch((error: unknown) => logger.error('[TraceService] Failed to write trace start: (Non-blocking)', error));
             return traceId;
         } catch (error: unknown) {
             logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);

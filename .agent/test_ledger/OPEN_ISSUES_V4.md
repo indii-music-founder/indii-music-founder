@@ -3539,6 +3539,8 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 
 - **Change (2026-11-23, part 1 of O5):** `loadCapabilitySnapshot` fetched the `getCapabilitySnapshot` callable for every seat (20 s timeout each). It now reuses a fresh server snapshot until the snapshot's own `expiresAt` (per signed-in uid), shares one in-flight request between parallel seats, and never caches a fail-closed result. Tests: `CapabilitySnapshotService.cache.test.ts` (3 parallel seats → 1 request; refetch after expiry; failure not cached); agent suites passed; renderer tsc 0 errors; ESLint 0 errors. Not changed: awaited `startTrace`, per-loop `checkBudget`, and the serial quota → headers → reservation calls.
 
+- **Part 2 (2026-11-23, branch `claude/seat-preflight-2`):** `TraceService.startTrace` no longer waits for the trace-start write (the id is minted locally; Firestore applies this client's writes in order, so later step updates still follow it). Checked and left as is: quota, rate limit and request headers already run concurrently, and the cost reservation must follow them. Kept on purpose: the per-loop `checkBudget` — a 15 s throttle (in `BaseAgent` or a shared spend cache in `MembershipService`) broke the cost-circuit-breaker and ledger budget tests, which require a breach to stop the very next loop; that safety rule outranks the round trip. Test: start returns without waiting for a write that never settles; agent suites 268 files passed; renderer tsc 0 errors; ESLint 0 errors.
+
 ---
 
 ### ISSUE-1659: Persona finalizer adds 2 LLM calls per seat inside the chunk barrier (AS:1634, PersonaResponseService.ts:171-1 [O6]
