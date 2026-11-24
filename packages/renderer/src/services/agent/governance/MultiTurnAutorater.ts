@@ -1,4 +1,5 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 import { db } from '../../firebase';
@@ -71,7 +72,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 schema as unknown as Record<string, unknown>,
                 undefined,
                 undefined,
-                getFineTunedModel('generalist')
+                INTELLIGENCE_MODELS.TEXT.FAST
             );
 
             if (!result) {
@@ -142,7 +143,7 @@ Return the evaluation in structured JSON matching the requested schema.
                 messages,
                 metadata: {
                     evaluatedAt: new Date().toISOString(),
-                    autoraterModel: getFineTunedModel('generalist'),
+                    autoraterModel: INTELLIGENCE_MODELS.TEXT.FAST,
                     version: '1.1.0-platinum'
                 },
                 createdAt: serverTimestamp(),

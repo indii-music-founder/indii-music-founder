@@ -268,7 +268,11 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
   test.describe('ISSUE-757: Memory recall', () => {
     test('a follow-up prompt includes the earlier decision text in the request sent to the model', async () => {
       const capturedPayloads: string[] = [];
-      await tabletPage.route(/generateContentStream|streamGenerateContent/, async (route) => {
+      const streamHandler = async (route: import('@playwright/test').Route) => {
+        if (route.request().method() === 'OPTIONS') {
+          await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
+          return;
+        }
         capturedPayloads.push(route.request().postData() || '');
         await route.fulfill({
           status: 200,
@@ -280,26 +284,42 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
             'data: ' + JSON.stringify({ text: 'Noted.', functionCalls: [] }) + '\n\n' +
             'data: ' + JSON.stringify({ complete: true }) + '\n\n',
         });
-      });
+      };
 
-      if (!(await tabletPage.getByTestId('boardroom-module').isVisible().catch(() => false))) {
-        await tabletPage.getByLabel('Enter Boardroom').click();
-        await expect(tabletPage.getByTestId('boardroom-module')).toBeVisible({ timeout: 15_000 });
+      await tabletPage.route(/generateContentStream|streamGenerateContent/, streamHandler);
+      try {
+        if (!(await tabletPage.getByTestId('boardroom-module').isVisible().catch(() => false))) {
+          await tabletPage.getByLabel('Enter Boardroom').click();
+          await expect(tabletPage.getByTestId('boardroom-module')).toBeVisible({ timeout: 15_000 });
+        }
+
+        // Wait for any prior test activity on tabletPage to finish before sending Turn 1.
+        await tabletPage.waitForFunction(() => (window as any).useStore.getState().isAgentProcessing !== true, undefined, { timeout: 15_000 });
+
+        const notedLocator = tabletPage.getByTestId('boardroom-module').getByText('Noted.');
+        const notedBeforeTurn1 = await notedLocator.count();
+
+        await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('My artist name is Luna Synthwave');
+        await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
+        await expect(notedLocator.nth(notedBeforeTurn1)).toBeVisible({ timeout: 30_000 }); // bypass-strict: select the response added by Turn 1
+
+        // Let the first turn finish before the follow-up; a send during processing is ignored.
+        await tabletPage.waitForFunction(() => (window as any).useStore.getState().isAgentProcessing === false, undefined, { timeout: 30_000 });
+
+        const payloadsBeforeFollowUp = capturedPayloads.length;
+        const notedBeforeFollowUp = await notedLocator.count();
+
+        await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('What is my artist name?');
+        await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
+        await expect(notedLocator.nth(notedBeforeFollowUp)).toBeVisible({ timeout: 30_000 }); // bypass-strict: select the response added by Turn 2
+        await tabletPage.waitForFunction(() => (window as any).useStore.getState().isAgentProcessing === false, undefined, { timeout: 30_000 });
+
+        const secondRequestOnward = capturedPayloads.slice(payloadsBeforeFollowUp).join('\n');
+        expect(secondRequestOnward).toContain('Luna Synthwave');
+        expect(secondRequestOnward).toContain('What is my artist name?');
+      } finally {
+        await tabletPage.unroute(/generateContentStream|streamGenerateContent/, streamHandler);
       }
-
-      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('My artist name is Luna Synthwave');
-      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
-      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').first()).toBeVisible({ timeout: 10_000 }); // bypass-strict: navigation element rendered across desktop and mobile layouts
-
-      // Let the first turn finish before the follow-up; a send during processing is ignored.
-      await tabletPage.waitForFunction(() => (window as any).useStore.getState().isAgentProcessing === false, undefined, { timeout: 15_000 });
-
-      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').fill('What is my artist name?');
-      await tabletPage.locator('[data-testid="main-prompt-input"]:visible').press('Enter');
-      await expect(tabletPage.getByTestId('boardroom-module').getByText('Noted.').nth(1)).toBeVisible({ timeout: 30_000 }); // bypass-strict: select specific element by 0-based index
-
-      const secondRequestOnward = capturedPayloads.slice(1).join('\n');
-      expect(secondRequestOnward).toContain('Luna Synthwave');
     });
   });
 });
