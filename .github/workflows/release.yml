@@ -64,10 +64,43 @@ jobs:
       - name: Build Apple Silicon DMG installer (Unsigned / No Certificates Required)
         if: runner.os == 'macOS'
         run: |
+          set -euo pipefail
+          # ISSUE-1719: v2.0.0 shipped without these and its sign-in said
+          # "Missing VITE_FIREBASE_API_KEY in .env". Refuse to build without them.
+          for name in VITE_FIREBASE_API_KEY VITE_FIREBASE_PROJECT_ID VITE_FIREBASE_AUTH_DOMAIN VITE_FIREBASE_STORAGE_BUCKET VITE_FIREBASE_APP_ID; do
+            if [ -z "${!name:-}" ]; then echo "::error::$name is not set for the desktop build"; exit 1; fi
+          done
           npm run build:studio
           CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dmg --arm64 --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          NODE_ENV: production
+          VITE_BOARDROOM_BROWSER_ENABLED: ${{ vars.VITE_BOARDROOM_BROWSER_ENABLED || 'true' }}
+          VITE_BOARDROOM_BROWSER_URL: ${{ vars.VITE_BOARDROOM_BROWSER_URL || 'wss://boardroom-browser-148015878263.us-central1.run.app' }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
+          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FCM_VAPID_KEY: ${{ secrets.VITE_FCM_VAPID_KEY }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
+          VITE_SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          VITE_TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          VITE_META_APP_ID: ${{ secrets.VITE_META_APP_ID }}
+          VITE_ENABLE_GOOGLE_MAPS: "true"
+          VITE_USE_FINE_TUNED_AGENTS: "true"
+          VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio
+          VITE_INGESTION_ENTITY_NAME: indii Music
+          VITE_INGESTION_TRADING_NAME: indii
+          VITE_INGESTION_CONTACT_NAME: indii Support
+          VITE_INGESTION_CONTACT_EMAIL: support@indii.music
+          VITE_INGESTION_CONTACT_ADDRESS: Detroit, MI
+          VITE_INGESTION_CONTACT_PHONE: +1-844-INDII-01
 
       - name: Build Linux installer
         if: runner.os == 'Linux'

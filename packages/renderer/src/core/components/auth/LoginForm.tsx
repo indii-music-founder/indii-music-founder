@@ -251,7 +251,7 @@ export default function LoginForm() {
                         indii<span className="text-dept-creative">.music</span>
                     </motion.h1>
                     <p className="mb-2 text-gray-500 font-mono text-xs tracking-[0.14em]">{INDII_BRAND.tagline}</p>
-                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
+                    <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v2.0</p>
                 </div>
 
                 {isFounderSource && (
