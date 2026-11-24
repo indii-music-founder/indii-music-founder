@@ -4299,3 +4299,13 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Not covered:** `packages/raw-converter/target/release/indii-raw` is not built anywhere in CI (electron-builder logs "file source doesn't exist" and skips it); RAW conversion is unavailable in packaged builds.
 - **Acceptance:** re-tagged v2.0.0 Release run is green with DMG, blockmap and `latest-mac.yml` attached; the installed app connects to the local MCP server.
 - **Release (2026-11-23):** merged as `f4dc8b904` (#1024); v2.0.0 Release run https://github.com/indii-music-founder/indii-music-founder/actions/runs/45252898158 green with all three assets (DMG grew from ~295 MB to ~682 MB with the bundled servers, scripts and catalog).
+
+### ISSUE-1719: v2.0.0 desktop release can't sign in ("Missing VITE_FIREBASE_API_KEY in .env"); unsigned DMG shows "damaged"
+
+- **Status:** 🟡 PARTIAL — env fix on branch `claude/release-env`; needs a re-tagged release; "damaged" not addressed
+- **Severity:** 🔴 CRITICAL
+- **Module:** `.github/workflows/release.yml`, desktop sign-in, macOS Gatekeeper
+- **Evidence:** 2026-11-23, owner installed v2.0.0 from release run actions/runs/45252898158. First open: macOS "“indii.music” is damaged and can't be opened" (quarantined unsigned app; cleared by the owner with `xattr -dr com.apple.quarantine`). Then the sign-in screen showed "Missing VITE_FIREBASE_API_KEY in .env". The release workflow's build step passed no `VITE_*` values to `npm run build:studio`; earlier DMGs were built locally with a `.env`. The sign-in card also still read "Founders Release • v1.0".
+- **Change (branch):** the release build step gets the same `VITE_*` environment as the hosting deploy (without `VITE_APP_TARGET: web`) and fails if the Firebase identifiers are missing; sign-in label reads v2.0.
+- **Open:** "damaged" on first open — an ad-hoc signature (`mac.identity: "-"`) should turn it into the right-click-Open "unidentified developer" warning; not tested.
+- **Acceptance:** a new v2.0.x DMG signs in with no manual steps beyond the first-open warning.
