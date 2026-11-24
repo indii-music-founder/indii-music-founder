@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M86ZZZK4ZFB4KE1KBMMHKAQA",
+  "strategy": "manual-commit",
+  "branch": "fix/boardroom-mcp-sse-e2e",
+  "checkpoints_count": 6,
+  "files_touched": [
+    ".agent/capabilities/catalog.json",
+    ".agent/capabilities/catalog.md",
+    ".agent/capabilities/registry.json",
+    ".agent/skills/error_memory/ERROR_LEDGER.md",
+    ".agent/skills/pp/SKILL.md",
+    ".agent/workflows/pp.md",
+    ".github/workflows/build.yml",
+    "AGENTS.md",
+    "docs/PLATINUM_QUALITY_STANDARDS.md",
+    "e2e/detroit-techno-onboarding.spec.ts",
+    "e2e/distribution-workflow.spec.ts",
+    "e2e/fixtures/auth.ts",
+    "e2e/fixtures/mcpTestServer.ts",
+    "e2e/indii-macro-flywheel.spec.ts",
+    "e2e/mcp-a2a-routing.spec.ts",
+    "e2e/mcp-boardroom-collaboration.spec.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.test.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 18962464,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 749641856,
+    "output_tokens": 915634,
+    "api_call_count": 4337,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 714870,
+    "layers": {
+      "betterleaks": 38,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 8,
+      "credentialed_uri": 5,
+      "entropy": 714966,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M86ZZZK4ZFB4KE1KBMMHKAQA",
+  "session_id": "01a1a89f-9cff-72d0-94f6-6b43ceac8b9a",
+  "strategy": "manual-commit",
+  "created_at": "2026-11-24T14:40:33.85598Z",
+  "branch": "fix/boardroom-mcp-sse-e2e",
+  "checkpoints_count": 6,
+  "save_step_count": 54,
+  "files_touched": [
+    ".agent/capabilities/catalog.json",
+    ".agent/capabilities/catalog.md",
+    ".agent/capabilities/registry.json",
+    ".agent/skills/error_memory/ERROR_LEDGER.md",
+    ".agent/skills/pp/SKILL.md",
+    ".agent/workflows/pp.md",
+    ".github/workflows/build.yml",
+    "AGENTS.md",
+    "docs/PLATINUM_QUALITY_STANDARDS.md",
+    "e2e/detroit-techno-onboarding.spec.ts",
+    "e2e/distribution-workflow.spec.ts",
+    "e2e/fixtures/auth.ts",
+    "e2e/fixtures/mcpTestServer.ts",
+    "e2e/indii-macro-flywheel.spec.ts",
+    "e2e/mcp-a2a-routing.spec.ts",
+    "e2e/mcp-boardroom-collaboration.spec.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.test.ts",
+    "packages/renderer/src/services/agent/tools/McpTools.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-6.1-sol",
+  "turn_id": "d3b95ccfb358",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 18962464,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 749641856,
+    "output_tokens": 915634,
+    "api_call_count": 4337,
+    "subagent_tokens_complete": true
+  },
+  "redaction": {
+    "replacements": 714870,
+    "layers": {
+      "betterleaks": 38,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 8,
+      "credentialed_uri": 5,
+      "entropy": 714966,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "session_metrics": {
+    "turn_count": 6
+  }
+}
