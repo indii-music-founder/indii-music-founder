@@ -55,7 +55,6 @@ vi.mock('@/modules/notes/NotesModule', () => ({ default: () => <div data-testid=
 vi.mock('@/modules/auth/SelectOrg', () => ({ default: () => <div data-testid="select-org">Select Org</div> }));
 
 // Mock other components used in App
-vi.mock('./CommandBar', () => ({ default: () => <div data-testid="command-bar">Command Bar</div> }));
 vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window">Agent Window</div> }));
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));

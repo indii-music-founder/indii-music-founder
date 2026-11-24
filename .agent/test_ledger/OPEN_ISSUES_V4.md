@@ -4309,3 +4309,16 @@ User changed active objective to fix/finish ALL media tools, superseding discove
 - **Change (branch):** the release build step gets the same `VITE_*` environment as the hosting deploy (without `VITE_APP_TARGET: web`) and fails if the Firebase identifiers are missing; sign-in label reads v2.0.
 - **Open:** "damaged" on first open — an ad-hoc signature (`mac.identity: "-"`) should turn it into the right-click-Open "unidentified developer" warning; not tested.
 - **Acceptance:** a new v2.0.x DMG signs in with no manual steps beyond the first-open warning.
+
+
+### ISSUE-1720: Boardroom follow-ups — autorater fast model, unused CommandBar removal, and ISSUE-757 memory-recall e2e flake
+
+- **Status:** 🟡 PARTIAL — structural fixes verified locally; production real-account Boardroom timing blocked at sign-in
+- **Severity:** 🟢 LOW
+- **Module:** `MultiTurnAutorater.ts`, `CommandBar.tsx` (removed), `e2e/cross-device-persistence.spec.ts`
+- **Evidence:** 2026-11-24 follow-up audit against `5e930bee2`: (1) `MultiTurnAutorater.evaluateTrace` still invoked `getFineTunedModel('generalist')` on every turn instead of `INTELLIGENCE_MODELS.TEXT.FAST` (`gemini-3.8-flash`); (2) `packages/renderer/src/core/components/CommandBar.tsx` had 0 production imports (referenced only by 4 `CommandBar.*.test.tsx` files and 2 test mocks); (3) `e2e/cross-device-persistence.spec.ts` (`ISSUE-757: Memory recall`) did not ignore `OPTIONS` preflights in its route capture, used a 10s Turn 1 timeout, and sliced `capturedPayloads.slice(1)` rather than snapshotting counts after Turn 1 settled.
+- **Change (branch):**
+  - Switched `MultiTurnAutorater` (`evaluateTrace` and `registerForFineTuning` metadata) to `INTELLIGENCE_MODELS.TEXT.FAST` (`MultiTurnAutorater.test.ts` 3/3 pass).
+  - Removed unused `CommandBar.tsx`, its 4 `CommandBar.*.test.tsx` suites, and the 2 stale `vi.mock` stubs in `SidebarNavigation.test.tsx` and `RouterContext.test.tsx` (16/16 pass).
+  - Stabilized `e2e/cross-device-persistence.spec.ts` (`ISSUE-757: Memory recall`) by ignoring `OPTIONS` preflights, waiting for `isAgentProcessing` to settle before and after Turn 1, increasing Turn 1 timeout to 30s, and slicing payloads captured after Turn 1 (`3/3` consecutive local runs pass, `5 passed, 1 skipped` — structural-only).
+- **Real-user verification:** Opened `https://indii.music/` and navigated to `https://app.indii.music/`, which presents the sign-in screen (no active signed-in session). Real-account Boardroom timing remains `BLOCKED / AUTH_REQUIRED` per `.agent/REAL_USER_AUTHENTICITY.md` until the founder signs in.

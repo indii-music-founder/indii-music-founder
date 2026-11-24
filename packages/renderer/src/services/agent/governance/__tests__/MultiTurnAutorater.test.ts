@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MultiTurnAutorater, TraceMessage } from '../MultiTurnAutorater';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
@@ -46,6 +47,7 @@ describe('MultiTurnAutorater', () => {
         if (callArgs) {
             expect(callArgs[0]).toContain('Create a project'); // Check prompt contains goal
             expect(callArgs[0]).toContain('Do not hallucinate files'); // Check prompt contains guidelines
+            expect(callArgs[4]).toBe(INTELLIGENCE_MODELS.TEXT.FAST);
         }
     });
 
