@@ -4360,6 +4360,7 @@ User changed active objective to fix/finish ALL media tools, superseding discove
   - Added `CustomProvider` mock to `firebase.appcheck.test.ts` and updated Electron App Check expectations.
   - Bound `CreativeNavbar` status pill to `store.isOffline` (`ONLINE` emerald vs `OFFLINE` amber).
 - **Acceptance:** Targeted main/renderer unit suites, ESLint, typecheck, and ledger/security gates pass; desktop v2.0.3+ DMG and live Web Studio (`https://app.indii.music/creative`) send `"hi"` and persist messages without offline errors in a real user session.
+- **Release (2026-11-25):** `v2.0.2` ([run `45542300522`](https://github.com/indii-music-founder/indii-music-founder/actions/runs/45542300522), tag commit `667f46d8a`) published the Electron CORS + offline directive fallback fix (#1038) and ad-hoc macOS signing (#1035). Bumped workspace to `2.0.3` to publish `v2.0.3` with the subsequent `main` Boardroom hardening/UI updates (#1039–#1042) as well.
 
 
 ### ISSUE-1722: Boardroom rail and drawer layout spec remainder (WP7 L2–L5)
